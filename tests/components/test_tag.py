@@ -111,9 +111,9 @@ def test_is_valid_attr(attr: Var, valid: bool):
     assert Tag.is_valid_attr(attr) == valid
 
 
-def test_add_attrs():
+def test_add_props():
     """Test that the attributes are added."""
-    tag = Tag().add_attrs(key="value", key2=42, invalid=None, invalid2={})
+    tag = Tag().add_props(key="value", key2=42, invalid=None, invalid2={})
     assert tag.attrs["key"] == Var.create("value")
     assert tag.attrs["key2"] == Var.create(42)
     assert "invalid" not in tag.attrs

@@ -15,7 +15,7 @@ class Link(Component):
     rel: Var[str]
 
     def _render(self) -> Tag:
-        return Tag(name="link").add_attrs(
+        return Tag(name="link").add_props(
             href=self.href,
             rel=self.rel,
         )

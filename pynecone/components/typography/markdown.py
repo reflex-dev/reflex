@@ -28,7 +28,7 @@ class Markdown(Component):
 
     def _render(self):
         tag = super()._render()
-        return tag.add_attrs(
+        return tag.add_props(
             children=utils.wrap(str(self.src).strip(), "`"),
             components={
                 "h1": "{({node, ...props}) => <Heading size='2xl' {...props} />}",

@@ -7,7 +7,6 @@ import os
 import re
 from typing import Any, Dict, Optional, Union
 
-import pydantic
 from plotly.graph_objects import Figure
 from plotly.io import to_json
 
@@ -23,8 +22,8 @@ class Tag(Base):
     # The name of the tag.
     name: str = ""
 
-    # The attributes of the tag.
-    attrs: Dict[str, Any] = {}
+    # The props of the tag.
+    props: Dict[str, Any] = {}
 
     # The inner contents of the tag.
     contents: str = ""
@@ -36,10 +35,10 @@ class Tag(Base):
             *args: Args to initialize the tag.
             **kwargs: Kwargs to initialize the tag.
         """
-        # Convert any attrs to properties.
-        if "attrs" in kwargs:
-            kwargs["attrs"] = {
-                name: Var.create(value) for name, value in kwargs["attrs"].items()
+        # Convert any props to vars.
+        if "props" in kwargs:
+            kwargs["props"] = {
+                name: Var.create(value) for name, value in kwargs["props"].items()
             }
         super().__init__(*args, **kwargs)
 
@@ -109,21 +108,21 @@ class Tag(Base):
         assert isinstance(value, str), "The value must be a string."
         return utils.wrap(value, "{", check_first=False)
 
-    def format_attrs(self) -> str:
+    def format_props(self) -> str:
         """Format a dictionary of attributes.
 
         Returns:
             The formatted attributes.
         """
         # If there are no attributes, return an empty string.
-        if len(self.attrs) == 0:
+        if len(self.props) == 0:
             return ""
 
         # Get the string representation of all the attributes joined.
         # We need a space at the beginning for formatting.
         return os.linesep.join(
             f"{name}={self.format_attr_value(value)}"
-            for name, value in self.attrs.items()
+            for name, value in self.props.items()
             if value is not None
         )
 
@@ -134,22 +133,22 @@ class Tag(Base):
             The React code to render the tag.
         """
         # Get the tag attributes.
-        attrs_str = self.format_attrs()
-        if len(attrs_str) > 0:
-            attrs_str = " " + attrs_str
+        props_str = self.format_props()
+        if len(props_str) > 0:
+            props_str = " " + props_str
 
         if len(self.contents) == 0:
             # If there is no inner content, we don't need a closing tag.
-            tag_str = utils.wrap(f"{self.name}{attrs_str}/", "<")
+            tag_str = utils.wrap(f"{self.name}{props_str}/", "<")
         else:
             # Otherwise wrap it in opening and closing tags.
-            open = utils.wrap(f"{self.name}{attrs_str}", "<")
+            open = utils.wrap(f"{self.name}{props_str}", "<")
             close = utils.wrap(f"/{self.name}", "<")
             tag_str = utils.wrap(self.contents, open, close)
 
         return tag_str
 
-    def add_attrs(self, **kwargs: Optional[Any]) -> Tag:
+    def add_props(self, **kwargs: Optional[Any]) -> Tag:
         """Add attributes to the tag.
 
         Args:
@@ -158,7 +157,7 @@ class Tag(Base):
         Returns:
             The tag with the attributes added.
         """
-        self.attrs.update(
+        self.props.update(
             {
                 utils.to_camel_case(name): attr
                 if utils._isinstance(attr, Union[EventChain, dict])
@@ -169,7 +168,7 @@ class Tag(Base):
         )
         return self
 
-    def remove_attrs(self, *args: str) -> Tag:
+    def remove_props(self, *args: str) -> Tag:
         """Remove attributes from the tag.
 
         Args:
@@ -179,8 +178,8 @@ class Tag(Base):
             The tag with the attributes removed.
         """
         for name in args:
-            if name in self.attrs:
-                del self.attrs[name]
+            if name in self.props:
+                del self.props[name]
         return self
 
     @staticmethod

@@ -17,7 +17,7 @@ class Box(ChakraComponent):
         return (
             super()
             ._render()
-            .add_attrs(
+            .add_props(
                 **{
                     "as": self.element,
                 }

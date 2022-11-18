@@ -30,7 +30,7 @@ class Component(Base, ABC):
     # The style of the component.
     style: Style = Style()
 
-    # A mapping of event chains to event triggers.
+    # A mapping from event triggers to event chains.
     event_triggers: Dict[str, EventChain] = {}
 
     # The library that the component is based on.
@@ -114,10 +114,9 @@ class Component(Base, ABC):
             del kwargs[key]
 
         # Add style props to the component.
-        style = kwargs["style"] if "style" in kwargs else {}
         kwargs["style"] = Style(
             {
-                **style,
+                **kwargs.get("style", {}),
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
         )
@@ -220,14 +219,17 @@ class Component(Base, ABC):
         Returns:
             The tag to render.
         """
-        tag = Tag(name=self.tag).add_attrs(
-            **{attr: getattr(self, attr) for attr in self.get_props()}
-        )
+        # Create the base tag.
+        tag = Tag(name=self.tag)
 
+        # Add component props to the tag.
+        props = {attr: getattr(self, attr) for attr in self.get_props()}
+        
         # Special case for props named `type_`.
         if hasattr(self, "type_"):
-            tag.add_attrs(type=getattr(self, "type_"))
-        return tag
+            props["type"] = getattr(self, "type_")
+
+        return tag.add_props(**props)
 
     @classmethod
     def get_props(cls) -> Set[str]:
@@ -297,7 +299,7 @@ class Component(Base, ABC):
         """
         tag = self._render()
         return str(
-            tag.add_attrs(**self.event_triggers, key=self.key, sx=self.style).set(
+            tag.add_props(**self.event_triggers, key=self.key, sx=self.style).set(
                 contents=utils.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
                 ),
