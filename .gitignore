@@ -1,0 +1,10 @@
+**/*.pyc
+**/.DS_Store
+**/*.swp
+**/.web
+**/*.db
+**/node_modules/**
+bun.lockb
+poetry.lock
+dist/*
+pynetree/

@@ -1,0 +1,102 @@
+"""A slider component."""
+
+from typing import Set
+
+from pynecone.components.component import Component
+from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.var import Var
+
+
+class Slider(ChakraComponent):
+    """The wrapper that provides context and functionality for all children."""
+
+    tag = "Slider"
+
+    # State var to bind the the input.
+    value: Var[int]
+
+    # The placeholder text.
+    default_value: Var[int]
+
+    # The writing mode ("ltr" | "rtl")
+    direction: Var[str]
+
+    # If false, the slider handle will not capture focus when value changes.
+    focus_thumb_on_change: Var[bool]
+
+    # If true, the slider will be disabled
+    is_disabled: Var[bool]
+
+    # If true, the slider will be in `read-only` state.
+    is_read_only: Var[bool]
+
+    # If true, the value will be incremented or decremented in reverse.
+    is_reversed: Var[bool]
+
+    # The minimum value of the slider.
+    min_: Var[int]
+
+    # The maximum value of the slider.
+    max_: Var[int]
+
+    # The minimum distance between slider thumbs. Useful for preventing the thumbs from being too close together.
+    min_steps_between_thumbs: Var[int]
+
+    @classmethod
+    def get_controlled_triggers(cls) -> Set[str]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            The controlled event triggers.
+        """
+        return {
+            "on_change",
+            "on_change_end",
+            "on_change_start",
+        }
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a slider component.
+
+        If no children are provided, a default slider will be created.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The slider component.
+        """
+        if len(children) == 0:
+            children = [
+                SliderTrack.create(
+                    SliderFilledTrack.create(),
+                ),
+                SliderThumb.create(),
+            ]
+        return super().create(*children, **props)
+
+
+class SliderTrack(ChakraComponent):
+    """The empty part of the slider that shows the track."""
+
+    tag = "SliderTrack"
+
+
+class SliderFilledTrack(ChakraComponent):
+    """The filled part of the slider."""
+
+    tag = "SliderFilledTrack"
+
+
+class SliderThumb(ChakraComponent):
+    """The handle that's used to change the slider value."""
+
+    tag = "SliderThumb"
+
+
+class SliderMark(ChakraComponent):
+    """The label or mark that shows names for specific slider values."""
+
+    tag = "SliderMark"
