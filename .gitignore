@@ -7,4 +7,4 @@
 bun.lockb
 poetry.lock
 dist/*
-pynetree/
+examples/

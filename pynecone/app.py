@@ -196,7 +196,7 @@ class App(Base):
                 v = BaseVar(
                     name=match.groups()[0],
                     type_=str,
-                    state="router.query",
+                    state=f"{constants.ROUTER}.query",
                 )
                 args.append(v)
 

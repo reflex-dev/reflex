@@ -8,7 +8,7 @@ import traceback
 from abc import ABC
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set, Type
 
-from pynecone import utils
+from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, EventSpec, window_alert
 from pynecone.var import BaseVar, ComputedVar, Var
@@ -320,35 +320,6 @@ class State(Base, ABC):
         Returns:
             The state update after processing the event.
         """
-
-        def fix_events(events):
-            if events is None:
-                return []
-            if not isinstance(events, List):
-                events = [events]
-            out = []
-            for e in events:
-                if isinstance(e, Event):
-                    out.append(
-                        Event(
-                            token=event.token,
-                            name=e.name,
-                            payload=e.payload,
-                        )
-                    )
-                else:
-                    if isinstance(e, EventHandler):
-                        e = e()
-                    assert isinstance(e, EventSpec)
-                    out.append(
-                        Event(
-                            token=event.token,
-                            name=utils.to_snake_case(e.handler.fn.__qualname__),
-                            payload=dict(e.args),
-                        )
-                    )
-            return out
-
         # Get the event handler.
         path = event.name.split(".")
         path, name = path[:-1], path[-1]
@@ -367,10 +338,16 @@ class State(Base, ABC):
             print(error)
             return StateUpdate(events=[window_alert(error)])
 
-        # Return the substate and the delta.
-        events = fix_events(events)
+        # Fix the returned events.
+        events = utils.fix_events(events, event.token)
+
+        # Get the delta after processing the event.
         delta = self.get_delta()
+
+        # Reset the dirty vars.
         self.clean()
+
+        # Return the state update.
         return StateUpdate(delta=delta, events=events)
 
     def get_delta(self) -> Delta:
@@ -379,15 +356,21 @@ class State(Base, ABC):
         Returns:
             The delta for the state.
         """
+        # Return the dirty vars, as well as all computed vars.
         delta = {
             self.get_full_name(): {
                 prop: getattr(self, prop)
                 for prop in self.dirty_vars | set(self.computed_vars.keys())
             }
         }
+        # Recursively find the substate deltas.
         for substate in self.dirty_substates:
             delta.update(self.substates[substate].get_delta())
+
+        # Format the delta.
         delta = utils.format_state(delta)
+
+        # Return the delta.
         return delta
 
     def mark_dirty(self):
@@ -398,8 +381,11 @@ class State(Base, ABC):
 
     def clean(self):
         """Reset the dirty vars."""
+        # Recursively clean the substates.
         for substate in self.dirty_substates:
             self.substates[substate].clean()
+
+        # Clean this state.
         self.dirty_vars = set()
         self.dirty_substates = set()
 
@@ -463,7 +449,7 @@ class StateManager(Base):
     states: Dict[str, State] = {}
 
     # The token expiration time (s).
-    token_expiration: int = 60 * 60
+    token_expiration: int = constants.TOKEN_EXPIRATION
 
     def __init__(self, *args, **kwargs):
         """Initialize the state manager.

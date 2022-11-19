@@ -36,7 +36,7 @@ from pynecone import constants
 
 if TYPE_CHECKING:
     from pynecone.components.component import ImportDict
-    from pynecone.event import EventHandler, EventSpec
+    from pynecone.event import Event, EventHandler, EventSpec
     from pynecone.var import Var
 
 
@@ -621,6 +621,18 @@ def get_default_app_name() -> str:
     return os.getcwd().split(os.path.sep)[-1].replace("-", "_")
 
 
+def is_dataframe(value: Type) -> bool:
+    """Check if the given value is a dataframe.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is a dataframe.
+    """
+    return value.__name__ == "DataFrame"
+
+
 def format_state(value: Dict) -> Dict:
     """Recursively format values in the given state.
 
@@ -632,9 +644,8 @@ def format_state(value: Dict) -> Dict:
     """
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]
-    import pandas as pd
 
-    if isinstance(value, pd.DataFrame):
+    if is_dataframe(type(value)):
         return {
             "columns": value.columns.tolist(),
             "data": value.values.tolist(),
@@ -655,6 +666,26 @@ def get_event(state, event):
         The event.
     """
     return f"{state.get_name()}.{event}"
+
+
+def format_string(string: str) -> str:
+    """Format the given string as a JS string literal..
+
+    Args:
+        string: The string to format.
+
+    Returns:
+        The formatted string.
+    """
+    # Escale backticks.
+    string = string.replace("\`", "`")  # type: ignore
+    string = string.replace("`", "\`")  # type: ignore
+
+    # Wrap the string so it looks like {`string`}.
+    string = wrap(string, "`")
+    string = wrap(string, "{")
+
+    return string
 
 
 def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
@@ -721,6 +752,53 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
         return event_spec.args
     else:
         return ((args[1], arg.name),)
+
+
+def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
+    """Fix a list of events returned by an event handler.
+
+    Args:
+        events: The events to fix.
+        token: The user token.
+
+    Returns:
+        The fixed events.
+    """
+    # If the event handler returns nothing, return an empty list.
+    if events is None:
+        return []
+
+    # If the handler returns a single event, wrap it in a list.
+    if not isinstance(events, List):
+        events = [events]
+
+    # Fix the events created by the handler.
+    out = []
+    for e in events:
+
+        # If it is already an event, don't modify it.
+        if isinstance(e, Event):
+            name = e.name
+            payload = e.payload
+
+        # Otherwise, create an event from the event spec.
+        else:
+            if isinstance(e, EventHandler):
+                e = e()
+            assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
+            name = to_snake_case(e.handler.fn.__qualname__)
+            payload = dict(e.args)
+
+        # Create an event and append it to the list.
+        out.append(
+            Event(
+                token=token,
+                name=name,
+                payload=payload,
+            )
+        )
+
+    return out
 
 
 def merge_imports(*imports) -> ImportDict:

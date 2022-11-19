@@ -123,10 +123,7 @@ class Var(ABC):
         else:
             out = utils.wrap(self.full_name, "{")
         if self.is_string:
-            out = out.replace("\`", "`")  # type: ignore
-            out = out.replace("`", "\`")  # type: ignore
-            out = utils.wrap(out, "`")
-            out = utils.wrap(out, "{")
+            out = utils.format_string(out)
         return out
 
     def __getitem__(self, i) -> Var:
@@ -140,7 +137,6 @@ class Var(ABC):
         """
         # The type of the indexed var.
         type_ = str
-        import pandas as pd
 
         # Convert any vars to local vars.
         if isinstance(i, Var):
@@ -154,7 +150,7 @@ class Var(ABC):
                 type_ = utils.get_args(self.type_)[0]
             else:
                 type_ = Any
-        elif utils._issubclass(self.type_, Union[dict, pd.DataFrame]):
+        elif utils.is_dataframe(self.type_):
             if isinstance(i, str):
                 i = utils.wrap(i, '"')
             if isinstance(self.type_, _GenericAlias):
