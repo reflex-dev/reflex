@@ -1,8 +1,10 @@
 """Table components."""
 
+from typing import List
+
 from pynecone import utils
 from pynecone.components.component import Component
-from pynecone.var import Var
+from pynecone.var import BaseVar, Var
 
 
 class Markdown(Component):
@@ -55,7 +57,7 @@ class Markdown(Component):
                     "\n", " "
                 ),
             },
-            remark_plugins="{{[remarkMath, remarkGfm]}}",
-            rehype_plugins="{{[rehypeKatex]}}",
+            remark_plugins=BaseVar(name="[remarkMath, remarkGfm]", type_=List[str]),
+            rehype_plugins=BaseVar(name="[rehypeKatex]", type_=List[str]),
             src="",
         )

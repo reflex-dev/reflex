@@ -441,6 +441,9 @@ def get_close_char(open: str, close: Optional[str] = None) -> str:
 
     Returns:
         The close character.
+
+    Raises:
+        ValueError: If the open character is not a valid brace.
     """
     if close is not None:
         return close
@@ -591,7 +594,20 @@ def format_event_fn(fn: Callable) -> str:
 
     if isinstance(fn, EventHandler):
         fn = fn.fn
-    return fn.__qualname__.replace(".", "_")
+    return to_snake_case(fn.__qualname__)
+
+
+def format_event(event_spec: EventSpec) -> str:
+    """Format an event.
+
+    Args:
+        event_spec: The event to format.
+
+    Returns:
+        The compiled event.
+    """
+    args = ",".join([":".join((name, val)) for name, val in event_spec.args])
+    return f"E(\"{format_event_fn(event_spec.handler.fn)}\", {wrap(args, '{')})"
 
 
 USED_VARIABLES = set()
@@ -633,7 +649,7 @@ def is_dataframe(value: Type) -> bool:
     return value.__name__ == "DataFrame"
 
 
-def format_state(value: Dict) -> Dict:
+def format_state(value: Any) -> Dict:
     """Recursively format values in the given state.
 
     Args:
@@ -724,6 +740,9 @@ def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
 
     Returns:
         The event specs from calling the function.
+
+    Raises:
+        ValueError: If the lambda has an invalid signature.
     """
     args = inspect.getfullargspec(fn).args
     if len(args) == 0:
@@ -764,6 +783,8 @@ def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
     Returns:
         The fixed events.
     """
+    from pynecone.event import Event, EventHandler, EventSpec
+
     # If the event handler returns nothing, return an empty list.
     if events is None:
         return []
@@ -786,7 +807,7 @@ def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
             if isinstance(e, EventHandler):
                 e = e()
             assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
-            name = to_snake_case(e.handler.fn.__qualname__)
+            name = format_event_fn(e.handler.fn)
             payload = dict(e.args)
 
         # Create an event and append it to the list.

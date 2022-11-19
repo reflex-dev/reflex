@@ -65,7 +65,8 @@ class IterTag(Tag):
             assert len(args) == 2
             component = render_fn(arg, index)
         if component.key is None:
-            component.key = utils.wrap(str(index), "{", check_first=False)
+            component.key = index
+            # component.key = utils.wrap(str(index), "{", check_first=False)
         return component
 
     def __str__(self) -> str:

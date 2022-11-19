@@ -177,6 +177,9 @@ class State(Base, ABC):
 
         Returns:
             The class substate.
+
+        Raises:
+            ValueError: If the substate is not found.
         """
         if len(path) == 0:
             return cls
@@ -198,6 +201,9 @@ class State(Base, ABC):
 
         Returns:
             The class var.
+
+        Raises:
+            ValueError: If the path is invalid.
         """
         path, name = path[:-1], path[-1]
         substate = cls.get_class_substate(tuple(path))
@@ -247,6 +253,9 @@ class State(Base, ABC):
 
         Returns:
             The attribute.
+
+        Raises:
+            Exception: If the attribute is not found.
         """
         # If it is an inherited var, return from the parent state.
         if name != "inherited_vars" and name in self.inherited_vars:
@@ -300,6 +309,9 @@ class State(Base, ABC):
 
         Returns:
             The substate.
+
+        Raises:
+            ValueError: If the substate is not found.
         """
         if len(path) == 0:
             return self

@@ -57,29 +57,19 @@ class Tag(Base):
         Returns:
             The formatted prop to display within a tag.
         """
-
-        def format_fn(value):
-            args = ",".join([":".join((name, val)) for name, val in value.args])
-            return f"E(\"{utils.to_snake_case(value.handler.fn.__qualname__)}\", {utils.wrap(args, '{')})"
-
         # Handle var props.
         if isinstance(prop, Var):
             if not prop.is_local or prop.is_string:
                 return str(prop)
             if issubclass(prop.type_, str):
-                prop = json.dumps(prop.full_name)
-                prop = re.sub('"{', "", prop)
-                prop = re.sub('}"', "", prop)
-                prop = re.sub('"`', '{"', prop)
-                prop = re.sub('`"', '"}', prop)
-                return prop
+                return json.dumps(prop.full_name)
             prop = prop.full_name
 
-        # Handle events.
+        # Handle event props.
         elif isinstance(prop, EventChain):
             local_args = ",".join(prop.events[0].local_args)
-            fns = ",".join([format_fn(event) for event in prop.events])
-            prop = f"({local_args}) => Event([{fns}])"
+            events = ",".join([utils.format_event(event) for event in prop.events])
+            prop = f"({local_args}) => Event([{events}])"
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -93,19 +83,18 @@ class Tag(Base):
         # For dictionaries, convert any properties to strings.
         else:
             if isinstance(prop, dict):
-                prop = json.dumps(
-                    {
-                        key: str(val) if isinstance(val, Var) else val
-                        for key, val in prop.items()
-                    }
-                )
-            else:
-                prop = json.dumps(prop)
+                # Convert any var keys to strings.
+                prop = {
+                    key: str(val) if isinstance(val, Var) else val
+                    for key, val in prop.items()
+                }
 
+            # Dump the prop as JSON.
+            prop = json.dumps(prop)
+
+            # This substitution is necessary to unwrap var values.
             prop = re.sub('"{', "", prop)
             prop = re.sub('}"', "", prop)
-            prop = re.sub('"`', '{"', prop)
-            prop = re.sub('`"', '"}', prop)
 
         # Wrap the variable in braces.
         assert isinstance(prop, str), "The prop must be a string."

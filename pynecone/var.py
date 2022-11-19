@@ -126,7 +126,7 @@ class Var(ABC):
             out = utils.format_string(out)
         return out
 
-    def __getitem__(self, i) -> Var:
+    def __getitem__(self, i: Any) -> Var:
         """Index into a var.
 
         Args:
@@ -134,6 +134,9 @@ class Var(ABC):
 
         Returns:
             The indexed var.
+
+        Raises:
+            TypeError: If the var is not indexable.
         """
         # The type of the indexed var.
         type_ = str
@@ -174,6 +177,9 @@ class Var(ABC):
 
         Returns:
             The var attribute.
+
+        Raises:
+            Exception: If the attribute is not found.
         """
         try:
             return super().__getattribute__(name)

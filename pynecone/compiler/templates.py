@@ -131,20 +131,6 @@ EVENT_FN = join(
 ).format
 
 
-def format_event_declaration(fn: Callable) -> str:
-    """Format an event declaration.
-
-    Args:
-        fn: The function to declare.
-
-    Returns:
-        The compiled event declaration.
-    """
-    name = utils.format_event_fn(fn=fn)
-    event = utils.to_snake_case(fn.__qualname__)
-    return f"const {name} = Event('{event}')"
-
-
 # Effects.
 ROUTER = constants.ROUTER
 RESULT = constants.RESULT

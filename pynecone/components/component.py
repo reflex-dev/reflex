@@ -137,6 +137,9 @@ class Component(Base, ABC):
 
         Returns:
             The event chain.
+
+        Raises:
+            ValueError: If the value is not a valid event chain.
         """
         arg = self.get_controlled_value()
 
