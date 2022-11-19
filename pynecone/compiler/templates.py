@@ -123,7 +123,6 @@ def format_state(
 EVENT_ENDPOINT = constants.Endpoint.EVENT.name
 EVENT_FN = join(
     [
-        "const E = (name, payload) => {{ return {{name, payload}} }}",
         "const Event = events => {set_state}({{",
         "  ...{state},",
         "  events: [...{state}.events, ...events],",
@@ -163,9 +162,9 @@ USE_EFFECT = join(
         f"        events: [...{{state}}.{EVENTS}, ...{RESULT}.{EVENTS}],",
         "      }})",
         f"      {SET_RESULT}({{{{",
-        f"        ...{RESULT},",
-        f"        {{state}}: null,",
-        f"       {PROCESSING}: false,",
+        f"        {STATE}: null,",
+        f"        {EVENTS}: [],",
+        f"        {PROCESSING}: false,",
         "      }})",
         "    }}",
         f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {EVENT_ENDPOINT}, {ROUTER})",

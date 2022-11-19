@@ -86,8 +86,12 @@ export const updateState = async (
     router
   );
   setResult({
+    ...result,
     state: state,
     events: events,
-    processing: true,
   });
+};
+
+export const E = (name, payload) => {
+  return { name, payload };
 };

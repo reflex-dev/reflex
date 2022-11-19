@@ -12,7 +12,7 @@ from pynecone.state import State
 DEFAULT_IMPORTS: ImportDict = {
     "react": {"useEffect", "useState"},
     "next/router": {"useRouter"},
-    f"/{constants.STATE_PATH}": {"updateState"},
+    f"/{constants.STATE_PATH}": {"updateState", "E"},
 }
 
 
