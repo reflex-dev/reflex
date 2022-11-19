@@ -91,7 +91,7 @@ def deploy(dry_run: bool = False):
     pcconfig.API_HOST = utils.get_production_backend_url()
 
     # Check if the deploy URI is set.
-    if not pcconfig.DEPLOY_URI:
+    if not hasattr(pcconfig, "DEPLOY_URI"):
         typer.echo("This feature is coming soon!")
         typer.echo("Join our waitlist to be notified: https://pynecone.io/waitlist")
         return

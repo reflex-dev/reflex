@@ -99,7 +99,7 @@ DEFAULT_TITLE = "Pynecone App"
 # The name of the pynecone config module.
 CONFIG_MODULE = "pcconfig"
 # The python config file.
-CONFIG_FILE = f"{CONFIG_MODULE}.{PY_EXT}"
+CONFIG_FILE = f"{CONFIG_MODULE}{PY_EXT}"
 # The deployment URL.
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
 # Token expiration time in seconds.
