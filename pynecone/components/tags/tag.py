@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 from plotly.graph_objects import Figure
 from plotly.io import to_json
@@ -14,6 +14,9 @@ from pynecone import utils
 from pynecone.base import Base
 from pynecone.event import EventChain
 from pynecone.var import Var
+
+if TYPE_CHECKING:
+    from pynecone.components.component import ComponentStyle
 
 
 class Tag(Base):
@@ -43,87 +46,86 @@ class Tag(Base):
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def format_attr_value(
-        value: Union[Var, EventChain, Dict[str, Var], str],
+    def format_prop(
+        prop: Union[Var, EventChain, ComponentStyle, str],
     ) -> Union[int, float, str]:
-        """Format an attribute value.
+        """Format a prop.
 
         Args:
-            value: The value of the attribute
+            prop: The prop to format.
 
         Returns:
-            The formatted value to display within the tag.
+            The formatted prop to display within a tag.
         """
 
         def format_fn(value):
             args = ",".join([":".join((name, val)) for name, val in value.args])
             return f"E(\"{utils.to_snake_case(value.handler.fn.__qualname__)}\", {utils.wrap(args, '{')})"
 
-        # Handle var attributes.
-        if isinstance(value, Var):
-            if not value.is_local or value.is_string:
-                return str(value)
-            if issubclass(value.type_, str):
-                value = json.dumps(value.full_name)
-                value = re.sub('"{', "", value)
-                value = re.sub('}"', "", value)
-                value = re.sub('"`', '{"', value)
-                value = re.sub('`"', '"}', value)
-                return value
-            value = value.full_name
+        # Handle var props.
+        if isinstance(prop, Var):
+            if not prop.is_local or prop.is_string:
+                return str(prop)
+            if issubclass(prop.type_, str):
+                prop = json.dumps(prop.full_name)
+                prop = re.sub('"{', "", prop)
+                prop = re.sub('}"', "", prop)
+                prop = re.sub('"`', '{"', prop)
+                prop = re.sub('`"', '"}', prop)
+                return prop
+            prop = prop.full_name
 
         # Handle events.
-        elif isinstance(value, EventChain):
-            local_args = ",".join(value.events[0].local_args)
-            fns = ",".join([format_fn(event) for event in value.events])
-            value = f"({local_args}) => Event([{fns}])"
+        elif isinstance(prop, EventChain):
+            local_args = ",".join(prop.events[0].local_args)
+            fns = ",".join([format_fn(event) for event in prop.events])
+            prop = f"({local_args}) => Event([{fns}])"
 
         # Handle other types.
-        elif isinstance(value, str):
-            if utils.is_wrapped(value, "{"):
-                return value
-            return json.dumps(value)
+        elif isinstance(prop, str):
+            if utils.is_wrapped(prop, "{"):
+                return prop
+            return json.dumps(prop)
 
-        elif isinstance(value, Figure):
-            value = json.loads(to_json(value))["data"]
+        elif isinstance(prop, Figure):
+            prop = json.loads(to_json(prop))["data"]
 
         # For dictionaries, convert any properties to strings.
         else:
-            if isinstance(value, dict):
-                value = json.dumps(
+            if isinstance(prop, dict):
+                prop = json.dumps(
                     {
                         key: str(val) if isinstance(val, Var) else val
-                        for key, val in value.items()
+                        for key, val in prop.items()
                     }
                 )
             else:
-                value = json.dumps(value)
+                prop = json.dumps(prop)
 
-            value = re.sub('"{', "", value)
-            value = re.sub('}"', "", value)
-            value = re.sub('"`', '{"', value)
-            value = re.sub('`"', '"}', value)
+            prop = re.sub('"{', "", prop)
+            prop = re.sub('}"', "", prop)
+            prop = re.sub('"`', '{"', prop)
+            prop = re.sub('`"', '"}', prop)
 
         # Wrap the variable in braces.
-        assert isinstance(value, str), "The value must be a string."
-        return utils.wrap(value, "{", check_first=False)
+        assert isinstance(prop, str), "The prop must be a string."
+        return utils.wrap(prop, "{", check_first=False)
 
     def format_props(self) -> str:
-        """Format a dictionary of attributes.
+        """Format the tag's props.
 
         Returns:
-            The formatted attributes.
+            The formatted props.
         """
-        # If there are no attributes, return an empty string.
+        # If there are no props, return an empty string.
         if len(self.props) == 0:
             return ""
 
-        # Get the string representation of all the attributes joined.
-        # We need a space at the beginning for formatting.
+        # Format all the props.
         return os.linesep.join(
-            f"{name}={self.format_attr_value(value)}"
-            for name, value in self.props.items()
-            if value is not None
+            f"{name}={self.format_prop(prop)}"
+            for name, prop in self.props.items()
+            if prop is not None
         )
 
     def __str__(self) -> str:
@@ -132,7 +134,7 @@ class Tag(Base):
         Returns:
             The React code to render the tag.
         """
-        # Get the tag attributes.
+        # Get the tag props.
         props_str = self.format_props()
         if len(props_str) > 0:
             props_str = " " + props_str
@@ -149,33 +151,33 @@ class Tag(Base):
         return tag_str
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
-        """Add attributes to the tag.
+        """Add props to the tag.
 
         Args:
-            **kwargs: The attributes to add.
+            **kwargs: The props to add.
 
         Returns:
-            The tag with the attributes added.
+            The tag with the props added.
         """
         self.props.update(
             {
-                utils.to_camel_case(name): attr
-                if utils._isinstance(attr, Union[EventChain, dict])
-                else Var.create(attr)
-                for name, attr in kwargs.items()
-                if self.is_valid_attr(attr)
+                utils.to_camel_case(name): prop
+                if utils._isinstance(prop, Union[EventChain, dict])
+                else Var.create(prop)
+                for name, prop in kwargs.items()
+                if self.is_valid_prop(prop)
             }
         )
         return self
 
     def remove_props(self, *args: str) -> Tag:
-        """Remove attributes from the tag.
+        """Remove props from the tag.
 
         Args:
-            *args: The attributes to remove.
+            *args: The props to remove.
 
         Returns:
-            The tag with the attributes removed.
+            The tag with the props removed.
         """
         for name in args:
             if name in self.props:
@@ -183,13 +185,13 @@ class Tag(Base):
         return self
 
     @staticmethod
-    def is_valid_attr(attr: Optional[Var]) -> bool:
-        """Check if the attr is valid.
+    def is_valid_prop(prop: Optional[Var]) -> bool:
+        """Check if the prop is valid.
 
         Args:
-            attr: The value to check.
+            prop: The prop to check.
 
         Returns:
-            Whether the value is valid.
+            Whether the prop is valid.
         """
-        return attr is not None and not (isinstance(attr, dict) and len(attr) == 0)
+        return prop is not None and not (isinstance(prop, dict) and len(prop) == 0)

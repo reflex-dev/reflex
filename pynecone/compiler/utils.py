@@ -115,9 +115,9 @@ def compile_state(state: Type[State]) -> str:
         state=state.get_name(), initial_state=json.dumps(initial_state)
     )
     initial_result = {
-        "state": None,
-        "events": [],
-        "processing": False,
+        constants.STATE: None,
+        constants.EVENTS: [],
+        constants.PROCESSING: False,
     }
     result = templates.format_state(
         state="result",
@@ -151,11 +151,8 @@ def compile_effects(state: Type[State]) -> str:
         A string of the compiled effects for the component.
     """
     state_name = state.get_name()
-    result_name = "result"
-    set_result = templates.format_state_setter(result_name)
-    return templates.USE_EFFECT(
-        state=state_name, result=result_name, set_result=set_result
-    )
+    set_state = templates.format_state_setter(state_name)
+    return templates.USE_EFFECT(state=state_name, set_state=set_state)
 
 
 def compile_render(component: Component) -> str:

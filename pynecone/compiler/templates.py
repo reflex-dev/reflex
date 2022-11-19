@@ -56,9 +56,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
 DOCUMENT_ROOT = join(
     [
         "{imports}",
-        "",
         "export default function Document() {{",
-        "",
         "return (",
         "{document}",
         ")",
@@ -74,17 +72,11 @@ COMPONENT = join(
     [
         "{imports}",
         "{custom_code}",
-        "",
         "{constants}",
-        "",
         "export default function Component() {{",
-        "",
         "{state}",
-        "",
         "{events}",
-        "",
         "{effects}",
-        "",
         "return (",
         "{render}",
         ")",
@@ -155,22 +147,28 @@ def format_event_declaration(fn: Callable) -> str:
 
 
 # Effects.
+ROUTER = constants.ROUTER
+RESULT = constants.RESULT
+PROCESSING = constants.PROCESSING
+STATE = constants.STATE
+EVENTS = constants.EVENTS
+SET_RESULT = format_state_setter(RESULT)
 USE_EFFECT = join(
     [
         "useEffect(() => {{",
         "  const update = async () => {{",
-        "    if (result.state != null) {{",
-        "      setState({{",
-        "        ...result.state,",
-        "        events: [...state.events, ...result.events],",
+        f"    if ({RESULT}.{STATE} != null) {{{{",
+        f"      {{set_state}}({{{{",
+        f"        ...{RESULT}.{STATE},",
+        f"        events: [...{{state}}.{EVENTS}, ...{RESULT}.{EVENTS}],",
         "      }})",
-        "      setResult({{",
-        "        ...result,",
-        "        state: null,",
-        "       processing: false,",
+        f"      {SET_RESULT}({{{{",
+        f"        ...{RESULT},",
+        f"        {{state}}: null,",
+        f"       {PROCESSING}: false,",
         "      }})",
         "    }}",
-        f"    await updateState({{state}}, {{result}}, {{set_result}}, {EVENT_ENDPOINT}, {constants.ROUTER})",
+        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {EVENT_ENDPOINT}, {ROUTER})",
         "  }}",
         "  update()",
         "}})",

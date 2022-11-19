@@ -70,6 +70,14 @@ APP_VAR = "app"
 API_VAR = "api"
 # The name of the router variable.
 ROUTER = "router"
+# The name of the variable to hold API results.
+RESULT = "result"
+# The name of the process variable.
+PROCESSING = "processing"
+# The name of the state variable.
+STATE = "state"
+# The name of the events variable.
+EVENTS = "events"
 # The name of the initial hydrate event.
 HYDRATE = "hydrate"
 # The name of the index page.
