@@ -64,7 +64,7 @@ Now you can modify the source code in my_app_name/my_app_name.py. Pynecone has f
 Let's go over a simple counter app to explore the basics of Pynecone.
 
 <div align="center">
-<img src="docs/images/Counter.gif" alt="drawing" width="550"/>
+<img src="docs/images/counter.gif" alt="drawing" width="550"/>
 <div align="left">
 
 Here is the complete code to create this.
@@ -73,10 +73,7 @@ Here is the complete code to create this.
 import pynecone as pc
 import random
 
-
 class State(pc.State):
-    """The app state."""
-
     count = 0
 
     def increment(self):
@@ -158,7 +155,6 @@ Our counter app has two event handlers, increment and decrement.
 
 ```python 
 def index():
-    """The main view."""
     return pc.center(
         pc.vstack(
             pc.heading(State.count),
