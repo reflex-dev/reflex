@@ -169,3 +169,13 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         expected: The expected output string.
     """
     assert utils.format_cond(condition, true_value, false_value) == expected
+
+
+def test_merge_imports():
+    """Test that imports are merged correctly."""
+    d1 = {"react": {"Component"}}
+    d2 = {"react": {"Component"}, "react-dom": {"render"}}
+    d = utils.merge_imports(d1, d2)
+    assert set(d.keys()) == {"react", "react-dom"}
+    assert set(d["react"]) == {"Component"}
+    assert set(d["react-dom"]) == {"render"}

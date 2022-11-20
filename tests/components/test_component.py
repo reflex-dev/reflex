@@ -2,8 +2,8 @@ from typing import Type
 
 import pytest
 
-from pynecone.components.component import Component, ImportDict, merge_imports
-from pynecone.event import EventChain, EventHandler, EventSpec
+from pynecone.components.component import Component, ImportDict
+from pynecone.event import EventHandler
 from pynecone.state import State
 from pynecone.style import Style
 
@@ -132,13 +132,3 @@ def test_get_imports(component1: Type[Component], component2: Type[Component]):
     c2 = component2.create(c1)
     assert c1.get_imports() == {"react": {"Component"}}
     assert c2.get_imports() == {"react-redux": {"connect"}, "react": {"Component"}}
-
-
-def test_merge_imports():
-    """Test that imports are merged correctly."""
-    d1 = {"react": {"Component"}}
-    d2 = {"react": {"Component"}, "react-dom": {"render"}}
-    d = merge_imports(d1, d2)
-    assert set(d.keys()) == {"react", "react-dom"}
-    assert set(d["react"]) == {"Component"}
-    assert set(d["react-dom"]) == {"render"}

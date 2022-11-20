@@ -1,8 +1,8 @@
 """Templates to use in the pynecone compiler."""
 
-from typing import Callable, Optional, Set
+from typing import Optional, Set
 
-from pynecone import constants, utils
+from pynecone import constants
 from pynecone.utils import join
 
 # Template for the Pynecone config file.
