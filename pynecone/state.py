@@ -368,13 +368,16 @@ class State(Base, ABC):
         Returns:
             The delta for the state.
         """
+        delta = {}
+
         # Return the dirty vars, as well as all computed vars.
-        delta = {
-            self.get_full_name(): {
-                prop: getattr(self, prop)
-                for prop in self.dirty_vars | set(self.computed_vars.keys())
-            }
+        subdelta = {
+            prop: getattr(self, prop)
+            for prop in self.dirty_vars | set(self.computed_vars.keys())
         }
+        if len(subdelta) > 0:
+            delta[self.get_full_name()] = subdelta
+
         # Recursively find the substate deltas.
         for substate in self.dirty_substates:
             delta.update(self.substates[substate].get_delta())

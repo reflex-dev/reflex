@@ -11,6 +11,8 @@ from pynecone import utils
         ("Hello", "hello"),
         ("camelCase", "camel_case"),
         ("camelTwoHumps", "camel_two_humps"),
+        ("_start_with_underscore", "_start_with_underscore"),
+        ("__start_with_double_underscore", "__start_with_double_underscore"),
     ],
 )
 def test_to_snake_case(input: str, output: str):
@@ -169,3 +171,13 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         expected: The expected output string.
     """
     assert utils.format_cond(condition, true_value, false_value) == expected
+
+
+def test_merge_imports():
+    """Test that imports are merged correctly."""
+    d1 = {"react": {"Component"}}
+    d2 = {"react": {"Component"}, "react-dom": {"render"}}
+    d = utils.merge_imports(d1, d2)
+    assert set(d.keys()) == {"react", "react-dom"}
+    assert set(d["react"]) == {"Component"}
+    assert set(d["react-dom"]) == {"render"}

@@ -643,14 +643,15 @@ async def test_process_event_simple(TestState):
     test_state = TestState()
     assert test_state.num1 == 0
 
-    event = Event(token="t", name="set_num1", payload={"num1": 69})
-    delta = await test_state.process(event)
+    event = Event(token="t", name="set_num1", payload={"value": 69})
+    update = await test_state.process(event)
 
     # The event should update the value.
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    assert delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.events == []
 
 
 @pytest.mark.asyncio
@@ -672,10 +673,13 @@ async def test_process_event_substate(TestState, ChildState, GrandchildState):
     event = Event(
         token="t", name="child_state.change_both", payload={"value": "hi", "count": 12}
     )
-    delta = await test_state.process(event)
+    update = await test_state.process(event)
     assert child_state.value == "HI"
     assert child_state.count == 24
-    assert delta == {"test_state.child_state": {"value": "HI", "count": 24}}
+    assert update.delta == {
+        "test_state.child_state": {"value": "HI", "count": 24},
+        "test_state": {"sum": 3.14, "upper": ""},
+    }
     test_state.clean()
 
     # Test with the granchild state.
@@ -683,11 +687,14 @@ async def test_process_event_substate(TestState, ChildState, GrandchildState):
     event = Event(
         token="t",
         name="child_state.grandchild_state.set_value2",
-        payload={"value2": "new"},
+        payload={"value": "new"},
     )
-    delta = await test_state.process(event)
+    update = await test_state.process(event)
     assert grandchild_state.value2 == "new"
-    assert delta == {"test_state.child_state.grandchild_state": {"value2": "new"}}
+    assert update.delta == {
+        "test_state.child_state.grandchild_state": {"value2": "new"},
+        "test_state": {"sum": 3.14, "upper": ""},
+    }
 
 
 @pytest.mark.asyncio
@@ -699,7 +706,7 @@ async def test_process_event_substate_set_parent_state(TestState, ChildState):
         ChildState: The child state class.
     """
     test_state = TestState()
-    event = Event(token="t", name="child_state.set_num1", payload={"num1": 69})
-    delta = await test_state.process(event)
+    event = Event(token="t", name="child_state.set_num1", payload={"value": 69})
+    update = await test_state.process(event)
     assert test_state.num1 == 69
-    assert delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}

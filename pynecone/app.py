@@ -1,5 +1,6 @@
 """The main Pynecone app."""
 
+import os
 import re
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
@@ -12,7 +13,7 @@ from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.event import Event
-from pynecone.middleware import HydrateMiddleware, LoggingMiddleware, Middleware
+from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 
@@ -56,7 +57,6 @@ class App(Base):
 
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
-        self.middleware.append(LoggingMiddleware())
 
         # Set up the state manager.
         self.state_manager.set(state=self.state)
@@ -187,7 +187,7 @@ class App(Base):
 
         from pynecone.var import BaseVar
 
-        parts = path.split("/")
+        parts = os.path.split(path)
         check = re.compile(r"^\[(.+)\]$")
         args = []
         for part in parts:

@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from typing import _GenericAlias  # type: ignore
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
 from plotly.graph_objects import Figure
 from plotly.io import to_json
@@ -153,7 +153,7 @@ class Var(ABC):
                 type_ = utils.get_args(self.type_)[0]
             else:
                 type_ = Any
-        elif utils.is_dataframe(self.type_):
+        elif utils._issubclass(self.type_, Dict) or utils.is_dataframe(self.type_):
             if isinstance(i, str):
                 i = utils.wrap(i, '"')
             if isinstance(self.type_, _GenericAlias):

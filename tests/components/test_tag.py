@@ -1,9 +1,9 @@
 from typing import Dict
 
-import pydantic
 import pytest
 
-from pynecone.components.tags import CondTag, Tag
+from pynecone.components import Box
+from pynecone.components.tags import CondTag, IterTag, Tag
 from pynecone.event import EventHandler, EventSpec, EventChain
 from pynecone.var import BaseVar, Var
 
@@ -13,29 +13,7 @@ def mock_event(arg):
 
 
 @pytest.mark.parametrize(
-    "cond,valid",
-    [
-        (BaseVar(name="p", type_=bool), True),
-        (BaseVar(name="p", type_=int), False),
-        (BaseVar(name="p", type_=str), False),
-    ],
-)
-def test_validate_cond(cond: BaseVar, valid: bool):
-    """Test that the cond is a boolean.
-
-    Args:
-        cond: The cond to test.
-        valid: The expected validity of the cond.
-    """
-    if not valid:
-        with pytest.raises(pydantic.ValidationError):
-            Tag(cond=cond)
-    else:
-        assert cond == Tag(cond=cond).cond
-
-
-@pytest.mark.parametrize(
-    "attr,formatted",
+    "prop,formatted",
     [
         ("string", '"string"'),
         ("{wrapped_string}", "{wrapped_string}"),
@@ -47,31 +25,35 @@ def test_validate_cond(cond: BaseVar, valid: bool):
         (["a", "b", "c"], '{["a", "b", "c"]}'),
         ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
         (
-            EventSpec(handler=EventHandler(fn=mock_event)),
+            EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
             '{() => Event([E("mock_event", {})])}',
         ),
         (
-            EventSpec(
-                handler=EventHandler(fn=mock_event),
-                local_args=("e",),
-                args=(("arg", "e.target.value"),),
+            EventChain(
+                events=[
+                    EventSpec(
+                        handler=EventHandler(fn=mock_event),
+                        local_args=("e",),
+                        args=(("arg", "e.target.value"),),
+                    )
+                ]
             ),
             '{(e) => Event([E("mock_event", {arg:e.target.value})])}',
         ),
     ],
 )
-def test_format_value(attr: Var, formatted: str):
-    """Test that the formatted value of an attribute is correct.
+def test_format_value(prop: Var, formatted: str):
+    """Test that the formatted value of an prop is correct.
 
     Args:
-        attr: The attribute to test.
+        prop: The prop to test.
         formatted: The expected formatted value.
     """
-    assert Tag.format_attr_value(attr) == formatted
+    assert Tag.format_prop(prop) == formatted
 
 
 @pytest.mark.parametrize(
-    "attrs,formatted",
+    "props,formatted",
     [
         ({}, ""),
         ({"key": 1}, "key={1}"),
@@ -79,18 +61,18 @@ def test_format_value(attr: Var, formatted: str):
         ({"key": True, "key2": "value2"}, 'key={true}\nkey2="value2"'),
     ],
 )
-def test_format_attrs(attrs: Dict[str, Var], formatted: str):
-    """Test that the formatted attributes are correct.
+def test_format_props(props: Dict[str, Var], formatted: str):
+    """Test that the formatted props are correct.
 
     Args:
-        attrs: The attributes to test.
-        formatted: The expected formatted attributes.
+        props: The props to test.
+        formatted: The expected formatted props.
     """
-    assert Tag(attrs=attrs).format_attrs() == formatted
+    assert Tag(props=props).format_props() == formatted
 
 
 @pytest.mark.parametrize(
-    "attr,valid",
+    "prop,valid",
     [
         (1, True),
         (3.14, True),
@@ -101,23 +83,23 @@ def test_format_attrs(attrs: Dict[str, Var], formatted: str):
         (None, False),
     ],
 )
-def test_is_valid_attr(attr: Var, valid: bool):
-    """Test that the attribute is valid.
+def test_is_valid_prop(prop: Var, valid: bool):
+    """Test that the prop is valid.
 
     Args:
-        attr: The attribute to test.
-        valid: The expected validity of the attribute.
+        prop: The prop to test.
+        valid: The expected validity of the prop.
     """
-    assert Tag.is_valid_attr(attr) == valid
+    assert Tag.is_valid_prop(prop) == valid
 
 
 def test_add_props():
-    """Test that the attributes are added."""
+    """Test that the props are added."""
     tag = Tag().add_props(key="value", key2=42, invalid=None, invalid2={})
-    assert tag.attrs["key"] == Var.create("value")
-    assert tag.attrs["key2"] == Var.create(42)
-    assert "invalid" not in tag.attrs
-    assert "invalid2" not in tag.attrs
+    assert tag.props["key"] == Var.create("value")
+    assert tag.props["key2"] == Var.create(42)
+    assert "invalid" not in tag.props
+    assert "invalid2" not in tag.props
 
 
 @pytest.mark.parametrize(
@@ -128,24 +110,16 @@ def test_add_props():
         (Tag(contents="hello"), "<>hello</>"),
         (Tag(name="h1", contents="hello"), "<h1>hello</h1>"),
         (
-            Tag(name="box", attrs={"color": "red", "textAlign": "center"}),
+            Tag(name="box", props={"color": "red", "textAlign": "center"}),
             '<box color="red"\ntextAlign="center"/>',
         ),
         (
             Tag(
                 name="box",
-                attrs={"color": "red", "textAlign": "center"},
+                props={"color": "red", "textAlign": "center"},
                 contents="text",
             ),
             '<box color="red"\ntextAlign="center">text</box>',
-        ),
-        (
-            Tag(
-                name="h1",
-                contents="hello",
-                cond=BaseVar(name="logged_in", type_=bool),
-            ),
-            '{logged_in ? <h1>hello</h1> : ""}',
         ),
     ],
 )
@@ -167,15 +141,3 @@ def test_format_cond_tag():
         cond=BaseVar(name="logged_in", type_=bool),
     )
     assert str(tag) == "{logged_in ? <h1>True content</h1> : <h2>False content</h2>}"
-
-
-def test_format_iter_tag():
-    """Test that the formatted iter tag is correct."""
-    # def render_todo(todo: str):
-    #     return Tag(name="Text", contents=todo)
-
-    # tag = IterTag(
-    #     iterable=BaseVar(name="todos", type_=list),
-    #     render_fn=render_todo
-    # )
-    # assert str(tag) == '{state.todos.map(render_todo)}'

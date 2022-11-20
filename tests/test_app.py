@@ -1,9 +1,12 @@
+from typing import Type
+
 import pytest
 
-from pynecone.base import Base
 from pynecone.app import App, DefaultState
 from pynecone.middleware import HydrateMiddleware
 from pynecone.components import Box
+from pynecone.state import State
+from pynecone.style import Style
 
 
 @pytest.fixture
@@ -36,25 +39,32 @@ def about_page():
     return about
 
 
-def test_default_state(app: App) -> None:
-    """Test creating an app with no state.
+@pytest.fixture()
+def TestState() -> Type[State]:
+    """A default state.
+
+    Returns:
+        A default state.
+    """
+
+    class TestState(State):
+        var: int
+
+    return TestState
+
+
+def test_default_app(app: App):
+    """Test creating an app with no args.
 
     Args:
         app: The app to test.
     """
     assert app.state() == DefaultState()
-
-
-def test_default_middleware(app: App) -> None:
-    """Test creating an app with no middleware.
-
-    Args:
-        app: The app to test.
-    """
     assert app.middleware == [HydrateMiddleware()]
+    assert app.style == Style()
 
 
-def test_add_page_default_route(app: App, index_page, about_page) -> None:
+def test_add_page_default_route(app: App, index_page, about_page):
     """Test adding a page to an app.
 
     Args:
@@ -69,7 +79,7 @@ def test_add_page_default_route(app: App, index_page, about_page) -> None:
     assert set(app.pages.keys()) == {"index", "about"}
 
 
-def test_add_page_set_route(app: App, index_page) -> None:
+def test_add_page_set_route(app: App, index_page):
     """Test adding a page to an app.
 
     Args:
@@ -79,3 +89,62 @@ def test_add_page_set_route(app: App, index_page) -> None:
     assert app.pages == {}
     app.add_page(index_page, path="/test")
     assert set(app.pages.keys()) == {"test"}
+
+
+def test_add_page_set_route_nested(app: App, index_page):
+    """Test adding a page to an app.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    assert app.pages == {}
+    app.add_page(index_page, path="/test/nested")
+    assert set(app.pages.keys()) == {"test/nested"}
+
+
+def test_initialize_with_state(TestState: Type[State]):
+    """Test setting the state of an app.
+
+    Args:
+        DefaultState: The default state.
+    """
+    app = App(state=TestState)
+    assert app.state == TestState
+
+    # Get a state for a given token.
+    token = "token"
+    state = app.get_state(token)
+    assert isinstance(state, TestState)
+    assert state.var == 0
+
+
+def test_set_and_get_state(TestState: Type[State]):
+    """Test setting and getting the state of an app with different tokens.
+
+    Args:
+        DefaultState: The default state.
+    """
+    app = App(state=TestState)
+
+    # Create two tokens.
+    token1 = "token1"
+    token2 = "token2"
+
+    # Get the default state for each token.
+    state1 = app.get_state(token1)
+    state2 = app.get_state(token2)
+    assert state1.var == 0
+    assert state2.var == 0
+
+    # Set the vars to different values.
+    state1.var = 1
+    state2.var = 2
+    app.set_state(token1, state1)
+    app.set_state(token2, state2)
+
+    # Get the states again and check the values.
+    state1 = app.get_state(token1)
+    state2 = app.get_state(token2)
+    assert state1.var == 1
+    assert state2.var == 2
