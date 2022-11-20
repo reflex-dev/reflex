@@ -91,6 +91,18 @@ def test_add_page_set_route(app: App, index_page):
     assert set(app.pages.keys()) == {"test"}
 
 
+def test_add_page_set_route_nested(app: App, index_page):
+    """Test adding a page to an app.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    assert app.pages == {}
+    app.add_page(index_page, path="/test/nested")
+    assert set(app.pages.keys()) == {"test/nested"}
+
+
 def test_initialize_with_state(TestState: Type[State]):
     """Test setting the state of an app.
 

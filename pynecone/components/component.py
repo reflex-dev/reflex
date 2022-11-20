@@ -327,7 +327,7 @@ class Component(Base, ABC):
         for child in self.children:
             child_code = child.get_custom_code()
             if child_code != "" and child_code not in code:
-                code += child_code
+                code += "\n" + child_code
         return code
 
     def _get_imports(self) -> ImportDict:

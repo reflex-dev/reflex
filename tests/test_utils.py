@@ -11,6 +11,8 @@ from pynecone import utils
         ("Hello", "hello"),
         ("camelCase", "camel_case"),
         ("camelTwoHumps", "camel_two_humps"),
+        ("_start_with_underscore", "_start_with_underscore"),
+        ("__start_with_double_underscore", "__start_with_double_underscore"),
     ],
 )
 def test_to_snake_case(input: str, output: str):

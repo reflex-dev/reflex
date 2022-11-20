@@ -4,7 +4,6 @@ import pytest
 
 from pynecone.components.component import Component, ImportDict
 from pynecone.event import EventHandler
-from pynecone.state import State
 from pynecone.style import Style
 
 
@@ -20,6 +19,9 @@ def component1() -> Type[Component]:
         def _get_imports(self) -> ImportDict:
             return {"react": {"Component"}}
 
+        def _get_custom_code(self) -> str:
+            return "console.log('component1')"
+
     return TestComponent1
 
 
@@ -34,6 +36,9 @@ def component2() -> Type[Component]:
     class TestComponent2(Component):
         def _get_imports(self) -> ImportDict:
             return {"react-redux": {"connect"}}
+
+        def _get_custom_code(self) -> str:
+            return "console.log('component2')"
 
     return TestComponent2
 
@@ -119,3 +124,29 @@ def test_get_imports(component1: Type[Component], component2: Type[Component]):
     c2 = component2.create(c1)
     assert c1.get_imports() == {"react": {"Component"}}
     assert c2.get_imports() == {"react-redux": {"connect"}, "react": {"Component"}}
+
+
+def test_get_custom_code(component1: Type[Component], component2: Type[Component]):
+    """Test getting the custom code of a component.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    # Check that the code gets compiled correctly.
+    c1 = component1.create()
+    c2 = component2.create()
+    assert c1.get_custom_code() == "console.log('component1')"
+    assert c2.get_custom_code() == "console.log('component2')"
+
+    # Check that nesting components compiles both codes.
+    c1 = component1.create(c2)
+    assert (
+        c1.get_custom_code() == "console.log('component1')\nconsole.log('component2')"
+    )
+
+    # Check that code is not duplicated.
+    c1 = component1.create(c2, c2, c1, c1)
+    assert (
+        c1.get_custom_code() == "console.log('component1')\nconsole.log('component2')"
+    )
