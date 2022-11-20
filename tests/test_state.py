@@ -676,7 +676,10 @@ async def test_process_event_substate(TestState, ChildState, GrandchildState):
     update = await test_state.process(event)
     assert child_state.value == "HI"
     assert child_state.count == 24
-    assert update.delta == {"test_state.child_state": {"value": "HI", "count": 24}}
+    assert update.delta == {
+        "test_state.child_state": {"value": "HI", "count": 24},
+        "test_state": {"sum": 3.14, "upper": ""},
+    }
     test_state.clean()
 
     # Test with the granchild state.
@@ -689,7 +692,8 @@ async def test_process_event_substate(TestState, ChildState, GrandchildState):
     update = await test_state.process(event)
     assert grandchild_state.value2 == "new"
     assert update.delta == {
-        "test_state.child_state.grandchild_state": {"value2": "new"}
+        "test_state.child_state.grandchild_state": {"value2": "new"},
+        "test_state": {"sum": 3.14, "upper": ""},
     }
 
 

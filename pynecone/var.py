@@ -161,7 +161,6 @@ class Var(ABC):
             else:
                 type_ = Any
         else:
-            breakpoint()
             raise TypeError("Var does not support indexing.")
 
         return BaseVar(
