@@ -1,37 +1,15 @@
 from typing import Dict
 
-import pydantic
 import pytest
 
-from pynecone.components.tags import CondTag, Tag
+from pynecone.components import Box
+from pynecone.components.tags import CondTag, IterTag, Tag
 from pynecone.event import EventHandler, EventSpec, EventChain
 from pynecone.var import BaseVar, Var
 
 
 def mock_event(arg):
     pass
-
-
-@pytest.mark.parametrize(
-    "cond,valid",
-    [
-        (BaseVar(name="p", type_=bool), True),
-        (BaseVar(name="p", type_=int), False),
-        (BaseVar(name="p", type_=str), False),
-    ],
-)
-def test_validate_cond(cond: BaseVar, valid: bool):
-    """Test that the cond is a boolean.
-
-    Args:
-        cond: The cond to test.
-        valid: The expected validity of the cond.
-    """
-    if not valid:
-        with pytest.raises(pydantic.ValidationError):
-            Tag(cond=cond)
-    else:
-        assert cond == Tag(cond=cond).cond
 
 
 @pytest.mark.parametrize(
@@ -47,24 +25,28 @@ def test_validate_cond(cond: BaseVar, valid: bool):
         (["a", "b", "c"], '{["a", "b", "c"]}'),
         ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
         (
-            EventSpec(handler=EventHandler(fn=mock_event)),
+            EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
             '{() => Event([E("mock_event", {})])}',
         ),
         (
-            EventSpec(
-                handler=EventHandler(fn=mock_event),
-                local_args=("e",),
-                args=(("arg", "e.target.value"),),
+            EventChain(
+                events=[
+                    EventSpec(
+                        handler=EventHandler(fn=mock_event),
+                        local_args=("e",),
+                        args=(("arg", "e.target.value"),),
+                    )
+                ]
             ),
             '{(e) => Event([E("mock_event", {arg:e.target.value})])}',
         ),
     ],
 )
 def test_format_value(prop: Var, formatted: str):
-    """Test that the formatted value of an propibute is correct.
+    """Test that the formatted value of an prop is correct.
 
     Args:
-        prop: The propibute to test.
+        prop: The prop to test.
         formatted: The expected formatted value.
     """
     assert Tag.format_prop(prop) == formatted
@@ -80,11 +62,11 @@ def test_format_value(prop: Var, formatted: str):
     ],
 )
 def test_format_props(props: Dict[str, Var], formatted: str):
-    """Test that the formatted propibutes are correct.
+    """Test that the formatted props are correct.
 
     Args:
-        props: The propibutes to test.
-        formatted: The expected formatted propibutes.
+        props: The props to test.
+        formatted: The expected formatted props.
     """
     assert Tag(props=props).format_props() == formatted
 
@@ -102,17 +84,17 @@ def test_format_props(props: Dict[str, Var], formatted: str):
     ],
 )
 def test_is_valid_prop(prop: Var, valid: bool):
-    """Test that the propibute is valid.
+    """Test that the prop is valid.
 
     Args:
-        prop: The propibute to test.
-        valid: The expected validity of the propibute.
+        prop: The prop to test.
+        valid: The expected validity of the prop.
     """
     assert Tag.is_valid_prop(prop) == valid
 
 
 def test_add_props():
-    """Test that the propibutes are added."""
+    """Test that the props are added."""
     tag = Tag().add_props(key="value", key2=42, invalid=None, invalid2={})
     assert tag.props["key"] == Var.create("value")
     assert tag.props["key2"] == Var.create(42)
@@ -139,14 +121,6 @@ def test_add_props():
             ),
             '<box color="red"\ntextAlign="center">text</box>',
         ),
-        (
-            Tag(
-                name="h1",
-                contents="hello",
-                cond=BaseVar(name="logged_in", type_=bool),
-            ),
-            '{logged_in ? <h1>hello</h1> : ""}',
-        ),
     ],
 )
 def test_format_tag(tag: Tag, expected: str):
@@ -167,15 +141,3 @@ def test_format_cond_tag():
         cond=BaseVar(name="logged_in", type_=bool),
     )
     assert str(tag) == "{logged_in ? <h1>True content</h1> : <h2>False content</h2>}"
-
-
-def test_format_iter_tag():
-    """Test that the formatted iter tag is correct."""
-    # def render_todo(todo: str):
-    #     return Tag(name="Text", contents=todo)
-
-    # tag = IterTag(
-    #     iterable=BaseVar(name="todos", type_=list),
-    #     render_fn=render_todo
-    # )
-    # assert str(tag) == '{state.todos.map(render_todo)}'

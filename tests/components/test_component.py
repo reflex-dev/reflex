@@ -108,19 +108,6 @@ def test_add_style(component1: Type[Component], component2: Type[Component]):
     assert c2.style["color"] == "black"
 
 
-def test_set_state(component1: Type[Component]):
-    """Test setting the state of a component.
-
-    Args:
-        component1: A test component.
-    """
-    children = [component1() for _ in range(3)]
-    c = component1.create(*children).set_state(State)
-    assert c.state == State
-    for child in c.children:
-        assert child.state == State
-
-
 def test_get_imports(component1: Type[Component], component2: Type[Component]):
     """Test getting the imports of a component.
 
