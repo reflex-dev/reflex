@@ -1,5 +1,6 @@
 """The main Pynecone app."""
 
+import os
 import re
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
@@ -187,7 +188,7 @@ class App(Base):
 
         from pynecone.var import BaseVar
 
-        parts = path.split("/")
+        parts = os.path.split(path)
         check = re.compile(r"^\[(.+)\]$")
         args = []
         for part in parts:
