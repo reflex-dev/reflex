@@ -860,12 +860,12 @@ def get_redis():
     """
     try:
         import redis
-
-        config = get_config()
-        if config.redis_url is None:
-            return None
-        redis_url, redis_port = config.redis_url.split(":")
-        print("Using redis at", config.redis_url)
-        return redis.Redis(host=redis_url, port=int(redis_port), db=0)
     except:
         return None
+
+    config = get_config()
+    if config.redis_url is None:
+        return None
+    redis_url, redis_port = config.redis_url.split(":")
+    print("Using redis at", config.redis_url)
+    return redis.Redis(host=redis_url, port=int(redis_port), db=0)
