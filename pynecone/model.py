@@ -12,8 +12,8 @@ def get_engine():
     Returns:
         The database engine.
     """
-    uri = utils.get_config().DB_URI
-    return sqlmodel.create_engine(uri, echo=False)
+    url = utils.get_config().db_url
+    return sqlmodel.create_engine(url, echo=False)
 
 
 class Model(Base, sqlmodel.SQLModel):

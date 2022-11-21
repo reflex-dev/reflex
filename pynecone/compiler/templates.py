@@ -6,13 +6,12 @@ from pynecone import constants
 from pynecone.utils import join
 
 # Template for the Pynecone config file.
-PCCONFIG = f"""# The Pynecone configuration file.
+PCCONFIG = f"""import pynecone as pc
 
-APP_NAME = "{{app_name}}"
-API_HOST = "http://localhost:8000"
-BUN_PATH = "$HOME/.bun/bin/bun"
-ENV = "{constants.Env.DEV.value}"
-DB_URI = "sqlite:///{constants.DB_NAME}"
+
+config = pc.Config(
+    app_name="{{app_name}}",
+)
 """
 
 # Javascript formatting.

@@ -215,15 +215,15 @@ class App(Base):
     def compile(self, ignore_env: bool = False):
         """Compile the app and output it to the pages folder.
 
-        If the pcconfig environment is set to production, the app will
+        If the config environment is set to production, the app will
         not be compiled.
 
         Args:
-            ignore_env: Whether to ignore the pcconfig environment.
+            ignore_env: Whether to ignore the config environment.
         """
         # Get the env mode.
         config = utils.get_config()
-        if not ignore_env and config.ENV != constants.Env.DEV.value:
+        if not ignore_env and config.env != constants.Env.DEV:
             print("Skipping compilation in non-dev mode.")
             return
 

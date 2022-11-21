@@ -87,11 +87,11 @@ def deploy(dry_run: bool = False):
         dry_run: Whether to run a dry run.
     """
     # Get the app config.
-    pcconfig = utils.get_config()
-    pcconfig.API_HOST = utils.get_production_backend_url()
+    config = utils.get_config()
+    config.api_url = utils.get_production_backend_url()
 
-    # Check if the deploy URI is set.
-    if not hasattr(pcconfig, "DEPLOY_URI"):
+    # Check if the deploy url is set.
+    if config.deploy_url is None:
         typer.echo("This feature is coming soon!")
         typer.echo("Join our waitlist to be notified: https://pynecone.io/waitlist")
         return
@@ -106,8 +106,8 @@ def deploy(dry_run: bool = False):
         return
 
     # Deploy the app.
-    data = {"userId": pcconfig.USERNAME, "projectId": pcconfig.APP_NAME}
-    original_response = requests.get(pcconfig.DEPLOY_URI, params=data)
+    data = {"userId": config.username, "projectId": config.app_name}
+    original_response = requests.get(config.deploy_url, params=data)
     response = original_response.json()
     print("response", response)
     frontend = response["frontend_resources_url"]

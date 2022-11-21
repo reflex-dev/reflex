@@ -36,6 +36,7 @@ from pynecone import constants
 
 if TYPE_CHECKING:
     from pynecone.components.component import ImportDict
+    from pynecone.config import Config
     from pynecone.event import Event, EventHandler, EventSpec
     from pynecone.var import Var
 
@@ -233,14 +234,19 @@ def which(program: str) -> Optional[str]:
     return shutil.which(program)
 
 
-def get_config() -> Any:
-    """Get the default pcconfig.
+def get_config() -> Config:
+    """Get the app config.
 
     Returns:
-        The default pcconfig.
+        The app config.
     """
     sys.path.append(os.getcwd())
-    return __import__(constants.CONFIG_MODULE)
+    try:
+        return __import__(constants.CONFIG_MODULE).config
+    except:
+        print(f"No {constants.CONFIG_MODULE} module found.")
+        print("Using default config.")
+        return Config(app_name="")
 
 
 def get_bun_path():
@@ -249,7 +255,7 @@ def get_bun_path():
     Returns:
         The path to the bun executable.
     """
-    return os.path.expandvars(get_config().BUN_PATH)
+    return os.path.expandvars(get_config().bun_path)
 
 
 def get_app() -> Any:
@@ -259,7 +265,7 @@ def get_app() -> Any:
         The app based on the default config.
     """
     config = get_config()
-    module = ".".join([config.APP_NAME, config.APP_NAME])
+    module = ".".join([config.app_name, config.app_name])
     app = __import__(module, fromlist=(constants.APP_VAR,))
     return app
 
@@ -364,8 +370,8 @@ def get_production_backend_url() -> str:
     """
     config = get_config()
     return constants.PRODUCTION_BACKEND_URL.format(
-        username=config.USERNAME,
-        app_name=config.APP_NAME,
+        username=config.username,
+        app_name=config.app_name,
     )
 
 
@@ -861,8 +867,10 @@ def get_redis():
         import redis
 
         config = get_config()
-        redis_host, redis_port = config.REDIS_HOST.split(":")
-        print("Using redis at", config.REDIS_HOST)
-        return redis.Redis(host=redis_host, port=redis_port, db=0)
+        if config.redis_url is None:
+            return None
+        redis_url, redis_port = config.redis_url.split(":")
+        print("Using redis at", config.redis_url)
+        return redis.Redis(host=redis_url, port=redis_port, db=0)
     except:
         return None
