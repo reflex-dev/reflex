@@ -59,7 +59,7 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the state manager.
-        self.state_manager.set(state=self.state)
+        self.state_manager.setup(state=self.state)
 
         # Set up the API.
         self.api = fastapi.FastAPI()
