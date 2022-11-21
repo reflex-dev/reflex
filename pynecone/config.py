@@ -10,6 +10,9 @@ class Config(Base):
     # The name of the app.
     app_name: str
 
+    # The username.
+    username: Optional[str] = None
+
     # The backend API url.
     api_url: str = "http://localhost:8000"
 

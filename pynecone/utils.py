@@ -241,12 +241,7 @@ def get_config() -> Config:
         The app config.
     """
     sys.path.append(os.getcwd())
-    try:
-        return __import__(constants.CONFIG_MODULE).config
-    except:
-        print(f"No {constants.CONFIG_MODULE} module found.")
-        print("Using default config.")
-        return Config(app_name="")
+    return __import__(constants.CONFIG_MODULE).config
 
 
 def get_bun_path():
@@ -871,6 +866,6 @@ def get_redis():
             return None
         redis_url, redis_port = config.redis_url.split(":")
         print("Using redis at", config.redis_url)
-        return redis.Redis(host=redis_url, port=redis_port, db=0)
+        return redis.Redis(host=redis_url, port=int(redis_port), db=0)
     except:
         return None
