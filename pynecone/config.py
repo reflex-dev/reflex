@@ -19,6 +19,9 @@ class Config(Base):
     # The redis url.
     redis_url: Optional[str] = None
 
+    # The deploy url.
+    deploy_url: Optional[str] = None
+
     # The environment mode.
     env: constants.Env = constants.Env.DEV
 
