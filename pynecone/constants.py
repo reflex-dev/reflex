@@ -134,5 +134,7 @@ class Endpoint(Enum):
         Returns:
             The full URL for the endpoint.
         """
-        pcconfig = __import__(CONFIG_MODULE)
-        return "".join([pcconfig.API_HOST, str(self)])
+        from pynecone import utils
+
+        config = utils.get_config()
+        return "".join([config.api_url, str(self)])
