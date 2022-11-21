@@ -23,6 +23,7 @@ class Base(pydantic.BaseModel):
         """Pydantic config."""
 
         arbitrary_types_allowed = True
+        use_enum_values = True
 
     def json(self) -> str:
         """Convert the object to a json string.
