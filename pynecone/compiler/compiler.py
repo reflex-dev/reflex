@@ -13,6 +13,7 @@ DEFAULT_IMPORTS: ImportDict = {
     "react": {"useEffect", "useState"},
     "next/router": {"useRouter"},
     f"/{constants.STATE_PATH}": {"updateState", "E"},
+    "": {"focus-visible/dist/focus-visible"},
 }
 
 
