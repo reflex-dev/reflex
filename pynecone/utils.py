@@ -15,7 +15,6 @@ import sys
 from collections import defaultdict
 from subprocess import PIPE
 from typing import _GenericAlias  # type: ignore
-from typing import _UnionGenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -71,7 +70,7 @@ def get_base_class(cls: Type) -> Type:
     """
     # For newer versions of Python.
     try:
-        from types import GenericAlias
+        from types import GenericAlias  # type: ignore
 
         if isinstance(cls, GenericAlias):
             return get_base_class(cls.__origin__)
@@ -79,11 +78,18 @@ def get_base_class(cls: Type) -> Type:
         pass
 
     # Check Union types first.
-    if isinstance(cls, _UnionGenericAlias):
-        return tuple(get_base_class(arg) for arg in get_args(cls))
+    try:
+        from typing import _UnionGenericAlias  # type: ignore
+
+        if isinstance(cls, _UnionGenericAlias):
+            return tuple(get_base_class(arg) for arg in get_args(cls))
+    except:
+        pass
 
     # Check other generic aliases.
     if isinstance(cls, _GenericAlias):
+        if cls.__origin__ == Union:
+            return tuple(get_base_class(arg) for arg in get_args(cls))
         return get_base_class(cls.__origin__)
 
     # This is the base class.
@@ -105,7 +111,7 @@ def _issubclass(
     # Special check for Any.
     if cls_check == Any:
         return True
-    if cls == Any:
+    if cls == Any or cls == Callable:
         return False
     cls_base = get_base_class(cls)
     cls_check_base = get_base_class(cls_check)
@@ -240,8 +246,13 @@ def get_config() -> Config:
     Returns:
         The app config.
     """
+    from pynecone.config import Config
+
     sys.path.append(os.getcwd())
-    return __import__(constants.CONFIG_MODULE).config
+    try:
+        return __import__(constants.CONFIG_MODULE).config
+    except:
+        return Config(app_name="")
 
 
 def get_bun_path():
@@ -694,9 +705,9 @@ def format_string(string: str) -> str:
     Returns:
         The formatted string.
     """
-    # Escale backticks.
-    string = string.replace("\`", "`")  # type: ignore
-    string = string.replace("`", "\`")  # type: ignore
+    # Escape backticks.
+    string = string.replace(r"\`", "`")
+    string = string.replace("`", r"\`")
 
     # Wrap the string so it looks like {`string`}.
     string = wrap(string, "`")
@@ -859,7 +870,7 @@ def get_redis():
         The redis client.
     """
     try:
-        import redis
+        import redis  # type: ignore
     except:
         return None
 

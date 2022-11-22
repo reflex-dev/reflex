@@ -4,7 +4,7 @@ import pytest
 
 from pynecone.components import Box
 from pynecone.components.tags import CondTag, IterTag, Tag
-from pynecone.event import EventHandler, EventSpec, EventChain
+from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
 
 

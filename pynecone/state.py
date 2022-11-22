@@ -467,7 +467,11 @@ class StateManager(Base):
     redis: Any = None
 
     def setup(self, state: Type[State]):
-        """Setup the state manager."""
+        """Set up the state manager.
+
+        Args:
+            state: The state class to use.
+        """
         self.state = state
         self.redis = utils.get_redis()
 

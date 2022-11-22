@@ -1,28 +1,11 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any, List, Protocol, runtime_checkable
+from typing import Any, Callable, List
 
 from pynecone.components.component import Component
 from pynecone.components.tags import IterTag, Tag
 from pynecone.var import BaseVar, Var
-
-
-@runtime_checkable
-class RenderFn(Protocol):
-    """A function that renders a component."""
-
-    def __call__(self, *args, **kwargs) -> Component:
-        """Render a component.
-
-        Args:
-            *args: The positional arguments.
-            **kwargs: The keyword arguments.
-
-        Returns: # noqa: DAR202
-            The rendered component.
-        """
-        ...
 
 
 class Foreach(Component):
@@ -32,10 +15,10 @@ class Foreach(Component):
     iterable: Var[List]
 
     # A function from the render args to the component.
-    render_fn: RenderFn
+    render_fn: Callable
 
     @classmethod
-    def create(cls, iterable: Var[List], render_fn: RenderFn, **props) -> Foreach:
+    def create(cls, iterable: Var[List], render_fn: Callable, **props) -> Foreach:
         """Create a foreach component.
 
         Args:

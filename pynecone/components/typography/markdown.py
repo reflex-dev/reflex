@@ -14,7 +14,7 @@ class Markdown(Component):
 
     tag = "ReactMarkdown"
 
-    src: Var[str] = ""  # type: ignore
+    src: Var[str]
 
     def _get_custom_code(self) -> str:
         return "import 'katex/dist/katex.min.css'"
