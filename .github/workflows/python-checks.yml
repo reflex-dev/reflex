@@ -1,0 +1,42 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python application
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - uses: snok/install-poetry@v1
+      with:
+        version: 1.1.14
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        
+    - run: poetry install --no-interaction --no-root
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+      
+    - run: poetry install --no-interaction
+    
+    - run: poetry run pytest tests
