@@ -80,6 +80,7 @@ def get_base_class(cls: Type) -> Type:
     # Check Union types first.
     try:
         from typing import _UnionGenericAlias  # type: ignore
+
         if isinstance(cls, _UnionGenericAlias):
             return tuple(get_base_class(arg) for arg in get_args(cls))
     except:
@@ -110,7 +111,7 @@ def _issubclass(
     # Special check for Any.
     if cls_check == Any:
         return True
-    if cls == Any:
+    if cls == Any or cls == Callable:
         return False
     cls_base = get_base_class(cls)
     cls_check_base = get_base_class(cls_check)
