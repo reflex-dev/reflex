@@ -70,7 +70,7 @@ def get_base_class(cls: Type) -> Type:
     """
     # For newer versions of Python.
     try:
-        from types import GenericAlias
+        from types import GenericAlias  # type: ignore
 
         if isinstance(cls, GenericAlias):
             return get_base_class(cls.__origin__)
@@ -869,7 +869,7 @@ def get_redis():
         The redis client.
     """
     try:
-        import redis
+        import redis  # type: ignore
     except:
         return None
 
