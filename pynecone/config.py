@@ -1,3 +1,5 @@
+"""The Pynecone config."""
+
 from typing import Optional
 
 from pynecone import constants

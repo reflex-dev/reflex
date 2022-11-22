@@ -3,8 +3,8 @@ from typing import Type
 import pytest
 
 from pynecone.app import App, DefaultState
-from pynecone.middleware import HydrateMiddleware
 from pynecone.components import Box
+from pynecone.middleware import HydrateMiddleware
 from pynecone.state import State
 from pynecone.style import Style
 
@@ -21,7 +21,11 @@ def app() -> App:
 
 @pytest.fixture
 def index_page():
-    """An index page."""
+    """An index page.
+
+    Returns:
+        The index page.
+    """
 
     def index():
         return Box.create("Index")
@@ -31,7 +35,11 @@ def index_page():
 
 @pytest.fixture
 def about_page():
-    """An index page."""
+    """An about page.
+
+    Returns:
+        The about page.
+    """
 
     def about():
         return Box.create("About")
@@ -107,7 +115,7 @@ def test_initialize_with_state(TestState: Type[State]):
     """Test setting the state of an app.
 
     Args:
-        DefaultState: The default state.
+        TestState: The default state.
     """
     app = App(state=TestState)
     assert app.state == TestState
@@ -123,7 +131,7 @@ def test_set_and_get_state(TestState: Type[State]):
     """Test setting and getting the state of an app with different tokens.
 
     Args:
-        DefaultState: The default state.
+        TestState: The default state.
     """
     app = App(state=TestState)
 

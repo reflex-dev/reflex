@@ -1,6 +1,21 @@
 import pytest
 
 from pynecone.event import Event, EventHandler, EventSpec
+from pynecone.var import Var
+
+
+def make_var(value) -> Var:
+    """Make a variable.
+
+    Args:
+        value: The value of the var.
+
+    Returns:
+        The var.
+    """
+    var = Var.create(value)
+    assert var is not None
+    return var
 
 
 def test_create_event():
@@ -28,7 +43,7 @@ def test_call_event_handler():
     assert event_spec.args == ()
 
     handler = EventHandler(fn=test_fn_with_args)
-    event_spec = handler("first", "second")
+    event_spec = handler(make_var("first"), make_var("second"))
 
     assert event_spec.handler == handler
     assert event_spec.local_args == ()
