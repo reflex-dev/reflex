@@ -11,9 +11,6 @@ class Avatar(ChakraComponent):
 
     tag = "Avatar"
 
-    # Function to get the initials to display.
-    get_initials: Var[str]
-
     # The default avatar used as fallback when name, and src is not specified.
     icon: Var[str]
 
@@ -22,9 +19,6 @@ class Avatar(ChakraComponent):
 
     # If true, opt out of the avatar's fallback logic and renders the img at all times.
     ignore_fallback: Var[bool]
-
-    # Defines loading strategy ("eager" | "lazy").
-    loading: Var[str]
 
     # The name of the person in the avatar.
     name: Var[str]

@@ -48,6 +48,10 @@ NODE_MODULES = "node_modules"
 PACKAGE_LOCK = "package-lock.json"
 
 # Commands to run the app.
+# The backend api url.
+API_URL = "http://localhost:8000"
+# The default path where bun is installed.
+BUN_PATH = "$HOME/.bun/bin/bun"
 # Command to install bun.
 INSTALL_BUN = "curl https://bun.sh/install | bash"
 # Command to run the backend in dev mode.
@@ -94,6 +98,8 @@ FRONTEND_ZIP = "frontend.zip"
 BACKEND_ZIP = "backend.zip"
 # The name of the sqlite database.
 DB_NAME = "pynecone.db"
+# The sqlite url.
+DB_URL = f"sqlite:///{DB_NAME}"
 # The default title to show for Pynecone apps.
 DEFAULT_TITLE = "Pynecone App"
 # The name of the pynecone config module.
