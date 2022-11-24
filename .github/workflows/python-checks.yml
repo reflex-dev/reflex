@@ -25,15 +25,30 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: cache poetry install
+      uses: actions/cache@v2
+      with:
+        path: ~/.local
+        key: poetry-1.1.14-0
+
     - uses: snok/install-poetry@v1
       with:
         version: 1.1.14
         virtualenvs-create: true
         virtualenvs-in-project: true
 
+    - name: cache deps
+      id: cache-deps
+      uses: actions/cache@v2
+      with:
+        path: .venv
+        key: python-${{ matrix.python-version }-pydeps-${{ hashFiles('**/poetry.lock') }}
+
     - run: poetry install --no-interaction --no-root
+      if: steps.cache-deps.outputs.cache-hit != 'true'
     - run: poetry install --no-interaction
     - run: poetry run pytest tests
     - run: poetry run pyright pynecone tests
     - run: poetry run pydocstyle pynecone tests
     - run: poetry run darglint pynecone tests
+    - run: poetry run black --check pynecone tests
