@@ -16,10 +16,10 @@ class Config(Base):
     username: Optional[str] = None
 
     # The backend API url.
-    api_url: str = "http://localhost:8000"
+    api_url: str = constants.API_URL
 
     # The database url.
-    db_url: str = f"sqlite:///{constants.DB_NAME}"
+    db_url: str = constants.DB_URL
 
     # The redis url.
     redis_url: Optional[str] = None
@@ -31,4 +31,4 @@ class Config(Base):
     env: constants.Env = constants.Env.DEV
 
     # The path to the bun executable.
-    bun_path: str = "$HOME/.bun/bin/bun"
+    bun_path: str = constants.BUN_PATH
