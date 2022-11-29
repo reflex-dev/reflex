@@ -62,7 +62,7 @@ def get_args(alias: _GenericAlias) -> Tuple[Type, ...]:
     return alias.__args__
 
 
-def is_generic_alias(cls: Type) -> bool:
+def is_generic_alias(cls: GenericType) -> bool:
     """Check whether the class is a generic alias.
 
     Args:
@@ -84,7 +84,7 @@ def is_generic_alias(cls: Type) -> bool:
         return False
 
 
-def is_union(cls: Type) -> bool:
+def is_union(cls: GenericType) -> bool:
     """Check if a class is a Union.
 
     Args:
@@ -106,7 +106,7 @@ def is_union(cls: Type) -> bool:
     return False
 
 
-def get_base_class(cls: Type) -> Type:
+def get_base_class(cls: GenericType) -> Type:
     """Get the base class of a class.
 
     Args:
