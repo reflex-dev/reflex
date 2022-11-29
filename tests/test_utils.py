@@ -1,3 +1,5 @@
+import typing
+
 import pytest
 
 from pynecone import utils
@@ -181,3 +183,24 @@ def test_merge_imports():
     assert set(d.keys()) == {"react", "react-dom"}
     assert set(d["react"]) == {"Component"}
     assert set(d["react-dom"]) == {"render"}
+
+
+@pytest.mark.parametrize(
+    "cls,expected",
+    [
+        (str, False),
+        (int, False),
+        (float, False),
+        (bool, False),
+        (typing.List, True),
+        (typing.List[int], True),
+    ],
+)
+def test_is_generic_alias(cls: type, expected: bool):
+    """Test checking if a class is a GenericAlias.
+
+    Args:
+        cls: The class to check.
+        expected: Whether the class is a GenericAlias.
+    """
+    assert utils.is_generic_alias(cls) == expected

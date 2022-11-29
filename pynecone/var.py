@@ -149,14 +149,14 @@ class Var(ABC):
             assert isinstance(
                 i, utils.get_args(Union[int, Var])
             ), "Index must be an integer."
-            if isinstance(self.type_, _GenericAlias):
+            if utils.is_generic_alias(self.type_):
                 type_ = utils.get_args(self.type_)[0]
             else:
                 type_ = Any
         elif utils._issubclass(self.type_, Dict) or utils.is_dataframe(self.type_):
             if isinstance(i, str):
                 i = utils.wrap(i, '"')
-            if isinstance(self.type_, _GenericAlias):
+            if utils.is_generic_alias(self.type_):
                 type_ = utils.get_args(self.type_)[1]
             else:
                 type_ = Any
