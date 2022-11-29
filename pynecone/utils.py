@@ -14,7 +14,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from subprocess import PIPE
-from typing import _GenericAlias, _SpecialGenericAlias  # type: ignore
+from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -47,7 +47,7 @@ join = os.linesep.join
 console = Console()
 
 # Union of generic types.
-GenericType = Union[Type, _GenericAlias, _SpecialGenericAlias]
+GenericType = Union[Type, _GenericAlias]
 
 
 def get_args(alias: _GenericAlias) -> Tuple[Type, ...]:
@@ -72,8 +72,15 @@ def is_generic_alias(cls: GenericType) -> bool:
         Whether the class is a generic alias.
     """
     # For older versions of Python.
-    if isinstance(cls, _GenericAlias) or isinstance(cls, _SpecialGenericAlias):
+    if isinstance(cls, _GenericAlias):
         return True
+
+    try:
+        from typing import _SpecialGenericAlias  # type: ignore
+
+        return isinstance(cls, _SpecialGenericAlias)
+    except ImportError:
+        pass
 
     # For newer versions of Python.
     try:
