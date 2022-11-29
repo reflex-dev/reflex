@@ -78,7 +78,8 @@ def is_generic_alias(cls: GenericType) -> bool:
     try:
         from typing import _SpecialGenericAlias  # type: ignore
 
-        return isinstance(cls, _SpecialGenericAlias)
+        if isinstance(cls, _SpecialGenericAlias):
+            return True
     except ImportError:
         pass
 
