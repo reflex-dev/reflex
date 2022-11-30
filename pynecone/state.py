@@ -10,7 +10,7 @@ from typing import Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set,
 
 from pynecone import constants, utils
 from pynecone.base import Base
-from pynecone.event import Event, EventHandler, EventSpec, window_alert
+from pynecone.event import Event, EventHandler, window_alert
 from pynecone.var import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
@@ -70,6 +70,9 @@ class State(Base, ABC):
 
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
+
+        Raises:
+            TypeError: If the class has a var with an invalid type.
         """
         super().__init_subclass__(**kwargs)
 
@@ -103,6 +106,13 @@ class State(Base, ABC):
 
         # Setup the base vars at the class level.
         for prop in cls.base_vars.values():
+            if not utils._issubclass(prop.type_, utils.StateVar):
+                raise TypeError(
+                    "State vars must be primitive Python types, "
+                    "Plotly figures, Pandas dataframes, "
+                    "or subclasses of pc.Base. "
+                    f'Found var "{prop.name}" with type {prop.type_}.'
+                )
             cls._set_var(prop)
             cls._create_setter(prop)
             cls._set_default_value(prop)
