@@ -253,6 +253,9 @@ class Component(Base, ABC):
 
         Returns:
             The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
         """
         # Import here to avoid circular imports.
         from pynecone.components.base.bare import Bare

@@ -70,6 +70,9 @@ class State(Base, ABC):
 
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
+
+        Raises:
+            TypeError: If the class has a var with an invalid type.
         """
         super().__init_subclass__(**kwargs)
 

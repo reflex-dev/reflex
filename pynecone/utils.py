@@ -709,6 +709,9 @@ def format_state(value: Any) -> Dict:
 
     Returns:
         The formatted state.
+
+    Raises:
+        TypeError: If the given value is not a valid state.
     """
     # Convert plotly figures to JSON.
     if _isinstance(value, go.Figure):
