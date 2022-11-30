@@ -32,6 +32,8 @@ from plotly.io import to_json
 from rich.console import Console
 
 from pynecone import constants
+from pynecone.base import Base
+
 
 if TYPE_CHECKING:
     from pynecone.components.component import ImportDict
@@ -48,6 +50,9 @@ console = Console()
 
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
+
+# Valid state var types.
+StateVar = Union[int, float, str, bool, list, dict, tuple, set, Base, None]
 
 
 def get_args(alias: _GenericAlias) -> Tuple[Type, ...]:
@@ -704,16 +709,29 @@ def format_state(value: Any) -> Dict:
     Returns:
         The formatted state.
     """
+    # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]
 
+    # Convert pandas dataframes to JSON.
     if is_dataframe(type(value)):
         return {
             "columns": value.columns.tolist(),
             "data": value.values.tolist(),
         }
+
+    # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v) for k, v in value.items()}
+
+    # Make sure the value is JSON serializable.
+    if not isinstance(value, StateVar):
+        raise TypeError(
+            "State vars must be primitive Python types, "
+            "or subclasses of pc.Base. "
+            f"Got var of type {type(value)}."
+        )
+
     return value
 
 

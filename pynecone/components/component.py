@@ -257,6 +257,15 @@ class Component(Base, ABC):
         # Import here to avoid circular imports.
         from pynecone.components.base.bare import Bare
 
+        # Validate all the children.
+        for child in children:
+            if not utils._isinstance(child, ComponentChild):
+                raise TypeError(
+                    "Children of Pynecone components must be other components, "
+                    "state vars, or primitive Python types. "
+                    f"Got child of type {type(child)}.",
+                )
+
         children = [
             Bare.create(contents=Var.create(child, is_string=True))
             if not isinstance(child, Component)
@@ -348,3 +357,4 @@ class Component(Base, ABC):
 
 # Map from component to styling.
 ComponentStyle = Dict[Union[str, Type[Component]], Any]
+ComponentChild = Union[int, float, str, list, Var, Component]
