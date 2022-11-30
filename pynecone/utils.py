@@ -321,7 +321,7 @@ def export_app(app):
     Args:
         app: The app.
     """
-    app.app.compile(ignore_env=False)
+    app.app.compile(force_compile=True)
     cmd = r"rm -rf .web/_static; cd .web && bun run export && cd _static  && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
     os.system(cmd)
 
@@ -343,7 +343,7 @@ def setup_frontend(app):
     ln(src=os.path.join("..", constants.APP_ASSETS_DIR), dest=constants.WEB_ASSETS_DIR)
 
     # Compile the frontend.
-    app.app.compile(ignore_env=False)
+    app.app.compile(force_compile=True)
 
 
 def run_frontend(app) -> subprocess.Popen:

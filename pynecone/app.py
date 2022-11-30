@@ -212,18 +212,18 @@ class App(Base):
         # Add the page.
         self.pages[route] = component
 
-    def compile(self, ignore_env: bool = False):
+    def compile(self, force_compile: bool = False):
         """Compile the app and output it to the pages folder.
 
         If the config environment is set to production, the app will
         not be compiled.
 
         Args:
-            ignore_env: Whether to ignore the config environment.
+            force_compile: Whether to force the app to compile.
         """
         # Get the env mode.
         config = utils.get_config()
-        if not ignore_env and config.env != constants.Env.DEV:
+        if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
 
@@ -238,7 +238,7 @@ class App(Base):
 
         # Compile the pages.
         for path, component in self.pages.items():
-            path, code = self.compile_page(path, component)
+            self.compile_page(path, component)
 
     def compile_page(
         self, path: str, component: Component, write: bool = True
