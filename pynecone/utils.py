@@ -52,7 +52,8 @@ console = Console()
 GenericType = Union[Type, _GenericAlias]
 
 # Valid state var types.
-StateVar = Union[int, float, str, bool, list, dict, tuple, set, Base, None]
+PrimitiveType = Union[int, float, bool, str, list, dict, tuple]
+StateVar = Union[PrimitiveType, Base, None]
 
 
 def get_args(alias: _GenericAlias) -> Tuple[Type, ...]:
@@ -710,7 +711,7 @@ def format_state(value: Any) -> Dict:
         The formatted state.
     """
     # Convert plotly figures to JSON.
-    if isinstance(value, go.Figure):
+    if _isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]
 
     # Convert pandas dataframes to JSON.
@@ -721,11 +722,11 @@ def format_state(value: Any) -> Dict:
         }
 
     # Handle dicts.
-    if isinstance(value, dict):
+    if _isinstance(value, dict):
         return {k: format_state(v) for k, v in value.items()}
 
     # Make sure the value is JSON serializable.
-    if not isinstance(value, StateVar):
+    if not _isinstance(value, StateVar):
         raise TypeError(
             "State vars must be primitive Python types, "
             "or subclasses of pc.Base. "

@@ -357,4 +357,4 @@ class Component(Base, ABC):
 
 # Map from component to styling.
 ComponentStyle = Dict[Union[str, Type[Component]], Any]
-ComponentChild = Union[int, float, str, list, Var, Component]
+ComponentChild = Union[utils.PrimitiveType, Var, Component]
