@@ -53,7 +53,7 @@ def init():
 
 @cli.command()
 def run(
-    env: constants.Env = constants.Env.DEV.value,  # type: ignore
+    env: constants.Env = constants.Env.DEV,
     frontend: bool = True,
     backend: bool = True,
 ):
@@ -66,6 +66,7 @@ def run(
     """
     utils.console.rule("[bold]Starting Pynecone App")
     app = utils.get_app()
+
     frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
         frontend_cmd, backend_cmd = utils.run_frontend, utils.run_backend

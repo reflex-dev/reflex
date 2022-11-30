@@ -113,7 +113,7 @@ TOKEN_EXPIRATION = 60 * 60
 
 
 # Env modes
-class Env(Enum):
+class Env(str, Enum):
     """The environment modes."""
 
     DEV = "dev"
