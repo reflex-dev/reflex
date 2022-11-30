@@ -1,10 +1,22 @@
 [tool.poetry]
 name = "pynecone-io"
 version = "0.1.6"
-description = ""
+description = "The easiest way to build web apps."
+license = "Apache-2.0"
 authors = [
     "Nikhil Rao <nikhil@pynecone.io>",
     "Alek Petuskey <alek@pynecone.io>",
+]
+readme = "README.md"
+homepage = "https://pynecone.io"
+repository = "https://github.com/pynecone-io/pynecone"
+documentation = "https://pynecone.io/docs/getting-started/introduction"
+keywords = [
+    "web",
+    "framework",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
 ]
 packages = [
     {include = "pynecone"}
