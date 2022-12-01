@@ -162,6 +162,18 @@ class App(Base):
             if out is not None:
                 return out
 
+    def add_middleware(self, middleware: Middleware, index: Optional[int] = None):
+        """Add middleware to the app.
+
+        Args:
+            middleware: The middleware to add.
+            index: The index to add the middleware at.
+        """
+        if index is None:
+            self.middleware.append(middleware)
+        else:
+            self.middleware.insert(index, middleware)
+
     def add_page(
         self,
         component: Union[Component, ComponentCallable],
