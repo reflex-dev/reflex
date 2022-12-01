@@ -167,6 +167,7 @@ class App(Base):
 
         Args:
             middleware: The middleware to add.
+            index: The index to add the middleware at.
         """
         if index is None:
             self.middleware.append(middleware)
