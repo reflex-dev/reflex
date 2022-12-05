@@ -30,6 +30,7 @@ class Meta(Component):
 
     tag = "meta"
 
+
 class Description(Meta):
     """A component that displays the title of the current page."""
 
@@ -38,7 +39,8 @@ class Description(Meta):
 
     # The type of the description.
     name: str = "description"
-    
+
+
 class Image(Meta):
     """A component that displays the title of the current page."""
 

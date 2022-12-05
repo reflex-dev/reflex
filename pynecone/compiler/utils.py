@@ -203,6 +203,7 @@ def create_theme(style: Style) -> Dict:
         },
     }
 
+
 def add_meta(page: Component, title, image, description) -> Component:
     """Add metadata to a page.
 
