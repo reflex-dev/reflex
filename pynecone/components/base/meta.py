@@ -23,3 +23,30 @@ class Title(Component):
             self.children[0], Bare
         ), "Title must be a single string."
         return str(tag.set(contents=str(self.children[0].contents)))
+
+class Meta(Component):
+    """A component that displays metadata for the current page."""
+    def render(self) -> Tag:
+        tag = self._render()
+        return str(tag.set())
+
+class Description(Meta):
+    """A component that displays the title of the current page."""
+
+    content: str = "" 
+
+    name: str = "description"
+
+    def _render(self) -> Tag:
+        return Tag(name="meta")
+
+class Image(Meta):
+    """A component that displays the title of the current page."""
+
+    content: str = "" 
+
+    property: str = "og:image"
+
+    def _render(self) -> Tag:
+        return Tag(name="meta")
+

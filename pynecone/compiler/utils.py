@@ -16,6 +16,8 @@ from pynecone.components.base import (
     Main,
     Script,
     Title,
+    Description,
+    Image,
 )
 from pynecone.components.component import ImportDict
 from pynecone.state import State
@@ -201,16 +203,16 @@ def create_theme(style: Style) -> Dict:
         },
     }
 
-
-def add_title(page: Component, title: str) -> Component:
-    """Add a title to a page.
+def add_meta(page: Component, title, image, description) -> Component:
+    """Add metadata to a page.
 
     Args:
         page: The component for the page.
-        title: The title to add.
+        metadata: The metadata to add.
 
     Returns:
-        The component with the title added.
+        The component with the metadata added.
     """
-    page.children.append(Head.create(Title.create(title)))
+    page.children.append(Head.create(Title.create(title), Description.create(description), Image.create(image)))
+
     return page
