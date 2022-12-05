@@ -217,10 +217,17 @@ def add_meta(page: Component, title, image, description) -> Component:
     """
     page.children.append(
         Head.create(
+<<<<<<< HEAD
             Title.create(title),
             Description.create(content=description),
             Image.create(content=image),
         )
     )
+=======
+            Title.create(title), 
+            Description.create(content=description), 
+            Image.create(content=image))
+        )
+>>>>>>> f29a861 (Fixed Meta components.)
 
     return page
