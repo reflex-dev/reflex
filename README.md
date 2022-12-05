@@ -1,25 +1,23 @@
 <div align="center">
 
-<img src="docs/images/logo.png" alt="drawing" width = 450/>
+<img src="docs/images/logo.svg" alt="drawing" width = 450/>
 
-**The easiest way to build and deploy web apps.**
+**Build performant, customizable web apps in minutes just using Python.**
 
 [![PyPI version](https://badge.fury.io/py/pynecone-io.svg)](https://badge.fury.io/py/pynecone-io)
+![tests](https://github.com/pynecone-io/pynecone/actions/workflows/python-checks.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/pynecone-io.svg)
 [![License](https://img.shields.io/badge/License-Apache_2.0-yellowgreen.svg)](https://opensource.org/licenses/Apache-2.0)  
-
 
 <div align="left">
 
 ## Getting Started
 
-Pynecone is a full-stack python framework that makes it easy to build and deploy web apps in minutes.
-
-All the information for getting started can be found in this README, however, a more detailed explanation of the following topics can be found on our website:
+Pynecone is a full-stack Python framework that makes it easy to build and deploy web apps in minutes.  All the information for getting started can be found in this README. However, a more detailed explanation of the following topics can be found on our website:
 
 <div align="center">
 
-### [Introduction](https://pynecone.io/docs/getting-started/introduction) | [Component Library](https://pynecone.io/docs/library) | [Examples](https://pynecone.io) | [Deployment](https://pynecone.io/docs/hosting/deploy) 
+### [Docs](https://pynecone.io/docs/getting-started/introduction) | [Component Library](https://pynecone.io/docs/library) | [Gallery](https://pynecone.io) | [Deployment](https://pynecone.io/docs/hosting/deploy) 
 
 <div align="left">
 
@@ -50,160 +48,176 @@ You can run this app in development mode:
 $ pc run
 ```
 
-
-You should see your app running at http://localhost:3000.
-
-
-Note that the port may be different if you have another app running on port 3000.
+You should see your app running at http://localhost:3000. (Note that the port may be different if you have another app running on port 3000)
 
 
-Now you can modify the source code in my_app_name/my_app_name.py. Pynecone has fast refreshes so you can see your changes instantly when you save your code.
+Now you can modify the source code in `my_app_name/my_app_name.py`. Pynecone has fast refreshes so you can see your changes instantly when you save your code.
 
-## Example App
 
-Let's go over a simple counter app to explore the basics of Pynecone.
+## Example Pynecone App
+
+Let's go over an example of creating a UI around Dalle. For simplicity of the example below, we call the OpenAI Dalle API, but you could replace this with any ML model locally.
 
 <div align="center">
-<img src="docs/images/counter.gif" alt="drawing" width="550"/>
+<img src="docs/images/dalle.gif" alt="drawing" width="550" style="border-radius:2%"/>
 <div align="left">
 
-Here is the complete code to create this.
+Here is the complete code to create this. This is all done in one Python file!
+
+- Live App: https://dalle.pynecone.app
 
 ```python
 import pynecone as pc
-import random
+import openai
+
+openai.api_key = "YOUR_API_KEY"
 
 class State(pc.State):
-    count = 0
+    """The app state."""
+    prompt = ""
+    image_url = ""
+    image_processing = False
+    image_made = False
 
-    def increment(self):
-        """Increment the count."""
-        self.count += 1
+    def process_image(self):
+        """Set the image processing flag to true and indicate image is not made yet."""
+        self.image_processing = True
+        self.image_made = False        
 
-    def decrement(self):
-        """Decrement the count."""
-        self.count -= 1
-
-    def random(self):
-        """Randomize the count."""
-        self.count = random.randint(0, 100)
-
+    def get_image(self):
+        """Get the image from the prompt."""
+        response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
+        self.image_url = response["data"][0]["url"]
+        self.image_processing = False
+        self.image_made = True
 
 def index():
-    """The main view."""
     return pc.center(
         pc.vstack(
-            pc.heading(State.count),
-            pc.hstack(
-                pc.button("Decrement", on_click=State.decrement, color_scheme="red"),
-                pc.button(
-                    "Randomize",
-                    on_click=State.random,
-                    background_image="linear-gradient(90deg, rgba(255,0,0,1) 0%, rgba(0,176,34,1) 100%)",
-                    color="white",
-                ),
-                pc.button("Increment", on_click=State.increment, color_scheme="green"),
+            pc.heading("DALL-E", font_size="1.5em"),
+            pc.input(placeholder="Enter a prompt..", on_blur=State.set_prompt),
+            pc.button(
+                "Generate Image",
+                on_click=[State.process_image, State.get_image],
+                width="100%",
             ),
-            padding="1em",
-            bg="#ededed",
-            border_radius="1em",
-            box_shadow="lg",
+            pc.divider(),
+            pc.cond(
+                State.image_processing,
+                pc.circular_progress(is_indeterminate=True),
+                pc.cond(
+                     State.image_made,
+                     pc.image(
+                         src=State.image_url,
+                         height="25em",
+                         width="25em",
+                    )
+                )
+            ),
+            bg="white",
+            padding="2em",
+            shadow="lg",
+            border_radius="lg",
         ),
-        padding_y="5em",
-        font_size="2em",
-        text_align="center",
+        width="100%",
+        height="100vh",
+        bg="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%)",
     )
-
 
 # Add state and page to the app.
 app = pc.App(state=State)
-app.add_page(index, title="Counter")
+app.add_page(index, title="Pynecone:DALL-E")
 app.compile()
 ```
 Let's break this down.
 
-* ### State
-    
-``` python
-class State(pc.State):
-    count = 0 
-```
-The state defines all the variables (called vars) in an app that can change, as well as the functions that change them.
-Here our state has by a single var, count, which holds the current value of the counter.
-The frontend of the app is a reflection of the current state.
-
-    
-* ### Event Handlers
-```python
-def increment(self):
-    """Increment the count."""
-    self.count += 1
-
-def decrement(self):
-    """Decrement the count."""
-    self.count -= 1
-
-def random(self):
-    """Randomize the count."""
-    self.count = random.randint(0, 100)
-```
-Within the state, we define functions, called event handlers, that change the state vars.
-Event handlers are the only way that we can modify the state in Pynecone. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
-Our counter app has two event handlers, increment and decrement.
-    
-* ### Frontend
+ ### **UI In Pynecone**
+Lets start by talking about the UI this Pynecone App.
 
 ```python 
 def index():
     return pc.center(
-        pc.vstack(
-            pc.heading(State.count),
-            pc.hstack(
-                pc.button("Decrement", on_click=State.decrement, color_scheme="red"),
-                pc.button(
-                    "Randomize",
-                    on_click=State.random,
-                    background_image="linear-gradient(90deg, rgba(255,0,0,1) 0%, rgba(0,176,34,1) 100%)",
-                    color="white",
-                ),
-                pc.button("Increment", on_click=State.increment, color_scheme="green"),
-            ),
-            padding="1em",
-            bg="#ededed",
-            border_radius="1em",
-            box_shadow="lg",
-        ),
-        padding_y="5em",
-        font_size="2em",
-        text_align="center",
+        ...
     )
 ```
-This function defines the frontend of the app.
-We use different components such as pc.box, pc.button, and pc.heading to build the frontend. Components can be nested to create complex layouts, and can be styled using the full power of CSS.
+This index function defines the frontend of the app. We use different components such as `center`, `vstack`, `input`, and `button` to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
     
-Pynecone comes with [50+ built-in components](https://pynecone.io/docs/library) to help you get started. 
-We are actively adding more components, plus it's easy to create your own components.
+Pynecone comes with [50+ built-in components](https://pynecone.io/docs/library) to help you get started. We are actively adding more components, plus it's easy to create your own components.
 
-* ### Routing 
+### **State**
     
-Next we define our app and tell it what state to use.
+``` python
+class State(pc.State):
+    """The app state."""
+    prompt = ""
+    image_url = ""
+    image_processing = False
+    image_made = False
+```
+The state defines all the variables (called vars) in an app that can change and the functions that change them.
+Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `image_processing` and `image_made` to indicate when to show the circular progress and image.
+    
+### **Event Handlers**
+```python
+    def process_image(self):
+        """Set the image processing flag to true and indicate image is not made yet."""
+        self.image_processing = True
+        self.image_made = False        
+
+    def get_image(self):
+        """Get the image from the prompt."""
+        response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
+        self.image_url = response["data"][0]["url"]
+        self.image_processing = False
+        self.image_made = True
+```
+Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Pynecone. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
+
+Our dalle app has two event handlers, `process_image` to indicate that the image is being generated and `get_image`, which calls the OpenAI API.
+
+### **Routing** 
+    
+Finally we define our app and tell it what state to use.
 ```python
 app = pc.App(state=State)
 ```
-We add a route from the root of the app to the counter component. By default the route
+We add a route from the root of the app to the index component. We also add a title that will show up in the page preview/ browser tab.
 ```python
-app.add_page(index)
+app.add_page(index, title="Pynecone:DALL-E")
+app.compile()
 ```
 You can create a multi-page app by adding more routes.
-    
+
+## Status
+As of December 2022, Pynecone has just been released publicly and is in the **Alpha Stage**.
+
+ - :large_orange_diamond: **Public Alpha**: Anyone can install and use Pynecone. There may be issues, but we are working to resolve them activly.
+ - **Public Beta**: Stable enough for non-enterprise use-cases.
+ - **Public Hosting Beta**: **Optionally** Deploy and Host your own apps on Pynecone!
+ - **Public**: Pynecone is production ready.
+
+ Pynecone has new releases and features coming every week! Make sure to: :star: star and :eyes: watch this repository to stay up to date.
+ 
 ## Contributing
 
-Pull requests are encouraged and always welcome. Pick an issue and help us out, or submit an issue id something is not working or confusing!
+We welcome contributions of any size! Below are some good ways to get started in the Pynecone community.
+
+- **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
+- **GitHub Issues**: These are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
+
+Want to our Pynecone team or learn more about our framework? Send us an email [here](mailto:founders@pynecone.io), and we can schedule a call to discuss Pynecone and how you can start contributing.
+
+We are actively looking for contributors, no matter your skill level or experience.
 
 ## More Information 
-
-More information about Pynecone can be found on our website, https://pynecone.io
+More information about Pynecone can be found on our website:
+- [Pynecone.io](https://pynecone.io)
   
 ## License
+Pynecone is open-source and licensed under the [Apache License 2.0](LICENSE).
 
-Pynecone is open-source and licensed under the [Apache License 2.0](LICENSE)
+## Contributors
+
+<a href="https://github.com/picklelo"><img src="https://avatars.githubusercontent.com/u/6270214?v=4" width="50" height="50" alt=""/></a> 
+<a href="https://github.com/Alek99"><img src="https://avatars.githubusercontent.com/u/38776361?s=400&u=bd6c163fe787c2de1a26c881598e54b67e2482dd&v=4" width="50" height="50" alt=""/></a> 
+<a href="https://github.com/kbrgl"><img src="https://avatars.githubusercontent.com/u/13417496?v=4" width="50" height="50" alt=""/></a> 
