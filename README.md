@@ -51,7 +51,7 @@ $ pc run
 You should see your app running at http://localhost:3000. (Note that the port may be different if you have another app running on port 3000)
 
 
-Now you can modify the source code in my_app_name/my_app_name.py. Pynecone has fast refreshes so you can see your changes instantly when you save your code.
+Now you can modify the source code in `my_app_name/my_app_name.py`. Pynecone has fast refreshes so you can see your changes instantly when you save your code.
 
 
 ## Example Pynecone App
@@ -140,7 +140,7 @@ def index():
         ...
     )
 ```
-This index function defines the frontend of the app. We use different components such as ```center```, ```vstack```, ```input```, and ```button``` to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
+This index function defines the frontend of the app. We use different components such as `center`, `vstack`, `input`, and `button` to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
     
 Pynecone comes with [50+ built-in components](https://pynecone.io/docs/library) to help you get started. We are actively adding more components, plus it's easy to create your own components.
 
@@ -155,7 +155,7 @@ class State(pc.State):
     image_made = False
 ```
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
-Here the state is comprised of a ```prompt``` and ```image_url```. There are also the booleans ```image_processing``` and ```image_made``` to indicate when to show the circular progress and image.
+Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `image_processing` and `image_made` to indicate when to show the circular progress and image.
     
 ### **Event Handlers**
 ```python
@@ -173,7 +173,7 @@ Here the state is comprised of a ```prompt``` and ```image_url```. There are als
 ```
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Pynecone. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
 
-Our dalle app has two event handlers, ```process_image``` to indicate that the image is being generated and ```get_image```, which calls the OpenAI API.
+Our dalle app has two event handlers, `process_image` to indicate that the image is being generated and `get_image`, which calls the OpenAI API.
 
 ### **Routing** 
     
@@ -181,7 +181,7 @@ Finally we define our app and tell it what state to use.
 ```python
 app = pc.App(state=State)
 ```
-We add a route from the root of the app to the index component. We also add a title that will show up in the page preview/ broweser tab.
+We add a route from the root of the app to the index component. We also add a title that will show up in the page preview/ browser tab.
 ```python
 app.add_page(index, title="Pynecone:DALL-E")
 app.compile()
