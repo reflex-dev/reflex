@@ -64,6 +64,8 @@ Let's go over an example of creating a UI around Dalle. For simplicity of the ex
 
 Here is the complete code to create this. This is all done in one Python file!
 
+- Live App: https://dalle.pynecone.app
+
 ```python
 import pynecone as pc
 import openai
@@ -127,45 +129,20 @@ app.compile()
 ```
 Let's break this down.
 
-* ### UI In Pynecone
+ ### **UI In Pynecone**
 Lets start by talking about the UI this Pynecone App.
+
 ```python 
 def index():
     return pc.center(
-        pc.vstack(
-            pc.heading("DALL-E", font_size="1.5em"),
-            pc.input(placeholder="Enter a prompt..", on_blur=State.set_prompt),
-            pc.button(
-                "Generate Image",
-                on_click=[State.process_image, State.get_image],
-                width="100%",
-            ),
-            pc.divider(),
-            pc.cond(
-                State.image_processing,
-                pc.circular_progress(is_indeterminate=True),
-                pc.image(
-                    src=State.image_url,
-                    cond=State.image_made,
-                    height="25em",
-                    width="25em",
-                ),
-            ),
-            bg="white",
-            padding="2em",
-            shadow="lg",
-            border_radius="lg",
-        ),
-        width="100%",
-        height="100vh",
-        bg="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%)",
+        ...
     )
 ```
-This function defines the frontend of the app. We use different components such as center, vstack, input, and button to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
+This index function defines the frontend of the app. We use different components such as center, vstack, input, and button to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
     
 Pynecone comes with [50+ built-in components](https://pynecone.io/docs/library) to help you get started. We are actively adding more components, plus it's easy to create your own components.
 
-* ### State
+### **State**
     
 ``` python
 class State(pc.State):
@@ -178,7 +155,7 @@ class State(pc.State):
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
 Here the state is comprised of a prompt and image_url. There are also the booleans image_processing and image_made to indicate when to show the circular progress and image.
     
-* ### Event Handlers
+### **Event Handlers**
 ```python
     def process_image(self):
         """Set the image processing flag to true and indicate image is not made yet."""
@@ -197,7 +174,7 @@ Within the state, we define functions called event handlers that change the stat
 
 Our counter app has two event handlers, process_image to indicate that the image is being generated and get_image, which calls the OpenAI API.
 
-* ### Routing 
+### **Routing** 
     
 Finally we define our app and tell it what state to use.
 ```python
@@ -225,7 +202,7 @@ As of December 2022, Pynecone has just released publicly and is in the **Alpha S
 We welcome contributions of any size! Below are some good ways to get started in the Pynecone community.
 
 - **GitHub Discussions**: A a great way to talk about features you want added or things that are confusing/need clarification.
-- **GitHub Issues**: Are an excellent way to report bugs. Additionally, you can try and solve an existing issue and subit a PR.
+- **GitHub Issues**: Are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
 Want to our Pynecone team or learn more about our framework? Send us an email [here](mailto:founders@pynecone.io), and we can schedule a call to discuss Pynecone and how you can start contributing.
 
