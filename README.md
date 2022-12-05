@@ -13,9 +13,7 @@
 
 ## Getting Started
 
-Pynecone is a full-stack python framework that makes it easy to build and deploy web apps in minutes.
-
-All the information for getting started can be found in this README, however, a more detailed explanation of the following topics can be found on our website:
+Pynecone is a full-stack python framework that makes it easy to build and deploy web apps in minutes.  All the information for getting started can be found in this README, however, a more detailed explanation of the following topics can be found on our website:
 
 <div align="center">
 
@@ -36,9 +34,12 @@ $ pip install pynecone-io
 As of December 2022, Pynecone has just released publicly and is in the **Alpha Stage**.
 
  -  :white_check_mark: Public Alpha: Anyone can install and use Pynecone the may be issues but we are working to activly resolve them.
- - :black_square_button: Public Beta: Stable enough for most non-enterprise use-cases.
- - :black_square_button: Public Hosting Beta: Deploy and Host your own apps on Pynecone!
- - :black_square_button: Public: Production-ready opensource and hosting service.
+ - :black_square_button: Public Beta: Stable enough for non-enterprise use-cases.
+ - :black_square_button: Public Hosting Beta: Optionaly Deploy and Host your own apps on Pynecone!
+ - :black_square_button: Public: Pynecone is production ready.
+
+ Pynecone has new releases and features coming every week! Make sure to star and watch this repository to stay up to date.
+
 
 ## Create your first Pynecone app
 
@@ -230,15 +231,21 @@ We welcome contributions of any size! Below are some good ways to get started in
 - **GitHub Discussions**: A a great way to talk about features you want added or things that are confusing/need clarification.
 - **GitHub Issues**: Are an excellent way to report bugs. Additionally, you can try and solve 
 
-
 Want to our Pynecone team or learn more about our framework? Send us an email here, and we can schedule a call to discuss Pynecone and how you can start contributing.
 
 We are actively looking for new team members, no matter your skill level or experience.
 
 ## More Information 
 
-More information about Pynecone can be found on our website, https://pynecone.io
+More information about Pynecone can be found on our website:
+- [Pynecone.io](https://pynecone.io)
   
 ## License
 
 Pynecone is open-source and licensed under the [Apache License 2.0](LICENSE)
+
+## Contributors
+
+<a href="https://github.com/picklelo"><img src="https://avatars.githubusercontent.com/u/6270214?v=4" width="50" height="50" alt=""/></a> 
+<a href="https://github.com/Alek99"><img src="https://avatars.githubusercontent.com/u/38776361?s=400&u=bd6c163fe787c2de1a26c881598e54b67e2482dd&v=4" width="50" height="50" alt=""/></a> 
+<a href="https://github.com/kbrgl"><img src="https://avatars.githubusercontent.com/u/13417496?v=4" width="50" height="50" alt=""/></a> 
