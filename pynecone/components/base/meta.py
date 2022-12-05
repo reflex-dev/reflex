@@ -8,8 +8,7 @@ from pynecone.components.tags import Tag
 class Title(Component):
     """A component that displays the title of the current page."""
 
-    def _render(self) -> Tag:
-        return Tag(name="title")
+    tag = "title"
 
     def render(self) -> str:
         """Render the title component.
@@ -24,29 +23,20 @@ class Title(Component):
         ), "Title must be a single string."
         return str(tag.set(contents=str(self.children[0].contents)))
 
+
 class Meta(Component):
-    """A component that displays metadata for the current page."""
-    def render(self) -> Tag:
-        tag = self._render()
-        return str(tag.set())
+    tag = "meta"
 
 class Description(Meta):
     """A component that displays the title of the current page."""
 
-    content: str = "" 
-
+    content: str = None
     name: str = "description"
-
-    def _render(self) -> Tag:
-        return Tag(name="meta")
 
 class Image(Meta):
     """A component that displays the title of the current page."""
+    
+    content: str = None
+    property:str ="og:image"
 
-    content: str = "" 
-
-    property: str = "og:image"
-
-    def _render(self) -> Tag:
-        return Tag(name="meta")
 
