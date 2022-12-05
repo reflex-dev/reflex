@@ -13,7 +13,7 @@
 
 ## Getting Started
 
-Pynecone is a full-stack python framework that makes it easy to build and deploy web apps in minutes.  All the information for getting started can be found in this README, however, a more detailed explanation of the following topics can be found on our website:
+Pynecone is a full-stack python framework that makes it easy to build and deploy web apps in minutes.  All the information for getting started can be found in this README. However, a more detailed explanation of the following topics can be found on our website:
 
 <div align="center">
 
@@ -32,7 +32,7 @@ $ pip install pynecone-io
 
 ## Create your first Pynecone app
 
-Installing Pynecone also installs the pc command line tool. To test that the install was successful by creating a new project. 
+Installing Pynecone also installs the pc command line tool. Test that the install was successful by creating a new project. 
 
 Replace my_app_name with your project name:
 
@@ -179,7 +179,7 @@ Finally we define our app and tell it what state to use.
 ```python
 app = pc.App(state=State)
 ```
-We add a route from the root of the app to the counter component. We also add a title which will show up in the page preview.
+We add a route from the root of the app to the counter component. We also add a title that will show up in the page preview.
 ```python
 app.add_page(index, title="Pynecone:DALL-E")
 app.compile()
@@ -187,11 +187,11 @@ app.compile()
 You can create a multi-page app by adding more routes.
 
 ## Status
-As of December 2022, Pynecone has just released publicly and is in the **Alpha Stage**.
+As of December 2022, Pynecone has just been released publicly and is in the **Alpha Stage**.
 
- - :large_orange_diamond: **Public Alpha**: Anyone can install and use Pynecone the may be issues but we are working to activly resolve them.
+ - :large_orange_diamond: **Public Alpha**: Anyone can install and use Pynecone. There may be issues, but we are working to resolve them activly.
  - **Public Beta**: Stable enough for non-enterprise use-cases.
- - **Public Hosting Beta**: Optionaly Deploy and Host your own apps on Pynecone!
+ - **Public Hosting Beta**: **Optionally** Deploy and Host your own apps on Pynecone!
  - **Public**: Pynecone is production ready.
 
  Pynecone has new releases and features coming every week! Make sure to: :star: star and :eyes: watch this repository to stay up to date.
@@ -200,12 +200,12 @@ As of December 2022, Pynecone has just released publicly and is in the **Alpha S
 
 We welcome contributions of any size! Below are some good ways to get started in the Pynecone community.
 
-- **GitHub Discussions**: A a great way to talk about features you want added or things that are confusing/need clarification.
-- **GitHub Issues**: Are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
+- **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
+- **GitHub Issues**: These are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
 Want to our Pynecone team or learn more about our framework? Send us an email [here](mailto:founders@pynecone.io), and we can schedule a call to discuss Pynecone and how you can start contributing.
 
-We are actively looking for contributers, no matter your skill level or experience.
+We are actively looking for contributors, no matter your skill level or experience.
 
 ## More Information 
 More information about Pynecone can be found on our website:
