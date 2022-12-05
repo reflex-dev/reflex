@@ -209,7 +209,9 @@ def add_meta(page: Component, title, image, description) -> Component:
 
     Args:
         page: The component for the page.
-        metadata: The metadata to add.
+        title: The title of the page.
+        image: The image for the page.
+        description: The description of the page.
 
     Returns:
         The component with the metadata added.

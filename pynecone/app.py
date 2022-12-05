@@ -191,6 +191,8 @@ class App(Base):
             component: The component to display at the page.
             path: The path to display the component at.
             title: The title of the page.
+            description: The description of the page.
+            image: The image to display on the page.
         """
         # If the path is not set, get it from the callable.
         if path is None:
