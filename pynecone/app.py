@@ -179,6 +179,8 @@ class App(Base):
         component: Union[Component, ComponentCallable],
         path: Optional[str] = None,
         title: str = constants.DEFAULT_TITLE,
+        description: str = constants.DEFAULT_DESCRIPTION,
+        image=constants.DEFAULT_IMAGE,
     ):
         """Add a page to the app.
 
@@ -189,6 +191,8 @@ class App(Base):
             component: The component to display at the page.
             path: The path to display the component at.
             title: The title of the page.
+            description: The description of the page.
+            image: The image to display on the page.
         """
         # If the path is not set, get it from the callable.
         if path is None:
@@ -216,7 +220,7 @@ class App(Base):
         component = component if isinstance(component, Component) else component(*args)
 
         # Add the title to the component.
-        compiler_utils.add_title(component, title)
+        compiler_utils.add_meta(component, title, description, image)
 
         # Format the route.
         route = utils.format_route(path)

@@ -102,6 +102,12 @@ DB_NAME = "pynecone.db"
 DB_URL = f"sqlite:///{DB_NAME}"
 # The default title to show for Pynecone apps.
 DEFAULT_TITLE = "Pynecone App"
+# The default description to show for Pynecone apps.
+DEFAULT_DESCRIPTION = "A Pynecone app."
+# The default image to show for Pynecone apps.
+DEFAULT_IMAGE = "favicon.ico"
+
+
 # The name of the pynecone config module.
 CONFIG_MODULE = "pcconfig"
 # The python config file.

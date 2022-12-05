@@ -3,13 +3,13 @@
 from pynecone.components.base.bare import Bare
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
+from typing import Optional
 
 
 class Title(Component):
     """A component that displays the title of the current page."""
 
-    def _render(self) -> Tag:
-        return Tag(name="title")
+    tag = "title"
 
     def render(self) -> str:
         """Render the title component.
@@ -23,3 +23,29 @@ class Title(Component):
             self.children[0], Bare
         ), "Title must be a single string."
         return str(tag.set(contents=str(self.children[0].contents)))
+
+
+class Meta(Component):
+    """A component that displays metadata for the current page."""
+
+    tag = "meta"
+
+
+class Description(Meta):
+    """A component that displays the title of the current page."""
+
+    # The description of the page.
+    content: Optional[str] = None
+
+    # The type of the description.
+    name: str = "description"
+
+
+class Image(Meta):
+    """A component that displays the title of the current page."""
+
+    # The image of the page.
+    content: Optional[str] = None
+
+    # The type of the image.
+    property: str = "og:image"
