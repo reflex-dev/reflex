@@ -38,17 +38,9 @@ class Description(Meta):
 
     # The type of the description.
     name: str = "description"
-
-
-    content: str = None
-    name: str = "description"
-
+    
 class Image(Meta):
     """A component that displays the title of the current page."""
-
-    content: str = None
-
-    property:str ="og:image"
 
     # The image of the page.
     content: Optional[str] = None
