@@ -48,14 +48,11 @@ You can run this app in development mode:
 $ pc run
 ```
 
-
-You should see your app running at http://localhost:3000.
-
-
-Note that the port may be different if you have another app running on port 3000.
+You should see your app running at http://localhost:3000. (Note that the port may be different if you have another app running on port 3000)
 
 
 Now you can modify the source code in my_app_name/my_app_name.py. Pynecone has fast refreshes so you can see your changes instantly when you save your code.
+
 
 ## Example Pynecone App
 
@@ -89,7 +86,6 @@ class State(pc.State):
         """Get the image from the prompt."""
         response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
         self.image_url = response["data"][0]["url"]
-        # Set the image processing flag to False and indicate image was been made.
         self.image_processing = False
         self.image_made = True
 
@@ -121,7 +117,7 @@ def index():
         ),
         width="100%",
         height="100vh",
-        background="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%),radial-gradient(circle at 82% 25%,rgba(33,150,243,.18),hsla(0,0%,100%,0) 35%),radial-gradient(circle at 25% 61%,rgba(250, 128, 114, .28),hsla(0,0%,100%,0) 55%)",
+        bg="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%)",
     )
 
 # Add state and page to the app.
@@ -162,7 +158,7 @@ def index():
         ),
         width="100%",
         height="100vh",
-        background="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%),radial-gradient(circle at 82% 25%,rgba(33,150,243,.18),hsla(0,0%,100%,0) 35%),radial-gradient(circle at 25% 61%,rgba(250, 128, 114, .28),hsla(0,0%,100%,0) 55%)",
+        bg="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%)",
     )
 ```
 This function defines the frontend of the app. We use different components such as center, vstack, input, and button to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
@@ -222,7 +218,7 @@ As of December 2022, Pynecone has just released publicly and is in the **Alpha S
  - **Public Hosting Beta**: Optionaly Deploy and Host your own apps on Pynecone!
  - **Public**: Pynecone is production ready.
 
- Pynecone has new releases and features coming every week! Make sure to: :star: star and eyes: watch this repository to stay up to date.
+ Pynecone has new releases and features coming every week! Make sure to: :star: star and :eyes: watch this repository to stay up to date.
  
 ## Contributing
 
