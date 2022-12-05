@@ -166,7 +166,6 @@ Here the state is comprised of a prompt and image_url. There are also the boolea
         """Get the image from the prompt."""
         response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
         self.image_url = response["data"][0]["url"]
-        # Set the image processing flag to False and indicate image was been made.
         self.image_processing = False
         self.image_made = True
 ```
