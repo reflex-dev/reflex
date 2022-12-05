@@ -27,16 +27,16 @@ class Title(Component):
 class Meta(Component):
     tag = "meta"
 
+
 class Description(Meta):
     """A component that displays the title of the current page."""
 
     content: str = None
     name: str = "description"
 
+
 class Image(Meta):
     """A component that displays the title of the current page."""
-    
+
     content: str = None
-    property:str ="og:image"
-
-
+    property: str = "og:image"

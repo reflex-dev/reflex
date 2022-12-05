@@ -108,7 +108,6 @@ DEFAULT_DESCRIPTION = "A Pynecone app."
 DEFAULT_IMAGE = "favicon.ico"
 
 
-
 # The name of the pynecone config module.
 CONFIG_MODULE = "pcconfig"
 # The python config file.

@@ -180,7 +180,7 @@ class App(Base):
         path: Optional[str] = None,
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
-        image = constants.DEFAULT_IMAGE
+        image=constants.DEFAULT_IMAGE,
     ):
         """Add a page to the app.
 
