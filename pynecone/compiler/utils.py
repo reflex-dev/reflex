@@ -203,7 +203,6 @@ def create_theme(style: Style) -> Dict:
         },
     }
 
-
 def add_meta(page: Component, title, image, description) -> Component:
     """Add metadata to a page.
 
@@ -218,25 +217,10 @@ def add_meta(page: Component, title, image, description) -> Component:
     """
     page.children.append(
         Head.create(
-<<<<<<< HEAD
-<<<<<<< HEAD
             Title.create(title),
             Description.create(content=description),
             Image.create(content=image),
         )
     )
-=======
-            Title.create(title), 
-            Description.create(content=description), 
-            Image.create(content=image))
-        )
->>>>>>> f29a861 (Fixed Meta components.)
-=======
-            Title.create(title),
-            Description.create(content=description),
-            Image.create(content=image),
-        )
-    )
->>>>>>> 95578f5 (Black formatting.)
 
     return page

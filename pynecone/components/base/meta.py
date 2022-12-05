@@ -4,10 +4,6 @@ from pynecone.components.base.bare import Bare
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
 from typing import Optional
-<<<<<<< HEAD
-
-=======
->>>>>>> 1385ba8 (Added optional type and doc strings.)
 
 
 class Title(Component):
