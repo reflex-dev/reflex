@@ -26,19 +26,13 @@ class Title(Component):
 
 
 class Meta(Component):
-<<<<<<< HEAD
     """A component that displays metadata for the current page."""
 
     tag = "meta"
 
-=======
-    tag = "meta"
->>>>>>> f29a861 (Fixed Meta components.)
-
 class Description(Meta):
     """A component that displays the title of the current page."""
 
-<<<<<<< HEAD
     # The description of the page.
     content: Optional[str] = None
 
@@ -46,23 +40,18 @@ class Description(Meta):
     name: str = "description"
 
 
-=======
     content: str = None
     name: str = "description"
 
->>>>>>> f29a861 (Fixed Meta components.)
 class Image(Meta):
     """A component that displays the title of the current page."""
-    
+
     content: str = None
+
     property:str ="og:image"
 
-<<<<<<< HEAD
     # The image of the page.
     content: Optional[str] = None
 
     # The type of the image.
     property: str = "og:image"
-=======
-
->>>>>>> f29a861 (Fixed Meta components.)
