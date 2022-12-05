@@ -13,7 +13,7 @@
 
 ## Getting Started
 
-Pynecone is a full-stack python framework that makes it easy to build and deploy web apps in minutes.  All the information for getting started can be found in this README. However, a more detailed explanation of the following topics can be found on our website:
+Pynecone is a full-stack Python framework that makes it easy to build and deploy web apps in minutes.  All the information for getting started can be found in this README. However, a more detailed explanation of the following topics can be found on our website:
 
 <div align="center">
 
@@ -105,12 +105,14 @@ def index():
             pc.cond(
                 State.image_processing,
                 pc.circular_progress(is_indeterminate=True),
-                pc.image(
-                    src=State.image_url,
-                    cond=State.image_made,
-                    height="25em",
-                    width="25em",
-                ),
+                pc.cond(
+                     State.image_made,
+                     pc.image(
+                         src=State.image_url,
+                         height="25em",
+                         width="25em",
+                    )
+                )
             ),
             bg="white",
             padding="2em",
@@ -138,7 +140,7 @@ def index():
         ...
     )
 ```
-This index function defines the frontend of the app. We use different components such as center, vstack, input, and button to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
+This index function defines the frontend of the app. We use different components such as ```center```, ```vstack```, ```input```, and ```button``` to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
     
 Pynecone comes with [50+ built-in components](https://pynecone.io/docs/library) to help you get started. We are actively adding more components, plus it's easy to create your own components.
 
@@ -153,7 +155,7 @@ class State(pc.State):
     image_made = False
 ```
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
-Here the state is comprised of a prompt and image_url. There are also the booleans image_processing and image_made to indicate when to show the circular progress and image.
+Here the state is comprised of a ```prompt``` and ```image_url```. There are also the booleans ```image_processing``` and ```image_made``` to indicate when to show the circular progress and image.
     
 ### **Event Handlers**
 ```python
@@ -171,7 +173,7 @@ Here the state is comprised of a prompt and image_url. There are also the boolea
 ```
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Pynecone. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
 
-Our counter app has two event handlers, process_image to indicate that the image is being generated and get_image, which calls the OpenAI API.
+Our dalle app has two event handlers, ```process_image``` to indicate that the image is being generated and ```get_image```, which calls the OpenAI API.
 
 ### **Routing** 
     
@@ -179,7 +181,7 @@ Finally we define our app and tell it what state to use.
 ```python
 app = pc.App(state=State)
 ```
-We add a route from the root of the app to the counter component. We also add a title that will show up in the page preview.
+We add a route from the root of the app to the index component. We also add a title that will show up in the page preview/ broweser tab.
 ```python
 app.add_page(index, title="Pynecone:DALL-E")
 app.compile()
