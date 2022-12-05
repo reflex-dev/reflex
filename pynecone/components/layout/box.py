@@ -5,6 +5,7 @@ from pynecone.components.tags import Tag
 from pynecone.var import Var
 from typing import Optional
 
+
 class Box(ChakraComponent):
     """Renders a box component that can contain other components."""
 
