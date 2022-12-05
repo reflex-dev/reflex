@@ -3,7 +3,7 @@
 from pynecone.components.base.bare import Bare
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
-
+from typing import Optional
 
 class Title(Component):
     """A component that displays the title of the current page."""
@@ -25,18 +25,25 @@ class Title(Component):
 
 
 class Meta(Component):
+    """A component that displays metadata for the current page."""
     tag = "meta"
 
 
 class Description(Meta):
-    """A component that displays the title of the current page."""
+    """A component that displays the title of the current page."""  
 
-    content: str = None
+    # The description of the page.
+    content: Optional[str] = None
+
+    # The type of the description.
     name: str = "description"
 
 
 class Image(Meta):
     """A component that displays the title of the current page."""
 
-    content: str = None
+    # The image of the page.
+    content: Optional[str] = None
+
+    # The type of the image.
     property: str = "og:image"
