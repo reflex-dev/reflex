@@ -3,6 +3,7 @@
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.tags import Tag
 from pynecone.var import Var
+from typing import Optional
 
 
 class Box(ChakraComponent):
@@ -10,8 +11,14 @@ class Box(ChakraComponent):
 
     tag = "Box"
 
-    # The element to render.
+    # The type element to render. You can specify as an image, video, or any other HTML element such as iframe.
     element: Var[str]
+
+    # The source of the content.
+    src: Optional[str] = None
+
+    # The alt text of the content.
+    alt: Optional[str] = None
 
     def _render(self) -> Tag:
         return (
