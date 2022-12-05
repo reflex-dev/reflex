@@ -2,7 +2,7 @@
 
 <img src="docs/images/logo.svg" alt="drawing" width = 450/>
 
-**Open Source: Build a performant, customizable web app in minutes just using Python.**
+**Build performant, customizable web apps in minutes just using Python.**
 
 [![PyPI version](https://badge.fury.io/py/pynecone-io.svg)](https://badge.fury.io/py/pynecone-io)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/python-checks.yml/badge.svg)
