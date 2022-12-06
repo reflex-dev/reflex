@@ -1,9 +1,10 @@
 """A box component that can contain other components."""
 
+from typing import Optional
+
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.tags import Tag
 from pynecone.var import Var
-from typing import Optional
 
 
 class Box(ChakraComponent):

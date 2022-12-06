@@ -9,15 +9,15 @@ from pynecone import constants, utils
 from pynecone.compiler import templates
 from pynecone.components.base import (
     Body,
+    Description,
     DocumentHead,
     Head,
     Html,
+    Image,
     Link,
     Main,
     Script,
     Title,
-    Description,
-    Image,
 )
 from pynecone.components.component import ImportDict
 from pynecone.state import State

@@ -7,7 +7,6 @@ from pynecone.components.component import Component, ImportDict
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
-
 # Path to the prism styles.
 PRISM_STYLES_PATH = "/styles/code/prism"
 

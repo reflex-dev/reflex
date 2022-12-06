@@ -1,9 +1,10 @@
 """Display the title of the current page."""
 
+from typing import Optional
+
 from pynecone.components.base.bare import Bare
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
-from typing import Optional
 
 
 class Title(Component):

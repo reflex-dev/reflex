@@ -34,7 +34,6 @@ from rich.console import Console
 from pynecone import constants
 from pynecone.base import Base
 
-
 if TYPE_CHECKING:
     from pynecone.components.component import ImportDict
     from pynecone.config import Config
