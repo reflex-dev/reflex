@@ -2,9 +2,14 @@
 
 from typing import Dict
 
-from pynecone.components.component import Component
+from pynecone import utils
+from pynecone.components.component import Component, ImportDict
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
+
+
+# Path to the prism styles.
+PRISM_STYLES_PATH = "/styles/code/prism"
 
 
 class CodeBlock(Component):
@@ -13,6 +18,9 @@ class CodeBlock(Component):
     library = "react-syntax-highlighter"
 
     tag = "Prism"
+
+    # The theme to use.
+    theme: Var[str]
 
     # The language to use.
     language: Var[str]
@@ -31,6 +39,14 @@ class CodeBlock(Component):
 
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
+
+    def _get_imports(self) -> ImportDict:
+        imports = super()._get_imports()
+        if self.theme is not None:
+            imports = utils.merge_imports(
+                imports, {PRISM_STYLES_PATH: {self.theme.name}}
+            )
+        return imports
 
     @classmethod
     def create(cls, *children, **props):
@@ -60,6 +76,14 @@ class CodeBlock(Component):
     def _add_style(self, style):
         self.custom_style = self.custom_style or {}
         self.custom_style.update(style)  # type: ignore
+
+    def _render(self):
+        out = super()._render()
+        if self.theme is not None:
+            out.add_props(
+                style=Var.create(self.theme.name, is_local=False)
+            ).remove_props("theme")
+        return out
 
 
 class Code(ChakraComponent):
