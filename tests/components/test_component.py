@@ -136,17 +136,19 @@ def test_get_custom_code(component1: Type[Component], component2: Type[Component
     # Check that the code gets compiled correctly.
     c1 = component1.create()
     c2 = component2.create()
-    assert c1.get_custom_code() == "console.log('component1')"
-    assert c2.get_custom_code() == "console.log('component2')"
+    assert c1.get_custom_code() == {"console.log('component1')"}
+    assert c2.get_custom_code() == {"console.log('component2')"}
 
     # Check that nesting components compiles both codes.
     c1 = component1.create(c2)
-    assert (
-        c1.get_custom_code() == "console.log('component1')\nconsole.log('component2')"
-    )
+    assert c1.get_custom_code() == {
+        "console.log('component1')",
+        "console.log('component2')",
+    }
 
     # Check that code is not duplicated.
     c1 = component1.create(c2, c2, c1, c1)
-    assert (
-        c1.get_custom_code() == "console.log('component1')\nconsole.log('component2')"
-    )
+    assert c1.get_custom_code() == {
+        "console.log('component1')",
+        "console.log('component2')",
+    }

@@ -3,7 +3,7 @@
 from typing import Any, List
 
 from pynecone import utils
-from pynecone.components.component import Component
+from pynecone.components.component import Component, ImportDict
 from pynecone.components.tags import Tag
 from pynecone.var import Var
 
@@ -39,10 +39,10 @@ class DataTable(Gridjs):
     # Enable pagination.
     pagination: Var[bool]
 
-    def _get_custom_code(self) -> str:
-        return """
-import "gridjs/dist/theme/mermaid.css";
-"""
+    def _get_imports(self) -> ImportDict:
+        return utils.merge_imports(
+            super()._get_imports(), {"": {"gridjs/dist/theme/mermaid.css"}}
+        )
 
     def _render(self) -> Tag:
         if utils.is_dataframe(type(self.data)):

@@ -37,9 +37,8 @@ class Plotly(PlotlyLib):
         return {}
 
     def _get_custom_code(self) -> str:
-        return """
-import dynamic from 'next/dynamic'
-const Plot = dynamic(() => import('react-plotly.js'), { ssr: false }); 
+        return """import dynamic from 'next/dynamic'
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 """
 
     def _render(self) -> Tag:

@@ -5,7 +5,7 @@
 **Build performant, customizable web apps in minutes just using Python.**
 
 [![PyPI version](https://badge.fury.io/py/pynecone-io.svg)](https://badge.fury.io/py/pynecone-io)
-![tests](https://github.com/pynecone-io/pynecone/actions/workflows/python-checks.yml/badge.svg)
+![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/pynecone-io.svg)
 [![License](https://img.shields.io/badge/License-Apache_2.0-yellowgreen.svg)](https://opensource.org/licenses/Apache-2.0)  
 

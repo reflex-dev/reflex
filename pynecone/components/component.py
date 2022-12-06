@@ -321,25 +321,33 @@ class Component(Base, ABC):
             )
         )
 
-    def _get_custom_code(self) -> str:
+    def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.
 
         Returns:
             The custom code.
         """
-        return ""
+        return None
 
-    def get_custom_code(self) -> str:
+    def get_custom_code(self) -> Set[str]:
         """Get custom code for the component and its children.
 
         Returns:
             The custom code.
         """
-        code = self._get_custom_code()
+        # Store the code in a set to avoid duplicates.
+        code = set()
+
+        # Add the custom code for this component.
+        custom_code = self._get_custom_code()
+        if custom_code is not None:
+            code.add(custom_code)
+
+        # Add the custom code for the children.
         for child in self.children:
-            child_code = child.get_custom_code()
-            if child_code != "" and child_code not in code:
-                code += "\n" + child_code
+            code |= child.get_custom_code()
+
+        # Return the code.
         return code
 
     def _get_imports(self) -> ImportDict:
