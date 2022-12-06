@@ -60,7 +60,7 @@ def compile_component(component: Component, state: Type[State]) -> str:
     # Compile the code to render the component.
     return templates.COMPONENT(
         imports=utils.compile_imports(imports),
-        custom_code=component.get_custom_code(),
+        custom_code=templates.join(component.get_custom_code()),
         constants=utils.compile_constants(),
         state=utils.compile_state(state),
         events=utils.compile_events(state),

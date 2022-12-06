@@ -16,9 +16,6 @@ class Markdown(Component):
 
     src: Var[str]
 
-    def _get_custom_code(self) -> str:
-        return "import 'katex/dist/katex.min.css'"
-
     def _get_imports(self):
         imports = super()._get_imports()
         imports["@chakra-ui/react"] = {"Heading", "Code", "Text", "Link"}
@@ -26,6 +23,7 @@ class Markdown(Component):
         imports["remark-math"] = {"remarkMath"}
         imports["remark-gfm"] = {"remarkGfm"}
         imports["rehype-katex"] = {"rehypeKatex"}
+        imports[""] = {"katex/dist/katex.min.css"}
         return imports
 
     def _render(self):
