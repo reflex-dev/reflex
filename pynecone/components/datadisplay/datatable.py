@@ -40,9 +40,7 @@ class DataTable(Gridjs):
     pagination: Var[bool]
 
     def _get_imports(self) -> ImportDict:
-        return super()._get_imports() | {
-            "": {"gridjs/dist/theme/mermaid.css"}
-        }
+        return super()._get_imports() | {"": {"gridjs/dist/theme/mermaid.css"}}
 
     def _render(self) -> Tag:
         if utils.is_dataframe(type(self.data)):

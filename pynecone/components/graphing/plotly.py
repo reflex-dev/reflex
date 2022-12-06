@@ -34,12 +34,12 @@ class Plotly(PlotlyLib):
     height: Var[str]
 
     def _get_imports(self):
-        return {
-            "next/dynamic": {"dynamic"}
-        }
+        return {}
 
     def _get_custom_code(self) -> str:
-        return """const Plot = dynamic(() => import('react-plotly.js'), { ssr: false }); """
+        return """import dynamic from 'next/dynamic'
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
+"""
 
     def _render(self) -> Tag:
         if isinstance(self.data, Figure):
