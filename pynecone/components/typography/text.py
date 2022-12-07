@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.components.tags import Tag
 from pynecone.var import Var
 
 
 class Text(ChakraComponent):
-    """Text component is the used to render text and paragraphs within an interface. It renders a p tag by default."""
+    """Render a paragraph of text."""
 
     tag = "Text"
 
@@ -23,5 +22,5 @@ class Text(ChakraComponent):
     # The CSS `text-decoration` property
     decoration: Var[str]
 
-    # Override the text element. Tpyes are b, strong, i, em, mark, small, del, ins, sub, and sup.
+    # Override the tag.
     as_: Var[str]

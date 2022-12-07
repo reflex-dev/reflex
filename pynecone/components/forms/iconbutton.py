@@ -1,11 +1,11 @@
-"""A button component."""
+"""An icon button component."""
 
 from pynecone.components.typography.text import Text
 from pynecone.var import Var
 
 
 class IconButton(Text):
-    """A button that can be clicked."""
+    """A button with an icon."""
 
     tag = "IconButton"
 

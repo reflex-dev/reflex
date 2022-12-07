@@ -5,7 +5,7 @@ from pynecone.var import Var
 
 
 class FormControl(ChakraComponent):
-    """FormControl provides context such as isInvalid, isDisabled, and isRequired to form elements."""
+    """Provide context to form components."""
 
     tag = "FormControl"
 

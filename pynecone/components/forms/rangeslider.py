@@ -1,4 +1,4 @@
-"""A button component."""
+"""A range slider component."""
 
 from typing import List, Set
 
@@ -80,20 +80,21 @@ class RangeSlider(ChakraComponent):
 
 
 class RangeSliderTrack(ChakraComponent):
-    """A button component."""
+    """A range slider track."""
 
     tag = "RangeSliderTrack"
 
 
 class RangeSliderFilledTrack(ChakraComponent):
-    """A button component."""
+    """A filled range slider track."""
 
     tag = "RangeSliderFilledTrack"
 
 
 class RangeSliderThumb(ChakraComponent):
-    """A button component."""
+    """A range slider thumb."""
 
     tag = "RangeSliderThumb"
 
+    # The position of the thumb.
     index: Var[int]
