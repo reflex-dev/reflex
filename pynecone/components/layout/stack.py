@@ -5,7 +5,7 @@ from pynecone.var import Var
 
 
 class Stack(ChakraComponent):
-    """Display a square box."""
+    """Container to stack elements with spacing."""
 
     tag = "Stack"
 
@@ -35,12 +35,12 @@ class Stack(ChakraComponent):
 
 
 class Hstack(Stack):
-    """The HStack component is a component which is only facing the horizontal direction. Additionally you can add a divider and horizontal spacing between the items."""
+    """Stack items horizontally."""
 
     tag = "HStack"
 
 
 class Vstack(Stack):
-    """The VStack component is a component which is only facing the vertical direction. Additionally you can add a divider and vertical spacing between the items."""
+    """Stack items vertically."""
 
     tag = "VStack"

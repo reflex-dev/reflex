@@ -74,8 +74,10 @@ class MenuButton(ChakraComponent):
 
     tag = "MenuButton"
 
+    # The variant of the menu button.
     variant: Var[str]
 
+    # The tag to use for the menu button.
     as_: Var[str]
 
 

@@ -12,7 +12,7 @@ from pynecone.var import Var
 
 
 class Cond(Component):
-    """Display a conditional render."""
+    """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.
     cond: Var[bool]

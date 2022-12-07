@@ -8,7 +8,7 @@ from pynecone.var import Var
 
 
 class Box(ChakraComponent):
-    """Renders a box component that can contain other components."""
+    """A generic container component that can contain other components."""
 
     tag = "Box"
 
@@ -16,10 +16,10 @@ class Box(ChakraComponent):
     element: Var[str]
 
     # The source of the content.
-    src: Optional[str] = None
+    src: Var[str]
 
     # The alt text of the content.
-    alt: Optional[str] = None
+    alt: Var[str]
 
     def _render(self) -> Tag:
         return (

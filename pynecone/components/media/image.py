@@ -9,7 +9,7 @@ from pynecone.var import Var
 
 
 class Image(ChakraComponent):
-    """The Image component is used to display images. Image composes Box so you can use all the style props and add responsive styles as well."""
+    """Display an image."""
 
     tag = "Image"
 

@@ -7,7 +7,7 @@ from pynecone.var import Var
 
 
 class Link(ChakraComponent):
-    """Component the provides a link."""
+    """Link to another page."""
 
     tag = "Link"
 

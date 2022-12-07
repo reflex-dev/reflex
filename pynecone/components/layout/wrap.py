@@ -4,7 +4,7 @@ from pynecone.components.libs.chakra import ChakraComponent
 
 
 class Wrap(ChakraComponent):
-    """Layout component used to add space between elements and wraps automatically if there isn't enough space."""
+    """Layout component used to add space between elements and wrap automatically if there isn't enough space."""
 
     tag = "Wrap"
 

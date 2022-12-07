@@ -5,7 +5,7 @@ from pynecone.var import Var
 
 
 class Alert(ChakraComponent):
-    """Container to stack elements with spacing."""
+    """An alert feedback box."""
 
     tag = "Alert"
 
@@ -17,13 +17,13 @@ class Alert(ChakraComponent):
 
 
 class AlertIcon(ChakraComponent):
-    """AlertIcon composes Icon and changes the icon based on the status prop."""
+    """An icon displayed in the alert."""
 
     tag = "AlertIcon"
 
 
 class AlertTitle(ChakraComponent):
-    """AlertTitle composes the Box component."""
+    """The title of the alert."""
 
     tag = "AlertTitle"
 

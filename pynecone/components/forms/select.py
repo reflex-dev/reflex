@@ -83,7 +83,7 @@ class Select(ChakraComponent):
 
 
 class Option(Text):
-    """A button component."""
+    """A select option."""
 
     tag = "option"
 

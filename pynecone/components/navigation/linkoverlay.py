@@ -5,7 +5,7 @@ from pynecone.var import Var
 
 
 class LinkOverlay(ChakraComponent):
-    """Wraps cild componet in a link."""
+    """Wraps child component in a link."""
 
     tag = "LinkOverlay"
 

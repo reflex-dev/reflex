@@ -241,7 +241,7 @@ class Component(Base, ABC):
         Returns:
             The unique fields.
         """
-        return set(cls.get_fields()) - set(Component.get_fields())
+        return set(cls.get_fields()) - set(Component.get_fields()) - {"library", "tag"}
 
     @classmethod
     def create(cls, *children, **props) -> Component:

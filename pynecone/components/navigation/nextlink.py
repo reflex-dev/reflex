@@ -4,14 +4,10 @@ from pynecone.components.component import Component
 from pynecone.var import Var
 
 
-class NextLinkLib(Component):
-    """A component that inherits from next/link."""
+class NextLink(Component):
+    """Links are accessible elements used primarily for navigation. This component is styled to resemble a hyperlink and semantically renders an <a>."""
 
     library = "next/link"
-
-
-class NextLink(NextLinkLib):
-    """Links are accessible elements used primarily for navigation. This component is styled to resemble a hyperlink and semantically renders an <a>."""
 
     tag = "NextLink"
 

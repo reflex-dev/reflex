@@ -14,6 +14,7 @@ class Markdown(Component):
 
     tag = "ReactMarkdown"
 
+    # The source of the markdown.
     src: Var[str]
 
     def _get_imports(self):

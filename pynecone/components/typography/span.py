@@ -5,10 +5,10 @@ from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
 
-class Text(ChakraComponent):
-    """Render a paragraph of text."""
+class Span(ChakraComponent):
+    """Render an inline span of text."""
 
     tag = "Text"
 
-    # Override the tag. The default tag is `<p>`.
-    as_: Var[str]
+    # Override the tag. The default tag is `<span>`.
+    as_: Var[str] = "span"  # type: ignore

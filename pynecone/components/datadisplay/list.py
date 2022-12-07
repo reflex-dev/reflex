@@ -6,7 +6,7 @@ from pynecone.var import Var
 
 
 class List(ChakraComponent):
-    """List component is used to display list items. It renders a ul element by default."""
+    """Display a list of items."""
 
     tag = "List"
 
@@ -21,18 +21,18 @@ class List(ChakraComponent):
 
 
 class ListItem(ChakraComponent):
-    """ListItem composes Box so you can pass all style and pseudo style props."""
+    """A single list item."""
 
     tag = "ListItem"
 
 
 class OrderedList(ChakraComponent):
-    """An ordered list component."""
+    """An ordered list component with numbers."""
 
     tag = "OrderedList"
 
 
 class UnorderedList(ChakraComponent):
-    """An unordered list component."""
+    """An unordered list component with bullets."""
 
     tag = "UnorderedList"
