@@ -11,4 +11,4 @@ class Span(ChakraComponent):
     tag = "Text"
 
     # Override the tag. The default tag is `<span>`.
-    as_: Var[str] = "span"
+    as_: Var[str] = "span"  # type: ignore

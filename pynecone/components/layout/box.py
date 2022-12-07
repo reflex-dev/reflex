@@ -16,10 +16,10 @@ class Box(ChakraComponent):
     element: Var[str]
 
     # The source of the content.
-    src: Var[str] = None
+    src: Var[str]
 
     # The alt text of the content.
-    alt: Var[str] = None
+    alt: Var[str]
 
     def _render(self) -> Tag:
         return (
