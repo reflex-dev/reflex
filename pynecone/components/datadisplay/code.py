@@ -59,7 +59,7 @@ class CodeBlock(Component):
             The text component.
         """
         # This component handles style in a special prop.
-        custom_style = props.get("custom_style", {})
+        custom_style = props.pop("custom_style", {})
 
         # Transfer style props to the custom style prop.
         for key, value in props.items():
@@ -70,6 +70,7 @@ class CodeBlock(Component):
         return super().create(
             *children,
             **props,
+            custom_style=custom_style,
         )
 
     def _add_style(self, style):
