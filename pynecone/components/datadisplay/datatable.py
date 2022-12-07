@@ -19,6 +19,7 @@ class DataTable(Gridjs):
 
     tag = "Grid"
 
+    # The dataframe to use.
     df: Var[Any]
 
     # The data to display. EIther a list of lists or a pandas dataframe.
