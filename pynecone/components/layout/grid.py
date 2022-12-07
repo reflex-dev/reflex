@@ -7,7 +7,7 @@ from pynecone.var import Var
 
 
 class Grid(ChakraComponent):
-    """The main wrapper of th egrid component."""
+    """A grid component."""
 
     tag = "Grid"
 

@@ -9,7 +9,7 @@ from pynecone.var import BaseVar, Var
 
 
 class Foreach(Component):
-    """Display a foreach."""
+    """A component that takes in an iterable and a render function and renders a list of components."""
 
     # The iterable to create components from.
     iterable: Var[List]

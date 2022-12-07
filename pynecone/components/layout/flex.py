@@ -5,7 +5,7 @@ from pynecone.var import Var
 
 
 class Flex(ChakraComponent):
-    """Flex is Box with display, flex and comes with helpful style shorthand. It renders a div element."""
+    """A reflexive container component."""
 
     tag = "Flex"
 

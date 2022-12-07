@@ -4,6 +4,6 @@ from pynecone.components.libs.chakra import ChakraComponent
 
 
 class Spacer(ChakraComponent):
-    """Display a flexible space."""
+    """A flexible space component."""
 
     tag = "Spacer"

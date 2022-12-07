@@ -5,7 +5,7 @@ from pynecone.var import Var
 
 
 class Container(ChakraComponent):
-    """Container composes Box so you can pass all Box related props in addition to this."""
+    """A flexbox container that centers its children and sets a max width."""
 
     tag = "Container"
 
