@@ -5,6 +5,7 @@ from typing import Dict
 from pynecone import utils
 from pynecone.components.component import Component, ImportDict
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.style import Style
 from pynecone.var import Var
 
 # Path to the prism styles.
@@ -70,7 +71,7 @@ class CodeBlock(Component):
         return super().create(
             *children,
             **props,
-            custom_style=custom_style,
+            custom_style=Style(custom_style),
         )
 
     def _add_style(self, style):

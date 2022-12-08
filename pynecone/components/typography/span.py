@@ -1,4 +1,4 @@
-"""A text component."""
+"""A span component."""
 from __future__ import annotations
 
 from pynecone.components.libs.chakra import ChakraComponent
