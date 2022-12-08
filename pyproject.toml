@@ -23,7 +23,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7.2"
+python = "^3.7"
 fastapi = "^0.88.0"
 gunicorn = "^20.1.0"
 plotly = "^5.10.0"
@@ -42,7 +42,6 @@ darglint = "^1.8.1"
 pydocstyle = "^6.1.1"
 toml = "^0.10.2"
 isort = "^5.10.1"
-pylint = "^2.14.5"
 pytest-asyncio = "^0.20.1"
 black = "^22.10.0"
 
