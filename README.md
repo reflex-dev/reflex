@@ -1,6 +1,10 @@
 <div align="center">
 
-<img src="docs/images/logo.svg" alt="drawing" width = 450/>
+    
+<h1 align="center">
+  <img width="600" src="docs/images/logo.svg#gh-light-mode-only" alt="Pynecone">
+  <img width="600" src="docs/images/logo_white.svg#gh-dark-mode-only" alt="Pynecone">
+</h1>
 
 **Build performant, customizable web apps in minutes just using Python.**
 
