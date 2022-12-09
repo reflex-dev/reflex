@@ -94,7 +94,6 @@ def deploy(dry_run: bool = False):
     # Check if the deploy url is set.
     if config.deploy_url is None:
         typer.echo("This feature is coming soon!")
-        typer.echo("Join our waitlist to be notified: https://pynecone.io/waitlist")
         return
 
     # Compile the app in production mode.
