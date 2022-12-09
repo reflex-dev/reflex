@@ -68,8 +68,6 @@ Let's go over an example of creating a UI around Dalle. For simplicity of the ex
 
 Here is the complete code to create this. This is all done in one Python file!
 
-- Live App: https://dalle.pynecone.app
-
 ```python
 import pynecone as pc
 import openai
