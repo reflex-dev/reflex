@@ -21,7 +21,7 @@ Pynecone is a full-stack Python framework that makes it easy to build and deploy
 
 <div align="center">
 
-### [Docs](https://pynecone.io/docs/getting-started/introduction) | [Component Library](https://pynecone.io/docs/library) | [Gallery](https://pynecone.io) | [Deployment](https://pynecone.io/docs/hosting/deploy) 
+### [Docs](https://pynecone.io/docs/getting-started/introduction) | [Component Library](https://pynecone.io/docs/library) | [Gallery](https://pynecone.io/docs/gallery) | [Deployment](https://pynecone.io/docs/hosting/deploy) 
 
 <div align="left">
 
