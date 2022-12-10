@@ -22,3 +22,39 @@ To navigate our codebase with confidence, see [Pynecone Docs](https://pynecone.i
 
 Thank you for supporting Pynecone!🎊
 
+## 💻 How to Run a Local Build of Pynecone 
+Here is a quick guide to how the run Pynecone repo locally so you can start contributing to the project.
+
+First clone Pynecone:
+```
+git clone https://github.com/pynecone-io/pynecone.git
+```
+
+Navigate into the repo:
+```
+cd pynecone
+```
+
+Now create an examples folder so you can test the local Python build in this repository:
+```
+mkdir examples
+cd example
+```
+
+Create a project in this folder can be named anything but for the sake of the directions we'll use `example`:
+```
+mkdir example
+cd example
+```
+
+Now Init/Run
+```
+poetry run pc init
+poetry run pc run
+```
+
+All the changes you make to the repository will be reflected in your running app.
+* We have the examples folder in the .gitignore, so your changes in pynecone/examples won't be reflected in your commit.
+
+
+
