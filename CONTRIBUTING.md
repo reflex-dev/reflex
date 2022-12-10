@@ -38,7 +38,7 @@ cd pynecone
 Now create an examples folder so you can test the local Python build in this repository:
 ```
 mkdir examples
-cd example
+cd examples
 ```
 
 Create a project in this folder can be named anything but for the sake of the directions we'll use `example`:
