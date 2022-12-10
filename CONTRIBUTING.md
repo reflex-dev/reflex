@@ -35,6 +35,16 @@ Navigate into the repo:
 cd pynecone
 ```
 
+Install poetry:
+```
+pip install poetry
+```
+
+Install your local Pynecone build:
+```
+python -m pip install -e .
+```
+
 Now create an examples folder so you can test the local Python build in this repository:
 ```
 mkdir examples
