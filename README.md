@@ -207,7 +207,7 @@ We welcome contributions of any size! Below are some good ways to get started in
 - **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
 - **GitHub Issues**: These are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
-Want to our Pynecone team or learn more about our framework? Send us an email [here](mailto:founders@pynecone.io), and we can schedule a call to discuss Pynecone and how you can start contributing.
+Want to join our Pynecone team or learn more about our framework? Send us an email [here](mailto:founders@pynecone.io), and we can schedule a call to discuss Pynecone and how you can start contributing.
 
 We are actively looking for contributors, no matter your skill level or experience.
 
