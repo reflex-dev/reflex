@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Dict, Set, Type
+from typing import TYPE_CHECKING, Dict, List, Set, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
@@ -169,11 +169,11 @@ def compile_render(component: Component) -> str:
     return component.render()
 
 
-def create_document_root(stylesheets) -> Component:
+def create_document_root(stylesheets: List[str]) -> Component:
     """Create the document root.
 
     Args:
-        stylesheets: The stylesheets to include in the document root.
+        stylesheets: The list of stylesheets to include in the document root.
 
     Returns:
         The document root.
@@ -204,7 +204,7 @@ def create_theme(style: Style) -> Dict:
     }
 
 
-def add_meta(page: Component, title, image, description) -> Component:
+def add_meta(page: Component, title: str, image: str, description: str) -> Component:
     """Add metadata to a page.
 
     Args:
