@@ -15,7 +15,7 @@ class Accordion(ChakraComponent):
     allow_multiple: Var[bool]
 
     # If true, any expanded accordion item can be collapsed again.
-    allow_toggle: Var[bool]
+    allow_toggle: Var[bool] = True  # type: ignore
 
     # The initial index(es) of the expanded accordion item(s).
     default_index: Var[Optional[List[int]]]
