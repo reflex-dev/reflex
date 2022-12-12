@@ -2,7 +2,7 @@
 
 import os
 
-import requests
+import httpx
 import typer
 
 from pynecone import constants, utils
@@ -129,7 +129,7 @@ def deploy(dry_run: bool = False):
 
     # Deploy the app.
     data = {"userId": config.username, "projectId": config.app_name}
-    original_response = requests.get(config.deploy_url, params=data)
+    original_response = httpx.get(config.deploy_url, params=data)
     response = original_response.json()
     print("response", response)
     frontend = response["frontend_resources_url"]
@@ -137,10 +137,10 @@ def deploy(dry_run: bool = False):
 
     # Upload the frontend and backend.
     with open(constants.FRONTEND_ZIP, "rb") as f:
-        response = requests.put(frontend, data=f)
+        response = httpx.put(frontend, data=f)
 
     with open(constants.BACKEND_ZIP, "rb") as f:
-        response = requests.put(backend, data=f)
+        response = httpx.put(backend, data=f)
 
 
 main = cli
