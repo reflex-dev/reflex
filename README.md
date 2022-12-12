@@ -1,9 +1,8 @@
 <div align="center">
 
-    
 <h1 align="center">
-  <img width="600" src="docs/images/logo.svg#gh-light-mode-only" alt="Pynecone">
-  <img width="600" src="docs/images/logo_white.svg#gh-dark-mode-only" alt="Pynecone">
+  <img width="600" src="docs/images/logo.svg#gh-light-mode-only" alt="Pynecone Logo">
+  <img width="600" src="docs/images/logo_white.svg#gh-dark-mode-only" alt="Pynecone Logo">
 </h1>
 
 **Build performant, customizable web apps in minutes just using Python.**
@@ -17,7 +16,7 @@
 
 ## Getting Started
 
-Pynecone is a full-stack Python framework that makes it easy to build and deploy web apps in minutes.  All the information for getting started can be found in this README. However, a more detailed explanation of the following topics can be found on our website:
+Pynecone is a full-stack Python framework that makes it easy to build and deploy web apps in minutes. All the information for getting started can be found in this README. However, a more detailed explanation of the following topics can be found on our website:
 
 <div align="center">
 
@@ -28,15 +27,17 @@ Pynecone is a full-stack Python framework that makes it easy to build and deploy
 ## Installation
 Pynecone requires to following to get started:
 * Python 3.7+
-* [NodeJS 12.22.0+](https://nodejs.org/en/)
+* [Node.js 12.22.0+](https://nodejs.org/en/) (Don't worry, you'll never have to write any Javascript)
 
 ```
 $ pip install pynecone-io
 ```
 
-## Create your first Pynecone app
+(Not `pynecone`, it's `pynecone-io`, IO for Input/Output)
 
-Installing Pynecone also installs the pc command line tool. Test that the install was successful by creating a new project. 
+## Create your first Pynecone App
+
+Installing Pynecone also installs the `pc` command line tool. Test that the install was successful by creating a new project. 
 
 Replace my_app_name with your project name:
 
@@ -46,13 +47,15 @@ $ cd my_app_name
 $ pc init
 ```
 
-This initializes a template app in your new directory.
+When you run this command for the first time, we will download and install `bun` automatically, it will spend 1-3 minutes to finish.
+
+This command initializes a template app in your new directory.
 You can run this app in development mode:
 ```
 $ pc run
 ```
 
-You should see your app running at http://localhost:3000. (Note that the port may be different if you have another app running on port 3000)
+You should see your app running at http://localhost:3000. (Note that the port may be different if you have another app running on port 3000, please notice the terminal output)
 
 
 Now you can modify the source code in `my_app_name/my_app_name.py`. Pynecone has fast refreshes so you can see your changes instantly when you save your code.
@@ -133,7 +136,8 @@ app.compile()
 ```
 Let's break this down.
 
- ### **UI In Pynecone**
+### **UI In Pynecone**
+
 Lets start by talking about the UI this Pynecone App.
 
 ```python 
@@ -143,11 +147,11 @@ def index():
     )
 ```
 This index function defines the frontend of the app. We use different components such as `center`, `vstack`, `input`, and `button` to build the front end. Components can be nested to create complex layouts and styled using CSS's full power. Just pass them in as keyword args.
-    
+
 Pynecone comes with [50+ built-in components](https://pynecone.io/docs/library) to help you get started. We are actively adding more components, plus it's easy to create your own components.
 
 ### **State**
-    
+
 ``` python
 class State(pc.State):
     """The app state."""
@@ -158,8 +162,9 @@ class State(pc.State):
 ```
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
 Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `image_processing` and `image_made` to indicate when to show the circular progress and image.
-    
+
 ### **Event Handlers**
+
 ```python
     def process_image(self):
         """Set the image processing flag to true and indicate image is not made yet."""
@@ -178,7 +183,7 @@ Within the state, we define functions called event handlers that change the stat
 Our dalle app has two event handlers, `process_image` to indicate that the image is being generated and `get_image`, which calls the OpenAI API.
 
 ### **Routing** 
-    
+
 Finally we define our app and tell it what state to use.
 ```python
 app = pc.App(state=State)
@@ -191,6 +196,7 @@ app.compile()
 You can create a multi-page app by adding more routes.
 
 ## Status
+
 As of December 2022, Pynecone has just been released publicly and is in the **Alpha Stage**.
 
  - :large_orange_diamond: **Public Alpha**: Anyone can install and use Pynecone. There may be issues, but we are working to resolve them activly.
@@ -212,10 +218,12 @@ Want to join our Pynecone team or learn more about our framework? Send us an ema
 We are actively looking for contributors, no matter your skill level or experience.
 
 ## More Information 
+
 More information about Pynecone can be found on our website:
 - [Pynecone.io](https://pynecone.io)
-  
+
 ## License
+
 Pynecone is open-source and licensed under the [Apache License 2.0](LICENSE).
 
 ## Contributors
