@@ -33,7 +33,7 @@ Pynecone requires to following to get started:
 $ pip install pynecone-io
 ```
 
-(Not `pynecone`, it's `pynecone-io`, IO for Input/Output)
+*NOTE:* Make sure you install the correct package: `pynecone-io`, not `pynecone`.
 
 ## Create your first Pynecone App
 
@@ -47,7 +47,7 @@ $ cd my_app_name
 $ pc init
 ```
 
-When you run this command for the first time, we will download and install `bun` automatically, it will spend 1-3 minutes to finish.
+When you run this command for the first time, we will download and install `bun` automatically.
 
 This command initializes a template app in your new directory.
 You can run this app in development mode:
