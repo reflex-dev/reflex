@@ -29,6 +29,7 @@ from typing import (
 
 import plotly.graph_objects as go
 from plotly.io import to_json
+from redis import Redis
 from rich.console import Console
 
 from pynecone import constants
@@ -383,6 +384,14 @@ def run_frontend_prod(app) -> subprocess.Popen:
     os.system(cmd)
     command = [get_bun_path(), "run", "prod"]
     return subprocess.Popen(command, cwd=constants.WEB_DIR)
+
+
+def get_num_workers() -> int:
+    """Get the number of backend worker processes.
+
+    Returns:
+        The number of backend worker processes.
+    """
 
 
 def run_backend(app):
@@ -918,20 +927,15 @@ def get_hydrate_event(state) -> str:
     return get_event(state, constants.HYDRATE)
 
 
-def get_redis():
+def get_redis() -> Optional[Redis]:
     """Get the redis client.
 
     Returns:
         The redis client.
     """
-    try:
-        import redis  # type: ignore
-    except:
-        return None
-
     config = get_config()
     if config.redis_url is None:
         return None
     redis_url, redis_port = config.redis_url.split(":")
     print("Using redis at", config.redis_url)
-    return redis.Redis(host=redis_url, port=int(redis_port), db=0)
+    return Redis(host=redis_url, port=int(redis_port), db=0)

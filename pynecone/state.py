@@ -8,6 +8,8 @@ import traceback
 from abc import ABC
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set, Type
 
+from redis import Redis
+
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
@@ -476,7 +478,7 @@ class StateManager(Base):
     token_expiration: int = constants.TOKEN_EXPIRATION
 
     # The redis client to use.
-    redis: Any = None
+    redis: Optional[Redis] = None
 
     def setup(self, state: Type[State]):
         """Set up the state manager.
