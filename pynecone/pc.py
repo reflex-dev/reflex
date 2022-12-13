@@ -137,10 +137,10 @@ def deploy(dry_run: bool = False):
 
     # Upload the frontend and backend.
     with open(constants.FRONTEND_ZIP, "rb") as f:
-        response = httpx.put(frontend, data=f)
+        response = httpx.put(frontend, data=f)  # type: ignore
 
     with open(constants.BACKEND_ZIP, "rb") as f:
-        response = httpx.put(backend, data=f)
+        response = httpx.put(backend, data=f)  # type: ignore
 
 
 main = cli
