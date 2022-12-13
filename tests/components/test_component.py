@@ -1,10 +1,20 @@
-from typing import Type
+from typing import List, Set, Type
 
 import pytest
 
 from pynecone.components.component import Component, ImportDict
-from pynecone.event import EventHandler
+from pynecone.event import EVENT_TRIGGERS, EventHandler
+from pynecone.state import State
 from pynecone.style import Style
+from pynecone.var import Var
+
+
+@pytest.fixture
+def TestState():
+    class TestState(State):
+        num: int
+
+    return TestState
 
 
 @pytest.fixture
@@ -16,6 +26,13 @@ def component1() -> Type[Component]:
     """
 
     class TestComponent1(Component):
+
+        # A test string prop.
+        text: Var[str]
+
+        # A test number prop.
+        number: Var[int]
+
         def _get_imports(self) -> ImportDict:
             return {"react": {"Component"}}
 
@@ -34,6 +51,15 @@ def component2() -> Type[Component]:
     """
 
     class TestComponent2(Component):
+
+        # A test list prop.
+        arr: Var[List[str]]
+
+        @classmethod
+        def get_controlled_triggers(cls) -> Set[str]:
+            """Test controlled triggers."""
+            return {"on_open", "on_close"}
+
         def _get_imports(self) -> ImportDict:
             return {"react-redux": {"connect"}}
 
@@ -152,3 +178,81 @@ def test_get_custom_code(component1: Type[Component], component2: Type[Component
         "console.log('component1')",
         "console.log('component2')",
     }
+
+
+def test_get_props(component1: Type[Component], component2: Type[Component]):
+    """Test that the props are set correctly.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    assert component1.get_props() == {"text", "number"}
+    assert component2.get_props() == {"arr"}
+
+
+@pytest.mark.parametrize(
+    "text,number",
+    [
+        ("", 0),
+        ("test", 1),
+        ("hi", -13),
+    ],
+)
+def test_valid_props(component1: Type[Component], text: str, number: int):
+    """ "Test that we can construct a component with valid props.
+
+    Args:
+        component1: A test component.
+        text: A test string.
+        number: A test number.
+    """
+    c = component1.create(text=text, number=number)
+    assert c.text == text
+    assert c.number == number
+
+
+@pytest.mark.parametrize(
+    "text,number", [("", "bad_string"), (13, 1), (None, 1), ("test", [1, 2, 3])]
+)
+def test_invalid_prop_type(component1: Type[Component], text: str, number: int):
+    """Test that an invalid prop type raises an error.
+
+    Args:
+        component1: A test component.
+        text: A test string.
+        number: A test number.
+    """
+    # Check that
+    with pytest.raises(TypeError):
+        component1.create(text=text, number=number)
+
+
+def test_var_props(component1: Type[Component], TestState: Type[State]):
+    """Test that we can set a Var prop."""
+    c1 = component1.create(text="hello", number=TestState.num)
+    assert c1.number == TestState.num
+
+
+def test_get_controlled_triggers(
+    component1: Type[Component], component2: Type[Component]
+):
+    """Test that we can get the controlled triggers of a component.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    assert component1.get_controlled_triggers() == set()
+    assert component2.get_controlled_triggers() == {"on_open", "on_close"}
+
+
+def test_get_triggers(component1: Type[Component], component2: Type[Component]):
+    """Test that we can get the triggers of a component.
+
+    Args:
+        component1: A test component.
+        component2: A test component.
+    """
+    assert component1.get_triggers() == EVENT_TRIGGERS
+    assert component2.get_triggers() == {"on_open", "on_close"} | EVENT_TRIGGERS

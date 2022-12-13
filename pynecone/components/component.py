@@ -97,13 +97,25 @@ class Component(Base, ABC):
 
             # Check whether the key is a component prop.
             if utils._issubclass(field_type, Var):
-                # Convert any constants into vars and make sure the types match.
-                kwargs[key] = Var.create(value)
-                passed_type = kwargs[key].type_
-                expected_type = fields[key].outer_type_.__args__[0]
-                assert utils._issubclass(
-                    passed_type, expected_type
-                ), f"Invalid var passed for {key}, expected {expected_type}, got {passed_type}."
+                try:
+                    # Try to create a var from the value.
+                    kwargs[key] = Var.create(value)
+
+                    # Check that the var type is not None.
+                    if kwargs[key] is None:
+                        raise TypeError
+
+                    # Get the passed type and the var type.
+                    passed_type = kwargs[key].type_
+                    expected_type = fields[key].outer_type_.__args__[0]
+                except TypeError:
+                    # If it is not a valid var, check the base types.
+                    passed_type = type(value)
+                    expected_type = fields[key].outer_type_
+                if not utils._issubclass(passed_type, expected_type):
+                    raise TypeError(
+                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value} of type {passed_type}."
+                    )
 
             # Check if the key is an event trigger.
             if key in triggers:
@@ -241,7 +253,7 @@ class Component(Base, ABC):
         Returns:
             The unique fields.
         """
-        return set(cls.get_fields()) - set(Component.get_fields()) - {"library", "tag"}
+        return set(cls.get_fields()) - set(Component.get_fields())
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -262,6 +274,7 @@ class Component(Base, ABC):
 
         # Validate all the children.
         for child in children:
+            # Make sure the child is a valid type.
             if not utils._isinstance(child, ComponentChild):
                 raise TypeError(
                     "Children of Pynecone components must be other components, "

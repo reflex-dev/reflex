@@ -22,6 +22,14 @@ def version():
 def init():
     """Initialize a new Pynecone app."""
     app_name = utils.get_default_app_name()
+
+    # Make sure they don't name the app "pynecone".
+    if app_name == constants.MODULE_NAME:
+        utils.console.print(
+            f"[red]The app directory cannot be named {constants.MODULE_NAME}."
+        )
+        raise typer.Exit()
+
     with utils.console.status(f"[bold]Initializing {app_name}") as status:
         # Only create the app directory if it doesn't exist.
         if not os.path.exists(constants.CONFIG_FILE):
@@ -64,6 +72,15 @@ def run(
         frontend: Whether to run the frontend.
         backend: Whether to run the backend.
     """
+    # Check that the app is initialized.
+    if not os.path.exists(constants.CONFIG_FILE) or not os.path.exists(
+        constants.WEB_DIR
+    ):
+        utils.console.print(
+            f"[red]The app is not initialized. Run [bold]pc init[/bold] first."
+        )
+        raise typer.Exit()
+
     utils.console.rule("[bold]Starting Pynecone App")
     app = utils.get_app()
 
