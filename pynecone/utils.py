@@ -403,7 +403,7 @@ def run_backend_prod(app) -> None:
     Args:
         app: The app.
     """
-    command = constants.RUN_BACKEND_PROD + [f"{app.__name__}:{constants.API_VAR}"]
+    command = constants.RUN_BACKEND_PROD + [f"{app.__name__}:{constants.APP_VAR}()"]
     subprocess.call(command)
 
 
