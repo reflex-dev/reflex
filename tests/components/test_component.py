@@ -57,7 +57,11 @@ def component2() -> Type[Component]:
 
         @classmethod
         def get_controlled_triggers(cls) -> Set[str]:
-            """Test controlled triggers."""
+            """Test controlled triggers.
+
+            Returns:
+                Test controlled triggers.
+            """
             return {"on_open", "on_close"}
 
         def _get_imports(self) -> ImportDict:
@@ -97,7 +101,7 @@ def on_click2() -> EventHandler:
     return EventHandler(fn=on_click2)
 
 
-def test_set_style_attrs(component1: Type[Component]):
+def test_set_style_attrs(component1):
     """Test that style attributes are set in the dict.
 
     Args:
@@ -108,7 +112,7 @@ def test_set_style_attrs(component1: Type[Component]):
     assert component.style["textAlign"] == "center"
 
 
-def test_create_component(component1: Type[Component]):
+def test_create_component(component1):
     """Test that the component is created correctly.
 
     Args:
@@ -122,7 +126,7 @@ def test_create_component(component1: Type[Component]):
     assert c.style == {"color": "white", "textAlign": "center"}
 
 
-def test_add_style(component1: Type[Component], component2: Type[Component]):
+def test_add_style(component1, component2):
     """Test adding a style to a component.
 
     Args:
@@ -139,7 +143,7 @@ def test_add_style(component1: Type[Component], component2: Type[Component]):
     assert c2.style["color"] == "black"
 
 
-def test_get_imports(component1: Type[Component], component2: Type[Component]):
+def test_get_imports(component1, component2):
     """Test getting the imports of a component.
 
     Args:
@@ -152,7 +156,7 @@ def test_get_imports(component1: Type[Component], component2: Type[Component]):
     assert c2.get_imports() == {"react-redux": {"connect"}, "react": {"Component"}}
 
 
-def test_get_custom_code(component1: Type[Component], component2: Type[Component]):
+def test_get_custom_code(component1, component2):
     """Test getting the custom code of a component.
 
     Args:
@@ -180,7 +184,7 @@ def test_get_custom_code(component1: Type[Component], component2: Type[Component
     }
 
 
-def test_get_props(component1: Type[Component], component2: Type[Component]):
+def test_get_props(component1, component2):
     """Test that the props are set correctly.
 
     Args:
@@ -199,8 +203,8 @@ def test_get_props(component1: Type[Component], component2: Type[Component]):
         ("hi", -13),
     ],
 )
-def test_valid_props(component1: Type[Component], text: str, number: int):
-    """ "Test that we can construct a component with valid props.
+def test_valid_props(component1, text: str, number: int):
+    """Test that we can construct a component with valid props.
 
     Args:
         component1: A test component.
@@ -215,7 +219,7 @@ def test_valid_props(component1: Type[Component], text: str, number: int):
 @pytest.mark.parametrize(
     "text,number", [("", "bad_string"), (13, 1), (None, 1), ("test", [1, 2, 3])]
 )
-def test_invalid_prop_type(component1: Type[Component], text: str, number: int):
+def test_invalid_prop_type(component1, text: str, number: int):
     """Test that an invalid prop type raises an error.
 
     Args:
@@ -228,15 +232,18 @@ def test_invalid_prop_type(component1: Type[Component], text: str, number: int):
         component1.create(text=text, number=number)
 
 
-def test_var_props(component1: Type[Component], TestState: Type[State]):
-    """Test that we can set a Var prop."""
+def test_var_props(component1, TestState):
+    """Test that we can set a Var prop.
+
+    Args:
+        component1: A test component.
+        TestState: A test state.
+    """
     c1 = component1.create(text="hello", number=TestState.num)
     assert c1.number == TestState.num
 
 
-def test_get_controlled_triggers(
-    component1: Type[Component], component2: Type[Component]
-):
+def test_get_controlled_triggers(component1, component2):
     """Test that we can get the controlled triggers of a component.
 
     Args:
@@ -247,7 +254,7 @@ def test_get_controlled_triggers(
     assert component2.get_controlled_triggers() == {"on_open", "on_close"}
 
 
-def test_get_triggers(component1: Type[Component], component2: Type[Component]):
+def test_get_triggers(component1, component2):
     """Test that we can get the triggers of a component.
 
     Args:

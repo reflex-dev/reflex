@@ -71,6 +71,9 @@ class Component(Base, ABC):
         Args:
             *args: Args to initialize the component.
             **kwargs: Kwargs to initialize the component.
+
+        Raises:
+            TypeError: If an invalid prop is passed.
         """
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
