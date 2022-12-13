@@ -392,6 +392,12 @@ def get_num_workers() -> int:
     Returns:
         The number of backend worker processes.
     """
+    if get_redis() is None:
+        # If there is no redis, then just use 1 worker.
+        return 1
+
+    # Use the number of cores * 2 + 1.
+    return (os.cpu_count() or 1) * 2 + 1
 
 
 def run_backend(app):
@@ -412,7 +418,14 @@ def run_backend_prod(app) -> None:
     Args:
         app: The app.
     """
-    command = constants.RUN_BACKEND_PROD + [f"{app.__name__}:{constants.APP_VAR}()"]
+    num_workers = get_num_workers()
+    command = constants.RUN_BACKEND_PROD + [
+        "--workers",
+        str(num_workers),
+        "--threads",
+        str(num_workers),
+        f"{app.__name__}:{constants.APP_VAR}()",
+    ]
     subprocess.call(command)
 
 
