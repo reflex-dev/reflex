@@ -321,6 +321,15 @@ def install_dependencies():
     subprocess.call([get_bun_path(), "install"], cwd=constants.WEB_DIR, stdout=PIPE)
 
 
+def is_initialized() -> bool:
+    """Check whether the app is initialized.
+
+    Returns:
+        Whether the app is initialized in the current directory.
+    """
+    return os.path.exists(constants.CONFIG_FILE) and os.path.exists(constants.WEB_DIR)
+
+
 def export_app(app):
     """Zip up the app for deployment.
 

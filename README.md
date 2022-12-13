@@ -5,7 +5,7 @@
   <img width="600" src="docs/images/logo_white.svg#gh-dark-mode-only" alt="Pynecone Logo">
 </h1>
 
-**Build performant, customizable web apps in minutes just using Python.**
+**Build performant, customizable web apps in pure Python.**
 
 [![PyPI version](https://badge.fury.io/py/pynecone-io.svg)](https://badge.fury.io/py/pynecone-io)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
