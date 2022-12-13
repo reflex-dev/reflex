@@ -74,6 +74,14 @@ class App(Base):
         """
         return f"<App state={self.state.__name__}>"
 
+    def __call__(self) -> fastapi.FastAPI:
+        """Run the backend api instance.
+
+        Returns:
+            The backend api.
+        """
+        return self.api
+
     def add_default_endpoints(self):
         """Add the default endpoints."""
         # To test the server.

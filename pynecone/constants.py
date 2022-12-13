@@ -56,12 +56,10 @@ BUN_PATH = "$HOME/.bun/bin/bun"
 INSTALL_BUN = "curl https://bun.sh/install | bash"
 # Command to run the backend in dev mode.
 RUN_BACKEND = "uvicorn --log-level critical --reload --host 0.0.0.0".split()
-# The number of workers to run in production mode by default.
-NUM_WORKERS = (os.cpu_count() or 1) * 2 + 1
 # The default timeout when launching the gunicorn server.
 TIMEOUT = 120
 # The command to run the backend in production mode.
-RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --bind 0.0.0.0:8000 --workers {NUM_WORKERS} --threads {NUM_WORKERS} --preload --timeout {TIMEOUT} --log-level debug".split()
+RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --bind 0.0.0.0:8000 --preload --timeout {TIMEOUT} --log-level debug".split()
 
 # Compiler variables.
 # The extension for compiled Javascript files.
