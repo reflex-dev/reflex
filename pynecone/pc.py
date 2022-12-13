@@ -40,7 +40,7 @@ def init():
             # Create a configuration file.
             with open(constants.CONFIG_FILE, "w") as f:
                 f.write(templates.PCCONFIG.format(app_name=app_name))
-                utils.console.log(f"Initialize the app directory.")
+                utils.console.log("Initialize the app directory.")
 
             # Initialize the app directory.
             utils.cp(constants.APP_TEMPLATE_DIR, app_name)
@@ -52,15 +52,15 @@ def init():
 
         # Install bun if it isn't already installed.
         if not os.path.exists(utils.get_bun_path()):
-            utils.console.log(f"Installing bun...")
+            utils.console.log("Installing bun...")
             os.system(constants.INSTALL_BUN)
 
         # Initialize the web directory.
-        utils.console.log(f"Initializing the web directory.")
+        utils.console.log("Initializing the web directory.")
         utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
         utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
         utils.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
-        utils.console.log(f"[bold green]Finished Initializing: {app_name}")
+        utils.console.log("[bold green]Finished Initializing: {app_name}")
 
 
 @cli.command()
@@ -82,7 +82,7 @@ def run(
     # Check that the app is initialized.
     if not utils.is_initialized():
         utils.console.print(
-            f"[red]The app is not initialized. Run [bold]pc init[/bold] first."
+            "[red]The app is not initialized. Run [bold]pc init[/bold] first."
         )
         raise typer.Exit()
 
