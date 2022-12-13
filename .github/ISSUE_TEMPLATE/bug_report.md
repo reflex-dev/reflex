@@ -21,7 +21,7 @@ If applicable, add screenshots to help explain your problem.
 
 ** Specifics (please complete the following information):**
  - OS: 
- - Browser:
+ - Browser (Optional):
  - Pynecone Version:
 
 **Additional context**
