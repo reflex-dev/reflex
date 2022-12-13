@@ -2,7 +2,7 @@
 
 import os
 
-import requests
+import httpx
 import typer
 
 from pynecone import constants, utils
@@ -40,7 +40,7 @@ def init():
             # Create a configuration file.
             with open(constants.CONFIG_FILE, "w") as f:
                 f.write(templates.PCCONFIG.format(app_name=app_name))
-                utils.console.log(f"Initialize the app directory.")
+                utils.console.log("Initialize the app directory.")
 
             # Initialize the app directory.
             utils.cp(constants.APP_TEMPLATE_DIR, app_name)
@@ -52,15 +52,15 @@ def init():
 
         # Install bun if it isn't already installed.
         if not os.path.exists(utils.get_bun_path()):
-            utils.console.log(f"Installing bun...")
+            utils.console.log("Installing bun...")
             os.system(constants.INSTALL_BUN)
 
         # Initialize the web directory.
-        utils.console.log(f"Initializing the web directory.")
+        utils.console.log("Initializing the web directory.")
         utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
         utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
         utils.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
-        utils.console.log(f"[bold green]Finished Initializing: {app_name}")
+        utils.console.log("[bold green]Finished Initializing: {app_name}")
 
 
 @cli.command()
@@ -82,7 +82,7 @@ def run(
     # Check that the app is initialized.
     if not utils.is_initialized():
         utils.console.print(
-            f"[red]The app is not initialized. Run [bold]pc init[/bold] first."
+            "[red]The app is not initialized. Run [bold]pc init[/bold] first."
         )
         raise typer.Exit()
 
@@ -129,7 +129,7 @@ def deploy(dry_run: bool = False):
 
     # Deploy the app.
     data = {"userId": config.username, "projectId": config.app_name}
-    original_response = requests.get(config.deploy_url, params=data)
+    original_response = httpx.get(config.deploy_url, params=data)
     response = original_response.json()
     print("response", response)
     frontend = response["frontend_resources_url"]
@@ -137,10 +137,10 @@ def deploy(dry_run: bool = False):
 
     # Upload the frontend and backend.
     with open(constants.FRONTEND_ZIP, "rb") as f:
-        response = requests.put(frontend, data=f)
+        response = httpx.put(frontend, data=f)  # type: ignore
 
     with open(constants.BACKEND_ZIP, "rb") as f:
-        response = requests.put(backend, data=f)
+        response = httpx.put(backend, data=f)  # type: ignore
 
 
 main = cli
