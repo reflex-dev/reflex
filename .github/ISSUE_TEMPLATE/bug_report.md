@@ -12,6 +12,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+ - Code/Link to Repo:
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
@@ -20,9 +21,10 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 ** Specifics (please complete the following information):**
+ - Python Version:
+ - Pynecone Version:
  - OS: 
  - Browser (Optional):
- - Pynecone Version:
-
+ 
 **Additional context**
 Add any other context about the problem here.
