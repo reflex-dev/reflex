@@ -70,7 +70,7 @@ class DataTable(Gridjs):
     def _render(self) -> Tag:
         if utils.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
-            self.columns = Var.create(list(self.data.columns.values.tolist()))  
-            self.data = Var.create(list(self.data.values.tolist()))
+            self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
+            self.data = Var.create(list(self.data.values.tolist())) # type: ignore
 
         return super()._render()
