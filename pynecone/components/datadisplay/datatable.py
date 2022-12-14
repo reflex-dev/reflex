@@ -19,9 +19,6 @@ class DataTable(Gridjs):
 
     tag = "Grid"
 
-    # The dataframe to use.
-    df: Var[Any]
-
     # The data to display. EIther a list of lists or a pandas dataframe.
     data: Any
 
@@ -47,11 +44,8 @@ class DataTable(Gridjs):
 
     def _render(self) -> Tag:
         if utils.is_dataframe(type(self.data)):
-            self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
-            self.data = Var.create(list(self.data.values.tolist()))  # type: ignore
-
-        if isinstance(self.df, Var):
-            self.columns = self.df["columns"]
-            self.data = self.df["data"]
-
+            # If given a pandas df break up the data and columns
+            self.columns = Var.create(list(self.data.columns.values.tolist()))  
+            self.data = Var.create(list(self.data.values.tolist()))
+            
         return super()._render()
