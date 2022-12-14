@@ -296,7 +296,7 @@ def get_config() -> Config:
         return Config(app_name="")
 
 
-def get_bun_path():
+def get_bun_path() -> str:
     """Get the path to the bun executable.
 
     Returns:
@@ -304,7 +304,7 @@ def get_bun_path():
     """
     # On windows, we use npm instead of bun.
     if platform.system() == "Windows":
-        return which("npm")
+        return str(which("npm"))
     return os.path.expandvars(get_config().bun_path)
 
 
