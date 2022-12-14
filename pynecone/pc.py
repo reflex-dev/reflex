@@ -60,7 +60,7 @@ def init():
         utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
         utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
         utils.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
-        utils.console.log("[bold green]Finished Initializing: {app_name}")
+        utils.console.log(f"[bold green]Finished Initializing: {app_name}")
 
 
 @cli.command()

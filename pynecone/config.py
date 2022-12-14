@@ -1,6 +1,6 @@
 """The Pynecone config."""
 
-from typing import Optional
+from typing import List, Optional
 
 from pynecone import constants
 from pynecone.base import Base
@@ -32,3 +32,6 @@ class Config(Base):
 
     # The path to the bun executable.
     bun_path: str = constants.BUN_PATH
+
+    # Additional frontend packages to install.
+    frontend_packages: List[str] = []
