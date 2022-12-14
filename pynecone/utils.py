@@ -316,9 +316,16 @@ def get_app() -> Any:
     return app
 
 
-def install_dependencies():
-    """Install the dependencies."""
+def install_frontend_packages():
+    """Install the frontend packages."""
+    # Install the base packages.
     subprocess.call([get_bun_path(), "install"], cwd=constants.WEB_DIR, stdout=PIPE)
+
+    # Install the app packages.
+    for package in get_config().frontend_packages:
+        subprocess.call(
+            [get_bun_path(), "add", package], cwd=constants.WEB_DIR, stdout=PIPE
+        )
 
 
 def is_initialized() -> bool:
@@ -350,9 +357,9 @@ def setup_frontend(app):
     # Initialize the web directory if it doesn't exist.
     cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR, overwrite=False)
 
-    # Install the frontend dependencies.
-    console.rule("[bold]Installing Dependencies")
-    install_dependencies()
+    # Install the frontend packages.
+    console.rule("[bold]Installing frontend packages")
+    install_frontend_packages()
 
     # Link the assets folder.
     ln(src=os.path.join("..", constants.APP_ASSETS_DIR), dest=constants.WEB_ASSETS_DIR)
