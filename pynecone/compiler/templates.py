@@ -11,7 +11,6 @@ PCCONFIG = f"""import pynecone as pc
 
 config = pc.Config(
     app_name="{{app_name}}",
-    bun_path="{constants.BUN_PATH}",
     db_url="{constants.DB_URL}",
     env=pc.Env.DEV,
 )

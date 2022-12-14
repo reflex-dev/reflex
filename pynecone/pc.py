@@ -6,7 +6,6 @@ import httpx
 import typer
 
 from pynecone import constants, utils
-from pynecone.compiler import templates
 
 # Create the app.
 cli = typer.Typer()
@@ -35,31 +34,16 @@ def init():
         raise typer.Exit()
 
     with utils.console.status(f"[bold]Initializing {app_name}"):
-        # Only create the app directory if it doesn't exist.
+        # Set up the web directory.
+        utils.install_bun()
+        utils.initialize_web_directory()
+
+        # Set up the app directory, only if the config doesn't exist.
         if not os.path.exists(constants.CONFIG_FILE):
-            # Create a configuration file.
-            with open(constants.CONFIG_FILE, "w") as f:
-                f.write(templates.PCCONFIG.format(app_name=app_name))
-                utils.console.log("Initialize the app directory.")
+            utils.create_config(app_name)
+            utils.initialize_app_directory(app_name)
 
-            # Initialize the app directory.
-            utils.cp(constants.APP_TEMPLATE_DIR, app_name)
-            utils.mv(
-                os.path.join(app_name, constants.APP_TEMPLATE_FILE),
-                os.path.join(app_name, app_name + constants.PY_EXT),
-            )
-            utils.cp(constants.ASSETS_TEMPLATE_DIR, constants.APP_ASSETS_DIR)
-
-        # Install bun if it isn't already installed.
-        if not os.path.exists(utils.get_bun_path()):
-            utils.console.log("Installing bun...")
-            os.system(constants.INSTALL_BUN)
-
-        # Initialize the web directory.
-        utils.console.log("Initializing the web directory.")
-        utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
-        utils.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
-        utils.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
+        # Finish initializing the app.
         utils.console.log(f"[bold green]Finished Initializing: {app_name}")
 
 
