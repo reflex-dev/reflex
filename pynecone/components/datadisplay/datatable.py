@@ -37,6 +37,31 @@ class DataTable(Gridjs):
     # Enable pagination.
     pagination: Var[bool]
 
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a datable component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props to pass to the component.
+
+        Returns:
+            The datable component.
+        """
+
+        # If data is a pandas dataframe and columns are provided throw an error.
+        if utils.is_dataframe(type(props.get("data"))) and props.get("columns"):
+            raise ValueError(
+                "Cannot pass in both a pandas dataframe and columns to the data_table component."
+            )
+
+        # Create the component.
+        return super().create(
+            *children,
+            **props,
+        )
+
+
     def _get_imports(self) -> ImportDict:
         return utils.merge_imports(
             super()._get_imports(), {"": {"gridjs/dist/theme/mermaid.css"}}
@@ -47,5 +72,5 @@ class DataTable(Gridjs):
             # If given a pandas df break up the data and columns
             self.columns = Var.create(list(self.data.columns.values.tolist()))  
             self.data = Var.create(list(self.data.values.tolist()))
-            
+
         return super()._render()
