@@ -48,7 +48,6 @@ class DataTable(Gridjs):
         Returns:
             The datable component.
         """
-
         # If data is a pandas dataframe and columns are provided throw an error.
         if utils.is_dataframe(type(props.get("data"))) and props.get("columns"):
             raise ValueError(
