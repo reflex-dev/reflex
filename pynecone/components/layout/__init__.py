@@ -1,6 +1,6 @@
 """Convenience functions to define layout components."""
 
-from .box import Box
+from .box import Box, Html
 from .center import Center, Circle, Square
 from .cond import Cond
 from .container import Container
