@@ -47,6 +47,9 @@ class DataTable(Gridjs):
 
         Returns:
             The datable component.
+
+        Raises:
+            ValueError: If a pandas dataframe is passed in and columns are also provided.
         """
         # If data is a pandas dataframe and columns are provided throw an error.
         if utils.is_dataframe(type(props.get("data"))) and props.get("columns"):
@@ -60,7 +63,6 @@ class DataTable(Gridjs):
             **props,
         )
 
-
     def _get_imports(self) -> ImportDict:
         return utils.merge_imports(
             super()._get_imports(), {"": {"gridjs/dist/theme/mermaid.css"}}
@@ -70,6 +72,6 @@ class DataTable(Gridjs):
         if utils.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
-            self.data = Var.create(list(self.data.values.tolist())) # type: ignore
+            self.data = Var.create(list(self.data.values.tolist()))  # type: ignore
 
         return super()._render()
