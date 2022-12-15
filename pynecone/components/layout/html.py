@@ -8,6 +8,7 @@ from pynecone.var import Var
 from pynecone import utils
 from typing import Dict
 
+
 class Html(Box):
     """Render the html.
 
