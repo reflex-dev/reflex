@@ -28,10 +28,10 @@ class Html(Box):
             **props: The props to pass to the component.
 
         Returns:
-            The datable html.
+            The html component.
 
         Raises:
-            ValueError: If a pandas dataframe is passed in and columns are also provided.
+            ValueError: If children are not provided or more than one child is provided.
         """
         # If children are not prvided, throw an error.
         if len(children) != 1:
