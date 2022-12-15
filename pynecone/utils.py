@@ -378,9 +378,10 @@ def install_frontend_packages():
 
     # Install the app packages.
     packages = get_config().frontend_packages
-    subprocess.run(
-        [get_bun_path(), "add", *packages], cwd=constants.WEB_DIR, stdout=PIPE
-    )
+    if len(packages) > 0:
+        subprocess.run(
+            [get_bun_path(), "add", *packages], cwd=constants.WEB_DIR, stdout=PIPE
+        )
 
 
 def is_initialized() -> bool:

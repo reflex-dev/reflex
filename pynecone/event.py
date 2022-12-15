@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 from typing import Any, Callable, Dict, List, Set, Tuple
 
 from pynecone.base import Base
@@ -48,7 +49,21 @@ class EventHandler(Base):
         fn_args = inspect.getfullargspec(self.fn).args[1:]
 
         # Construct the payload.
-        payload = tuple(zip(fn_args, [Var.create(arg).full_name for arg in args]))  # type: ignore
+        values = []
+        for arg in args:
+            # If it is a Var, add the full name.
+            if isinstance(arg, Var):
+                values.append(arg.full_name)
+                continue
+
+            # Otherwise, convert to JSON.
+            try:
+                values.append(json.dumps(arg))
+            except TypeError:
+                raise TypeError(
+                    f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+                )
+        payload = tuple(zip(fn_args, values))
 
         # Return the event spec.
         return EventSpec(handler=self, args=payload)
