@@ -15,6 +15,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from subprocess import PIPE
+from types import ModuleType
 from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
@@ -309,8 +310,8 @@ def get_bun_path() -> str:
     return os.path.expandvars(get_config().bun_path)
 
 
-def get_app() -> App:
-    """Get the app based on the default config.
+def get_app() -> ModuleType:
+    """Get the app module based on the default config.
 
     Returns:
         The app based on the default config.
@@ -399,7 +400,7 @@ def export_app(app: App, zip: bool = False):
         zip: Whether to zip the app.
     """
     # Force compile the app.
-    app.app.compile(force_compile=True)
+    app.compile(force_compile=True)
 
     # Remove the static folder.
     rm(constants.WEB_STATIC_DIR)
@@ -413,12 +414,8 @@ def export_app(app: App, zip: bool = False):
         os.system(cmd)
 
 
-def setup_frontend(app: App):
-    """Set up the frontend.
-
-    Args:
-        app: The app.
-    """
+def setup_frontend():
+    """Set up the frontend."""
     # Initialize the web directory if it doesn't exist.
     cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR, overwrite=False)
 
@@ -437,10 +434,10 @@ def run_frontend(app: App):
         app: The app.
     """
     # Set up the frontend.
-    setup_frontend(app)
+    setup_frontend()
 
     # Compile the frontend.
-    app.app.compile(force_compile=True)
+    app.compile(force_compile=True)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
@@ -454,7 +451,7 @@ def run_frontend_prod(app: App):
         app: The app.
     """
     # Set up the frontend.
-    setup_frontend(app)
+    setup_frontend()
 
     # Export the app.
     export_app(app)
@@ -477,23 +474,23 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def run_backend(app: App):
+def run_backend(app_name: str):
     """Run the backend.
 
     Args:
-        app: The app.
+        app_name: The app name.
     """
     command = constants.RUN_BACKEND + [
-        f"{app.__name__}:{constants.APP_VAR}.{constants.API_VAR}"
+        f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}"
     ]
     subprocess.run(command)
 
 
-def run_backend_prod(app: App):
+def run_backend_prod(app_name: str):
     """Run the backend.
 
     Args:
-        app: The app.
+        app_name: The app name.
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
@@ -501,7 +498,7 @@ def run_backend_prod(app: App):
         str(num_workers),
         "--threads",
         str(num_workers),
-        f"{app.__name__}:{constants.APP_VAR}()",
+        f"{app_name}:{constants.APP_VAR}()",
     ]
     subprocess.run(command)
 

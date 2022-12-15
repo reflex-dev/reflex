@@ -70,9 +70,11 @@ def run(
         )
         raise typer.Exit()
 
+    # Get the app module.
     utils.console.rule("[bold]Starting Pynecone App")
     app = utils.get_app()
 
+    # Get the frontend and backend commands, based on the environment.
     frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
         frontend_cmd, backend_cmd = utils.run_frontend, utils.run_backend
@@ -80,10 +82,11 @@ def run(
         frontend_cmd, backend_cmd = utils.run_frontend_prod, utils.run_backend_prod
     assert frontend_cmd and backend_cmd, "Invalid env"
 
+    # Run the frontend and backend.
     if frontend:
-        frontend_cmd(app)
+        frontend_cmd(app.app)
     if backend:
-        backend_cmd(app)
+        backend_cmd(app.__name__)
 
 
 @cli.command()
@@ -104,7 +107,7 @@ def deploy(dry_run: bool = False):
 
     # Compile the app in production mode.
     typer.echo("Compiling production app")
-    app = utils.get_app()
+    app = utils.get_app().app
     utils.export_app(app, zip=True)
 
     # Exit early if this is a dry run.
