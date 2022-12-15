@@ -190,7 +190,7 @@ class Var(ABC):
                 and hasattr(self.type_, "__fields__")
                 and name in self.type_.__fields__
             ):
-                type_ = self.type_.__fields__[name].type_
+                type_ = self.type_.__fields__[name].outer_type_
                 if isinstance(type_, ModelField):
                     type_ = type_.type_
                 return BaseVar(

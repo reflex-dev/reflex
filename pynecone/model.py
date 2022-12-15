@@ -22,6 +22,17 @@ class Model(Base, sqlmodel.SQLModel):
     # The primary key for the table.
     id: int = sqlmodel.Field(primary_key=True)
 
+    def dict(self, **kwargs):
+        """Convert the object to a dictionary.
+
+        Args:
+            kwargs: Ignored but needed for compatibility.
+
+        Returns:
+            The object as a dictionary.
+        """
+        return {name: getattr(self, name) for name in self.__fields__}
+
     @staticmethod
     def create_all():
         """Create all the tables."""
