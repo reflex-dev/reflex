@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import json
 import os
+import platform
 import random
 import re
 import shutil
@@ -291,16 +292,19 @@ def get_config() -> Config:
     sys.path.append(os.getcwd())
     try:
         return __import__(constants.CONFIG_MODULE).config
-    except:
+    except ImportError:
         return Config(app_name="")
 
 
-def get_bun_path():
+def get_bun_path() -> str:
     """Get the path to the bun executable.
 
     Returns:
         The path to the bun executable.
     """
+    # On windows, we use npm instead of bun.
+    if platform.system() == "Windows":
+        return str(which("npm"))
     return os.path.expandvars(get_config().bun_path)
 
 
@@ -316,16 +320,65 @@ def get_app() -> Any:
     return app
 
 
+def create_config(app_name: str):
+    """Create a new pcconfig file.
+
+    Args:
+        app_name: The name of the app.
+    """
+    # Import here to avoid circular imports.
+    from pynecone.compiler import templates
+
+    with open(constants.CONFIG_FILE, "w") as f:
+        f.write(templates.PCCONFIG.format(app_name=app_name))
+
+
+def initialize_app_directory(app_name: str):
+    """Initialize the app directory on pc init.
+
+    Args:
+        app_name: The name of the app.
+    """
+    console.log("Initializing the app directory.")
+    cp(constants.APP_TEMPLATE_DIR, app_name)
+    mv(
+        os.path.join(app_name, constants.APP_TEMPLATE_FILE),
+        os.path.join(app_name, app_name + constants.PY_EXT),
+    )
+    cp(constants.ASSETS_TEMPLATE_DIR, constants.APP_ASSETS_DIR)
+
+
+def initialize_web_directory():
+    """Initialize the web directory on pc init."""
+    console.log("Initializing the web directory.")
+    rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
+    rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
+    cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
+
+
+def install_bun():
+    """Install bun onto the user's system."""
+    # Bun is not supported on Windows.
+    if platform.system() == "Windows":
+        console.log("Skipping bun installation on Windows.")
+        return
+
+    # Only install if bun is not already installed.
+    if not os.path.exists(get_bun_path()):
+        console.log("Installing bun...")
+        os.system(constants.INSTALL_BUN)
+
+
 def install_frontend_packages():
     """Install the frontend packages."""
     # Install the base packages.
     subprocess.call([get_bun_path(), "install"], cwd=constants.WEB_DIR, stdout=PIPE)
 
     # Install the app packages.
-    for package in get_config().frontend_packages:
-        subprocess.call(
-            [get_bun_path(), "add", package], cwd=constants.WEB_DIR, stdout=PIPE
-        )
+    packages = get_config().frontend_packages
+    subprocess.call(
+        [get_bun_path(), "add", *packages], cwd=constants.WEB_DIR, stdout=PIPE
+    )
 
 
 def is_initialized() -> bool:

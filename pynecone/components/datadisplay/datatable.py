@@ -39,14 +39,14 @@ class DataTable(Gridjs):
 
     @classmethod
     def create(cls, *children, **props):
-        """Create a datable component.
+        """Create a datatable component.
 
         Args:
             *children: The children of the component.
             **props: The props to pass to the component.
 
         Returns:
-            The datable component.
+            The datatable component.
 
         Raises:
             ValueError: If a pandas dataframe is passed in and columns are also provided.
