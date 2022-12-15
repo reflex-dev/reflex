@@ -228,7 +228,9 @@ class App(Base):
         component = component if isinstance(component, Component) else component(*args)
 
         # Add the title to the component.
-        compiler_utils.add_meta(component, title, description, image)
+        compiler_utils.add_meta(
+            component, title=title, image=image, description=description
+        )
 
         # Format the route.
         route = utils.format_route(path)
