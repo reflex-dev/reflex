@@ -7,6 +7,7 @@ from .container import Container
 from .flex import Flex
 from .foreach import Foreach
 from .grid import Grid, GridItem, ResponsiveGrid
+from .html import Html
 from .spacer import Spacer
 from .stack import Hstack, Stack, Vstack
 from .wrap import Wrap, WrapItem
