@@ -44,6 +44,9 @@ class EventHandler(Base):
 
         Returns:
             The event spec, containing both the function and args.
+
+        Raises:
+            TypeError: If the arguments are invalid.
         """
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
