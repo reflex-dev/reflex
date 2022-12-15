@@ -1,11 +1,11 @@
 """A select component."""
 
-from typing import Any, Set
+from typing import Any, List, Set
 
 from pynecone import utils
 from pynecone.components.component import EVENT_ARG, Component
+from pynecone.components.layout.foreach import Foreach
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.components.tags import Tag
 from pynecone.components.typography.text import Text
 from pynecone.var import Var
 
@@ -79,6 +79,12 @@ class Select(ChakraComponent):
         """
         if len(children) == 1 and isinstance(children[0], list):
             children = [Option.create(child) for child in children[0]]
+        if (
+            len(children) == 1
+            and isinstance(children[0], Var)
+            and utils._issubclass(children[0].type_, List)
+        ):
+            children = [Foreach.create(children[0], lambda item: Option.create(item))]
         return super().create(*children, **props)
 
 
