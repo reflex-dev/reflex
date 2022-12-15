@@ -209,25 +209,13 @@ class App(Base):
             ), "Path must be set if component is not a callable."
             path = component.__name__
 
-        from pynecone.var import BaseVar
-
-        parts = os.path.split(path)
-        check = re.compile(r"^\[(.+)\]$")
-        args = []
-        for part in parts:
-            match = check.match(part)
-            if match:
-                v = BaseVar(
-                    name=match.groups()[0],
-                    type_=str,
-                    state=f"{constants.ROUTER}.query",
-                )
-                args.append(v)
+        # Get args from the path for dynamic routes.
+        args = utils.get_path_args(path)
 
         # Generate the component if it is a callable.
         component = component if isinstance(component, Component) else component(*args)
 
-        # Add the title to the component.
+        # Add meta information to the component.
         compiler_utils.add_meta(
             component, title=title, image=image, description=description
         )

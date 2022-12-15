@@ -303,11 +303,21 @@ def get_bun_path() -> str:
 
     Returns:
         The path to the bun executable.
+
+    Raises:
+        FileNotFoundError: If bun or npm is not installed.
     """
-    # On windows, we use npm instead of bun.
+    # On Windows, we use npm instead of bun.
     if platform.system() == "Windows":
-        return str(which("npm"))
-    return os.path.expandvars(get_config().bun_path)
+        if which("npm") is None:
+            raise FileNotFoundError("Pynecone requires npm to be installed on Windows.")
+        return "npm"
+
+    # On other platforms, we use bun.
+    bun_path = os.path.expandvars(get_config().bun_path)
+    if which(bun_path) is None:
+        raise FileNotFoundError("Pynecone requires bun to be installed.")
+    return bun_path
 
 
 def get_app() -> ModuleType:
@@ -679,6 +689,36 @@ def get_theme_path() -> str:
         The path of the theme style.
     """
     return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
+
+
+def get_path_args(path: str) -> List[str]:
+    """Get the path arguments for the given path.
+
+    Args:
+        path: The path to get the arguments for.
+
+    Returns:
+        The path arguments.
+    """
+    # Import here to avoid circular imports.
+    from pynecone.var import BaseVar
+
+    # Regex to check for path args.
+    check = re.compile(r"^\[(.+)\]$")
+
+    # Iterate over the path parts and check for path args.
+    args = []
+    for part in os.path.split(path):
+        match = check.match(part)
+        if match:
+            # Add the path arg to the list.
+            v = BaseVar(
+                name=match.groups()[0],
+                type_=str,
+                state=f"{constants.ROUTER}.query",
+            )
+            args.append(v)
+    return args
 
 
 def write_page(path: str, code: str):
