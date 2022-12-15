@@ -1,8 +1,9 @@
 """A html component."""
 
+from typing import Dict
+
 from pynecone.components.layout.box import Box
 from pynecone.var import Var
-from typing import Dict
 
 
 class Html(Box):
@@ -33,7 +34,6 @@ class Html(Box):
         if len(children) != 1:
             raise ValueError("Must provide children to the html component.")
         else:
-
             props["dangerouslySetInnerHTML"] = {"__html": children[0]}
 
         # Create the component.

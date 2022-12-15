@@ -220,7 +220,7 @@ We are actively looking for contributors, no matter your skill level or experien
 ## More Information 
 
 More information about Pynecone can be found on our website:
-- [Pynecone.io](https://pynecone.io)
+- [pynecone.io](https://pynecone.io)
 
 ## License
 

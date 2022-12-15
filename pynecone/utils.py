@@ -15,6 +15,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from subprocess import PIPE
+from types import ModuleType
 from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
@@ -37,6 +38,7 @@ from pynecone import constants
 from pynecone.base import Base
 
 if TYPE_CHECKING:
+    from pynecone.app import App
     from pynecone.components.component import ImportDict
     from pynecone.config import Config
     from pynecone.event import Event, EventHandler, EventSpec
@@ -308,8 +310,8 @@ def get_bun_path() -> str:
     return os.path.expandvars(get_config().bun_path)
 
 
-def get_app() -> Any:
-    """Get the app based on the default config.
+def get_app() -> ModuleType:
+    """Get the app module based on the default config.
 
     Returns:
         The app based on the default config.
@@ -372,11 +374,11 @@ def install_bun():
 def install_frontend_packages():
     """Install the frontend packages."""
     # Install the base packages.
-    subprocess.call([get_bun_path(), "install"], cwd=constants.WEB_DIR, stdout=PIPE)
+    subprocess.run([get_bun_path(), "install"], cwd=constants.WEB_DIR, stdout=PIPE)
 
     # Install the app packages.
     packages = get_config().frontend_packages
-    subprocess.call(
+    subprocess.run(
         [get_bun_path(), "add", *packages], cwd=constants.WEB_DIR, stdout=PIPE
     )
 
@@ -390,23 +392,30 @@ def is_initialized() -> bool:
     return os.path.exists(constants.CONFIG_FILE) and os.path.exists(constants.WEB_DIR)
 
 
-def export_app(app):
+def export_app(app: App, zip: bool = False):
     """Zip up the app for deployment.
 
     Args:
         app: The app.
+        zip: Whether to zip the app.
     """
-    app.app.compile(force_compile=True)
-    cmd = r"rm -rf .web/_static; cd .web && bun run export && cd _static  && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
-    os.system(cmd)
+    # Force compile the app.
+    app.compile(force_compile=True)
+
+    # Remove the static folder.
+    rm(constants.WEB_STATIC_DIR)
+
+    # Export the Next app.
+    subprocess.run([get_bun_path(), "run", "export"], cwd=constants.WEB_DIR)
+
+    # Zip up the app.
+    if zip:
+        cmd = r"cd .web/_static && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
+        os.system(cmd)
 
 
-def setup_frontend(app):
-    """Set up the frontend.
-
-    Args:
-        app: The app.
-    """
+def setup_frontend():
+    """Set up the frontend."""
     # Initialize the web directory if it doesn't exist.
     cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR, overwrite=False)
 
@@ -417,42 +426,38 @@ def setup_frontend(app):
     # Link the assets folder.
     ln(src=os.path.join("..", constants.APP_ASSETS_DIR), dest=constants.WEB_ASSETS_DIR)
 
+
+def run_frontend(app: App):
+    """Run the frontend.
+
+    Args:
+        app: The app.
+    """
+    # Set up the frontend.
+    setup_frontend()
+
     # Compile the frontend.
-    app.app.compile(force_compile=True)
+    app.compile(force_compile=True)
 
-
-def run_frontend(app) -> subprocess.Popen:
-    """Run the frontend.
-
-    Args:
-        app: The app.
-
-    Returns:
-        The frontend process.
-    """
-    setup_frontend(app)
-    command = [get_bun_path(), "run", "dev"]
+    # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    return subprocess.Popen(
-        command, cwd=constants.WEB_DIR
-    )  # stdout=PIPE to hide output
+    subprocess.Popen([get_bun_path(), "run", "dev"], cwd=constants.WEB_DIR)
 
 
-def run_frontend_prod(app) -> subprocess.Popen:
+def run_frontend_prod(app: App):
     """Run the frontend.
 
     Args:
         app: The app.
-
-    Returns:
-        The frontend process.
     """
-    setup_frontend(app)
-    # Export and zip up the frontend and backend then  start the frontend in production mode.
-    cmd = r"rm -rf .web/_static || true; cd .web && bun run export"
-    os.system(cmd)
-    command = [get_bun_path(), "run", "prod"]
-    return subprocess.Popen(command, cwd=constants.WEB_DIR)
+    # Set up the frontend.
+    setup_frontend()
+
+    # Export the app.
+    export_app(app)
+
+    # Run the frontend in production mode.
+    subprocess.Popen([get_bun_path(), "run", "prod"], cwd=constants.WEB_DIR)
 
 
 def get_num_workers() -> int:
@@ -469,23 +474,23 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def run_backend(app):
+def run_backend(app_name: str):
     """Run the backend.
 
     Args:
-        app: The app.
+        app_name: The app name.
     """
     command = constants.RUN_BACKEND + [
-        f"{app.__name__}:{constants.APP_VAR}.{constants.API_VAR}"
+        f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}"
     ]
-    subprocess.call(command)
+    subprocess.run(command)
 
 
-def run_backend_prod(app) -> None:
+def run_backend_prod(app_name: str):
     """Run the backend.
 
     Args:
-        app: The app.
+        app_name: The app name.
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
@@ -493,9 +498,9 @@ def run_backend_prod(app) -> None:
         str(num_workers),
         "--threads",
         str(num_workers),
-        f"{app.__name__}:{constants.APP_VAR}()",
+        f"{app_name}:{constants.APP_VAR}()",
     ]
-    subprocess.call(command)
+    subprocess.run(command)
 
 
 def get_production_backend_url() -> str:
