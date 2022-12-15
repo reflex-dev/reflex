@@ -105,7 +105,7 @@ def deploy(dry_run: bool = False):
     # Compile the app in production mode.
     typer.echo("Compiling production app")
     app = utils.get_app()
-    utils.export_app(app)
+    utils.export_app(app, zip=True)
 
     # Exit early if this is a dry run.
     if dry_run:

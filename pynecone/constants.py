@@ -38,6 +38,8 @@ UTILS_DIR = "utils"
 STATE_PATH = os.path.join(UTILS_DIR, "state")
 # The directory where the app pages are compiled to.
 WEB_PAGES_DIR = os.path.join(WEB_DIR, "pages")
+# The directory where the static build is located.
+WEB_STATIC_DIR = os.path.join(WEB_DIR, "_static")
 # The directory where the utils file is located.
 WEB_UTILS_DIR = os.path.join(WEB_DIR, UTILS_DIR)
 # The directory where the assets are located.
