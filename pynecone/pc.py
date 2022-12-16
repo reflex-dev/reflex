@@ -64,7 +64,7 @@ def run(
         Exit: If the app is not initialized.
     """
     # Check that the app is initialized.
-    if not utils.is_initialized():
+    if frontend and not utils.is_initialized():
         utils.console.print(
             "[red]The app is not initialized. Run [bold]pc init[/bold] first."
         )
