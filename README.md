@@ -25,7 +25,9 @@ Pynecone is a full-stack Python framework that makes it easy to build and deploy
 <div align="left">
 
 ## Installation
-Pynecone requires to following to get started:
+  
+Pynecone requires the following to get started:
+
 * Python 3.7+
 * [Node.js 12.22.0+](https://nodejs.org/en/) (Don't worry, you'll never have to write any Javascript)
 
@@ -204,7 +206,7 @@ As of December 2022, Pynecone has just been released publicly and is in the **Al
  - **Public Hosting Beta**: **Optionally** Deploy and Host your own apps on Pynecone!
  - **Public**: Pynecone is production ready.
 
- Pynecone has new releases and features coming every week! Make sure to: :star: star and :eyes: watch this repository to stay up to date.
+Pynecone has new releases and features coming every week! Make sure to: :star: star and :eyes: watch this repository to stay up to date.
  
 ## Contributing
 
