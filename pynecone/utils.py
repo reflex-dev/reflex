@@ -298,26 +298,24 @@ def get_config() -> Config:
         return Config(app_name="")
 
 
-def get_bun_path() -> str:
-    """Get the path to the bun executable.
+def get_package_manager() -> str:
+    """Get the package manager executable.
 
     Returns:
-        The path to the bun executable.
+        The path to the package manager.
 
     Raises:
         FileNotFoundError: If bun or npm is not installed.
     """
     # On Windows, we use npm instead of bun.
     if platform.system() == "Windows":
-        if which("npm") is None:
+        npm_path = which("npm")
+        if npm_path is None:
             raise FileNotFoundError("Pynecone requires npm to be installed on Windows.")
-        return "npm"
+        return npm_path
 
     # On other platforms, we use bun.
-    bun_path = os.path.expandvars(get_config().bun_path)
-    if which(bun_path) is None:
-        raise FileNotFoundError("Pynecone requires bun to be installed.")
-    return bun_path
+    return os.path.expandvars(get_config().bun_path)
 
 
 def get_app() -> ModuleType:
@@ -376,7 +374,7 @@ def install_bun():
         return
 
     # Only install if bun is not already installed.
-    if not os.path.exists(get_bun_path()):
+    if not os.path.exists(get_package_manager()):
         console.log("Installing bun...")
         os.system(constants.INSTALL_BUN)
 
@@ -384,13 +382,17 @@ def install_bun():
 def install_frontend_packages():
     """Install the frontend packages."""
     # Install the base packages.
-    subprocess.run([get_bun_path(), "install"], cwd=constants.WEB_DIR, stdout=PIPE)
+    subprocess.run(
+        [get_package_manager(), "install"], cwd=constants.WEB_DIR, stdout=PIPE
+    )
 
     # Install the app packages.
     packages = get_config().frontend_packages
     if len(packages) > 0:
         subprocess.run(
-            [get_bun_path(), "add", *packages], cwd=constants.WEB_DIR, stdout=PIPE
+            [get_package_manager(), "add", *packages],
+            cwd=constants.WEB_DIR,
+            stdout=PIPE,
         )
 
 
@@ -417,7 +419,7 @@ def export_app(app: App, zip: bool = False):
     rm(constants.WEB_STATIC_DIR)
 
     # Export the Next app.
-    subprocess.run([get_bun_path(), "run", "export"], cwd=constants.WEB_DIR)
+    subprocess.run([get_package_manager(), "run", "export"], cwd=constants.WEB_DIR)
 
     # Zip up the app.
     if zip:
@@ -452,7 +454,7 @@ def run_frontend(app: App):
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    subprocess.Popen([get_bun_path(), "run", "dev"], cwd=constants.WEB_DIR)
+    subprocess.Popen([get_package_manager(), "run", "dev"], cwd=constants.WEB_DIR)
 
 
 def run_frontend_prod(app: App):
@@ -468,7 +470,7 @@ def run_frontend_prod(app: App):
     export_app(app)
 
     # Run the frontend in production mode.
-    subprocess.Popen([get_bun_path(), "run", "prod"], cwd=constants.WEB_DIR)
+    subprocess.Popen([get_package_manager(), "run", "prod"], cwd=constants.WEB_DIR)
 
 
 def get_num_workers() -> int:
