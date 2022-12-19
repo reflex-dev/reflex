@@ -1,10 +1,8 @@
 """The main Pynecone app."""
 
-import os
-import re
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
-import fastapi
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware import cors
 
 from pynecone import constants, utils
@@ -32,7 +30,7 @@ class App(Base):
     stylesheets: List[str] = []
 
     # The backend API object.
-    api: fastapi.FastAPI = None  # type: ignore
+    api: FastAPI = None  # type: ignore
 
     # The state class to use for the app.
     state: Type[State] = DefaultState
@@ -62,7 +60,7 @@ class App(Base):
         self.state_manager.setup(state=self.state)
 
         # Set up the API.
-        self.api = fastapi.FastAPI()
+        self.api = FastAPI()
         self.add_cors()
         self.add_default_endpoints()
 
@@ -74,7 +72,7 @@ class App(Base):
         """
         return f"<App state={self.state.__name__}>"
 
-    def __call__(self) -> fastapi.FastAPI:
+    def __call__(self) -> FastAPI:
         """Run the backend api instance.
 
         Returns:
@@ -88,6 +86,7 @@ class App(Base):
         self.get(str(constants.Endpoint.PING))(_ping)
 
         # To make state changes.
+        self.ws(str(constants.Endpoint.WS))(self._ws)
         self.post(str(constants.Endpoint.EVENT))(_event(app=self))
 
     def add_cors(self):
@@ -322,6 +321,12 @@ async def _ping() -> str:
         The response.
     """
     return "pong"
+
+async def _ws_event(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Message text was: {data}")
 
 
 def _event(app: App) -> Reducer:
