@@ -45,6 +45,9 @@ class Input(ChakraComponent):
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[str]
 
+    # "lg" | "md" | "sm" | "xs"
+    size: Var[str]
+
     @classmethod
     def get_controlled_triggers(cls) -> Set[str]:
         """Get the event triggers that pass the component's value to the handler.
