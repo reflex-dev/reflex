@@ -148,10 +148,17 @@ class Endpoint(Enum):
         Returns:
             The full URL for the endpoint.
         """
+        # Import here to avoid circular imports.
         from pynecone import utils
 
+        # Get the API URL from the config.
         config = utils.get_config()
         url = "".join([config.api_url, str(self)])
+
+        # The event endpoint is a websocket.
         if self == Endpoint.EVENT:
-            url = url.replace("http", "ws")
+            # Replace the protocol with ws.
+            url = url.replace("https://", "ws://").replace("http://", "ws://")
+
+        # Return the url.
         return url

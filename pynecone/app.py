@@ -356,5 +356,5 @@ async def process(app: App, event: Event) -> StateUpdate:
     if post is not None:
         return StateUpdate(delta=post)
 
-    # Return the delta.
+    # Return the update.
     return update
