@@ -53,6 +53,3 @@ class ButtonGroup(ChakraComponent):
 
     # The spacing between the buttons.
     spacing: Var[int]
-
-    # "ghost" | "outline" | "solid" | "link" | "unstyled"
-    variant: Var[str]
