@@ -94,9 +94,6 @@ def compile_constants() -> str:
     )
 
 
-import plotly.graph_objects as go
-
-
 def compile_state(state: Type[State]) -> str:
     """Compile the state of the app.
 

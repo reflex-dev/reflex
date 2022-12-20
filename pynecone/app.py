@@ -86,8 +86,7 @@ class App(Base):
         self.get(str(constants.Endpoint.PING))(_ping)
 
         # To make state changes.
-        self.websocket(str(constants.Endpoint.WEBSOCKET))(_event2(app=self))
-        self.post(str(constants.Endpoint.EVENT))(_event(app=self))
+        self.websocket(str(constants.Endpoint.EVENT))(_event(app=self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -333,8 +332,9 @@ async def _ping() -> str:
     """
     return "pong"
 
-def _event2(app: App):
-    async def _ws(websocket: WebSocket):
+
+def _event(app: App):
+    async def ws(websocket: WebSocket):
         await websocket.accept()
         while True:
             data = await websocket.receive_text()
@@ -345,7 +345,9 @@ def _event2(app: App):
                 await websocket.send_text(update.json())
             except Exception as e:
                 await websocket.send_text(str(e))
-    return _ws
+
+    return ws
+
 
 async def process(app: App, event: Event) -> StateUpdate:
     # Get the state for the session.
@@ -367,36 +369,3 @@ async def process(app: App, event: Event) -> StateUpdate:
 
     # Return the delta.
     return update
-
-def _event(app: App) -> Reducer:
-    """Create an event reducer to modify the state.
-
-    Args:
-        app: The app to modify the state of.
-
-    Returns:
-        A handler that takes in an event and modifies the state.
-    """
-
-    async def process(event: Event) -> StateUpdate:
-        # Get the state for the session.
-        state = app.get_state(event.token)
-
-        # Preprocess the event.
-        pre = app.preprocess(state, event)
-        if pre is not None:
-            return StateUpdate(delta=pre)
-
-        # Apply the event to the state.
-        update = await state.process(event)
-        app.set_state(event.token, state)
-
-        # Postprocess the event.
-        post = app.postprocess(state, event, update.delta)
-        if post is not None:
-            return StateUpdate(delta=post)
-
-        # Return the delta.
-        return update
-
-    return process

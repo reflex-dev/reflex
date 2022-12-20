@@ -143,7 +143,7 @@ USE_EFFECT = join(
     [
         "useEffect(() => {{",
         "  if (!socket.current) {{",
-        "    startSocket(socket, state, setResult)",
+        f"    connect(socket, state, setResult, {EVENT_ENDPOINT})",
         "  }}",
         "  const update = async () => {{",
         f"    if ({RESULT}.{STATE} != null) {{{{",

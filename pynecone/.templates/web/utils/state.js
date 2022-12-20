@@ -74,7 +74,6 @@ export const updateState = async (
     return;
   }
   if (!socket.readyState) {
-    console.log("not ready")
     return
   }
   setResult({ ...result, processing: true });
@@ -90,8 +89,8 @@ export const E = (name, payload) => {
   return { name, payload };
 };
 
-export const startSocket = async (socket, state, setResult) => {
-    socket.current = new WebSocket("ws://localhost:8000/ws");
+export const connect = async (socket, state, setResult, endpoint) => {
+    socket.current = new WebSocket(endpoint);
     socket.current.onmessage = function(update) {
       update = JSON.parse(update.data)
       applyDelta(state, update.delta);

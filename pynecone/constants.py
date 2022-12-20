@@ -131,7 +131,6 @@ class Endpoint(Enum):
 
     PING = "ping"
     EVENT = "event"
-    WEBSOCKET = "ws"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
@@ -150,4 +149,7 @@ class Endpoint(Enum):
         from pynecone import utils
 
         config = utils.get_config()
-        return "".join([config.api_url, str(self)])
+        url = "".join([config.api_url, str(self)])
+        if self == Endpoint.EVENT:
+            url = url.replace("http", "ws")
+        return url
