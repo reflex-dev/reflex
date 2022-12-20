@@ -83,10 +83,10 @@ class App(Base):
     def add_default_endpoints(self):
         """Add the default endpoints."""
         # To test the server.
-        self.get(str(constants.Endpoint.PING))(_ping)
+        self.api.get(str(constants.Endpoint.PING))(_ping)
 
         # To make state changes.
-        self.websocket(str(constants.Endpoint.EVENT))(_event(app=self))
+        self.api.websocket(str(constants.Endpoint.EVENT))(_event(app=self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -96,43 +96,6 @@ class App(Base):
             allow_methods=["*"],
             allow_headers=["*"],
         )
-
-    def get(self, path: str, *args, **kwargs) -> Callable:
-        """Register a get request.
-
-        Args:
-            path: The endpoint path to link to the request.
-            *args: Args to pass to the request.
-            **kwargs: Kwargs to pass to the request.
-
-        Returns:
-            A decorator to handle the request.
-        """
-        return self.api.get(path, *args, **kwargs)
-
-    def post(self, path: str, *args, **kwargs) -> Callable:
-        """Register a post request.
-
-        Args:
-            path: The endpoint path to link to the request.
-            *args: Args to pass to the request.
-            **kwargs: Kwargs to pass to the request.
-
-        Returns:
-            A decorator to handle the request.
-        """
-        return self.api.post(path, *args, **kwargs)
-
-    def websocket(self, path: str) -> Callable:
-        """Register a websocket enpdoint.
-
-        Args:
-            path: The endpoint path to link to websocket.
-
-        Returns:
-            A decorator to handle the request.
-        """
-        return self.api.websocket(path)
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
         """Preprocess the event.
