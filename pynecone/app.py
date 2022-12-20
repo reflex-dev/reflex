@@ -297,22 +297,48 @@ async def _ping() -> str:
 
 
 def _event(app: App):
+    """Websocket endpoint for events.
+
+    Args:
+        app: The app to add the endpoint to.
+
+    Returns:
+        The websocket endpoint.
+    """
+
     async def ws(websocket: WebSocket):
+        """Create websocket endpoint.
+
+        Args:
+            websocket: The websocket sending events.
+        """
+        # Accept the connection.
         await websocket.accept()
+
+        # Process events until the connection is closed.
         while True:
-            data = await websocket.receive_text()
-            data = data.replace("True", "true").replace("False", "false")
-            try:
-                event = Event.parse_raw(data)
-                update = await process(app, event)
-                await websocket.send_text(update.json())
-            except Exception as e:
-                await websocket.send_text(str(e))
+            # Get the event.
+            event = Event.parse_raw(await websocket.receive_text())
+
+            # Process the event.
+            update = await process(app, event)
+
+            # Send the update.
+            await websocket.send_text(update.json())
 
     return ws
 
 
 async def process(app: App, event: Event) -> StateUpdate:
+    """Process an event.
+
+    Args:
+        app: The app to process the event for.
+        event: The event to process.
+
+    Returns:
+        The state update after processing the event.
+    """
     # Get the state for the session.
     state = app.get_state(event.token)
 

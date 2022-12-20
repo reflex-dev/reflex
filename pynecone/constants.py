@@ -74,6 +74,8 @@ APP_VAR = "app"
 API_VAR = "api"
 # The name of the router variable.
 ROUTER = "router"
+# The name of the socket variable.
+SOCKET = "socket"
 # The name of the variable to hold API results.
 RESULT = "result"
 # The name of the process variable.
