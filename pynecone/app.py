@@ -339,7 +339,6 @@ def _event2(app: App):
         while True:
             data = await websocket.receive_text()
             data = data.replace("True", "true").replace("False", "false")
-            print("Received:", data)
             try:
                 event = Event.parse_raw(data)
                 update = await process(app, event)

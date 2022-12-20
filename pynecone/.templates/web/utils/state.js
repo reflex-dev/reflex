@@ -43,7 +43,7 @@ export const applyDelta = (state, delta) => {
   }
 };
 
-export const applyEvent = async (state, event, endpoint, router, socket) => {
+export const applyEvent = async (state, event, router, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
     router.push(event.payload.path);
@@ -58,7 +58,6 @@ export const applyEvent = async (state, event, endpoint, router, socket) => {
   }
 
   event.token = getToken();
-  console.log("socket", socket)
   if (socket) {
     socket.send(JSON.stringify(event));
   }
@@ -68,7 +67,6 @@ export const updateState = async (
   state,
   result,
   setResult,
-  endpoint,
   router,
   socket,
 ) => {
@@ -83,15 +81,9 @@ export const updateState = async (
   await applyEvent(
     state,
     state.events.shift(),
-    endpoint,
     router,
     socket
   );
-  setResult({
-    ...result,
-    processing: true,
-    events: [],
-  });
 };
 
 export const E = (name, payload) => {
@@ -102,13 +94,9 @@ export const startSocket = async (socket, state, setResult) => {
     socket.current = new WebSocket("ws://localhost:8000/ws");
     socket.current.onmessage = function(update) {
       update = JSON.parse(update.data)
-      console.log(`[message] Data received from server: ${update}`);
-      console.log("delta", update.delta)
-      console.log("events", update.events)
       applyDelta(state, update.delta);
-      console.log("setting state", state)
       setResult({
-        processing: true,
+        processing: false,
         state: state,
         events: update.events,
       });

@@ -157,7 +157,7 @@ USE_EFFECT = join(
         f"        {PROCESSING}: false,",
         "      }})",
         "    }}",
-        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {EVENT_ENDPOINT}, {ROUTER}, socket.current)",
+        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {ROUTER}, socket.current)",
         "  }}",
         "  update()",
         "}})",
