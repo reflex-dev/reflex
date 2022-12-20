@@ -1,5 +1,3 @@
-import axios from "axios";
-
 let token;
 const TOKEN_KEY = "token";
 
@@ -45,27 +43,25 @@ export const applyDelta = (state, delta) => {
   }
 };
 
-export const applyEvent = async (state, event, endpoint, router) => {
+export const applyEvent = async (state, event, endpoint, router, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
     router.push(event.payload.path);
-    return [];
   }
 
   if (event.name == "_console") {
     console.log(event.payload.message);
-    return [];
   }
 
   if (event.name == "_alert") {
     alert(event.payload.message);
-    return [];
   }
 
   event.token = getToken();
-  const update = (await axios.post(endpoint, event)).data;
-  applyDelta(state, update.delta);
-  return update.events;
+  console.log("socket", socket)
+  if (socket) {
+    socket.send(JSON.stringify(event));
+  }
 };
 
 export const updateState = async (
@@ -73,25 +69,48 @@ export const updateState = async (
   result,
   setResult,
   endpoint,
-  router
+  router,
+  socket,
 ) => {
   if (result.processing || state.events.length == 0) {
     return;
   }
+  if (!socket.readyState) {
+    console.log("not ready")
+    return
+  }
   setResult({ ...result, processing: true });
-  const events = await applyEvent(
+  await applyEvent(
     state,
     state.events.shift(),
     endpoint,
-    router
+    router,
+    socket
   );
   setResult({
+    ...result,
     processing: true,
-    state: state,
-    events: events,
+    events: [],
   });
 };
 
 export const E = (name, payload) => {
   return { name, payload };
 };
+
+export const startSocket = async (socket, state, setResult) => {
+    socket.current = new WebSocket("ws://localhost:8000/ws");
+    socket.current.onmessage = function(update) {
+      update = JSON.parse(update.data)
+      console.log(`[message] Data received from server: ${update}`);
+      console.log("delta", update.delta)
+      console.log("events", update.events)
+      applyDelta(state, update.delta);
+      console.log("setting state", state)
+      setResult({
+        processing: true,
+        state: state,
+        events: update.events,
+      });
+    };
+  }

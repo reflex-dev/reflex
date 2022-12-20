@@ -131,7 +131,7 @@ class Endpoint(Enum):
 
     PING = "ping"
     EVENT = "event"
-    WS = "ws"
+    WEBSOCKET = "ws"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.

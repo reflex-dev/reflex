@@ -10,9 +10,9 @@ from pynecone.state import State
 
 # Imports to be included in every Pynecone app.
 DEFAULT_IMPORTS: ImportDict = {
-    "react": {"useEffect", "useState"},
+    "react": {"useEffect", "useRef", "useState"},
     "next/router": {"useRouter"},
-    f"/{constants.STATE_PATH}": {"updateState", "E"},
+    f"/{constants.STATE_PATH}": {"startSocket", "updateState", "E"},
     "": {"focus-visible/dist/focus-visible"},
 }
 

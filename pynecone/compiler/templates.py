@@ -142,6 +142,9 @@ SET_RESULT = format_state_setter(RESULT)
 USE_EFFECT = join(
     [
         "useEffect(() => {{",
+        "  if (!socket.current) {{",
+        "    startSocket(socket, state, setResult)",
+        "  }}",
         "  const update = async () => {{",
         f"    if ({RESULT}.{STATE} != null) {{{{",
         f"      {{set_state}}({{{{",
@@ -154,7 +157,7 @@ USE_EFFECT = join(
         f"        {PROCESSING}: false,",
         "      }})",
         "    }}",
-        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {EVENT_ENDPOINT}, {ROUTER})",
+        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {EVENT_ENDPOINT}, {ROUTER}, socket.current)",
         "  }}",
         "  update()",
         "}})",
@@ -163,3 +166,6 @@ USE_EFFECT = join(
 
 # Routing
 ROUTER = f"const {constants.ROUTER} = useRouter()"
+
+# Sockets.
+SOCKET = "const socket = useRef(null)"

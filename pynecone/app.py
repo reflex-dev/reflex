@@ -86,7 +86,7 @@ class App(Base):
         self.get(str(constants.Endpoint.PING))(_ping)
 
         # To make state changes.
-        self.ws(str(constants.Endpoint.WS))(self._ws)
+        self.websocket(str(constants.Endpoint.WEBSOCKET))(_event2(app=self))
         self.post(str(constants.Endpoint.EVENT))(_event(app=self))
 
     def add_cors(self):
@@ -123,6 +123,17 @@ class App(Base):
             A decorator to handle the request.
         """
         return self.api.post(path, *args, **kwargs)
+
+    def websocket(self, path: str) -> Callable:
+        """Register a websocket enpdoint.
+
+        Args:
+            path: The endpoint path to link to websocket.
+
+        Returns:
+            A decorator to handle the request.
+        """
+        return self.api.websocket(path)
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
         """Preprocess the event.
@@ -322,12 +333,41 @@ async def _ping() -> str:
     """
     return "pong"
 
-async def _ws_event(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Message text was: {data}")
+def _event2(app: App):
+    async def _ws(websocket: WebSocket):
+        await websocket.accept()
+        while True:
+            data = await websocket.receive_text()
+            data = data.replace("True", "true").replace("False", "false")
+            print("Received:", data)
+            try:
+                event = Event.parse_raw(data)
+                update = await process(app, event)
+                await websocket.send_text(update.json())
+            except Exception as e:
+                await websocket.send_text(str(e))
+    return _ws
 
+async def process(app: App, event: Event) -> StateUpdate:
+    # Get the state for the session.
+    state = app.get_state(event.token)
+
+    # Preprocess the event.
+    pre = app.preprocess(state, event)
+    if pre is not None:
+        return StateUpdate(delta=pre)
+
+    # Apply the event to the state.
+    update = await state.process(event)
+    app.set_state(event.token, state)
+
+    # Postprocess the event.
+    post = app.postprocess(state, event, update.delta)
+    if post is not None:
+        return StateUpdate(delta=post)
+
+    # Return the delta.
+    return update
 
 def _event(app: App) -> Reducer:
     """Create an event reducer to modify the state.
