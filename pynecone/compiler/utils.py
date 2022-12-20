@@ -94,9 +94,6 @@ def compile_constants() -> str:
     )
 
 
-import plotly.graph_objects as go
-
-
 def compile_state(state: Type[State]) -> str:
     """Compile the state of the app.
 
@@ -126,7 +123,8 @@ def compile_state(state: Type[State]) -> str:
         initial_state=json.dumps(initial_result),
     )
     router = templates.ROUTER
-    return templates.join([synced_state, result, router])
+    socket = templates.SOCKET
+    return templates.join([synced_state, result, router, socket])
 
 
 def compile_events(state: Type[State]) -> str:

@@ -34,6 +34,7 @@ uvicorn = "^0.20.0"
 rich = "^12.6.0"
 redis = "^4.3.5"
 httpx = "^0.23.1"
+websockets = "^10.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

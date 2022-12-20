@@ -1,8 +1,16 @@
-import axios from "axios";
+// State management for Pynecone web apps.
 
+// Global variable to hold the token.
 let token;
+
+// Key for the token in the session storage.
 const TOKEN_KEY = "token";
 
+/**
+ * Generate a UUID (Used for session tokens).
+ * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
+ * @returns A UUID.
+ */
 const generateUUID = () => {
   let d = new Date().getTime(),
     d2 = (performance && performance.now && performance.now() * 1000) || 0;
@@ -19,6 +27,10 @@ const generateUUID = () => {
   });
 };
 
+/**
+ * Get the token for the current session.
+ * @returns The token.
+ */
 export const getToken = () => {
   if (token) {
     return token;
@@ -32,6 +44,11 @@ export const getToken = () => {
   return token;
 };
 
+/**
+ * Apply a delta to the state.
+ * @param state The state to apply the delta to.
+ * @param delta The delta to apply.
+ */
 export const applyDelta = (state, delta) => {
   for (const substate in delta) {
     let s = state;
@@ -45,53 +62,86 @@ export const applyDelta = (state, delta) => {
   }
 };
 
-export const applyEvent = async (state, event, endpoint, router) => {
+/**
+ * Send an event to the server.
+ * @param event The event to send.
+ * @param router The router object.
+ * @param socket The socket object to send the event on.
+ */
+export const applyEvent = async (event, router, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
     router.push(event.payload.path);
-    return [];
+    return;
   }
 
   if (event.name == "_console") {
     console.log(event.payload.message);
-    return [];
+    return;
   }
 
   if (event.name == "_alert") {
     alert(event.payload.message);
-    return [];
+    return;
   }
 
+  // Send the event to the server.
   event.token = getToken();
-  const update = (await axios.post(endpoint, event)).data;
-  applyDelta(state, update.delta);
-  return update.events;
+  if (socket) {
+    socket.send(JSON.stringify(event));
+  }
 };
 
-export const updateState = async (
-  state,
-  result,
-  setResult,
-  endpoint,
-  router
-) => {
+/**
+ * Process an event off the event queue.
+ * @param state The state with the event queue.
+ * @param result The current result
+ * @param setResult The function to set the result.
+ * @param router The router object.
+ * @param socket The socket object to send the event on.
+ */
+export const updateState = async (state, result, setResult, router, socket) => {
+  // If we are already processing an event, or there are no events to process, return.
   if (result.processing || state.events.length == 0) {
     return;
   }
+
+  // If the socket is not ready, return.
+  if (!socket.readyState) {
+    return;
+  }
+
+  // Process the next event in the queue.
   setResult({ ...result, processing: true });
-  const events = await applyEvent(
-    state,
-    state.events.shift(),
-    endpoint,
-    router
-  );
-  setResult({
-    processing: true,
-    state: state,
-    events: events,
-  });
+  await applyEvent(state.events.shift(), router, socket);
 };
 
+/**
+ * Connect to a websocket and set the handlers.
+ * @param socket The socket object to connect.
+ * @param state The state object to apply the deltas to.
+ * @param setResult The function to set the result.
+ * @param endpoint The endpoint to connect to.
+ */
+export const connect = async (socket, state, setResult, endpoint) => {
+  socket.current = new WebSocket(endpoint);
+  socket.current.onmessage = function (update) {
+    update = JSON.parse(update.data);
+    applyDelta(state, update.delta);
+    setResult({
+      processing: false,
+      state: state,
+      events: update.events,
+    });
+  };
+};
+
+/**
+ * Create an event object.
+ * @param name The name of the event.
+ * @param payload The payload of the event.
+ * @returns The event object.
+ */
 export const E = (name, payload) => {
   return { name, payload };
 };

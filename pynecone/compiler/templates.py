@@ -136,12 +136,16 @@ EVENT_FN = join(
 ROUTER = constants.ROUTER
 RESULT = constants.RESULT
 PROCESSING = constants.PROCESSING
+SOCKET = constants.SOCKET
 STATE = constants.STATE
 EVENTS = constants.EVENTS
 SET_RESULT = format_state_setter(RESULT)
 USE_EFFECT = join(
     [
         "useEffect(() => {{",
+        f"  if (!{SOCKET}.current) {{{{",
+        f"    connect({SOCKET}, {{state}}, {SET_RESULT}, {EVENT_ENDPOINT})",
+        "  }}",
         "  const update = async () => {{",
         f"    if ({RESULT}.{STATE} != null) {{{{",
         f"      {{set_state}}({{{{",
@@ -154,7 +158,7 @@ USE_EFFECT = join(
         f"        {PROCESSING}: false,",
         "      }})",
         "    }}",
-        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {EVENT_ENDPOINT}, {ROUTER})",
+        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {SOCKET}.current)",
         "  }}",
         "  update()",
         "}})",
@@ -163,3 +167,6 @@ USE_EFFECT = join(
 
 # Routing
 ROUTER = f"const {constants.ROUTER} = useRouter()"
+
+# Sockets.
+SOCKET = "const socket = useRef(null)"

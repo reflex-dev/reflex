@@ -1,10 +1,8 @@
 """The main Pynecone app."""
 
-import os
-import re
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
-import fastapi
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware import cors
 
 from pynecone import constants, utils
@@ -32,7 +30,7 @@ class App(Base):
     stylesheets: List[str] = []
 
     # The backend API object.
-    api: fastapi.FastAPI = None  # type: ignore
+    api: FastAPI = None  # type: ignore
 
     # The state class to use for the app.
     state: Type[State] = DefaultState
@@ -62,7 +60,7 @@ class App(Base):
         self.state_manager.setup(state=self.state)
 
         # Set up the API.
-        self.api = fastapi.FastAPI()
+        self.api = FastAPI()
         self.add_cors()
         self.add_default_endpoints()
 
@@ -74,7 +72,7 @@ class App(Base):
         """
         return f"<App state={self.state.__name__}>"
 
-    def __call__(self) -> fastapi.FastAPI:
+    def __call__(self) -> FastAPI:
         """Run the backend api instance.
 
         Returns:
@@ -85,10 +83,10 @@ class App(Base):
     def add_default_endpoints(self):
         """Add the default endpoints."""
         # To test the server.
-        self.get(str(constants.Endpoint.PING))(_ping)
+        self.api.get(str(constants.Endpoint.PING))(_ping)
 
         # To make state changes.
-        self.post(str(constants.Endpoint.EVENT))(_event(app=self))
+        self.api.websocket(str(constants.Endpoint.EVENT))(_event(app=self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -98,32 +96,6 @@ class App(Base):
             allow_methods=["*"],
             allow_headers=["*"],
         )
-
-    def get(self, path: str, *args, **kwargs) -> Callable:
-        """Register a get request.
-
-        Args:
-            path: The endpoint path to link to the request.
-            *args: Args to pass to the request.
-            **kwargs: Kwargs to pass to the request.
-
-        Returns:
-            A decorator to handle the request.
-        """
-        return self.api.get(path, *args, **kwargs)
-
-    def post(self, path: str, *args, **kwargs) -> Callable:
-        """Register a post request.
-
-        Args:
-            path: The endpoint path to link to the request.
-            *args: Args to pass to the request.
-            **kwargs: Kwargs to pass to the request.
-
-        Returns:
-            A decorator to handle the request.
-        """
-        return self.api.post(path, *args, **kwargs)
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
         """Preprocess the event.
@@ -324,35 +296,65 @@ async def _ping() -> str:
     return "pong"
 
 
-def _event(app: App) -> Reducer:
-    """Create an event reducer to modify the state.
+def _event(app: App):
+    """Websocket endpoint for events.
 
     Args:
-        app: The app to modify the state of.
+        app: The app to add the endpoint to.
 
     Returns:
-        A handler that takes in an event and modifies the state.
+        The websocket endpoint.
     """
 
-    async def process(event: Event) -> StateUpdate:
-        # Get the state for the session.
-        state = app.get_state(event.token)
+    async def ws(websocket: WebSocket):
+        """Create websocket endpoint.
 
-        # Preprocess the event.
-        pre = app.preprocess(state, event)
-        if pre is not None:
-            return StateUpdate(delta=pre)
+        Args:
+            websocket: The websocket sending events.
+        """
+        # Accept the connection.
+        await websocket.accept()
 
-        # Apply the event to the state.
-        update = await state.process(event)
-        app.set_state(event.token, state)
+        # Process events until the connection is closed.
+        while True:
+            # Get the event.
+            event = Event.parse_raw(await websocket.receive_text())
 
-        # Postprocess the event.
-        post = app.postprocess(state, event, update.delta)
-        if post is not None:
-            return StateUpdate(delta=post)
+            # Process the event.
+            update = await process(app, event)
 
-        # Return the delta.
-        return update
+            # Send the update.
+            await websocket.send_text(update.json())
 
-    return process
+    return ws
+
+
+async def process(app: App, event: Event) -> StateUpdate:
+    """Process an event.
+
+    Args:
+        app: The app to process the event for.
+        event: The event to process.
+
+    Returns:
+        The state update after processing the event.
+    """
+    # Get the state for the session.
+    state = app.get_state(event.token)
+
+    # Preprocess the event.
+    pre = app.preprocess(state, event)
+    if pre is not None:
+        return StateUpdate(delta=pre)
+
+    # Apply the event to the state.
+    update = await state.process(event)
+    app.set_state(event.token, state)
+
+    # Postprocess the event.
+    post = app.postprocess(state, event, update.delta)
+    if post is not None:
+        return StateUpdate(delta=post)
+
+    # Return the update.
+    return update

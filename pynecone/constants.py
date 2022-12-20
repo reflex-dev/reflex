@@ -74,6 +74,8 @@ APP_VAR = "app"
 API_VAR = "api"
 # The name of the router variable.
 ROUTER = "router"
+# The name of the socket variable.
+SOCKET = "socket"
 # The name of the variable to hold API results.
 RESULT = "result"
 # The name of the process variable.
@@ -146,7 +148,17 @@ class Endpoint(Enum):
         Returns:
             The full URL for the endpoint.
         """
+        # Import here to avoid circular imports.
         from pynecone import utils
 
+        # Get the API URL from the config.
         config = utils.get_config()
-        return "".join([config.api_url, str(self)])
+        url = "".join([config.api_url, str(self)])
+
+        # The event endpoint is a websocket.
+        if self == Endpoint.EVENT:
+            # Replace the protocol with ws.
+            url = url.replace("https://", "ws://").replace("http://", "ws://")
+
+        # Return the url.
+        return url
