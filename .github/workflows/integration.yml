@@ -1,0 +1,64 @@
+name: build
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        node-version: [15.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+          node-version: ${{ matrix.node-version }}
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    # Clone Pynecone Website Repo For integration tests
+    - name: Clone supercharge docs repository
+      uses: actions/checkout@v2
+      with:
+        repository: pynecone-io/pynecone-website
+        path: pynecone-website
+    
+    # Install poetry
+    - name: cache poetry install
+      uses: actions/cache@v2
+      with:
+        path: ~/.local
+        key: python-${{ matrix.python-version }}-poetry-1.3.1
+
+    - uses: snok/install-poetry@v1
+      with:
+        version: 1.3.1
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: cache deps
+      id: cache-deps
+      uses: actions/cache@v2
+      with:
+        path: .venv
+        key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
+
+    # Begin the integration test
+    - run: poetry install --no-interaction --no-root
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+    - run: poetry install --no-interaction
+    - run: cd pynecone-website/pcweb
+    - run: poetry run pip install -r requirements.txt
+    - run: poetry run pc init
+    - run: poetry run pc run
