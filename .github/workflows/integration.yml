@@ -68,6 +68,9 @@ jobs:
     - name: Install Requirements
       working-directory: ./pynecone-website/pcweb
       run: poetry run pip install -r requirements.txt
-    - name: Init and Run Pynecone Website
+    - name: Init Website
       working-directory: ./pynecone-website/pcweb
-      run: poetry run pc init | poetry run pc run
+      run: poetry run pc init
+    - name: Run Website
+      working-directory: ./pynecone-website/pcweb
+      run: poetry run pc run
