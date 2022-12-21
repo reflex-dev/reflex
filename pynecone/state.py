@@ -258,6 +258,14 @@ class State(Base, ABC):
             field.default = default_value
 
     def getattr(self, name: str) -> Any:
+        """Get a non-prop attribute.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The attribute.
+        """
         return super().__getattribute__(name)
 
     def __getattribute__(self, name: str) -> Any:
@@ -290,6 +298,7 @@ class State(Base, ABC):
             name: The name of the attribute.
             value: The value of the attribute.
         """
+        # NOTE: We use super().__getattribute__ for performance reasons.
         if name != "inherited_vars" and name in super().__getattribute__(
             "inherited_vars"
         ):
@@ -303,8 +312,6 @@ class State(Base, ABC):
         if name in super().__getattribute__("vars"):
             super().__getattribute__("dirty_vars").add(name)
             super().__getattribute__("mark_dirty")()
-            # self.dirty_vars.add(name)
-            # self.mark_dirty()
 
     def reset(self):
         """Reset all the base vars to their default values."""
@@ -351,10 +358,11 @@ class State(Base, ABC):
         Returns:
             The state update after processing the event.
         """
+        # NOTE: We use super().__getattribute__ for performance reasons.
         # Get the event handler.
         path = event.name.split(".")
         path, name = path[:-1], path[-1]
-        substate = self.get_substate(path)
+        substate = super().__getattribute__("get_substate")(path)
         handler = getattr(substate, name)
 
         # Process the event.
@@ -375,10 +383,10 @@ class State(Base, ABC):
         events = utils.fix_events(events, event.token)
 
         # Get the delta after processing the event.
-        delta = self.get_delta()
+        delta = super().__getattribute__("get_delta")()
 
         # Reset the dirty vars.
-        self.clean()
+        super().__getattribute__("clean")()
 
         # Return the state update.
         return StateUpdate(delta=delta, events=events)
@@ -389,6 +397,7 @@ class State(Base, ABC):
         Returns:
             The delta for the state.
         """
+        # NOTE: We use super().__getattribute__ for performance reasons.
         delta = {}
 
         # Return the dirty vars, as well as all computed vars.
@@ -419,16 +428,14 @@ class State(Base, ABC):
 
     def clean(self):
         """Reset the dirty vars."""
+        # NOTE: We use super().__getattribute__ for performance reasons.
         # Recursively clean the substates.
         for substate in super().__getattribute__("dirty_substates"):
             super().__getattribute__("substates")[substate].getattr("clean")()
-        #     super().__getattribute__("substates")[substate].__getattribute__("clean")()
 
         # Clean this state.
         super().__setattr__("dirty_vars", set())
         super().__setattr__("dirty_substates", set())
-        # self.dirty_vars = set()
-        # self.dirty_substates = set()
 
     def dict(self, include_computed: bool = True, **kwargs) -> Dict[str, Any]:
         """Convert the object to a dictionary.
