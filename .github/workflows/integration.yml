@@ -1,0 +1,71 @@
+name: integration-test
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Specify python/node versions to test against
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        node-version: ["15.x"]
+      
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+          node-version: ${{ matrix.node-version }}
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    # Clone Pynecone Website Repo For integration tests
+    - name: Clone Pynecone Website Repo
+      uses: actions/checkout@v3
+      with:
+        repository: pynecone-io/pynecone-website
+        path: pynecone-website
+    
+    # Install poetry
+    - name: cache poetry install
+      uses: actions/cache@v2
+      with:
+        path: ~/.local
+        key: python-${{ matrix.python-version }}-poetry-1.3.1
+
+    - uses: snok/install-poetry@v1
+      with:
+        version: 1.3.1
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: cache deps
+      id: cache-deps
+      uses: actions/cache@v2
+      with:
+        path: .venv
+        key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
+
+    # Begin the integration test
+    - name: Poetry Install
+      run: poetry install --no-interaction --no-root
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+    - name: Install Requirements
+      working-directory: ./pynecone-website/pcweb
+      run: poetry run pip install -r requirements.txt
+    - name: Init Website
+      working-directory: ./pynecone-website/pcweb
+      run: poetry run pc init
+    - name: Run Website
+      working-directory: ./pynecone-website/pcweb
+      run: timeout 1m poetry run pc run || exit 0
