@@ -61,15 +61,10 @@ jobs:
     # Begin the integration test
     - run: poetry install --no-interaction --no-root
       if: steps.cache-deps.outputs.cache-hit != 'true'
-    - run: ls -a
+    - run: ls -R
     - run: poetry install --no-interaction
       working-directory: ./pynecone-website/pcweb
     - run: poetry run pip install -r requirements.txt
     - run: ls -a
       working-directory: ./pynecone-website/pcweb
-    - run: ls -a
-    - run: poetry run pc init
-      working-directory: ./pynecone-website/pcweb
-    - run: ls -a
-      working-directory: ./pynecone-website/pcweb
-    - run: poetry run pc run
+    - run: poetry run pc init | poetry run pc run
