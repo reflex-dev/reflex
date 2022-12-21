@@ -402,8 +402,8 @@ def is_initialized() -> bool:
     Returns:
         Whether the app is initialized in the current directory.
     """
-    print(constants.CONFIG_FILE)
-    print(constants.WEB_DIR)
+    print(os.path.exists(constants.CONFIG_FILE), constants.CONFIG_FILE)
+    print(os.path.exists(constants.WEB_DIR), constants.WEB_DIR)
     return os.path.exists(constants.CONFIG_FILE) and os.path.exists(constants.WEB_DIR)
 
 
