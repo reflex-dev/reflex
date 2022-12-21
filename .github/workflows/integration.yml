@@ -73,4 +73,4 @@ jobs:
       run: poetry run pc init
     - name: Run Website
       working-directory: ./pynecone-website/pcweb
-      run: timeout 1m poetry run pc run 
+      run: timeout 1m poetry run pc run || exit 0
