@@ -257,6 +257,9 @@ class State(Base, ABC):
             field.required = False
             field.default = default_value
 
+    def getattr(self, name: str) -> Any:
+        return super().__getattribute__(name)
+
     def __getattribute__(self, name: str) -> Any:
         """Get the attribute.
 
@@ -287,17 +290,19 @@ class State(Base, ABC):
             name: The name of the attribute.
             value: The value of the attribute.
         """
-        if name != "inherited_vars" and name in self.inherited_vars:
-            setattr(self.parent_state, name, value)
+        if name != "inherited_vars" and name in super().__getattribute__("inherited_vars"):
+            setattr(super().__getattribute__("parent_state"), name, value)
             return
 
         # Set the attribute.
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
-        if name in self.vars:
-            self.dirty_vars.add(name)
-            self.mark_dirty()
+        if name in super().__getattribute__("vars"):
+            super().__getattribute__("dirty_vars").add(name)
+            super().__getattribute__("mark_dirty")()
+            # self.dirty_vars.add(name)
+            # self.mark_dirty()
 
     def reset(self):
         """Reset all the base vars to their default values."""
@@ -411,12 +416,15 @@ class State(Base, ABC):
     def clean(self):
         """Reset the dirty vars."""
         # Recursively clean the substates.
-        for substate in self.dirty_substates:
-            self.substates[substate].clean()
+        for substate in super().__getattribute__("dirty_substates"):
+            super().__getattribute__("substates")[substate].getattr("clean")()
+        #     super().__getattribute__("substates")[substate].__getattribute__("clean")()
 
         # Clean this state.
-        self.dirty_vars = set()
-        self.dirty_substates = set()
+        super().__setattr__("dirty_vars", set())
+        super().__setattr__("dirty_substates", set())
+        # self.dirty_vars = set()
+        # self.dirty_substates = set()
 
     def dict(self, include_computed: bool = True, **kwargs) -> Dict[str, Any]:
         """Convert the object to a dictionary.
