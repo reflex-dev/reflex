@@ -63,8 +63,9 @@ jobs:
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - run: poetry install --no-interaction
     - run: ls
-    - run: cd pynecone-website/pcweb
+    - run: cd pynecone-website
     - run: ls
+    - run: cd pcweb
     - run: poetry run pip install -r requirements.txt
     - run: poetry run pc init
     - run: poetry run pc run
