@@ -1,4 +1,4 @@
-name: integration-test
+name: integration
 
 on:
   push:
@@ -33,6 +33,7 @@ jobs:
     
     # Clone Pynecone Website Repo For integration tests
     - name: Clone Pynecone Website Repo
+      uses: actions/checkout@v3
       with:
         repository: pynecone-io/pynecone-website
         path: pynecone-website
