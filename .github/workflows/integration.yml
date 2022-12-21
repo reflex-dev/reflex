@@ -73,4 +73,8 @@ jobs:
       run: poetry run pc init
     - name: Run Website
       working-directory: ./pynecone-website/pcweb
-      run: poetry run pc run
+      run: |
+      poetry run pc run &
+      pid=$!
+      sleep 60
+      kill $pid
