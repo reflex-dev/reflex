@@ -281,14 +281,14 @@ class State(Base, ABC):
             Exception: If the attribute is not found.
         """
         # If it is an inherited var, return from the parent state.
-        if name != "inherited_vars" and name in self.inherited_vars:
-            return getattr(self.parent_state, name)
+        if name != "inherited_vars" and name in super().__getattribute__("inherited_vars"):
+            return getattr(super().__getattribute__("parent_state"), name)
         try:
             return super().__getattribute__(name)
         except Exception as e:
             # Check if the attribute is a substate.
-            if name in self.substates:
-                return self.substates[name]
+            if name in super().__getattribute__("substates"):
+                return super().__getattribute__("substates")[name]
             raise e
 
     def __setattr__(self, name: str, value: Any):
@@ -341,13 +341,13 @@ class State(Base, ABC):
         """
         if len(path) == 0:
             return self
-        if path[0] == self.get_name():
+        if path[0] == super().__getattribute__("get_name")():
             if len(path) == 1:
                 return self
             path = path[1:]
-        if path[0] not in self.substates:
+        if path[0] not in super().__getattribute__("substates"):
             raise ValueError(f"Invalid path: {path}")
-        return self.substates[path[0]].get_substate(path[1:])
+        return super().__getattribute__("substates")[path[0]].getattr("get_substate")(path[1:])
 
     async def process(self, event: Event) -> StateUpdate:
         """Process an event.
@@ -422,9 +422,9 @@ class State(Base, ABC):
 
     def mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
-        if self.parent_state is not None:
-            self.parent_state.dirty_substates.add(self.get_name())
-            self.parent_state.mark_dirty()
+        if super().__getattribute__("parent_state") is not None:
+            super().__getattribute__("parent_state").getattr("dirty_substates").add(self.get_name())
+            super().__getattribute__("parent_state").mark_dirty()
 
     def clean(self):
         """Reset the dirty vars."""
