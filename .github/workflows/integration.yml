@@ -62,9 +62,9 @@ jobs:
     - run: poetry install --no-interaction --no-root
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - run: poetry install --no-interaction
+    - name: Install Pynecone Website Requirements
       working-directory: ./pynecone-website/pcweb
-    - run: poetry run pip install -r requirements.txt
+      run: poetry run pip install -r requirements.txt
+    - name: Install Pynecone and Run Tests
       working-directory: ./pynecone-website/pcweb
-    - run: poetry run pc init
-      working-directory: ./pynecone-website/pcweb
-    - run: poetry run pc run
+      run: poetry run pc init |  poetry run pc run
