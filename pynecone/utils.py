@@ -851,8 +851,16 @@ def format_state(value: Any) -> Dict:
     Raises:
         TypeError: If the given value is not a valid state.
     """
+    # Handle dicts.
+    if isinstance(value, dict):
+        return {k: format_state(v) for k, v in value.items()}
+
+    # Return state vars as is.
+    if isinstance(value, StateBases):
+        return value
+
     # Convert plotly figures to JSON.
-    if _isinstance(value, go.Figure):
+    if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]
 
     # Convert pandas dataframes to JSON.
@@ -862,20 +870,11 @@ def format_state(value: Any) -> Dict:
             "data": value.values.tolist(),
         }
 
-    # Handle dicts.
-    if _isinstance(value, dict):
-        return {k: format_state(v) for k, v in value.items()}
-
-    # Make sure the value is JSON serializable.
-    if not _isinstance(value, StateVar):
-        raise TypeError(
-            "State vars must be primitive Python types, "
-            "or subclasses of pc.Base. "
-            f"Got var of type {type(value)}."
-        )
-
-    return value
-
+    raise TypeError(
+        "State vars must be primitive Python types, "
+        "or subclasses of pc.Base. "
+        f"Got var of type {type(value)}."
+    )
 
 def get_event(state, event):
     """Get the event from the given state.
@@ -1069,3 +1068,7 @@ def get_redis() -> Optional[Redis]:
     redis_url, redis_port = config.redis_url.split(":")
     print("Using redis at", config.redis_url)
     return Redis(host=redis_url, port=int(redis_port), db=0)
+
+
+# Store this here for performance.
+StateBases = get_base_class(StateVar)

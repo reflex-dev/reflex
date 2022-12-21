@@ -123,8 +123,11 @@ export const updateState = async (state, result, setResult, router, socket) => {
  * @param setResult The function to set the result.
  * @param endpoint The endpoint to connect to.
  */
-export const connect = async (socket, state, setResult, endpoint) => {
+export const connect = async (socket, state, result, setResult, router, endpoint) => {
   socket.current = new WebSocket(endpoint);
+  socket.current.onopen = () => {
+    updateState(state, result, setResult, router, socket.current)
+  }
   socket.current.onmessage = function (update) {
     update = JSON.parse(update.data);
     applyDelta(state, update.delta);
