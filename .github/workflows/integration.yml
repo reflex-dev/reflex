@@ -16,7 +16,7 @@ jobs:
     # Specify python/node versions to test against
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.10",==]
         node-version: ["15.x"]
       
     steps:
@@ -62,9 +62,11 @@ jobs:
     - run: poetry install --no-interaction --no-root
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - run: poetry install --no-interaction
-    - name: Install Pynecone Website Requirements
       working-directory: ./pynecone-website/pcweb
-      run: poetry run pip install -r requirements.txt
-    - name: Install Pynecone and Run Tests
+    - run: poetry run pip install -r requirements.txt
       working-directory: ./pynecone-website/pcweb
-      run: poetry run pc init |  poetry run pc run
+    - run: poetry run pc init
+      working-directory: ./pynecone-website/pcweb
+    - run: ls -a
+      working-directory: ./pynecone-website/pcweb
+    - run: poetry run pc run
