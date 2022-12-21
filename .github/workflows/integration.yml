@@ -57,12 +57,9 @@ jobs:
         key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
     # Begin the integration test
-    - run: poetry install --no-interaction --no-root
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-    - run: ls -R
     - name: Poetry Install
-      working-directory: ./pynecone-website/pcweb
-      run: poetry install --no-interaction
+      run: poetry install --no-interaction --no-root
+      if: steps.cache-deps.outputs.cache-hit != 'true'
     - name: Install Requirements
       working-directory: ./pynecone-website/pcweb
       run: poetry run pip install -r requirements.txt
