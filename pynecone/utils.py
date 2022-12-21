@@ -876,6 +876,7 @@ def format_state(value: Any) -> Dict:
         f"Got var of type {type(value)}."
     )
 
+
 def get_event(state, event):
     """Get the event from the given state.
 

@@ -290,7 +290,9 @@ class State(Base, ABC):
             name: The name of the attribute.
             value: The value of the attribute.
         """
-        if name != "inherited_vars" and name in super().__getattribute__("inherited_vars"):
+        if name != "inherited_vars" and name in super().__getattribute__(
+            "inherited_vars"
+        ):
             setattr(super().__getattribute__("parent_state"), name, value)
             return
 
@@ -392,14 +394,16 @@ class State(Base, ABC):
         # Return the dirty vars, as well as all computed vars.
         subdelta = {
             prop: getattr(self, prop)
-            for prop in self.dirty_vars | set(self.computed_vars.keys())
+            for prop in super().__getattribute__("dirty_vars")
+            | set(super().__getattribute__("computed_vars").keys())
         }
         if len(subdelta) > 0:
-            delta[self.get_full_name()] = subdelta
+            delta[super().__getattribute__("get_full_name")()] = subdelta
 
         # Recursively find the substate deltas.
-        for substate in self.dirty_substates:
-            delta.update(self.substates[substate].get_delta())
+        substates = super().__getattribute__("substates")
+        for substate in super().__getattribute__("dirty_substates"):
+            delta.update(substates[substate].getattr("get_delta")())
 
         # Format the delta.
         delta = utils.format_state(delta)
