@@ -437,6 +437,19 @@ def is_initialized() -> bool:
     return os.path.exists(constants.CONFIG_FILE) and os.path.exists(constants.WEB_DIR)
 
 
+def is_latest_template() -> bool:
+    """Whether the app is using the latest template.
+
+    Returns:
+        Whether the app is using the latest template.
+    """
+    template_version = open(constants.PCVERSION_TEMPLATE_FILE).read()
+    if not os.path.exists(constants.PCVERSION_APP_FILE):
+        return False
+    app_version = open(constants.PCVERSION_APP_FILE).read()
+    return app_version >= template_version
+
+
 def export_app(app: App, zip: bool = False):
     """Zip up the app for deployment.
 
