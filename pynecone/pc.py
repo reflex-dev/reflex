@@ -26,13 +26,6 @@ def init():
     """
     app_name = utils.get_default_app_name()
 
-    # Check that the node version is valid.
-    if not (utils.check_node_version(constants.MIN_NODE_VERSION)):
-        utils.console.print(
-            f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Pynecone."
-        )
-        raise typer.Exit()
-
     # Make sure they don't name the app "pynecone".
     if app_name == constants.MODULE_NAME:
         utils.console.print(
