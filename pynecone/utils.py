@@ -816,7 +816,7 @@ def format_cond(
     return expr
 
 
-def format_event_fn(fn: Callable) -> str:
+def format_event_handler(handler: EventHandler) -> str:
     """Format a function as an event.
 
     Args:
@@ -825,11 +825,19 @@ def format_event_fn(fn: Callable) -> str:
     Returns:
         The formatted function.
     """
-    from pynecone.event import EventHandler
+    # Get the class that defines the event handler.
+    parts = handler.fn.__qualname__.split(".")
 
-    if isinstance(fn, EventHandler):
-        fn = fn.fn
-    return to_snake_case(fn.__qualname__)
+    # If there's no enclosing class, just return the function name.
+    if len(parts) == 1:
+        return parts[-1]
+
+    # Get the state and the function name.
+    state_name, name = parts[-2:]
+
+    # Construct the full event handler name.
+    state = vars(sys.modules[handler.fn.__module__])[state_name]
+    return ".".join([state.get_full_name(), name])
 
 
 def format_event(event_spec: EventSpec) -> str:
@@ -842,7 +850,7 @@ def format_event(event_spec: EventSpec) -> str:
         The compiled event.
     """
     args = ",".join([":".join((name, val)) for name, val in event_spec.args])
-    return f"E(\"{format_event_fn(event_spec.handler.fn)}\", {wrap(args, '{')})"
+    return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 
 USED_VARIABLES = set()
@@ -1058,7 +1066,7 @@ def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
             if isinstance(e, EventHandler):
                 e = e()
             assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
-            name = format_event_fn(e.handler.fn)
+            name = format_event_handler(e.handler)
             payload = dict(e.args)
 
         # Create an event and append it to the list.

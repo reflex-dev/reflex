@@ -2,104 +2,89 @@ from typing import Dict, List
 
 import pytest
 
+from pynecone import utils
 from pynecone.base import Base
 from pynecone.event import Event
 from pynecone.state import State
 from pynecone.var import BaseVar, ComputedVar
 
 
-@pytest.fixture
-def TestObject():
-    class TestObject(Base):
-        """A test object fixture."""
+class Object(Base):
+    """A test object fixture."""
 
-        prop1: int = 42
-        prop2: str = "hello"
-
-    return TestObject
+    prop1: int = 42
+    prop2: str = "hello"
 
 
-@pytest.fixture
-def TestState(TestObject):
-    class TestState(State):
-        """A test state."""
+class TestState(State):
+    """A test state."""
 
-        num1: int
-        num2: float = 3.14
-        key: str
-        array: List[float] = [1, 2, 3.14]
-        mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
-        obj: TestObject = TestObject()
-        complex: Dict[int, TestObject] = {1: TestObject(), 2: TestObject()}
+    num1: int
+    num2: float = 3.14
+    key: str
+    array: List[float] = [1, 2, 3.14]
+    mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
+    obj: Object = Object()
+    complex: Dict[int, Object] = {1: Object(), 2: Object()}
 
-        @ComputedVar
-        def sum(self) -> float:
-            """Dynamically sum the numbers.
+    @ComputedVar
+    def sum(self) -> float:
+        """Dynamically sum the numbers.
 
-            Returns:
-                The sum of the numbers.
-            """
-            return self.num1 + self.num2
+        Returns:
+            The sum of the numbers.
+        """
+        return self.num1 + self.num2
 
-        @ComputedVar
-        def upper(self) -> str:
-            """Uppercase the key.
+    @ComputedVar
+    def upper(self) -> str:
+        """Uppercase the key.
 
-            Returns:
-                The uppercased key.
-            """
-            return self.key.upper()
+        Returns:
+            The uppercased key.
+        """
+        return self.key.upper()
 
-        def do_something(self):
-            """Do something."""
-            pass
-
-    return TestState
+    def do_something(self):
+        """Do something."""
+        pass
 
 
-@pytest.fixture
-def ChildState(TestState):
-    class ChildState(TestState):
-        """A child state fixture."""
+class ChildState(TestState):
+    """A child state fixture."""
 
-        value: str
-        count: int = 23
+    value: str
+    count: int = 23
 
-        def change_both(self, value: str, count: int):
-            """Change both the value and count.
+    def change_both(self, value: str, count: int):
+        """Change both the value and count.
 
-            Args:
-                value: The new value.
-                count: The new count.
-            """
-            self.value = value.upper()
-            self.count = count * 2
-
-    return ChildState
+        Args:
+            value: The new value.
+            count: The new count.
+        """
+        self.value = value.upper()
+        self.count = count * 2
 
 
-@pytest.fixture
-def ChildState2(TestState):
-    class ChildState2(TestState):
-        """A child state fixture."""
+class ChildState2(TestState):
+    """A child state fixture."""
 
-        value: str
+    value: str
 
-    return ChildState2
+
+class GrandchildState(ChildState):
+    """A grandchild state fixture."""
+
+    value2: str
+
+    def do_nothing(self):
+        """Do something."""
+        pass
 
 
 @pytest.fixture
-def GrandchildState(ChildState):
-    class GrandchildState(ChildState):
-        """A grandchild state fixture."""
-
-        value2: str
-
-    return GrandchildState
-
-
-@pytest.fixture
-def state(TestState) -> State:
+def state() -> State:
     """A state.
 
     Args:
@@ -201,11 +186,15 @@ def test_dict(state):
     Args:
         state: A state.
     """
-    assert set(state.dict().keys()) == set(state.vars.keys())
-    assert set(state.dict(include_computed=False).keys()) == set(state.base_vars)
+    substates = {"child_state", "child_state2"}
+    assert set(state.dict().keys()) == set(state.vars.keys()) | substates
+    assert (
+        set(state.dict(include_computed=False).keys())
+        == set(state.base_vars) | substates
+    )
 
 
-def test_default_setters(TestState):
+def test_default_setters():
     """Test that we can set default values.
 
     Args:
@@ -217,7 +206,7 @@ def test_default_setters(TestState):
         assert hasattr(state, f"set_{prop_name}")
 
 
-def test_class_indexing_with_vars(TestState):
+def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var.
 
     Args:
@@ -230,7 +219,7 @@ def test_class_indexing_with_vars(TestState):
     assert str(prop) == '{test_state.mapping["a"][test_state.num1]}'
 
 
-def test_class_attributes(TestState):
+def test_class_attributes():
     """Test that we can get class attributes.
 
     Args:
@@ -243,7 +232,7 @@ def test_class_attributes(TestState):
     assert str(prop) == "{test_state.complex[1].prop1}"
 
 
-def test_get_parent_state(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_parent_state():
     """Test getting the parent state.
 
     Args:
@@ -258,7 +247,7 @@ def test_get_parent_state(TestState, ChildState, ChildState2, GrandchildState):
     assert GrandchildState.get_parent_state() == ChildState
 
 
-def test_get_substates(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_substates():
     """Test getting the substates.
 
     Args:
@@ -273,7 +262,7 @@ def test_get_substates(TestState, ChildState, ChildState2, GrandchildState):
     assert GrandchildState.get_substates() == set()
 
 
-def test_get_name(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_name():
     """Test getting the name of a state.
 
     Args:
@@ -288,7 +277,7 @@ def test_get_name(TestState, ChildState, ChildState2, GrandchildState):
     assert GrandchildState.get_name() == "grandchild_state"
 
 
-def test_get_full_name(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_full_name():
     """Test getting the full name.
 
     Args:
@@ -303,7 +292,7 @@ def test_get_full_name(TestState, ChildState, ChildState2, GrandchildState):
     assert GrandchildState.get_full_name() == "test_state.child_state.grandchild_state"
 
 
-def test_get_class_substate(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_class_substate():
     """Test getting the substate of a class.
 
     Args:
@@ -330,7 +319,7 @@ def test_get_class_substate(TestState, ChildState, ChildState2, GrandchildState)
         )
 
 
-def test_get_class_var(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_class_var():
     """Test getting the var of a class.
 
     Args:
@@ -363,7 +352,7 @@ def test_get_class_var(TestState, ChildState, ChildState2, GrandchildState):
         )
 
 
-def test_set_class_var(TestState):
+def test_set_class_var():
     """Test setting the var of a class.
 
     Args:
@@ -378,7 +367,7 @@ def test_set_class_var(TestState):
     assert var.state == TestState.get_full_name()
 
 
-def test_set_parent_and_substates(TestState, ChildState, ChildState2, GrandchildState):
+def test_set_parent_and_substates():
     """Test setting the parent and substates.
 
     Args:
@@ -401,7 +390,7 @@ def test_set_parent_and_substates(TestState, ChildState, ChildState2, Grandchild
     assert len(grandchild_state.substates) == 0
 
 
-def test_get_child_attribute(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_child_attribute():
     """Test getting the attribute of a state.
 
     Args:
@@ -428,7 +417,7 @@ def test_get_child_attribute(TestState, ChildState, ChildState2, GrandchildState
         test_state.child_state.grandchild_state.invalid
 
 
-def test_set_child_attribute(TestState, ChildState, ChildState2, GrandchildState):
+def test_set_child_attribute():
     """Test setting the attribute of a state.
 
     Args:
@@ -449,7 +438,7 @@ def test_set_child_attribute(TestState, ChildState, ChildState2, GrandchildState
     assert grandchild_state.value2 == "test2"
 
 
-def test_get_substate(TestState, ChildState, ChildState2, GrandchildState):
+def test_get_substate():
     """Test getting the substate of a state.
 
     Args:
@@ -477,7 +466,7 @@ def test_get_substate(TestState, ChildState, ChildState2, GrandchildState):
         test_state.get_substate(("child_state", "grandchild_state", "invalid"))
 
 
-def test_set_dirty_var(TestState):
+def test_set_dirty_var():
     """Test changing state vars marks the value as dirty.
 
     Args:
@@ -501,7 +490,7 @@ def test_set_dirty_var(TestState):
     assert test_state.dirty_vars == set()
 
 
-def test_set_dirty_substate(TestState, ChildState, ChildState2, GrandchildState):
+def test_set_dirty_substate():
     """Test changing substate vars marks the value as dirty.
 
     Args:
@@ -544,7 +533,7 @@ def test_set_dirty_substate(TestState, ChildState, ChildState2, GrandchildState)
     assert grandchild_state.dirty_vars == set()
 
 
-def test_reset(TestState, ChildState):
+def test_reset():
     """Test resetting the state.
 
     Args:
@@ -576,7 +565,7 @@ def test_reset(TestState, ChildState):
 
 
 @pytest.mark.asyncio
-async def test_process_event_simple(TestState):
+async def test_process_event_simple():
     """Test processing an event.
 
     Args:
@@ -597,7 +586,7 @@ async def test_process_event_simple(TestState):
 
 
 @pytest.mark.asyncio
-async def test_process_event_substate(TestState, ChildState, GrandchildState):
+async def test_process_event_substate():
     """Test processing an event on a substate.
 
     Args:
@@ -637,3 +626,24 @@ async def test_process_event_substate(TestState, ChildState, GrandchildState):
         "test_state.child_state.grandchild_state": {"value2": "new"},
         "test_state": {"sum": 3.14, "upper": ""},
     }
+
+
+def test_format_event_handler():
+    """Test formatting an event handler.
+
+    Args:
+        TestState: The state class.
+        ChildState: The child state class.
+        GrandchildState: The grandchild state class.
+    """
+    assert (
+        utils.format_event_handler(TestState.do_something) == "test_state.do_something"
+    )
+    assert (
+        utils.format_event_handler(ChildState.change_both)
+        == "test_state.child_state.change_both"
+    )
+    assert (
+        utils.format_event_handler(GrandchildState.do_nothing)
+        == "test_state.child_state.grandchild_state.do_nothing"
+    )
