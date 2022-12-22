@@ -50,10 +50,6 @@ WEB_ASSETS_DIR = os.path.join(WEB_DIR, "public")
 NODE_MODULES = "node_modules"
 # The package lock file.
 PACKAGE_LOCK = "package-lock.json"
-# The template version file for the Pynecone version.
-PC_TEMPLATE_VERSION = os.path.join(WEB_TEMPLATE_DIR, "version.txt")
-# The template version
-
 
 # Commands to run the app.
 # The backend api url.
