@@ -124,7 +124,7 @@ def test_initialize_with_state(TestState: Type[State]):
     token = "token"
     state = app.get_state(token)
     assert isinstance(state, TestState)
-    assert state.var == 0
+    assert state.var == 0  # type: ignore
 
 
 def test_set_and_get_state(TestState: Type[State]):
@@ -142,8 +142,8 @@ def test_set_and_get_state(TestState: Type[State]):
     # Get the default state for each token.
     state1 = app.get_state(token1)
     state2 = app.get_state(token2)
-    assert state1.var == 0
-    assert state2.var == 0
+    assert state1.var == 0  # type: ignore
+    assert state2.var == 0  # type: ignore
 
     # Set the vars to different values.
     state1.var = 1
@@ -154,5 +154,5 @@ def test_set_and_get_state(TestState: Type[State]):
     # Get the states again and check the values.
     state1 = app.get_state(token1)
     state2 = app.get_state(token2)
-    assert state1.var == 1
-    assert state2.var == 2
+    assert state1.var == 1  # type: ignore
+    assert state2.var == 2  # type: ignore
