@@ -411,12 +411,15 @@ def test_get_child_attribute(TestState, ChildState, ChildState2, GrandchildState
         GrandchildState: The grandchild state class.
     """
     test_state = TestState()
+    child_state = test_state.get_substate(["child_state"])
+    child_state2 = test_state.get_substate(["child_state2"])
+    grandchild_state = child_state.get_substate(["grandchild_state"])
 
     assert test_state.num1 == 0
-    assert test_state.child_state.value == ""
-    assert test_state.child_state2.value == ""
-    assert test_state.child_state.count == 23
-    assert test_state.child_state.grandchild_state.value2 == ""
+    assert child_state.value == ""
+    assert child_state2.value == ""
+    assert child_state.count == 23
+    assert grandchild_state.value2 == ""
     with pytest.raises(AttributeError):
         test_state.invalid
     with pytest.raises(AttributeError):
@@ -435,77 +438,15 @@ def test_set_child_attribute(TestState, ChildState, ChildState2, GrandchildState
         GrandchildState: The grandchild state class.
     """
     test_state = TestState()
-    child_state = test_state.child_state
-    grandchild_state = child_state.grandchild_state
+    child_state = test_state.get_substate(["child_state"])
+    grandchild_state = child_state.get_substate(["grandchild_state"])
 
     test_state.num1 = 10
     assert test_state.num1 == 10
-    test_state.child_state.value = "test"
-    assert test_state.child_state.value == "test"
-    assert child_state.value == "test"
-
-    test_state.child_state.grandchild_state.value2 = "test2"
-    assert test_state.child_state.grandchild_state.value2 == "test2"
-    assert child_state.grandchild_state.value2 == "test2"
-    assert grandchild_state.value2 == "test2"
-
-
-def test_get_parent_attribute(TestState, ChildState, ChildState2, GrandchildState):
-    """Test setting the attribute of a state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
-    test_state = TestState()
-    child_state = test_state.child_state
-    grandchild_state = child_state.grandchild_state
-
-    assert test_state.num1 == 0
-    assert child_state.num1 == 0
-    assert grandchild_state.num1 == 0
-
-    # Changing the parent var should change the child var.
-    test_state.num1 = 1
-    assert test_state.num1 == 1
-    assert child_state.num1 == 1
-    assert grandchild_state.num1 == 1
-
     child_state.value = "test"
-    assert test_state.child_state.value == "test"
     assert child_state.value == "test"
-    assert grandchild_state.value == "test"
-
-
-def test_set_parent_attribute(TestState, ChildState, ChildState2, GrandchildState):
-    """Test setting the attribute of a state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
-    test_state = TestState()
-    child_state = test_state.child_state
-    grandchild_state = child_state.grandchild_state
-
-    # Changing the child var should not change the parent var.
-    child_state.num1 = 2
-    assert child_state.num1 == 2
-    assert test_state.num1 == 2
-    assert grandchild_state.num1 == 2
-
-    grandchild_state.num1 = 3
-    assert grandchild_state.num1 == 3
-    assert child_state.num1 == 3
-    assert test_state.num1 == 3
-
-    grandchild_state.value = "test2"
-    assert grandchild_state.value == "test2"
-    assert child_state.value == "test2"
+    grandchild_state.value2 = "test2"
+    assert grandchild_state.value2 == "test2"
 
 
 def test_get_substate(TestState, ChildState, ChildState2, GrandchildState):
@@ -518,11 +459,12 @@ def test_get_substate(TestState, ChildState, ChildState2, GrandchildState):
         GrandchildState: The grandchild state class.
     """
     test_state = TestState()
-    child_state = test_state.child_state
-    grandchild_state = child_state.grandchild_state
+    child_state = test_state.substates["child_state"]
+    child_state2 = test_state.substates["child_state2"]
+    grandchild_state = child_state.substates["grandchild_state"]
 
     assert test_state.get_substate(("child_state",)) == child_state
-    assert test_state.get_substate(("child_state2",)) == test_state.child_state2
+    assert test_state.get_substate(("child_state2",)) == child_state2
     assert (
         test_state.get_substate(("child_state", "grandchild_state")) == grandchild_state
     )
@@ -569,9 +511,9 @@ def test_set_dirty_substate(TestState, ChildState, ChildState2, GrandchildState)
         GrandchildState: The grandchild state class.
     """
     test_state = TestState()
-    child_state = test_state.child_state
-    child_state2 = test_state.child_state2
-    grandchild_state = child_state.grandchild_state
+    child_state = test_state.get_substate(["child_state"])
+    child_state2 = test_state.get_substate(["child_state2"])
+    grandchild_state = child_state.get_substate(["grandchild_state"])
 
     # Initially there should be no dirty vars.
     assert test_state.dirty_vars == set()
@@ -610,7 +552,7 @@ def test_reset(TestState, ChildState):
         ChildState: The child state class.
     """
     test_state = TestState()
-    child_state = test_state.child_state
+    child_state = test_state.get_substate(["child_state"])
 
     # Set some values.
     test_state.num1 = 1
@@ -664,8 +606,8 @@ async def test_process_event_substate(TestState, ChildState, GrandchildState):
         GrandchildState: The grandchild state class.
     """
     test_state = TestState()
-    child_state = test_state.child_state
-    grandchild_state = child_state.grandchild_state
+    child_state = test_state.get_substate(["child_state"])
+    grandchild_state = child_state.get_substate(["grandchild_state"])
 
     # Events should bubble down to the substate.
     assert child_state.value == ""
@@ -695,18 +637,3 @@ async def test_process_event_substate(TestState, ChildState, GrandchildState):
         "test_state.child_state.grandchild_state": {"value2": "new"},
         "test_state": {"sum": 3.14, "upper": ""},
     }
-
-
-@pytest.mark.asyncio
-async def test_process_event_substate_set_parent_state(TestState, ChildState):
-    """Test setting the parent state on a substate.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-    """
-    test_state = TestState()
-    event = Event(token="t", name="child_state.set_num1", payload={"value": 69})
-    update = await test_state.process(event)
-    assert test_state.num1 == 69
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}

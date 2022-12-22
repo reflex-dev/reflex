@@ -28,9 +28,9 @@ from typing import (
     Type,
     Union,
 )
-import typer
 
 import plotly.graph_objects as go
+import typer
 from plotly.io import to_json
 from redis import Redis
 from rich.console import Console

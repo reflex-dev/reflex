@@ -360,8 +360,7 @@ class State(Base, ABC):
         # Return the dirty vars, as well as all computed vars.
         subdelta = {
             prop: getattr(self, prop)
-            for prop in self.dirty_vars
-            | self.computed_vars.keys()
+            for prop in self.dirty_vars | self.computed_vars.keys()
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
