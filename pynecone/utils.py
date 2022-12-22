@@ -817,10 +817,10 @@ def format_cond(
 
 
 def format_event_handler(handler: EventHandler) -> str:
-    """Format a function as an event.
+    """Format an event handler.
 
     Args:
-        fn: The function to format.
+        handler: The event handler to format.
 
     Returns:
         The formatted function.

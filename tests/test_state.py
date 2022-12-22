@@ -87,9 +87,6 @@ class GrandchildState(ChildState):
 def state() -> State:
     """A state.
 
-    Args:
-        TestState: The state class.
-
     Returns:
         A test state.
     """
@@ -195,11 +192,7 @@ def test_dict(state):
 
 
 def test_default_setters():
-    """Test that we can set default values.
-
-    Args:
-        TestState: The state class.
-    """
+    """Test that we can set default values."""
     state = TestState()
     for prop_name in state.base_vars:
         # Each base var should have a default setter.
@@ -207,11 +200,7 @@ def test_default_setters():
 
 
 def test_class_indexing_with_vars():
-    """Test that we can index into a state var with another var.
-
-    Args:
-        TestState: The state class.
-    """
+    """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]
     assert str(prop) == "{test_state.array[test_state.num1]}"
 
@@ -220,11 +209,7 @@ def test_class_indexing_with_vars():
 
 
 def test_class_attributes():
-    """Test that we can get class attributes.
-
-    Args:
-        TestState: The state class.
-    """
+    """Test that we can get class attributes."""
     prop = TestState.obj.prop1
     assert str(prop) == "{test_state.obj.prop1}"
 
@@ -233,14 +218,7 @@ def test_class_attributes():
 
 
 def test_get_parent_state():
-    """Test getting the parent state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the parent state."""
     assert TestState.get_parent_state() is None
     assert ChildState.get_parent_state() == TestState
     assert ChildState2.get_parent_state() == TestState
@@ -248,14 +226,7 @@ def test_get_parent_state():
 
 
 def test_get_substates():
-    """Test getting the substates.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the substates."""
     assert TestState.get_substates() == {ChildState, ChildState2}
     assert ChildState.get_substates() == {GrandchildState}
     assert ChildState2.get_substates() == set()
@@ -263,14 +234,7 @@ def test_get_substates():
 
 
 def test_get_name():
-    """Test getting the name of a state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the name of a state."""
     assert TestState.get_name() == "test_state"
     assert ChildState.get_name() == "child_state"
     assert ChildState2.get_name() == "child_state2"
@@ -278,14 +242,7 @@ def test_get_name():
 
 
 def test_get_full_name():
-    """Test getting the full name.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the full name."""
     assert TestState.get_full_name() == "test_state"
     assert ChildState.get_full_name() == "test_state.child_state"
     assert ChildState2.get_full_name() == "test_state.child_state2"
@@ -293,14 +250,7 @@ def test_get_full_name():
 
 
 def test_get_class_substate():
-    """Test getting the substate of a class.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the substate of a class."""
     assert TestState.get_class_substate(("child_state",)) == ChildState
     assert TestState.get_class_substate(("child_state2",)) == ChildState2
     assert ChildState.get_class_substate(("grandchild_state",)) == GrandchildState
@@ -320,14 +270,7 @@ def test_get_class_substate():
 
 
 def test_get_class_var():
-    """Test getting the var of a class.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the var of a class."""
     assert TestState.get_class_var(("num1",)) == TestState.num1
     assert TestState.get_class_var(("num2",)) == TestState.num2
     assert ChildState.get_class_var(("value",)) == ChildState.value
@@ -353,11 +296,7 @@ def test_get_class_var():
 
 
 def test_set_class_var():
-    """Test setting the var of a class.
-
-    Args:
-        TestState: The state class.
-    """
+    """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3
     TestState._set_var(BaseVar(name="num3", type_=int).set_state(TestState))
@@ -368,14 +307,7 @@ def test_set_class_var():
 
 
 def test_set_parent_and_substates():
-    """Test setting the parent and substates.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test setting the parent and substates."""
     test_state = TestState()
     assert len(test_state.substates) == 2
     assert set(test_state.substates) == {"child_state", "child_state2"}
@@ -391,14 +323,7 @@ def test_set_parent_and_substates():
 
 
 def test_get_child_attribute():
-    """Test getting the attribute of a state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the attribute of a state."""
     test_state = TestState()
     child_state = test_state.get_substate(["child_state"])
     child_state2 = test_state.get_substate(["child_state2"])
@@ -418,14 +343,7 @@ def test_get_child_attribute():
 
 
 def test_set_child_attribute():
-    """Test setting the attribute of a state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test setting the attribute of a state."""
     test_state = TestState()
     child_state = test_state.get_substate(["child_state"])
     grandchild_state = child_state.get_substate(["grandchild_state"])
@@ -439,14 +357,7 @@ def test_set_child_attribute():
 
 
 def test_get_substate():
-    """Test getting the substate of a state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test getting the substate of a state."""
     test_state = TestState()
     child_state = test_state.substates["child_state"]
     child_state2 = test_state.substates["child_state2"]
@@ -467,11 +378,7 @@ def test_get_substate():
 
 
 def test_set_dirty_var():
-    """Test changing state vars marks the value as dirty.
-
-    Args:
-        TestState: The state class.
-    """
+    """Test changing state vars marks the value as dirty."""
     test_state = TestState()
 
     # Initially there should be no dirty vars.
@@ -491,14 +398,7 @@ def test_set_dirty_var():
 
 
 def test_set_dirty_substate():
-    """Test changing substate vars marks the value as dirty.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        ChildState2: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test changing substate vars marks the value as dirty."""
     test_state = TestState()
     child_state = test_state.get_substate(["child_state"])
     child_state2 = test_state.get_substate(["child_state2"])
@@ -534,12 +434,7 @@ def test_set_dirty_substate():
 
 
 def test_reset():
-    """Test resetting the state.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-    """
+    """Test resetting the state."""
     test_state = TestState()
     child_state = test_state.get_substate(["child_state"])
 
@@ -566,11 +461,7 @@ def test_reset():
 
 @pytest.mark.asyncio
 async def test_process_event_simple():
-    """Test processing an event.
-
-    Args:
-        TestState: The state class.
-    """
+    """Test processing an event."""
     test_state = TestState()
     assert test_state.num1 == 0
 
@@ -587,13 +478,7 @@ async def test_process_event_simple():
 
 @pytest.mark.asyncio
 async def test_process_event_substate():
-    """Test processing an event on a substate.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test processing an event on a substate."""
     test_state = TestState()
     child_state = test_state.get_substate(["child_state"])
     grandchild_state = child_state.get_substate(["grandchild_state"])
@@ -629,13 +514,7 @@ async def test_process_event_substate():
 
 
 def test_format_event_handler():
-    """Test formatting an event handler.
-
-    Args:
-        TestState: The state class.
-        ChildState: The child state class.
-        GrandchildState: The grandchild state class.
-    """
+    """Test formatting an event handler."""
     assert (
         utils.format_event_handler(TestState.do_something) == "test_state.do_something"
     )
