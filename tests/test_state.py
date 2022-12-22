@@ -84,7 +84,7 @@ class GrandchildState(ChildState):
 
 
 @pytest.fixture
-def state() -> State:
+def test_state() -> TestState:
     """A state.
 
     Returns:
@@ -93,14 +93,48 @@ def state() -> State:
     return TestState()  # type: ignore
 
 
-def test_base_class_vars(state):
+@pytest.fixture
+def child_state(test_state) -> ChildState:
+    """A child state.
+
+    Returns:
+        A test child state.
+    """
+    child_state = test_state.get_substate(["child_state"])
+    assert child_state is not None
+    return child_state
+    
+@pytest.fixture
+def child_state2(test_state) -> ChildState2:
+    """A second child state.
+
+    Returns:
+        A second test child state.
+    """
+    child_state2 = test_state.get_substate(["child_state2"])
+    assert child_state2 is not None
+    return child_state2
+
+@pytest.fixture
+def grandchild_state(child_state) -> GrandchildState:
+    """A state.
+
+    Returns:
+        A test state.
+    """
+    grandchild_state = child_state.get_substate(["grandchild_state"])
+    assert grandchild_state is not None
+    return grandchild_state
+
+
+def test_base_class_vars(test_state):
     """Test that the class vars are set correctly.
 
     Args:
         state: A state.
     """
-    fields = state.get_fields()
-    cls = type(state)
+    fields = test_state.get_fields()
+    cls = type(test_state)
 
     for field in fields:
         if field in (
@@ -119,25 +153,25 @@ def test_base_class_vars(state):
     assert cls.key.type_ == str
 
 
-def test_computed_class_var(state):
+def test_computed_class_var(test_state):
     """Test that the class computed vars are set correctly.
 
     Args:
         state: A state.
     """
-    cls = type(state)
+    cls = type(test_state)
     vars = [(prop.name, prop.type_) for prop in cls.computed_vars.values()]
     assert ("sum", float) in vars
     assert ("upper", str) in vars
 
 
-def test_class_vars(state):
+def test_class_vars(test_state):
     """Test that the class vars are set correctly.
 
     Args:
         state: A state.
     """
-    cls = type(state)
+    cls = type(test_state)
     assert set(cls.vars.keys()) == {
         "num1",
         "num2",
@@ -151,52 +185,51 @@ def test_class_vars(state):
     }
 
 
-def test_default_value(state):
+def test_default_value(test_state):
     """Test that the default value of a var is correct.
 
     Args:
         state: A state.
     """
-    assert state.num1 == 0
-    assert state.num2 == 3.14
-    assert state.key == ""
-    assert state.sum == 3.14
-    assert state.upper == ""
+    assert test_state.num1 == 0
+    assert test_state.num2 == 3.14
+    assert test_state.key == ""
+    assert test_state.sum == 3.14
+    assert test_state.upper == ""
 
 
-def test_computed_vars(state):
+def test_computed_vars(test_state):
     """Test that the computed var is computed correctly.
 
     Args:
         state: A state.
     """
-    state.num1 = 1
-    state.num2 = 4
-    assert state.sum == 5
-    state.key = "hello world"
-    assert state.upper == "HELLO WORLD"
+    test_state.num1 = 1
+    test_state.num2 = 4
+    assert test_state.sum == 5
+    test_state.key = "hello world"
+    assert test_state.upper == "HELLO WORLD"
 
 
-def test_dict(state):
+def test_dict(test_state):
     """Test that the dict representation of a state is correct.
 
     Args:
         state: A state.
     """
     substates = {"child_state", "child_state2"}
-    assert set(state.dict().keys()) == set(state.vars.keys()) | substates
+    assert set(test_state.dict().keys()) == set(test_state.vars.keys()) | substates
     assert (
-        set(state.dict(include_computed=False).keys())
-        == set(state.base_vars) | substates
+        set(test_state.dict(include_computed=False).keys())
+        == set(test_state.base_vars) | substates
     )
 
 
-def test_default_setters():
+def test_default_setters(test_state):
     """Test that we can set default values."""
-    state = TestState()
-    for prop_name in state.base_vars:
+    for prop_name in test_state.base_vars:
         # Each base var should have a default setter.
-        assert hasattr(state, f"set_{prop_name}")
+        assert hasattr(test_state, f"set_{prop_name}")
 
 
 def test_class_indexing_with_vars():
@@ -298,37 +331,29 @@ def test_get_class_var():
 def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
-        TestState.num3
+        TestState.num3  # type: ignore
     TestState._set_var(BaseVar(name="num3", type_=int).set_state(TestState))
-    var = TestState.num3
+    var = TestState.num3  # type: ignore
     assert var.name == "num3"
     assert var.type_ == int
     assert var.state == TestState.get_full_name()
 
 
-def test_set_parent_and_substates():
+def test_set_parent_and_substates(test_state, child_state, grandchild_state):
     """Test setting the parent and substates."""
-    test_state = TestState()
     assert len(test_state.substates) == 2
     assert set(test_state.substates) == {"child_state", "child_state2"}
 
-    child_state = test_state.substates["child_state"]
     assert child_state.parent_state == test_state
     assert len(child_state.substates) == 1
     assert set(child_state.substates) == {"grandchild_state"}
 
-    grandchild_state = child_state.substates["grandchild_state"]
     assert grandchild_state.parent_state == child_state
     assert len(grandchild_state.substates) == 0
 
 
-def test_get_child_attribute():
+def test_get_child_attribute(test_state, child_state, child_state2, grandchild_state):
     """Test getting the attribute of a state."""
-    test_state = TestState()
-    child_state = test_state.get_substate(["child_state"])
-    child_state2 = test_state.get_substate(["child_state2"])
-    grandchild_state = child_state.get_substate(["grandchild_state"])
-
     assert test_state.num1 == 0
     assert child_state.value == ""
     assert child_state2.value == ""
@@ -342,12 +367,8 @@ def test_get_child_attribute():
         test_state.child_state.grandchild_state.invalid
 
 
-def test_set_child_attribute():
+def test_set_child_attribute(test_state, child_state, grandchild_state):
     """Test setting the attribute of a state."""
-    test_state = TestState()
-    child_state = test_state.get_substate(["child_state"])
-    grandchild_state = child_state.get_substate(["grandchild_state"])
-
     test_state.num1 = 10
     assert test_state.num1 == 10
     child_state.value = "test"
@@ -356,13 +377,8 @@ def test_set_child_attribute():
     assert grandchild_state.value2 == "test2"
 
 
-def test_get_substate():
+def test_get_substate(test_state, child_state, child_state2, grandchild_state):
     """Test getting the substate of a state."""
-    test_state = TestState()
-    child_state = test_state.substates["child_state"]
-    child_state2 = test_state.substates["child_state2"]
-    grandchild_state = child_state.substates["grandchild_state"]
-
     assert test_state.get_substate(("child_state",)) == child_state
     assert test_state.get_substate(("child_state2",)) == child_state2
     assert (
@@ -377,10 +393,8 @@ def test_get_substate():
         test_state.get_substate(("child_state", "grandchild_state", "invalid"))
 
 
-def test_set_dirty_var():
+def test_set_dirty_var(test_state):
     """Test changing state vars marks the value as dirty."""
-    test_state = TestState()
-
     # Initially there should be no dirty vars.
     assert test_state.dirty_vars == set()
 
@@ -397,13 +411,8 @@ def test_set_dirty_var():
     assert test_state.dirty_vars == set()
 
 
-def test_set_dirty_substate():
+def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_state):
     """Test changing substate vars marks the value as dirty."""
-    test_state = TestState()
-    child_state = test_state.get_substate(["child_state"])
-    child_state2 = test_state.get_substate(["child_state2"])
-    grandchild_state = child_state.get_substate(["grandchild_state"])
-
     # Initially there should be no dirty vars.
     assert test_state.dirty_vars == set()
     assert child_state.dirty_vars == set()
@@ -433,11 +442,8 @@ def test_set_dirty_substate():
     assert grandchild_state.dirty_vars == set()
 
 
-def test_reset():
+def test_reset(test_state, child_state):
     """Test resetting the state."""
-    test_state = TestState()
-    child_state = test_state.get_substate(["child_state"])
-
     # Set some values.
     test_state.num1 = 1
     test_state.num2 = 2
@@ -460,9 +466,8 @@ def test_reset():
 
 
 @pytest.mark.asyncio
-async def test_process_event_simple():
+async def test_process_event_simple(test_state):
     """Test processing an event."""
-    test_state = TestState()
     assert test_state.num1 == 0
 
     event = Event(token="t", name="set_num1", payload={"value": 69})
@@ -477,12 +482,8 @@ async def test_process_event_simple():
 
 
 @pytest.mark.asyncio
-async def test_process_event_substate():
+async def test_process_event_substate(test_state, child_state, grandchild_state):
     """Test processing an event on a substate."""
-    test_state = TestState()
-    child_state = test_state.get_substate(["child_state"])
-    grandchild_state = child_state.get_substate(["grandchild_state"])
-
     # Events should bubble down to the substate.
     assert child_state.value == ""
     assert child_state.count == 23
@@ -516,13 +517,13 @@ async def test_process_event_substate():
 def test_format_event_handler():
     """Test formatting an event handler."""
     assert (
-        utils.format_event_handler(TestState.do_something) == "test_state.do_something"
+        utils.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
     )
     assert (
-        utils.format_event_handler(ChildState.change_both)
+        utils.format_event_handler(ChildState.change_both)  # type: ignore
         == "test_state.child_state.change_both"
     )
     assert (
-        utils.format_event_handler(GrandchildState.do_nothing)
+        utils.format_event_handler(GrandchildState.do_nothing)  # type: ignore
         == "test_state.child_state.grandchild_state.do_nothing"
     )
