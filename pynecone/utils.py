@@ -354,7 +354,7 @@ def get_package_manager() -> str:
             f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Pynecone."
         )
         raise typer.Exit()
-        
+
     # On Windows, we use npm instead of bun.
     if platform.system() == "Windows":
         npm_path = which("npm")
