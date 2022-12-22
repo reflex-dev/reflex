@@ -315,24 +315,8 @@ def check_node_version(min_version):
         )
         # The output will be in the form "vX.Y.Z", so we can split it on the "v" character and take the second part
         version = result.stdout.decode().strip().split("v")[1]
-        # Split the version string on the "." character and convert each part to an integer
-        version_parts = [int(x) for x in version.split(".")]
-        # Split the minimum version string on the "." character and convert each part to an integer
-        min_version_parts = [int(x) for x in min_version.split(".")]
-        # Compare the version parts to the minimum version parts
-        if version_parts[0] < min_version_parts[0] or (
-            version_parts[0] == min_version_parts[0]
-            and (
-                version_parts[1] < min_version_parts[1]
-                or (
-                    version_parts[1] == min_version_parts[1]
-                    and version_parts[2] < min_version_parts[2]
-                )
-            )
-        ):
-            return False
-        else:
-            return True
+        # Compare the version numbers
+        return version.split(".") >= min_version.split(".")
     except Exception as e:
         return False
 
@@ -349,7 +333,7 @@ def get_package_manager() -> str:
 
     """
     # Check that the node version is valid.
-    if not (check_node_version(constants.MIN_NODE_VERSION)):
+    if not check_node_version(constants.MIN_NODE_VERSION):
         console.print(
             f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Pynecone."
         )
