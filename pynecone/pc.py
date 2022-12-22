@@ -70,6 +70,13 @@ def run(
         )
         raise typer.Exit()
 
+    # Check that the template is up to date.
+    if not utils.is_latest_template():
+        utils.console.print(
+            "[red]The base app template has updated. Run [bold]pc init[/bold] again."
+        )
+        raise typer.Exit()
+
     # Get the app module.
     utils.console.rule("[bold]Starting Pynecone App")
     app = utils.get_app()

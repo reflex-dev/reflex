@@ -50,6 +50,11 @@ WEB_ASSETS_DIR = os.path.join(WEB_DIR, "public")
 NODE_MODULES = "node_modules"
 # The package lock file.
 PACKAGE_LOCK = "package-lock.json"
+# The pcversion template file.
+PCVERSION_TEMPLATE_FILE = os.path.join(WEB_TEMPLATE_DIR, "pcversion.txt")
+# The pcversion app file.
+PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pcversion.txt")
+
 
 # Commands to run the app.
 # The backend api url.
