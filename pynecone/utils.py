@@ -350,7 +350,7 @@ def check_node_version(min_version):
         min_version: The minimum version of Node.js required.
 
     Raises:
-        RuntimeError: If the version of Node.js is too low.
+        RuntimeError: If there was a problem running the node -v command.
 
     Returns:
         Whether the version of Node.js is high enough.
