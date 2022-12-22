@@ -257,40 +257,6 @@ class State(Base, ABC):
             field.required = False
             field.default = default_value
 
-    def getattr(self, name: str) -> Any:
-        """Get a non-prop attribute.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute.
-        """
-        return super().__getattribute__(name)
-
-    def __getattribute__(self, name: str) -> Any:
-        """Get the attribute.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The attribute.
-
-        Raises:
-            Exception: If the attribute is not found.
-        """
-        # If it is an inherited var, return from the parent state.
-        if name != "inherited_vars" and name in super().__getattribute__("inherited_vars"):
-            return getattr(super().__getattribute__("parent_state"), name)
-        try:
-            return super().__getattribute__(name)
-        except Exception as e:
-            # Check if the attribute is a substate.
-            if name in super().__getattribute__("substates"):
-                return super().__getattribute__("substates")[name]
-            raise e
-
     def __setattr__(self, name: str, value: Any):
         """Set the attribute.
 
@@ -298,20 +264,13 @@ class State(Base, ABC):
             name: The name of the attribute.
             value: The value of the attribute.
         """
-        # NOTE: We use super().__getattribute__ for performance reasons.
-        if name != "inherited_vars" and name in super().__getattribute__(
-            "inherited_vars"
-        ):
-            setattr(super().__getattribute__("parent_state"), name, value)
-            return
-
         # Set the attribute.
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
-        if name in super().__getattribute__("vars"):
-            super().__getattribute__("dirty_vars").add(name)
-            super().__getattribute__("mark_dirty")()
+        if name in self.vars:
+            self.dirty_vars.add(name)
+            self.mark_dirty()
 
     def reset(self):
         """Reset all the base vars to their default values."""
@@ -341,13 +300,13 @@ class State(Base, ABC):
         """
         if len(path) == 0:
             return self
-        if path[0] == super().__getattribute__("get_name")():
+        if path[0] == self.get_name():
             if len(path) == 1:
                 return self
             path = path[1:]
-        if path[0] not in super().__getattribute__("substates"):
+        if path[0] not in self.substates:
             raise ValueError(f"Invalid path: {path}")
-        return super().__getattribute__("substates")[path[0]].getattr("get_substate")(path[1:])
+        return self.substates[path[0]].get_substate(path[1:])
 
     async def process(self, event: Event) -> StateUpdate:
         """Process an event.
@@ -358,11 +317,10 @@ class State(Base, ABC):
         Returns:
             The state update after processing the event.
         """
-        # NOTE: We use super().__getattribute__ for performance reasons.
         # Get the event handler.
         path = event.name.split(".")
         path, name = path[:-1], path[-1]
-        substate = super().__getattribute__("get_substate")(path)
+        substate = self.get_substate(path)
         handler = getattr(substate, name)
 
         # Process the event.
@@ -383,10 +341,10 @@ class State(Base, ABC):
         events = utils.fix_events(events, event.token)
 
         # Get the delta after processing the event.
-        delta = super().__getattribute__("get_delta")()
+        delta = self.get_delta()
 
         # Reset the dirty vars.
-        super().__getattribute__("clean")()
+        self.clean()
 
         # Return the state update.
         return StateUpdate(delta=delta, events=events)
@@ -397,22 +355,21 @@ class State(Base, ABC):
         Returns:
             The delta for the state.
         """
-        # NOTE: We use super().__getattribute__ for performance reasons.
         delta = {}
 
         # Return the dirty vars, as well as all computed vars.
         subdelta = {
             prop: getattr(self, prop)
-            for prop in super().__getattribute__("dirty_vars")
-            | set(super().__getattribute__("computed_vars").keys())
+            for prop in self.dirty_vars
+            | self.computed_vars.keys()
         }
         if len(subdelta) > 0:
-            delta[super().__getattribute__("get_full_name")()] = subdelta
+            delta[self.get_full_name()] = subdelta
 
         # Recursively find the substate deltas.
-        substates = super().__getattribute__("substates")
-        for substate in super().__getattribute__("dirty_substates"):
-            delta.update(substates[substate].getattr("get_delta")())
+        substates = self.substates
+        for substate in self.dirty_substates:
+            delta.update(substates[substate].get_delta())
 
         # Format the delta.
         delta = utils.format_state(delta)
@@ -422,20 +379,19 @@ class State(Base, ABC):
 
     def mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
-        if super().__getattribute__("parent_state") is not None:
-            super().__getattribute__("parent_state").getattr("dirty_substates").add(self.get_name())
-            super().__getattribute__("parent_state").mark_dirty()
+        if self.parent_state is not None:
+            self.parent_state.dirty_substates.add(self.get_name())
+            self.parent_state.mark_dirty()
 
     def clean(self):
         """Reset the dirty vars."""
-        # NOTE: We use super().__getattribute__ for performance reasons.
         # Recursively clean the substates.
-        for substate in super().__getattribute__("dirty_substates"):
-            super().__getattribute__("substates")[substate].getattr("clean")()
+        for substate in self.dirty_substates:
+            self.substates[substate].clean()
 
         # Clean this state.
-        super().__setattr__("dirty_vars", set())
-        super().__setattr__("dirty_substates", set())
+        self.dirty_vars = set()
+        self.dirty_substates = set()
 
     def dict(self, include_computed: bool = True, **kwargs) -> Dict[str, Any]:
         """Convert the object to a dictionary.

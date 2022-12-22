@@ -50,6 +50,10 @@ WEB_ASSETS_DIR = os.path.join(WEB_DIR, "public")
 NODE_MODULES = "node_modules"
 # The package lock file.
 PACKAGE_LOCK = "package-lock.json"
+# The template version file for the Pynecone version.
+PC_TEMPLATE_VERSION = os.path.join(WEB_TEMPLATE_DIR, "version.txt")
+# The template version
+
 
 # Commands to run the app.
 # The backend api url.
@@ -63,7 +67,7 @@ RUN_BACKEND = "uvicorn --log-level critical --reload --host 0.0.0.0".split()
 # The default timeout when launching the gunicorn server.
 TIMEOUT = 120
 # The command to run the backend in production mode.
-RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --bind 0.0.0.0:8000 --preload --timeout {TIMEOUT} --log-level debug".split()
+RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --bind 0.0.0.0:8000 --preload --timeout {TIMEOUT} --log-level critical".split()
 
 # Compiler variables.
 # The extension for compiled Javascript files.
