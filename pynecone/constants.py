@@ -12,6 +12,8 @@ MODULE_NAME = "pynecone"
 PACKAGE_NAME = "pynecone-io"
 # The current version of Pynecone.
 VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
+# Minimum version of Node.js required to run Pynecone.
+MIN_NODE_VERSION = "12.22.0"
 
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.

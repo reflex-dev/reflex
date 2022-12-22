@@ -28,6 +28,7 @@ from typing import (
     Type,
     Union,
 )
+import typer
 
 import plotly.graph_objects as go
 from plotly.io import to_json
@@ -298,6 +299,28 @@ def get_config() -> Config:
         return Config(app_name="")
 
 
+def check_node_version(min_version):
+    """Check the version of Node.js.
+
+    Args:
+        min_version: The minimum version of Node.js required.
+
+    Returns:
+        Whether the version of Node.js is high enough.
+    """
+    try:
+        # Run the node -v command and capture the output
+        result = subprocess.run(
+            ["node", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        # The output will be in the form "vX.Y.Z", so we can split it on the "v" character and take the second part
+        version = result.stdout.decode().strip().split("v")[1]
+        # Compare the version numbers
+        return version.split(".") >= min_version.split(".")
+    except Exception as e:
+        return False
+
+
 def get_package_manager() -> str:
     """Get the package manager executable.
 
@@ -306,7 +329,16 @@ def get_package_manager() -> str:
 
     Raises:
         FileNotFoundError: If bun or npm is not installed.
+        Exit: If the app directory is invalid.
+
     """
+    # Check that the node version is valid.
+    if not check_node_version(constants.MIN_NODE_VERSION):
+        console.print(
+            f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Pynecone."
+        )
+        raise typer.Exit()
+
     # On Windows, we use npm instead of bun.
     if platform.system() == "Windows":
         npm_path = which("npm")

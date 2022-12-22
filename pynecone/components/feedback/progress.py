@@ -10,7 +10,7 @@ class Progress(ChakraComponent):
     tag = "Progress"
 
     # If true, the progress bar will show stripe
-    has_striped: Var[bool]
+    has_stripe: Var[bool]
 
     # If true, and hasStripe is true, the stripes will be animated
     is_animated: Var[bool]
