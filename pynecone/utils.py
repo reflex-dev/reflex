@@ -343,6 +343,49 @@ def create_config(app_name: str):
         f.write(templates.PCCONFIG.format(app_name=app_name))
 
 
+def check_node_version(min_version):
+    """Check the version of Node.js.
+
+    Args:
+        min_version: The minimum version of Node.js required.
+
+    Raises:
+        RuntimeError: If the version of Node.js is too low.
+
+    Returns:
+        Whether the version of Node.js is high enough.
+    """
+    try:
+        # Run the node -v command and capture the output
+        result = subprocess.run(
+            ["node", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        # The output will be in the form "vX.Y.Z", so we can split it on the "v" character and take the second part
+        version = result.stdout.decode().strip().split("v")[1]
+        # Split the version string on the "." character and convert each part to an integer
+        version_parts = [int(x) for x in version.split(".")]
+        # Split the minimum version string on the "." character and convert each part to an integer
+        min_version_parts = [int(x) for x in min_version.split(".")]
+        # Compare the version parts to the minimum version parts
+        if version_parts[0] < min_version_parts[0] or (
+            version_parts[0] == min_version_parts[0]
+            and (
+                version_parts[1] < min_version_parts[1]
+                or (
+                    version_parts[1] == min_version_parts[1]
+                    and version_parts[2] < min_version_parts[2]
+                )
+            )
+        ):
+            return False
+        else:
+            return True
+    except Exception as e:
+        # If an error occurs, print the error message and return False
+        print("Error checking node version: " + str(e))
+        return False
+
+
 def initialize_app_directory(app_name: str):
     """Initialize the app directory on pc init.
 
