@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
-from fastapi import FastAPI, WebSocket,APIRouter
+from fastapi import FastAPI, WebSocket, APIRouter
 from fastapi.middleware import cors
 
 from pynecone import constants, utils
@@ -60,7 +60,7 @@ class App(Base):
         self.state_manager.setup(state=self.state)
 
         # Set up the API.
-        
+
         self.api = FastAPI()
         self.add_cors()
         self.add_default_endpoints()
