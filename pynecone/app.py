@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
-from fastapi import FastAPI, WebSocket, APIRouter
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware import cors
 
 from pynecone import constants, utils
