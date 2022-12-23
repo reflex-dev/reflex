@@ -836,7 +836,12 @@ def format_event_handler(handler: EventHandler) -> str:
     state_name, name = parts[-2:]
 
     # Construct the full event handler name.
-    state = vars(sys.modules[handler.fn.__module__])[state_name]
+    try:
+        # Try to get the state from the module.
+        state = vars(sys.modules[handler.fn.__module__])[state_name]
+    except:
+        # If the state isn't in the module, just return the function name.
+        return handler.fn.__qualname__
     return ".".join([state.get_full_name(), name])
 
 
