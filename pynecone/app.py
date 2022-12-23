@@ -60,6 +60,7 @@ class App(Base):
         self.state_manager.setup(state=self.state)
 
         # Set up the API.
+
         self.api = FastAPI()
         self.add_cors()
         self.add_default_endpoints()
@@ -93,6 +94,7 @@ class App(Base):
         self.api.add_middleware(
             cors.CORSMiddleware,
             allow_origins=["*"],
+            allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         )

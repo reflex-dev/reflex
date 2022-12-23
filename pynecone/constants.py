@@ -165,7 +165,7 @@ class Endpoint(Enum):
         # The event endpoint is a websocket.
         if self == Endpoint.EVENT:
             # Replace the protocol with ws.
-            url = url.replace("https://", "ws://").replace("http://", "ws://")
+            url = url.replace("https://", "wss://").replace("http://", "ws://")
 
         # Return the url.
         return url
