@@ -71,7 +71,7 @@ def run(
         raise typer.Exit()
 
     # Check that the template is up to date.
-    if not utils.is_latest_template():
+    if frontend and not utils.is_latest_template():
         utils.console.print(
             "[red]The base app template has updated. Run [bold]pc init[/bold] again."
         )
