@@ -619,7 +619,7 @@ class BaseVar(Var, Base):
         Returns:
             The default value of the var.
         """
-        if isinstance(self.type_, _GenericAlias):
+        if utils.is_generic_alias(self.type_):
             type_ = self.type_.__origin__
         else:
             type_ = self.type_
