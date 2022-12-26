@@ -24,6 +24,7 @@ class Markdown(Component):
         imports["remark-math"] = {"remarkMath"}
         imports["remark-gfm"] = {"remarkGfm"}
         imports["rehype-katex"] = {"rehypeKatex"}
+        imports["rehype-raw"] = {"rehypeRaw"}
         imports[""] = {"katex/dist/katex.min.css"}
         return imports
 
@@ -57,6 +58,6 @@ class Markdown(Component):
                 ),
             },
             remark_plugins=BaseVar(name="[remarkMath, remarkGfm]", type_=List[str]),
-            rehype_plugins=BaseVar(name="[rehypeKatex]", type_=List[str]),
+            rehype_plugins=BaseVar(name="[rehypeKatex, rehypeRaw]", type_=List[str]),
             src="",
         )
