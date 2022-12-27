@@ -134,6 +134,16 @@ class Env(str, Enum):
     DEV = "dev"
     PROD = "prod"
 
+# Log levels
+class LogLevel(str, Enum):
+    """The log levels."""
+
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
 
 class Endpoint(Enum):
     """Endpoints for the pynecone backend API."""

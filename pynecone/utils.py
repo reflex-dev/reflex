@@ -532,16 +532,25 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def run_backend(app_name: str):
+def run_backend(app_name: str, loglevel: str = "debug"):
     """Run the backend.
 
     Args:
         app_name: The app name.
     """
+    from uvicorn import run
+
+    # Configure the logger
     command = constants.RUN_BACKEND + [
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}"
     ]
-    subprocess.run(command)
+
+    run(
+        f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+        host="0.0.0.0",
+        log_level=loglevel,
+        reload=True,
+    )
 
 
 def run_backend_prod(app_name: str):
