@@ -532,7 +532,7 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def run_backend(app_name: str, loglevel: str = "debug"):
+def run_backend(app_name: str, loglevel: str = "error"):
     """Run the backend.
 
     Args:
@@ -549,7 +549,7 @@ def run_backend(app_name: str, loglevel: str = "debug"):
     )
 
 
-def run_backend_prod(app_name: str, loglevel: str = "debug"):
+def run_backend_prod(app_name: str, loglevel: str = "error"):
     """Run the backend.
 
     Args:
