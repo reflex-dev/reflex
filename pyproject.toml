@@ -47,7 +47,7 @@ pytest-asyncio = "^0.20.1"
 black = "^22.10.0"
 
 [tool.poetry.scripts]
-pc = "cli.pc:main"
+pc = "pynecone.pc:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
