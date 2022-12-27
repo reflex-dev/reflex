@@ -13,6 +13,7 @@ import signal
 import string
 import subprocess
 import sys
+import uvicorn
 from collections import defaultdict
 from subprocess import PIPE
 from types import ModuleType
@@ -532,23 +533,29 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
-def run_backend(app_name: str):
+def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        loglevel: The log level.
     """
-    command = constants.RUN_BACKEND + [
-        f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}"
-    ]
-    subprocess.run(command)
+    uvicorn.run(
+        f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+        host=constants.BACKEND_HOST,
+        log_level=loglevel,
+        reload=True,
+    )
 
 
-def run_backend_prod(app_name: str):
+def run_backend_prod(
+    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        loglevel: The log level.
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
@@ -556,6 +563,8 @@ def run_backend_prod(app_name: str):
         str(num_workers),
         "--threads",
         str(num_workers),
+        "--log-level",
+        str(loglevel),
         f"{app_name}:{constants.APP_VAR}()",
     ]
     subprocess.run(command)

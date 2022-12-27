@@ -52,6 +52,7 @@ def run(
     env: constants.Env = constants.Env.DEV,
     frontend: bool = True,
     backend: bool = True,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
     """Run the app.
 
@@ -59,6 +60,7 @@ def run(
         env: The environment to run the app in.
         frontend: Whether to run the frontend.
         backend: Whether to run the backend.
+        loglevel: The log level to use.
 
     Raises:
         Exit: If the app is not initialized.
@@ -93,7 +95,7 @@ def run(
     if frontend:
         frontend_cmd(app.app)
     if backend:
-        backend_cmd(app.__name__)
+        backend_cmd(app.__name__, loglevel=loglevel)
 
 
 @cli.command()
