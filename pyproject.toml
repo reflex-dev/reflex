@@ -47,10 +47,11 @@ pytest-asyncio = "^0.20.1"
 black = "^22.10.0"
 
 [tool.poetry.scripts]
-pc = "pynecone.pc:main"
+pc = "cli.pc:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.pyright]
+[darglint]
+ignore_regex = "pynecone/pc.py"

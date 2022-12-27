@@ -85,10 +85,10 @@ class App(Base):
     def add_default_endpoints(self):
         """Add the default endpoints."""
         # To test the server.
-        self.api.get(str(constants.Endpoint.PING))(_ping)
+        self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To make state changes.
-        self.api.websocket(str(constants.Endpoint.EVENT))(_event(app=self))
+        self.api.websocket(str(constants.Endpoint.EVENT))(event(app=self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -290,7 +290,7 @@ class App(Base):
         self.state_manager.set_state(token, state)
 
 
-async def _ping() -> str:
+async def ping() -> str:
     """Test API endpoint.
 
     Returns:
@@ -299,7 +299,7 @@ async def _ping() -> str:
     return "pong"
 
 
-def _event(app: App):
+def event(app: App):
     """Websocket endpoint for events.
 
     Args:
