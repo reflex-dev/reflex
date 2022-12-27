@@ -63,7 +63,7 @@ API_URL = "http://localhost:8000"
 BUN_PATH = "$HOME/.bun/bin/bun"
 # Command to install bun.
 INSTALL_BUN = "curl https://bun.sh/install | bash"
-# Command to run the backend in dev mode.
+# Default host in dev mode.
 BACKEND_HOST = "0.0.0.0"
 # The default timeout when launching the gunicorn server.
 TIMEOUT = 120
