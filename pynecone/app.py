@@ -4,6 +4,7 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, 
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware import cors
+from starlette.websockets import WebSocketDisconnect
 
 from pynecone import constants, utils
 from pynecone.base import Base
@@ -320,7 +321,11 @@ def _event(app: App):
         # Process events until the connection is closed.
         while True:
             # Get the event.
-            event = Event.parse_raw(await websocket.receive_text())
+            try:
+                event = Event.parse_raw(await websocket.receive_text())
+            except WebSocketDisconnect:
+                # Close the connection.
+                return
 
             # Process the event.
             update = await process(app, event)
