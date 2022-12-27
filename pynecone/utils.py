@@ -537,17 +537,12 @@ def run_backend(app_name: str, loglevel: str = "debug"):
 
     Args:
         app_name: The app name.
+        loglevel: The log level.
     """
     from uvicorn import run
-
-    # Configure the logger
-    command = constants.RUN_BACKEND + [
-        f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}"
-    ]
-
     run(
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
-        host="0.0.0.0",
+        host=constants.BACKEND_HOST,
         log_level=loglevel,
         reload=True,
     )
