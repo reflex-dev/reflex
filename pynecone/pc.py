@@ -94,10 +94,8 @@ def run(
     # Run the frontend and backend.
     if frontend:
         frontend_cmd(app.app)
-    if backend and env == constants.Env.DEV:
-        backend_cmd(app.__name__, loglevel)
-    else:
-        backend_cmd(app.__name__)
+    if backend:
+        backend_cmd(app.__name__, loglevel=loglevel)
 
 
 @cli.command()

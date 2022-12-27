@@ -134,6 +134,7 @@ class Env(str, Enum):
     DEV = "dev"
     PROD = "prod"
 
+
 # Log levels
 class LogLevel(str, Enum):
     """The log levels."""

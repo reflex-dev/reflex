@@ -540,6 +540,7 @@ def run_backend(app_name: str, loglevel: str = "debug"):
         loglevel: The log level.
     """
     from uvicorn import run
+
     run(
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
         host=constants.BACKEND_HOST,
@@ -548,11 +549,12 @@ def run_backend(app_name: str, loglevel: str = "debug"):
     )
 
 
-def run_backend_prod(app_name: str):
+def run_backend_prod(app_name: str, loglevel: str = "debug"):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        loglevel: The log level.
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
@@ -560,6 +562,8 @@ def run_backend_prod(app_name: str):
         str(num_workers),
         "--threads",
         str(num_workers),
+        "--log-level",
+        str(loglevel),
         f"{app_name}:{constants.APP_VAR}()",
     ]
     subprocess.run(command)
