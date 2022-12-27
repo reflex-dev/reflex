@@ -19,11 +19,7 @@ def version():
 
 @cli.command()
 def init():
-    """Initialize a new Pynecone app.
-
-    Raises:
-        Exit: If the app directory is invalid.
-    """
+    """Initialize a new Pynecone app in the current directory."""
     app_name = utils.get_default_app_name()
 
     # Make sure they don't name the app "pynecone".
@@ -49,22 +45,16 @@ def init():
 
 @cli.command()
 def run(
-    env: constants.Env = constants.Env.DEV,
-    frontend: bool = True,
-    backend: bool = True,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    env: constants.Env = typer.Option(
+        constants.Env.DEV, help="The environment to run the app in."
+    ),
+    frontend: bool = typer.Option(True, help="Whether to run the frontend."),
+    backend: bool = typer.Option(True, help="Whether to run the backend."),
+    loglevel: constants.LogLevel = typer.Option(
+        constants.LogLevel.ERROR, help="The log level to use."
+    ),
 ):
-    """Run the app.
-
-    Args:
-        env: The environment to run the app in.
-        frontend: Whether to run the frontend.
-        backend: Whether to run the backend.
-        loglevel: The log level to use.
-
-    Raises:
-        Exit: If the app is not initialized.
-    """
+    """Run the app in the current directory."""
     # Check that the app is initialized.
     if frontend and not utils.is_initialized():
         utils.console.print(
@@ -99,12 +89,8 @@ def run(
 
 
 @cli.command()
-def deploy(dry_run: bool = False):
-    """Deploy the app to the hosting service.
-
-    Args:
-        dry_run: Whether to run a dry run.
-    """
+def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
+    """Deploy the app to the Pynecone hosting service."""
     # Get the app config.
     config = utils.get_config()
     config.api_url = utils.get_production_backend_url()

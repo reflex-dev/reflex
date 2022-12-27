@@ -50,5 +50,5 @@ jobs:
     - run: poetry run pytest tests
     - run: poetry run pyright pynecone tests
     - run: poetry run pydocstyle pynecone tests
-    - run: poetry run darglint pynecone tests
+    - run: find pynecone tests -name "*.py" -not -path pynecone/pc.py | xargs poetry run darglint
     - run: poetry run black --check pynecone tests
