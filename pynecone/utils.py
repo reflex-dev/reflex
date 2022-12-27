@@ -548,7 +548,9 @@ def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel
     )
 
 
-def run_backend_prod(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
+def run_backend_prod(
+    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+):
     """Run the backend.
 
     Args:
