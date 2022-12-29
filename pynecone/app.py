@@ -269,26 +269,6 @@ class App(Base):
 
         return output_path, code
 
-    def get_state(self, token: str) -> State:
-        """Get the state for a token.
-
-        Args:
-            token: The token to get the state for.
-
-        Returns:
-            The state for the token.
-        """
-        return self.state_manager.get_state(token)
-
-    def set_state(self, token: str, state: State):
-        """Set the state for a token.
-
-        Args:
-            token: The token to set the state for.
-            state: The state to set.
-        """
-        self.state_manager.set_state(token, state)
-
 
 async def ping() -> str:
     """Test API endpoint.
@@ -347,7 +327,7 @@ async def process(app: App, event: Event) -> StateUpdate:
         The state update after processing the event.
     """
     # Get the state for the session.
-    state = app.get_state(event.token)
+    state = app.state_manager.get_state(event.token)
 
     # Preprocess the event.
     pre = app.preprocess(state, event)
@@ -356,7 +336,7 @@ async def process(app: App, event: Event) -> StateUpdate:
 
     # Apply the event to the state.
     update = await state.process(event)
-    app.set_state(event.token, state)
+    app.state_manager.set_state(event.token, state)
 
     # Postprocess the event.
     post = app.postprocess(state, event, update.delta)
