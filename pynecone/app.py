@@ -219,55 +219,16 @@ class App(Base):
         # Create the database models.
         Model.create_all()
 
-        # Create the root document with base styles and fonts.
-        self.pages[constants.DOCUMENT_ROOT] = compiler_utils.create_document_root(
-            self.stylesheets
-        )
-        self.pages[constants.THEME] = compiler_utils.create_theme(self.style)  # type: ignore
+        # Compile the root document with base styles and fonts.
+        compiler.compile_document_root(self.stylesheets)
+
+        # Compile the theme.
+        compiler.compile_theme(self.style)
 
         # Compile the pages.
         for path, component in self.pages.items():
-            self.compile_page(path, component)
-
-    def compile_page(
-        self, path: str, component: Component, write: bool = True
-    ) -> Tuple[str, str]:
-        """Compile a single page.
-
-        Args:
-            path: The path to compile the page to.
-            component: The component to compile.
-            write: Whether to write the page to the pages folder.
-
-        Returns:
-            The path and code of the compiled page.
-        """
-        # Get the path for the output file.
-        output_path = utils.get_page_path(path)
-
-        # Compile the document root.
-        if path == constants.DOCUMENT_ROOT:
-            code = compiler.compile_document_root(component)
-
-        # Compile the theme.
-        elif path == constants.THEME:
-            output_path = utils.get_theme_path()
-            code = compiler.compile_theme(component)  # type: ignore
-
-        # Compile all other pages.
-        else:
-            # Add the style to the component.
             component.add_style(self.style)
-            code = compiler.compile_component(
-                component=component,
-                state=self.state,
-            )
-
-        # Write the page to the pages folder.
-        if write:
-            utils.write_page(output_path, code)
-
-        return output_path, code
+            compiler.compile_page(path, component, self.state)
 
 
 async def ping() -> str:

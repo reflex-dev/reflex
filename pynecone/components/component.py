@@ -382,6 +382,13 @@ class Component(Base, ABC):
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
+    def get_custom_components(self) -> Set[CustomComponent]:
+        """Get all the custom components used by the component."""
+        custom_components = set()
+        for child in self.children:
+            custom_components |= child.get_custom_components()
+        return custom_components
+
 
 # Map from component to styling.
 ComponentStyle = Dict[Union[str, Type[Component]], Any]
@@ -401,10 +408,17 @@ class CustomComponent(Component):
         super().__init__(*args, **kwargs)
         self.tag = utils.to_title_case(self.component_fn.__name__)
 
+    def __hash__(self):
+        return hash(self.tag)
+
     @classmethod
     def get_props(cls) -> Set[str]:
         """Get the props for the component."""
         return super().get_props() - {"component_fn"}
+
+    def get_custom_components(self) -> Set[CustomComponent]:
+        """Get all the custom components used by the component."""
+        return {self} | super().get_custom_components()
 
 
 def custom_component(

@@ -724,27 +724,6 @@ def indent(text: str, indent_level: int = 2) -> str:
     return os.linesep.join(f"{' ' * indent_level}{line}" for line in lines) + os.linesep
 
 
-def get_page_path(path: str) -> str:
-    """Get the path of the compiled JS file for the given page.
-
-    Args:
-        path: The path of the page.
-
-    Returns:
-        The path of the compiled JS file.
-    """
-    return os.path.join(constants.WEB_PAGES_DIR, path + constants.JS_EXT)
-
-
-def get_theme_path() -> str:
-    """Get the path of the base theme style.
-
-    Returns:
-        The path of the theme style.
-    """
-    return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
-
-
 def get_path_args(path: str) -> List[str]:
     """Get the path arguments for the given path.
 
@@ -773,18 +752,6 @@ def get_path_args(path: str) -> List[str]:
             )
             args.append(v)
     return args
-
-
-def write_page(path: str, code: str):
-    """Write the given code to the given path.
-
-    Args:
-        path: The path to write the code to.
-        code: The code to write.
-    """
-    mkdir(os.path.dirname(path))
-    with open(path, "w") as f:
-        f.write(code)
 
 
 def format_route(route: str):

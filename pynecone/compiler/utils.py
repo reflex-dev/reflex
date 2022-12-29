@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import TYPE_CHECKING, Dict, List, Set, Type
 
 from pynecone import constants, utils
@@ -202,6 +203,39 @@ def create_theme(style: Style) -> Dict:
     }
 
 
+def get_page_path(path: str) -> str:
+    """Get the path of the compiled JS file for the given page.
+
+    Args:
+        path: The path of the page.
+
+    Returns:
+        The path of the compiled JS file.
+    """
+    return os.path.join(constants.WEB_PAGES_DIR, path + constants.JS_EXT)
+
+
+def get_theme_path() -> str:
+    """Get the path of the base theme style.
+
+    Returns:
+        The path of the theme style.
+    """
+    return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
+
+
+def create_components(components: Set[Component]) -> Component:
+    """Create the components for the app.
+
+    Args:
+        components: The set of components to include in the app.
+
+    Returns:
+        The components for the app.
+    """
+    return templates.join(components)
+
+
 def add_meta(page: Component, title: str, image: str, description: str) -> Component:
     """Add metadata to a page.
 
@@ -223,3 +257,15 @@ def add_meta(page: Component, title: str, image: str, description: str) -> Compo
     )
 
     return page
+
+
+def write_page(path: str, code: str):
+    """Write the given code to the given path.
+
+    Args:
+        path: The path to write the code to.
+        code: The code to write.
+    """
+    utils.mkdir(os.path.dirname(path))
+    with open(path, "w") as f:
+        f.write(code)
