@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, List, Tuple, Type
+from functools import wraps
+from typing import TYPE_CHECKING, Callable, List, Tuple, Type
 
 from pynecone import constants
 from pynecone.compiler import templates, utils
@@ -48,7 +49,7 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME(theme=json.dumps(theme))
 
 
-def compile_component(component: Component, state: Type[State]) -> str:
+def _compile_page(component: Component, state: Type[State]) -> str:
     """Compile the component given the app state.
 
     Args:
@@ -62,7 +63,7 @@ def compile_component(component: Component, state: Type[State]) -> str:
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
 
     # Compile the code to render the component.
-    return templates.COMPONENT(
+    return templates.PAGE(
         imports=utils.compile_imports(imports),
         custom_code=templates.join(component.get_custom_code()),
         constants=utils.compile_constants(),
@@ -73,9 +74,22 @@ def compile_component(component: Component, state: Type[State]) -> str:
     )
 
 
-def compile_document_root(
-    stylesheets: List[str], write: bool = True
-) -> Tuple[str, str]:
+def write_fn(fn: Callable[..., Tuple[str, str]]):
+    """Decorator to write the output of a function to a file."""
+
+    @wraps(fn)
+    def wrapper(*args, write: bool = True) -> Tuple[str, str]:
+        """Write the output of the function to a file."""
+        path, code = fn(*args)
+        if write:
+            utils.write_page(path, code)
+        return path, code
+
+    return wrapper
+
+
+@write_fn
+def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     """Compile the document root.
 
     Args:
@@ -92,15 +106,11 @@ def compile_document_root(
 
     # Compile the document root.
     code = _compile_document_root(document_root)
-
-    # Write the document root to the pages folder.
-    if write:
-        utils.write_page(output_path, code)
-
-    return constants.DOCUMENT_ROOT, code
+    return output_path, code
 
 
-def compile_theme(style: ComponentStyle, write: bool = True) -> Tuple[str, str]:
+@write_fn
+def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     """Compile the theme.
 
     Args:
@@ -116,22 +126,19 @@ def compile_theme(style: ComponentStyle, write: bool = True) -> Tuple[str, str]:
 
     # Compile the theme.
     code = _compile_theme(theme)
-
-    # Write the theme to the pages folder.
-    if write:
-        utils.write_page(output_path, code)
-
     return output_path, code
 
 
+@write_fn
 def compile_page(
-    path: str, component: Component, state: Type[State], write: bool = True
+    path: str, component: Component, state: Type[State]
 ) -> Tuple[str, str]:
     """Compile a single page.
 
     Args:
         path: The path to compile the page to.
         component: The component to compile.
+        state: The app state.
 
     Returns:
         The path and code of the compiled page.
@@ -140,13 +147,8 @@ def compile_page(
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = compile_component(
+    code = _compile_page(
         component=component,
         state=state,
     )
-
-    # Write the page to the pages folder.
-    if write:
-        utils.write_page(output_path, code)
-
     return output_path, code

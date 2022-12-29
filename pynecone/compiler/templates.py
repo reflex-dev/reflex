@@ -68,8 +68,8 @@ DOCUMENT_ROOT = join(
 # Template for the theme file.
 THEME = "export default {theme}".format
 
-# Code to render a single NextJS component.
-COMPONENT = join(
+# Code to render a single NextJS page.
+PAGE = join(
     [
         "{imports}",
         "{custom_code}",
