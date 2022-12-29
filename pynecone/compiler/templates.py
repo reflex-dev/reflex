@@ -85,6 +85,24 @@ PAGE = join(
     ]
 ).format
 
+# Code to render a single exported custom component.
+COMPONENT = join(
+    [
+        "export const {name} = memo(() => (",
+        "{render}",
+        "))",
+    ]
+).format
+
+# Code to render the custom components page.
+COMPONENTS = join(
+    [
+        "{imports}",
+        "{components}",
+    ]
+).format
+
+
 # React state declarations.
 USE_STATE = CONST(
     name="[{state}, {set_state}]", value="useState({initial_state})"

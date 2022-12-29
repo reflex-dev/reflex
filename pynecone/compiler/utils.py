@@ -224,6 +224,15 @@ def get_theme_path() -> str:
     return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
 
 
+def get_components_path() -> str:
+    """Get the path of the compiled components.
+
+    Returns:
+        The path of the compiled components.
+    """
+    return os.path.join(constants.WEB_UTILS_DIR, "components" + constants.JS_EXT)
+
+
 def create_components(components: Set[Component]) -> Component:
     """Create the components for the app.
 

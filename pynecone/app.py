@@ -1,6 +1,6 @@
 """The main Pynecone app."""
 
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware import cors
@@ -226,9 +226,14 @@ class App(Base):
         compiler.compile_theme(self.style)
 
         # Compile the pages.
+        custom_components = set()
         for path, component in self.pages.items():
+            custom_components |= component.get_custom_components()
             component.add_style(self.style)
             compiler.compile_page(path, component, self.state)
+
+        # Compile the custom components.
+        compiler.compile_components(custom_components)
 
 
 async def ping() -> str:

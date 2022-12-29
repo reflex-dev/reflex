@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import json
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, List, Tuple, Type
+from typing import TYPE_CHECKING, Callable, List, Set, Tuple, Type
 
 from pynecone import constants
 from pynecone.compiler import templates, utils
-from pynecone.components.component import Component, ImportDict
+from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
 
 if TYPE_CHECKING:
@@ -74,12 +74,55 @@ def _compile_page(component: Component, state: Type[State]) -> str:
     )
 
 
-def write_fn(fn: Callable[..., Tuple[str, str]]):
-    """Decorator to write the output of a function to a file."""
+def _compile_components(components: Set[CustomComponent]) -> str:
+    """Compile the components.
+
+    Args:
+        components: The components to compile.
+
+    Returns:
+        The compiled components.
+    """
+    # Get the imports for the components.
+    imports = {"react": {"memo"}}
+    component_defs = []
+    from pynecone.event import EventChain
+
+    for component in components:
+        render = component.component_fn(EventChain(events=[]))
+        imports = utils.merge_imports(imports, render.get_imports())
+        component = templates.COMPONENT(
+            name=component.tag,
+            props=component.get_props(),
+            render=render,
+        )
+        component_defs.append(component)
+    return templates.COMPONENTS(
+        imports=utils.compile_imports(imports),
+        components=templates.join(component_defs),
+    )
+
+
+def write_output(fn: Callable[..., Tuple[str, str]]):
+    """Decorator to write the output of a function to a file.
+
+    Args:
+        fn: The function to decorate.
+
+    Returns:
+        The decorated function.
+    """
 
     @wraps(fn)
     def wrapper(*args, write: bool = True) -> Tuple[str, str]:
-        """Write the output of the function to a file."""
+        """Write the output of the function to a file.
+
+        Args:
+            write: Whether to write the output to a file.
+
+        Returns:
+            The path and code of the output.
+        """
         path, code = fn(*args)
         if write:
             utils.write_page(path, code)
@@ -88,7 +131,7 @@ def write_fn(fn: Callable[..., Tuple[str, str]]):
     return wrapper
 
 
-@write_fn
+@write_output
 def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     """Compile the document root.
 
@@ -109,7 +152,7 @@ def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     return output_path, code
 
 
-@write_fn
+@write_output
 def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     """Compile the theme.
 
@@ -129,7 +172,7 @@ def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     return output_path, code
 
 
-@write_fn
+@write_output
 def compile_page(
     path: str, component: Component, state: Type[State]
 ) -> Tuple[str, str]:
@@ -147,8 +190,23 @@ def compile_page(
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(
-        component=component,
-        state=state,
-    )
+    code = _compile_page(component, state)
+    return output_path, code
+
+
+@write_output
+def compile_components(components: Set[CustomComponent]):
+    """Compile the custom components.
+
+    Args:
+        components: The custom components to compile.
+
+    Returns:
+        The path and code of the compiled components.
+    """
+    # Get the path for the output file.
+    output_path = utils.get_components_path()
+
+    # Compile the components.
+    code = _compile_components(components)
     return output_path, code
