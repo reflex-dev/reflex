@@ -389,7 +389,7 @@ ComponentChild = Union[utils.PrimitiveType, Var, Component]
 
 
 class CustomComponent(Component):
-    """A pure component."""
+    """A custom user-defined component."""
 
     # Use the components library.
     library = f"/{constants.COMPONENTS_PATH}"
@@ -407,7 +407,7 @@ class CustomComponent(Component):
         return super().get_props() - {"component_fn"}
 
 
-def pure_component(
+def custom_component(
     component_fn: Callable[..., Component]
 ) -> Callable[..., CustomComponent]:
     """Decorator for creating pure components."""
