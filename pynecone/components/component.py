@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from abc import ABC
+from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
-from pynecone import utils
+from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.components.tags import Tag
 from pynecone.event import (
@@ -282,7 +283,7 @@ class Component(Base, ABC):
                 raise TypeError(
                     "Children of Pynecone components must be other components, "
                     "state vars, or primitive Python types. "
-                    f"Got child of type {type(child)}.",
+                    f"Got child {child} of type {type(child)}.",
                 )
 
         children = [
@@ -385,3 +386,34 @@ class Component(Base, ABC):
 # Map from component to styling.
 ComponentStyle = Dict[Union[str, Type[Component]], Any]
 ComponentChild = Union[utils.PrimitiveType, Var, Component]
+
+
+class CustomComponent(Component):
+    """A pure component."""
+
+    # Use the components library.
+    library = f"/{constants.COMPONENTS_PATH}"
+
+    # The function that creates the component.
+    component_fn: Callable[..., Component]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tag = utils.to_title_case(self.component_fn.__name__)
+
+    @classmethod
+    def get_props(cls) -> Set[str]:
+        """Get the props for the component."""
+        return super().get_props() - {"component_fn"}
+
+
+def pure_component(
+    component_fn: Callable[..., Component]
+) -> Callable[..., CustomComponent]:
+    """Decorator for creating pure components."""
+
+    @wraps(component_fn)
+    def wrapper(*children, **props) -> CustomComponent:
+        return CustomComponent(component_fn=component_fn, children=children, **props)
+
+    return wrapper

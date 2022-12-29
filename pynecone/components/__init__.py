@@ -4,7 +4,7 @@ from pynecone import utils
 from pynecone.event import EventSpec
 from pynecone.var import Var
 
-from .component import Component
+from .component import Component, pure_component
 from .datadisplay import *
 from .disclosure import *
 from .feedback import *

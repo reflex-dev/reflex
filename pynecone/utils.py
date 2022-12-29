@@ -621,10 +621,8 @@ def to_camel_case(text: str) -> str:
     return prefix + camel
 
 
-def to_title(text: str) -> str:
-    """Convert a string from snake case to a title.
-
-    Each word is converted to title case and separated by a space.
+def to_title_case(text: str) -> str:
+    """Convert a string from snake case to title case.
 
     Args:
         text: The string to convert.
@@ -632,7 +630,7 @@ def to_title(text: str) -> str:
     Returns:
         The title case string.
     """
-    return " ".join(word.capitalize() for word in text.split("_"))
+    return "".join(word.capitalize() for word in text.split("_"))
 
 
 WRAP_MAP = {
