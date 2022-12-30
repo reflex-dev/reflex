@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
-from typing import TYPE_CHECKING, Dict, List, Set, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Set, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
@@ -23,9 +24,10 @@ from pynecone.components.base import (
 from pynecone.components.component import ImportDict
 from pynecone.state import State
 from pynecone.style import Style
+from pynecone.var import BaseVar
 
 if TYPE_CHECKING:
-    from pynecone.components.component import Component
+    from pynecone.components.component import Component, CustomComponent
 
 
 # To re-export this function.
@@ -168,6 +170,48 @@ def compile_render(component: Component) -> str:
     return component.render()
 
 
+def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDict]:
+    """Compile a custom component.
+
+    Args:
+        component: The custom component to compile.
+
+    Returns:
+        A tuple of the compiled component and the imports required by the component.
+    """
+    # The component props.
+    props = []
+
+    # Inspect the component function for props.
+    argspec = inspect.getfullargspec(component.component_fn)
+    annoations = argspec.annotations
+    for arg in argspec.args:
+        # Convert the prop name to camel case.
+        name = utils.to_camel_case(arg)
+
+        # Get the prop type.
+        type_ = annoations.get(arg, Any)
+
+        # Add the prop to the list.
+        props.append(BaseVar(name=name, type_=type_, is_local=True))
+
+    # Compile the component.
+    render = component.component_fn(*props)
+
+    # Concatenate the props.
+    props = ", ".join([prop.name for prop in props])
+
+    # Compile the component.
+    return (
+        templates.COMPONENT(
+            name=component.tag,
+            props=props,
+            render=render,
+        ),
+        render.get_imports(),
+    )
+
+
 def create_document_root(stylesheets: List[str]) -> Component:
     """Create the document root.
 
@@ -231,18 +275,6 @@ def get_components_path() -> str:
         The path of the compiled components.
     """
     return os.path.join(constants.WEB_UTILS_DIR, "components" + constants.JS_EXT)
-
-
-def create_components(components: Set[Component]) -> Component:
-    """Create the components for the app.
-
-    Args:
-        components: The set of components to include in the app.
-
-    Returns:
-        The components for the app.
-    """
-    return templates.join(components)
 
 
 def add_meta(page: Component, title: str, image: str, description: str) -> Component:

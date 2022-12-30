@@ -1,19 +1,16 @@
 """Compiler for the pynecone apps."""
 from __future__ import annotations
 
-import inspect
 import json
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, List, Set, Tuple, Type
+from typing import TYPE_CHECKING, Callable, List, Set, Tuple, Type
 
 from pynecone import constants
 from pynecone.compiler import templates, utils
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
-from pynecone.var import BaseVar
+from pynecone.style import Style
 
-if TYPE_CHECKING:
-    from pynecone.components.component import ComponentStyle
 
 # Imports to be included in every Pynecone app.
 DEFAULT_IMPORTS: ImportDict = {
@@ -85,27 +82,16 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     Returns:
         The compiled components.
     """
-    # Get the imports for the components.
     imports = {"react": {"memo"}}
     component_defs = []
 
+    # Compile each component.
     for component in components:
-        args = []
-        argspec = inspect.getfullargspec(component.component_fn)
-        annoations = argspec.annotations
-        for arg in argspec.args:
-            name = utils.utils.to_camel_case(arg)
-            type_ = annoations.get(arg, Any)
-            args.append(BaseVar(name=name, type_=type_, is_local=True))
-        render = component.component_fn(*args)
-        imports = utils.merge_imports(imports, render.get_imports())
-        props = ", ".join([arg.name for arg in args])
-        component = templates.COMPONENT(
-            name=component.tag,
-            props=props,
-            render=render,
-        )
-        component_defs.append(component)
+        component_def, component_imports = utils.compile_custom_component(component)
+        component_defs.append(component_def)
+        imports = utils.merge_imports(imports, component_imports)
+
+    # Compile the components page.
     return templates.COMPONENTS(
         imports=utils.compile_imports(imports),
         components=templates.join(component_defs),
@@ -113,7 +99,7 @@ def _compile_components(components: Set[CustomComponent]) -> str:
 
 
 def write_output(fn: Callable[..., Tuple[str, str]]):
-    """Decorator to write the output of a function to a file.
+    """Write the output of the function to a file.
 
     Args:
         fn: The function to decorate.
@@ -127,6 +113,7 @@ def write_output(fn: Callable[..., Tuple[str, str]]):
         """Write the output of the function to a file.
 
         Args:
+            *args: The arguments to pass to the function.
             write: Whether to write the output to a file.
 
         Returns:
@@ -145,7 +132,7 @@ def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     """Compile the document root.
 
     Args:
-        document_root: The document root to compile.
+        stylesheets: The stylesheets to include in the document root.
 
     Returns:
         The path and code of the compiled document root.
@@ -162,11 +149,11 @@ def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
 
 
 @write_output
-def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
+def compile_theme(style: Style) -> Tuple[str, str]:
     """Compile the theme.
 
     Args:
-        theme: The theme to compile.
+        style: The style to compile.
 
     Returns:
         The path and code of the compiled theme.

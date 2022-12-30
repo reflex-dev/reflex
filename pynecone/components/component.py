@@ -144,7 +144,7 @@ class Component(Base, ABC):
         self,
         event_trigger: str,
         value: Union[Var, EventHandler, List[EventHandler], Callable],
-    ) -> EventChain:
+    ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
         Args:
@@ -387,7 +387,11 @@ class Component(Base, ABC):
         )
 
     def get_custom_components(self) -> Set[CustomComponent]:
-        """Get all the custom components used by the component."""
+        """Get all the custom components used by the component.
+        
+        Returns:
+            The set of custom components.
+        """
         custom_components = set()
         for child in self.children:
             custom_components |= child.get_custom_components()
@@ -409,26 +413,54 @@ class CustomComponent(Component):
     component_fn: Callable[..., Component]
 
     def __init__(self, *args, **kwargs):
+        """Initialize the custom component.
+        
+        Args:
+            *args: The args to pass to the component.
+            **kwargs: The kwargs to pass to the component.
+        """
         super().__init__(*args, **kwargs)
+
+        # Set the tag to the name of the function.
         self.tag = utils.to_title_case(self.component_fn.__name__)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """Get the hash of the component.
+        
+        Returns:
+            The hash of the component.
+        """
         return hash(self.tag)
 
     @classmethod
     def get_props(cls) -> Set[str]:
-        """Get the props for the component."""
+        """Get the props for the component.
+        
+        Returns:
+            The set of component props.
+        """
         return super().get_props() - {"component_fn"}
 
     def get_custom_components(self) -> Set[CustomComponent]:
-        """Get all the custom components used by the component."""
+        """Get all the custom components used by the component.
+        
+        Returns:
+            The set of custom components.
+        """
         return {self} | super().get_custom_components()
 
 
 def custom_component(
     component_fn: Callable[..., Component]
 ) -> Callable[..., CustomComponent]:
-    """Decorator for creating pure components."""
+    """Create a custom component from a function.
+    
+    Args:
+        component_fn: The function that creates the component.
+
+    Returns:
+        The decorated function.
+    """
 
     @wraps(component_fn)
     def wrapper(*children, **props) -> CustomComponent:
