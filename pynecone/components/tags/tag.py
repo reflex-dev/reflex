@@ -67,10 +67,7 @@ class Tag(Base):
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-            if len(prop.events) > 0:
-                local_args = ",".join(prop.events[0].local_args)
-            else:
-                local_args = ""
+            local_args = ",".join(prop.events[0].local_args)
             events = ",".join([utils.format_event(event) for event in prop.events])
             prop = f"({local_args}) => Event([{events}])"
 

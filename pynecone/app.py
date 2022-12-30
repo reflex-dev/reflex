@@ -228,9 +228,11 @@ class App(Base):
         # Compile the pages.
         custom_components = set()
         for path, component in self.pages.items():
-            custom_components |= component.get_custom_components()
             component.add_style(self.style)
             compiler.compile_page(path, component, self.state)
+
+            # Add the custom components from the page to the set.
+            custom_components |= component.get_custom_components()
 
         # Compile the custom components.
         compiler.compile_components(custom_components)

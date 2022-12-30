@@ -88,7 +88,7 @@ PAGE = join(
 # Code to render a single exported custom component.
 COMPONENT = join(
     [
-        "export const {name} = memo(() => (",
+        "export const {name} = memo(({{{props}}}) => (",
         "{render}",
         "))",
     ]

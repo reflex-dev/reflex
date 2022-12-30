@@ -32,7 +32,7 @@ class Component(Base, ABC):
     style: Style = Style()
 
     # A mapping from event triggers to event chains.
-    event_triggers: Dict[str, EventChain] = {}
+    event_triggers: Dict[str, Union[EventChain, Var]] = {}
 
     # The library that the component is based on.
     library: Optional[str] = None
@@ -143,7 +143,7 @@ class Component(Base, ABC):
     def _create_event_chain(
         self,
         event_trigger: str,
-        value: Union[EventChain, EventHandler, List[EventHandler], Callable],
+        value: Union[Var, EventHandler, List[EventHandler], Callable],
     ) -> EventChain:
         """Create an event chain from a variety of input types.
 
@@ -158,7 +158,7 @@ class Component(Base, ABC):
             ValueError: If the value is not a valid event chain.
         """
         # If it's already an event chain, return it.
-        if isinstance(value, EventChain):
+        if isinstance(value, Var):
             return value
 
         arg = self.get_controlled_value()

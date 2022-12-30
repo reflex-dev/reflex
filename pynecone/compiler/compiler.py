@@ -1,14 +1,16 @@
 """Compiler for the pynecone apps."""
 from __future__ import annotations
 
+import inspect
 import json
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, List, Set, Tuple, Type
+from typing import TYPE_CHECKING, Any, Callable, List, Set, Tuple, Type
 
 from pynecone import constants
 from pynecone.compiler import templates, utils
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
+from pynecone.var import BaseVar
 
 if TYPE_CHECKING:
     from pynecone.components.component import ComponentStyle
@@ -86,14 +88,21 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     # Get the imports for the components.
     imports = {"react": {"memo"}}
     component_defs = []
-    from pynecone.event import EventChain
 
     for component in components:
-        render = component.component_fn(EventChain(events=[]))
+        args = []
+        argspec = inspect.getfullargspec(component.component_fn)
+        annoations = argspec.annotations
+        for arg in argspec.args:
+            name = utils.utils.to_camel_case(arg)
+            type_ = annoations.get(arg, Any)
+            args.append(BaseVar(name=name, type_=type_, is_local=True))
+        render = component.component_fn(*args)
         imports = utils.merge_imports(imports, render.get_imports())
+        props = ", ".join([arg.name for arg in args])
         component = templates.COMPONENT(
             name=component.tag,
-            props=component.get_props(),
+            props=props,
             render=render,
         )
         component_defs.append(component)
