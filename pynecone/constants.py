@@ -57,6 +57,8 @@ PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pcversion.txt")
 
 
 # Commands to run the app.
+# The frontend default port.
+FRONTEND_PORT = "3000"
 # The backend api url.
 API_URL = "http://localhost:8000"
 # The default path where bun is installed.
@@ -68,7 +70,7 @@ BACKEND_HOST = "0.0.0.0"
 # The default timeout when launching the gunicorn server.
 TIMEOUT = 120
 # The command to run the backend in production mode.
-RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --bind 0.0.0.0:8000 --preload --timeout {TIMEOUT} --log-level critical".split()
+RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {TIMEOUT} --log-level critical".split()
 
 # Compiler variables.
 # The extension for compiled Javascript files.

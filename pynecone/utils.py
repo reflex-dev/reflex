@@ -14,6 +14,7 @@ import string
 import subprocess
 import sys
 import uvicorn
+from urllib.parse import urlparse
 from collections import defaultdict
 from subprocess import PIPE
 from types import ModuleType
@@ -500,7 +501,10 @@ def run_frontend(app: App):
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    subprocess.Popen([get_package_manager(), "run", "dev"], cwd=constants.WEB_DIR)
+    os.environ["PORT"] = get_config().port
+    subprocess.Popen(
+        [get_package_manager(), "run", "dev"], cwd=constants.WEB_DIR, env=os.environ
+    )
 
 
 def run_frontend_prod(app: App):
@@ -515,8 +519,12 @@ def run_frontend_prod(app: App):
     # Export the app.
     export_app(app)
 
+    os.environ["PORT"] = get_config().port
+
     # Run the frontend in production mode.
-    subprocess.Popen([get_package_manager(), "run", "prod"], cwd=constants.WEB_DIR)
+    subprocess.Popen(
+        [get_package_manager(), "run", "prod"], cwd=constants.WEB_DIR, env=os.environ
+    )
 
 
 def get_num_workers() -> int:
@@ -533,6 +541,19 @@ def get_num_workers() -> int:
     return (os.cpu_count() or 1) * 2 + 1
 
 
+def get_api_port() -> int:
+    """Get the API port.
+
+    Returns:
+        The API port.
+    """
+    port = urlparse(get_config().api_url).port
+    if port is None:
+        port = urlparse(constants.API_URL).port
+    assert port is not None
+    return port
+
+
 def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
     """Run the backend.
 
@@ -543,6 +564,7 @@ def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel
     uvicorn.run(
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
         host=constants.BACKEND_HOST,
+        port=get_api_port(),
         log_level=loglevel,
         reload=True,
     )
@@ -559,6 +581,8 @@ def run_backend_prod(
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
+        "--bind",
+        f"0.0.0.0:{get_api_port()}",
         "--workers",
         str(num_workers),
         "--threads",
