@@ -281,7 +281,11 @@ def test_get_triggers(component1, component2):
 
 
 def test_create_custom_component(my_component):
-    """Test that we can create a custom component."""
+    """Test that we can create a custom component.
+    
+    Args:
+        my_component: A test custom component.
+    """
     component = CustomComponent(component_fn=my_component)
     assert component.tag == "MyComponent"
     assert component.get_props() == set()
