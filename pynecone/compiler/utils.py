@@ -24,7 +24,7 @@ from pynecone.components.base import (
 from pynecone.components.component import ImportDict
 from pynecone.state import State
 from pynecone.style import Style
-from pynecone.var import BaseVar
+from pynecone.var import BaseVar, Var
 
 if TYPE_CHECKING:
     from pynecone.components.component import Component, CustomComponent
@@ -191,6 +191,8 @@ def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDic
 
         # Get the prop type.
         type_ = annoations.get(arg, Any)
+        if issubclass(type_, Var):
+            type_ = utils.get_args(type_)[0]
 
         # Add the prop to the list.
         props.append(BaseVar(name=name, type_=type_, is_local=True))
