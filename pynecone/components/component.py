@@ -388,7 +388,7 @@ class Component(Base, ABC):
 
     def get_custom_components(self) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
-        
+
         Returns:
             The set of custom components.
         """
@@ -414,7 +414,7 @@ class CustomComponent(Component):
 
     def __init__(self, *args, **kwargs):
         """Initialize the custom component.
-        
+
         Args:
             *args: The args to pass to the component.
             **kwargs: The kwargs to pass to the component.
@@ -426,7 +426,7 @@ class CustomComponent(Component):
 
     def __hash__(self) -> int:
         """Get the hash of the component.
-        
+
         Returns:
             The hash of the component.
         """
@@ -435,7 +435,7 @@ class CustomComponent(Component):
     @classmethod
     def get_props(cls) -> Set[str]:
         """Get the props for the component.
-        
+
         Returns:
             The set of component props.
         """
@@ -443,7 +443,7 @@ class CustomComponent(Component):
 
     def get_custom_components(self) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
-        
+
         Returns:
             The set of custom components.
         """
@@ -454,7 +454,7 @@ def custom_component(
     component_fn: Callable[..., Component]
 ) -> Callable[..., CustomComponent]:
     """Create a custom component from a function.
-    
+
     Args:
         component_fn: The function that creates the component.
 
