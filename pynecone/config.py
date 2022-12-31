@@ -15,6 +15,9 @@ class Config(Base):
     # The username.
     username: Optional[str] = None
 
+    # The frontend port.
+    port: str = constants.FRONTEND_PORT
+
     # The backend API url.
     api_url: str = constants.API_URL
 
