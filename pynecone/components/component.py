@@ -424,6 +424,17 @@ class CustomComponent(Component):
         # Set the tag to the name of the function.
         self.tag = utils.to_title_case(self.component_fn.__name__)
 
+    def __eq__(self, other) -> bool:
+        """Check if the component is equal to another.
+
+        Args:
+            other: The other component.
+
+        Returns:
+            Whether the component is equal to the other.
+        """
+        return isinstance(other, CustomComponent) and self.tag == other.tag
+
     def __hash__(self) -> int:
         """Get the hash of the component.
 
