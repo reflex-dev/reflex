@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import typing
 from abc import ABC
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
@@ -433,13 +434,12 @@ class CustomComponent(Component):
         self.tag = utils.to_title_case(self.component_fn.__name__)
 
         # Set the props.
-        argspec = inspect.getfullargspec(self.component_fn)
-        annotations = argspec.annotations
+        props = typing.get_type_hints(self.component_fn)
         for key, value in kwargs.items():
-            if key not in argspec.args:
+            if key not in props:
                 continue
-            type_ = annotations.get(key, Any)
-            if issubclass(type_, EventChain):
+            type_ = props[key]
+            if utils._issubclass(type_, EventChain):
                 value = self._create_event_chain(key, value)
             else:
                 value = Var.create(value)
@@ -471,7 +471,7 @@ class CustomComponent(Component):
         Returns:
             The set of component props.
         """
-        return super().get_props() - {"component_fn"}
+        return set()
 
     def get_custom_components(self) -> Set[CustomComponent]:
         """Get all the custom components used by the component.

@@ -290,3 +290,10 @@ def test_create_custom_component(my_component):
     assert component.tag == "MyComponent"
     assert component.get_props() == set()
     assert component.get_custom_components() == {component}
+
+
+def test_custom_component_hash(my_component):
+    """Test that the hash of a custom component is correct."""
+    component1 = CustomComponent(component_fn=my_component)
+    component2 = CustomComponent(component_fn=my_component)
+    assert set([component1, component2]) == {component1}
