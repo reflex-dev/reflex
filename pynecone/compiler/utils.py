@@ -179,23 +179,10 @@ def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDic
     Returns:
         A tuple of the compiled component and the imports required by the component.
     """
-    # The component props.
-    props = []
-
-    # Inspect the component function for props.
-    argspec = inspect.getfullargspec(component.component_fn)
-    annoations = argspec.annotations
-    for arg in argspec.args:
-        # Convert the prop name to camel case.
-        name = utils.to_camel_case(arg)
-
-        # Get the prop type.
-        type_ = annoations.get(arg, Any)
-        if issubclass(type_, Var):
-            type_ = utils.get_args(type_)[0]
-
-        # Add the prop to the list.
-        props.append(BaseVar(name=name, type_=type_, is_local=True))
+    props = [
+        BaseVar(name=name, type_=Any, is_local=True)
+        for name, prop in component.props.items()
+    ]
 
     # Compile the component.
     render = component.component_fn(*props)

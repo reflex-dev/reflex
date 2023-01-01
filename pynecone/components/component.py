@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from abc import ABC
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
@@ -71,6 +72,7 @@ class Component(Base, ABC):
 
         Args:
             *args: Args to initialize the component.
+            set_props: Whether to set the props.
             **kwargs: Kwargs to initialize the component.
 
         Raises:
@@ -412,6 +414,9 @@ class CustomComponent(Component):
     # The function that creates the component.
     component_fn: Callable[..., Component]
 
+    # The props of the component.
+    props: Dict[str, Any] = {}
+
     def __init__(self, *args, **kwargs):
         """Initialize the custom component.
 
@@ -421,8 +426,24 @@ class CustomComponent(Component):
         """
         super().__init__(*args, **kwargs)
 
+        # Unset the style.
+        self.style = Style()
+
         # Set the tag to the name of the function.
         self.tag = utils.to_title_case(self.component_fn.__name__)
+
+        # Set the props.
+        argspec = inspect.getfullargspec(self.component_fn)
+        annotations = argspec.annotations
+        for key, value in kwargs.items():
+            if key not in argspec.args:
+                continue
+            type_ = annotations.get(key, Any)
+            if issubclass(type_, EventChain):
+                value = self._create_event_chain(key, value)
+            else:
+                value = Var.create(value)
+            self.props[utils.to_camel_case(key)] = value
 
     def __eq__(self, other) -> bool:
         """Check if the component is equal to another.
@@ -459,6 +480,14 @@ class CustomComponent(Component):
             The set of custom components.
         """
         return {self} | super().get_custom_components()
+
+    def _render(self) -> Tag:
+        """Define how to render the component in React.
+
+        Returns:
+            The tag to render.
+        """
+        return Tag(name=self.tag).add_props(**self.props)
 
 
 def custom_component(
