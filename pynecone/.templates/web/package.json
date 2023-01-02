@@ -12,6 +12,8 @@
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
     "axios": "^0.27.2",
+    "echarts": "^5.4.1",
+    "echarts-for-react": "^3.0.2",
     "focus-visible": "^5.2.0",
     "framer-motion": "^6.3.3",
     "gridjs": "^4.0.0",
