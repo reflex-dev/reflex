@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import pynecone as pc
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
 from pynecone.var import Var
@@ -28,7 +27,7 @@ class Echarts(Component):
     """
     library = "echarts-for-react"
     tag = "EchartsForReact"
-    option: pc.Var[dict]
+    option: Var[dict]
     
 
     def _get_imports(self):
