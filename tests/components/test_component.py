@@ -293,7 +293,11 @@ def test_create_custom_component(my_component):
 
 
 def test_custom_component_hash(my_component):
-    """Test that the hash of a custom component is correct."""
+    """Test that the hash of a custom component is correct.
+
+    Args:
+        my_component: A test custom component.
+    """
     component1 = CustomComponent(component_fn=my_component)
     component2 = CustomComponent(component_fn=my_component)
     assert set([component1, component2]) == {component1}

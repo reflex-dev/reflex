@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 import typing
 from abc import ABC
 from functools import wraps
@@ -73,7 +72,6 @@ class Component(Base, ABC):
 
         Args:
             *args: Args to initialize the component.
-            set_props: Whether to set the props.
             **kwargs: Kwargs to initialize the component.
 
         Raises:
