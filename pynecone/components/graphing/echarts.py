@@ -17,17 +17,33 @@
 
 from pynecone.components.component import Component
 from pynecone.var import Var
-
+from typing import Any, Dict
 
 class Echarts(Component):
     """A component that wraps echarts-for-react.
     - echarts: https://echarts.apache.org/examples/en/index.html
     - echarts-for-react: https://github.com/hustcc/echarts-for-react
     """
+
     library = "echarts-for-react"
     tag = "EchartsForReact"
-    option: Var[dict]
+
+    #
+    option: Var[Dict]#Var[dict] = {}
+
+    theme: Var[str]
+
+    notMerge: Var[bool]
+
+    lazyUpdate: Var[bool]
+
+    opts: Var[Dict]
     
+    onEvents: Var[Dict]
+
+    # onChartReady: Var
+
+
 
     def _get_imports(self):
         return {}
