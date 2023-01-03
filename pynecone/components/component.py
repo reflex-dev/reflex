@@ -440,7 +440,7 @@ class CustomComponent(Component):
             if utils._issubclass(type_, EventChain):
                 value = self._create_event_chain(key, value)
             else:
-                value = Var.create(value)
+                value = Var.create(value, is_string=type(value) is str)
             self.props[utils.to_camel_case(key)] = value
 
     def __eq__(self, other) -> bool:

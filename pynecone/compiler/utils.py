@@ -183,7 +183,6 @@ def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDic
         BaseVar(
             name=name,
             type_=prop.type_ if utils._isinstance(prop, Var) else type(prop),
-            is_local=True,
         )
         for name, prop in component.props.items()
     ]
