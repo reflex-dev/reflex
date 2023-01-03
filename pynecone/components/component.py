@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import typing
 from abc import ABC
+from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
-from pynecone import utils
+from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.components.tags import Tag
 from pynecone.event import (
@@ -31,7 +33,7 @@ class Component(Base, ABC):
     style: Style = Style()
 
     # A mapping from event triggers to event chains.
-    event_triggers: Dict[str, EventChain] = {}
+    event_triggers: Dict[str, Union[EventChain, Var]] = {}
 
     # The library that the component is based on.
     library: Optional[str] = None
@@ -142,8 +144,8 @@ class Component(Base, ABC):
     def _create_event_chain(
         self,
         event_trigger: str,
-        value: Union[EventHandler, List[EventHandler], Callable],
-    ) -> EventChain:
+        value: Union[Var, EventHandler, List[EventHandler], Callable],
+    ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
         Args:
@@ -156,6 +158,10 @@ class Component(Base, ABC):
         Raises:
             ValueError: If the value is not a valid event chain.
         """
+        # If it's already an event chain, return it.
+        if isinstance(value, Var):
+            return value
+
         arg = self.get_controlled_value()
 
         # If the input is a single event handler, wrap it in a list.
@@ -282,7 +288,7 @@ class Component(Base, ABC):
                 raise TypeError(
                     "Children of Pynecone components must be other components, "
                     "state vars, or primitive Python types. "
-                    f"Got child of type {type(child)}.",
+                    f"Got child {child} of type {type(child)}.",
                 )
 
         children = [
@@ -381,7 +387,121 @@ class Component(Base, ABC):
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
+    def get_custom_components(self) -> Set[CustomComponent]:
+        """Get all the custom components used by the component.
+
+        Returns:
+            The set of custom components.
+        """
+        custom_components = set()
+        for child in self.children:
+            custom_components |= child.get_custom_components()
+        return custom_components
+
 
 # Map from component to styling.
 ComponentStyle = Dict[Union[str, Type[Component]], Any]
 ComponentChild = Union[utils.PrimitiveType, Var, Component]
+
+
+class CustomComponent(Component):
+    """A custom user-defined component."""
+
+    # Use the components library.
+    library = f"/{constants.COMPONENTS_PATH}"
+
+    # The function that creates the component.
+    component_fn: Callable[..., Component]
+
+    # The props of the component.
+    props: Dict[str, Any] = {}
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the custom component.
+
+        Args:
+            *args: The args to pass to the component.
+            **kwargs: The kwargs to pass to the component.
+        """
+        super().__init__(*args, **kwargs)
+
+        # Unset the style.
+        self.style = Style()
+
+        # Set the tag to the name of the function.
+        self.tag = utils.to_title_case(self.component_fn.__name__)
+
+        # Set the props.
+        props = typing.get_type_hints(self.component_fn)
+        for key, value in kwargs.items():
+            if key not in props:
+                continue
+            type_ = props[key]
+            if utils._issubclass(type_, EventChain):
+                value = self._create_event_chain(key, value)
+            else:
+                value = Var.create(value)
+            self.props[utils.to_camel_case(key)] = value
+
+    def __eq__(self, other) -> bool:
+        """Check if the component is equal to another.
+
+        Args:
+            other: The other component.
+
+        Returns:
+            Whether the component is equal to the other.
+        """
+        return isinstance(other, CustomComponent) and self.tag == other.tag
+
+    def __hash__(self) -> int:
+        """Get the hash of the component.
+
+        Returns:
+            The hash of the component.
+        """
+        return hash(self.tag)
+
+    @classmethod
+    def get_props(cls) -> Set[str]:
+        """Get the props for the component.
+
+        Returns:
+            The set of component props.
+        """
+        return set()
+
+    def get_custom_components(self) -> Set[CustomComponent]:
+        """Get all the custom components used by the component.
+
+        Returns:
+            The set of custom components.
+        """
+        return {self} | super().get_custom_components()
+
+    def _render(self) -> Tag:
+        """Define how to render the component in React.
+
+        Returns:
+            The tag to render.
+        """
+        return Tag(name=self.tag).add_props(**self.props)
+
+
+def custom_component(
+    component_fn: Callable[..., Component]
+) -> Callable[..., CustomComponent]:
+    """Create a custom component from a function.
+
+    Args:
+        component_fn: The function that creates the component.
+
+    Returns:
+        The decorated function.
+    """
+
+    @wraps(component_fn)
+    def wrapper(*children, **props) -> CustomComponent:
+        return CustomComponent(component_fn=component_fn, children=children, **props)
+
+    return wrapper

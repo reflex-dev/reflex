@@ -1,6 +1,6 @@
 """The main Pynecone app."""
 
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware import cors
@@ -219,75 +219,23 @@ class App(Base):
         # Create the database models.
         Model.create_all()
 
-        # Create the root document with base styles and fonts.
-        self.pages[constants.DOCUMENT_ROOT] = compiler_utils.create_document_root(
-            self.stylesheets
-        )
-        self.pages[constants.THEME] = compiler_utils.create_theme(self.style)  # type: ignore
-
-        # Compile the pages.
-        for path, component in self.pages.items():
-            self.compile_page(path, component)
-
-    def compile_page(
-        self, path: str, component: Component, write: bool = True
-    ) -> Tuple[str, str]:
-        """Compile a single page.
-
-        Args:
-            path: The path to compile the page to.
-            component: The component to compile.
-            write: Whether to write the page to the pages folder.
-
-        Returns:
-            The path and code of the compiled page.
-        """
-        # Get the path for the output file.
-        output_path = utils.get_page_path(path)
-
-        # Compile the document root.
-        if path == constants.DOCUMENT_ROOT:
-            code = compiler.compile_document_root(component)
+        # Compile the root document with base styles and fonts.
+        compiler.compile_document_root(self.stylesheets)
 
         # Compile the theme.
-        elif path == constants.THEME:
-            output_path = utils.get_theme_path()
-            code = compiler.compile_theme(component)  # type: ignore
+        compiler.compile_theme(self.style)
 
-        # Compile all other pages.
-        else:
-            # Add the style to the component.
+        # Compile the pages.
+        custom_components = set()
+        for path, component in self.pages.items():
             component.add_style(self.style)
-            code = compiler.compile_component(
-                component=component,
-                state=self.state,
-            )
+            compiler.compile_page(path, component, self.state)
 
-        # Write the page to the pages folder.
-        if write:
-            utils.write_page(output_path, code)
+            # Add the custom components from the page to the set.
+            custom_components |= component.get_custom_components()
 
-        return output_path, code
-
-    def get_state(self, token: str) -> State:
-        """Get the state for a token.
-
-        Args:
-            token: The token to get the state for.
-
-        Returns:
-            The state for the token.
-        """
-        return self.state_manager.get_state(token)
-
-    def set_state(self, token: str, state: State):
-        """Set the state for a token.
-
-        Args:
-            token: The token to set the state for.
-            state: The state to set.
-        """
-        self.state_manager.set_state(token, state)
+        # Compile the custom components.
+        compiler.compile_components(custom_components)
 
 
 async def ping() -> str:
@@ -347,7 +295,7 @@ async def process(app: App, event: Event) -> StateUpdate:
         The state update after processing the event.
     """
     # Get the state for the session.
-    state = app.get_state(event.token)
+    state = app.state_manager.get_state(event.token)
 
     # Preprocess the event.
     pre = app.preprocess(state, event)
@@ -356,7 +304,7 @@ async def process(app: App, event: Event) -> StateUpdate:
 
     # Apply the event to the state.
     update = await state.process(event)
-    app.set_state(event.token, state)
+    app.state_manager.set_state(event.token, state)
 
     # Postprocess the event.
     post = app.postprocess(state, event, update.delta)

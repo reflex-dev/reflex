@@ -6,7 +6,7 @@ from typing import Optional
 import pydantic
 
 from pynecone.components.component import Component
-from pynecone.components.layout.box import Box
+from pynecone.components.layout.fragment import Fragment
 from pynecone.components.tags import CondTag, Tag
 from pynecone.var import Var
 
@@ -54,7 +54,7 @@ class Cond(Component):
             The conditional component.
         """
         if comp2 is None:
-            comp2 = Box.create()
+            comp2 = Fragment.create()
         if isinstance(comp1, Cond):
             comp1.is_nested = True
         if isinstance(comp2, Cond):

@@ -68,8 +68,8 @@ DOCUMENT_ROOT = join(
 # Template for the theme file.
 THEME = "export default {theme}".format
 
-# Code to render a single NextJS component.
-COMPONENT = join(
+# Code to render a single NextJS page.
+PAGE = join(
     [
         "{imports}",
         "{custom_code}",
@@ -84,6 +84,24 @@ COMPONENT = join(
         "}}",
     ]
 ).format
+
+# Code to render a single exported custom component.
+COMPONENT = join(
+    [
+        "export const {name} = memo(({{{props}}}) => (",
+        "{render}",
+        "))",
+    ]
+).format
+
+# Code to render the custom components page.
+COMPONENTS = join(
+    [
+        "{imports}",
+        "{components}",
+    ]
+).format
+
 
 # React state declarations.
 USE_STATE = CONST(

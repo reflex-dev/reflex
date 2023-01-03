@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import inspect
 import json
-from typing import TYPE_CHECKING, Dict, List, Set, Type
+import os
+from typing import TYPE_CHECKING, Any, Dict, List, Set, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
@@ -22,9 +24,10 @@ from pynecone.components.base import (
 from pynecone.components.component import ImportDict
 from pynecone.state import State
 from pynecone.style import Style
+from pynecone.var import BaseVar, Var
 
 if TYPE_CHECKING:
-    from pynecone.components.component import Component
+    from pynecone.components.component import Component, CustomComponent
 
 
 # To re-export this function.
@@ -167,6 +170,41 @@ def compile_render(component: Component) -> str:
     return component.render()
 
 
+def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDict]:
+    """Compile a custom component.
+
+    Args:
+        component: The custom component to compile.
+
+    Returns:
+        A tuple of the compiled component and the imports required by the component.
+    """
+    props = [
+        BaseVar(
+            name=name,
+            type_=prop.type_ if utils._isinstance(prop, Var) else type(prop),
+            is_local=True,
+        )
+        for name, prop in component.props.items()
+    ]
+
+    # Compile the component.
+    render = component.component_fn(*props)
+
+    # Concatenate the props.
+    props = ", ".join([prop.name for prop in props])
+
+    # Compile the component.
+    return (
+        templates.COMPONENT(
+            name=component.tag,
+            props=props,
+            render=render,
+        ),
+        render.get_imports(),
+    )
+
+
 def create_document_root(stylesheets: List[str]) -> Component:
     """Create the document root.
 
@@ -202,6 +240,36 @@ def create_theme(style: Style) -> Dict:
     }
 
 
+def get_page_path(path: str) -> str:
+    """Get the path of the compiled JS file for the given page.
+
+    Args:
+        path: The path of the page.
+
+    Returns:
+        The path of the compiled JS file.
+    """
+    return os.path.join(constants.WEB_PAGES_DIR, path + constants.JS_EXT)
+
+
+def get_theme_path() -> str:
+    """Get the path of the base theme style.
+
+    Returns:
+        The path of the theme style.
+    """
+    return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
+
+
+def get_components_path() -> str:
+    """Get the path of the compiled components.
+
+    Returns:
+        The path of the compiled components.
+    """
+    return os.path.join(constants.WEB_UTILS_DIR, "components" + constants.JS_EXT)
+
+
 def add_meta(page: Component, title: str, image: str, description: str) -> Component:
     """Add metadata to a page.
 
@@ -223,3 +291,15 @@ def add_meta(page: Component, title: str, image: str, description: str) -> Compo
     )
 
     return page
+
+
+def write_page(path: str, code: str):
+    """Write the given code to the given path.
+
+    Args:
+        path: The path to write the code to.
+        code: The code to write.
+    """
+    utils.mkdir(os.path.dirname(path))
+    with open(path, "w") as f:
+        f.write(code)

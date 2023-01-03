@@ -2,7 +2,8 @@ from typing import List, Set, Type
 
 import pytest
 
-from pynecone.components.component import Component, ImportDict
+from pynecone.components.component import Component, CustomComponent, ImportDict
+from pynecone.components.layout.box import Box
 from pynecone.event import EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
 from pynecone.style import Style
@@ -99,6 +100,20 @@ def on_click2() -> EventHandler:
         pass
 
     return EventHandler(fn=on_click2)
+
+
+@pytest.fixture
+def my_component():
+    """A test component function.
+
+    Returns:
+        A test component function.
+    """
+
+    def my_component(prop1: str, prop2: int):
+        return Box.create(prop1, prop2)
+
+    return my_component
 
 
 def test_set_style_attrs(component1):
@@ -263,3 +278,26 @@ def test_get_triggers(component1, component2):
     """
     assert component1.get_triggers() == EVENT_TRIGGERS
     assert component2.get_triggers() == {"on_open", "on_close"} | EVENT_TRIGGERS
+
+
+def test_create_custom_component(my_component):
+    """Test that we can create a custom component.
+
+    Args:
+        my_component: A test custom component.
+    """
+    component = CustomComponent(component_fn=my_component)
+    assert component.tag == "MyComponent"
+    assert component.get_props() == set()
+    assert component.get_custom_components() == {component}
+
+
+def test_custom_component_hash(my_component):
+    """Test that the hash of a custom component is correct.
+
+    Args:
+        my_component: A test custom component.
+    """
+    component1 = CustomComponent(component_fn=my_component)
+    component2 = CustomComponent(component_fn=my_component)
+    assert set([component1, component2]) == {component1}

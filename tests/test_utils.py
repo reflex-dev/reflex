@@ -53,18 +53,18 @@ def test_to_camel_case(input: str, output: str):
         ("", ""),
         ("hello", "Hello"),
         ("Hello", "Hello"),
-        ("snake_case", "Snake Case"),
-        ("snake_case_two", "Snake Case Two"),
+        ("snake_case", "SnakeCase"),
+        ("snake_case_two", "SnakeCaseTwo"),
     ],
 )
-def test_to_title(input: str, output: str):
+def test_to_title_case(input: str, output: str):
     """Test converting strings to title case.
 
     Args:
         input: The input string.
         output: The expected output string.
     """
-    assert utils.to_title(input) == output
+    assert utils.to_title_case(input) == output
 
 
 @pytest.mark.parametrize(
