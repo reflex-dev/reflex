@@ -377,6 +377,21 @@ def create_config(app_name: str):
         f.write(templates.PCCONFIG.format(app_name=app_name))
 
 
+def initialize_gitignore():
+    """Initialize the template .gitignore file."""
+    # The files to add to the .gitignore file.
+    files = constants.DEFAULT_GITIGNORE
+
+    # Subtract current ignored files.
+    if os.path.exists(constants.GITIGNORE_FILE):
+        with open(constants.GITIGNORE_FILE, "r") as f:
+            files -= set(f.read().splitlines())
+
+    # Add the new files to the .gitignore file.
+    with open(constants.GITIGNORE_FILE, "a") as f:
+        f.write(join(files))
+
+
 def initialize_app_directory(app_name: str):
     """Initialize the app directory on pc init.
 
