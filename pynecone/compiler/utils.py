@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Dict, List, Set, Type
+from typing import Dict, List, Set, Tuple, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
