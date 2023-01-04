@@ -1,10 +1,10 @@
-"""Table components."""
+"""Markdown component."""
 
+import textwrap
 from typing import List
 
-from pynecone import utils
 from pynecone.components.component import Component
-from pynecone.var import BaseVar, Var
+from pynecone.var import BaseVar
 
 
 class Markdown(Component):
@@ -14,8 +14,22 @@ class Markdown(Component):
 
     tag = "ReactMarkdown"
 
-    # The source of the markdown.
-    src: Var[str]
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a markdown component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The markdown component.
+        """
+        assert (
+            len(children) == 1
+        ), "Markdown component must have exactly one child containing the markdown source."
+        src = textwrap.dedent(children[0])
+        return super().create(src, **props)
 
     def _get_imports(self):
         imports = super()._get_imports()
@@ -37,19 +51,20 @@ class Markdown(Component):
         return imports
 
     def _render(self):
-        tag = super()._render()
-        return tag.add_props(
-            children=utils.wrap(str(self.src).strip(), "`"),
-            components={
-                "h1": "{({node, ...props}) => <Heading size='2xl' {...props} />}",
-                "h2": "{({node, ...props}) => <Heading size='xl' {...props} />}",
-                "h3": "{({node, ...props}) => <Heading size='lg' {...props} />}",
-                "ul": "{UnorderedList}",
-                "ol": "{OrderedList}",
-                "li": "{ListItem}",
-                "p": "{Text}",
-                "a": "{Link}",
-                "code": """{({node, inline, className, children, ...props}) => 
+        return (
+            super()
+            ._render()
+            .add_props(
+                components={
+                    "h1": "{({node, ...props}) => <Heading size='2xl' {...props} />}",
+                    "h2": "{({node, ...props}) => <Heading size='xl' {...props} />}",
+                    "h3": "{({node, ...props}) => <Heading size='lg' {...props} />}",
+                    "ul": "{UnorderedList}",
+                    "ol": "{OrderedList}",
+                    "li": "{ListItem}",
+                    "p": "{Text}",
+                    "a": "{Link}",
+                    "code": """{({node, inline, className, children, ...props}) => 
                     {
         const match = (className || '').match(/language-(?<lang>.*)/);
         return !inline ? (
@@ -64,10 +79,12 @@ class Markdown(Component):
           </Code>
         );
       }}""".replace(
-                    "\n", " "
+                        "\n", " "
+                    ),
+                },
+                remark_plugins=BaseVar(name="[remarkMath, remarkGfm]", type_=List[str]),
+                rehype_plugins=BaseVar(
+                    name="[rehypeKatex, rehypeRaw]", type_=List[str]
                 ),
-            },
-            remark_plugins=BaseVar(name="[remarkMath, remarkGfm]", type_=List[str]),
-            rehype_plugins=BaseVar(name="[rehypeKatex, rehypeRaw]", type_=List[str]),
-            src="",
+            )
         )
