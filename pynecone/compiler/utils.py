@@ -1,11 +1,8 @@
 """Common utility functions used in the compiler."""
 
-from __future__ import annotations
-
-import inspect
 import json
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Set, Type
+from typing import Dict, List, Set, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
@@ -21,13 +18,9 @@ from pynecone.components.base import (
     Script,
     Title,
 )
-from pynecone.components.component import ImportDict
+from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
 from pynecone.style import Style
-from pynecone.var import BaseVar, Var
-
-if TYPE_CHECKING:
-    from pynecone.components.component import Component, CustomComponent
 
 
 # To re-export this function.
@@ -179,19 +172,18 @@ def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDic
     Returns:
         A tuple of the compiled component and the imports required by the component.
     """
-    props = [
-        BaseVar(
-            name=name,
-            type_=prop.type_ if utils._isinstance(prop, Var) else type(prop),
-        )
-        for name, prop in component.props.items()
-    ]
+    # Render the component.
+    render = component.get_component()
 
-    # Compile the component.
-    render = component.component_fn(*props)
+    # Get the imports.
+    imports = {
+        lib: fields
+        for lib, fields in render.get_imports().items()
+        if lib != component.library
+    }
 
     # Concatenate the props.
-    props = ", ".join([prop.name for prop in props])
+    props = ", ".join([prop.name for prop in component.get_prop_vars()])
 
     # Compile the component.
     return (
@@ -200,7 +192,7 @@ def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDic
             props=props,
             render=render,
         ),
-        render.get_imports(),
+        imports,
     )
 
 

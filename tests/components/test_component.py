@@ -110,7 +110,7 @@ def my_component():
         A test component function.
     """
 
-    def my_component(prop1: str, prop2: int):
+    def my_component(prop1: Var[str], prop2: Var[int]):
         return Box.create(prop1, prop2)
 
     return my_component
@@ -286,7 +286,7 @@ def test_create_custom_component(my_component):
     Args:
         my_component: A test custom component.
     """
-    component = CustomComponent(component_fn=my_component)
+    component = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     assert component.tag == "MyComponent"
     assert component.get_props() == set()
     assert component.get_custom_components() == {component}
@@ -298,6 +298,6 @@ def test_custom_component_hash(my_component):
     Args:
         my_component: A test custom component.
     """
-    component1 = CustomComponent(component_fn=my_component)
-    component2 = CustomComponent(component_fn=my_component)
+    component1 = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
+    component2 = CustomComponent(component_fn=my_component, prop1="test", prop2=2)
     assert set([component1, component2]) == {component1}
