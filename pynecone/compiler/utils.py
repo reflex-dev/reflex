@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Dict, List, Set, Type
+from typing import Dict, List, Set, Tuple, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
@@ -21,7 +21,6 @@ from pynecone.components.base import (
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
 from pynecone.style import Style
-
 
 # To re-export this function.
 merge_imports = utils.merge_imports
@@ -163,7 +162,7 @@ def compile_render(component: Component) -> str:
     return component.render()
 
 
-def compile_custom_component(component: CustomComponent) -> tuple[str, ImportDict]:
+def compile_custom_component(component: CustomComponent) -> Tuple[str, ImportDict]:
     """Compile a custom component.
 
     Args:

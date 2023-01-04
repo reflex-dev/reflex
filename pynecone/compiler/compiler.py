@@ -11,7 +11,6 @@ from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
 from pynecone.style import Style
 
-
 # Imports to be included in every Pynecone app.
 DEFAULT_IMPORTS: ImportDict = {
     "react": {"useEffect", "useRef", "useState"},
