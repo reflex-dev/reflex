@@ -270,7 +270,6 @@ class State(Base, ABC):
         """
         # Get the var from the parent state.
         if name in super().__getattribute__("inherited_vars"):
-            print("returning parent state", name)
             return getattr(super().__getattribute__("parent_state"), name)
         return super().__getattribute__(name)
 
