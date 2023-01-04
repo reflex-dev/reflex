@@ -443,7 +443,7 @@ class CustomComponent(Component):
                 value = Var.create(value, is_string=type(value) is str)
             self.props[utils.to_camel_case(key)] = value
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Check if the component is equal to another.
 
         Args:

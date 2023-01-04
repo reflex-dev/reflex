@@ -405,10 +405,24 @@ def test_set_child_attribute(test_state, child_state, grandchild_state):
     """
     test_state.num1 = 10
     assert test_state.num1 == 10
+    assert child_state.num1 == 10
+    assert grandchild_state.num1 == 10
+
+    grandchild_state.num1 = 5
+    assert test_state.num1 == 5
+    assert child_state.num1 == 5
+    assert grandchild_state.num1 == 5
+
     child_state.value = "test"
     assert child_state.value == "test"
-    grandchild_state.value2 = "test2"
-    assert grandchild_state.value2 == "test2"
+    assert grandchild_state.value == "test"
+
+    grandchild_state.value = "test2"
+    assert child_state.value == "test2"
+    assert grandchild_state.value == "test2"
+
+    grandchild_state.value2 = "test3"
+    assert grandchild_state.value2 == "test3"
 
 
 def test_get_substate(test_state, child_state, child_state2, grandchild_state):
