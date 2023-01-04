@@ -30,7 +30,7 @@ class State(Base, ABC):
     # The computed vars of the class.
     computed_vars: ClassVar[Dict[str, ComputedVar]] = {}
 
-    # vars inherited by the parent state.
+    # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
 
     # The parent state.
@@ -257,13 +257,36 @@ class State(Base, ABC):
             field.required = False
             field.default = default_value
 
+    def __getattribute__(self, name: str) -> Any:
+        """Get the state var.
+
+        If the var is inherited, get the var from the parent state.
+
+        Args:
+            name: The name of the var.
+
+        Returns:
+            The value of the var.
+        """
+        # Get the var from the parent state.
+        if name in super().__getattribute__("inherited_vars"):
+            return getattr(super().__getattribute__("parent_state"), name)
+        return super().__getattribute__(name)
+
     def __setattr__(self, name: str, value: Any):
         """Set the attribute.
+
+        If the attribute is inherited, set the attribute on the parent state.
 
         Args:
             name: The name of the attribute.
             value: The value of the attribute.
         """
+        # Set the var on the parent state.
+        if name in self.inherited_vars:
+            setattr(self.parent_state, name, value)
+            return
+
         # Set the attribute.
         super().__setattr__(name, value)
 
