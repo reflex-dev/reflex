@@ -86,6 +86,5 @@ class Markdown(Component):
                 rehype_plugins=BaseVar(
                     name="[rehypeKatex, rehypeRaw]", type_=List[str]
                 ),
-                src="",
             )
         )
