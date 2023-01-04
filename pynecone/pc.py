@@ -39,6 +39,9 @@ def init():
             utils.create_config(app_name)
             utils.initialize_app_directory(app_name)
 
+        # Initialize the .gitignore.
+        utils.initialize_gitignore()
+
         # Finish initializing the app.
         utils.console.log(f"[bold green]Finished Initializing: {app_name}")
 
