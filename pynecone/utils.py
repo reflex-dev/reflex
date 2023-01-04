@@ -382,11 +382,10 @@ def initialize_gitignore():
     # The files to add to the .gitignore file.
     files = constants.DEFAULT_GITIGNORE
 
-    # Get the current ignored files.
+    # Subtract current ignored files.
     if os.path.exists(constants.GITIGNORE_FILE):
         with open(constants.GITIGNORE_FILE, "r") as f:
-            ignored_files = set(f.read().splitlines())
-        files -= ignored_files
+            files -= set(f.read().splitlines())
 
     # Add the new files to the .gitignore file.
     with open(constants.GITIGNORE_FILE, "a") as f:
