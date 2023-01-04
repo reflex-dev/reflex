@@ -1,10 +1,10 @@
 """Table components."""
 
+import textwrap
 from typing import List
 
-from pynecone import utils
 from pynecone.components.component import Component
-from pynecone.var import BaseVar, Var
+from pynecone.var import BaseVar
 
 
 class Markdown(Component):
@@ -14,8 +14,22 @@ class Markdown(Component):
 
     tag = "ReactMarkdown"
 
-    # The source of the markdown.
-    src: Var[str]
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a markdown component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The markdown component.
+        """
+        assert (
+            len(children) == 1
+        ), "Markdown component must have exactly one child containing the markdown source."
+        src = textwrap.dedent(children[0])
+        return super().create(src, **props)
 
     def _get_imports(self):
         imports = super()._get_imports()
@@ -39,7 +53,7 @@ class Markdown(Component):
     def _render(self):
         tag = super()._render()
         return tag.add_props(
-            children=utils.wrap(str(self.src).strip(), "`"),
+            # children=utils.wrap(str(self.src).strip(), "`"),
             components={
                 "h1": "{({node, ...props}) => <Heading size='2xl' {...props} />}",
                 "h2": "{({node, ...props}) => <Heading size='xl' {...props} />}",
