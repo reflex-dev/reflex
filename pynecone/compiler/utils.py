@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Dict, List, Set, Tuple, Type
+from typing import Dict, List, Set, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
@@ -171,13 +171,8 @@ def compile_custom_component(component: CustomComponent) -> Tuple[str, ImportDic
     Returns:
         A tuple of the compiled component and the imports required by the component.
     """
-    props = [
-        BaseVar(
-            name=name,
-            type_=prop.type_ if utils._isinstance(prop, Var) else type(prop),
-        )
-        for name, prop in component.props.items()
-    ]
+    # Render the component.
+    render = component.get_component()
 
     # Get the imports.
     imports = {
