@@ -161,7 +161,9 @@ class Var(ABC):
             else:
                 type_ = Any
         else:
-            raise TypeError("Var does not support indexing.")
+            raise TypeError(
+                f"Var {self.name} of type {self.type_} does not support indexing."
+            )
 
         return BaseVar(
             name=f"{self.name}[{i}]",

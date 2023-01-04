@@ -18,7 +18,7 @@ from pynecone.event import (
     EventSpec,
 )
 from pynecone.style import Style
-from pynecone.var import Var
+from pynecone.var import BaseVar, Var
 
 ImportDict = Dict[str, Set[str]]
 
@@ -440,7 +440,7 @@ class CustomComponent(Component):
             if utils._issubclass(type_, EventChain):
                 value = self._create_event_chain(key, value)
             else:
-                value = Var.create(value)
+                value = Var.create(value, is_string=type(value) is str)
             self.props[utils.to_camel_case(key)] = value
 
     def __eq__(self, other) -> bool:
@@ -477,7 +477,11 @@ class CustomComponent(Component):
         Returns:
             The set of custom components.
         """
-        return {self} | super().get_custom_components()
+        return (
+            {self}
+            | super().get_custom_components()
+            | self.get_component().get_custom_components()
+        )
 
     def _render(self) -> Tag:
         """Define how to render the component in React.
@@ -486,6 +490,28 @@ class CustomComponent(Component):
             The tag to render.
         """
         return Tag(name=self.tag).add_props(**self.props)
+
+    def get_prop_vars(self) -> List[BaseVar]:
+        """Get the prop vars.
+
+        Returns:
+            The prop vars.
+        """
+        return [
+            BaseVar(
+                name=name,
+                type_=prop.type_ if utils._isinstance(prop, Var) else type(prop),
+            )
+            for name, prop in self.props.items()
+        ]
+
+    def get_component(self) -> Component:
+        """Render the component.
+
+        Returns:
+            The code to render the component.
+        """
+        return self.component_fn(*self.get_prop_vars())
 
 
 def custom_component(

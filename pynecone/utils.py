@@ -13,8 +13,6 @@ import signal
 import string
 import subprocess
 import sys
-import uvicorn
-from urllib.parse import urlparse
 from collections import defaultdict
 from subprocess import PIPE
 from types import ModuleType
@@ -30,9 +28,11 @@ from typing import (
     Type,
     Union,
 )
+from urllib.parse import urlparse
 
 import plotly.graph_objects as go
 import typer
+import uvicorn
 from plotly.io import to_json
 from redis import Redis
 from rich.console import Console
