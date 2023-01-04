@@ -73,10 +73,6 @@ BACKEND_HOST = "0.0.0.0"
 TIMEOUT = 120
 # The command to run the backend in production mode.
 RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {TIMEOUT} --log-level critical".split()
-# The gitignore file.
-GITIGNORE_FILE = ".gitignore"
-# Files to gitignore.
-DEFAULT_GITIGNORE = {".web", "pynecone.db"}
 
 # Compiler variables.
 # The extension for compiled Javascript files.
@@ -125,6 +121,10 @@ DEFAULT_DESCRIPTION = "A Pynecone app."
 DEFAULT_IMAGE = "favicon.ico"
 
 
+# The gitignore file.
+GITIGNORE_FILE = ".gitignore"
+# Files to gitignore.
+DEFAULT_GITIGNORE = {".web", DB_NAME}
 # The name of the pynecone config module.
 CONFIG_MODULE = "pcconfig"
 # The python config file.
