@@ -14,3 +14,4 @@ from .middleware import Middleware
 from .model import Model, session
 from .state import ComputedVar as var
 from .state import State
+from .components.graphing.victory import data
