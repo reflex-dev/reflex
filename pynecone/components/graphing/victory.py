@@ -320,7 +320,7 @@ class Bar(Victory):
     bar_width: Var[int]
 
     # Specifies a radius to apply to each bar.
-    corner_radius: Var[float | int]
+    corner_radius: Var[float]
 
 
 class Area(Victory):
@@ -341,7 +341,7 @@ class Pie(Victory):
     color_scale: Var[str]
 
     # Specifies the corner radius of the slices rendered in the pie chart.
-    corner_radius: Var[float | int]
+    corner_radius: Var[float]
 
     # Specifies the angular placement of each label relative to the angle of its corresponding slice. Options are : "parallel", "perpendicular", "vertical".
     label_placement: Var[str]
@@ -413,7 +413,7 @@ class Histogram(Victory):
     bin_spacing: Var[float]
 
     # Specifies a radius to apply to each bar.
-    corner_radius: Var[float | int]
+    corner_radius: Var[float]
 
 
 class ErrorBar(Victory):
