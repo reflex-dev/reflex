@@ -1,6 +1,6 @@
 """Component for displaying a plotly graph."""
 
-from typing import Any, Dict, Union, List,Optional
+from typing import Any, Dict, Union, List, Optional
 
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
@@ -8,17 +8,7 @@ from pynecone.var import Var
 
 
 def format_line(x: List, y: List) -> List:
-    """Formats line data.
-    Args:
-        x: The x values.
-        y: The y values.
-
-    Returns:
-        The formatted data for a line as a dict.
-
-    Raises:
-        ValueError: If x and y are not the same length.
-    """
+    """Format line data."""
     data = []
     if len(x) != len(y):
         raise ValueError("x and y must be the same length")
@@ -64,7 +54,7 @@ def format_area(x: List, y: List, y0: Optional[List] = None) -> List:
     return data
 
 
-def format_bar(x: List, y: List, y0: Optional[List]= None) -> List:
+def format_bar(x: List, y: List, y0: Optional[List] = None) -> List:
     """Format an bar."""
     data = []
     if y0 is None:
@@ -208,7 +198,6 @@ def format_candlestick(x: List, open: List, close: List, high: List, low: List) 
 
 def format_error_bar(x: List, y: List, error_x: List, error_y: List) -> List:
     """Format an error bar."""
-
     data = []
     if x is None:
         raise ValueError("x must be specified")
@@ -232,7 +221,7 @@ def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
     if graph == "box_plot":
         return format_box_plot(x, y, **kwargs)
     elif graph == "bar":
-        return format_bar(x, y) # type: ignore
+        return format_bar(x, y)  # type: ignore
     elif graph == "line":
         return format_line(x, y)  # type: ignore
     elif graph == "scatter":
