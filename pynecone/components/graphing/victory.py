@@ -8,7 +8,22 @@ from pynecone.var import Var
 
 
 def format_xy(x: List, y: List) -> List:
+    """Format x and y data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x and y are not the same length.
+    """
+    if len(x) != len(y):
+        raise ValueError("x and y must be the same length")
     return [{"x": x[i], "y": y[i]} for i in range(len(x))]
+
 
 def format_line(x: List, y: List) -> List:
     """Format line data.
@@ -23,10 +38,8 @@ def format_line(x: List, y: List) -> List:
     Raises:
         ValueError: If x and y are not the same length.
     """
-    if len(x) != len(y):
-        raise ValueError("x and y must be the same length")
-
     return format_xy(x, y)
+
 
 def format_scatter(x: List, y: List, amount: Optional[List] = None) -> List:
     """Format scatter data.
@@ -44,9 +57,6 @@ def format_scatter(x: List, y: List, amount: Optional[List] = None) -> List:
     """
     if x is None or y is None:
         raise ValueError("x and y must be provided")
-
-    if len(x) != len(y):
-        raise ValueError("x and y must be the same length")
 
     if amount is None:
         return format_xy(x, y)
@@ -69,13 +79,12 @@ def format_area(x: List, y: List, y0: Optional[List] = None) -> List:
         ValueError: If x and y are not the same length.
     """
     if y0 is None:
-        if len(x) != len(y):
-            raise ValueError("x and y must be the same length")
         return format_xy(x, y)
     else:
         if len(x) != len(y) or len(x) != len(y0):
             raise ValueError("x, y, and y0 must be the same length")
         return [{"x": x[i], "y": y[i], "y0": y0[i]} for i in range(len(x))]
+
 
 def format_bar(x: List, y: List, y0: Optional[List] = None) -> List:
     """Format bar data.
@@ -92,13 +101,12 @@ def format_bar(x: List, y: List, y0: Optional[List] = None) -> List:
         ValueError: If x and y are not the same length.
     """
     if y0 is None:
-        if len(x) != len(y):
-            raise ValueError("x and y must be the same length")
         return format_xy(x, y)
     else:
         if len(x) != len(y) or len(x) != len(y0):
             raise ValueError("x, y, and y0 must be the same length")
         return [{"x": x[i], "y": y[i], "y0": y0[i]} for i in range(len(x))]
+
 
 def format_box_plot(
     x: List,
@@ -134,8 +142,6 @@ def format_box_plot(
         raise ValueError("x must be specified")
 
     if y is not None:
-        if len(x) != len(y):
-            raise ValueError("x and y must be the same length")
         return format_xy(x, y)
 
     else:
@@ -209,8 +215,6 @@ def format_pie(x: List, y: List, label: Optional[List] = None) -> List:
         raise ValueError("x must be specified")
 
     if label is None:
-        if len(x) != len(y):
-            raise ValueError("x and y must be the same length")
         return format_xy(x, y)
     else:
         if len(x) != len(y) or len(x) != len(label):
@@ -235,9 +239,6 @@ def format_voronoi(x: List, y: List) -> List:
     data = []
     if x is None or y is None:
         raise ValueError("x and y must be specified")
-
-    if len(x) != len(y):
-        raise ValueError("x and y must be the same length")
 
     return format_xy(x, y)
 
@@ -270,7 +271,10 @@ def format_candlestick(x: List, open: List, close: List, high: List, low: List) 
     ):
         raise ValueError("x, open, close, high, and low must be the same length")
 
-    return [{"x": x[i], "open": open[i], "close": close[i], "high": high[i], "low": low[i]} for i in range(len(x))]
+    return [
+        {"x": x[i], "open": open[i], "close": close[i], "high": high[i], "low": low[i]}
+        for i in range(len(x))
+    ]
 
 
 def format_error_bar(x: List, y: List, error_x: List, error_y: List) -> List:
@@ -292,13 +296,13 @@ def format_error_bar(x: List, y: List, error_x: List, error_y: List) -> List:
     if x is None:
         raise ValueError("x must be specified")
 
-    if len(x) != len(y):
-        raise ValueError("x and y must be the same length")
-
     if len(x) != len(error_x) or len(x) != len(error_y):
         raise ValueError("x, y, error_x, and error_y must be the same length")
     else:
-        return [{"x": x[i], "y": y[i], "error_x": error_x[i], "error_y": error_y[i]} for i in range(len(x))]
+        return [
+            {"x": x[i], "y": y[i], "error_x": error_x[i], "error_y": error_y[i]}
+            for i in range(len(x))
+        ]
 
 
 def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
