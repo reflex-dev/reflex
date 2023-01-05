@@ -32,7 +32,7 @@ def format_line(x: List, y: List) -> List:
 
 def format_scatter(x: List, y: List, amount: Optional[List] = None) -> List:
     """Format scatter data.
-    
+
     Args:
         x: The x values.
         y: The y values.
@@ -357,7 +357,7 @@ def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
         x: The x values.
         y: The y values.
         kwargs: The keyword arguments.
-    
+
     Returns:
         The formatted data.
 
