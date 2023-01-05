@@ -35,8 +35,8 @@ jobs:
     - name: Clone Pynecone Website Repo
       uses: actions/checkout@v3
       with:
-        repository: pynecone-io/pynecone-website
-        path: pynecone-website
+        repository: pynecone-io/pcweb
+        path: pcweb
     
     # Install poetry
     - name: cache poetry install
@@ -63,11 +63,11 @@ jobs:
       run: poetry install --no-interaction --no-root
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - name: Install Requirements
-      working-directory: ./pynecone-website/pcweb
+      working-directory: ./pcweb
       run: poetry run pip install -r requirements.txt
     - name: Init Website
-      working-directory: ./pynecone-website/pcweb
+      working-directory: ./pcweb/pcweb
       run: poetry run pc init
     - name: Run Website
-      working-directory: ./pynecone-website/pcweb
+      working-directory: ./pcweb/pcweb
       run: timeout 1m poetry run pc run || exit 0
