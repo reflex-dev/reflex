@@ -67,8 +67,6 @@ def format_bar(x: List, y: List, y0: Optional[List] = None) -> List:
             raise ValueError("x, y, and y0 must be the same length")
         for i in range(len(x)):
             data.append({"x": x[i], "y": y[i], "y0": y0[i]})
-
-    print(data)
     return data
 
 
