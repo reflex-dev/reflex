@@ -8,7 +8,18 @@ from pynecone.var import Var
 
 
 def format_line(x: List, y: List) -> List:
-    """Format line data."""
+    """Format line data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x and y are not the same length.
+    """
     data = []
     if len(x) != len(y):
         raise ValueError("x and y must be the same length")
@@ -20,7 +31,19 @@ def format_line(x: List, y: List) -> List:
 
 
 def format_scatter(x: List, y: List, amount: Optional[List] = None) -> List:
-    """Format a scatter."""
+    """Format scatter data.
+    
+    Args:
+        x: The x values.
+        y: The y values.
+        amount: The amount of each point.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x and y are not the same length.
+    """
     data = []
     if x is None or y is None:
         raise ValueError("x and y must be provided")
@@ -39,7 +62,19 @@ def format_scatter(x: List, y: List, amount: Optional[List] = None) -> List:
 
 
 def format_area(x: List, y: List, y0: Optional[List] = None) -> List:
-    """Format an area."""
+    """Format area data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+        y0: The y0 values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x and y are not the same length.
+    """
     data = []
     if y0 is None:
         if len(x) != len(y):
@@ -55,7 +90,19 @@ def format_area(x: List, y: List, y0: Optional[List] = None) -> List:
 
 
 def format_bar(x: List, y: List, y0: Optional[List] = None) -> List:
-    """Format an bar."""
+    """Format bar data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+        y0: The y0 values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x and y are not the same length.
+    """
     data = []
     if y0 is None:
         if len(x) != len(y):
@@ -79,7 +126,26 @@ def format_box_plot(
     q1: Optional[List[Any]] = None,
     q3: Optional[List[Any]] = None,
 ) -> List:
-    """Format a box plot."""
+    """Format box plot data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+        min_: The minimum values.
+        max_: The maximum values.
+        median: The median values.
+        q1: The q1 values.
+        q3: The q3 values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x is not provided.
+        ValueError: If y is provided and x, y are not the same length.
+        ValueError: If y is not provided and min, max, median, q1, and q3 are not provided.
+        ValueError: If y is not provided and x, min, max, median, q1, and q3 are not the same length.
+    """
     data = []
     if x is None:
         raise ValueError("x must be specified")
@@ -124,7 +190,17 @@ def format_box_plot(
 
 
 def format_histogram(x: List) -> List:
-    """Format a histogram."""
+    """Format histogram data.
+
+    Args:
+        x: The x values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x is not provided.
+    """
     data = []
     if x is None:
         raise ValueError("x must be specified")
@@ -136,15 +212,33 @@ def format_histogram(x: List) -> List:
 
 
 def format_pie(x: List, y: List, label: Optional[List] = None) -> List:
-    """Format a pie chart."""
+    """Format pie data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+        label: The label values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x is not provided.
+        ValueError: If x and y are not the same length.
+        ValueError: If x, y, and label are not the same length.
+    """
     data = []
     if x is None:
         raise ValueError("x must be specified")
 
     if label is None:
+        if len(x) != len(y):
+            raise ValueError("x and y must be the same length")
         for i in range(len(x)):
             data.append({"x": x[i], "y": y[i]})
     else:
+        if len(x) != len(y) or len(x) != len(label):
+            raise ValueError("x, y, and label must be the same length")
         for i in range(len(x)):
             data.append({"x": x[i], "y": y[i], "label": label[i]})
 
@@ -152,10 +246,22 @@ def format_pie(x: List, y: List, label: Optional[List] = None) -> List:
 
 
 def format_voronoi(x: List, y: List) -> List:
-    """Format a voronoi chart."""
+    """Format voronoi data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x or y is not provided.
+        ValueError: If x and y are not the same length.
+    """
     data = []
-    if x is None:
-        raise ValueError("x must be specified")
+    if x is None or y is None:
+        raise ValueError("x and y must be specified")
 
     if len(x) != len(y):
         raise ValueError("x and y must be the same length")
@@ -167,7 +273,22 @@ def format_voronoi(x: List, y: List) -> List:
 
 
 def format_candlestick(x: List, open: List, close: List, high: List, low: List) -> List:
-    """Format a candlestick chart."""
+    """Format candlestick data.
+
+    Args:
+        x: The x values.
+        open: The open values.
+        close: The close values.
+        high: The high values.
+        low: The low values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x is not provided.
+        ValueError: If x, open, close, high, and low are not the same length.
+    """
     data = []
     if x is None:
         raise ValueError("x must be specified")
@@ -195,7 +316,21 @@ def format_candlestick(x: List, open: List, close: List, high: List, low: List) 
 
 
 def format_error_bar(x: List, y: List, error_x: List, error_y: List) -> List:
-    """Format an error bar."""
+    """Format error bar data.
+
+    Args:
+        x: The x values.
+        y: The y values.
+        error_x: The error_x values.
+        error_y: The error_y values.
+
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If x is not provided.
+        ValueError: If x, y, error_x, and error_y are not the same length.
+    """
     data = []
     if x is None:
         raise ValueError("x must be specified")
@@ -215,7 +350,21 @@ def format_error_bar(x: List, y: List, error_x: List, error_y: List) -> List:
 
 
 def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
-    """Create a pynecone data object."""
+    """Format data.
+
+    Args:
+        graph: The graph type.
+        x: The x values.
+        y: The y values.
+        kwargs: The keyword arguments.
+    
+    Returns:
+        The formatted data.
+
+    Raises:
+        ValueError: If graph is not provided.
+        ValueError: If graph is not supported.
+    """
     if graph == "box_plot":
         return format_box_plot(x, y, **kwargs)
     elif graph == "bar":
