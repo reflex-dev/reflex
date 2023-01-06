@@ -57,8 +57,8 @@ def format_scatter(x: List, y: List, amount: Optional[List] = None) -> List:
 
     if amount is None:
         return format_xy(x, y)
-    else:
-        return [{"x": x[i], "y": y[i], "amount": amount[i]} for i in range(len(x))]
+
+    return [{"x": x[i], "y": y[i], "amount": amount[i]} for i in range(len(x))]
 
 
 def format_area(x: List, y: List, y0: Optional[List] = None) -> List:
@@ -146,7 +146,7 @@ def format_box_plot(
             raise ValueError(
                 "min, max, median, q1, and q3 must be specified if y is not provided"
             )
-        elif (
+        if (
             len(x) != len(min_)
             or len(x) != len(max_)
             or len(x) != len(median)
@@ -157,20 +157,16 @@ def format_box_plot(
                 "x, min, max, median, q1, and q3 must be the same length and specified if y is not provided"
             )
         for i in range(len(x)):
-            row = {}
-            if x is not None:
-                row["x"] = x[i]
-            if min_ is not None:
-                row["min"] = min_[i]
-            if max_ is not None:
-                row["max"] = max_[i]
-            if median is not None:
-                row["median"] = median[i]
-            if q1 is not None:
-                row["q1"] = q1[i]
-            if q3 is not None:
-                row["q3"] = q3[i]
-            data.append(row)
+            data.append(
+                {
+                    "x": x[i],
+                    "min": min_[i],
+                    "max": max_[i],
+                    "median": median[i],
+                    "q1": q1[i],
+                    "q3": q3[i],
+                }
+            )
     return data
 
 
@@ -233,7 +229,6 @@ def format_voronoi(x: List, y: List) -> List:
         ValueError: If x or y is not provided.
         ValueError: If x and y are not the same length.
     """
-    data = []
     if x is None or y is None:
         raise ValueError("x and y must be specified")
 
@@ -343,7 +338,7 @@ def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
 
 
 class Victory(Component):
-    """A component that wraps a plotly lib."""
+    """A component that wraps a victory lib."""
 
     library = "victory"
 
@@ -437,7 +432,7 @@ class Pie(Victory):
 
     tag = "VictoryPie"
 
-    # Defines a color scale to be applied to each slice. Takes in an array of colors. Default color scemes are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
+    # Defines a color scale to be applied to each slice. Takes in an array of colors. Default color scale are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
     color_scale: Var[str]
 
     # Specifies the corner radius of the slices rendered in the pie chart.
@@ -522,7 +517,7 @@ class ErrorBar(Victory):
     tag = "VictoryErrorBar"
 
     # Sets the border width of the error bars.
-    borderWidth: Var[float]
+    border_width: Var[float]
 
 
 class Group(Victory):
@@ -530,8 +525,8 @@ class Group(Victory):
 
     tag = "VictoryGroup"
 
-    # Optional prop that defines a color scale to be applied to the children of the group. Takes in an array of colors. Default color scemes are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
-    color_scale: Var[List]
+    # Optional prop that defines a color scale to be applied to the children of the group. Takes in an array of colors. Default color scale are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
+    color_scale: Var[List[str]]
 
     # Optional prop that defines a single color to be applied to the children of the group. Overrides color_scale.
     color: Var[str]
@@ -548,7 +543,7 @@ class Stack(Victory):
     # Prop is used for grouping stacks of bars.
     categories: Var[int]
 
-    # Optional prop that defines a color scale to be applied to the children of the group. Takes in an array of colors. Default color scemes are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
+    # Optional prop that defines a color scale to be applied to the children of the group. Takes in an array of colors. Default color scale are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
     color_scale: Var[List]
 
 
