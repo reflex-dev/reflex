@@ -146,7 +146,7 @@ def test_candlestick():
         {"x": 4, "open": 6, "high": 6, "low": 6, "close": 6},
         {"x": 5, "open": 1, "high": 1, "low": 1, "close": 1},
     ]
-    
+
     assert output == expected
 
 
