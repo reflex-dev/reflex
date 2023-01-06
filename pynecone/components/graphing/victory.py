@@ -34,9 +34,6 @@ def format_line(x: List, y: List) -> List:
 
     Returns:
         The formatted data.
-
-    Raises:
-        ValueError: If x and y are not the same length.
     """
     return format_xy(x, y)
 
