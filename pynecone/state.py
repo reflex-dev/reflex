@@ -262,7 +262,11 @@ class State(Base, ABC):
             field.default = default_value
 
     def get_current_page(cls) -> str:
-        """Obtain the path of current page from the router data."""
+        """Obtain the path of current page from the router data.
+
+        Returns:
+            The current page.
+        """
         return cls.router_data["pathname"]
 
     def __getattribute__(self, name: str) -> Any:
