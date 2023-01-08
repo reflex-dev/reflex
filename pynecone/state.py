@@ -46,7 +46,7 @@ class State(Base, ABC):
     dirty_substates: Set[str] = set()
 
     # The routing path that triggered the state
-    router_path: str
+    router_data: Dict[str, Any]
 
     def __init__(self, *args, **kwargs):
         """Initialize the state.
@@ -259,6 +259,11 @@ class State(Base, ABC):
         if field.required and default_value is not None:
             field.required = False
             field.default = default_value
+
+    @classmethod
+    @functools.lru_cache()
+    def get_current_page(cls) -> str:
+        return cls.router_data["pathname"]
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
