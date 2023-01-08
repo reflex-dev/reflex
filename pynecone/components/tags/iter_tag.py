@@ -57,16 +57,30 @@ class IterTag(Tag):
         Returns:
             The rendered component.
         """
+        # Import here to avoid circular imports.
+        from pynecone.components.layout.foreach import Foreach
+        from pynecone.components.layout.fragment import Fragment
+
+        # Get the render function arguments.
         args = inspect.getfullargspec(render_fn).args
         index = IterTag.get_index_var()
+
         if len(args) == 1:
+            # If the render function doesn't take the index as an argument.
             component = render_fn(arg)
         else:
+            # If the render function takes the index as an argument.
             assert len(args) == 2
             component = render_fn(arg, index)
+
+        # Nested foreach components must be wrapped in fragments.
+        if isinstance(component, Foreach):
+            component = Fragment.create(component)
+
+        # Set the component key.
         if component.key is None:
             component.key = index
-            # component.key = utils.wrap(str(index), "{", check_first=False)
+
         return component
 
     def __str__(self) -> str:
