@@ -18,6 +18,9 @@ class Event(Base):
     # The event name.
     name: str
 
+    # The path where event occured
+    path: str
+
     # The event payload.
     payload: Dict[str, Any] = {}
 

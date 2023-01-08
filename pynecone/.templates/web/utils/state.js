@@ -70,6 +70,8 @@ export const applyDelta = (state, delta) => {
  */
 export const applyEvent = async (event, router, socket) => {
   // Handle special events
+
+  event.path = router.pathname;
   if (event.name == "_redirect") {
     router.push(event.payload.path);
     return;
