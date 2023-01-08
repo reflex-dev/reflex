@@ -153,6 +153,7 @@ def test_base_class_vars(test_state):
             "substates",
             "dirty_vars",
             "dirty_substates",
+            "router_data",
         ):
             continue
         prop = getattr(cls, field)
