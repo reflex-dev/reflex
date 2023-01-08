@@ -225,7 +225,7 @@ More information about Pynecone can be found on our website:
 - [pynecone.io](https://pynecone.io)
   
 Join Our Discord:
-- [Discord](https://discord.gg/T5WSbC2YtQ)
+- [Discord Link](https://discord.gg/T5WSbC2YtQ)
 
 ## License
 
