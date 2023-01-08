@@ -223,10 +223,20 @@ def create_theme(style: Style) -> Dict:
     Returns:
         The base style for the app.
     """
+    # Get the global style from the style dict.
+    global_style = Style({k: v for k, v in style.items() if not isinstance(k, type)})
+
+    # Root styles.
+    root_style = Style({k: v for k, v in global_style.items() if k.startswith("::")})
+
+    # Body styles.
+    root_style["body"] = Style(
+        {k: v for k, v in global_style.items() if k not in root_style}
+    )
+
+    # Return the theme.
     return {
-        "styles": {
-            "global": Style({k: v for k, v in style.items() if not isinstance(k, type)})
-        },
+        "styles": {"global": root_style},
     }
 
 
