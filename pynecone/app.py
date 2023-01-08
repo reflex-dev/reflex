@@ -297,6 +297,8 @@ async def process(app: App, event: Event) -> StateUpdate:
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
+    state.router_data = event.router_data
+
     # Preprocess the event.
     pre = app.preprocess(state, event)
     if pre is not None:

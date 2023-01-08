@@ -45,6 +45,9 @@ class State(Base, ABC):
     # The set of dirty substates.
     dirty_substates: Set[str] = set()
 
+    # The routing path that triggered the state
+    router_data: Dict[str, Any] = {}
+
     def __init__(self, *args, **kwargs):
         """Initialize the state.
 
@@ -89,6 +92,7 @@ class State(Base, ABC):
             "substates",
             "dirty_vars",
             "dirty_substates",
+            "router_data",
         }
         cls.base_vars = {
             f.name: BaseVar(name=f.name, type_=f.outer_type_).set_state(cls)
@@ -256,6 +260,14 @@ class State(Base, ABC):
         if field.required and default_value is not None:
             field.required = False
             field.default = default_value
+
+    def get_current_page(cls) -> str:
+        """Obtain the path of current page from the router data.
+
+        Returns:
+            The current page.
+        """
+        return cls.router_data["pathname"]
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.

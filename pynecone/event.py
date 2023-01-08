@@ -18,6 +18,9 @@ class Event(Base):
     # The event name.
     name: str
 
+    # The routing data where event occured
+    router_data: Dict[str, Any] = {}
+
     # The event payload.
     payload: Dict[str, Any] = {}
 
