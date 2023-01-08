@@ -45,6 +45,9 @@ class State(Base, ABC):
     # The set of dirty substates.
     dirty_substates: Set[str] = set()
 
+    # The routing path that triggered the state
+    router_path: str
+
     def __init__(self, *args, **kwargs):
         """Initialize the state.
 
