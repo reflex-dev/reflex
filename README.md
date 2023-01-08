@@ -223,6 +223,9 @@ We are actively looking for contributors, no matter your skill level or experien
 
 More information about Pynecone can be found on our website:
 - [pynecone.io](https://pynecone.io)
+  
+Join Our Discord:
+- [Discord Link](https://discord.gg/T5WSbC2YtQ)
 
 ## License
 
