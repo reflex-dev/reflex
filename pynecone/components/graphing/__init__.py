@@ -13,8 +13,8 @@ from .victory import (
     BoxPlot,
     Histogram,
     ErrorBar,
-    Group,
-    Stack,
+    ChartGroup,
+    ChartStack,
     Voronoi,
 )
 
