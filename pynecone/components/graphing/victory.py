@@ -379,22 +379,22 @@ class Victory(Component):
     # The padding for the chart.
     padding: Var[Dict]
 
-    # A custom style for the code block.
-    custom_style: Var[Dict[str, str]]
-
     # Domain padding for the chart.
     domain_padding: Var[Dict]
 
+    # A custom style for the code block.
+    custom_style: Var[Dict[str, str]]
+
     @classmethod
     def create(cls, *children, **props):
-        """Create a text component.
+        """Create a chart component.
 
         Args:
             *children: The children of the component.
             **props: The props to pass to the component.
 
         Returns:
-            The text component.
+            The chart component.
         """
         # This component handles style in a special prop.
         custom_style = props.pop("style", {})
@@ -413,7 +413,6 @@ class Victory(Component):
 
     def _add_style(self, style):
         self.custom_style = self.custom_style or {}
-        breakpoint()
         self.custom_style.update(style)  # type: ignore
 
     def _render(self):
