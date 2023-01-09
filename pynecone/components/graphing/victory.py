@@ -415,13 +415,14 @@ class Victory(Component):
         self.custom_style = self.custom_style or {}
         breakpoint()
         self.custom_style.update(style)  # type: ignore
-    
+
     def _render(self):
         out = super()._render()
         return out.add_props(style=self.custom_style).remove_props("custom_style")
 
+
 class Chart(Victory):
-    """Wrapper component that renders a given set of children on a set of Cartesian or polar axes. """
+    """Wrapper component that renders a given set of children on a set of Cartesian or polar axes."""
 
     tag = "VictoryChart"
 

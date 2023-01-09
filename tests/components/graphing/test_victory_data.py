@@ -153,10 +153,10 @@ def test_candlestick():
 def test_errorbar():
     output = data(graph="error_bar", x=x_num, y=y1, error_y=y1, error_x=y1)
     expected = [
-        {"x": 1, "y": 5, "error_y": 5, "error_x": 5},
-        {"x": 2, "y": 12, "error_y": 12, "error_x": 12},
-        {"x": 3, "y": 4, "error_y": 4, "error_x": 4},
-        {"x": 4, "y": 6, "error_y": 6, "error_x": 6},
-        {"x": 5, "y": 1, "error_y": 1, "error_x": 1},
+        {"x": 1, "y": 5, "errorY": 5, "errorX": 5},
+        {"x": 2, "y": 12, "errorY": 12, "errorX": 12},
+        {"x": 3, "y": 4, "errorY": 4, "errorX": 4},
+        {"x": 4, "y": 6, "errorY": 6, "errorX": 6},
+        {"x": 5, "y": 1, "errorY": 1, "errorX": 1},
     ]
     assert output == expected
