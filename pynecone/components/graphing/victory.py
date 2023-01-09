@@ -4,6 +4,7 @@ from typing import Any, Dict, Union, List, Optional
 
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
+from pynecone.style import Style
 from pynecone.var import Var
 
 
@@ -292,7 +293,7 @@ def format_error_bar(x: List, y: List, error_x: List, error_y: List) -> List:
         raise ValueError("x, y, error_x, and error_y must be the same length")
     else:
         return [
-            {"x": x[i], "y": y[i], "error_x": error_x[i], "error_y": error_y[i]}
+            {"x": x[i], "y": y[i], "errorX": error_x[i], "errorY": error_y[i]}
             for i in range(len(x))
         ]
 
@@ -375,9 +376,52 @@ class Victory(Component):
     # The sort order for the chart: "ascending", "descending"
     sort_order: Var[str]
 
+    # The padding for the chart.
+    padding: Var[Dict]
+
+    # A custom style for the code block.
+    custom_style: Var[Dict[str, str]]
+
+    # Domain padding for the chart.
+    domain_padding: Var[Dict]
+
+    @classmethod
+    def create(cls, *children, **props):
+        """Create a text component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props to pass to the component.
+
+        Returns:
+            The text component.
+        """
+        # This component handles style in a special prop.
+        custom_style = props.pop("style", {})
+
+        # Transfer style props to the custom style prop.
+        for key, value in props.items():
+            if key not in cls.get_fields():
+                custom_style[key] = value
+
+        # Create the component.
+        return super().create(
+            *children,
+            **props,
+            custom_style=Style(custom_style),
+        )
+
+    def _add_style(self, style):
+        self.custom_style = self.custom_style or {}
+        breakpoint()
+        self.custom_style.update(style)  # type: ignore
+    
+    def _render(self):
+        out = super()._render()
+        return out.add_props(style=self.custom_style).remove_props("custom_style")
 
 class Chart(Victory):
-    """Display a victory graph."""
+    """Wrapper component that renders a given set of children on a set of Cartesian or polar axes. """
 
     tag = "VictoryChart"
 
@@ -453,6 +497,15 @@ class Pie(Victory):
     # Specifies the radius of the pie. When this prop is not given, it will be calculated based on the width, height, and padding props.
     radius: Var[float]
 
+    # Specifies the inner radius of the pie. When this prop is not given, it will default to 0.
+    inner_radius: Var[float]
+
+    # Specifies the start angle of the first slice in number of degrees. Default is 0.
+    start_angle: Var[float]
+
+    # Specifies the end angle of the last slice in number of degrees. Default is 360.
+    end_angle: Var[float]
+
 
 class Candlestick(Victory):
     """Display a victory candlestick."""
@@ -520,13 +573,13 @@ class ErrorBar(Victory):
     border_width: Var[float]
 
 
-class Group(Victory):
+class ChartGroup(Victory):
     """Display a victory group."""
 
     tag = "VictoryGroup"
 
     # Optional prop that defines a color scale to be applied to the children of the group. Takes in an array of colors. Default color scale are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
-    color_scale: Var[List[str]]
+    color_scale: Var[str]
 
     # Optional prop that defines a single color to be applied to the children of the group. Overrides color_scale.
     color: Var[str]
@@ -535,7 +588,7 @@ class Group(Victory):
     offset: Var[float]
 
 
-class Stack(Victory):
+class ChartStack(Victory):
     """Display a victory stack."""
 
     tag = "VictoryStack"
