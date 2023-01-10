@@ -236,3 +236,5 @@ Pynecone is open-source and licensed under the [Apache License 2.0](LICENSE).
 <a href="https://github.com/picklelo"><img src="https://avatars.githubusercontent.com/u/6270214?v=4" width="50" height="50" alt=""/></a> 
 <a href="https://github.com/Alek99"><img src="https://avatars.githubusercontent.com/u/38776361?s=400&u=bd6c163fe787c2de1a26c881598e54b67e2482dd&v=4" width="50" height="50" alt=""/></a> 
 <a href="https://github.com/kbrgl"><img src="https://avatars.githubusercontent.com/u/13417496?v=4" width="50" height="50" alt=""/></a> 
+<a href="https://github.com/Lendemor"><img src="https://avatars.githubusercontent.com/u/4015177?v=4" width="50" height="50" alt=""/></a> 
+<a href="https://github.com/FHU-yezi"><img src="https://avatars.githubusercontent.com/u/50828953?v=4" width="50" height="50" alt=""/></a> 
