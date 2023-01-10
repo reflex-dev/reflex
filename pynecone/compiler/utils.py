@@ -119,7 +119,8 @@ def compile_state(state: Type[State]) -> str:
     )
     router = templates.ROUTER
     socket = templates.SOCKET
-    return templates.join([synced_state, result, router, socket])
+    ready = templates.READY
+    return templates.join([synced_state, result, router, socket, ready])
 
 
 def compile_events(state: Type[State]) -> str:
