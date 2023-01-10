@@ -158,9 +158,12 @@ SOCKET = constants.SOCKET
 STATE = constants.STATE
 EVENTS = constants.EVENTS
 SET_RESULT = format_state_setter(RESULT)
+READY = f"const {{ isReady }} = {ROUTER};"
 USE_EFFECT = join(
     [
         "useEffect(() => {{",
+        "  if(!isReady)",
+        f"    return;",
         f"  if (!{SOCKET}.current) {{{{",
         f"    connect({SOCKET}, {{state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",
         "  }}",
