@@ -267,7 +267,7 @@ class State(Base, ABC):
         Returns:
             The current page.
         """
-        return cls.router_data.get("pathname")
+        return cls.router_data.get("pathname", "")
 
     def get_query_params(cls) -> Dict[str, str]:
         """Obtain the query parameters for the queried page.
