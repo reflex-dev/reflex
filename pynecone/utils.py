@@ -253,18 +253,17 @@ def ln(src: str, dest: str, overwrite: bool = False) -> bool:
     Returns:
         Whether the link was successful.
     """
-    if os.system() != "Windows":
-        if src == dest:
-            return False
-        if not overwrite and (os.path.exists(dest) or os.path.islink(dest)):
-            return False
-        if os.path.isdir(src):
-            rm(dest)
-            os.symlink(src, dest, target_is_directory=True)
-        else:
-            os.symlink(src, dest)
-        return True
-    return False
+    if src == dest:
+        return False
+    if not overwrite and (os.path.exists(dest) or os.path.islink(dest)):
+        return False
+    if os.path.isdir(src):
+        rm(dest)
+        os.symlink(src, dest, target_is_directory=True)
+    else:
+        os.symlink(src, dest)
+    return True
+
 
 
 def kill(pid):
