@@ -439,6 +439,14 @@ class CustomComponent(Component):
             type_ = props[key]
             if utils._issubclass(type_, EventChain):
                 value = self._create_event_chain(key, value)
+                self.props[utils.to_camel_case(key)] = value
+                continue
+            type_ = utils.get_args(type_)[0]
+            if utils._issubclass(type_, Base):
+                try:
+                    value = BaseVar(name=value.json(), type_=type_, is_local=True)
+                except:
+                    value = Var.create(value)
             else:
                 value = Var.create(value, is_string=type(value) is str)
             self.props[utils.to_camel_case(key)] = value
@@ -480,7 +488,7 @@ class CustomComponent(Component):
         return (
             {self}
             | super().get_custom_components()
-            | self.get_component().get_custom_components()
+            # | self.get_component().get_custom_components()
         )
 
     def _render(self) -> Tag:

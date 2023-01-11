@@ -279,6 +279,22 @@ class Var(ABC):
         """
         return self.operation(fn="Math.abs")
 
+    def length(self) -> Var:
+        """Get the length of a list var.
+
+        Returns:
+            A var with the absolute value.
+
+        Raises:
+            ValueError: If the var is not a list.
+        """
+        if not utils._issubclass(self.type_, List):
+            raise ValueError(f"Cannot get length of non-list var {self}.")
+        return BaseVar(
+            name=f"{self.full_name}.length",
+            type_=int,
+        )
+
     def __eq__(self, other: Var) -> Var:
         """Perform an equality comparison.
 
