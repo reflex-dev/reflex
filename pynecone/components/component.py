@@ -500,12 +500,16 @@ class CustomComponent(Component):
             The set of custom components.
         """
         assert self.tag is not None, "The tag must be set."
+
+        # Store the seen components in a set to avoid infinite recursion.
         if seen is None:
             seen = set()
         custom_components = {self} | super().get_custom_components(seen=seen)
+
+        # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_component().get_custom_components(seen=seen)
+            custom_components |= self.get_compogsnent().get_custom_components(seen=seen)
         return custom_components
 
     def _render(self) -> Tag:
