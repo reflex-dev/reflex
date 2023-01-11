@@ -509,7 +509,7 @@ class CustomComponent(Component):
         # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_compogsnent().get_custom_components(seen=seen)
+            custom_components |= self.get_component().get_custom_components(seen=seen)
         return custom_components
 
     def _render(self) -> Tag:
