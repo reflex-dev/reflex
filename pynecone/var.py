@@ -279,6 +279,17 @@ class Var(ABC):
         """
         return self.operation(fn="Math.abs")
 
+    def length(self) -> Var:
+        """Get the absolute value of a var.
+
+        Returns:
+            A var with the absolute value.
+        """
+        return BaseVar(
+            name=f"{self.full_name}.length",
+            type_=int,
+        )
+
     def __eq__(self, other: Var) -> Var:
         """Perform an equality comparison.
 
