@@ -265,7 +265,6 @@ def ln(src: str, dest: str, overwrite: bool = False) -> bool:
     return True
 
 
-
 def kill(pid):
     """Kill a process.
 
@@ -505,7 +504,10 @@ def setup_frontend():
         mkdir(constants.WEB_ASSETS_DIR)
         cp(src=constants.APP_ASSETS_DIR, dest=constants.WEB_ASSETS_DIR)
     else:
-        ln(src=os.path.join("..", constants.APP_ASSETS_DIR), dest=constants.WEB_ASSETS_DIR)
+        ln(
+            src=os.path.join("..", constants.APP_ASSETS_DIR),
+            dest=constants.WEB_ASSETS_DIR,
+        )
 
 
 def run_frontend(app: App):
