@@ -2,19 +2,19 @@
 
 from .plotly import Plotly
 from .victory import (
-    Chart,
-    Line,
-    Scatter,
     Area,
     Bar,
-    Pie,
-    Polar,
-    Candlestick,
     BoxPlot,
-    Histogram,
-    ErrorBar,
+    Candlestick,
+    Chart,
     ChartGroup,
     ChartStack,
+    ErrorBar,
+    Histogram,
+    Line,
+    Pie,
+    Polar,
+    Scatter,
     Voronoi,
 )
 

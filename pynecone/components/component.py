@@ -387,15 +387,24 @@ class Component(Base, ABC):
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
-    def get_custom_components(self) -> Set[CustomComponent]:
+    def get_custom_components(
+        self, seen: Optional[Set[str]] = None
+    ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
+
+        Args:
+            seen: The tags of the components that have already been seen.
 
         Returns:
             The set of custom components.
         """
         custom_components = set()
+
+        # Store the seen components in a set to avoid infinite recursion.
+        if seen is None:
+            seen = set()
         for child in self.children:
-            custom_components |= child.get_custom_components()
+            custom_components |= child.get_custom_components(seen=seen)
         return custom_components
 
 
@@ -479,17 +488,29 @@ class CustomComponent(Component):
         """
         return set()
 
-    def get_custom_components(self) -> Set[CustomComponent]:
+    def get_custom_components(
+        self, seen: Optional[Set[str]] = None
+    ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
+
+        Args:
+            seen: The tags of the components that have already been seen.
 
         Returns:
             The set of custom components.
         """
-        return (
-            {self}
-            | super().get_custom_components()
-            # | self.get_component().get_custom_components()
-        )
+        assert self.tag is not None, "The tag must be set."
+
+        # Store the seen components in a set to avoid infinite recursion.
+        if seen is None:
+            seen = set()
+        custom_components = {self} | super().get_custom_components(seen=seen)
+
+        # Avoid adding the same component twice.
+        if self.tag not in seen:
+            seen.add(self.tag)
+            custom_components |= self.get_component().get_custom_components(seen=seen)
+        return custom_components
 
     def _render(self) -> Tag:
         """Define how to render the component in React.

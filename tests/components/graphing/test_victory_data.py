@@ -2,13 +2,13 @@ from typing import List, Set, Type
 
 import pytest
 
+from pynecone import data
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.components.layout.box import Box
 from pynecone.event import EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
 from pynecone.style import Style
 from pynecone.var import Var
-from pynecone import data
 
 x_num = [1, 2, 3, 4, 5]
 x_str = ["Cats", "Dogs", "Birds", "Fish", "Reptiles"]
