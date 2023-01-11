@@ -13,6 +13,7 @@ class DatePicker(pc.Component):
     is_clearable: Var[bool]
     show_week_numbers: Var[bool]
     should_close_on_select: Var[bool]
+    placeholder_text: Var[str]
 
     @classmethod
     def get_controlled_triggers(cls) -> set[str]:
