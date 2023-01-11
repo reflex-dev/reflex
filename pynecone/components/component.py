@@ -387,9 +387,7 @@ class Component(Base, ABC):
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
-    def get_custom_components(
-        self, seen: Optional[Set[Component]] = None
-    ) -> Set[CustomComponent]:
+    def get_custom_components(self) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
         Returns:

@@ -284,6 +284,9 @@ class Var(ABC):
 
         Returns:
             A var with the absolute value.
+
+        Raises:
+            ValueError: If the var is not a list.
         """
         if not utils._issubclass(self.type_, List):
             raise ValueError(f"Cannot get length of non-list var {self}.")
