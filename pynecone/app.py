@@ -184,11 +184,13 @@ class App(Base):
             ), "Path must be set if component is not a callable."
             path = component.__name__
 
-        # Get args from the path for dynamic routes.
-        args = utils.get_path_args(path)
+        # Check if the path given is valid
+        utils.verify_path_validity(path)
+
+        self.state.setup_dynamic_args(utils.get_path_args(path))
 
         # Generate the component if it is a callable.
-        component = component if isinstance(component, Component) else component(*args)
+        component = component if isinstance(component, Component) else component()
 
         # Add meta information to the component.
         compiler_utils.add_meta(

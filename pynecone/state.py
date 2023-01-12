@@ -279,6 +279,21 @@ class State(Base, ABC):
         """
         return cls.router_data.get("query", {})
 
+    @classmethod
+    def setup_dynamic_args(cls, args: list[str]):
+        for param in args:
+
+            @ComputedVar
+            def func(self):
+
+                return self.get_query_params().get(func._name)
+                # ic(id(self), self.router_data, func._name, val)
+
+            func._name = str(param)
+
+            cls.computed_vars[param] = func.set_state(cls)
+            setattr(cls, param, func)
+
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
 

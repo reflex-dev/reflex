@@ -763,6 +763,22 @@ def indent(text: str, indent_level: int = 2) -> str:
     return os.linesep.join(f"{' ' * indent_level}{line}" for line in lines) + os.linesep
 
 
+def verify_path_validity(path: str) -> None:
+    """Verify if the path is valid, and throw an error if not.
+
+    Raises:
+        ValueError: explains what is wrong with the path.
+    """
+    check_catchall = re.compile(r"^\[\.\.\.(.+)\]$")
+    catchall_found = False
+    for part in path.split("/"):
+        if catchall_found:
+            raise ValueError(f"Catch-all must be the last part of the URL: {path}")
+        match = check_catchall.match(part)
+        if match:
+            catchall_found = True
+
+
 def get_path_args(path: str) -> List[str]:
     """Get the path arguments for the given path.
 
@@ -780,16 +796,12 @@ def get_path_args(path: str) -> List[str]:
 
     # Iterate over the path parts and check for path args.
     args = []
-    for part in os.path.split(path):
+    for part in path.split("/"):
         match = check.match(part)
         if match:
             # Add the path arg to the list.
-            v = BaseVar(
-                name=match.groups()[0],
-                type_=str,
-                state=f"{constants.ROUTER}.query",
-            )
-            args.append(v)
+            arg_name = match.groups()[0]
+            args.append(arg_name.lstrip("."))
     return args
 
 
