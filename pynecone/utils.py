@@ -499,7 +499,15 @@ def setup_frontend():
     install_frontend_packages()
 
     # Link the assets folder.
-    ln(src=os.path.join("..", constants.APP_ASSETS_DIR), dest=constants.WEB_ASSETS_DIR)
+    if platform.system() == "Windows":
+        # copy asset files to public folder
+        mkdir(constants.WEB_ASSETS_DIR)
+        cp(src=constants.APP_ASSETS_DIR, dest=constants.WEB_ASSETS_DIR)
+    else:
+        ln(
+            src=os.path.join("..", constants.APP_ASSETS_DIR),
+            dest=constants.WEB_ASSETS_DIR,
+        )
 
 
 def run_frontend(app: App):

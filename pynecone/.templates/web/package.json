@@ -6,9 +6,9 @@
     "prod": "next start"
   },
   "dependencies": {
-    "@chakra-ui/system": "1.12.1",
     "@chakra-ui/icons": "1.1.7",
     "@chakra-ui/react": "1.8.8",
+    "@chakra-ui/system": "1.12.1",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
     "axios": "^0.27.2",
@@ -27,6 +27,7 @@
     "rehype-katex": "^6.0.2",
     "rehype-raw": "^6.1.1",
     "remark-gfm": "^3.0.1",
-    "remark-math": "^5.1.1"
+    "remark-math": "^5.1.1",
+    "victory": "^36.6.8"
   }
 }
