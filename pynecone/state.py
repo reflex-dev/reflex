@@ -309,7 +309,7 @@ class State(Base, ABC):
                 func = param_factory(param)
             else:
                 continue
-            cls.computed_vars[param] = func.set_state(cls)
+            cls.computed_vars[param] = func.set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
     def __getattribute__(self, name: str) -> Any:
