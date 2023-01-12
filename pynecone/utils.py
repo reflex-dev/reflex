@@ -824,9 +824,9 @@ def get_path_args(path: str) -> Dict[str, str]:
         match = check.match(part)
         if match:
             # Add the path arg to the list.
+            arg_name = match.groups()[0]
             if arg_name in args:
                 raise ValueError(f"arg [{arg_name}] is used more than once in this URL")
-            arg_name = match.groups()[0]
             args[arg_name] = "patharg"
     return args
 
