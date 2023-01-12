@@ -81,7 +81,10 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     Returns:
         The compiled components.
     """
-    imports = {"react": {"memo"}}
+    imports = {
+        "react": {"memo"},
+        f"/{constants.STATE_PATH}": {"E"},
+    }
     component_defs = []
 
     # Compile each component.
