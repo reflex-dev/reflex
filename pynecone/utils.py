@@ -779,7 +779,7 @@ def verify_path_validity(path: str) -> None:
             catchall_found = True
 
 
-def get_path_args(path: str) -> List[str]:
+def get_path_args(path: str) -> Dict[str, str]:
     """Get the path arguments for the given path.
 
     Args:
@@ -793,15 +793,27 @@ def get_path_args(path: str) -> List[str]:
 
     # Regex to check for path args.
     check = re.compile(r"^\[(.+)\]$")
+    check_catchall = re.compile(r"^\[\.\.\.(.+)\]$")
 
     # Iterate over the path parts and check for path args.
-    args = []
+    args = {}
     for part in path.split("/"):
+        match = check_catchall.match(part)
+        if match:
+            arg_name = match.groups()[0]
+            if arg_name in args:
+                raise ValueError(f"arg [{arg_name}] is used more than once in this URL")
+
+            args[arg_name] = "catchall"
+            continue
+
         match = check.match(part)
         if match:
             # Add the path arg to the list.
+            if arg_name in args:
+                raise ValueError(f"arg [{arg_name}] is used more than once in this URL")
             arg_name = match.groups()[0]
-            args.append(arg_name.lstrip("."))
+            args[arg_name] = "patharg"
     return args
 
 

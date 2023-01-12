@@ -280,17 +280,27 @@ class State(Base, ABC):
         return cls.router_data.get("query", {})
 
     @classmethod
-    def setup_dynamic_args(cls, args: list[str]):
-        for param in args:
-
+    def setup_dynamic_args(cls, args: dict[str, str]):
+        def param_factory(param):
             @ComputedVar
-            def func(self):
+            def inner_func(self) -> str:
+                return self.get_query_params().get(param, "")
 
-                return self.get_query_params().get(func._name)
-                # ic(id(self), self.router_data, func._name, val)
+            return inner_func
 
-            func._name = str(param)
+        def catchall_factory(param):
+            @ComputedVar
+            def inner_func(self) -> List:
+                return self.get_query_params().get(param, [])
 
+            return inner_func
+
+        for param, value in args.items():
+            match value:
+                case "catchall":
+                    func = catchall_factory(param)
+                case "patharg":
+                    func = param_factory(param)
             cls.computed_vars[param] = func.set_state(cls)
             setattr(cls, param, func)
 
