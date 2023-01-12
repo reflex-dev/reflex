@@ -281,6 +281,12 @@ class State(Base, ABC):
 
     @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
+        """Set up args for easy access in renderer.
+
+        Args:
+            args: a dict of args
+        """
+
         def param_factory(param):
             @ComputedVar
             def inner_func(self) -> str:
