@@ -771,11 +771,33 @@ def indent(text: str, indent_level: int = 2) -> str:
     return os.linesep.join(f"{' ' * indent_level}{line}" for line in lines) + os.linesep
 
 
-def get_path_args(path: str) -> List[str]:
+def verify_path_validity(path: str) -> None:
+    """Verify if the path is valid, and throw an error if not.
+
+    Args:
+        path: the path that need to be checked
+
+    Raises:
+        ValueError: explains what is wrong with the path.
+    """
+    check_catchall = re.compile(r"^\[\.\.\.(.+)\]$")
+    catchall_found = False
+    for part in path.split("/"):
+        if catchall_found:
+            raise ValueError(f"Catch-all must be the last part of the URL: {path}")
+        match = check_catchall.match(part)
+        if match:
+            catchall_found = True
+
+
+def get_path_args(path: str) -> Dict[str, str]:
     """Get the path arguments for the given path.
 
     Args:
         path: The path to get the arguments for.
+
+    Raises:
+        ValueError: explains what is wrong with the path.
 
     Returns:
         The path arguments.
@@ -785,19 +807,27 @@ def get_path_args(path: str) -> List[str]:
 
     # Regex to check for path args.
     check = re.compile(r"^\[(.+)\]$")
+    check_catchall = re.compile(r"^\[\.\.\.(.+)\]$")
 
     # Iterate over the path parts and check for path args.
-    args = []
-    for part in os.path.split(path):
+    args = {}
+    for part in path.split("/"):
+        match = check_catchall.match(part)
+        if match:
+            arg_name = match.groups()[0]
+            if arg_name in args:
+                raise ValueError(f"arg [{arg_name}] is used more than once in this URL")
+
+            args[arg_name] = "catchall"
+            continue
+
         match = check.match(part)
         if match:
             # Add the path arg to the list.
-            v = BaseVar(
-                name=match.groups()[0],
-                type_=str,
-                state=f"{constants.ROUTER}.query",
-            )
-            args.append(v)
+            arg_name = match.groups()[0]
+            if arg_name in args:
+                raise ValueError(f"arg [{arg_name}] is used more than once in this URL")
+            args[arg_name] = "patharg"
     return args
 
 

@@ -279,6 +279,39 @@ class State(Base, ABC):
         """
         return self.router_data.get("query", {})
 
+    @classmethod
+    def setup_dynamic_args(cls, args: dict[str, str]):
+        """Set up args for easy access in renderer.
+
+        Args:
+            args: a dict of args
+        """
+
+        def param_factory(param):
+            @ComputedVar
+            def inner_func(self) -> str:
+                return self.get_query_params().get(param, "")
+
+            return inner_func
+
+        def catchall_factory(param):
+            @ComputedVar
+            def inner_func(self) -> List:
+                return self.get_query_params().get(param, [])
+
+            return inner_func
+
+        for param, value in args.items():
+
+            if value == "catchall":
+                func = catchall_factory(param)
+            elif value == "patharg":
+                func = param_factory(param)
+            else:
+                continue
+            cls.computed_vars[param] = func.set_state(cls)  # type: ignore
+            setattr(cls, param, func)
+
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
 
