@@ -766,6 +766,9 @@ def indent(text: str, indent_level: int = 2) -> str:
 def verify_path_validity(path: str) -> None:
     """Verify if the path is valid, and throw an error if not.
 
+    Args:
+        path: the path that need to be checked
+
     Raises:
         ValueError: explains what is wrong with the path.
     """
@@ -784,6 +787,9 @@ def get_path_args(path: str) -> Dict[str, str]:
 
     Args:
         path: The path to get the arguments for.
+
+    Raises:
+        ValueError: explains what is wrong with the path.
 
     Returns:
         The path arguments.
