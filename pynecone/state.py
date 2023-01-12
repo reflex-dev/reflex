@@ -302,11 +302,10 @@ class State(Base, ABC):
             return inner_func
 
         for param, value in args.items():
-            match value:
-                case "catchall":
-                    func = catchall_factory(param)
-                case "patharg":
-                    func = param_factory(param)
+            if value == "catchall":
+                func = catchall_factory(param)
+            elif value == "patharg":
+                func = param_factory(param)
             cls.computed_vars[param] = func.set_state(cls)
             setattr(cls, param, func)
 
