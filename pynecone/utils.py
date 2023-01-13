@@ -505,7 +505,10 @@ def setup_frontend(root: Path):
 
     # copy asset files to public folder
     mkdir(str(root / constants.WEB_ASSETS_DIR))
-    cp(src= str(root / constants.APP_ASSETS_DIR), dest= str(root / constants.WEB_ASSETS_DIR))
+    cp(
+        src=str(root / constants.APP_ASSETS_DIR),
+        dest=str(root / constants.WEB_ASSETS_DIR),
+    )
 
 
 def run_frontend(app: App, root: Path):
