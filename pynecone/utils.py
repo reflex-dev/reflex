@@ -497,15 +497,15 @@ def setup_frontend(root: Path):
         root: root path of the project.
     """
     # Initialize the web directory if it doesn't exist.
-    cp(constants.WEB_TEMPLATE_DIR, root / constants.WEB_DIR, overwrite=False)
+    cp(constants.WEB_TEMPLATE_DIR, str(root / constants.WEB_DIR), overwrite=False)
 
     # Install the frontend packages.
     console.rule("[bold]Installing frontend packages")
     install_frontend_packages()
 
     # copy asset files to public folder
-    mkdir(root / constants.WEB_ASSETS_DIR)
-    cp(src=root / constants.APP_ASSETS_DIR, dest=root / constants.WEB_ASSETS_DIR)
+    mkdir(str(root / constants.WEB_ASSETS_DIR))
+    cp(src= str(root / constants.APP_ASSETS_DIR), dest= str(root / constants.WEB_ASSETS_DIR))
 
 
 def run_frontend(app: App, root: Path):
