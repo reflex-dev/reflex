@@ -1,6 +1,7 @@
 """Pynecone CLI to create, run, and deploy apps."""
 
 import os
+from pathlib import Path
 
 import httpx
 import typer
@@ -86,7 +87,7 @@ def run(
 
     # Run the frontend and backend.
     if frontend:
-        frontend_cmd(app.app)
+        frontend_cmd(app.app, Path.cwd())
     if backend:
         backend_cmd(app.__name__, loglevel=loglevel)
 
@@ -116,7 +117,6 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
     data = {"userId": config.username, "projectId": config.app_name}
     original_response = httpx.get(config.deploy_url, params=data)
     response = original_response.json()
-    print("response", response)
     frontend = response["frontend_resources_url"]
     backend = response["backend_resources_url"]
 

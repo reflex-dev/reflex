@@ -14,6 +14,7 @@ import string
 import subprocess
 import sys
 from collections import defaultdict
+from pathlib import Path
 from subprocess import PIPE
 from types import ModuleType
 from typing import _GenericAlias  # type: ignore
@@ -489,28 +490,33 @@ def export_app(app: App, zip: bool = False):
         os.system(cmd)
 
 
-def setup_frontend():
-    """Set up the frontend."""
+def setup_frontend(root: Path):
+    """Set up the frontend.
+
+    Args:
+        root: root path of the project.
+    """
     # Initialize the web directory if it doesn't exist.
-    cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR, overwrite=False)
+    cp(constants.WEB_TEMPLATE_DIR, root / constants.WEB_DIR, overwrite=False)
 
     # Install the frontend packages.
     console.rule("[bold]Installing frontend packages")
     install_frontend_packages()
 
     # copy asset files to public folder
-    mkdir(constants.WEB_ASSETS_DIR)
-    cp(src=constants.APP_ASSETS_DIR, dest=constants.WEB_ASSETS_DIR)
+    mkdir(root / constants.WEB_ASSETS_DIR)
+    cp(src=root / constants.APP_ASSETS_DIR, dest=root / constants.WEB_ASSETS_DIR)
 
 
-def run_frontend(app: App):
+def run_frontend(app: App, root: Path):
     """Run the frontend.
 
     Args:
         app: The app.
+        root: root path of the project.
     """
     # Set up the frontend.
-    setup_frontend()
+    setup_frontend(root)
 
     # Compile the frontend.
     app.compile(force_compile=True)
@@ -523,14 +529,15 @@ def run_frontend(app: App):
     )
 
 
-def run_frontend_prod(app: App):
+def run_frontend_prod(app: App, root: Path):
     """Run the frontend.
 
     Args:
         app: The app.
+        root: root path of the project.
     """
     # Set up the frontend.
-    setup_frontend()
+    setup_frontend(root)
 
     # Export the app.
     export_app(app)

@@ -204,3 +204,25 @@ def test_is_generic_alias(cls: type, expected: bool):
         expected: Whether the class is a GenericAlias.
     """
     assert utils.is_generic_alias(cls) == expected
+
+
+def test_setup_frontend(tmp_path, mocker):
+    """Test checking if assets content have been
+    copied into the .web/public folder
+
+    Args:
+        tmp_path: root path of test case data directory
+        mocker: mocker object to allow mocking
+    """
+    web_folder = tmp_path / ".web"
+    web_public_folder = web_folder / "public"
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "favicon.ico").touch()
+
+    mocker.patch("pynecone.utils.install_frontend_packages")
+
+    utils.setup_frontend(tmp_path)
+    assert web_folder.exists()
+    assert web_public_folder.exists()
+    assert (web_public_folder / "favicon.ico").exists()
