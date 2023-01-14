@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pynecone-io"
-version = "0.1.11"
+version = "0.1.13"
 description = "The easiest way to build web apps."
 license = "Apache-2.0"
 authors = [
@@ -53,3 +53,5 @@ pc = "pynecone.pc:main"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
