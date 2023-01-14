@@ -794,14 +794,20 @@ def get_path_args(path: str) -> Dict[str, str]:
     Args:
         path: The path to get the arguments for.
 
-    Raises:
-        ValueError: explains what is wrong with the path.
-
     Returns:
         The path arguments.
     """
 
     def add_path_arg(match, type_):
+        """Add arg from regex search result.
+
+        Args:
+            match: result of a regex search
+            type_: the assigned type for this arg
+
+        Raises:
+            ValueError: explains what is wrong with the path.
+        """
         arg_name = match.groups()[0]
         if arg_name in args:
             raise ValueError(
@@ -835,14 +841,30 @@ def get_path_args(path: str) -> Dict[str, str]:
 
 
 def catchall_in_route(route) -> str:
+    """Extract the catchall part from a route.
+
+    Args:
+        route: the route from which to extract
+
+    Returns:
+        str: the catchall part of the URI
+    """
     pattern = re.compile(constants.Regex.CATCHALL)
     match_ = pattern.search(route)
-    return match_.group() if match_ else None
+    return match_.group() if match_ else ""
 
 
 def catchall_prefix(route) -> str:
+    """Extract the prefix part from a route that contains a catchall.
+
+    Args:
+        route: the route from which to extract
+
+    Returns:
+        str: the prefix part of the URI
+    """
     pattern = catchall_in_route(route)
-    return route.replace(pattern, "")
+    return route.replace(pattern, "") if pattern else ""
 
 
 def format_route(route: str):

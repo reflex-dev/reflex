@@ -236,6 +236,7 @@ class App(Base):
 
             if route == "[...slug]" and new_route == "[[...slug]]":
                 raise ValueError("")
+
     def compile(self, force_compile: bool = False):
         """Compile the app and output it to the pages folder.
 

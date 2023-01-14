@@ -202,5 +202,3 @@ class Regex(str, Enum):
     OPT_CATCHALL = r"\[{}\]".format(
         STRICT_CATCHALL  # group return the argname (i.e "slug")
     )
-
-
