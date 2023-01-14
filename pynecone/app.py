@@ -199,10 +199,43 @@ class App(Base):
 
         # Format the route.
         route = utils.format_route(path)
-
         # Add the page.
+        self._check_routes_conflict(route)
         self.pages[route] = component
 
+    def _check_routes_conflict(self, new_route: str):
+        """Verify if there is any conflict between the new route and any existing route.
+
+        Based on conflicts that NextJS would throw if not intercepted.
+
+        Raises:
+            ValueError: exception showing which conflict exist with the path to be added
+
+        Args:
+            new_route: the route being newly added.
+        """
+        catchall_pattern = utils.catchall_in_route(new_route)
+        if not catchall_pattern:
+            return
+
+        for route in self.pages:
+            route = "" if route == "index" else route
+
+            if new_route.startswith(route + "/[[..."):
+                raise ValueError(
+                    f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
+                )
+
+            if utils.catchall_in_route(route) and catchall_pattern:
+                # both route have a catchall, check if preceding path is the same
+                # ic("double slug", route, new_route)
+                if utils.catchall_prefix(route) == utils.catchall_prefix(new_route):
+                    raise ValueError(
+                        f"You cannot use different slug names for the same dynamic path ({route} !== {new_route})"
+                    )
+
+            if route == "[...slug]" and new_route == "[[...slug]]":
+                raise ValueError("")
     def compile(self, force_compile: bool = False):
         """Compile the app and output it to the pages folder.
 

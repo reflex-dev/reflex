@@ -188,3 +188,19 @@ class Endpoint(Enum):
 
         # Return the url.
         return url
+
+
+# ROUTE REGEXs
+class Regex(str, Enum):
+    """Regex used for extracting path args in path."""
+
+    ARG = r"\[(?!\.)([^\[\]]+)\]"
+    CATCHALL = r"(\[?\[\.{3}(?![0-9]).*\]?\])"  # group return the catchall pattern (i.e "[[..slug]]")
+    STRICT_CATCHALL = (
+        r"\[\.{3}([a-zA-Z_][\w]*)\]"  # group return the argname (i.e "slug")
+    )
+    OPT_CATCHALL = r"\[{}\]".format(
+        STRICT_CATCHALL  # group return the argname (i.e "slug")
+    )
+
+

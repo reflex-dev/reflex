@@ -783,14 +783,9 @@ def verify_path_validity(path: str) -> None:
     Raises:
         ValueError: explains what is wrong with the path.
     """
-    check_catchall = re.compile(r"^\[\.\.\.(.+)\]$")
-    catchall_found = False
-    for part in path.split("/"):
-        if catchall_found:
-            raise ValueError(f"Catch-all must be the last part of the URL: {path}")
-        match = check_catchall.match(part)
-        if match:
-            catchall_found = True
+    pattern = catchall_in_route(path)
+    if pattern and not path.endswith(pattern):
+        raise ValueError(f"Catch-all must be the last part of the URL: {path}")
 
 
 def get_path_args(path: str) -> Dict[str, str]:
@@ -805,33 +800,49 @@ def get_path_args(path: str) -> Dict[str, str]:
     Returns:
         The path arguments.
     """
-    # Import here to avoid circular imports.
-    from pynecone.var import BaseVar
+
+    def add_path_arg(match, type_):
+        arg_name = match.groups()[0]
+        if arg_name in args:
+            raise ValueError(
+                f"arg name [{arg_name}] is used more than once in this URL"
+            )
+        args[arg_name] = type_
 
     # Regex to check for path args.
-    check = re.compile(r"^\[(.+)\]$")
-    check_catchall = re.compile(r"^\[\.\.\.(.+)\]$")
+    check = re.compile(constants.Regex.ARG)
+    check_strict_catchall = re.compile(constants.Regex.STRICT_CATCHALL)
+    check_opt_catchall = re.compile(constants.Regex.OPT_CATCHALL)
 
     # Iterate over the path parts and check for path args.
     args = {}
     for part in path.split("/"):
-        match = check_catchall.match(part)
-        if match:
-            arg_name = match.groups()[0]
-            if arg_name in args:
-                raise ValueError(f"arg [{arg_name}] is used more than once in this URL")
+        match_opt = check_opt_catchall.match(part)
+        if match_opt:
+            add_path_arg(match_opt, "catchall")
+            break
 
-            args[arg_name] = "catchall"
-            continue
+        match_strict = check_strict_catchall.match(part)
+        if match_strict:
+            add_path_arg(match_strict, "catchall")
+            break
 
         match = check.match(part)
         if match:
             # Add the path arg to the list.
-            arg_name = match.groups()[0]
-            if arg_name in args:
-                raise ValueError(f"arg [{arg_name}] is used more than once in this URL")
-            args[arg_name] = "patharg"
+            add_path_arg(match, "patharg")
     return args
+
+
+def catchall_in_route(route) -> str:
+    pattern = re.compile(constants.Regex.CATCHALL)
+    match_ = pattern.search(route)
+    return match_.group() if match_ else None
+
+
+def catchall_prefix(route) -> str:
+    pattern = catchall_in_route(route)
+    return route.replace(pattern, "")
 
 
 def format_route(route: str):
