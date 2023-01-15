@@ -287,14 +287,14 @@ class State(Base, ABC):
             args: a dict of args
         """
 
-        def param_factory(param):
+        def argsingle_factory(param):
             @ComputedVar
             def inner_func(self) -> str:
                 return self.get_query_params().get(param, "")
 
             return inner_func
 
-        def catchall_factory(param):
+        def arglist_factory(param):
             @ComputedVar
             def inner_func(self) -> List:
                 return self.get_query_params().get(param, [])
@@ -303,10 +303,10 @@ class State(Base, ABC):
 
         for param, value in args.items():
 
-            if value == "catchall":
-                func = catchall_factory(param)
-            elif value == "patharg":
-                func = param_factory(param)
+            if value == constants.PathArgType.SINGLE:
+                func = argsingle_factory(param)
+            elif value == constants.PathArgType.LIST:
+                func = arglist_factory(param)
             else:
                 continue
             cls.computed_vars[param] = func.set_state(cls)  # type: ignore

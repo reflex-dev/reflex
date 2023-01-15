@@ -214,8 +214,8 @@ class App(Base):
         Args:
             new_route: the route being newly added.
         """
-        catchall_pattern = utils.catchall_in_route(new_route)
-        if not catchall_pattern:
+        newroute_catchall = utils.catchall_in_route(new_route)
+        if not newroute_catchall:
             return
 
         for route in self.pages:
@@ -226,16 +226,13 @@ class App(Base):
                     f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
                 )
 
-            if utils.catchall_in_route(route) and catchall_pattern:
+            route_catchall = utils.catchall_in_route(route)
+            if route_catchall and newroute_catchall:
                 # both route have a catchall, check if preceding path is the same
-                # ic("double slug", route, new_route)
                 if utils.catchall_prefix(route) == utils.catchall_prefix(new_route):
                     raise ValueError(
-                        f"You cannot use different slug names for the same dynamic path ({route} !== {new_route})"
+                        f"You cannot use multiple catchall for the same dynamic path ({route} !== {new_route})"
                     )
-
-            if route == "[...slug]" and new_route == "[[...slug]]":
-                raise ValueError("")
 
     def compile(self, force_compile: bool = False):
         """Compile the app and output it to the pages folder.

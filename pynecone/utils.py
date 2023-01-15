@@ -17,7 +17,7 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import PIPE
 from types import ModuleType
-from typing import _GenericAlias  # type: ignore
+from typing import _GenericAlias, Literal  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -798,7 +798,7 @@ def get_path_args(path: str) -> Dict[str, str]:
         The path arguments.
     """
 
-    def add_path_arg(match, type_):
+    def add_path_arg(match: re.Match[str], type_: str):
         """Add arg from regex search result.
 
         Args:
@@ -816,31 +816,31 @@ def get_path_args(path: str) -> Dict[str, str]:
         args[arg_name] = type_
 
     # Regex to check for path args.
-    check = re.compile(constants.Regex.ARG)
-    check_strict_catchall = re.compile(constants.Regex.STRICT_CATCHALL)
-    check_opt_catchall = re.compile(constants.Regex.OPT_CATCHALL)
+    check = constants.RouteRegex.ARG
+    check_strict_catchall = constants.RouteRegex.STRICT_CATCHALL
+    check_opt_catchall = constants.RouteRegex.OPT_CATCHALL
 
     # Iterate over the path parts and check for path args.
     args = {}
     for part in path.split("/"):
         match_opt = check_opt_catchall.match(part)
         if match_opt:
-            add_path_arg(match_opt, "catchall")
+            add_path_arg(match_opt, constants.PathArgType.LIST)
             break
 
         match_strict = check_strict_catchall.match(part)
         if match_strict:
-            add_path_arg(match_strict, "catchall")
+            add_path_arg(match_strict, constants.PathArgType.LIST)
             break
 
         match = check.match(part)
         if match:
             # Add the path arg to the list.
-            add_path_arg(match, "patharg")
+            add_path_arg(match, constants.PathArgType.SINGLE)
     return args
 
 
-def catchall_in_route(route) -> str:
+def catchall_in_route(route: str) -> str:
     """Extract the catchall part from a route.
 
     Args:
@@ -849,12 +849,11 @@ def catchall_in_route(route) -> str:
     Returns:
         str: the catchall part of the URI
     """
-    pattern = re.compile(constants.Regex.CATCHALL)
-    match_ = pattern.search(route)
+    match_ = constants.RouteRegex.CATCHALL.search(route)
     return match_.group() if match_ else ""
 
 
-def catchall_prefix(route) -> str:
+def catchall_prefix(route: str) -> str:
     """Extract the prefix part from a route that contains a catchall.
 
     Args:
@@ -867,7 +866,7 @@ def catchall_prefix(route) -> str:
     return route.replace(pattern, "") if pattern else ""
 
 
-def format_route(route: str):
+def format_route(route: str) -> str:
     """Format the given route.
 
     Args:

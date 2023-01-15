@@ -1,7 +1,10 @@
 """Constants used throughout the package."""
 
 import os
+import re
+
 from enum import Enum
+from types import SimpleNamespace
 
 import pkg_resources
 
@@ -190,15 +193,21 @@ class Endpoint(Enum):
         return url
 
 
+class PathArgType(SimpleNamespace):
+    """Type of pathArg extracted from URI path."""
+
+    SINGLE = str("arg_single")
+    LIST = str("arg_list")
+
+
 # ROUTE REGEXs
-class Regex(str, Enum):
+class RouteRegex(SimpleNamespace):
     """Regex used for extracting path args in path."""
 
-    ARG = r"\[(?!\.)([^\[\]]+)\]"
-    CATCHALL = r"(\[?\[\.{3}(?![0-9]).*\]?\])"  # group return the catchall pattern (i.e "[[..slug]]")
-    STRICT_CATCHALL = (
-        r"\[\.{3}([a-zA-Z_][\w]*)\]"  # group return the argname (i.e "slug")
-    )
-    OPT_CATCHALL = r"\[{}\]".format(
-        STRICT_CATCHALL  # group return the argname (i.e "slug")
-    )
+    ARG = re.compile(r"\[(?!\.)([^\[\]]+)\]")
+    # group return the catchall pattern (i.e "[[..slug]]")
+    CATCHALL = re.compile(r"(\[?\[\.{3}(?![0-9]).*\]?\])")
+    # group return the argname (i.e "slug")
+    STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
+    # group return the argname (i.e "slug")
+    OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
