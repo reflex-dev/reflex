@@ -162,10 +162,11 @@ READY = f"const {{ isReady }} = {ROUTER};"
 USE_EFFECT = join(
     [
         "useEffect(() => {{",
-        "  if(!isReady)",
+        "  if(!isReady) {{",
         f"    return;",
+        "  }}",
         f"  if (!{SOCKET}.current) {{{{",
-        f"    connect({SOCKET}, {{state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",
+        f"    connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",
         "  }}",
         "  const update = async () => {{",
         f"    if ({RESULT}.{STATE} != null) {{{{",
@@ -179,7 +180,7 @@ USE_EFFECT = join(
         f"        {PROCESSING}: false,",
         "      }})",
         "    }}",
-        f"    await updateState({{state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {SOCKET}.current)",
+        f"    await updateState({{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {SOCKET}.current)",
         "  }}",
         "  update()",
         "}})",

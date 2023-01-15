@@ -96,12 +96,13 @@ export const applyEvent = async (event, router, socket) => {
 /**
  * Process an event off the event queue.
  * @param state The state with the event queue.
+ * @param setState The function to set the state.
  * @param result The current result
  * @param setResult The function to set the result.
  * @param router The router object.
  * @param socket The socket object to send the event on.
  */
-export const updateState = async (state, result, setResult, router, socket) => {
+export const updateState = async (state, setState, result, setResult, router, socket) => {
   // If we are already processing an event, or there are no events to process, return.
   if (result.processing || state.events.length == 0) {
     return;
@@ -112,25 +113,34 @@ export const updateState = async (state, result, setResult, router, socket) => {
     return;
   }
 
-  // Process the next event in the queue.
+  // Set processing to true to block other events from being processed.
   setResult({ ...result, processing: true });
-  await applyEvent(state.events.shift(), router, socket);
+
+  // Pop the next event off the queue and apply it.
+  const event = state.events.shift()
+
+  // Set new events to avoid reprocessing the same event.
+  setState({ ...state, events: state.events });
+
+  // Apply the event.
+  await applyEvent(event, router, socket);
 };
 
 /**
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
  * @param state The state object to apply the deltas to.
+ * @param setState The function to set the state.
  * @param setResult The function to set the result.
  * @param endpoint The endpoint to connect to.
  */
-export const connect = async (socket, state, result, setResult, router, endpoint) => {
+export const connect = async (socket, state, setState, result, setResult, router, endpoint) => {
   // Create the socket.
   socket.current = new WebSocket(endpoint);
 
   // Once the socket is open, hydrate the page.
   socket.current.onopen = () => {
-    updateState(state, result, setResult, router, socket.current)
+    updateState(state, setState, result, setResult, router, socket.current)
   }
 
   // On each received message, apply the delta and set the result.
