@@ -211,3 +211,11 @@ class RouteRegex(SimpleNamespace):
     STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
     # group return the argname (i.e "slug")
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
+
+
+# 404 variables
+ROOT_404 = ""
+SLUG_404 = "[..._]"
+TITLE_404 = "404 - Not Found"
+FAVICON_404 = "favicon.ico"
+DESCRIPTION_404 = "The page was not found"

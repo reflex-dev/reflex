@@ -234,6 +234,38 @@ class App(Base):
                         f"You cannot use multiple catchall for the same dynamic path ({route} !== {new_route})"
                     )
 
+    def add_custom_404_page(self, component, title=None, image=None, description=None):
+        """Define a custom 404 page for any url having no match.
+
+        If there is no page defined on 'index' route, add the 404 page to it.
+        If there is no global catchall defined, add the 404 page with a catchall
+
+        Args:
+            component: The component to display at the page.
+            title: The title of the page.
+            description: The description of the page.
+            image: The image to display on the page.
+        """
+        title = title or constants.TITLE_404
+        image = image or constants.FAVICON_404
+        description = description or constants.DESCRIPTION_404
+
+        component = component if isinstance(component, Component) else component()
+
+        compiler_utils.add_meta(
+            component, title=title, image=image, description=description
+        )
+
+        froute = utils.format_route
+        if (froute(constants.ROOT_404) not in self.pages) and (
+            not any(page.startswith("[[...") for page in self.pages)
+        ):
+            self.pages[froute(constants.ROOT_404)] = component
+        if not any(
+            page.startswith("[...") or page.startswith("[[...") for page in self.pages
+        ):
+            self.pages[froute(constants.SLUG_404)] = component
+
     def compile(self, force_compile: bool = False):
         """Compile the app and output it to the pages folder.
 
