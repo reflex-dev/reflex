@@ -17,7 +17,7 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import PIPE
 from types import ModuleType
-from typing import _GenericAlias, Literal  # type: ignore
+from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
