@@ -208,3 +208,9 @@ def compile_components(components: Set[CustomComponent]):
     # Compile the components.
     code = _compile_components(components)
     return output_path, code
+
+
+def purge_web_pages_dir():
+    """Empty out .web directory.
+    """
+    utils.empty_dir(constants.WEB_PAGES_DIR)

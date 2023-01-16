@@ -304,3 +304,9 @@ def write_page(path: str, code: str):
     utils.mkdir(os.path.dirname(path))
     with open(path, "w") as f:
         f.write(code)
+
+def empty_dir(path):
+    """Empty directory
+    """
+    utils.rm(path)
+    utils.mkdir(path)
