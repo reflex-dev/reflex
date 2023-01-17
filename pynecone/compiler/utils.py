@@ -313,7 +313,6 @@ def empty_dir(path, ignored=[]):
         excluded (list, optional): List of filenames or foldernames that will not be deleted. Defaults to [].
     """
     directory_contents = os.listdir(path)
-    print(directory_contents)
     for element in directory_contents:
         if element not in ignored:
             utils.rm(os.path.join(path, element))
