@@ -128,6 +128,22 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
         response = httpx.put(backend, data=f)  # type: ignore
 
 
+@cli.command()
+def export():
+    """Export the app to a zip file."""
+    # Get the app config.
+    config = utils.get_config()
+    config.api_url = utils.get_production_backend_url()
+
+    # Compile the app in production mode and export it.
+    utils.console.rule("[bold]Compiling production app and preparing for export.")
+    app = utils.get_app().app
+    utils.export_app(app, zip=True)
+    utils.console.rule(
+        "Backend & Frontend compiled. See [green bold]backend.zip[/green bold] and [green bold]frontend.zip[/green bold]."
+    )
+
+
 main = cli
 
 
