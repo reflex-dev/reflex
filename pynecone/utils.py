@@ -361,6 +361,7 @@ def get_app() -> ModuleType:
     """
     config = get_config()
     module = ".".join([config.app_name, config.app_name])
+    sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.APP_VAR,))
     return app
 
