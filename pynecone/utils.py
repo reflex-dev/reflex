@@ -15,7 +15,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
-from subprocess import PIPE
+from subprocess import PIPE, DEVNULL, STDOUT
 from types import ModuleType
 from typing import _GenericAlias  # type: ignore
 from typing import (
@@ -527,6 +527,15 @@ def run_frontend(app: App, root: Path):
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().port
+
+    subprocess.Popen(
+        [get_package_manager(), "run", "next", "telemetry", "disable"],
+        cwd=constants.WEB_DIR,
+        env=os.environ,
+        stdout=DEVNULL,
+        stderr=STDOUT,
+    )
+
     subprocess.Popen(
         [get_package_manager(), "run", "dev"], cwd=constants.WEB_DIR, env=os.environ
     )
