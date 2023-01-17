@@ -129,7 +129,7 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
 
 @cli.command()
-def export(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
+def export():
     """Export the app to a zip file."""
     # Get the app config.
     config = utils.get_config()
