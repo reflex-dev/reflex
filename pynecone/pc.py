@@ -139,7 +139,10 @@ def export():
     utils.console.rule("[bold]Compiling production app and preparing for export.")
     app = utils.get_app().app
     utils.export_app(app, zip=True)
-    utils.console.rule("Backend & Frontend compiled. See [green bold]backend.zip[/green bold] and [green bold]frontend.zip[/green bold].")
+    utils.console.rule(
+        "Backend & Frontend compiled. See [green bold]backend.zip[/green bold] and [green bold]frontend.zip[/green bold]."
+    )
+
 
 main = cli
 
