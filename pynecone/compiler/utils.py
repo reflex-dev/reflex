@@ -305,6 +305,7 @@ def write_page(path: str, code: str):
     with open(path, "w") as f:
         f.write(code)
 
+
 def empty_dir(path, ignored=[]):
     """Remove all files and folders in a directory except for the ignored file- or foldernames.
 
@@ -316,4 +317,3 @@ def empty_dir(path, ignored=[]):
     for element in directory_contents:
         if element not in ignored:
             utils.rm(os.path.join(path, element))
-    
