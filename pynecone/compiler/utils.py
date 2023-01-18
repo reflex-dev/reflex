@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Dict, List, Set, Tuple, Type
+from typing import Dict, List, Optional, Set, Tuple, Type
 
 from pynecone import constants, utils
 from pynecone.compiler import templates
@@ -306,13 +306,14 @@ def write_page(path: str, code: str):
         f.write(code)
 
 
-def empty_dir(path, keep_files=[]):
-    """Remove all files and folders in a directory except for the kept file- or foldernames.
+def empty_dir(path: str, keep_files: Optional[List[str]] = None):
+    """Remove all files and folders in a directory except for the keep_files.
 
     Args:
-        path (str): The path to the directory that will be emptied
-        keep_files (list, optional): List of filenames or foldernames that will not be deleted. Defaults to [].
+        path: The path to the directory that will be emptied
+        keep_files: List of filenames or foldernames that will not be deleted.
     """
+    keep_files = keep_files or []
     directory_contents = os.listdir(path)
     for element in directory_contents:
         if element not in keep_files:

@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 import pytest
 
 from pynecone.base import Base
@@ -135,18 +137,18 @@ def test_create(value, expected):
         assert prop.equals(expected)  # type: ignore
 
 
+def v(value) -> Var:
+    val = Var.create(value)
+    assert val is not None
+    return val
+
+
 def test_basic_operations(TestObj):
     """Test the var operations.
 
     Args:
         TestObj: The test object.
     """
-
-    def v(value) -> Var:
-        val = Var.create(value)
-        assert val is not None
-        return val
-
     assert str(v(1) == v(2)) == "{(1 == 2)}"
     assert str(v(1) != v(2)) == "{(1 != 2)}"
     assert str(v(1) < v(2)) == "{(1 < 2)}"
@@ -162,8 +164,46 @@ def test_basic_operations(TestObj):
     assert str(v(1) ** v(2)) == "{Math.pow(1 , 2)}"
     assert str(v(1) & v(2)) == "{(1 && 2)}"
     assert str(v(1) | v(2)) == "{(1 || 2)}"
-    assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3][0]}"
+    assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
     assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
     assert (
         str(BaseVar(name="foo", state="state", type_=TestObj).bar) == "{state.foo.bar}"
     )
+    assert str(abs(v(1))) == "{Math.abs(1)}"
+    assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
+
+
+def test_var_indexing_lists():
+    """Test that we can index into list vars."""
+    lst = BaseVar(name="lst", type_=List[int])
+
+    # Test basic indexing.
+    assert str(lst[0]) == "{lst.at(0)}"
+    assert str(lst[1]) == "{lst.at(1)}"
+
+    # Test negative indexing.
+    assert str(lst[-1]) == "{lst.at(-1)}"
+
+    # Test non-integer indexing raises an error.
+    with pytest.raises(TypeError):
+        lst["a"]
+    with pytest.raises(TypeError):
+        lst[1.5]
+
+
+def test_var_list_slicing():
+    """Test that we can slice into list vars."""
+    lst = BaseVar(name="lst", type_=List[int])
+
+    assert str(lst[0:1]) == "{lst.slice(0, 1)}"
+    assert str(lst[:1]) == "{lst.slice(0, 1)}"
+    assert str(lst[0:]) == "{lst.slice(0, undefined)}"
+
+
+def test_dict_indexing():
+    """Test that we can index into dict vars."""
+    dct = BaseVar(name="dct", type_=Dict[str, int])
+
+    # Check correct indexing.
+    assert str(dct["a"]) == '{dct["a"]}'
+    assert str(dct["asdf"]) == '{dct["asdf"]}'

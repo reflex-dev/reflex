@@ -15,7 +15,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
-from subprocess import PIPE, DEVNULL, STDOUT
+from subprocess import DEVNULL, PIPE, STDOUT
 from types import ModuleType
 from typing import _GenericAlias  # type: ignore
 from typing import (
