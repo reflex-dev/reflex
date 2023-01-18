@@ -26,36 +26,36 @@ Thank you for supporting Pynecone!🎊
 Here is a quick guide to how the run Pynecone repo locally so you can start contributing to the project.
 
 First clone Pynecone:
-```
+``` bash
 git clone https://github.com/pynecone-io/pynecone.git
 ```
 
 Navigate into the repo:
-```
+``` bash
 cd pynecone
 ```
 
 Install poetry and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
 
 Install your local Pynecone build:
-```
+``` bash
 poetry install
 ```
 
 Now create an examples folder so you can test the local Python build in this repository:
-```
+``` bash
 mkdir examples
 cd examples
 ```
 
 Create a project in this folder can be named anything but for the sake of the directions we'll use `example`:
-```
+``` bash
 mkdir example
 cd example
 ```
 
 Now Init/Run
-```
+``` bash
 poetry run pc init
 poetry run pc run
 ```
@@ -64,4 +64,25 @@ All the changes you make to the repository will be reflected in your running app
 * We have the examples folder in the .gitignore, so your changes in pynecone/examples won't be reflected in your commit.
 
 
+## ✅ Making a PR
+
+Once you solve a current issue or improvement to Pynecone, you can make a pr, and we will review the changes. 
+
+Before submitting, a pull request, ensure the following steps are taken and test passing.
+
+In your `pynecone` directory run make sure all the unit tests are still passing using the following command.
+``` bash
+poetry run pytest tests
+```
+Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
+``` bash
+poetry run pyright pynecone tests
+poetry run pydocstyle pynecone tests
+find pynecone tests -name "*.py" -not -path pynecone/pc.py | xargs poetry run darglint
+```
+Finally run `black` to format your code.
+``` bash
+poetry run black pynecone
+```
+That's it you can now submit your pr. Thanks for contributing to Pynecone!
 
