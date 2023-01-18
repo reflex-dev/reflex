@@ -1,8 +1,9 @@
-import pynecone as pc
+from pynecone.components.component import Component
 from pynecone.var import Var
 
 
-class DatePicker(pc.Component):
+class DatePicker(Component):
+    """A component to add a datepicker to your page"""
     library = "react-datepicker"
     tag = "DatePicker"
     value: Var[str]
