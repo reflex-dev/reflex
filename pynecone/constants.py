@@ -126,7 +126,7 @@ DEFAULT_IMAGE = "favicon.ico"
 # The gitignore file.
 GITIGNORE_FILE = ".gitignore"
 # Files to gitignore.
-DEFAULT_GITIGNORE = {".web", DB_NAME}
+DEFAULT_GITIGNORE = {WEB_DIR, DB_NAME}
 # The name of the pynecone config module.
 CONFIG_MODULE = "pcconfig"
 # The python config file.

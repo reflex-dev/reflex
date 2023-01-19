@@ -339,7 +339,7 @@ class Component(Base, ABC):
             tag.add_props(**self.event_triggers, key=self.key, sx=self.style).set(
                 contents=utils.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
-                ),
+                ).strip(),
             )
         )
 
