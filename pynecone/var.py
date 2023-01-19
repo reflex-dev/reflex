@@ -138,33 +138,64 @@ class Var(ABC):
         Raises:
             TypeError: If the var is not indexable.
         """
+        # Indexing is only supported for lists, dicts, and dataframes.
+        if not (
+            utils._issubclass(self.type_, Union[List, Dict])
+            or utils.is_dataframe(self.type_)
+        ):
+            raise TypeError(
+                f"Var {self.name} of type {self.type_} does not support indexing."
+            )
+
         # The type of the indexed var.
-        type_ = str
+        type_ = Any
 
         # Convert any vars to local vars.
         if isinstance(i, Var):
             i = BaseVar(name=i.name, type_=i.type_, state=i.state, is_local=True)
 
+        # Handle list indexing.
         if utils._issubclass(self.type_, List):
-            assert isinstance(
-                i, utils.get_args(Union[int, Var])
-            ), "Index must be an integer."
+            # List indices must be ints, slices, or vars.
+            if not isinstance(i, utils.get_args(Union[int, slice, Var])):
+                raise TypeError("Index must be an integer.")
+
+            # Handle slices first.
+            if isinstance(i, slice):
+                # Get the start and stop indices.
+                start = i.start or 0
+                stop = i.stop or "undefined"
+
+                # Use the slice function.
+                return BaseVar(
+                    name=f"{self.name}.slice({start}, {stop})",
+                    type_=self.type_,
+                    state=self.state,
+                )
+
+            # Get the type of the indexed var.
             if utils.is_generic_alias(self.type_):
                 type_ = utils.get_args(self.type_)[0]
             else:
                 type_ = Any
-        elif utils._issubclass(self.type_, Dict) or utils.is_dataframe(self.type_):
-            if isinstance(i, str):
-                i = utils.wrap(i, '"')
-            if utils.is_generic_alias(self.type_):
-                type_ = utils.get_args(self.type_)[1]
-            else:
-                type_ = Any
-        else:
-            raise TypeError(
-                f"Var {self.name} of type {self.type_} does not support indexing."
+
+            # Use `at` to support negative indices.
+            return BaseVar(
+                name=f"{self.name}.at({i})",
+                type_=type_,
+                state=self.state,
             )
 
+        # Dictionary / dataframe indexing.
+        # Get the type of the indexed var.
+        if isinstance(i, str):
+            i = utils.wrap(i, '"')
+        if utils.is_generic_alias(self.type_):
+            type_ = utils.get_args(self.type_)[1]
+        else:
+            type_ = Any
+
+        # Use normal indexing here.
         return BaseVar(
             name=f"{self.name}[{i}]",
             type_=type_,
@@ -621,6 +652,7 @@ class BaseVar(Var, Base):
     # Whether this is a local javascript variable.
     is_local: bool = False
 
+    # Whether this var is a raw string.
     is_string: bool = False
 
     def __hash__(self) -> int:

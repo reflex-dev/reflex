@@ -251,10 +251,10 @@ def test_default_setters(test_state):
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
     prop = TestState.array[TestState.num1]
-    assert str(prop) == "{test_state.array[test_state.num1]}"
+    assert str(prop) == "{test_state.array.at(test_state.num1)}"
 
     prop = TestState.mapping["a"][TestState.num1]
-    assert str(prop) == '{test_state.mapping["a"][test_state.num1]}'
+    assert str(prop) == '{test_state.mapping["a"].at(test_state.num1)}'
 
 
 def test_class_attributes():
