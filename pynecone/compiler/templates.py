@@ -35,8 +35,8 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
         The compiled import statement.
     """
     # Handle the case of direct imports with no libraries.
-    if lib == "":
-        assert default == "", "No default field allowed for empty library."
+    if not lib:
+        assert not default, "No default field allowed for empty library."
         assert rest is not None and len(rest) > 0, "No fields to import."
         return join([IMPORT_LIB(lib=lib) for lib in sorted(rest)])
 
@@ -45,12 +45,11 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
     if len(default) == 0 and len(rest) == 0:
         # Handle the case of importing a library with no fields.
         return IMPORT_LIB(lib=lib)
-    else:
-        # Handle importing specific fields from a library.
-        others = f'{{{", ".join(sorted(rest))}}}' if len(rest) > 0 else ""
-        if len(default) > 0 and len(rest) > 0:
-            default += ", "
-        return IMPORT_FIELDS(default=default, others=others, lib=lib)
+    # Handle importing specific fields from a library.
+    others = f'{{{", ".join(sorted(rest))}}}' if len(rest) > 0 else ""
+    if default != "" and len(rest) > 0:
+        default += ", "
+    return IMPORT_FIELDS(default=default, others=others, lib=lib)
 
 
 # Code to render a NextJS Document root.
@@ -163,7 +162,7 @@ USE_EFFECT = join(
     [
         "useEffect(() => {{",
         "  if(!isReady) {{",
-        f"    return;",
+        "    return;",
         "  }}",
         f"  if (!{SOCKET}.current) {{{{",
         f"    connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",

@@ -77,7 +77,7 @@ class PinInput(ChakraComponent):
         Returns:
             The pin input component.
         """
-        if len(children) == 0 and "length" in props:
+        if not children and "length" in props:
             children = [PinInputField()] * props["length"]
         return super().create(*children, **props)
 

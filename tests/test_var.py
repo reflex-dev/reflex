@@ -195,9 +195,9 @@ def test_var_list_slicing():
     """Test that we can slice into list vars."""
     lst = BaseVar(name="lst", type_=List[int])
 
-    assert str(lst[0:1]) == "{lst.slice(0, 1)}"
     assert str(lst[:1]) == "{lst.slice(0, 1)}"
-    assert str(lst[0:]) == "{lst.slice(0, undefined)}"
+    assert str(lst[:1]) == "{lst.slice(0, 1)}"
+    assert str(lst[:]) == "{lst.slice(0, undefined)}"
 
 
 def test_dict_indexing():
