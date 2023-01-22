@@ -261,13 +261,21 @@ class State(Base, ABC):
             field.required = False
             field.default = default_value
 
+    def get_token(self) -> str:
+        """Return the token of the client associated with this state.
+
+        Returns:
+            The token of the client.
+        """
+        return self.router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+
     def get_current_page(self) -> str:
         """Obtain the path of current page from the router data.
 
         Returns:
             The current page.
         """
-        return self.router_data.get("pathname", "")
+        return self.router_data.get(constants.RouteVar.PATH, "")
 
     def get_query_params(self) -> Dict[str, str]:
         """Obtain the query parameters for the queried page.
@@ -277,7 +285,7 @@ class State(Base, ABC):
         Returns:
             The dict of query parameters.
         """
-        return self.router_data.get("query", {})
+        return self.router_data.get(constants.RouteVar.QUERY, {})
 
     @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
