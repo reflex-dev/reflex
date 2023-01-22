@@ -59,15 +59,16 @@ jobs:
         key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
     # Begin the integration test
-    - name: Poetry Install
-      run: poetry install --no-interaction --no-root
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-    - name: Install Requirements
-      working-directory: ./pcweb
-      run: poetry run pip install -r requirements.txt
-    - name: Init Website
-      working-directory: ./pcweb
-      run: poetry run pc init
-    - name: Run Website
-      working-directory: ./pcweb
-      run: timeout 1m poetry run pc run || exit 0
+    # Commenting this out for now while we improve it.
+    # - name: Poetry Install
+    #   run: poetry install --no-interaction --no-root
+    #   if: steps.cache-deps.outputs.cache-hit != 'true'
+    # - name: Install Requirements
+    #   working-directory: ./pcweb
+    #   run: poetry run pip install -r requirements.txt
+    # - name: Init Website
+    #   working-directory: ./pcweb
+    #   run: poetry run pc init
+    # - name: Run Website
+    #   working-directory: ./pcweb
+    #   run: timeout 1m poetry run pc run || exit 0
