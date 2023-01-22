@@ -980,6 +980,7 @@ def get_default_app_name() -> str:
     """
     return os.getcwd().split(os.path.sep)[-1].replace("-", "_")
 
+
 def is_dataframe(value: Type) -> bool:
     """Check if the given value is a dataframe.
 
@@ -1015,7 +1016,7 @@ def format_state(value: Any) -> Dict:
     # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]
-    
+
     # Convert pandas dataframes to JSON.
     if is_dataframe(type(value)):
         try:
