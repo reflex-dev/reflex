@@ -380,4 +380,8 @@ async def process(app: App, event: Event) -> StateUpdate:
 
     # Postprocess the event.
     post = app.postprocess(state, event, update.delta)
-    return StateUpdate(delta=post) if post is not None else update
+    if post is not None:
+        return StateUpdate(delta=post)
+
+    # Return the update.
+    return update

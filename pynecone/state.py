@@ -435,16 +435,18 @@ class State(Base, ABC):
         """
         delta = {}
 
-        if subdelta := {
+        # Return the dirty vars, as well as all computed vars.
+        subdelta = {
             prop: getattr(self, prop)
             for prop in self.dirty_vars | self.computed_vars.keys()
-        }:
+        }
+        if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates:
-            delta |= substates[substate].get_delta()
+            delta.update(substates[substate].get_delta())
 
         # Format the delta.
         delta = utils.format_state(delta)
@@ -495,7 +497,7 @@ class State(Base, ABC):
             k: v.dict(include_computed=include_computed, **kwargs)
             for k, v in self.substates.items()
         }
-        vars = base_vars | computed_vars | substate_vars
+        vars = {**base_vars, **computed_vars, **substate_vars}
         return {k: vars[k] for k in sorted(vars)}
 
 

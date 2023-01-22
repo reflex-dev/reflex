@@ -42,7 +42,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
 
     # Handle importing from a library.
     rest = rest or set()
-    if not default and len(rest) == 0:
+    if len(default) == 0 and len(rest) == 0:
         # Handle the case of importing a library with no fields.
         return IMPORT_LIB(lib=lib)
     # Handle importing specific fields from a library.
