@@ -66,8 +66,8 @@ jobs:
       working-directory: ./pcweb
       run: poetry run pip install -r requirements.txt
     - name: Init Website
-      working-directory: ./pcweb/pcweb
+      working-directory: ./pcweb
       run: poetry run pc init
     - name: Run Website
-      working-directory: ./pcweb/pcweb
+      working-directory: ./pcweb
       run: timeout 1m poetry run pc run || exit 0
