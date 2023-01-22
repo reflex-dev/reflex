@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from pynecone.event import Event, EventHandler, EventSpec
     from pynecone.var import Var
 
-
 # Shorthand for join.
 join = os.linesep.join
 
@@ -512,12 +511,13 @@ def setup_frontend(root: Path):
     )
 
 
-def run_frontend(app: App, root: Path):
+def run_frontend(app: App, root: Path, port: str):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
+        port: port of the app.
     """
     # Set up the frontend.
     setup_frontend(root)
@@ -527,7 +527,7 @@ def run_frontend(app: App, root: Path):
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    os.environ["PORT"] = get_config().port
+    os.environ["PORT"] = get_config().port if port is None else port
 
     subprocess.Popen(
         [get_package_manager(), "run", "next", "telemetry", "disable"],
@@ -542,12 +542,13 @@ def run_frontend(app: App, root: Path):
     )
 
 
-def run_frontend_prod(app: App, root: Path):
+def run_frontend_prod(app: App, root: Path, port: str):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
+        port: port of the app.
     """
     # Set up the frontend.
     setup_frontend(root)
@@ -555,7 +556,7 @@ def run_frontend_prod(app: App, root: Path):
     # Export the app.
     export_app(app)
 
-    os.environ["PORT"] = get_config().port
+    os.environ["PORT"] = get_config().port if port is None else port
 
     # Run the frontend in production mode.
     subprocess.Popen(
@@ -607,7 +608,7 @@ def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel
 
 
 def run_backend_prod(
-    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+        app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
 ):
     """Run the backend.
 
@@ -740,11 +741,11 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 
 
 def wrap(
-    text: str,
-    open: str,
-    close: Optional[str] = None,
-    check_first: bool = True,
-    num: int = 1,
+        text: str,
+        open: str,
+        close: Optional[str] = None,
+        check_first: bool = True,
+        num: int = 1,
 ) -> str:
     """Wrap the given text in the given open and close characters.
 
@@ -893,7 +894,7 @@ def format_route(route: str) -> str:
 
 
 def format_cond(
-    cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
+        cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
 ) -> str:
     """Format a conditional expression.
 
@@ -1082,7 +1083,7 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
     if len(args) == 1:
         return event_handler()
     assert (
-        len(args) == 2
+            len(args) == 2
     ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
     return event_handler(arg)
 

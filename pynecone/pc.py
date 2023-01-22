@@ -49,14 +49,15 @@ def init():
 
 @cli.command()
 def run(
-    env: constants.Env = typer.Option(
-        constants.Env.DEV, help="The environment to run the app in."
-    ),
-    frontend: bool = typer.Option(True, help="Whether to run the frontend."),
-    backend: bool = typer.Option(True, help="Whether to run the backend."),
-    loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.ERROR, help="The log level to use."
-    ),
+        env: constants.Env = typer.Option(
+            constants.Env.DEV, help="The environment to run the app in."
+        ),
+        frontend: bool = typer.Option(True, help="Whether to run the frontend."),
+        backend: bool = typer.Option(True, help="Whether to run the backend."),
+        loglevel: constants.LogLevel = typer.Option(
+            constants.LogLevel.ERROR, help="The log level to use."
+        ),
+        port: str = typer.Option(None, help="Specify a different port."),
 ):
     """Run the app in the current directory."""
     # Check that the app is initialized.
@@ -87,7 +88,7 @@ def run(
 
     # Run the frontend and backend.
     if frontend:
-        frontend_cmd(app.app, Path.cwd())
+        frontend_cmd(app.app, Path.cwd(), port)
     if backend:
         backend_cmd(app.__name__, loglevel=loglevel)
 
@@ -145,7 +146,6 @@ def export():
 
 
 main = cli
-
 
 if __name__ == "__main__":
     main()
