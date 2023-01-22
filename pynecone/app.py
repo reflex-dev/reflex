@@ -230,8 +230,7 @@ class App(Base):
             if (
                 route_catchall
                 and newroute_catchall
-                and utils.catchall_prefix(route)
-                == utils.catchall_prefix(new_route)
+                and utils.catchall_prefix(route) == utils.catchall_prefix(new_route)
             ):
                 raise ValueError(
                     f"You cannot use multiple catchall for the same dynamic path ({route} !== {new_route})"

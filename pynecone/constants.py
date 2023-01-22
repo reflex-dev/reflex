@@ -199,8 +199,6 @@ class PathArgType(SimpleNamespace):
     LIST = "arg_list"
 
 
-
-
 class RouteRegex(SimpleNamespace):
     """Regex used for extracting path args in path."""
 

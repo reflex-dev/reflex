@@ -1109,7 +1109,7 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
         The handler args.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
-    return event_spec.args if len(args) > 2 else ((args[1], arg.name), )
+    return event_spec.args if len(args) > 2 else ((args[1], arg.name),)
 
 
 def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
