@@ -980,7 +980,6 @@ def get_default_app_name() -> str:
     """
     return os.getcwd().split(os.path.sep)[-1].replace("-", "_")
 
-
 def is_dataframe(value: Type) -> bool:
     """Check if the given value is a dataframe.
 
@@ -1016,13 +1015,21 @@ def format_state(value: Any) -> Dict:
     # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]
-
+    
     # Convert pandas dataframes to JSON.
     if is_dataframe(type(value)):
-        return {
-            "columns": value.columns.tolist(),
-            "data": value.values.tolist(),
-        }
+        try:
+            df = {
+                "columns": value.columns.tolist(),
+                "data": value.values.tolist(),
+            }
+        except Exception as e:
+            console.log(f"Pycone Utils ERROR: {e}")
+            df = {
+                "columns": value.columns,
+                "data": value.to_numpy().tolist(),
+            }
+        return df
 
     raise TypeError(
         "State vars must be primitive Python types, "
