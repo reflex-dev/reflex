@@ -208,7 +208,6 @@ class RouteVar(SimpleNamespace):
     QUERY = "query"
 
 
-# ROUTE REGEXs
 class RouteRegex(SimpleNamespace):
     """Regex used for extracting path args in path."""
 
