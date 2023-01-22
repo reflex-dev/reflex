@@ -313,6 +313,11 @@ def empty_dir(path: str, keep_files: Optional[List[str]] = None):
         path: The path to the directory that will be emptied
         keep_files: List of filenames or foldernames that will not be deleted.
     """
+    # If the directory does not exist, return.
+    if not os.path.exists(path):
+        return
+
+    # Remove all files and folders in the directory.
     keep_files = keep_files or []
     directory_contents = os.listdir(path)
     for element in directory_contents:

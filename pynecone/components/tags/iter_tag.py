@@ -91,7 +91,7 @@ class IterTag(Tag):
         """
         try:
             type_ = self.iterable.type_.__args__[0]
-        except:
+        except Exception:
             type_ = Any
         arg = BaseVar(
             name=utils.get_unique_variable_name(),

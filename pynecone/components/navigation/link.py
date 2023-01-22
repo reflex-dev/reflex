@@ -34,9 +34,5 @@ class Link(ChakraComponent):
         Returns:
             The component.
         """
-        kwargs = {}
-        if "href" in props:
-            kwargs["href"] = props.pop("href")
-        else:
-            kwargs["href"] = "#"
+        kwargs = {"href": props.pop("href") if "href" in props else "#"}
         return NextLink.create(super().create(*children, **props), **kwargs)

@@ -157,7 +157,7 @@ class State(Base, ABC):
         Returns:
             The substates of the state.
         """
-        return {subclass for subclass in cls.__subclasses__()}
+        return set(cls.__subclasses__())
 
     @classmethod
     @functools.lru_cache()
@@ -416,7 +416,7 @@ class State(Base, ABC):
                 events = await fn(**event.payload)
             else:
                 events = fn(**event.payload)
-        except:
+        except Exception:
             error = traceback.format_exc()
             print(error)
             return StateUpdate(

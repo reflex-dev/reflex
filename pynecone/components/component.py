@@ -92,13 +92,12 @@ class Component(Base, ABC):
             if key in triggers:
                 # Event triggers are bound to event chains.
                 field_type = EventChain
-            else:
-                # If the key is not in the fields, skip it.
-                if key not in props:
-                    continue
-
+            elif key in props:
                 # Set the field type.
                 field_type = fields[key].type_
+
+            else:
+                continue
 
             # Check whether the key is a component prop.
             if utils._issubclass(field_type, Var):
@@ -292,9 +291,9 @@ class Component(Base, ABC):
                 )
 
         children = [
-            Bare.create(contents=Var.create(child, is_string=True))
-            if not isinstance(child, Component)
-            else child
+            child
+            if isinstance(child, Component)
+            else Bare.create(contents=Var.create(child, is_string=True))
             for child in children
         ]
         return cls(children=children, **props)
@@ -315,7 +314,7 @@ class Component(Base, ABC):
             # Extract the style for this component.
             component_style = Style(style[type(self)])
 
-            # Only add stylee props that are not overriden.
+            # Only add stylee props that are not overridden.
             component_style = {
                 k: v for k, v in component_style.items() if k not in self.style
             }
@@ -454,7 +453,7 @@ class CustomComponent(Component):
             if utils._issubclass(type_, Base):
                 try:
                     value = BaseVar(name=value.json(), type_=type_, is_local=True)
-                except:
+                except Exception:
                     value = Var.create(value)
             else:
                 value = Var.create(value, is_string=type(value) is str)

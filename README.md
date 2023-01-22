@@ -201,7 +201,7 @@ You can create a multi-page app by adding more routes.
 
 As of December 2022, Pynecone has just been released publicly and is in the **Alpha Stage**.
 
- - :large_orange_diamond: **Public Alpha**: Anyone can install and use Pynecone. There may be issues, but we are working to resolve them activly.
+ - :large_orange_diamond: **Public Alpha**: Anyone can install and use Pynecone. There may be issues, but we are working to resolve them actively.
  - **Public Beta**: Stable enough for non-enterprise use-cases.
  - **Public Hosting Beta**: **Optionally** Deploy and Host your own apps on Pynecone!
  - **Public**: Pynecone is production ready.

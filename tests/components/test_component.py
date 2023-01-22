@@ -300,4 +300,4 @@ def test_custom_component_hash(my_component):
     """
     component1 = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     component2 = CustomComponent(component_fn=my_component, prop1="test", prop2=2)
-    assert set([component1, component2]) == {component1}
+    assert {component1, component2} == {component1}

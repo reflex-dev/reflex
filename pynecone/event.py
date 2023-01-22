@@ -18,7 +18,7 @@ class Event(Base):
     # The event name.
     name: str
 
-    # The routing data where event occured
+    # The routing data where event occurred
     router_data: Dict[str, Any] = {}
 
     # The event payload.
@@ -65,10 +65,10 @@ class EventHandler(Base):
             # Otherwise, convert to JSON.
             try:
                 values.append(json.dumps(arg))
-            except TypeError:
+            except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
-                )
+                ) from e
         payload = tuple(zip(fn_args, values))
 
         # Return the event spec.
