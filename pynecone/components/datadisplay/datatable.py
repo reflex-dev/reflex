@@ -19,7 +19,7 @@ class DataTable(Gridjs):
 
     tag = "Grid"
 
-    # The data to display. EIther a list of lists or a pandas dataframe.
+    # The data to display. Either a list of dictionaries or a pandas dataframe.
     data: Any
 
     # The columns to display.
