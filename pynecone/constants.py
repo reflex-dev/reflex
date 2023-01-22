@@ -195,11 +195,11 @@ class Endpoint(Enum):
 class PathArgType(SimpleNamespace):
     """Type of pathArg extracted from URI path."""
 
+    # Typecast to str is needed for Enum to work.
     SINGLE = str("arg_single")
     LIST = str("arg_list")
 
 
-# ROUTE REGEXs
 class RouteRegex(SimpleNamespace):
     """Regex used for extracting path args in path."""
 

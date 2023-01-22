@@ -68,7 +68,7 @@ class RangeSlider(ChakraComponent):
         Returns:
             The RangeSlider component.
         """
-        if len(children) == 0:
+        if not children:
             children = [
                 RangeSliderTrack.create(
                     RangeSliderFilledTrack.create(),

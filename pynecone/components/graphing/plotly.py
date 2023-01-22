@@ -42,11 +42,13 @@ const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 """
 
     def _render(self) -> Tag:
-        if isinstance(self.data, Figure):
-            if self.layout is None:
-                if self.width is not None:
-                    layout = Var.create({"width": self.width, "height": self.height})
-                    assert layout is not None
-                    self.layout = layout
+        if (
+            isinstance(self.data, Figure)
+            and self.layout is None
+            and self.width is not None
+        ):
+            layout = Var.create({"width": self.width, "height": self.height})
+            assert layout is not None
+            self.layout = layout
 
         return super()._render()

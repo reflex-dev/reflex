@@ -78,10 +78,9 @@ def format_area(x: List, y: List, y0: Optional[List] = None) -> List:
     """
     if y0 is None:
         return format_xy(x, y)
-    else:
-        if len(x) != len(y) or len(x) != len(y0):
-            raise ValueError("x, y, and y0 must be the same length")
-        return [{"x": x[i], "y": y[i], "y0": y0[i]} for i in range(len(x))]
+    if len(x) != len(y) or len(x) != len(y0):
+        raise ValueError("x, y, and y0 must be the same length")
+    return [{"x": x[i], "y": y[i], "y0": y0[i]} for i in range(len(x))]
 
 
 def format_bar(x: List, y: List, y0: Optional[List] = None) -> List:
@@ -100,10 +99,9 @@ def format_bar(x: List, y: List, y0: Optional[List] = None) -> List:
     """
     if y0 is None:
         return format_xy(x, y)
-    else:
-        if len(x) != len(y) or len(x) != len(y0):
-            raise ValueError("x, y, and y0 must be the same length")
-        return [{"x": x[i], "y": y[i], "y0": y0[i]} for i in range(len(x))]
+    if len(x) != len(y) or len(x) != len(y0):
+        raise ValueError("x, y, and y0 must be the same length")
+    return [{"x": x[i], "y": y[i], "y0": y0[i]} for i in range(len(x))]
 
 
 def format_box_plot(
@@ -135,40 +133,37 @@ def format_box_plot(
         ValueError: If y is not provided and min, max, median, q1, and q3 are not provided.
         ValueError: If y is not provided and x, min, max, median, q1, and q3 are not the same length.
     """
-    data = []
     if x is None:
         raise ValueError("x must be specified")
 
     if y is not None:
         return format_xy(x, y)
 
-    else:
-        if min_ is None or max_ is None or median is None or q1 is None or q3 is None:
-            raise ValueError(
-                "min, max, median, q1, and q3 must be specified if y is not provided"
-            )
-        if (
-            len(x) != len(min_)
-            or len(x) != len(max_)
-            or len(x) != len(median)
-            or len(x) != len(q1)
-            or len(x) != len(q3)
-        ):
-            raise ValueError(
-                "x, min, max, median, q1, and q3 must be the same length and specified if y is not provided"
-            )
-        for i in range(len(x)):
-            data.append(
-                {
-                    "x": x[i],
-                    "min": min_[i],
-                    "max": max_[i],
-                    "median": median[i],
-                    "q1": q1[i],
-                    "q3": q3[i],
-                }
-            )
-    return data
+    if min_ is None or max_ is None or median is None or q1 is None or q3 is None:
+        raise ValueError(
+            "min, max, median, q1, and q3 must be specified if y is not provided"
+        )
+    if (
+        len(x) != len(min_)
+        or len(x) != len(max_)
+        or len(x) != len(median)
+        or len(x) != len(q1)
+        or len(x) != len(q3)
+    ):
+        raise ValueError(
+            "x, min, max, median, q1, and q3 must be the same length and specified if y is not provided"
+        )
+    return [
+        {
+            "x": x[i],
+            "min": min_[i],
+            "max": max_[i],
+            "median": median[i],
+            "q1": q1[i],
+            "q3": q3[i],
+        }
+        for i in range(len(x))
+    ]
 
 
 def format_histogram(x: List) -> List:
@@ -210,10 +205,9 @@ def format_pie(x: List, y: List, label: Optional[List] = None) -> List:
 
     if label is None:
         return format_xy(x, y)
-    else:
-        if len(x) != len(y) or len(x) != len(label):
-            raise ValueError("x, y, and label must be the same length")
-        return [{"x": x[i], "y": y[i], "label": label[i]} for i in range(len(x))]
+    if len(x) != len(y) or len(x) != len(label):
+        raise ValueError("x, y, and label must be the same length")
+    return [{"x": x[i], "y": y[i], "label": label[i]} for i in range(len(x))]
 
 
 def format_voronoi(x: List, y: List) -> List:
@@ -314,26 +308,26 @@ def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
         ValueError: If graph is not provided.
         ValueError: If graph is not supported.
     """
-    if graph == "box_plot":
-        return format_box_plot(x, y, **kwargs)
+    if graph == "area":
+        return format_area(x, y, **kwargs)  # type: ignore
     elif graph == "bar":
         return format_bar(x, y)  # type: ignore
-    elif graph == "line":
-        return format_line(x, y)  # type: ignore
-    elif graph == "scatter":
-        return format_scatter(x, y, **kwargs)  # type: ignore
-    elif graph == "area":
-        return format_area(x, y, **kwargs)  # type: ignore
-    elif graph == "histogram":
-        return format_histogram(x)
-    elif graph == "pie":
-        return format_pie(x, y, **kwargs)  # type: ignore
-    elif graph == "voronoi":
-        return format_voronoi(x, y)  # type: ignore
+    elif graph == "box_plot":
+        return format_box_plot(x, y, **kwargs)
     elif graph == "candlestick":
         return format_candlestick(x, **kwargs)
     elif graph == "error_bar":
         return format_error_bar(x, y, **kwargs)  # type: ignore
+    elif graph == "histogram":
+        return format_histogram(x)
+    elif graph == "line":
+        return format_line(x, y)  # type: ignore
+    elif graph == "pie":
+        return format_pie(x, y, **kwargs)  # type: ignore
+    elif graph == "scatter":
+        return format_scatter(x, y, **kwargs)  # type: ignore
+    elif graph == "voronoi":
+        return format_voronoi(x, y)  # type: ignore
     else:
         raise ValueError("Invalid graph type")
 

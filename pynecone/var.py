@@ -64,7 +64,7 @@ class Var(ABC):
             value = json.loads(to_json(value))["data"]
             type_ = Figure
 
-        name = json.dumps(value) if not isinstance(value, str) else value
+        name = value if isinstance(value, str) else json.dumps(value)
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
 
@@ -118,10 +118,7 @@ class Var(ABC):
         Returns:
             The wrapped var, i.e. {state.var}.
         """
-        if self.is_local:
-            out = self.full_name
-        else:
-            out = utils.wrap(self.full_name, "{")
+        out = self.full_name if self.is_local else utils.wrap(self.full_name, "{")
         if self.is_string:
             out = utils.format_string(out)
         return out
@@ -263,7 +260,7 @@ class Var(ABC):
         if other is None:
             name = f"{op}{self.full_name}"
         else:
-            props = (self, other) if not flip else (other, self)
+            props = (other, self) if flip else (self, other)
             name = f"{props[0].full_name} {op} {props[1].full_name}"
             if fn is None:
                 name = utils.wrap(name, "(")
@@ -620,9 +617,7 @@ class Var(ABC):
         Returns:
             The full name of the var.
         """
-        if self.state == "":
-            return self.name
-        return ".".join([self.state, self.name])
+        return self.name if self.state == "" else ".".join([self.state, self.name])
 
     def set_state(self, state: Type[State]) -> Any:
         """Set the state of the var.
@@ -685,9 +680,7 @@ class BaseVar(Var, Base):
             return {}
         if issubclass(type_, tuple):
             return ()
-        if issubclass(type_, set):
-            return set()
-        return None
+        return set() if issubclass(type_, set) else None
 
     def get_setter_name(self, include_state: bool = True) -> str:
         """Get the name of the var's generated setter function.
