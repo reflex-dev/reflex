@@ -199,6 +199,14 @@ class PathArgType(SimpleNamespace):
     LIST = str("arg_list")
 
 
+class RouteVar(SimpleNamespace):
+    """Names of variables used in the router_data dict stored in State."""
+
+    CLIENT_TOKEN = "token"
+    PATH = "pathname"
+    QUERY = "query"
+
+
 # ROUTE REGEXs
 class RouteRegex(SimpleNamespace):
     """Regex used for extracting path args in path."""
