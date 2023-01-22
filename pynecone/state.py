@@ -157,7 +157,7 @@ class State(Base, ABC):
         Returns:
             The substates of the state.
         """
-        return {subclass for subclass in cls.__subclasses__()}
+        return set(cls.__subclasses__())
 
     @classmethod
     @functools.lru_cache()
@@ -408,7 +408,7 @@ class State(Base, ABC):
                 events = await fn(**event.payload)
             else:
                 events = fn(**event.payload)
-        except:
+        except Exception:
             error = traceback.format_exc()
             print(error)
             return StateUpdate(
@@ -435,18 +435,16 @@ class State(Base, ABC):
         """
         delta = {}
 
-        # Return the dirty vars, as well as all computed vars.
-        subdelta = {
+        if subdelta := {
             prop: getattr(self, prop)
             for prop in self.dirty_vars | self.computed_vars.keys()
-        }
-        if len(subdelta) > 0:
+        }:
             delta[self.get_full_name()] = subdelta
 
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates:
-            delta.update(substates[substate].get_delta())
+            delta |= substates[substate].get_delta()
 
         # Format the delta.
         delta = utils.format_state(delta)
@@ -497,7 +495,7 @@ class State(Base, ABC):
             k: v.dict(include_computed=include_computed, **kwargs)
             for k, v in self.substates.items()
         }
-        vars = {**base_vars, **computed_vars, **substate_vars}
+        vars = base_vars | computed_vars | substate_vars
         return {k: vars[k] for k in sorted(vars)}
 
 

@@ -31,7 +31,7 @@ class Foreach(Component):
         """
         try:
             type_ = iterable.type_.__args__[0]
-        except:
+        except Exception:
             type_ = Any
         arg = BaseVar(name="_", type_=type_, is_local=True)
         return cls(

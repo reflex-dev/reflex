@@ -195,11 +195,12 @@ class Endpoint(Enum):
 class PathArgType(SimpleNamespace):
     """Type of pathArg extracted from URI path."""
 
-    SINGLE = str("arg_single")
-    LIST = str("arg_list")
+    SINGLE = "arg_single"
+    LIST = "arg_list"
 
 
-# ROUTE REGEXs
+
+
 class RouteRegex(SimpleNamespace):
     """Regex used for extracting path args in path."""
 
@@ -213,8 +214,12 @@ class RouteRegex(SimpleNamespace):
 
 
 # 404 variables
+# 404 variables
+# 404 variables
+# 404 variables
 ROOT_404 = ""
 SLUG_404 = "[..._]"
 TITLE_404 = "404 - Not Found"
 FAVICON_404 = "favicon.ico"
+DESCRIPTION_404 = "The page was not found"
 DESCRIPTION_404 = "The page was not found"

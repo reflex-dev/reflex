@@ -1,7 +1,9 @@
 """General utility functions."""
 
+
 from __future__ import annotations
 
+import contextlib
 import inspect
 import json
 import os
@@ -88,14 +90,11 @@ def is_generic_alias(cls: GenericType) -> bool:
     if isinstance(cls, _GenericAlias):
         return True
 
-    try:
+    with contextlib.suppress(ImportError):
         from typing import _SpecialGenericAlias  # type: ignore
 
         if isinstance(cls, _SpecialGenericAlias):
             return True
-    except ImportError:
-        pass
-
     # For newer versions of Python.
     try:
         from types import GenericAlias  # type: ignore
@@ -114,17 +113,11 @@ def is_union(cls: GenericType) -> bool:
     Returns:
         Whether the class is a Union.
     """
-    try:
+    with contextlib.suppress(ImportError):
         from typing import _UnionGenericAlias  # type: ignore
 
         return isinstance(cls, _UnionGenericAlias)
-    except ImportError:
-        pass
-
-    if is_generic_alias(cls):
-        return cls.__origin__ == Union
-
-    return False
+    return cls.__origin__ == Union if is_generic_alias(cls) else False
 
 
 def get_base_class(cls: GenericType) -> Type:
@@ -139,10 +132,7 @@ def get_base_class(cls: GenericType) -> Type:
     if is_union(cls):
         return tuple(get_base_class(arg) for arg in get_args(cls))
 
-    if is_generic_alias(cls):
-        return get_base_class(cls.__origin__)
-
-    return cls
+    return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
 
 def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
@@ -158,7 +148,7 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
     # Special check for Any.
     if cls_check == Any:
         return True
-    if cls == Any or cls == Callable:
+    if cls in [Any, Callable]:
         return False
     cls_base = get_base_class(cls)
     cls_check_base = get_base_class(cls_check)
@@ -362,8 +352,7 @@ def get_app() -> ModuleType:
     config = get_config()
     module = ".".join([config.app_name, config.app_name])
     sys.path.insert(0, os.getcwd())
-    app = __import__(module, fromlist=(constants.APP_VAR,))
-    return app
+    return __import__(module, fromlist=(constants.APP_VAR,))
 
 
 def create_config(app_name: str):
@@ -569,12 +558,7 @@ def get_num_workers() -> int:
     Returns:
         The number of backend worker processes.
     """
-    if get_redis() is None:
-        # If there is no redis, then just use 1 worker.
-        return 1
-
-    # Use the number of cores * 2 + 1.
-    return (os.cpu_count() or 1) * 2 + 1
+    return 1 if get_redis() is None else (os.cpu_count() or 1) * 2 + 1
 
 
 def get_api_port() -> int:
@@ -887,9 +871,7 @@ def format_route(route: str) -> str:
     """
     route = route.strip(os.path.sep)
     route = to_snake_case(route).replace("_", "-")
-    if route == "":
-        return constants.INDEX_ROUTE
-    return route
+    return constants.INDEX_ROUTE if route == "" else route
 
 
 def format_cond(
@@ -935,7 +917,7 @@ def format_event_handler(handler: EventHandler) -> str:
     try:
         # Try to get the state from the module.
         state = vars(sys.modules[handler.fn.__module__])[state_name]
-    except:
+    except Exception:
         # If the state isn't in the module, just return the function name.
         return handler.fn.__qualname__
     return ".".join([state.get_full_name(), name])
@@ -1127,10 +1109,7 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
         The handler args.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
-    if len(args) > 2:
-        return event_spec.args
-    else:
-        return ((args[1], arg.name),)
+    return event_spec.args if len(args) > 2 else ((args[1], arg.name), )
 
 
 def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:

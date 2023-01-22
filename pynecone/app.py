@@ -221,18 +221,21 @@ class App(Base):
         for route in self.pages:
             route = "" if route == "index" else route
 
-            if new_route.startswith(route + "/[[..."):
+            if new_route.startswith(f"{route}/[[..."):
                 raise ValueError(
                     f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
                 )
 
             route_catchall = utils.catchall_in_route(route)
-            if route_catchall and newroute_catchall:
-                # both route have a catchall, check if preceding path is the same
-                if utils.catchall_prefix(route) == utils.catchall_prefix(new_route):
-                    raise ValueError(
-                        f"You cannot use multiple catchall for the same dynamic path ({route} !== {new_route})"
-                    )
+            if (
+                route_catchall
+                and newroute_catchall
+                and utils.catchall_prefix(route)
+                == utils.catchall_prefix(new_route)
+            ):
+                raise ValueError(
+                    f"You cannot use multiple catchall for the same dynamic path ({route} !== {new_route})"
+                )
 
     def add_custom_404_page(self, component, title=None, image=None, description=None):
         """Define a custom 404 page for any url having no match.
@@ -378,8 +381,4 @@ async def process(app: App, event: Event) -> StateUpdate:
 
     # Postprocess the event.
     post = app.postprocess(state, event, update.delta)
-    if post is not None:
-        return StateUpdate(delta=post)
-
-    # Return the update.
-    return update
+    return StateUpdate(delta=post) if post is not None else update

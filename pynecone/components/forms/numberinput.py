@@ -85,7 +85,7 @@ class NumberInput(ChakraComponent):
         Returns:
             The component.
         """
-        if len(children) == 0:
+        if not children:
             children = [
                 NumberInputField.create(),
                 NumberInputStepper.create(
