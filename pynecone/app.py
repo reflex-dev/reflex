@@ -284,6 +284,9 @@ class App(Base):
         # Create the database models.
         Model.create_all()
 
+        # Empty the .web pages directory
+        compiler.purge_web_pages_dir()
+
         # Compile the root document with base styles and fonts.
         compiler.compile_document_root(self.stylesheets)
 
