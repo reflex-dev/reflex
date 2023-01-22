@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from pynecone.event import Event, EventHandler, EventSpec
     from pynecone.var import Var
 
-
 # Shorthand for join.
 join = os.linesep.join
 
@@ -512,12 +511,13 @@ def setup_frontend(root: Path):
     )
 
 
-def run_frontend(app: App, root: Path):
+def run_frontend(app: App, root: Path, port: str):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
+        port: port of the app.
     """
     # Set up the frontend.
     setup_frontend(root)
@@ -527,7 +527,7 @@ def run_frontend(app: App, root: Path):
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    os.environ["PORT"] = get_config().port
+    os.environ["PORT"] = get_config().port if port is None else port
 
     subprocess.Popen(
         [get_package_manager(), "run", "next", "telemetry", "disable"],
@@ -542,12 +542,13 @@ def run_frontend(app: App, root: Path):
     )
 
 
-def run_frontend_prod(app: App, root: Path):
+def run_frontend_prod(app: App, root: Path, port: str):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
+        port: port of the app.
     """
     # Set up the frontend.
     setup_frontend(root)
@@ -555,7 +556,7 @@ def run_frontend_prod(app: App, root: Path):
     # Export the app.
     export_app(app)
 
-    os.environ["PORT"] = get_config().port
+    os.environ["PORT"] = get_config().port if port is None else port
 
     # Run the frontend in production mode.
     subprocess.Popen(
