@@ -7,6 +7,7 @@ from pynecone.base import Base
 from pynecone.event import Event
 from pynecone.state import State
 from pynecone.var import BaseVar, ComputedVar
+from pynecone.constants import RouteVar
 
 
 class Object(Base):
@@ -609,3 +610,31 @@ def test_format_event_handler():
         utils.format_event_handler(GrandchildState.do_nothing)  # type: ignore
         == "test_state.child_state.grandchild_state.do_nothing"
     )
+
+
+def test_get_token(test_state):
+    assert test_state.get_token() == ""
+
+    token = "b181904c-3953-4a79-dc18-ae9518c22f05"
+    test_state.router_data = {RouteVar.CLIENT_TOKEN: token}
+
+    assert test_state.get_token() == token
+
+
+def test_get_current_page(test_state):
+
+    assert test_state.get_current_page() == ""
+
+    route = "mypage/subpage"
+    test_state.router_data = {RouteVar.PATH: route}
+
+    assert test_state.get_current_page() == route
+
+
+def test_get_query_params(test_state):
+    assert test_state.get_query_params() == {}
+
+    params = {"p1": "a", "p2": "b"}
+    test_state.router_data = {RouteVar.QUERY: params}
+
+    assert test_state.get_query_params() == params

@@ -368,6 +368,7 @@ async def process(app: App, event: Event) -> StateUpdate:
     state = app.state_manager.get_state(event.token)
 
     state.router_data = event.router_data
+    state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
 
     # Preprocess the event.
     pre = app.preprocess(state, event)
