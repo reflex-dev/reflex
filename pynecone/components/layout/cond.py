@@ -1,9 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Optional
-
-import pydantic
+from typing import Any, Optional
 
 from pynecone.components.component import Component
 from pynecone.components.layout.fragment import Fragment
@@ -15,7 +13,7 @@ class Cond(Component):
     """Render one of two components based on a condition."""
 
     # The cond to determine which component to render.
-    cond: Var[bool]
+    cond: Var[Any]
 
     # The component to render if the cond is true.
     comp1: Component
@@ -25,19 +23,6 @@ class Cond(Component):
 
     # Whether the cond is within another cond.
     is_nested: bool = False
-
-    @pydantic.validator("cond")
-    def validate_cond(cls, cond: Var) -> Var:
-        """Validate that the cond is a boolean.
-
-        Args:
-            cond: The cond to validate.
-
-        Returns:
-            The validated cond.
-        """
-        assert issubclass(cond.type_, bool), "The var must be a boolean."
-        return cond
 
     @classmethod
     def create(
