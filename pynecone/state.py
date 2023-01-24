@@ -310,10 +310,9 @@ class State(Base, ABC):
             return inner_func
 
         for param, value in args.items():
-
-            if value == constants.PathArgType.SINGLE:
+            if value == constants.RouteArgType.SINGLE:
                 func = argsingle_factory(param)
-            elif value == constants.PathArgType.LIST:
+            elif value == constants.RouteArgType.LIST:
                 func = arglist_factory(param)
             else:
                 continue
