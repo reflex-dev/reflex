@@ -101,7 +101,7 @@ class State(pc.State):
 def index():
     return pc.center(
         pc.vstack(
-            pc.heading("DALL-E", font_size="1.5em"),
+            pc.heading("DALL·E", font_size="1.5em"),
             pc.input(placeholder="Enter a prompt..", on_blur=State.set_prompt),
             pc.button(
                 "Generate Image",
@@ -133,7 +133,7 @@ def index():
 
 # Add state and page to the app.
 app = pc.App(state=State)
-app.add_page(index, title="Pynecone:DALL-E")
+app.add_page(index, title="Pynecone:DALL·E")
 app.compile()
 ```
 Let's break this down.
