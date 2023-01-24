@@ -49,7 +49,7 @@ $ cd my_app_name
 $ pc init
 ```
 
-When you run this command for the first time, we will download and install `bun` automatically.
+When you run this command for the first time, we will download and install [bun](https://bun.sh/) automatically.
 
 This command initializes a template app in your new directory.
 You can run this app in development mode:
@@ -65,7 +65,7 @@ Now you can modify the source code in `my_app_name/my_app_name.py`. Pynecone has
 
 ## Example Pynecone App
 
-Let's go over an example of creating a UI around Dalle. For simplicity of the example below, we call the OpenAI Dalle API, but you could replace this with any ML model locally.
+Let's go over an example of creating a UI around DALL·E. For simplicity of the example below, we call the OpenAI DALL·E API, but you could replace this with any ML model locally.
 
 <div align="center">
 <img src="docs/images/dalle.gif" alt="drawing" width="550" style="border-radius:2%"/>
