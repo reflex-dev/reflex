@@ -192,8 +192,8 @@ class Endpoint(Enum):
         return url
 
 
-class PathArgType(SimpleNamespace):
-    """Type of pathArg extracted from URI path."""
+class RouteArgType(SimpleNamespace):
+    """Type of dynamic route arg extracted from URI route."""
 
     # Typecast to str is needed for Enum to work.
     SINGLE = str("arg_single")
@@ -209,7 +209,7 @@ class RouteVar(SimpleNamespace):
 
 
 class RouteRegex(SimpleNamespace):
-    """Regex used for extracting path args in path."""
+    """Regex used for extracting route args in route."""
 
     ARG = re.compile(r"\[(?!\.)([^\[\]]+)\]")
     # group return the catchall pattern (i.e "[[..slug]]")

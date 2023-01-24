@@ -769,69 +769,69 @@ def indent(text: str, indent_level: int = 2) -> str:
     return os.linesep.join(f"{' ' * indent_level}{line}" for line in lines) + os.linesep
 
 
-def verify_path_validity(path: str) -> None:
-    """Verify if the path is valid, and throw an error if not.
+def verify_route_validity(route: str) -> None:
+    """Verify if the route is valid, and throw an error if not.
 
     Args:
-        path: the path that need to be checked
+        route: The route that need to be checked
 
     Raises:
-        ValueError: explains what is wrong with the path.
+        ValueError: If the route is invalid.
     """
-    pattern = catchall_in_route(path)
-    if pattern and not path.endswith(pattern):
-        raise ValueError(f"Catch-all must be the last part of the URL: {path}")
+    pattern = catchall_in_route(route)
+    if pattern and not route.endswith(pattern):
+        raise ValueError(f"Catch-all must be the last part of the URL: {route}")
 
 
-def get_path_args(path: str) -> Dict[str, str]:
-    """Get the path arguments for the given path.
+def get_route_args(route: str) -> Dict[str, str]:
+    """Get the dynamic arguments for the given route.
 
     Args:
-        path: The path to get the arguments for.
+        route: The route to get the arguments for.
 
     Returns:
-        The path arguments.
+        The route arguments.
     """
+    args = {}
 
-    def add_path_arg(match: re.Match[str], type_: str):
+    def add_route_arg(match: re.Match[str], type_: str):
         """Add arg from regex search result.
 
         Args:
-            match: result of a regex search
-            type_: the assigned type for this arg
+            match: Result of a regex search
+            type_: The assigned type for this arg
 
         Raises:
-            ValueError: explains what is wrong with the path.
+            ValueError: If the route is invalid.
         """
         arg_name = match.groups()[0]
         if arg_name in args:
             raise ValueError(
-                f"arg name [{arg_name}] is used more than once in this URL"
+                f"Arg name [{arg_name}] is used more than once in this URL"
             )
         args[arg_name] = type_
 
-    # Regex to check for path args.
+    # Regex to check for route args.
     check = constants.RouteRegex.ARG
     check_strict_catchall = constants.RouteRegex.STRICT_CATCHALL
     check_opt_catchall = constants.RouteRegex.OPT_CATCHALL
 
-    # Iterate over the path parts and check for path args.
-    args = {}
-    for part in path.split("/"):
+    # Iterate over the route parts and check for route args.
+    for part in route.split("/"):
         match_opt = check_opt_catchall.match(part)
         if match_opt:
-            add_path_arg(match_opt, constants.PathArgType.LIST)
+            add_route_arg(match_opt, constants.RouteArgType.LIST)
             break
 
         match_strict = check_strict_catchall.match(part)
         if match_strict:
-            add_path_arg(match_strict, constants.PathArgType.LIST)
+            add_route_arg(match_strict, constants.RouteArgType.LIST)
             break
 
         match = check.match(part)
         if match:
-            # Add the path arg to the list.
-            add_path_arg(match, constants.PathArgType.SINGLE)
+            # Add the route arg to the list.
+            add_route_arg(match, constants.RouteArgType.SINGLE)
     return args
 
 
