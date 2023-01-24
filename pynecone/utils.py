@@ -64,6 +64,15 @@ PrimitiveType = Union[int, float, bool, str, list, dict, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 
 
+def deprecate(msg: str):
+    """Print a deprecation warning.
+
+    Args:
+        msg: The deprecation message.
+    """
+    console.print(f"[yellow]DeprecationWarning: {msg}[/yellow]")
+
+
 def get_args(alias: _GenericAlias) -> Tuple[Type, ...]:
     """Get the arguments of a type alias.
 

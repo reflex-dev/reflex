@@ -160,6 +160,7 @@ class App(Base):
     def add_page(
         self,
         component: Union[Component, ComponentCallable],
+        path: Optional[str] = None,
         route: Optional[str] = None,
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
@@ -172,11 +173,18 @@ class App(Base):
 
         Args:
             component: The component to display at the page.
+            path: (deprecated) The path to the component.
             route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
         """
+        if path is not None:
+            utils.deprecate(
+                "The `path` argument is deprecated for `add_page`. Use `route` instead."
+            )
+            route = path
+
         # If the route is not set, get it from the callable.
         if route is None:
             assert isinstance(
