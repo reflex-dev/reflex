@@ -5,7 +5,7 @@ from typing import Any, List
 from pynecone import utils
 from pynecone.components.component import Component, ImportDict
 from pynecone.components.tags import Tag
-from pynecone.var import Var
+from pynecone.var import BaseVar, Var
 
 
 class Gridjs(Component):
@@ -69,9 +69,23 @@ class DataTable(Gridjs):
         )
 
     def _render(self) -> Tag:
+        # If given a pandas df break up the data and columns
         if utils.is_dataframe(type(self.data)):
-            # If given a pandas df break up the data and columns
             self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
             self.data = Var.create(list(self.data.values.tolist()))  # type: ignore
 
+        # If given a var dataframe, get the data and columns
+        if isinstance(self.data, Var):
+            self.columns = BaseVar(
+                name=f"{self.data.name}.columns",
+                type_=List[Any],
+                state=self.data.state,
+            )
+            self.data = BaseVar(
+                name=f"{self.data.name}.data",
+                type_=List[List[Any]],
+                state=self.data.state,
+            )
+
+        # Render the table.
         return super()._render()

@@ -4,10 +4,10 @@ import pytest
 
 from pynecone import utils
 from pynecone.base import Base
+from pynecone.constants import RouteVar
 from pynecone.event import Event
 from pynecone.state import State
 from pynecone.var import BaseVar, ComputedVar
-from pynecone.constants import RouteVar
 
 
 class Object(Base):

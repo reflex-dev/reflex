@@ -976,6 +976,18 @@ def is_dataframe(value: Type) -> bool:
     return value.__name__ == "DataFrame"
 
 
+def is_valid_var_type(var: Type) -> bool:
+    """Check if the given value is a valid prop type.
+
+    Args:
+        var: The value to check.
+
+    Returns:
+        Whether the value is a valid prop type.
+    """
+    return _issubclass(var, StateVar) or is_dataframe(var)
+
+
 def format_state(value: Any) -> Dict:
     """Recursively format values in the given state.
 
