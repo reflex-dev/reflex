@@ -1,6 +1,8 @@
 import pytest
 
 import pynecone as pc
+from pynecone.components.layout.cond import Cond
+from pynecone.components.typography.text import Text
 
 
 @pytest.fixture
@@ -21,16 +23,18 @@ def cond_state(request):
     indirect=True,
 )
 def test_validate_cond(cond_state: pc.Var):
-    """Test if cond can be a pc.Val with any values"""
-    cond_component = pc.cond(
+    """Test if cond can be a pc.Val with any values
+
+    Args:
+        cond_state: A fixture.
+    """
+    cond_component = Cond.create(
         cond_state.value,
-        pc.text("cond is True"),
-        pc.text("cond is False"),
+        Text.create("cond is True"),
+        Text.create("cond is False"),
     )
 
-    rendered_cond = cond_component._render()
-
-    assert str(rendered_cond) == (
+    assert str(cond_component) == (
         "{cond_state.value ? "
         "<Text>{`cond is True`}</Text> : "
         "<Text>{`cond is False`}</Text>}"
