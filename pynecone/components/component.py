@@ -158,7 +158,7 @@ class Component(Base, ABC):
             ValueError: If the value is not a valid event chain.
         """
         # If it's already an event chain, return it.
-        if isinstance(value, Var):
+        if isinstance(value, EventChain):
             return value
 
         arg = self.get_controlled_value()
