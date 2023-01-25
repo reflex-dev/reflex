@@ -1,4 +1,4 @@
-from typing import Type
+from typing import List, Tuple, Type
 
 import pytest
 
@@ -202,7 +202,7 @@ def list_mutation_state():
     ],
 )
 async def test_list_mutation_detection(
-    event_tuples: list[tuple[str, list[str]]], list_mutation_state: State
+    event_tuples: List[Tuple[str, List[str]]], list_mutation_state: State
 ):
     """Test list mutation detection
     when reassignment is not explicitly included in the logic.
