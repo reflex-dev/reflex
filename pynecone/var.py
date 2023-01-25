@@ -748,3 +748,64 @@ class ComputedVar(property, Var):
         if "return" in self.fget.__annotations__:
             return self.fget.__annotations__["return"]
         return Any
+
+
+class PcList(list):
+    """A custom list that pynecone can detect its mutation."""
+
+    def __init__(
+        self,
+        original_list: list,
+        reassign_field: Callable | None = None,
+        field_name: str | None = None,
+    ):
+        """Initialize PcList.
+
+        Args:
+            original_list (list): The original list
+            reassign_field (function | None):
+                The method in the parent state to reassign the field.
+            field_name (str): The field name of the list in the parent state.
+        """
+        self._reassign_field, self._field_name = None, None
+
+        if reassign_field is not None and field_name is not None:
+            self._reassign_field = reassign_field
+            self._field_name = field_name
+
+        super().__init__(original_list)
+
+    def _parent_state_reassign_field(self):
+        """Reassign the field in the parent state."""
+        if self._reassign_field is not None and self._field_name is not None:
+            self._reassign_field(self._field_name)
+
+    def append(self, *args, **kargs):
+        """Append.
+
+        Args:
+            args: The args passed.
+            kargs: The kwargs passed.
+        """
+        super().append(*args, **kargs)
+        self._parent_state_reassign_field()
+
+    def __setitem__(self, *args, **kargs):
+        """Set item.
+
+        Args:
+            args: The args passed.
+            kargs: The kwargs passed.
+        """
+        super().__setitem__(*args, **kargs)
+        self._parent_state_reassign_field()
+
+    def __delitem__(self, *args, **kargs):
+        """Delete item.
+
+        Args:
+            args: The args passed.
+            kargs: The kwargs passed.
+        """
+        super().__delitem__(*args, **kargs)
+        self._parent_state_reassign_field()
