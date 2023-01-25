@@ -756,8 +756,7 @@ class PcList(list):
     def __init__(
         self,
         original_list: list,
-        reassign_field: Callable | None = None,
-        field_name: str | None = None,
+        reassign_field: Callable = lambda: None,
     ):
         """Initialize PcList.
 
@@ -767,18 +766,9 @@ class PcList(list):
                 The method in the parent state to reassign the field.
             field_name (str): The field name of the list in the parent state.
         """
-        self._reassign_field, self._field_name = None, None
-
-        if reassign_field is not None and field_name is not None:
-            self._reassign_field = reassign_field
-            self._field_name = field_name
+        self._reassign_field = reassign_field
 
         super().__init__(original_list)
-
-    def _parent_state_reassign_field(self):
-        """Reassign the field in the parent state."""
-        if self._reassign_field is not None and self._field_name is not None:
-            self._reassign_field(self._field_name)
 
     def append(self, *args, **kargs):
         """Append.
@@ -788,7 +778,7 @@ class PcList(list):
             kargs: The kwargs passed.
         """
         super().append(*args, **kargs)
-        self._parent_state_reassign_field()
+        self._reassign_field()
 
     def __setitem__(self, *args, **kargs):
         """Set item.
@@ -798,7 +788,7 @@ class PcList(list):
             kargs: The kwargs passed.
         """
         super().__setitem__(*args, **kargs)
-        self._parent_state_reassign_field()
+        self._reassign_field()
 
     def __delitem__(self, *args, **kargs):
         """Delete item.
@@ -808,4 +798,4 @@ class PcList(list):
             kargs: The kwargs passed.
         """
         super().__delitem__(*args, **kargs)
-        self._parent_state_reassign_field()
+        self._reassign_field()

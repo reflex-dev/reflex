@@ -76,13 +76,14 @@ class State(Base, ABC):
                     field.name,
                     PcList(
                         getattr(self, field.name),
-                        reassign_field=self._reassign_field,
-                        field_name=field.name,
+                        reassign_field=lambda: self._reassign_field(field.name),
                     ),
                 )
 
     def _reassign_field(self, field_name: str):
         """Reassign the given field.
+
+        Primarily for mutation in fields of mutable data types.
 
         Args:
             field_name (str): The name of the field we want to reassign
