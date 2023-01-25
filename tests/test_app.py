@@ -4,6 +4,7 @@ import pytest
 
 from pynecone.app import App, DefaultState
 from pynecone.components import Box
+from pynecone.event import Event
 from pynecone.middleware import HydrateMiddleware
 from pynecone.state import State
 from pynecone.style import Style
@@ -156,3 +157,64 @@ def test_set_and_get_state(TestState: Type[State]):
     state2 = app.state_manager.get_state(token2)
     assert state1.var == 1  # type: ignore
     assert state2.var == 2  # type: ignore
+
+
+@pytest.fixture
+def list_mutation_state():
+    class AppState(State):
+        """The app state."""
+
+        friends = ["Tommy"]
+
+        def make_friend(self):
+            self.friends.append("another-fd")
+
+        def change_first_friend(self):
+            self.friends[0] = "Jenny"
+
+        def unfriend_all_friends(self):
+            self.friends.clear()
+
+        def unfriend_first_friend(self):
+            del self.friends[0]
+
+    return AppState()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "event_tuples",
+    [
+        pytest.param(
+            [
+                ("app_state.make_friend", ["Tommy", "another-fd"]),
+                ("app_state.change_first_friend", ["Jenny", "another-fd"]),
+            ],
+            id="append then __setitem__",
+        ),
+        pytest.param(
+            [
+                ("app_state.unfriend_first_friend", []),
+                ("app_state.make_friend", ["another-fd"]),
+            ],
+            id="delitem then append",
+        ),
+    ],
+)
+async def test_list_mutation_detection(
+    event_tuples: list[tuple[str, list[str]]], list_mutation_state: State
+):
+    """Test list mutation detection
+    when reassignment is not explicitly included in the logic.
+    """
+    for event_name, expected_friends_in_delta in event_tuples:
+        result = await list_mutation_state.process(
+            Event(
+                token="fake-token",
+                name=event_name,
+                router_data={"pathname": "/", "query": {}},
+                payload={},
+            )
+        )
+
+        assert result.delta["app_state"]["friends"] == expected_friends_in_delta
