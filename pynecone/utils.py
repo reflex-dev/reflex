@@ -1,6 +1,4 @@
 """General utility functions."""
-
-
 from __future__ import annotations
 
 import contextlib
@@ -8,10 +6,8 @@ import inspect
 import json
 import os
 import platform
-import psutil
 import random
 import re
-import multiprocessing
 import shutil
 import signal
 import string
@@ -1230,46 +1226,3 @@ def get_redis() -> Optional[Redis]:
 
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
-
-# Helper functions for telemetry.
-def get_os() -> str:
-    """Get the operating system.
-
-    Returns:
-        The operating system.
-    """
-    return platform.system()
-
-
-def get_python_version() -> str:
-    """Get the Python version.
-
-    Returns:
-        The Python version.
-    """
-    return platform.python_version()
-
-
-def get_cpu_count() -> int:
-    """Get the number of CPUs.
-
-    Returns:
-        The number of CPUs.
-    """
-    return multiprocessing.cpu_count()
-
-
-def add_telemetry() -> Dict:
-    """Add telemetry to an event.
-
-    Returns:
-        The payload with telemetry added.
-    """
-    payload = {}
-    payload["os"] = get_os()
-    payload["cpu_count"] = get_cpu_count()
-    # Display memory in MB.
-    payload["memory"] = psutil.virtual_memory().total >> 20
-    payload["pynecone_version"] = constants.VERSION
-    payload["python_version"] = get_python_version()
-    return payload

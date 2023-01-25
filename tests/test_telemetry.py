@@ -1,12 +1,12 @@
 import pytest
 
-from pynecone import utils
+from pynecone import telemetry
 
 
 def test_os():
     """Test that the OS is detected correctly."""
-    assert utils.get_os() != None
-    assert utils.get_os() in ["Linux", "Darwin", "Java", "Windows"]
+    assert telemetry.get_os() != None
+    assert telemetry.get_os() in ["Linux", "Darwin", "Java", "Windows"]
 
 
 def versiontuple(v):
@@ -15,13 +15,13 @@ def versiontuple(v):
 
 def test_python_version():
     """Test that the Python version is detected correctly."""
-    assert utils.get_python_version() != None
-    assert versiontuple(utils.get_python_version()) >= versiontuple("3.7")
+    assert telemetry.get_python_version() != None
+    assert versiontuple(telemetry.get_python_version()) >= versiontuple("3.7")
 
 
 def test_telemetry():
     """Test that telemetry is sent correctly."""
-    payload = utils.add_telemetry()
+    payload = telemetry.add_telemetry()
     assert payload["pynecone_version"] != None
     assert payload["python_version"] != None
     assert payload["os"] != None
