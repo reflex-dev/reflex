@@ -3,13 +3,15 @@ import pytest
 from pynecone import telemetry
 import json
 
+
 def versiontuple(v):
     return tuple(map(int, (v.split("."))))
+
 
 def test_telemetry():
     """Test that telemetry is sent correctly."""
     tel = telemetry.Telemetry()
-   
+
     # Check that the user OS is one of the supported operating systems.
     tel.get_os()
 
@@ -32,7 +34,7 @@ def test_telemetry():
 
     # Check that the Python version is greater than 3.7.
     tel.get_pynecone_version()
-    
+
     assert tel.python_version != None
     assert versiontuple(tel.python_version) >= versiontuple("3.7")
 
@@ -43,7 +45,3 @@ def test_telemetry():
     assert tel_json["memory"] == tel.memory
     assert tel_json["pynecone_version"] == tel.pynecone_version
     assert tel_json["python_version"] == tel.python_version
-    
-
-
-    
