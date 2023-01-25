@@ -67,10 +67,12 @@ All the changes you make to the repository will be reflected in your running app
 
 Any feature or significant change added should be accompanied with unit tests.
 
-Within the 'test' directory of Pynecone you can add to a test file already there or create your own file if it doesn't fit into the existing layout.
+Within the 'test' directory of Pynecone you can add to a test file already there or create a new test python file if it doesn't fit into the existing layout.
 
 What to unit test?
-- Any function or helper function that has significant logic.
+- Any feature or significant change that has been added.
+- Any edge cases or potential problem areas.
+ -Any interactions between different parts of the code.
 
 
 ## ✅ Making a PR
