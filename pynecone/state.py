@@ -13,7 +13,7 @@ from redis import Redis
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, Var
+from pynecone.var import BaseVar, ComputedVar, PcList, Var
 
 Delta = Dict[str, Any]
 
@@ -60,6 +60,38 @@ class State(Base, ABC):
         # Setup the substates.
         for substate in self.get_substates():
             self.substates[substate.get_name()] = substate().set(parent_state=self)
+
+        self._init_mutable_fields()
+
+    def _init_mutable_fields(self):
+        """Initialize mutable fields.
+
+        So that mutation to them can be detected by the app:
+        * list
+        """
+        for field in self.base_vars.values():
+            if field.type_ is list:
+                setattr(
+                    self,
+                    field.name,
+                    PcList(
+                        getattr(self, field.name),
+                        reassign_field=self._reassign_field,
+                        field_name=field.name,
+                    ),
+                )
+
+    def _reassign_field(self, field_name: str):
+        """Reassign the given field.
+
+        Args:
+            field_name (str): The name of the field we want to reassign
+        """
+        setattr(
+            self,
+            field_name,
+            getattr(self, field_name),
+        )
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
