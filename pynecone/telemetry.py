@@ -3,49 +3,40 @@
 import platform
 import psutil
 import multiprocessing
-from typing import Dict
 
 from pynecone import constants
-
-# Helper functions for telemetry.
-def get_os() -> str:
-    """Get the operating system.
-
-    Returns:
-        The operating system.
-    """
-    return platform.system()
+from pynecone.base import Base
 
 
-def get_python_version() -> str:
-    """Get the Python version.
+class Telemetry(Base):
+    """Anonymous telemetry for Pynecone."""
 
-    Returns:
-        The Python version.
-    """
-    return platform.python_version()
+    user_os: str = ""
+    cpu_count: int = 0
+    memory: int = 0
+    pynecone_version: str = ""
+    python_version: str = ""
 
+    def get_os(self):
+        """Get the operating system.
 
-def get_cpu_count() -> int:
-    """Get the number of CPUs.
+        Returns:
+            The operating system.
+        """
+        self.user_os = platform.system()
 
-    Returns:
-        The number of CPUs.
-    """
-    return multiprocessing.cpu_count()
+    def get_python_version(self):
+        """Get the Python version."""
+        self.python_version = platform.python_version()
 
+    def get_pynecone_version(self):
+        """Get the Pynecone version."""
+        self.pynecone_version = constants.VERSION
 
-def add_telemetry() -> Dict:
-    """Add telemetry to an event.
+    def get_cpu_count(self):
+        """Get the number of CPUs."""
+        self.cpu_count = multiprocessing.cpu_count()
 
-    Returns:
-        The payload with telemetry added.
-    """
-    payload = {}
-    payload["os"] = get_os()
-    payload["cpu_count"] = get_cpu_count()
-    # Display memory in MB.
-    payload["memory"] = psutil.virtual_memory().total >> 20
-    payload["pynecone_version"] = constants.VERSION
-    payload["python_version"] = get_python_version()
-    return payload
+    def get_memory(self):
+        """Get the total memory in MB."""
+        self.memory = psutil.virtual_memory().total >> 20
