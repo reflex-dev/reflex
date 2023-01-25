@@ -112,7 +112,7 @@ class State(Base, ABC):
 
         # Setup the base vars at the class level.
         for prop in cls.base_vars.values():
-            if not utils._issubclass(prop.type_, utils.StateVar):
+            if not utils.is_valid_var_type(prop.type_):
                 raise TypeError(
                     "State vars must be primitive Python types, "
                     "Plotly figures, Pandas dataframes, "
@@ -310,10 +310,9 @@ class State(Base, ABC):
             return inner_func
 
         for param, value in args.items():
-
-            if value == constants.PathArgType.SINGLE:
+            if value == constants.RouteArgType.SINGLE:
                 func = argsingle_factory(param)
-            elif value == constants.PathArgType.LIST:
+            elif value == constants.RouteArgType.LIST:
                 func = arglist_factory(param)
             else:
                 continue

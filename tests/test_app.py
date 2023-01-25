@@ -95,7 +95,7 @@ def test_add_page_set_route(app: App, index_page):
         index_page: The index page.
     """
     assert app.pages == {}
-    app.add_page(index_page, path="/test")
+    app.add_page(index_page, route="/test")
     assert set(app.pages.keys()) == {"test"}
 
 
@@ -107,7 +107,7 @@ def test_add_page_set_route_nested(app: App, index_page):
         index_page: The index page.
     """
     assert app.pages == {}
-    app.add_page(index_page, path="/test/nested")
+    app.add_page(index_page, route="/test/nested")
     assert set(app.pages.keys()) == {"test/nested"}
 
 

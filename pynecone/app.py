@@ -11,7 +11,7 @@ from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
-from pynecone.event import Event
+from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
@@ -44,6 +44,9 @@ class App(Base):
 
     # Middleware to add to the app.
     middleware: List[Middleware] = []
+
+    # events handlers to trigger when a page load
+    load_events: Dict[str, EventHandler] = {}
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -161,9 +164,11 @@ class App(Base):
         self,
         component: Union[Component, ComponentCallable],
         path: Optional[str] = None,
+        route: Optional[str] = None,
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
+        on_load: Optional[EventHandler] = None,
     ):
         """Add a page to the app.
 
@@ -172,22 +177,31 @@ class App(Base):
 
         Args:
             component: The component to display at the page.
-            path: The path to display the component at.
+            path: (deprecated) The path to the component.
+            route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
+            on_load: The event handler that will be called each time the page load.
         """
-        # If the path is not set, get it from the callable.
-        if path is None:
+        if path is not None:
+            utils.deprecate(
+                "The `path` argument is deprecated for `add_page`. Use `route` instead."
+            )
+            route = path
+
+        # If the route is not set, get it from the callable.
+        if route is None:
             assert isinstance(
                 component, Callable
-            ), "Path must be set if component is not a callable."
-            path = component.__name__
+            ), "Route must be set if component is not a callable."
+            route = component.__name__
 
-        # Check if the path given is valid
-        utils.verify_path_validity(path)
+        # Check if the route given is valid
+        utils.verify_route_validity(route)
 
-        self.state.setup_dynamic_args(utils.get_path_args(path))
+        # Apply dynamic args to the route.
+        self.state.setup_dynamic_args(utils.get_route_args(route))
 
         # Generate the component if it is a callable.
         component = component if isinstance(component, Component) else component()
@@ -198,10 +212,14 @@ class App(Base):
         )
 
         # Format the route.
-        route = utils.format_route(path)
+        route = utils.format_route(route)
+
         # Add the page.
         self._check_routes_conflict(route)
         self.pages[route] = component
+
+        if on_load:
+            self.load_events[route] = on_load
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
@@ -209,7 +227,7 @@ class App(Base):
         Based on conflicts that NextJS would throw if not intercepted.
 
         Raises:
-            ValueError: exception showing which conflict exist with the path to be added
+            ValueError: exception showing which conflict exist with the route to be added
 
         Args:
             new_route: the route being newly added.
@@ -233,7 +251,7 @@ class App(Base):
                 and utils.catchall_prefix(route) == utils.catchall_prefix(new_route)
             ):
                 raise ValueError(
-                    f"You cannot use multiple catchall for the same dynamic path ({route} !== {new_route})"
+                    f"You cannot use multiple catchall for the same dynamic route ({route} !== {new_route})"
                 )
 
     def add_custom_404_page(self, component, title=None, image=None, description=None):
@@ -297,9 +315,9 @@ class App(Base):
 
         # Compile the pages.
         custom_components = set()
-        for path, component in self.pages.items():
+        for route, component in self.pages.items():
             component.add_style(self.style)
-            compiler.compile_page(path, component, self.state)
+            compiler.compile_page(route, component, self.state)
 
             # Add the custom components from the page to the set.
             custom_components |= component.get_custom_components()
