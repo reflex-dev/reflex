@@ -161,6 +161,12 @@ def test_set_and_get_state(TestState: Type[State]):
 
 @pytest.fixture
 def list_mutation_state():
+    """A fixture to create a state with list mutation features.
+
+    Returns:
+        A state with list mutation features.
+    """
+
     class AppState(State):
         """The app state."""
 
@@ -206,6 +212,10 @@ async def test_list_mutation_detection(
 ):
     """Test list mutation detection
     when reassignment is not explicitly included in the logic.
+
+    Args:
+        event_tuples: From parametrization.
+        list_mutation_state: A state with list mutation features.
     """
     for event_name, expected_friends_in_delta in event_tuples:
         result = await list_mutation_state.process(

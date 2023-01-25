@@ -762,9 +762,9 @@ class PcList(list):
 
         Args:
             original_list (list): The original list
-            reassign_field (function | None):
+            reassign_field (Callable):
                 The method in the parent state to reassign the field.
-            field_name (str): The field name of the list in the parent state.
+                Default to be a no-op function
         """
         self._reassign_field = reassign_field
 
