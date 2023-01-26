@@ -222,19 +222,6 @@ def list_mutation_state():
     return TestState()
 
 
-async def _test_event_delta(state, event_name, expected_delta):
-    result = await state.process(
-        Event(
-            token="fake-token",
-            name=event_name,
-            router_data={"pathname": "/", "query": {}},
-            payload={},
-        )
-    )
-
-    assert result.delta == expected_delta
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "event_tuples",
