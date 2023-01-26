@@ -1,4 +1,5 @@
 // State management for Pynecone web apps.
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
 // Global variable to hold the token.
 let token;
@@ -136,7 +137,7 @@ export const updateState = async (state, setState, result, setResult, router, so
  */
 export const connect = async (socket, state, setState, result, setResult, router, endpoint) => {
   // Create the socket.
-  socket.current = new WebSocket(endpoint);
+  socket.current = new ReconnectingWebSocket(endpoint);
 
   // Once the socket is open, hydrate the page.
   socket.current.onopen = () => {
