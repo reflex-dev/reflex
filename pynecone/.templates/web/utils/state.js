@@ -4,7 +4,7 @@
 let token;
 
 // Key for the token in the session storage.
-const TOKEN_KEY = "token";
+const TOKEN_KEY = "token"; 
 
 /**
  * Generate a UUID (Used for session tokens).
