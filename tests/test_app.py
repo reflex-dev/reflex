@@ -167,24 +167,72 @@ def list_mutation_state():
         A state with list mutation features.
     """
 
-    class AppState(State):
-        """The app state."""
+    class TestState(State):
+        """The test state."""
 
-        friends = ["Tommy"]
+        # plain list
+        plain_friends = ["Tommy"]
 
         def make_friend(self):
-            self.friends.append("another-fd")
+            self.plain_friends.append("another-fd")
 
         def change_first_friend(self):
-            self.friends[0] = "Jenny"
+            self.plain_friends[0] = "Jenny"
 
         def unfriend_all_friends(self):
-            self.friends.clear()
+            self.plain_friends.clear()
 
         def unfriend_first_friend(self):
-            del self.friends[0]
+            del self.plain_friends[0]
 
-    return AppState()
+        def remove_last_friend(self):
+            self.plain_friends.pop()
+
+        def make_friends_with_colleagues(self):
+            colleagues = ["Peter", "Jimmy"]
+            self.plain_friends.extend(colleagues)
+
+        def remove_tommy(self):
+            self.plain_friends.remove("Tommy")
+
+        # list in dict
+        friends_in_dict = {"Tommy": ["Jenny"]}
+
+        def remove_jenny_from_tommy(self):
+            self.friends_in_dict["Tommy"].remove("Jenny")
+
+        def add_jimmy_to_tommy_friends(self):
+            self.friends_in_dict["Tommy"].append("Jimmy")
+
+        def tommy_has_no_fds(self):
+            self.friends_in_dict["Tommy"].clear()
+
+        # nested list
+        friends_in_nested_list = [["Tommy"], ["Jenny"]]
+
+        def remove_first_group(self):
+            self.friends_in_nested_list.pop(0)
+
+        def remove_first_person_from_first_group(self):
+            self.friends_in_nested_list[0].pop(0)
+
+        def add_jimmy_to_second_group(self):
+            self.friends_in_nested_list[1].append("Jimmy")
+
+    return TestState()
+
+
+async def _test_event_delta(state, event_name, expected_delta):
+    result = await state.process(
+        Event(
+            token="fake-token",
+            name=event_name,
+            router_data={"pathname": "/", "query": {}},
+            payload={},
+        )
+    )
+
+    assert result.delta == expected_delta
 
 
 @pytest.mark.asyncio
@@ -193,21 +241,96 @@ def list_mutation_state():
     [
         pytest.param(
             [
-                ("app_state.make_friend", ["Tommy", "another-fd"]),
-                ("app_state.change_first_friend", ["Jenny", "another-fd"]),
+                (
+                    "test_state.make_friend",
+                    {"test_state": {"plain_friends": ["Tommy", "another-fd"]}},
+                ),
+                (
+                    "test_state.change_first_friend",
+                    {"test_state": {"plain_friends": ["Jenny", "another-fd"]}},
+                ),
             ],
             id="append then __setitem__",
         ),
         pytest.param(
             [
-                ("app_state.unfriend_first_friend", []),
-                ("app_state.make_friend", ["another-fd"]),
+                (
+                    "test_state.unfriend_first_friend",
+                    {"test_state": {"plain_friends": []}},
+                ),
+                (
+                    "test_state.make_friend",
+                    {"test_state": {"plain_friends": ["another-fd"]}},
+                ),
             ],
             id="delitem then append",
         ),
+        pytest.param(
+            [
+                (
+                    "test_state.make_friends_with_colleagues",
+                    {"test_state": {"plain_friends": ["Tommy", "Peter", "Jimmy"]}},
+                ),
+                (
+                    "test_state.remove_tommy",
+                    {"test_state": {"plain_friends": ["Peter", "Jimmy"]}},
+                ),
+                (
+                    "test_state.remove_last_friend",
+                    {"test_state": {"plain_friends": ["Peter"]}},
+                ),
+                (
+                    "test_state.unfriend_all_friends",
+                    {"test_state": {"plain_friends": []}},
+                ),
+            ],
+            id="extend, remove, pop, clear",
+        ),
+        pytest.param(
+            [
+                (
+                    "test_state.add_jimmy_to_second_group",
+                    {
+                        "test_state": {
+                            "friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]
+                        }
+                    },
+                ),
+                (
+                    "test_state.remove_first_person_from_first_group",
+                    {
+                        "test_state": {
+                            "friends_in_nested_list": [[], ["Jenny", "Jimmy"]]
+                        }
+                    },
+                ),
+                (
+                    "test_state.remove_first_group",
+                    {"test_state": {"friends_in_nested_list": [["Jenny", "Jimmy"]]}},
+                ),
+            ],
+            id="nested list",
+        ),
+        pytest.param(
+            [
+                (
+                    "test_state.add_jimmy_to_tommy_friends",
+                    {"test_state": {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}}},
+                ),
+                (
+                    "test_state.remove_jenny_from_tommy",
+                    {"test_state": {"friends_in_dict": {"Tommy": ["Jimmy"]}}},
+                ),
+                (
+                    "test_state.tommy_has_no_fds",
+                    {"test_state": {"friends_in_dict": {"Tommy": []}}},
+                ),
+            ],
+            id="list in dict",
+        ),
     ],
 )
-async def test_list_mutation_detection(
+async def test_list_mutation_detection__plain_list(
     event_tuples: List[Tuple[str, List[str]]], list_mutation_state: State
 ):
     """Test list mutation detection
@@ -217,7 +340,7 @@ async def test_list_mutation_detection(
         event_tuples: From parametrization.
         list_mutation_state: A state with list mutation features.
     """
-    for event_name, expected_friends_in_delta in event_tuples:
+    for event_name, expected_delta in event_tuples:
         result = await list_mutation_state.process(
             Event(
                 token="fake-token",
@@ -227,4 +350,4 @@ async def test_list_mutation_detection(
             )
         )
 
-        assert result.delta["app_state"]["friends"] == expected_friends_in_delta
+        assert result.delta == expected_delta
