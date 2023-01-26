@@ -1,4 +1,5 @@
 // State management for Pynecone web apps.
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
 // Global variable to hold the token.
 let token;
