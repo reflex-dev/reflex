@@ -755,18 +755,20 @@ class PcList(list):
 
     def __init__(
         self,
-        original_list: list,
-        reassign_field: Callable = lambda: None,
+        original_list: List,
+        reassign_field: Callable = lambda _field_name: None,
+        field_name: str = "",
     ):
         """Initialize PcList.
 
         Args:
-            original_list (list): The original list
+            original_list (List): The original list
             reassign_field (Callable):
                 The method in the parent state to reassign the field.
                 Default to be a no-op function
+            field_name (str): the name of field in the parent state
         """
-        self._reassign_field = reassign_field
+        self._reassign_field = lambda: reassign_field(field_name)
 
         super().__init__(original_list)
 
@@ -798,4 +800,44 @@ class PcList(list):
             kargs: The kwargs passed.
         """
         super().__delitem__(*args, **kargs)
+        self._reassign_field()
+
+    def clear(self, *args, **kargs):
+        """Remove all item from the list.
+
+        Args:
+            args: The args passed.
+            kargs: The kwargs passed.
+        """
+        super().clear(*args, **kargs)
+        self._reassign_field()
+
+    def extend(self, *args, **kargs):
+        """Add all item of a list to the end of the list.
+
+        Args:
+            args: The args passed.
+            kargs: The kwargs passed.
+        """
+        super().extend(*args, **kargs)
+        self._reassign_field()
+
+    def pop(self, *args, **kargs):
+        """Remove an element.
+
+        Args:
+            args: The args passed.
+            kargs: The kwargs passed.
+        """
+        super().pop(*args, **kargs)
+        self._reassign_field()
+
+    def remove(self, *args, **kargs):
+        """Remove an element.
+
+        Args:
+            args: The args passed.
+            kargs: The kwargs passed.
+        """
+        super().remove(*args, **kargs)
         self._reassign_field()

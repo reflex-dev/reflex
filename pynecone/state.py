@@ -70,15 +70,16 @@ class State(Base, ABC):
         * list
         """
         for field in self.base_vars.values():
-            if field.type_ is list:
-                setattr(
-                    self,
-                    field.name,
-                    PcList(
-                        getattr(self, field.name),
-                        reassign_field=lambda: self._reassign_field(field.name),
-                    ),
-                )
+            value = getattr(self, field.name)
+
+            value_in_pc_data = _convert_mutable_datatypes(
+                value, self._reassign_field, field.name
+            )
+
+            if utils._issubclass(field.type_, List):
+                setattr(self, field.name, value_in_pc_data)
+
+        self.clean()
 
     def _reassign_field(self, field_name: str):
         """Reassign the given field.
@@ -611,3 +612,38 @@ class StateManager(Base):
         if self.redis is None:
             return
         self.redis.set(token, pickle.dumps(state), ex=self.token_expiration)
+
+
+def _convert_mutable_datatypes(
+    field_value: Any, reassign_field: Callable, field_name: str
+) -> Any:
+    """Recursively convert mutable data to the Pc data types.
+
+    Note: right now only list & dict would be handled recursively.
+
+    Args:
+        field_value: The target field_value.
+        reassign_field:
+            The function to reassign the field in the parent state.
+        field_name: the name of the field in the parent state
+
+    Returns:
+        The converted field_value
+    """
+    if isinstance(field_value, list):
+        for index in range(len(field_value)):
+            field_value[index] = _convert_mutable_datatypes(
+                field_value[index], reassign_field, field_name
+            )
+
+        field_value = PcList(
+            field_value, reassign_field=reassign_field, field_name=field_name
+        )
+
+    elif isinstance(field_value, dict):
+        for key, value in field_value.items():
+            field_value[key] = _convert_mutable_datatypes(
+                value, reassign_field, field_name
+            )
+
+    return field_value
