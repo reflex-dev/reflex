@@ -136,7 +136,7 @@ export const updateState = async (state, setState, result, setResult, router, so
  */
 export const connect = async (socket, state, setState, result, setResult, router, endpoint) => {
   // Create the socket.
-  socket.current = new WebSocket(endpoint);
+  socket.current = new ReconnectingWebSocket(endpoint);
 
   // Once the socket is open, hydrate the page.
   socket.current.onopen = () => {
