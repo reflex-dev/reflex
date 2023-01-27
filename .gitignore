@@ -2,3 +2,5 @@
 **/*.pyc
 dist/*
 examples/
+.idea
+.vscode
