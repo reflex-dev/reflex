@@ -12,6 +12,7 @@ from plotly.io import to_json
 
 from pynecone import utils
 from pynecone.base import Base
+from pynecone.components.layout.propcond import PropCond
 from pynecone.event import EventChain
 from pynecone.var import Var
 
@@ -85,7 +86,9 @@ class Tag(Base):
             if isinstance(prop, dict):
                 # Convert any var keys to strings.
                 prop = {
-                    key: str(val) if isinstance(val, Var) else val
+                    key: str(val)
+                    if isinstance(val, Var) or isinstance(val, PropCond)
+                    else val
                     for key, val in prop.items()
                 }
 
