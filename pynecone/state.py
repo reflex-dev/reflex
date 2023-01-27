@@ -13,7 +13,7 @@ from redis import Redis
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, PcList, Var
+from pynecone.var import BaseVar, ComputedVar, PCList, Var
 
 Delta = Dict[str, Any]
 
@@ -636,7 +636,7 @@ def _convert_mutable_datatypes(
                 field_value[index], reassign_field, field_name
             )
 
-        field_value = PcList(
+        field_value = PCList(
             field_value, reassign_field=reassign_field, field_name=field_name
         )
 

@@ -750,7 +750,7 @@ class ComputedVar(property, Var):
         return Any
 
 
-class PcList(list):
+class PCList(list):
     """A custom list that pynecone can detect its mutation."""
 
     def __init__(
@@ -759,7 +759,7 @@ class PcList(list):
         reassign_field: Callable = lambda _field_name: None,
         field_name: str = "",
     ):
-        """Initialize PcList.
+        """Initialize PCList.
 
         Args:
             original_list (List): The original list
