@@ -1127,8 +1127,15 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
 
     Returns:
         The handler args.
+
+    Raises:
+        TypeError: If the event handler has an invalid signature.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
+    if len(args) < 2:
+        raise TypeError(
+            f"Event handler has an invalid signature, needed a method with a parameter, got {event_spec.handler}."
+        )
     return event_spec.args if len(args) > 2 else ((args[1], arg.name),)
 
 
