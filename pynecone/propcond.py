@@ -4,8 +4,6 @@ from pynecone import utils
 from pynecone.base import Base
 from pynecone.var import Var
 
-# from pynecone.components.tags import CondTag, Tag
-
 
 class PropCond(Base):
     """A conditional prop."""

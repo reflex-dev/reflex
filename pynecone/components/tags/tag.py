@@ -12,7 +12,7 @@ from plotly.io import to_json
 
 from pynecone import utils
 from pynecone.base import Base
-from pynecone.components.layout.propcond import PropCond
+from pynecone.propcond import PropCond
 from pynecone.event import EventChain
 from pynecone.var import Var
 

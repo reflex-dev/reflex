@@ -1,7 +1,7 @@
 """Import all the components."""
 
 from pynecone import utils
-from pynecone.components.layout.propcond import PropCond
+from pynecone.propcond import PropCond
 
 from .component import Component
 from .datadisplay import *
