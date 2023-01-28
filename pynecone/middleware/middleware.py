@@ -1,4 +1,4 @@
-"""Base Pynecone middelware."""
+"""Base Pynecone middleware."""
 from __future__ import annotations
 
 from abc import ABC

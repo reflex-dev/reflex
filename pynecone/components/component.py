@@ -315,7 +315,7 @@ class Component(Base, ABC):
             # Extract the style for this component.
             component_style = Style(style[type(self)])
 
-            # Only add stylee props that are not overridden.
+            # Only add style props that are not overridden.
             component_style = {
                 k: v for k, v in component_style.items() if k not in self.style
             }
