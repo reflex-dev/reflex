@@ -165,7 +165,7 @@ USE_EFFECT = join(
         "    return;",
         "  }}",
         "  const reconnectSocket = () => {{",
-        f"    {SOCKET}.current.reconnect()",
+        f"    {SOCKET}.current.reconnect() ",
         "  }}",
         f"  if (typeof {SOCKET}.current !== 'undefined') {{{{",
         f"    if (!{SOCKET}.current) {{{{",
