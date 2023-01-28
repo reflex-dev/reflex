@@ -130,9 +130,14 @@ class Component(Base, ABC):
             del kwargs[key]
 
         # Add style props to the component.
+        style = kwargs.get("style", {})
+        if isinstance(style, List):
+            # Merge styles, the later ones overriding keys in the earlier ones.
+            style = {k: v for style_dict in style for k, v in style_dict.items()}
+
         kwargs["style"] = Style(
             {
-                **kwargs.get("style", {}),
+                **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
         )
