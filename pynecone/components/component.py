@@ -162,10 +162,11 @@ class Component(Base, ABC):
         Raises:
             ValueError: If the value is not a valid event chain.
         """
-        # If it's a custom component and var, return it.
-        if isinstance(self, CustomComponent):
-            if isinstance(value, Var):
-                return value
+        # If it's an event chain var, return it.
+        if isinstance(value, Var):
+            if value.type_ is not EventChain:
+                raise ValueError(f"Invalid event chain: {value}")
+            return value
 
         arg = self.get_controlled_value()
 
