@@ -30,7 +30,7 @@ class Html(Box):
         Raises:
             ValueError: If children are not provided or more than one child is provided.
         """
-        # If children are not prvided, throw an error.
+        # If children are not provided, throw an error.
         if len(children) != 1:
             raise ValueError("Must provide children to the html component.")
         else:

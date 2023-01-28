@@ -51,7 +51,7 @@ class Drawer(ChakraComponent):
     size: Var[str]
 
     # A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
-    use_intert: Var[bool]
+    use_inert: Var[bool]
 
     # Variant of drawer
     variant: Var[str]

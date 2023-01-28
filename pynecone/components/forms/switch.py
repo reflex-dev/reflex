@@ -7,7 +7,7 @@ from pynecone.var import Var
 
 
 class Switch(ChakraComponent):
-    """Togglable switch component."""
+    """Toggleable switch component."""
 
     tag = "Switch"
 

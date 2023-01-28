@@ -80,7 +80,7 @@ class ResponsiveGrid(ChakraComponent):
     # Shorthand prop for gridRow
     row: Var[str]
 
-    # Alist that defines the number of columns for each breakpoint.
+    # A list that defines the number of columns for each breakpoint.
     columns: Var[List[int]]
 
     # The width at which child elements will break into columns. Pass a number for pixel values or a string for any other valid CSS length.
