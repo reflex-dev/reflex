@@ -61,14 +61,18 @@ def test_format_value(prop: Var, formatted: str):
         ({"key": True, "key2": "value2"}, 'key={true}\nkey2="value2"'),
     ],
 )
-def test_format_props(props: Dict[str, Var], formatted: str):
+def test_format_props(props: Dict[str, Var], formatted: str, windows_platform):
     """Test that the formatted props are correct.
 
     Args:
         props: The props to test.
         formatted: The expected formatted props.
     """
-    assert Tag(props=props).format_props() == formatted
+    assert (
+        Tag(props=props).format_props() == formatted.replace("\n", "\r\n")
+        if windows_platform
+        else formatted
+    )
 
 
 @pytest.mark.parametrize(
@@ -123,14 +127,14 @@ def test_add_props():
         ),
     ],
 )
-def test_format_tag(tag: Tag, expected: str):
+def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
     """Test that the formatted tag is correct.
 
     Args:
         tag: The tag to test.
         expected: The expected formatted tag.
     """
-    assert str(tag) == expected
+    assert str(tag) == expected.replace("\n", "\r\n" if windows_platform else expected)
 
 
 def test_format_cond_tag():

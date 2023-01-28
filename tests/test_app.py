@@ -1,3 +1,5 @@
+import os.path
+from typing import Type
 from typing import List, Tuple, Type
 
 import pytest
@@ -88,28 +90,30 @@ def test_add_page_default_route(app: App, index_page, about_page):
     assert set(app.pages.keys()) == {"index", "about"}
 
 
-def test_add_page_set_route(app: App, index_page):
+def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
     """
+    route = "\\test" if windows_platform else "/test"
     assert app.pages == {}
-    app.add_page(index_page, route="/test")
+    app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test"}
 
 
-def test_add_page_set_route_nested(app: App, index_page):
+def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
     """Test adding a page to an app.
 
     Args:
         app: The app to test.
         index_page: The index page.
     """
+    route = "\\test\\nested" if windows_platform else "/test/nested"
     assert app.pages == {}
-    app.add_page(index_page, route="/test/nested")
-    assert set(app.pages.keys()) == {"test/nested"}
+    app.add_page(index_page, route=route)
+    assert set(app.pages.keys()) == {route.strip(os.path.sep)}
 
 
 def test_initialize_with_state(TestState: Type[State]):

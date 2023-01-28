@@ -145,7 +145,7 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
         ("  hello\n  world", 2, "    hello\n    world\n"),
     ],
 )
-def test_indent(text: str, indent_level: int, expected: str):
+def test_indent(text: str, indent_level: int, expected: str, windows_platform: bool):
     """Test indenting a string.
 
     Args:
@@ -153,7 +153,11 @@ def test_indent(text: str, indent_level: int, expected: str):
         indent_level: The number of spaces to indent by.
         expected: The expected output string.
     """
-    assert utils.indent(text, indent_level) == expected
+    assert (
+        utils.indent(text, indent_level) == expected.replace("\n", "\r\n")
+        if windows_platform
+        else expected
+    )
 
 
 @pytest.mark.parametrize(

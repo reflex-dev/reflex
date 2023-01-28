@@ -16,3 +16,4 @@ from .model import Model, session
 from .state import ComputedVar as var
 from .state import State
 from .style import toggle_color_mode
+from .var import Var
