@@ -30,7 +30,7 @@ from typing import (
     Union,
 )
 from urllib.parse import urlparse
-
+import psutil
 import plotly.graph_objects as go
 import typer
 import uvicorn
@@ -580,6 +580,22 @@ def get_api_port() -> int:
         port = urlparse(constants.API_URL).port
     assert port is not None
     return port
+
+
+def kill_process_on_port(port):
+    """Kill the process on the given port.
+
+    Args:
+        port: The port.
+    """
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+        try:
+            for conns in proc.connections(kind="inet"):
+                if conns.laddr.port == port:
+                    proc.kill()
+                    return
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
 
 
 def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
