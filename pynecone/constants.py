@@ -212,11 +212,11 @@ class RouteRegex(SimpleNamespace):
     """Regex used for extracting route args in route."""
 
     ARG = re.compile(r"\[(?!\.)([^\[\]]+)\]")
-    # group return the catchall pattern (i.e "[[..slug]]")
+    # group return the catchall pattern (i.e. "[[..slug]]")
     CATCHALL = re.compile(r"(\[?\[\.{3}(?![0-9]).*\]?\])")
-    # group return the argname (i.e "slug")
+    # group return the arg name (i.e. "slug")
     STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
-    # group return the argname (i.e "slug")
+    # group return the arg name (i.e. "slug")
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
 
 

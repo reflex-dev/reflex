@@ -130,9 +130,14 @@ class Component(Base, ABC):
             del kwargs[key]
 
         # Add style props to the component.
+        style = kwargs.get("style", {})
+        if isinstance(style, List):
+            # Merge styles, the later ones overriding keys in the earlier ones.
+            style = {k: v for style_dict in style for k, v in style_dict.items()}
+
         kwargs["style"] = Style(
             {
-                **kwargs.get("style", {}),
+                **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
         )
@@ -157,10 +162,11 @@ class Component(Base, ABC):
         Raises:
             ValueError: If the value is not a valid event chain.
         """
-        # If it's a custom component and var, return it.
-        if isinstance(self, CustomComponent):
-            if isinstance(value, Var):
-                return value
+        # If it's an event chain var, return it.
+        if isinstance(value, Var):
+            if value.type_ is not EventChain:
+                raise ValueError(f"Invalid event chain: {value}")
+            return value
 
         arg = self.get_controlled_value()
 
@@ -315,7 +321,7 @@ class Component(Base, ABC):
             # Extract the style for this component.
             component_style = Style(style[type(self)])
 
-            # Only add stylee props that are not overridden.
+            # Only add style props that are not overridden.
             component_style = {
                 k: v for k, v in component_style.items() if k not in self.style
             }
