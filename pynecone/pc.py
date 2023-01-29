@@ -60,7 +60,6 @@ def run(
     port: str = typer.Option(None, help="Specify a different port."),
 ):
     """Run the app in the current directory."""
-
     # Check that the app is initialized.
     if frontend and not utils.is_initialized():
         utils.console.print(
