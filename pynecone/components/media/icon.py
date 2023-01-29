@@ -29,6 +29,8 @@ class Icon(ChakraIconComponent):
         if "tag" not in kwargs.keys():
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
         if len(kwargs.get("children", [])) == 0:
-            raise AttributeError("Icon component does not allwo to pass any children")
+            raise AttributeError(
+                "Passing children to Icon component is not allowed: remove positional arguments to fix"
+            )
 
         super().__init__(*args, **kwargs)
