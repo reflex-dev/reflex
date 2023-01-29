@@ -17,7 +17,6 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT
 from types import ModuleType
-from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,6 +28,7 @@ from typing import (
     Type,
     Union,
 )
+from typing import _GenericAlias  # type: ignore
 from urllib.parse import urlparse
 
 import plotly.graph_objects as go
@@ -422,6 +422,17 @@ def install_bun():
     # Only install if bun is not already installed.
     if not os.path.exists(get_package_manager()):
         console.log("Installing bun...")
+
+        # Check if curl is installed
+        curl_path = which("curl")
+        if curl_path is None:
+            raise FileNotFoundError("Pynecone requires curl to be installed.")
+
+        # Check if unzip is installed
+        unzip_path = which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Pynecone requires unzip to be installed.")
+
         os.system(constants.INSTALL_BUN)
 
 
@@ -599,7 +610,7 @@ def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel
 
 
 def run_backend_prod(
-    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+        app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
 ):
     """Run the backend.
 
@@ -732,11 +743,11 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 
 
 def wrap(
-    text: str,
-    open: str,
-    close: Optional[str] = None,
-    check_first: bool = True,
-    num: int = 1,
+        text: str,
+        open: str,
+        close: Optional[str] = None,
+        check_first: bool = True,
+        num: int = 1,
 ) -> str:
     """Wrap the given text in the given open and close characters.
 
@@ -883,7 +894,7 @@ def format_route(route: str) -> str:
 
 
 def format_cond(
-    cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
+        cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
 ) -> str:
     """Format a conditional expression.
 
@@ -1084,7 +1095,7 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
     if len(args) == 1:
         return event_handler()
     assert (
-        len(args) == 2
+            len(args) == 2
     ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
     return event_handler(arg)
 
