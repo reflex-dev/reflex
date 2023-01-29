@@ -14,23 +14,27 @@ class Icon(ChakraIconComponent):
 
     tag = "None"
 
-    def __init__(self, *args, **kwargs):
+    @classmethod
+    def create(cls, *children, **props):
         """Initialize the Icon component.
 
         Run some additional checks on Icon component.
 
         Args:
-            args: The positional arguments
-            kwargs: The keyword arguments
+            children: The positional arguments
+            props: The keyword arguments
 
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
-        """
-        if "tag" not in kwargs.keys():
-            raise AttributeError("Missing 'tag' keyword-argument for Icon")
-        if len(kwargs.get("children", [])) == 0:
-            raise AttributeError(
-                "Passing children to Icon component is not allowed: remove positional arguments to fix"
-            )
 
-        super().__init__(*args, **kwargs)
+        Returns:
+            The created component.
+        """
+        if children:
+            raise AttributeError(
+                f"Passing children to Icon component is not allowed: remove positional arguments {children} to fix"
+            )
+        if "tag" not in props.keys():
+            raise AttributeError("Missing 'tag' keyword-argument for Icon")
+
+        return super().create(*children, **props)
