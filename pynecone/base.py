@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, TypeVar
 
 import pydantic
+from pydantic.fields import ModelField
 
 # Typevar to represent any class subclassing Base.
 PcType = TypeVar("PcType")
@@ -54,6 +55,25 @@ class Base(pydantic.BaseModel):
             The fields of the object.
         """
         return cls.__fields__
+
+    @classmethod
+    def add_field(cls, var: Any, default_value: Any):
+        """Add a pydantic field after class definition.
+
+        Used by State.add_var() to correctly handle the new variable.
+
+        Args:
+            var: The variable to add a pydantic field for.
+            default_value: The default value of the field
+        """
+        new_field = ModelField.infer(
+            name=var.name,
+            value=default_value,
+            annotation=var.type_,
+            class_validators=None,
+            config=cls.__config__,
+        )
+        cls.__fields__.update({var.name: new_field})
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field.
