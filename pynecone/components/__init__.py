@@ -92,7 +92,7 @@ def mobile_and_tablet(*children, **props):
 
 
 def cond(cond_var, c1, c2=None):
-    """Create a conditional component.
+    """Create a conditional component or Prop.
 
     Args:
         cond_var: The cond to determine which component to render.
