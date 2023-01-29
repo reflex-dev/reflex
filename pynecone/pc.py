@@ -58,7 +58,7 @@ def run(
         constants.LogLevel.ERROR, help="The log level to use."
     ),
     port: str = typer.Option(None, help="Specify a different port."),
-):  
+):
     """Run the app in the current directory."""
 
     # Check that the app is initialized.
