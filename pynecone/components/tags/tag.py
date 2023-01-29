@@ -75,7 +75,7 @@ class Tag(Base):
         elif isinstance(prop, str):
             if utils.is_wrapped(prop, "{"):
                 return prop
-            return json.dumps(prop)
+            return json.dumps(prop, ensure_ascii=False)
 
         elif isinstance(prop, Figure):
             prop = json.loads(to_json(prop))["data"]

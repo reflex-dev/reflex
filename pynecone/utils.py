@@ -30,7 +30,7 @@ from typing import (
     Union,
 )
 from urllib.parse import urlparse
-
+import psutil
 import plotly.graph_objects as go
 import typer
 import uvicorn
@@ -581,6 +581,15 @@ def get_api_port() -> int:
     assert port is not None
     return port
 
+def kill_process_on_port(port):
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            for conns in proc.connections(kind='inet'):
+                if conns.laddr.port == port:
+                    proc.kill()
+                    return
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
 
 def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
     """Run the backend.
@@ -620,7 +629,6 @@ def run_backend_prod(
         f"{app_name}:{constants.APP_VAR}()",
     ]
     subprocess.run(command)
-
 
 def get_production_backend_url() -> str:
     """Get the production backend URL.

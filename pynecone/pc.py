@@ -58,8 +58,9 @@ def run(
         constants.LogLevel.ERROR, help="The log level to use."
     ),
     port: str = typer.Option(None, help="Specify a different port."),
-):
+):  
     """Run the app in the current directory."""
+
     # Check that the app is initialized.
     if frontend and not utils.is_initialized():
         utils.console.print(
@@ -87,10 +88,14 @@ def run(
     assert frontend_cmd and backend_cmd, "Invalid env"
 
     # Run the frontend and backend.
-    if frontend:
-        frontend_cmd(app.app, Path.cwd(), port)
-    if backend:
-        backend_cmd(app.__name__, loglevel=loglevel)
+    try:
+        if frontend:
+            frontend_cmd(app.app, Path.cwd(), port)
+        if backend:
+            backend_cmd(app.__name__, loglevel=loglevel)
+    finally:
+        utils.kill_process_on_port(os.environ["PORT"])
+        utils.kill_process_on_port(utils.get_api_port())
 
 
 @cli.command()
