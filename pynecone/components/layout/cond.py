@@ -12,16 +12,16 @@ from pynecone.var import Var
 class Cond(Component):
     """Render one of two components based on a condition."""
 
-    # The cond to determine which component to render.
+    # The cond_var to determine which component to render.
     cond: Var[Any]
 
-    # The component to render if the cond is true.
+    # The component to render if the cond_var is true.
     comp1: Component
 
-    # The component to render if the cond is false.
+    # The component to render if the cond_var is false.
     comp2: Component
 
-    # Whether the cond is within another cond.
+    # Whether the cond_var is within another cond_var.
     is_nested: bool = False
 
     @classmethod
@@ -31,9 +31,9 @@ class Cond(Component):
         """Create a conditional component.
 
         Args:
-            cond: The cond to determine which component to render.
-            comp1: The component to render if the cond is true.
-            comp2: The component to render if the cond is false.
+            cond: The cond_var to determine which component to render.
+            comp1: The component to render if the cond_var is true.
+            comp2: The component to render if the cond_var is false.
 
         Returns:
             The conditional component.

@@ -1,4 +1,5 @@
 """General utility functions."""
+
 from __future__ import annotations
 
 import contextlib
@@ -1002,11 +1003,17 @@ def format_cond(
     Returns:
         The formatted conditional expression.
     """
-    expr = (
-        f"{cond} ? '{true_value}' : '{false_value}'".replace("{", "").replace("}", "")
-        if is_prop
-        else f"{cond} ? {true_value} : {false_value}"
-    )
+    if is_prop:
+        if isinstance(true_value, str):
+            true_value = wrap(true_value, "'")
+        if isinstance(false_value, str):
+            false_value = wrap(false_value, "'")
+        expr = f"{cond} ? {true_value} : {false_value}".replace("{", "").replace(
+            "}", ""
+        )
+    else:
+        expr = f"{cond} ? {true_value} : {false_value}"
+
     if not is_nested:
         expr = wrap(expr, "{")
     return expr

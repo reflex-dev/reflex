@@ -91,18 +91,17 @@ def mobile_and_tablet(*children, **props):
     return Box.create(*children, **props, display=["block", "block", "block", "none"])
 
 
-def cond(cond, comp1, comp2=None):
+def cond(cond_var, c1, c2=None):
     """Create a conditional component.
 
     Args:
-        cond: The cond to determine which component to render.
-        comp1: The component or prop to render if the cond is true.
-        comp2: The component or prop to render if the cond is false.
+        cond_var: The cond to determine which component to render.
+        c1: The component or prop to render if the cond_var is true.
+        c2: The component or prop to render if the cond_var is false.
 
     Returns:
         The conditional component.
     """
-    if isinstance(comp1, Component) and isinstance(comp2, Component):
-        return Cond.create(cond, comp1, comp2)
-    else:
-        return PropCond.create(cond, comp1, comp2)
+    if isinstance(c1, Component) and isinstance(c2, Component):
+        return Cond.create(cond_var, c1, c2)
+    return PropCond.create(cond_var, c1, c2)

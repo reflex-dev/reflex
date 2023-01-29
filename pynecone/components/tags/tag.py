@@ -48,7 +48,7 @@ class Tag(Base):
 
     @staticmethod
     def format_prop(
-        prop: Union[Var, EventChain, ComponentStyle, str],
+        prop: Union[Var, EventChain, ComponentStyle, PropCond, str],
     ) -> Union[int, float, str]:
         """Format a prop.
 
@@ -71,6 +71,10 @@ class Tag(Base):
             local_args = ",".join(prop.events[0].local_args)
             events = ",".join([utils.format_event(event) for event in prop.events])
             prop = f"({local_args}) => Event([{events}])"
+
+        # Handle conditional props.
+        elif isinstance(prop, PropCond):
+            return str(prop)
 
         # Handle other types.
         elif isinstance(prop, str):

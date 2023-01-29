@@ -22,9 +22,9 @@ class PropCond(Base):
         """Create a conditional component.
 
         Args:
-            cond: The cond to determine which component to render.
-            comp1: The prop value to render if the cond is true.
-            comp2: The prop value to render if the cond is false.
+            cond: The cond_var to determine which component to render.
+            prop1: The prop value to render if the cond_var is true.
+            prop2: The prop value to render if the cond_var is false.
 
         Returns:
             The conditional Prop.

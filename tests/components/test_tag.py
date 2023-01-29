@@ -6,6 +6,7 @@ from pynecone.components import Box
 from pynecone.components.tags import CondTag, IterTag, Tag
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
+from pynecone.propcond import PropCond
 
 
 def mock_event(arg):
@@ -40,6 +41,12 @@ def mock_event(arg):
             ),
             '{(e) => Event([E("mock_event", {arg:e.target.value})])}',
         ),
+        (
+            PropCond.create(
+                cond=BaseVar(name="random_var"), prop1="true_value", prop2="false_value"
+            ),
+            "{random_var ? 'true_value' : 'false_value'}",
+        ),
     ],
 )
 def test_format_value(prop: Var, formatted: str):
@@ -61,7 +68,7 @@ def test_format_value(prop: Var, formatted: str):
         ({"key": True, "key2": "value2"}, 'key={true}\nkey2="value2"'),
     ],
 )
-def test_format_props(props: Dict[str, Var], formatted: str, windows_platform):
+def test_format_props(props: Dict[str, Var], formatted: str, windows_platform: bool):
     """Test that the formatted props are correct.
 
     Args:
@@ -138,7 +145,7 @@ def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
 
 
 def test_format_cond_tag():
-    """Test that the formatted cond tag is correct."""
+    """Test that the formatted cond_var tag is correct."""
     tag = CondTag(
         true_value=str(Tag(name="h1", contents="True content")),
         false_value=str(Tag(name="h2", contents="False content")),

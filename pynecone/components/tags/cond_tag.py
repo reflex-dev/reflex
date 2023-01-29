@@ -19,7 +19,7 @@ class CondTag(Tag):
     # The code to render if the condition is false.
     false_value: str
 
-    # Whether the cond tag is nested.
+    # Whether the cond_var tag is nested.
     is_nested: bool = False
 
     def __str__(self) -> str:
