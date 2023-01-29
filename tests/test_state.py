@@ -638,3 +638,20 @@ def test_get_query_params(test_state):
     test_state.router_data = {RouteVar.QUERY: params}
 
     assert test_state.get_query_params() == params
+
+
+def test_add_var(test_state):
+    test_state.add_var("dynamic_int", int, 42)
+    assert test_state.dynamic_int == 42
+
+    test_state.add_var("dynamic_list", List[int], [5, 10])
+    assert test_state.dynamic_list == [5, 10]
+    assert getattr(test_state, "dynamic_list") == [5, 10]
+
+    # how to test that one?
+    # test_state.dynamic_list.append(15)
+    # assert test_state.dynamic_list == [5, 10, 15]
+
+    test_state.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
+    assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
+    assert getattr(test_state, "dynamic_dict") == {"k1": 5, "k2": 10}
