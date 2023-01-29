@@ -145,7 +145,7 @@ def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
 
 
 def test_format_cond_tag():
-    """Test that the formatted cond_var tag is correct."""
+    """Test that the formatted cond tag is correct."""
     tag = CondTag(
         true_value=str(Tag(name="h1", contents="True content")),
         false_value=str(Tag(name="h2", contents="False content")),

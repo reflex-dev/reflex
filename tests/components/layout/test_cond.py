@@ -23,19 +23,19 @@ def cond_state(request):
     indirect=True,
 )
 def test_validate_cond(cond_state: pc.Var):
-    """Test if cond_var can be a pc.Val with any values
+    """Test if cond can be a pc.Val with any values
 
     Args:
         cond_state: A fixture.
     """
     cond_component = Cond.create(
         cond_state.value,
-        Text.create("cond_var is True"),
-        Text.create("cond_var is False"),
+        Text.create("cond is True"),
+        Text.create("cond is False"),
     )
 
     assert str(cond_component) == (
         "{cond_state.value ? "
-        "<Text>{`cond_var is True`}</Text> : "
-        "<Text>{`cond_var is False`}</Text>}"
+        "<Text>{`cond is True`}</Text> : "
+        "<Text>{`cond is False`}</Text>}"
     )

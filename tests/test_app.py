@@ -1,5 +1,4 @@
 import os.path
-from typing import Type
 from typing import List, Tuple, Type
 
 import pytest

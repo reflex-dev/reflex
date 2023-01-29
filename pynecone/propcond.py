@@ -19,12 +19,12 @@ class PropCond(Base):
 
     @classmethod
     def create(cls, cond: Var, prop1: Any, prop2: Any = None):
-        """Create a conditional component.
+        """Create a conditional Prop.
 
         Args:
-            cond: The cond_var to determine which component to render.
-            prop1: The prop value to render if the cond_var is true.
-            prop2: The prop value to render if the cond_var is false.
+            cond: The cond to determine which prop to render.
+            prop1: The prop value to render if the cond is true.
+            prop2: The prop value to render if the cond is false.
 
         Returns:
             The conditional Prop.
