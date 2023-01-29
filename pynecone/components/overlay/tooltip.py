@@ -44,7 +44,7 @@ class Tooltip(ChakraComponent):
     # If true, the tooltip will show an arrow tip
     has_arrow: Var[bool]
 
-    # If true, th etooltip with be disabled.
+    # If true, the tooltip with be disabled.
     is_disabled: Var[bool]
 
     # If true, the tooltip will be open.

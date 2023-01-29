@@ -29,7 +29,7 @@ class Menu(ChakraComponent):
     # If by default the menu is open.
     default_is_open: Var[bool]
 
-    # If rtl, poper placement positions will be flipped i.e. 'top-right' will become 'top-left' and vice-verse ("ltr" | "rtl")
+    # If rtl, popper placement positions will be flipped i.e. 'top-right' will become 'top-left' and vice-verse ("ltr" | "rtl")
     direction: Var[str]
 
     # If true, the popper will change its placement and flip when it's about to overflow its boundary area.
