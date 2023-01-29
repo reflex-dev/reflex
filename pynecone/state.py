@@ -109,9 +109,6 @@ class State(Base, ABC):
 
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
-
-        Raises:
-            TypeError: If the class has a var with an invalid type.
         """
         super().__init_subclass__(**kwargs)
 
@@ -146,16 +143,7 @@ class State(Base, ABC):
 
         # Setup the base vars at the class level.
         for prop in cls.base_vars.values():
-            if not utils.is_valid_var_type(prop.type_):
-                raise TypeError(
-                    "State vars must be primitive Python types, "
-                    "Plotly figures, Pandas dataframes, "
-                    "or subclasses of pc.Base. "
-                    f'Found var "{prop.name}" with type {prop.type_}.'
-                )
-            cls._set_var(prop)
-            cls._create_setter(prop)
-            cls._set_default_value(prop)
+            cls._init_var(prop)
 
         # Set up the event handlers.
         events = {
@@ -260,6 +248,60 @@ class State(Base, ABC):
         if not hasattr(substate, name):
             raise ValueError(f"Invalid path: {path}")
         return getattr(substate, name)
+
+    @classmethod
+    def _init_var(cls, prop: BaseVar):
+        """Initialize a variable.
+
+        Args:
+            prop (BaseVar): The variable to initialize
+
+        Raises:
+            TypeError: if the variable has an incorrect type
+        """
+        if not utils.is_valid_var_type(prop.type_):
+            raise TypeError(
+                "State vars must be primitive Python types, "
+                "Plotly figures, Pandas dataframes, "
+                "or subclasses of pc.Base. "
+                f'Found var "{prop.name}" with type {prop.type_}.'
+            )
+        cls._set_var(prop)
+        cls._create_setter(prop)
+        cls._set_default_value(prop)
+
+    @classmethod
+    def add_var(cls, name: str, type_: Any, default_value: Any = None):
+        """Add dynamically a variable to the State.
+
+        The variable added this way can be used in the same way as a variable
+        defined statically in the model.
+
+        Args:
+            name (str): The name of the variable
+            type_ (any): The type of the variable
+            default_value (any): The default value of the variable
+
+        Raises:
+            NameError: if a variable of this name already exists
+        """
+        if name in cls.__fields__:
+            raise NameError(
+                f"The variable '{name}' already exist. Use a different name"
+            )
+
+        # create the variable based on name and type
+        var = BaseVar(name=name, type_=type_)
+        var.set_state(cls)
+
+        # add the pydantic field dynamically (must be done before _init_var)
+        cls.add_field(var, default_value)
+
+        cls._init_var(var)
+
+        # update the internal dicts so the new variable is correctly handled
+        cls.base_vars.update({name: var})
+        cls.vars.update({name: var})
 
     @classmethod
     def _set_var(cls, prop: BaseVar):
