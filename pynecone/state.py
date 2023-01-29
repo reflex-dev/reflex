@@ -279,8 +279,8 @@ class State(Base, ABC):
 
         Args:
             name (str): The name of the variable
-            type_ (any): The type of the variable
-            default_value (any): The default value of the variable
+            type_ (Any): The type of the variable
+            default_value (Any): The default value of the variable
 
         Raises:
             NameError: if a variable of this name already exists
