@@ -610,7 +610,7 @@ def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel
 
 
 def run_backend_prod(
-        app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
 ):
     """Run the backend.
 
@@ -743,11 +743,11 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 
 
 def wrap(
-        text: str,
-        open: str,
-        close: Optional[str] = None,
-        check_first: bool = True,
-        num: int = 1,
+    text: str,
+    open: str,
+    close: Optional[str] = None,
+    check_first: bool = True,
+    num: int = 1,
 ) -> str:
     """Wrap the given text in the given open and close characters.
 
@@ -894,7 +894,7 @@ def format_route(route: str) -> str:
 
 
 def format_cond(
-        cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
+    cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
 ) -> str:
     """Format a conditional expression.
 
@@ -1095,7 +1095,7 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
     if len(args) == 1:
         return event_handler()
     assert (
-            len(args) == 2
+        len(args) == 2
     ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
     return event_handler(arg)
 
