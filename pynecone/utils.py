@@ -37,6 +37,7 @@ import uvicorn
 from plotly.io import to_json
 from redis import Redis
 from rich.console import Console
+from rich.prompt import Prompt
 
 from pynecone import constants
 from pynecone.base import Base
@@ -582,6 +583,25 @@ def get_api_port() -> int:
     return port
 
 
+def get_process_on_port(port) -> Optional[psutil.Process]:
+    """Get the process on the given port.
+
+    Args:
+        port: The port.
+
+    Returns:
+        The process on the given port.
+    """
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+        try:
+            for conns in proc.connections(kind="inet"):
+                if conns.laddr.port == int(port):
+                    return proc
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return None
+
+
 def is_process_on_port(port) -> bool:
     """Check if a process is running on the given port.
 
@@ -591,14 +611,7 @@ def is_process_on_port(port) -> bool:
     Returns:
         Whether a process is running on the given port.
     """
-    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
-        try:
-            for conns in proc.connections(kind="inet"):
-                if conns.laddr.port == int(port):
-                    return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
-    return False
+    return get_process_on_port(port) is not None
 
 
 def kill_process_on_port(port):
@@ -607,14 +620,18 @@ def kill_process_on_port(port):
     Args:
         port: The port.
     """
-    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
-        try:
-            for conns in proc.connections(kind="inet"):
-                if conns.laddr.port == int(port):
-                    proc.kill()
-                    return
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
+    get_process_on_port(port).kill()
+
+
+def terminate_port(port, _type):
+    console.print(
+        f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
+    )
+    frontend_action = Prompt.ask("Kill it?", choices=["y", "n"])
+    if frontend_action == "y":
+        kill_process_on_port(port)
+    else:
+        return
 
 
 def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):

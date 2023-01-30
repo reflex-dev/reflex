@@ -62,37 +62,15 @@ def run(
     port: str = typer.Option(None, help="Specify a different port."),
 ):
     """Run the app in the current directory."""
-    # Check if something is already running on the specified ports.
-    frontend_running, backend_running = False, False
-
     frontend_port = utils.get_config().port if port is None else port
     backend_port = utils.get_api_port()
 
-    if utils.is_process_on_port(frontend_port):
-        frontend_running = True
-    if utils.is_process_on_port(backend_port):
-        backend_running = True
-
     # If something is running on the ports, ask the user if they want to kill it.
-    if frontend_running:
-        utils.console.print(
-            f"Something is already running on port [bold underline]{frontend_port}[/bold underline]. This is the port the frontend runs on."
-        )
-        frontend_action = Prompt.ask("Kill it?", choices=["y", "n"])
-        if frontend_action == "y":
-            utils.kill_process_on_port(frontend_port)
-        else:
-            return
+    if utils.is_process_on_port(frontend_port):
+        utils.terminate_port(frontend_port, "frontend")
 
-    if backend_running:
-        utils.console.print(
-            f"Something is already running on port [bold underline]{backend_port}[/bold underline]. This is the port the backend runs on.",
-        )
-        backend_action = Prompt.ask("Kill it?", choices=["y", "n"])
-        if backend_action == "y":
-            utils.kill_process_on_port(backend_port)
-        else:
-            return
+    if utils.is_process_on_port(backend_port):
+        utils.terminate_port(backend_port, "backend")
 
     # Check that the app is initialized.
     if frontend and not utils.is_initialized():
