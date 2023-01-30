@@ -1231,5 +1231,17 @@ def get_redis() -> Optional[Redis]:
     return Redis(host=redis_url, port=int(redis_port), db=0)
 
 
+def is_backend_variable(name: str) -> bool:
+    """Check if this variable name correspond to a backend variable.
+
+    Args:
+        name (str): The name of the variable to check
+
+    Returns:
+        bool: The result of the check
+    """
+    return name.startswith("_") and not name.startswith("__")
+
+
 # Store this here for performance.
 StateBases = get_base_class(StateVar)

@@ -117,6 +117,12 @@ class State(Base, ABC):
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
 
+        cls.backend_vars = {
+            name: value
+            for name, value in cls.__dict__.items()
+            if utils.is_backend_variable(name)
+        }
+
         # Set the base and computed vars.
         skip_vars = set(cls.inherited_vars) | {
             "parent_state",
@@ -409,6 +415,8 @@ class State(Base, ABC):
         # Get the var from the parent state.
         if name in super().__getattribute__("inherited_vars"):
             return getattr(super().__getattribute__("parent_state"), name)
+        elif name in super().__getattribute__("backend_vars"):
+            return super().__getattribute__("backend_vars").__getitem__(name)
         return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any):
@@ -423,6 +431,10 @@ class State(Base, ABC):
         # Set the var on the parent state.
         if name in self.inherited_vars:
             setattr(self.parent_state, name, value)
+            return
+
+        if utils.is_backend_variable(name):
+            self.backend_vars.__setitem__(name, value)
             return
 
         # Set the attribute.
