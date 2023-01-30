@@ -63,32 +63,34 @@ def run(
 ):
     """Run the app in the current directory."""
     # Check if something is already running on the specified ports.
-    frontend_port, backend_port = False, False
+    frontend_running, backend_running = False, False
 
-    test_port = utils.get_config().port if port is None else port
-    if utils.is_process_on_port(test_port):
-        frontend_port = True
-    if utils.is_process_on_port(utils.get_api_port()):
-        backend_port = True
+    frontend_port = utils.get_config().port if port is None else port
+    backend_port = utils.get_api_port()
+
+    if utils.is_process_on_port(frontend_port):
+        frontend_running = True
+    if utils.is_process_on_port(backend_port):
+        backend_running = True
 
     # If something is running on the ports, ask the user if they want to kill it.
-    if frontend_port:
+    if frontend_running:
         utils.console.print(
-            f"Something is already running on port [bold underline]{test_port}[/bold underline]. This is the port the frontend runs on."
+            f"Something is already running on port [bold underline]{frontend_port}[/bold underline]. This is the port the frontend runs on."
         )
         frontend_action = Prompt.ask("Kill it?", choices=["y", "n"])
         if frontend_action == "y":
-            utils.kill_process_on_port(test_port)
+            utils.kill_process_on_port(frontend_port)
         else:
             return
 
-    if backend_port:
+    if backend_running:
         utils.console.print(
-            f"Something is already running on port [bold underline]{utils.get_api_port()}[/bold underline]. This is the port the backend runs on.",
+            f"Something is already running on port [bold underline]{backend_port}[/bold underline]. This is the port the backend runs on.",
         )
         backend_action = Prompt.ask("Kill it?", choices=["y", "n"])
         if backend_action == "y":
-            utils.kill_process_on_port(utils.get_api_port())
+            utils.kill_process_on_port(backend_port)
         else:
             return
 
@@ -125,8 +127,8 @@ def run(
         if backend:
             backend_cmd(app.__name__, loglevel=loglevel)
     finally:
-        utils.kill_process_on_port(test_port)
-        utils.kill_process_on_port(utils.get_api_port())
+        utils.kill_process_on_port(frontend_port)
+        utils.kill_process_on_port(backend_port)
 
 
 @cli.command()
