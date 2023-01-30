@@ -17,6 +17,7 @@ DEFAULT_IMPORTS: ImportDict = {
     "next/router": {"useRouter"},
     f"/{constants.STATE_PATH}": {"connect", "updateState", "E"},
     "": {"focus-visible/dist/focus-visible"},
+    "@chakra-ui/react": {"useColorMode"},
 }
 
 

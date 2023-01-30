@@ -6,6 +6,15 @@ from pynecone import utils
 from pynecone.var import Var
 
 
+def toggle_color_mode():
+    """Toggle the color mode.
+
+    Returns:
+        Toggle color mode JS event as a variable
+    """
+    return Var.create(value="toggleColorMode", is_local=False, is_string=False)
+
+
 def convert(style_dict):
     """Format a style dictionary.
 

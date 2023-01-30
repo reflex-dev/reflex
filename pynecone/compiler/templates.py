@@ -197,3 +197,6 @@ ROUTER = f"const {constants.ROUTER} = useRouter()"
 
 # Sockets.
 SOCKET = "const socket = useRef(null)"
+
+# Color toggle
+COLORTOGGLE = "const { colorMode, toggleColorMode } = useColorMode()"

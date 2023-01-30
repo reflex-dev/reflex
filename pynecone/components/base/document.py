@@ -31,3 +31,16 @@ class Script(NextDocumentLib):
     """The document main scripts."""
 
     tag = "NextScript"
+
+
+class ChakraUiReactLib(Component):
+    """Chakra UI React document components."""
+
+    library = "@chakra-ui/react"
+
+
+class ColorModeScript(ChakraUiReactLib):
+    """Chakra color mode script."""
+
+    tag = "ColorModeScript"
+    initialColorMode = "light"
