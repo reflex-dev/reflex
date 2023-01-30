@@ -210,6 +210,7 @@ def test_is_generic_alias(cls: type, expected: bool):
     "route,expected",
     [
         ("", "index"),
+        ("/", "index"),
         ("custom-route", "custom-route"),
         ("custom-route/", "custom-route"),
         ("/custom-route", "custom-route"),

@@ -952,12 +952,14 @@ def format_route(route: str) -> str:
     Returns:
         The formatted route.
     """
+    # Strip the route.
+    route = route.strip("/")
+    route = to_snake_case(route).replace("_", "-")
+
     # If the route is empty, return the index route.
     if route == "":
         return constants.INDEX_ROUTE
 
-    route = route.strip("/")
-    route = to_snake_case(route).replace("_", "-")
     return route
 
 
