@@ -418,7 +418,6 @@ def install_bun():
     Raises:
         FileNotFoundError: If the required packages are not installed.
     """
-
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
