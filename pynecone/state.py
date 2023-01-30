@@ -33,6 +33,9 @@ class State(Base, ABC):
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
 
+    # Backend vars that are never sent to the client.
+    backend_vars: ClassVar[Dict[str, Any]] = {}
+
     # The parent state.
     parent_state: Optional[State] = None
 
