@@ -621,7 +621,7 @@ def kill_process_on_port(port):
         port: The port.
     """
     if get_process_on_port(port) is not None:
-        get_process_on_port(port).kill() # type: ignore
+        get_process_on_port(port).kill()  # type: ignore
 
 
 def terminate_port(port, _type):
