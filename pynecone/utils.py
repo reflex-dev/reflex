@@ -630,9 +630,6 @@ def terminate_port(port, _type):
     Args:
         port: The port.
         _type: The type of the port.
-
-    Raises:
-        SystemExit: If the user does not want to kill the process on the port.
     """
     console.print(
         f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
