@@ -245,3 +245,15 @@ def test_setup_frontend(tmp_path, mocker):
     assert web_folder.exists()
     assert web_public_folder.exists()
     assert (web_public_folder / "favicon.ico").exists()
+
+
+@pytest.mark.parametrize(
+    "input, output",
+    [
+        ("_hidden", True),
+        ("not_hidden", False),
+        ("__dundermethod__", False),
+    ],
+)
+def test_is_backend_variable(input, output):
+    assert utils.is_backend_variable(input) == output
