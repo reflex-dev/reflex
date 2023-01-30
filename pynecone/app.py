@@ -197,9 +197,6 @@ class App(Base):
             ), "Route must be set if component is not a callable."
             route = component.__name__
 
-        # Format the route.
-        route = utils.format_route(route)
-
         # Check if the route given is valid
         utils.verify_route_validity(route)
 
