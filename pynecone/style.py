@@ -2,17 +2,12 @@
 
 from typing import Optional
 
-from pynecone import utils
-from pynecone.var import Var
+from pynecone import constants, utils
+from pynecone.event import EventChain
+from pynecone.var import BaseVar, Var
 
 
-def toggle_color_mode():
-    """Toggle the color mode.
-
-    Returns:
-        Toggle color mode JS event as a variable
-    """
-    return Var.create(value="toggleColorMode", is_local=False, is_string=False)
+toggle_color_mode = BaseVar(name=constants.TOGGLE_COLOR_MODE, type_=EventChain)
 
 
 def convert(style_dict):
