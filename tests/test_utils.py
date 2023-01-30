@@ -206,6 +206,25 @@ def test_is_generic_alias(cls: type, expected: bool):
     assert utils.is_generic_alias(cls) == expected
 
 
+@pytest.mark.parametrize(
+    "route,expected",
+    [
+        ("", "index"),
+        ("custom-route", "custom-route"),
+        ("custom-route/", "custom-route"),
+        ("/custom-route", "custom-route"),
+    ],
+)
+def test_format_route(route: str, expected: bool):
+    """Test formatting a route.
+
+    Args:
+        route: The route to format.
+        expected: The expected formatted route.
+    """
+    assert utils.format_route(route) == expected
+
+
 def test_setup_frontend(tmp_path, mocker):
     """Test checking if assets content have been
     copied into the .web/public folder
