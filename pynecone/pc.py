@@ -8,6 +8,8 @@ import typer
 
 from pynecone import constants, utils
 
+from rich.prompt import Prompt
+
 # Create the app.
 cli = typer.Typer()
 
@@ -60,6 +62,16 @@ def run(
     port: str = typer.Option(None, help="Specify a different port."),
 ):
     """Run the app in the current directory."""
+    frontend_port = utils.get_config().port if port is None else port
+    backend_port = utils.get_api_port()
+
+    # If something is running on the ports, ask the user if they want to kill it.
+    if utils.is_process_on_port(frontend_port):
+        utils.terminate_port(frontend_port, "frontend")
+
+    if utils.is_process_on_port(backend_port):
+        utils.terminate_port(backend_port, "backend")
+
     # Check that the app is initialized.
     if frontend and not utils.is_initialized():
         utils.console.print(
@@ -93,8 +105,8 @@ def run(
         if backend:
             backend_cmd(app.__name__, loglevel=loglevel)
     finally:
-        utils.kill_process_on_port(os.environ["PORT"])
-        utils.kill_process_on_port(utils.get_api_port())
+        utils.kill_process_on_port(frontend_port)
+        utils.kill_process_on_port(backend_port)
 
 
 @cli.command()
