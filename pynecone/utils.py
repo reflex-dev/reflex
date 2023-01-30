@@ -792,6 +792,22 @@ def indent(text: str, indent_level: int = 2) -> str:
     return os.linesep.join(f"{' ' * indent_level}{line}" for line in lines) + os.linesep
 
 
+def format_route(route: str) -> str:
+    """Format the given route.
+
+    Args:
+        route: The route to format.
+
+    Returns:
+        The formatted route.
+    """
+    # Remove leading and trailing slashes.
+    route = route.strip("/")
+
+    # Add leading "./".
+    return f"./{route}"
+
+
 def verify_route_validity(route: str) -> None:
     """Verify if the route is valid, and throw an error if not.
 
