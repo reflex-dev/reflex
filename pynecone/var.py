@@ -716,14 +716,6 @@ class BaseVar(Var, Base):
 
         return setter
 
-    def json(self) -> str:
-        """Convert the object to a json string.
-
-        Returns:
-            The object as a json string.
-        """
-        return self.__config__.json_dumps(self.dict())
-
 
 class ComputedVar(property, Var):
     """A field with computed getters."""
