@@ -9,6 +9,7 @@ import typer
 from pynecone import constants, utils
 
 from rich.prompt import Prompt
+
 # Create the app.
 cli = typer.Typer()
 
@@ -69,7 +70,7 @@ def run(
         frontend_port = True
     if utils.is_process_on_port(utils.get_api_port()):
         backend_port = True
-    
+
     # If something is running on the ports, ask the user if they want to kill it.
     if frontend_port:
         utils.console.print(

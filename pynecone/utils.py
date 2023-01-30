@@ -582,24 +582,25 @@ def get_api_port() -> int:
     return port
 
 
-
-def is_process_on_port(port):
+def is_process_on_port(port) -> bool:
     """Check if a process is running on the given port.
-    
+
     Args:
         port: The port.
+
+    Returns:
+        Whether a process is running on the given port.
     """
-    
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
-            for conns in proc.connections(kind='inet'):
+            for conns in proc.connections(kind="inet"):
                 if conns.laddr.port == int(port):
                     return True
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
     return False
 
-    
+
 def kill_process_on_port(port):
     """Kill the process on the given port.
 
