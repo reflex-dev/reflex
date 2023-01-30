@@ -226,3 +226,8 @@ SLUG_404 = "[..._]"
 TITLE_404 = "404 - Not Found"
 FAVICON_404 = "favicon.ico"
 DESCRIPTION_404 = "The page was not found"
+
+# Color mode variables
+USE_COLOR_MODE = "useColorMode"
+COLOR_MODE = "colorMode"
+TOGGLE_COLOR_MODE = "toggleColorMode"

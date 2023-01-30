@@ -162,11 +162,6 @@ class Component(Base, ABC):
         Raises:
             ValueError: If the value is not a valid event chain.
         """
-        # If it's a JS var, return it.
-        if isinstance(value, Var):
-            if value.is_local is False and value.is_string is False:
-                return value
-
         # If it's an event chain var, return it.
         if isinstance(value, Var):
             if value.type_ is not EventChain:

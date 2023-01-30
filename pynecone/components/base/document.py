@@ -1,6 +1,7 @@
 """Document components."""
 
 from pynecone.components.component import Component
+from pynecone.components.libs.chakra import ChakraComponent
 
 
 class NextDocumentLib(Component):
@@ -33,13 +34,7 @@ class Script(NextDocumentLib):
     tag = "NextScript"
 
 
-class ChakraUiReactLib(Component):
-    """Chakra UI React document components."""
-
-    library = "@chakra-ui/react"
-
-
-class ColorModeScript(ChakraUiReactLib):
+class ColorModeScript(ChakraComponent):
     """Chakra color mode script."""
 
     tag = "ColorModeScript"
