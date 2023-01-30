@@ -17,7 +17,6 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT
 from types import ModuleType
-from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,6 +28,7 @@ from typing import (
     Type,
     Union,
 )
+from typing import _GenericAlias  # type: ignore
 from urllib.parse import urlparse
 import psutil
 import plotly.graph_objects as go
@@ -414,7 +414,11 @@ def initialize_web_directory():
 
 
 def install_bun():
-    """Install bun onto the user's system."""
+    """Install bun onto the user's system.
+
+    Raises:
+        FileNotFoundError: If the required packages are not installed.
+    """
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
@@ -423,6 +427,17 @@ def install_bun():
     # Only install if bun is not already installed.
     if not os.path.exists(get_package_manager()):
         console.log("Installing bun...")
+
+        # Check if curl is installed
+        curl_path = which("curl")
+        if curl_path is None:
+            raise FileNotFoundError("Pynecone requires curl to be installed.")
+
+        # Check if unzip is installed
+        unzip_path = which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Pynecone requires unzip to be installed.")
+
         os.system(constants.INSTALL_BUN)
 
 
