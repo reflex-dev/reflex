@@ -992,6 +992,7 @@ def is_dataframe(value: Type) -> bool:
     """
     return value.__name__ == "DataFrame"
 
+
 def is_polars_dataframe(value: Type) -> bool:
     """Check if the given value is a polars dataframe.
 
@@ -1001,7 +1002,7 @@ def is_polars_dataframe(value: Type) -> bool:
     Returns:
         Whether the value is a polars dataframe.
     """
-    return 'polars' in str(value)
+    return "polars" in str(value)
 
 
 def format_state(value: Any) -> Dict:
@@ -1027,13 +1028,10 @@ def format_state(value: Any) -> Dict:
     # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]
-    
+
     # Check if polars DF
     if is_polars_dataframe(type(value)):
-        return {
-                "columns": value.columns,
-                "data": value.to_numpy().tolist()
-        }
+        return {"columns": value.columns, "data": value.to_numpy().tolist()}
 
     # Convert pandas dataframes to JSON.
     if is_dataframe(type(value)):
