@@ -413,7 +413,12 @@ def initialize_web_directory():
 
 
 def install_bun():
-    """Install bun onto the user's system."""
+    """Install bun onto the user's system.
+
+    Raises:
+        FileNotFoundError: If the required packages are not installed.
+    """
+
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
