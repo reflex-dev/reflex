@@ -620,7 +620,8 @@ def kill_process_on_port(port):
     Args:
         port: The port.
     """
-    get_process_on_port(port).kill()
+    if get_process_on_port(port) is not None:
+        get_process_on_port(port).kill() # type: ignore
 
 
 def terminate_port(port, _type):
@@ -631,7 +632,8 @@ def terminate_port(port, _type):
     if frontend_action == "y":
         kill_process_on_port(port)
     else:
-        return
+        console.print("Exiting...")
+        sys.exit()
 
 
 def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
