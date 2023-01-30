@@ -11,6 +11,9 @@ def get_engine():
 
     Returns:
         The database engine.
+
+    Raises:
+        ValueError: If the database url is None.
     """
     url = utils.get_config().db_url
     if url is None:
