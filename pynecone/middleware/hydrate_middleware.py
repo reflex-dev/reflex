@@ -27,9 +27,9 @@ class HydrateMiddleware(Middleware):
             An optional state to return.
         """
         if event.name == utils.get_hydrate_event(state):
-            route = event.router_data.get("pathname", "")
+            route = event.router_data.get(constants.RouteVar.PATH, "")
             if route == "/":
-                load_event = app.load_events.get("index")
+                load_event = app.load_events.get(constants.INDEX_ROUTE)
             elif route:
                 load_event = app.load_events.get(route.lstrip("/"))
             else:
