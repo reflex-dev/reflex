@@ -163,12 +163,12 @@ class App(Base):
     def add_page(
         self,
         component: Union[Component, ComponentCallable],
-        path: Optional[str] = None,
         route: Optional[str] = None,
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
         on_load: Optional[EventHandler] = None,
+        path: Optional[str] = None,
     ):
         """Add a page to the app.
 

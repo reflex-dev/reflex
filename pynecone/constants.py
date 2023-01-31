@@ -11,7 +11,7 @@ import pkg_resources
 # The name of the Pynecone module.
 MODULE_NAME = "pynecone"
 # The name of the pip install package.
-PACKAGE_NAME = "pynecone-io"
+PACKAGE_NAME = "pynecone"
 # The current version of Pynecone.
 VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
