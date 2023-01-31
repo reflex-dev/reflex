@@ -1316,7 +1316,7 @@ def is_backend_variable(name: str) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:
-        name (str): The name of the variable to check
+        name: The name of the variable to check
 
     Returns:
         bool: The result of the check
