@@ -438,6 +438,7 @@ class State(Base, ABC):
 
         if utils.is_backend_variable(name):
             self.backend_vars.__setitem__(name, value)
+            self.mark_dirty()
             return
 
         # Set the attribute.
