@@ -90,7 +90,7 @@ class State(Base, ABC):
         Primarily for mutation in fields of mutable data types.
 
         Args:
-            field_name (str): The name of the field we want to reassign
+            field_name: The name of the field we want to reassign
         """
         setattr(
             self,
@@ -287,9 +287,9 @@ class State(Base, ABC):
         defined statically in the model.
 
         Args:
-            name (str): The name of the variable
-            type_ (Any): The type of the variable
-            default_value (Any): The default value of the variable
+            name: The name of the variable
+            type_: The type of the variable
+            default_value: The default value of the variable
 
         Raises:
             NameError: if a variable of this name already exists
@@ -688,17 +688,19 @@ def _convert_mutable_datatypes(
     Returns:
         The converted field_value
     """
-    if isinstance(field_value, list):
-        for index in range(len(field_value)):
-            field_value[index] = _convert_mutable_datatypes(
-                field_value[index], reassign_field, field_name
-            )
+    # TODO: The PCList class needs to be pickleable to work with Redis.
+    # We will uncomment this code once this is fixed.
+    # if isinstance(field_value, list):
+    #     for index in range(len(field_value)):
+    #         field_value[index] = _convert_mutable_datatypes(
+    #             field_value[index], reassign_field, field_name
+    #         )
 
-        field_value = PCList(
-            field_value, reassign_field=reassign_field, field_name=field_name
-        )
+    #     field_value = PCList(
+    #         field_value, reassign_field=reassign_field, field_name=field_name
+    #     )
 
-    elif isinstance(field_value, dict):
+    if isinstance(field_value, dict):
         for key, value in field_value.items():
             field_value[key] = _convert_mutable_datatypes(
                 value, reassign_field, field_name
