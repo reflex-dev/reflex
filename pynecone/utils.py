@@ -639,42 +639,54 @@ def kill_process_on_port(port):
         get_process_on_port(port).kill()  # type: ignore
 
 
-def terminate_port(port, _type):
-    """Terminate the port.
+def terminate_port(port, _type) -> str:
+    """Terminate or change the port.
 
     Args:
         port: The port.
         _type: The type of the port.
+
+    Returns:
+        The new port.
     """
     console.print(
         f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
     )
-    frontend_action = Prompt.ask("Kill it?", choices=["y", "n"])
-    if frontend_action == "y":
+    frontend_action = Prompt.ask("Kill or change it?", choices=["k", "c", "n"])
+    if frontend_action == "k":
         kill_process_on_port(port)
+        return port
+    elif frontend_action == "c":
+        new_port = Prompt.ask("Specify the new port")
+        if is_process_on_port(new_port):
+            terminate_port(new_port, _type)
+        else:
+            console.print(f"The {_type} will run on port [bold underline]{new_port}[/bold underline].")
+            return new_port
     else:
         console.print("Exiting...")
         sys.exit()
 
 
-def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
+def run_backend(app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        port: The app port
         loglevel: The log level.
     """
     uvicorn.run(
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
         host=constants.BACKEND_HOST,
-        port=get_api_port(),
+        port=port,
         log_level=loglevel,
         reload=True,
     )
 
 
 def run_backend_prod(
-    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+        app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
 ):
     """Run the backend.
 
@@ -807,11 +819,11 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 
 
 def wrap(
-    text: str,
-    open: str,
-    close: Optional[str] = None,
-    check_first: bool = True,
-    num: int = 1,
+        text: str,
+        open: str,
+        close: Optional[str] = None,
+        check_first: bool = True,
+        num: int = 1,
 ) -> str:
     """Wrap the given text in the given open and close characters.
 
@@ -964,7 +976,7 @@ def format_route(route: str) -> str:
 
 
 def format_cond(
-    cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
+        cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
 ) -> str:
     """Format a conditional expression.
 
@@ -1165,7 +1177,7 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
     if len(args) == 1:
         return event_handler()
     assert (
-        len(args) == 2
+            len(args) == 2
     ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
     return event_handler(arg)
 
