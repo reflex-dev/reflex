@@ -1,3 +1,4 @@
+import platform
 from typing import Dict
 
 import pytest
@@ -75,10 +76,8 @@ def test_format_props(props: Dict[str, Var], formatted: str, windows_platform: b
         props: The props to test.
         formatted: The expected formatted props.
     """
-    assert (
-        Tag(props=props).format_props() == formatted.replace("\n", "\r\n")
-        if windows_platform
-        else formatted
+    assert Tag(props=props).format_props() == (
+        formatted.replace("\n", "\r\n") if windows_platform else formatted
     )
 
 
@@ -141,7 +140,9 @@ def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
         tag: The tag to test.
         expected: The expected formatted tag.
     """
-    assert str(tag) == expected.replace("\n", "\r\n" if windows_platform else expected)
+
+    expected = expected.replace("\n", "\r\n") if windows_platform else expected
+    assert str(tag) == expected
 
 
 def test_format_cond_tag():

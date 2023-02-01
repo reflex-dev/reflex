@@ -1,3 +1,4 @@
+"""Create a Prop Condition."""
 from typing import Any
 
 from pynecone import utils
@@ -37,6 +38,7 @@ class PropCond(Base):
 
     def __str__(self) -> str:
         """Render the prop as a React string.
+
         Returns:
             The React code to render the prop.
         """

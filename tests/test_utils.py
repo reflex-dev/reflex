@@ -153,10 +153,8 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
         indent_level: The number of spaces to indent by.
         expected: The expected output string.
     """
-    assert (
-        utils.indent(text, indent_level) == expected.replace("\n", "\r\n")
-        if windows_platform
-        else expected
+    assert utils.indent(text, indent_level) == (
+        expected.replace("\n", "\r\n") if windows_platform else expected
     )
 
 

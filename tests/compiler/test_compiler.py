@@ -50,10 +50,8 @@ def test_compile_imports(
         import_dict: The import dictionary.
         output: The expected output.
     """
-    assert (
-        utils.compile_imports(import_dict) == output.replace("\n", "\r\n")
-        if windows_platform
-        else output
+    assert utils.compile_imports(import_dict) == (
+        output.replace("\n", "\r\n") if windows_platform else output
     )
 
 
