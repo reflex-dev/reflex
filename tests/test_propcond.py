@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 
 from pynecone.propcond import PropCond
-from pynecone.var import BaseVar
+from pynecone.var import BaseVar, Var
 from pynecone.utils import wrap
 
 
@@ -24,7 +24,7 @@ def test_validate_propcond(prop1: Any, prop2: Any):
 
     """
     prop_cond = PropCond.create(
-        cond=BaseVar.create("cond_state.value"), prop1=prop1, prop2=prop2
+        cond=BaseVar(name="cond_state.value", type_=str), prop1=prop1, prop2=prop2
     )
 
     expected_prop1 = wrap(prop1, "'") if isinstance(prop1, str) else prop1

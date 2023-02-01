@@ -44,7 +44,9 @@ def mock_event(arg):
         ),
         (
             PropCond.create(
-                cond=BaseVar(name="random_var"), prop1="true_value", prop2="false_value"
+                cond=BaseVar(name="random_var", type_=str),
+                prop1="true_value",
+                prop2="false_value",
             ),
             "{random_var ? 'true_value' : 'false_value'}",
         ),
