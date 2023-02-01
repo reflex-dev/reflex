@@ -639,7 +639,7 @@ def kill_process_on_port(port):
         get_process_on_port(port).kill()  # type: ignore
 
 
-def terminate_port(port, _type) -> str:
+def change_or_terminate_port(port, _type) -> str:
     """Terminate or change the port.
 
     Args:
@@ -647,7 +647,7 @@ def terminate_port(port, _type) -> str:
         _type: The type of the port.
 
     Returns:
-        The new port.
+        The new port or the current one.
     """
     console.print(
         f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
@@ -658,17 +658,23 @@ def terminate_port(port, _type) -> str:
         return port
     elif frontend_action == "c":
         new_port = Prompt.ask("Specify the new port")
+
+        # Check if also the new port is used
         if is_process_on_port(new_port):
-            terminate_port(new_port, _type)
+            return change_or_terminate_port(new_port, _type)
         else:
-            console.print(f"The {_type} will run on port [bold underline]{new_port}[/bold underline].")
+            console.print(
+                f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
+            )
             return new_port
     else:
         console.print("Exiting...")
         sys.exit()
 
 
-def run_backend(app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
+def run_backend(
+    app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+):
     """Run the backend.
 
     Args:
@@ -686,18 +692,19 @@ def run_backend(app_name: str, port: int, loglevel: constants.LogLevel = constan
 
 
 def run_backend_prod(
-        app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+    app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR
 ):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        port: The app port
         loglevel: The log level.
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
         "--bind",
-        f"0.0.0.0:{get_api_port()}",
+        f"0.0.0.0:{port}",
         "--workers",
         str(num_workers),
         "--threads",
@@ -819,11 +826,11 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 
 
 def wrap(
-        text: str,
-        open: str,
-        close: Optional[str] = None,
-        check_first: bool = True,
-        num: int = 1,
+    text: str,
+    open: str,
+    close: Optional[str] = None,
+    check_first: bool = True,
+    num: int = 1,
 ) -> str:
     """Wrap the given text in the given open and close characters.
 
@@ -976,7 +983,7 @@ def format_route(route: str) -> str:
 
 
 def format_cond(
-        cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
+    cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
 ) -> str:
     """Format a conditional expression.
 
@@ -1177,7 +1184,7 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
     if len(args) == 1:
         return event_handler()
     assert (
-            len(args) == 2
+        len(args) == 2
     ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
     return event_handler(arg)
 
