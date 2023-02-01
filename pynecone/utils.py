@@ -639,53 +639,72 @@ def kill_process_on_port(port):
         get_process_on_port(port).kill()  # type: ignore
 
 
-def terminate_port(port, _type):
-    """Terminate the port.
+def change_or_terminate_port(port, _type) -> str:
+    """Terminate or change the port.
 
     Args:
         port: The port.
         _type: The type of the port.
+
+    Returns:
+        The new port or the current one.
     """
     console.print(
         f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
     )
-    frontend_action = Prompt.ask("Kill it?", choices=["y", "n"])
-    if frontend_action == "y":
+    frontend_action = Prompt.ask("Kill or change it?", choices=["k", "c", "n"])
+    if frontend_action == "k":
         kill_process_on_port(port)
+        return port
+    elif frontend_action == "c":
+        new_port = Prompt.ask("Specify the new port")
+
+        # Check if also the new port is used
+        if is_process_on_port(new_port):
+            return change_or_terminate_port(new_port, _type)
+        else:
+            console.print(
+                f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
+            )
+            return new_port
     else:
         console.print("Exiting...")
         sys.exit()
 
 
-def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
+def run_backend(
+    app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        port: The app port
         loglevel: The log level.
     """
     uvicorn.run(
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
         host=constants.BACKEND_HOST,
-        port=get_api_port(),
+        port=port,
         log_level=loglevel,
         reload=True,
     )
 
 
 def run_backend_prod(
-    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+    app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR
 ):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        port: The app port
         loglevel: The log level.
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
         "--bind",
-        f"0.0.0.0:{get_api_port()}",
+        f"0.0.0.0:{port}",
         "--workers",
         str(num_workers),
         "--threads",
