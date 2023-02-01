@@ -9,7 +9,7 @@ import pytest
 def windows_platform() -> Generator:
     """Check if system is windows.
 
-    Returns:
+    Yields:
         whether system is windows.
     """
     yield platform.system() == "Windows"

@@ -95,6 +95,7 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     Args:
         app: The app to test.
         index_page: The index page.
+        windows_platform: Whether the system is windows.
     """
     route = "\\test" if windows_platform else "/test"
     assert app.pages == {}
@@ -108,6 +109,7 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     Args:
         app: The app to test.
         index_page: The index page.
+        windows_platform: Whether the system is windows.
     """
     route = "\\test\\nested" if windows_platform else "/test/nested"
     assert app.pages == {}

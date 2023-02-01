@@ -49,6 +49,7 @@ def test_compile_imports(
     Args:
         import_dict: The import dictionary.
         output: The expected output.
+        windows_platform: whether system is windows.
     """
     assert utils.compile_imports(import_dict) == (
         output.replace("\n", "\r\n") if windows_platform else output
