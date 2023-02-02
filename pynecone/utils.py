@@ -1,4 +1,5 @@
 """General utility functions."""
+
 from __future__ import annotations
 
 import contextlib
@@ -17,6 +18,7 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT
 from types import ModuleType
+from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -983,7 +985,11 @@ def format_route(route: str) -> str:
 
 
 def format_cond(
-    cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
+    cond: str,
+    true_value: str,
+    false_value: str = '""',
+    is_nested: bool = False,
+    is_prop=False,
 ) -> str:
     """Format a conditional expression.
 
@@ -992,11 +998,22 @@ def format_cond(
         true_value: The value to return if the cond is true.
         false_value: The value to return if the cond is false.
         is_nested: Whether the cond is nested.
+        is_prop: Whether the cond is a prop
 
     Returns:
         The formatted conditional expression.
     """
-    expr = f"{cond} ? {true_value} : {false_value}"
+    if is_prop:
+        if isinstance(true_value, str):
+            true_value = wrap(true_value, "'")
+        if isinstance(false_value, str):
+            false_value = wrap(false_value, "'")
+        expr = f"{cond} ? {true_value} : {false_value}".replace("{", "").replace(
+            "}", ""
+        )
+    else:
+        expr = f"{cond} ? {true_value} : {false_value}"
+
     if not is_nested:
         expr = wrap(expr, "{")
     return expr

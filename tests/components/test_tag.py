@@ -1,3 +1,4 @@
+import platform
 from typing import Dict
 
 import pytest
@@ -6,6 +7,7 @@ from pynecone.components import Box
 from pynecone.components.tags import CondTag, IterTag, Tag
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
+from pynecone.propcond import PropCond
 
 
 def mock_event(arg):
@@ -40,6 +42,14 @@ def mock_event(arg):
             ),
             '{(e) => Event([E("mock_event", {arg:e.target.value})])}',
         ),
+        (
+            PropCond.create(
+                cond=BaseVar(name="random_var", type_=str),
+                prop1="true_value",
+                prop2="false_value",
+            ),
+            "{random_var ? 'true_value' : 'false_value'}",
+        ),
     ],
 )
 def test_format_value(prop: Var, formatted: str):
@@ -61,14 +71,17 @@ def test_format_value(prop: Var, formatted: str):
         ({"key": True, "key2": "value2"}, 'key={true}\nkey2="value2"'),
     ],
 )
-def test_format_props(props: Dict[str, Var], formatted: str):
+def test_format_props(props: Dict[str, Var], formatted: str, windows_platform: bool):
     """Test that the formatted props are correct.
 
     Args:
         props: The props to test.
         formatted: The expected formatted props.
+        windows_platform: Whether the system is windows.
     """
-    assert Tag(props=props).format_props() == formatted
+    assert Tag(props=props).format_props() == (
+        formatted.replace("\n", "\r\n") if windows_platform else formatted
+    )
 
 
 @pytest.mark.parametrize(
@@ -123,13 +136,16 @@ def test_add_props():
         ),
     ],
 )
-def test_format_tag(tag: Tag, expected: str):
+def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
     """Test that the formatted tag is correct.
 
     Args:
         tag: The tag to test.
         expected: The expected formatted tag.
+        windows_platform: Whether the system is windows.
     """
+
+    expected = expected.replace("\n", "\r\n") if windows_platform else expected
     assert str(tag) == expected
 
 
