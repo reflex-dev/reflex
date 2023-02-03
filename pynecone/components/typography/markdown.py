@@ -1,10 +1,11 @@
 """Markdown component."""
 
 import textwrap
-from typing import List
+from typing import List, Union
 
+from pynecone import utils
 from pynecone.components.component import Component
-from pynecone.var import BaseVar
+from pynecone.var import BaseVar, Var
 
 
 class Markdown(Component):
@@ -25,10 +26,14 @@ class Markdown(Component):
         Returns:
             The markdown component.
         """
-        assert (
-            len(children) == 1
+        assert len(children) == 1 and utils._isinstance(
+            children[0], Union[str, Var]
         ), "Markdown component must have exactly one child containing the markdown source."
-        src = textwrap.dedent(children[0])
+
+        # Get the markdown source.
+        src = children[0]
+        if isinstance(src, str):
+            src = textwrap.dedent(src)
         return super().create(src, **props)
 
     def _get_imports(self):

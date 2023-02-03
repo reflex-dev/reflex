@@ -63,6 +63,17 @@ poetry run pc run
 All the changes you make to the repository will be reflected in your running app.
 * We have the examples folder in the .gitignore, so your changes in pynecone/examples won't be reflected in your commit.
 
+## 🧪 Testing and QA
+
+Any feature or significant change added should be accompanied with unit tests.
+
+Within the 'test' directory of Pynecone you can add to a test file already there or create a new test python file if it doesn't fit into the existing layout.
+
+What to unit test?
+- Any feature or significant change that has been added.
+- Any edge cases or potential problem areas.
+ -Any interactions between different parts of the code.
+
 
 ## ✅ Making a PR
 
@@ -85,4 +96,3 @@ Finally run `black` to format your code.
 poetry run black pynecone
 ```
 That's it you can now submit your pr. Thanks for contributing to Pynecone!
-

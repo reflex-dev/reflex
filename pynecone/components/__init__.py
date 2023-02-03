@@ -1,8 +1,7 @@
 """Import all the components."""
 
 from pynecone import utils
-from pynecone.event import EventSpec
-from pynecone.var import Var
+from pynecone.propcond import PropCond
 
 from .component import Component
 from .datadisplay import *
@@ -24,6 +23,7 @@ locals().update(
         if isinstance(value, type) and issubclass(value, Component)
     }
 )
+
 
 # Add responsive styles shortcuts.
 def mobile_only(*children, **props):
@@ -89,3 +89,19 @@ def mobile_and_tablet(*children, **props):
         The component.
     """
     return Box.create(*children, **props, display=["block", "block", "block", "none"])
+
+
+def cond(cond_var, c1, c2=None):
+    """Create a conditional component or Prop.
+
+    Args:
+        cond_var: The cond to determine which component to render.
+        c1: The component or prop to render if the cond_var is true.
+        c2: The component or prop to render if the cond_var is false.
+
+    Returns:
+        The conditional component.
+    """
+    if isinstance(c1, Component) and isinstance(c2, Component):
+        return Cond.create(cond_var, c1, c2)
+    return PropCond.create(cond_var, c1, c2)

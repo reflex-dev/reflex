@@ -11,7 +11,7 @@ from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
-from pynecone.event import Event
+from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
@@ -44,6 +44,9 @@ class App(Base):
 
     # Middleware to add to the app.
     middleware: List[Middleware] = []
+
+    # events handlers to trigger when a page load
+    load_events: Dict[str, EventHandler] = {}
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -160,11 +163,12 @@ class App(Base):
     def add_page(
         self,
         component: Union[Component, ComponentCallable],
-        path: Optional[str] = None,
         route: Optional[str] = None,
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
+        on_load: Optional[EventHandler] = None,
+        path: Optional[str] = None,
     ):
         """Add a page to the app.
 
@@ -178,6 +182,7 @@ class App(Base):
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
+            on_load: The event handler that will be called each time the page load.
         """
         if path is not None:
             utils.deprecate(
@@ -212,6 +217,9 @@ class App(Base):
         # Add the page.
         self._check_routes_conflict(route)
         self.pages[route] = component
+
+        if on_load:
+            self.load_events[route] = on_load
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
@@ -294,7 +302,8 @@ class App(Base):
             return
 
         # Create the database models.
-        Model.create_all()
+        if config.db_url is not None:
+            Model.create_all()
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()

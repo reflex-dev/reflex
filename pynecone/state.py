@@ -13,7 +13,7 @@ from redis import Redis
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, Var
+from pynecone.var import BaseVar, ComputedVar, PCList, Var
 
 Delta = Dict[str, Any]
 
@@ -32,6 +32,9 @@ class State(Base, ABC):
 
     # Vars inherited by the parent state.
     inherited_vars: ClassVar[Dict[str, Var]] = {}
+
+    # Backend vars that are never sent to the client.
+    backend_vars: ClassVar[Dict[str, Any]] = {}
 
     # The parent state.
     parent_state: Optional[State] = None
@@ -61,6 +64,40 @@ class State(Base, ABC):
         for substate in self.get_substates():
             self.substates[substate.get_name()] = substate().set(parent_state=self)
 
+        self._init_mutable_fields()
+
+    def _init_mutable_fields(self):
+        """Initialize mutable fields.
+
+        So that mutation to them can be detected by the app:
+        * list
+        """
+        for field in self.base_vars.values():
+            value = getattr(self, field.name)
+
+            value_in_pc_data = _convert_mutable_datatypes(
+                value, self._reassign_field, field.name
+            )
+
+            if utils._issubclass(field.type_, List):
+                setattr(self, field.name, value_in_pc_data)
+
+        self.clean()
+
+    def _reassign_field(self, field_name: str):
+        """Reassign the given field.
+
+        Primarily for mutation in fields of mutable data types.
+
+        Args:
+            field_name: The name of the field we want to reassign
+        """
+        setattr(
+            self,
+            field_name,
+            getattr(self, field_name),
+        )
+
     def __repr__(self) -> str:
         """Get the string representation of the state.
 
@@ -75,9 +112,6 @@ class State(Base, ABC):
 
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
-
-        Raises:
-            TypeError: If the class has a var with an invalid type.
         """
         super().__init_subclass__(**kwargs)
 
@@ -85,6 +119,12 @@ class State(Base, ABC):
         parent_state = cls.get_parent_state()
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
+
+        cls.backend_vars = {
+            name: value
+            for name, value in cls.__dict__.items()
+            if utils.is_backend_variable(name)
+        }
 
         # Set the base and computed vars.
         skip_vars = set(cls.inherited_vars) | {
@@ -112,16 +152,7 @@ class State(Base, ABC):
 
         # Setup the base vars at the class level.
         for prop in cls.base_vars.values():
-            if not utils.is_valid_var_type(prop.type_):
-                raise TypeError(
-                    "State vars must be primitive Python types, "
-                    "Plotly figures, Pandas dataframes, "
-                    "or subclasses of pc.Base. "
-                    f'Found var "{prop.name}" with type {prop.type_}.'
-                )
-            cls._set_var(prop)
-            cls._create_setter(prop)
-            cls._set_default_value(prop)
+            cls._init_var(prop)
 
         # Set up the event handlers.
         events = {
@@ -226,6 +257,60 @@ class State(Base, ABC):
         if not hasattr(substate, name):
             raise ValueError(f"Invalid path: {path}")
         return getattr(substate, name)
+
+    @classmethod
+    def _init_var(cls, prop: BaseVar):
+        """Initialize a variable.
+
+        Args:
+            prop (BaseVar): The variable to initialize
+
+        Raises:
+            TypeError: if the variable has an incorrect type
+        """
+        if not utils.is_valid_var_type(prop.type_):
+            raise TypeError(
+                "State vars must be primitive Python types, "
+                "Plotly figures, Pandas dataframes, "
+                "or subclasses of pc.Base. "
+                f'Found var "{prop.name}" with type {prop.type_}.'
+            )
+        cls._set_var(prop)
+        cls._create_setter(prop)
+        cls._set_default_value(prop)
+
+    @classmethod
+    def add_var(cls, name: str, type_: Any, default_value: Any = None):
+        """Add dynamically a variable to the State.
+
+        The variable added this way can be used in the same way as a variable
+        defined statically in the model.
+
+        Args:
+            name: The name of the variable
+            type_: The type of the variable
+            default_value: The default value of the variable
+
+        Raises:
+            NameError: if a variable of this name already exists
+        """
+        if name in cls.__fields__:
+            raise NameError(
+                f"The variable '{name}' already exist. Use a different name"
+            )
+
+        # create the variable based on name and type
+        var = BaseVar(name=name, type_=type_)
+        var.set_state(cls)
+
+        # add the pydantic field dynamically (must be done before _init_var)
+        cls.add_field(var, default_value)
+
+        cls._init_var(var)
+
+        # update the internal dicts so the new variable is correctly handled
+        cls.base_vars.update({name: var})
+        cls.vars.update({name: var})
 
     @classmethod
     def _set_var(cls, prop: BaseVar):
@@ -333,6 +418,8 @@ class State(Base, ABC):
         # Get the var from the parent state.
         if name in super().__getattribute__("inherited_vars"):
             return getattr(super().__getattribute__("parent_state"), name)
+        elif name in super().__getattribute__("backend_vars"):
+            return super().__getattribute__("backend_vars").__getitem__(name)
         return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any):
@@ -347,6 +434,11 @@ class State(Base, ABC):
         # Set the var on the parent state.
         if name in self.inherited_vars:
             setattr(self.parent_state, name, value)
+            return
+
+        if utils.is_backend_variable(name):
+            self.backend_vars.__setitem__(name, value)
+            self.mark_dirty()
             return
 
         # Set the attribute.
@@ -578,3 +670,40 @@ class StateManager(Base):
         if self.redis is None:
             return
         self.redis.set(token, pickle.dumps(state), ex=self.token_expiration)
+
+
+def _convert_mutable_datatypes(
+    field_value: Any, reassign_field: Callable, field_name: str
+) -> Any:
+    """Recursively convert mutable data to the Pc data types.
+
+    Note: right now only list & dict would be handled recursively.
+
+    Args:
+        field_value: The target field_value.
+        reassign_field:
+            The function to reassign the field in the parent state.
+        field_name: the name of the field in the parent state
+
+    Returns:
+        The converted field_value
+    """
+    # TODO: The PCList class needs to be pickleable to work with Redis.
+    # We will uncomment this code once this is fixed.
+    # if isinstance(field_value, list):
+    #     for index in range(len(field_value)):
+    #         field_value[index] = _convert_mutable_datatypes(
+    #             field_value[index], reassign_field, field_name
+    #         )
+
+    #     field_value = PCList(
+    #         field_value, reassign_field=reassign_field, field_name=field_name
+    #     )
+
+    if isinstance(field_value, dict):
+        for key, value in field_value.items():
+            field_value[key] = _convert_mutable_datatypes(
+                value, reassign_field, field_name
+            )
+
+    return field_value

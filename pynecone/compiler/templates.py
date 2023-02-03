@@ -164,8 +164,14 @@ USE_EFFECT = join(
         "  if(!isReady) {{",
         "    return;",
         "  }}",
-        f"  if (!{SOCKET}.current) {{{{",
-        f"    connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",
+        "  const reconnectSocket = () => {{",
+        f"    {SOCKET}.current.reconnect()",
+        "  }}",
+        f"  if (typeof {SOCKET}.current !== 'undefined') {{{{",
+        f"    if (!{SOCKET}.current) {{{{",
+        f"      window.addEventListener('focus', reconnectSocket)",
+        f"      connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",
+        "    }}",
         "  }}",
         "  const update = async () => {{",
         f"    if ({RESULT}.{STATE} != null) {{{{",
@@ -191,3 +197,6 @@ ROUTER = f"const {constants.ROUTER} = useRouter()"
 
 # Sockets.
 SOCKET = "const socket = useRef(null)"
+
+# Color toggle
+COLORTOGGLE = f"const {{ {constants.COLOR_MODE}, {constants.TOGGLE_COLOR_MODE} }} = {constants.USE_COLOR_MODE}()"

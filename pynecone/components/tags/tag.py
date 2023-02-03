@@ -12,6 +12,7 @@ from plotly.io import to_json
 
 from pynecone import utils
 from pynecone.base import Base
+from pynecone.propcond import PropCond
 from pynecone.event import EventChain
 from pynecone.var import Var
 
@@ -47,7 +48,7 @@ class Tag(Base):
 
     @staticmethod
     def format_prop(
-        prop: Union[Var, EventChain, ComponentStyle, str],
+        prop: Union[Var, EventChain, ComponentStyle, PropCond, str],
     ) -> Union[int, float, str]:
         """Format a prop.
 
@@ -71,6 +72,10 @@ class Tag(Base):
             events = ",".join([utils.format_event(event) for event in prop.events])
             prop = f"({local_args}) => Event([{events}])"
 
+        # Handle conditional props.
+        elif isinstance(prop, PropCond):
+            return str(prop)
+
         # Handle other types.
         elif isinstance(prop, str):
             if utils.is_wrapped(prop, "{"):
@@ -85,7 +90,9 @@ class Tag(Base):
             if isinstance(prop, dict):
                 # Convert any var keys to strings.
                 prop = {
-                    key: str(val) if isinstance(val, Var) else val
+                    key: str(val)
+                    if isinstance(val, Var) or isinstance(val, PropCond)
+                    else val
                     for key, val in prop.items()
                 }
 

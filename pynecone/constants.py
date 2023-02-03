@@ -11,7 +11,7 @@ import pkg_resources
 # The name of the Pynecone module.
 MODULE_NAME = "pynecone"
 # The name of the pip install package.
-PACKAGE_NAME = "pynecone-io"
+PACKAGE_NAME = "pynecone"
 # The current version of Pynecone.
 VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
@@ -212,11 +212,11 @@ class RouteRegex(SimpleNamespace):
     """Regex used for extracting route args in route."""
 
     ARG = re.compile(r"\[(?!\.)([^\[\]]+)\]")
-    # group return the catchall pattern (i.e "[[..slug]]")
+    # group return the catchall pattern (i.e. "[[..slug]]")
     CATCHALL = re.compile(r"(\[?\[\.{3}(?![0-9]).*\]?\])")
-    # group return the argname (i.e "slug")
+    # group return the arg name (i.e. "slug")
     STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
-    # group return the argname (i.e "slug")
+    # group return the arg name (i.e. "slug")
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
 
 
@@ -226,3 +226,8 @@ SLUG_404 = "[..._]"
 TITLE_404 = "404 - Not Found"
 FAVICON_404 = "favicon.ico"
 DESCRIPTION_404 = "The page was not found"
+
+# Color mode variables
+USE_COLOR_MODE = "useColorMode"
+COLOR_MODE = "colorMode"
+TOGGLE_COLOR_MODE = "toggleColorMode"

@@ -2,8 +2,12 @@
 
 from typing import Optional
 
-from pynecone import utils
-from pynecone.var import Var
+from pynecone import constants, utils
+from pynecone.event import EventChain
+from pynecone.var import BaseVar, Var
+
+
+toggle_color_mode = BaseVar(name=constants.TOGGLE_COLOR_MODE, type_=EventChain)
 
 
 def convert(style_dict):

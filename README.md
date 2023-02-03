@@ -7,7 +7,7 @@
 
 **Build performant, customizable web apps in pure Python.**
 
-[![PyPI version](https://badge.fury.io/py/pynecone-io.svg)](https://badge.fury.io/py/pynecone-io)
+[![PyPI version](https://badge.fury.io/py/pynecone.svg)](https://badge.fury.io/py/pynecone)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/pynecone-io.svg)
 [![License](https://img.shields.io/badge/License-Apache_2.0-yellowgreen.svg)](https://opensource.org/licenses/Apache-2.0)  
@@ -32,10 +32,8 @@ Pynecone requires the following to get started:
 * [Node.js 12.22.0+](https://nodejs.org/en/) (Don't worry, you'll never have to write any Javascript)
 
 ```
-$ pip install pynecone-io
+$ pip install pynecone
 ```
-
-*NOTE:* Make sure you install the correct package: `pynecone-io`, not `pynecone`.
 
 ## Create your first Pynecone App
 
@@ -57,7 +55,7 @@ You can run this app in development mode:
 $ pc run
 ```
 
-You should see your app running at http://localhost:3000. (Note that the port may be different if you have another app running on port 3000, please notice the terminal output)
+You should see your app running at http://localhost:3000.
 
 
 Now you can modify the source code in `my_app_name/my_app_name.py`. Pynecone has fast refreshes so you can see your changes instantly when you save your code.
@@ -182,7 +180,7 @@ Here the state is comprised of a `prompt` and `image_url`. There are also the bo
 ```
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Pynecone. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
 
-Our dalle app has two event handlers, `process_image` to indicate that the image is being generated and `get_image`, which calls the OpenAI API.
+Our DALL·E. app has two event handlers, `process_image` to indicate that the image is being generated and `get_image`, which calls the OpenAI API.
 
 ### **Routing** 
 
@@ -212,29 +210,12 @@ Pynecone has new releases and features coming every week! Make sure to: :star: s
 
 We welcome contributions of any size! Below are some good ways to get started in the Pynecone community.
 
+- **Join Our Discord**: Our [Discord](https://discord.gg/T5WSbC2YtQ) is the best place to get help on your Pynecone project and to discuss how you can contribute.
 - **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
 - **GitHub Issues**: These are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
-Want to join our Pynecone team or learn more about our framework? Send us an email [here](mailto:founders@pynecone.io), and we can schedule a call to discuss Pynecone and how you can start contributing.
-
 We are actively looking for contributors, no matter your skill level or experience.
-
-## More Information 
-
-More information about Pynecone can be found on our website:
-- [pynecone.io](https://pynecone.io)
-  
-Join Our Discord:
-- [Discord Link](https://discord.gg/T5WSbC2YtQ)
 
 ## License
 
 Pynecone is open-source and licensed under the [Apache License 2.0](LICENSE).
-
-## Contributors
-
-<a href="https://github.com/picklelo"><img src="https://avatars.githubusercontent.com/u/6270214?v=4" width="50" height="50" alt=""/></a> 
-<a href="https://github.com/Alek99"><img src="https://avatars.githubusercontent.com/u/38776361?s=400&u=bd6c163fe787c2de1a26c881598e54b67e2482dd&v=4" width="50" height="50" alt=""/></a> 
-<a href="https://github.com/kbrgl"><img src="https://avatars.githubusercontent.com/u/13417496?v=4" width="50" height="50" alt=""/></a> 
-<a href="https://github.com/Lendemor"><img src="https://avatars.githubusercontent.com/u/4015177?v=4" width="50" height="50" alt=""/></a> 
-<a href="https://github.com/FHU-yezi"><img src="https://avatars.githubusercontent.com/u/50828953?v=4" width="50" height="50" alt=""/></a> 

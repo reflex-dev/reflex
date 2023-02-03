@@ -1,6 +1,5 @@
 """General utility functions."""
 
-
 from __future__ import annotations
 
 import contextlib
@@ -31,14 +30,16 @@ from typing import (
     Type,
     Union,
 )
+from typing import _GenericAlias  # type: ignore
 from urllib.parse import urlparse
-
+import psutil
 import plotly.graph_objects as go
 import typer
 import uvicorn
 from plotly.io import to_json
 from redis import Redis
 from rich.console import Console
+from rich.prompt import Prompt
 
 from pynecone import constants
 from pynecone.base import Base
@@ -415,7 +416,11 @@ def initialize_web_directory():
 
 
 def install_bun():
-    """Install bun onto the user's system."""
+    """Install bun onto the user's system.
+
+    Raises:
+        FileNotFoundError: If the required packages are not installed.
+    """
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
@@ -424,6 +429,17 @@ def install_bun():
     # Only install if bun is not already installed.
     if not os.path.exists(get_package_manager()):
         console.log("Installing bun...")
+
+        # Check if curl is installed
+        curl_path = which("curl")
+        if curl_path is None:
+            raise FileNotFoundError("Pynecone requires curl to be installed.")
+
+        # Check if unzip is installed
+        unzip_path = which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Pynecone requires unzip to be installed.")
+
         os.system(constants.INSTALL_BUN)
 
 
@@ -584,35 +600,113 @@ def get_api_port() -> int:
     return port
 
 
-def run_backend(app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR):
+def get_process_on_port(port) -> Optional[psutil.Process]:
+    """Get the process on the given port.
+
+    Args:
+        port: The port.
+
+    Returns:
+        The process on the given port.
+    """
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+        try:
+            for conns in proc.connections(kind="inet"):
+                if conns.laddr.port == int(port):
+                    return proc
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return None
+
+
+def is_process_on_port(port) -> bool:
+    """Check if a process is running on the given port.
+
+    Args:
+        port: The port.
+
+    Returns:
+        Whether a process is running on the given port.
+    """
+    return get_process_on_port(port) is not None
+
+
+def kill_process_on_port(port):
+    """Kill the process on the given port.
+
+    Args:
+        port: The port.
+    """
+    if get_process_on_port(port) is not None:
+        get_process_on_port(port).kill()  # type: ignore
+
+
+def change_or_terminate_port(port, _type) -> str:
+    """Terminate or change the port.
+
+    Args:
+        port: The port.
+        _type: The type of the port.
+
+    Returns:
+        The new port or the current one.
+    """
+    console.print(
+        f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
+    )
+    frontend_action = Prompt.ask("Kill or change it?", choices=["k", "c", "n"])
+    if frontend_action == "k":
+        kill_process_on_port(port)
+        return port
+    elif frontend_action == "c":
+        new_port = Prompt.ask("Specify the new port")
+
+        # Check if also the new port is used
+        if is_process_on_port(new_port):
+            return change_or_terminate_port(new_port, _type)
+        else:
+            console.print(
+                f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
+            )
+            return new_port
+    else:
+        console.print("Exiting...")
+        sys.exit()
+
+
+def run_backend(
+    app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        port: The app port
         loglevel: The log level.
     """
     uvicorn.run(
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
         host=constants.BACKEND_HOST,
-        port=get_api_port(),
+        port=port,
         log_level=loglevel,
         reload=True,
     )
 
 
 def run_backend_prod(
-    app_name: str, loglevel: constants.LogLevel = constants.LogLevel.ERROR
+    app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR
 ):
     """Run the backend.
 
     Args:
         app_name: The app name.
+        port: The app port
         loglevel: The log level.
     """
     num_workers = get_num_workers()
     command = constants.RUN_BACKEND_PROD + [
         "--bind",
-        f"0.0.0.0:{get_api_port()}",
+        f"0.0.0.0:{port}",
         "--workers",
         str(num_workers),
         "--threads",
@@ -879,13 +973,23 @@ def format_route(route: str) -> str:
     Returns:
         The formatted route.
     """
-    route = route.strip(os.path.sep)
+    # Strip the route.
+    route = route.strip("/")
     route = to_snake_case(route).replace("_", "-")
-    return constants.INDEX_ROUTE if route == "" else route
+
+    # If the route is empty, return the index route.
+    if route == "":
+        return constants.INDEX_ROUTE
+
+    return route
 
 
 def format_cond(
-    cond: str, true_value: str, false_value: str = '""', is_nested: bool = False
+    cond: str,
+    true_value: str,
+    false_value: str = '""',
+    is_nested: bool = False,
+    is_prop=False,
 ) -> str:
     """Format a conditional expression.
 
@@ -894,11 +998,22 @@ def format_cond(
         true_value: The value to return if the cond is true.
         false_value: The value to return if the cond is false.
         is_nested: Whether the cond is nested.
+        is_prop: Whether the cond is a prop
 
     Returns:
         The formatted conditional expression.
     """
-    expr = f"{cond} ? {true_value} : {false_value}"
+    if is_prop:
+        if isinstance(true_value, str):
+            true_value = wrap(true_value, "'")
+        if isinstance(false_value, str):
+            false_value = wrap(false_value, "'")
+        expr = f"{cond} ? {true_value} : {false_value}".replace("{", "").replace(
+            "}", ""
+        )
+    else:
+        expr = f"{cond} ? {true_value} : {false_value}"
+
     if not is_nested:
         expr = wrap(expr, "{")
     return expr
@@ -1129,8 +1244,15 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
 
     Returns:
         The handler args.
+
+    Raises:
+        TypeError: If the event handler has an invalid signature.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
+    if len(args) < 2:
+        raise TypeError(
+            f"Event handler has an invalid signature, needed a method with a parameter, got {event_spec.handler}."
+        )
     return event_spec.args if len(args) > 2 else ((args[1], arg.name),)
 
 
@@ -1224,6 +1346,18 @@ def get_redis() -> Optional[Redis]:
     redis_url, redis_port = config.redis_url.split(":")
     print("Using redis at", config.redis_url)
     return Redis(host=redis_url, port=int(redis_port), db=0)
+
+
+def is_backend_variable(name: str) -> bool:
+    """Check if this variable name correspond to a backend variable.
+
+    Args:
+        name: The name of the variable to check
+
+    Returns:
+        bool: The result of the check
+    """
+    return name.startswith("_") and not name.startswith("__")
 
 
 # Store this here for performance.

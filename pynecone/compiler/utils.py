@@ -17,6 +17,7 @@ from pynecone.components.base import (
     Main,
     Script,
     Title,
+    ColorModeScript,
 )
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
@@ -120,7 +121,8 @@ def compile_state(state: Type[State]) -> str:
     router = templates.ROUTER
     socket = templates.SOCKET
     ready = templates.READY
-    return templates.join([synced_state, result, router, socket, ready])
+    color_toggle = templates.COLORTOGGLE
+    return templates.join([synced_state, result, router, socket, ready, color_toggle])
 
 
 def compile_events(state: Type[State]) -> str:
@@ -209,6 +211,7 @@ def create_document_root(stylesheets: List[str]) -> Component:
     return Html.create(
         DocumentHead.create(*sheets),
         Body.create(
+            ColorModeScript.create(),
             Main.create(),
             Script.create(),
         ),
@@ -302,7 +305,7 @@ def write_page(path: str, code: str):
         code: The code to write.
     """
     utils.mkdir(os.path.dirname(path))
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write(code)
 
 

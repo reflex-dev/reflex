@@ -22,7 +22,7 @@ class Config(Base):
     api_url: str = constants.API_URL
 
     # The database url.
-    db_url: str = constants.DB_URL
+    db_url: Optional[str] = constants.DB_URL
 
     # The redis url.
     redis_url: Optional[str] = None
