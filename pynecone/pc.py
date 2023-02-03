@@ -54,9 +54,9 @@ def run(
     env: constants.Env = typer.Option(
         constants.Env.DEV, help="The environment to run the app in."
     ),
-    frontend: bool = typer.Option(True, help="Whether to run the frontend."),
-    backend: bool = typer.Option(True, help="Whether to run the backend."),
-    loglevel: constants.LogLevel = typer.Option(
+    frontend: bool = typer.Option(True, "--no-frontend" ,help="Disable frontend execution."),
+    backend: bool = typer.Option(True, "--no-backend" help="Disable backend execution."),
+    loglevel: constants.LogLevel = typer.Option(ç
         constants.LogLevel.ERROR, help="The log level to use."
     ),
     port: str = typer.Option(None, help="Specify a different port."),
