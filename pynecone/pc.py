@@ -56,7 +56,7 @@ def run(
     ),
     frontend: bool = typer.Option(True, "--no-frontend" ,help="Disable frontend execution."),
     backend: bool = typer.Option(True, "--no-backend" help="Disable backend execution."),
-    loglevel: constants.LogLevel = typer.Option(ç
+    loglevel: constants.LogLevel = typer.Option(
         constants.LogLevel.ERROR, help="The log level to use."
     ),
     port: str = typer.Option(None, help="Specify a different port."),
