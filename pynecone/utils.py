@@ -1100,6 +1100,18 @@ def is_dataframe(value: Type) -> bool:
     return value.__name__ == "DataFrame"
 
 
+def is_figure(value: Type) -> bool:
+    """Check if the given value is a figure.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is a figure.
+    """
+    return value.__name__ == "Figure"
+
+
 def is_valid_var_type(var: Type) -> bool:
     """Check if the given value is a valid prop type.
 
@@ -1109,7 +1121,7 @@ def is_valid_var_type(var: Type) -> bool:
     Returns:
         Whether the value is a valid prop type.
     """
-    return _issubclass(var, StateVar) or is_dataframe(var)
+    return _issubclass(var, StateVar) or is_dataframe(var) or is_figure(var)
 
 
 def format_state(value: Any) -> Dict:
@@ -1279,7 +1291,6 @@ def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
     # Fix the events created by the handler.
     out = []
     for e in events:
-
         # If it is already an event, don't modify it.
         if isinstance(e, Event):
             name = e.name
