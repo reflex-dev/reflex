@@ -30,7 +30,6 @@ class TestState(State):
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
 
-
     @ComputedVar
     def sum(self) -> float:
         """Dynamically sum the numbers.
@@ -626,7 +625,6 @@ def test_get_token(test_state):
 
 
 def test_get_current_page(test_state):
-
     assert test_state.get_current_page() == ""
 
     route = "mypage/subpage"
