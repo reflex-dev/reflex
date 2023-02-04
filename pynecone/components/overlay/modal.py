@@ -1,8 +1,10 @@
 """Modal components."""
 
 from typing import Set
+from pynecone.components.component import Component
 
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.components.media import Icon
 from pynecone.var import Var
 
 
@@ -63,6 +65,59 @@ class Modal(ChakraComponent):
             "on_esc",
             "on_overlay_click",
         }
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a modal component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Raises:
+            AttributeError: error that occurs if conflicting props are passed
+
+        Returns:
+            The modal component.
+        """
+
+        if not children:
+            contents = []
+            prop_header = props.pop("header", None)
+            prop_body = props.pop("body", None)
+            prop_footer = props.pop("footer", None)
+
+            # add header if present in props
+            if prop_header:
+                contents.append(ModalHeader.create(prop_header))
+
+            # add ModalBody if present in props
+            if prop_body:
+                contents.append(ModalBody.create(prop_body))
+
+            # add ModalFooter if present in props
+            if prop_footer:
+                contents.append(ModalFooter.create(prop_footer))
+
+            # add ModalCloseButton if either a prop for one was passed, or if
+            if props.get("on_close"):
+                # get user defined close button or use default one
+                prop_close_button = props.pop(
+                    "close_button", Icon.create(tag="CloseIcon")
+                )
+                contents.append(ModalCloseButton.create(prop_close_button))
+            elif props.get("close_button"):
+                raise AttributeError(
+                    "Close button can not be used if on_close event handler is not defined"
+                )
+
+            children = [
+                ModalOverlay.create(
+                    ModalContent.create(*contents),
+                )
+            ]
+
+        return super().create(*children, **props)
 
 
 class ModalOverlay(Modal):
