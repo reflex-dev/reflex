@@ -1,5 +1,6 @@
 """Breadcrumb components."""
 
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -14,6 +15,28 @@ class Breadcrumb(ChakraComponent):
 
     # The left and right margin applied to the separator
     separator_margin: Var[str]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a breadcrumb component
+
+        If the kw-args `items` is provided and is a list, they will be added as children.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The breadcrumb component.
+        """
+        children = list(children)
+        if "items" in props and isinstance(props.get("items"), list):
+            for label, link in props.get("items"):
+                bc_link = BreadcrumbItem.create(
+                    BreadcrumbLink.create(label, href=link),
+                )
+                children.append(bc_link)
+        return super().create(*children, **props)
 
 
 class BreadcrumbItem(ChakraComponent):
