@@ -1,8 +1,10 @@
 """Container to stack elements with spacing."""
 
 from typing import Set
+from pynecone.components.component import Component
 
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.components.media.icon import Icon
 from pynecone.var import Var
 
 
@@ -69,6 +71,54 @@ class Drawer(ChakraComponent):
             "on_esc",
             "on_overlay_click",
         }
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a drawer component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Raises:
+            AttributeError: error that occurs if conflicting props are passed
+
+        Returns:
+            The drawer component.
+        """
+        if not children:
+            contents = []
+            prop_header = props.pop("header", None)
+            prop_body = props.pop("body", None)
+            prop_footer = props.pop("footer", None)
+
+            if prop_header:
+                contents.append(DrawerHeader.create(prop_header))
+
+            if prop_body:
+                contents.append(DrawerBody.create(prop_body))
+
+            if prop_footer:
+                contents.append(DrawerFooter.create(prop_footer))
+
+            if props.get("on_close"):
+                # get user defined close button or use default one
+                prop_close_button = props.pop(
+                    "close_button", Icon.create(tag="CloseIcon")
+                )
+                contents.append(DrawerCloseButton.create(prop_close_button))
+            elif props.get("close_button"):
+                raise AttributeError(
+                    "Close button can not be used if on_close event handler is not defined"
+                )
+
+            children = [
+                DrawerOverlay.create(
+                    DrawerContent.create(*contents),
+                )
+            ]
+
+        return super().create(*children, **props)
 
 
 class DrawerBody(ChakraComponent):
