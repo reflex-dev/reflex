@@ -176,7 +176,14 @@ class Component(Base, ABC):
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            events = [utils.call_event_handler(v, arg) for v in value]
+            events = []
+            for v in value:
+                if isinstance(v, EventHandler):
+                    events.append(utils.call_event_handler(v, arg))
+                elif isinstance(v, Callable):
+                    events.extend(utils.call_event_fn(v, arg))
+                else:
+                    raise ValueError(f"Invalid event: {v}")
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
