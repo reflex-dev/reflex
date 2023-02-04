@@ -1,6 +1,7 @@
 """Menu components."""
 
 from typing import Set
+from pynecone.components.component import Component
 
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
@@ -67,6 +68,14 @@ class Menu(ChakraComponent):
             The event triggers.
         """
         return super().get_triggers() | {"on_close", "on_open"}
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        if not children:
+            button = MenuButton.create(*props.pop("button"))
+            items = props.pop("items", [])
+            children = [button, MenuList.create(*items)]
+        return super().create(*children, **props)
 
 
 class MenuButton(ChakraComponent):
