@@ -80,7 +80,6 @@ class Modal(ChakraComponent):
         Returns:
             The modal component.
         """
-
         if not children:
             contents = []
             prop_header = props.pop("header", None)

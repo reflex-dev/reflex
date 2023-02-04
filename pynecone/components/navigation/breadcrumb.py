@@ -18,7 +18,7 @@ class Breadcrumb(ChakraComponent):
 
     @classmethod
     def create(cls, *children, **props) -> Component:
-        """Create a breadcrumb component
+        """Create a breadcrumb component.
 
         If the kw-args `items` is provided and is a list, they will be added as children.
 

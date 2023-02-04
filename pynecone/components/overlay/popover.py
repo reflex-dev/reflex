@@ -1,6 +1,8 @@
 """Popover components."""
 
 from typing import Set
+from pynecone.components.component import Component
+from pynecone.components.forms.button import Button
 
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
@@ -82,6 +84,43 @@ class Popover(ChakraComponent):
             The event triggers.
         """
         return super().get_triggers() | {"on_close", "on_open"}
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a popover component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The popover component.
+        """
+        if not children and props.get("auto_build", True):
+            contents = []
+            prop_trigger = props.pop("trigger", Button.create("Trigger"))
+            prop_header = props.pop("header", None)
+            prop_body = props.pop("body", None)
+            prop_footer = props.pop("footer", None)
+
+            trigger = PopoverTrigger.create(prop_trigger)
+
+            # add header if present in props
+            if prop_header:
+                contents.append(PopoverHeader.create(prop_header))
+
+            if prop_body:
+                contents.append(PopoverBody.create(prop_body))
+
+            if prop_footer:
+                contents.append(PopoverFooter.create(prop_footer))
+
+            if props.get("use_close_button", False):
+                contents.append(PopoverCloseButton.create(auto_build=False))
+
+            children = [trigger, PopoverContent.create(*contents)]
+
+        return super().create(*children, **props)
 
 
 class PopoverContent(Popover):
