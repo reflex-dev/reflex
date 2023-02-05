@@ -2,6 +2,8 @@
 
 from typing import Set
 
+from pynecone.components.component import Component
+from pynecone.components.media.icon import Icon
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -63,6 +65,46 @@ class AlertDialog(ChakraComponent):
             "on_esc",
             "on_overlay_click",
         }
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        if not children:
+            contents = []
+            prop_header = props.pop("header", None)
+            prop_body = props.pop("body", None)
+            prop_footer = props.pop("footer", None)
+
+            # add header if present in props
+            if prop_header:
+                contents.append(AlertDialogHeader.create(prop_header))
+
+            # add ModalBody if present in props
+            if prop_body:
+                contents.append(AlertDialogBody.create(prop_body))
+
+            # add ModalFooter if present in props
+            if prop_footer:
+                contents.append(AlertDialogFooter.create(prop_footer))
+
+            # add ModalCloseButton if either a prop for one was passed, or if
+            if props.get("on_close"):
+                # get user defined close button or use default one
+                prop_close_button = props.pop(
+                    "close_button", Icon.create(tag="CloseIcon")
+                )
+                contents.append(AlertDialogCloseButton.create(prop_close_button))
+            elif props.get("close_button"):
+                raise AttributeError(
+                    "Close button can not be used if on_close event handler is not defined"
+                )
+
+            children = [
+                AlertDialogOverlay.create(
+                    AlertDialogContent.create(*contents),
+                )
+            ]
+
+        return super().create(*children, **props)
 
 
 class AlertDialogBody(ChakraComponent):

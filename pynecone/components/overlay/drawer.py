@@ -139,19 +139,19 @@ class DrawerFooter(ChakraComponent):
     tag = "DrawerFooter"
 
 
-class DrawerOverlay(Drawer):
+class DrawerOverlay(ChakraComponent):
     """Drawer overlay."""
 
     tag = "DrawerOverlay"
 
 
-class DrawerContent(Drawer):
+class DrawerContent(ChakraComponent):
     """Drawer content."""
 
     tag = "DrawerContent"
 
 
-class DrawerCloseButton(Drawer):
+class DrawerCloseButton(ChakraComponent):
     """Drawer close button."""
 
     tag = "DrawerCloseButton"

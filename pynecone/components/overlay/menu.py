@@ -96,7 +96,7 @@ class MenuList(ChakraComponent):
     tag = "MenuList"
 
 
-class MenuItem(Menu):
+class MenuItem(ChakraComponent):
     """The trigger that handles menu selection. Must be a direct child of a MenuList."""
 
     tag = "MenuItem"
@@ -117,7 +117,7 @@ class MenuItem(Menu):
     is_focusable: Var[bool]
 
 
-class MenuItemOption(Menu):
+class MenuItemOption(ChakraComponent):
     """The checkable menu item, to be used with MenuOptionGroup."""
 
     tag = "MenuItemOption"
@@ -147,13 +147,13 @@ class MenuItemOption(Menu):
     value: Var[str]
 
 
-class MenuGroup(Menu):
+class MenuGroup(ChakraComponent):
     """A wrapper to group related menu items."""
 
     tag = "MenuGroup"
 
 
-class MenuOptionGroup(Menu):
+class MenuOptionGroup(ChakraComponent):
     """A wrapper for checkable menu items (radio and checkbox)."""
 
     tag = "MenuOptionGroup"
@@ -165,7 +165,7 @@ class MenuOptionGroup(Menu):
     value: Var[str]
 
 
-class MenuDivider(Menu):
+class MenuDivider(ChakraComponent):
     """A visual separator for menu items and groups."""
 
     tag = "MenuDivider"

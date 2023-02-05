@@ -1,6 +1,7 @@
 """Container to stack elements with spacing."""
 
 from typing import List, Optional, Union
+from pynecone.components.component import Component
 
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
@@ -25,6 +26,37 @@ class Accordion(ChakraComponent):
 
     # If true, height animation and transitions will be disabled.
     reduce_motion: Var[bool]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create an accordion component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The accordion component
+        """
+        if not children:
+            accordions = []
+            items = props.pop("items", [])
+            icon_position = props.pop("accordion_icon", "right")
+            for label, panel in items:
+                if icon_position == "right":
+                    button = AccordionButton.create(label, AccordionIcon.create())
+                elif icon_position == "left":
+                    button = AccordionButton.create(AccordionIcon.create(), label)
+                else:
+                    button = AccordionButton.create(label)
+
+                item = AccordionItem.create(
+                    button,
+                    AccordionPanel.create(panel),
+                )
+                accordions.append(item)
+                children = accordions
+        return super().create(*children, **props)
 
 
 class AccordionItem(ChakraComponent):

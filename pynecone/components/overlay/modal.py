@@ -119,7 +119,7 @@ class Modal(ChakraComponent):
         return super().create(*children, **props)
 
 
-class ModalOverlay(Modal):
+class ModalOverlay(ChakraComponent):
     """The dimmed overlay behind the modal dialog."""
 
     tag = "ModalOverlay"
@@ -137,7 +137,7 @@ class ModalFooter(ChakraComponent):
     tag = "ModalFooter"
 
 
-class ModalContent(Modal):
+class ModalContent(ChakraComponent):
     """The container for the modal dialog's content."""
 
     tag = "ModalContent"
@@ -149,7 +149,7 @@ class ModalBody(ChakraComponent):
     tag = "ModalBody"
 
 
-class ModalCloseButton(Modal):
+class ModalCloseButton(ChakraComponent):
     """The button that closes the modal."""
 
     tag = "ModalCloseButton"

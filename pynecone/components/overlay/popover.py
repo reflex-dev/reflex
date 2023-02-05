@@ -96,7 +96,7 @@ class Popover(ChakraComponent):
         Returns:
             The popover component.
         """
-        if not children and props.get("auto_build", True):
+        if not children:
             contents = []
             prop_trigger = props.pop("trigger", Button.create("Trigger"))
             prop_header = props.pop("header", None)
@@ -116,14 +116,14 @@ class Popover(ChakraComponent):
                 contents.append(PopoverFooter.create(prop_footer))
 
             if props.get("use_close_button", False):
-                contents.append(PopoverCloseButton.create(auto_build=False))
+                contents.append(PopoverCloseButton.create())
 
             children = [trigger, PopoverContent.create(*contents)]
 
         return super().create(*children, **props)
 
 
-class PopoverContent(Popover):
+class PopoverContent(ChakraComponent):
     """The popover itself."""
 
     tag = "PopoverContent"
@@ -147,25 +147,25 @@ class PopoverBody(ChakraComponent):
     tag = "PopoverBody"
 
 
-class PopoverArrow(Popover):
+class PopoverArrow(ChakraComponent):
     """A visual arrow that points to the reference (or trigger)."""
 
     tag = "PopoverArrow"
 
 
-class PopoverCloseButton(Popover):
+class PopoverCloseButton(ChakraComponent):
     """A button to close the popover."""
 
     tag = "PopoverCloseButton"
 
 
-class PopoverAnchor(Popover):
+class PopoverAnchor(ChakraComponent):
     """Used to wrap the position-reference element."""
 
     tag = "PopoverAnchor"
 
 
-class PopoverTrigger(Popover):
+class PopoverTrigger(ChakraComponent):
     """Used to wrap the reference (or trigger) element."""
 
     tag = "PopoverTrigger"

@@ -1,5 +1,6 @@
 """Tab components."""
 
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -32,6 +33,27 @@ class Tabs(ChakraComponent):
 
     # "line" | "enclosed" | "enclosed-colored" | "soft-rounded" | "solid-rounded" | "unstyled"
     variant: Var[str]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a tab component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The tab component
+        """
+        if not children:
+            tabs = []
+            panels = []
+            items = props.pop("items", [])
+            for tab, panel in items:
+                tabs.append(Tab.create(tab))
+                panels.append(TabPanel.create(panel))
+            children = [TabList.create(*tabs), TabPanels.create(*panels)]
+        return super().create(*children, **props)
 
 
 class Tab(ChakraComponent):
