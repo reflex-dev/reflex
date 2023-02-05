@@ -55,3 +55,11 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
+
+[tool.ruff]
+
+select = ["B", "E", "F", "I", "SIM", "W"]
+
+ignore = ["ANN101", "B008", "E501", "F401", "F403", "F405", "SIM115"]
+
+target-version = "py37"
