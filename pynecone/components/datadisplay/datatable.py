@@ -1,6 +1,6 @@
 """Table components."""
 
-from typing import Any, List
+from typing import Any, List, Optional
 
 from pynecone import utils
 from pynecone.components.component import Component, ImportDict
@@ -36,6 +36,15 @@ class DataTable(Gridjs):
 
     # Enable pagination.
     pagination: Var[bool]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias for the component.
+
+        Returns:
+            The alias.
+        """
+        return "DataTableGrid"
 
     @classmethod
     def create(cls, *children, **props):
