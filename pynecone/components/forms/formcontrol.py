@@ -26,33 +26,46 @@ class FormControl(ChakraComponent):
     label: Var[str]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls,
+        *children,
+        label=None,
+        input=None,
+        help_text=None,
+        error_message=None,
+        **props
+    ) -> Component:
         """Create a form control component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            children: The children of the form control.
+            label: The label of the form control.
+            input: The input of the form control.
+            help_text: The help text of the form control.
+            error_message: The error message of the form control.
+            props: The properties of the form control.
+
+        Raises:
+            AttributeError: raise an error if missing required kwargs.
 
         Returns:
-            The form control component
+            The form control component.
         """
-        if not children:
+        if len(children) == 0:
             children = []
-            prop_label = props.pop("label", None)
-            prop_input = props.pop("input")
-            prop_helptext = props.pop("help_text", None)
-            prop_errormessage = props.pop("error_message", None)
 
-            if prop_label:
-                children.append(FormLabel.create(*prop_label))
+            if label:
+                children.append(FormLabel.create(*label))
 
-            children.append(prop_input)
+            if not input:
+                raise AttributeError("input keyword argument is required")
+            children.append(input)
 
-            if prop_helptext:
-                children.append(FormHelperText.create(*prop_helptext))
+            if help_text:
+                children.append(FormHelperText.create(*help_text))
 
-            if prop_errormessage:
-                children.append(FormErrorMessage.create(*prop_errormessage))
+            if error_message:
+                children.append(FormErrorMessage.create(*error_message))
 
         return super().create(*children, **props)
 

@@ -25,49 +25,36 @@ class Table(ChakraComponent):
     placement: Var[str]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls, *children, caption=None, headers=None, rows=None, footers=None, **props
+    ) -> Component:
         """Create a table component.
 
         Args:
             children: The children of the component.
+            caption: The caption of the table component.
+            headers: The headers of the table component.
+            rows: The rows of the table component.
+            footers: The footers of the table component.
             props: The properties of the component.
 
         Returns:
             The table component.
         """
-        if not children:
+        if len(children) == 0:
             children = []
-            prop_caption = props.pop("caption", None)
-            prop_headers = props.pop("headers", [])  # list of headers
-            prop_rows = props.pop("rows", [[]])  # list of rows
-            prop_footers = props.pop("footers", [])  # list of footers
 
-            if prop_caption:
-                children.append(TableCaption.create(prop_caption))
+            if caption:
+                children.append(TableCaption.create(caption))
 
-            if prop_headers:
-                children.append(
-                    Thead.create(
-                        Tr.create(*[Th.create(header) for header in prop_headers])
-                    )
-                )
+            if headers:
+                children.append(Thead.create(headers=headers))
 
-            if prop_rows:
-                children.append(
-                    Tbody.create(
-                        *[
-                            Tr.create(*[Td.create(item) for item in row])
-                            for row in prop_rows
-                        ]
-                    )
-                )
+            if rows:
+                children.append(Tbody.create(rows=rows))
 
-            if prop_footers:
-                children.append(
-                    Tfoot.create(
-                        Tr.create(*[Th.create(footer) for footer in prop_footers])
-                    )
-                )
+            if footers:
+                children.append(Tfoot.create(footers=footers))
         return super().create(*children, **props)
 
 
@@ -76,11 +63,43 @@ class Thead(ChakraComponent):
 
     tag = "Thead"
 
+    @classmethod
+    def create(cls, *children, headers=None, **props) -> Component:
+        """Create a table header component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+            headers (list, optional): List of headers. Defaults to None.
+
+        Returns:
+            The table header component.
+        """
+        if len(children) == 0:
+            children = [Tr.create(cell_type="header", cells=headers)]
+        return super().create(*children, **props)
+
 
 class Tbody(ChakraComponent):
     """A table body component."""
 
     tag = "Tbody"
+
+    @classmethod
+    def create(cls, *children, rows=None, **props) -> Component:
+        """Create a table body component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+            rows (list[list], optional): The rows of the table body. Defaults to None.
+
+        Returns:
+            Component: _description_
+        """
+        if len(children) == 0:
+            children = [Tr.create(cell_type="data", cells=row) for row in rows or []]
+        return super().create(*children, **props)
 
 
 class Tfoot(ChakraComponent):
@@ -88,11 +107,46 @@ class Tfoot(ChakraComponent):
 
     tag = "Tfoot"
 
+    @classmethod
+    def create(cls, *children, footers=None, **props) -> Component:
+        """Create a table footer component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+            footers (list, optional): List of footers. Defaults to None.
+
+        Returns:
+            The table footer component.
+        """
+        if len(children) == 0:
+            children = [Tr.create(cell_type="header", cells=footers)]
+        return super().create(*children, **props)
+
 
 class Tr(ChakraComponent):
     """A table row component."""
 
     tag = "Tr"
+
+    @classmethod
+    def create(cls, *children, cell_type=None, cells=None, **props) -> Component:
+        """Create a table row component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+            cell_type (str, optional): the type of cells in this table row. "header" or "data". Defaults to None.
+            cells (list, optional): The cells value to add in the table row. Defaults to None.
+
+        Returns:
+            The table row component
+        """
+        types = {"header": Th, "data": Td}
+        cell_cls = types.get(cell_type)
+        if len(children) == 0:
+            children = [cell_cls.create(cell) for cell in cells or []]
+        return super().create(*children, **props)
 
 
 class Th(ChakraComponent):

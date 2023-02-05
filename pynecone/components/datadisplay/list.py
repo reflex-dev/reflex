@@ -20,20 +20,20 @@ class List(ChakraComponent):
     style_type: Var[str]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, items=None, **props) -> Component:
         """Create a list component.
 
         Args:
             children: The children of the component.
+            items: A list of items to add to the list.
             props: The properties of the component.
 
         Returns:
             The list component.
         """
-        if not children:
+        if len(children) == 0:
             children = []
-            items = props.pop("items")
-            for item in items:
+            for item in items or []:
                 children.append(ListItem.create(*item))
         return super().create(*children, **props)
 

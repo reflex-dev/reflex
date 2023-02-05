@@ -67,11 +67,17 @@ class Modal(ChakraComponent):
         }
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls, *children, header=None, body=None, footer=None, close_button=None, **props
+    ) -> Component:
         """Create a modal component.
 
         Args:
             children: The children of the component.
+            header: The header of the modal.
+            body: The body of the modal.
+            footer: The footer of the modal.
+            close_button: The close button of the modal.
             props: The properties of the component.
 
         Raises:
@@ -80,32 +86,28 @@ class Modal(ChakraComponent):
         Returns:
             The modal component.
         """
-        if not children:
+        if len(children) == 0:
             contents = []
-            prop_header = props.pop("header", None)
-            prop_body = props.pop("body", None)
-            prop_footer = props.pop("footer", None)
 
             # add header if present in props
-            if prop_header:
-                contents.append(ModalHeader.create(prop_header))
+            if header:
+                contents.append(ModalHeader.create(header))
 
             # add ModalBody if present in props
-            if prop_body:
-                contents.append(ModalBody.create(prop_body))
+            if body:
+                contents.append(ModalBody.create(body))
 
             # add ModalFooter if present in props
-            if prop_footer:
-                contents.append(ModalFooter.create(prop_footer))
+            if footer:
+                contents.append(ModalFooter.create(footer))
 
             # add ModalCloseButton if either a prop for one was passed, or if
             if props.get("on_close"):
                 # get user defined close button or use default one
-                prop_close_button = props.pop(
-                    "close_button", Icon.create(tag="CloseIcon")
-                )
-                contents.append(ModalCloseButton.create(prop_close_button))
-            elif props.get("close_button"):
+                if not close_button:
+                    close_button = Icon.create(tag="CloseIcon")
+                contents.append(ModalCloseButton.create(close_button))
+            elif close_button:
                 raise AttributeError(
                     "Close button can not be used if on_close event handler is not defined"
                 )

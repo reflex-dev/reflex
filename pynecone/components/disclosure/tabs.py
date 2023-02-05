@@ -35,22 +35,24 @@ class Tabs(ChakraComponent):
     variant: Var[str]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, items=None, **props) -> Component:
         """Create a tab component.
 
         Args:
             children: The children of the component.
+            items: The items for the tabs component, a list of tuple (label, panel)
             props: The properties of the component.
 
         Returns:
             The tab component
         """
-        if not children:
+        if len(children) == 0:
             tabs = []
             panels = []
-            items = props.pop("items", [])
-            for tab, panel in items:
-                tabs.append(Tab.create(tab))
+            if not items:
+                items = []
+            for label, panel in items:
+                tabs.append(Tab.create(label))
                 panels.append(TabPanel.create(panel))
             children = [TabList.create(*tabs), TabPanels.create(*panels)]
         return super().create(*children, **props)

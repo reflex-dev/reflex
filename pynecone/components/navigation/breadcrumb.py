@@ -17,21 +17,22 @@ class Breadcrumb(ChakraComponent):
     separator_margin: Var[str]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, items=None, **props) -> Component:
         """Create a breadcrumb component.
 
         If the kw-args `items` is provided and is a list, they will be added as children.
 
         Args:
             children: The children of the component.
+            items (list): The items of the breadcrumb: (label, link)
             props: The properties of the component.
 
         Returns:
             The breadcrumb component.
         """
-        if not children:
+        if len(children) == 0:
             children = []
-            for label, link in props.pop("items", []):
+            for label, link in items or []:
                 children.append(
                     BreadcrumbItem.create(BreadcrumbLink.create(label, href=link))
                 )

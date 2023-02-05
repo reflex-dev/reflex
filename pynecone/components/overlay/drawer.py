@@ -73,12 +73,18 @@ class Drawer(ChakraComponent):
         }
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls, *children, header=None, body=None, footer=None, close_button=None, **props
+    ) -> Component:
         """Create a drawer component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            children: The children of the drawer component.
+            header: The header of the drawer.
+            body: The body of the drawer.
+            footer: The footer of the drawer.
+            close_button: The close button of the drawer.
+            props: The properties of the drawer component.
 
         Raises:
             AttributeError: error that occurs if conflicting props are passed
@@ -86,28 +92,24 @@ class Drawer(ChakraComponent):
         Returns:
             The drawer component.
         """
-        if not children:
+        if len(children) == 0:
             contents = []
-            prop_header = props.pop("header", None)
-            prop_body = props.pop("body", None)
-            prop_footer = props.pop("footer", None)
 
-            if prop_header:
-                contents.append(DrawerHeader.create(prop_header))
+            if header:
+                contents.append(DrawerHeader.create(header))
 
-            if prop_body:
-                contents.append(DrawerBody.create(prop_body))
+            if body:
+                contents.append(DrawerBody.create(body))
 
-            if prop_footer:
-                contents.append(DrawerFooter.create(prop_footer))
+            if footer:
+                contents.append(DrawerFooter.create(footer))
 
             if props.get("on_close"):
-                # get user defined close button or use default one
-                prop_close_button = props.pop(
-                    "close_button", Icon.create(tag="CloseIcon")
-                )
-                contents.append(DrawerCloseButton.create(prop_close_button))
-            elif props.get("close_button"):
+                # use default close button if undefined
+                if not close_button:
+                    close_button = Icon.create(tag="CloseIcon")
+                contents.append(DrawerCloseButton.create(close_button))
+            elif close_button:
                 raise AttributeError(
                     "Close button can not be used if on_close event handler is not defined"
                 )

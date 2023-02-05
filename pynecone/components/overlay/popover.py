@@ -86,36 +86,46 @@ class Popover(ChakraComponent):
         return super().get_triggers() | {"on_close", "on_open"}
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls,
+        *children,
+        trigger=None,
+        header=None,
+        body=None,
+        footer=None,
+        use_close_button=False,
+        **props
+    ) -> Component:
         """Create a popover component.
 
         Args:
             children: The children of the component.
+            trigger: The trigger that opens the popover.
+            header: The header of the popover.
+            body: The body of the popover.
+            footer: The footer of the popover.
+            use_close_button: Whether to add a close button on the popover.
             props: The properties of the component.
 
         Returns:
             The popover component.
         """
-        if not children:
+        if len(children) == 0:
             contents = []
-            prop_trigger = props.pop("trigger", Button.create("Trigger"))
-            prop_header = props.pop("header", None)
-            prop_body = props.pop("body", None)
-            prop_footer = props.pop("footer", None)
 
-            trigger = PopoverTrigger.create(prop_trigger)
+            trigger = PopoverTrigger.create(trigger)
 
             # add header if present in props
-            if prop_header:
-                contents.append(PopoverHeader.create(prop_header))
+            if header:
+                contents.append(PopoverHeader.create(header))
 
-            if prop_body:
-                contents.append(PopoverBody.create(prop_body))
+            if body:
+                contents.append(PopoverBody.create(body))
 
-            if prop_footer:
-                contents.append(PopoverFooter.create(prop_footer))
+            if footer:
+                contents.append(PopoverFooter.create(footer))
 
-            if props.get("use_close_button", False):
+            if use_close_button:
                 contents.append(PopoverCloseButton.create())
 
             children = [trigger, PopoverContent.create(*contents)]

@@ -17,27 +17,31 @@ class Alert(ChakraComponent):
     variant: Var[str]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls, *children, icon=True, title="Alert title", desc=None, **props
+    ) -> Component:
         """Create an alert component.
 
         Args:
             children: The children of the component.
+            icon (bool): The icon of the alert.
+            title (str): The title of the alert.
+            desc (str): The description of the alert
             props: The properties of the component.
 
         Returns:
             The alert component.
         """
-        if not children:
+        if len(children) == 0:
             contents = []
-            prop_icon = props.pop("icon", True)
-            prop_title = props.pop("title", "AlertTitle")
-            prop_desc = props.pop("description", None)
-            if prop_icon:
+
+            if icon:
                 contents.append(AlertIcon.create())
-            if prop_title:
-                contents.append(AlertTitle.create(prop_title))
-            if prop_desc:
-                contents.append(AlertDescription.create(prop_desc))
+
+            contents.append(AlertTitle.create(title))
+
+            if desc:
+                contents.append(AlertDescription.create(desc))
 
         return super().create(*children, **props)
 

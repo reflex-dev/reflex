@@ -28,34 +28,36 @@ class Accordion(ChakraComponent):
     reduce_motion: Var[bool]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, items=None, icon_pos="right", **props) -> Component:
         """Create an accordion component.
 
         Args:
             children: The children of the component.
+            items: The items of the accordion component: list of tuples (label,panel)
+            icon_pos: The position of the arrow icon of the accordion. "right", "left" or None
             props: The properties of the component.
 
         Returns:
             The accordion component
         """
-        if not children:
-            accordions = []
-            items = props.pop("items", [])
-            icon_position = props.pop("accordion_icon", "right")
+        if len(children) == 0:
+            children = []
+            if not items:
+                items = []
             for label, panel in items:
-                if icon_position == "right":
+                if icon_pos == "right":
                     button = AccordionButton.create(label, AccordionIcon.create())
-                elif icon_position == "left":
+                elif icon_pos == "left":
                     button = AccordionButton.create(AccordionIcon.create(), label)
                 else:
                     button = AccordionButton.create(label)
 
-                item = AccordionItem.create(
-                    button,
-                    AccordionPanel.create(panel),
+                children.append(
+                    AccordionItem.create(
+                        button,
+                        AccordionPanel.create(panel),
+                    )
                 )
-                accordions.append(item)
-                children = accordions
         return super().create(*children, **props)
 
 

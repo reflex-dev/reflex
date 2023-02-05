@@ -67,12 +67,18 @@ class AlertDialog(ChakraComponent):
         }
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls, *children, header=None, body=None, footer=None, close_button=None, **props
+    ) -> Component:
         """Create an alert dialog component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            children: The children of the alert dialog component.
+            header: The header of the alert dialog.
+            body: The body of the alert dialog.
+            footer: The footer of the alert dialog.
+            close_button: The close button of the alert dialog.
+            props: The properties of the alert dialog component.
 
         Raises:
             AttributeError: if there is a conflict between the props used.
@@ -80,32 +86,25 @@ class AlertDialog(ChakraComponent):
         Returns:
             The alert dialog component.
         """
-        if not children:
+        if len(children) == 0:
             contents = []
-            prop_header = props.pop("header", None)
-            prop_body = props.pop("body", None)
-            prop_footer = props.pop("footer", None)
 
-            # add header if present in props
-            if prop_header:
-                contents.append(AlertDialogHeader.create(prop_header))
+            if header:
+                contents.append(AlertDialogHeader.create(header))
 
-            # add AlertDialogBody if present in props
-            if prop_body:
-                contents.append(AlertDialogBody.create(prop_body))
+            if body:
+                contents.append(AlertDialogBody.create(body))
 
-            # add AlertDialogFooter if present in props
-            if prop_footer:
-                contents.append(AlertDialogFooter.create(prop_footer))
+            if footer:
+                contents.append(AlertDialogFooter.create(footer))
 
             # add AlertDialogCloseButton if either a prop for one was passed, or if on_close callback is present
             if props.get("on_close"):
                 # get user defined close button or use default one
-                prop_close_button = props.pop(
-                    "close_button", Icon.create(tag="CloseIcon")
-                )
-                contents.append(AlertDialogCloseButton.create(prop_close_button))
-            elif props.get("close_button"):
+                if not close_button:
+                    close_button = Icon.create(tag="CloseIcon")
+                contents.append(AlertDialogCloseButton.create(close_button))
+            elif close_button:
                 raise AttributeError(
                     "Close button can not be used if on_close event handler is not defined"
                 )

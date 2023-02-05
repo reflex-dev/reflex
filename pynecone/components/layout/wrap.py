@@ -32,20 +32,20 @@ class Wrap(ChakraComponent):
     spacing_y: Var[str]
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, items=None, **props) -> Component:
         """Return a wrap component.
 
         Args:
             children: The children of the component.
+            items (list): The items of the wrap component.
             props: The properties of the component.
 
         Returns:
             The wrap component.
         """
-        if not children:
+        if len(children) == 0:
             children = []
-            items = props.pop("items", [])
-            for item in items:
+            for item in items or []:
                 children.append(WrapItem.create(*item))
 
         return super().create(*children, **props)
