@@ -21,7 +21,7 @@ class List(ChakraComponent):
 
     @classmethod
     def create(cls, *children, **props) -> Component:
-        """Create a list component
+        """Create a list component.
 
         Args:
             children: The children of the component.

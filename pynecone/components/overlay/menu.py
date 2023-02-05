@@ -71,6 +71,15 @@ class Menu(ChakraComponent):
 
     @classmethod
     def create(cls, *children, **props) -> Component:
+        """Create a menu component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The menu component.
+        """
         if not children:
             button = MenuButton.create(*props.pop("button"))
             items = props.pop("items", [])

@@ -33,7 +33,7 @@ class Wrap(ChakraComponent):
 
     @classmethod
     def create(cls, *children, **props) -> Component:
-        """Return a wrap component
+        """Return a wrap component.
 
         Args:
             children: The children of the component.

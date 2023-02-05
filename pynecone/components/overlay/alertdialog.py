@@ -68,6 +68,18 @@ class AlertDialog(ChakraComponent):
 
     @classmethod
     def create(cls, *children, **props) -> Component:
+        """Create an alert dialog component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Raises:
+            AttributeError: if there is a conflict between the props used.
+
+        Returns:
+            The alert dialog component.
+        """
         if not children:
             contents = []
             prop_header = props.pop("header", None)

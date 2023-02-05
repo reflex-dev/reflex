@@ -12,7 +12,7 @@ class Stat(ChakraComponent):
 
     @classmethod
     def create(cls, *children, **props) -> Component:
-        """Create a stat component
+        """Create a stat component.
 
         Args:
             children: The children of the component.
