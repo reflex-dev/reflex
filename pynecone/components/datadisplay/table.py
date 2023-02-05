@@ -26,13 +26,14 @@ class Table(ChakraComponent):
 
     @classmethod
     def create(cls, *children, **props) -> Component:
-        """Create a table component
+        """Create a table component.
 
         Args:
             children: The children of the component.
             props: The properties of the component.
+
         Returns:
-            The table component
+            The table component.
         """
         if not children:
             children = []
