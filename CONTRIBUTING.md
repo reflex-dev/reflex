@@ -87,7 +87,7 @@ poetry run pytest tests
 ```
 Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
 ``` bash
-poetry run ruff .
+poetry run ruff check .
 poetry run pyright pynecone tests
 find pynecone tests -name "*.py" -not -path pynecone/pc.py | xargs poetry run darglint
 ```
