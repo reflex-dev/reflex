@@ -2,9 +2,11 @@
 
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
-from fastapi import FastAPI, WebSocket
+# from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI
 from fastapi.middleware import cors
-from starlette.websockets import WebSocketDisconnect
+# from starlette.websockets import WebSocketDisconnect
+import socketio
 
 from pynecone import constants, utils
 from pynecone.base import Base
@@ -21,6 +23,7 @@ ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 
+
 class App(Base):
     """A Pynecone application."""
 
@@ -32,6 +35,9 @@ class App(Base):
 
     # The backend API object.
     api: FastAPI = None  # type: ignore
+
+    sio: socketio.AsyncServer = None
+
 
     # The state class to use for the app.
     state: Type[State] = DefaultState
@@ -66,8 +72,32 @@ class App(Base):
         # Set up the API.
 
         self.api = FastAPI()
-        self.add_cors()
-        self.add_default_endpoints()
+        # self.add_cors()
+        # self.add_default_endpoints()
+
+        # self.sio = socketio.AsyncServer(async_mode='asgi')
+        self.sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+
+        socket_app = socketio.ASGIApp(self.sio, socketio_path='event')
+
+        event_namespace = MyCustomNamespace('/event')
+        event_namespace.app = self
+
+        self.sio.register_namespace(event_namespace)
+        # self.sio.on('*', lambda: print("hello"))
+
+        self.api.mount('/', socket_app)
+
+    # @sio.on("ping")
+    # async def ping(sid):
+    #     return "pong"
+
+
+
+
+    # @sio.on('*')
+    # def catch_all(event, sid, *args):
+    #     print(f'catch_all(event={event}, sid={sid}, args={args})')
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
@@ -85,23 +115,23 @@ class App(Base):
         """
         return self.api
 
-    def add_default_endpoints(self):
-        """Add the default endpoints."""
-        # To test the server.
-        self.api.get(str(constants.Endpoint.PING))(ping)
+    # def add_default_endpoints(self):
+    #     """Add the default endpoints."""
+    #     # To test the server.
+    #     self.api.get(str(constants.Endpoint.PING))(ping)
+    #
+    #     # To make state changes.
+    #     self.api.websocket(str(constants.Endpoint.EVENT))(event(app=self))
 
-        # To make state changes.
-        self.api.websocket(str(constants.Endpoint.EVENT))(event(app=self))
-
-    def add_cors(self):
-        """Add CORS middleware to the app."""
-        self.api.add_middleware(
-            cors.CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+    # def add_cors(self):
+    #     """Add CORS middleware to the app."""
+    #     self.api.add_middleware(
+    #         cors.CORSMiddleware,
+    #         allow_origins=["*"],
+    #         allow_credentials=True,
+    #         allow_methods=["*"],
+    #         allow_headers=["*"],
+    #     )
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
         """Preprocess the event.
@@ -327,50 +357,51 @@ class App(Base):
         compiler.compile_components(custom_components)
 
 
-async def ping() -> str:
-    """Test API endpoint.
+# async def ping() -> str:
+#     """Test API endpoint.
+#
+#     Returns:
+#         The response.
+#     """
+#     return "pong"
 
-    Returns:
-        The response.
-    """
-    return "pong"
 
+# def event(app: App):
+#     """Websocket endpoint for events.
+#
+#     Args:
+#         app: The app to add the endpoint to.
+#
+#     Returns:
+#         The websocket endpoint.
+#     """
+#
+#     async def ws(websocket: WebSocket):
+#         """Create websocket endpoint.
+#
+#         Args:
+#             websocket: The websocket sending events.
+#         """
+#         # Accept the connection.
+#         await websocket.accept()
+#
+#         # Process events until the connection is closed.
+#         while True:
+#             # Get the event.
+#             try:
+#                 event = Event.parse_raw(await websocket.receive_text())
+#             except WebSocketDisconnect:
+#                 # Close the connection.
+#                 return
+#
+#             # Process the event.
+#             update = await process(app, event)
+#
+#             # Send the update.
+#             await websocket.send_text(update.json())
+#
+#     return ws
 
-def event(app: App):
-    """Websocket endpoint for events.
-
-    Args:
-        app: The app to add the endpoint to.
-
-    Returns:
-        The websocket endpoint.
-    """
-
-    async def ws(websocket: WebSocket):
-        """Create websocket endpoint.
-
-        Args:
-            websocket: The websocket sending events.
-        """
-        # Accept the connection.
-        await websocket.accept()
-
-        # Process events until the connection is closed.
-        while True:
-            # Get the event.
-            try:
-                event = Event.parse_raw(await websocket.receive_text())
-            except WebSocketDisconnect:
-                # Close the connection.
-                return
-
-            # Process the event.
-            update = await process(app, event)
-
-            # Send the update.
-            await websocket.send_text(update.json())
-
-    return ws
 
 
 async def process(app: App, event: Event) -> StateUpdate:
@@ -405,3 +436,21 @@ async def process(app: App, event: Event) -> StateUpdate:
 
     # Return the update.
     return update
+
+class MyCustomNamespace(socketio.AsyncNamespace):
+
+    app: App = None
+
+    def on_connect(self, sid, environ):
+        print('!!!!connected')
+        pass
+
+    def on_disconnect(self, sid):
+        print('!!!!disconnected')
+        pass
+
+    async def on_event(self, sid, data):
+        print('!!!!event')
+        event = Event.parse_raw(data)
+        update = await process(self.app, event)
+        await self.emit('event', update.json(), to=sid)
