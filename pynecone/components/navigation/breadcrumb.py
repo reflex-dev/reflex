@@ -29,13 +29,12 @@ class Breadcrumb(ChakraComponent):
         Returns:
             The breadcrumb component.
         """
-        children = list(children)
-        if "items" in props and isinstance(props.get("items"), list):
-            for label, link in props.get("items"):
-                bc_link = BreadcrumbItem.create(
-                    BreadcrumbLink.create(label, href=link),
+        if not children:
+            children = []
+            for label, link in props.pop("items", []):
+                children.append(
+                    BreadcrumbItem.create(BreadcrumbLink.create(label, href=link))
                 )
-                children.append(bc_link)
         return super().create(*children, **props)
 
 
