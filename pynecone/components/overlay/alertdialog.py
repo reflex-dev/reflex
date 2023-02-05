@@ -90,15 +90,15 @@ class AlertDialog(ChakraComponent):
             if prop_header:
                 contents.append(AlertDialogHeader.create(prop_header))
 
-            # add ModalBody if present in props
+            # add AlertDialogBody if present in props
             if prop_body:
                 contents.append(AlertDialogBody.create(prop_body))
 
-            # add ModalFooter if present in props
+            # add AlertDialogFooter if present in props
             if prop_footer:
                 contents.append(AlertDialogFooter.create(prop_footer))
 
-            # add ModalCloseButton if either a prop for one was passed, or if
+            # add AlertDialogCloseButton if either a prop for one was passed, or if on_close callback is present
             if props.get("on_close"):
                 # get user defined close button or use default one
                 prop_close_button = props.pop(
