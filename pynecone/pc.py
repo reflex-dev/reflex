@@ -5,10 +5,9 @@ from pathlib import Path
 
 import httpx
 import typer
+from rich.prompt import Prompt
 
 from pynecone import constants, utils
-
-from rich.prompt import Prompt
 
 # Create the app.
 cli = typer.Typer()

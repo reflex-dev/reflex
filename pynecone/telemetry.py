@@ -1,8 +1,9 @@
 """Anonymous telemetry for Pynecone."""
 
-import platform
-import psutil
 import multiprocessing
+import platform
+
+import psutil
 
 from pynecone import constants
 from pynecone.base import Base

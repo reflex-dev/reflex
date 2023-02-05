@@ -18,7 +18,6 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT
 from types import ModuleType
-from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,11 +28,12 @@ from typing import (
     Tuple,
     Type,
     Union,
+    _GenericAlias,  # type: ignore  # type: ignore
 )
-from typing import _GenericAlias  # type: ignore
 from urllib.parse import urlparse
-import psutil
+
 import plotly.graph_objects as go
+import psutil
 import typer
 import uvicorn
 from plotly.io import to_json
@@ -319,7 +319,7 @@ def check_node_version(min_version):
         version = result.stdout.decode().strip().split("v")[1]
         # Compare the version numbers
         return version.split(".") >= min_version.split(".")
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -1146,7 +1146,7 @@ def format_state(value: Any) -> Dict:
 
     # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
-        return json.loads(to_json(value))["data"]
+        return json.loads(to_json(value))["data"]  # type: ignore
 
     # Convert pandas dataframes to JSON.
     if is_dataframe(type(value)):

@@ -6,8 +6,8 @@ import pytest
 from pynecone.components import Box
 from pynecone.components.tags import CondTag, IterTag, Tag
 from pynecone.event import EventChain, EventHandler, EventSpec
-from pynecone.var import BaseVar, Var
 from pynecone.propcond import PropCond
+from pynecone.var import BaseVar, Var
 
 
 def mock_event(arg):

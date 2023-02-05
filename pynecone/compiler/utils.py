@@ -8,6 +8,7 @@ from pynecone import constants, utils
 from pynecone.compiler import templates
 from pynecone.components.base import (
     Body,
+    ColorModeScript,
     Description,
     DocumentHead,
     Head,
@@ -17,7 +18,6 @@ from pynecone.components.base import (
     Main,
     Script,
     Title,
-    ColorModeScript,
 )
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State

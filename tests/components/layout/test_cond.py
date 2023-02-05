@@ -8,7 +8,7 @@ from pynecone.components.typography.text import Text
 @pytest.fixture
 def cond_state(request):
     class CondState(pc.State):
-        value: request.param["value_type"] = request.param["value"]
+        value: request.param["value_type"] = request.param["value"]  # noqa
 
     return CondState
 

@@ -3,8 +3,8 @@ from typing import Any
 import pytest
 
 from pynecone.propcond import PropCond
-from pynecone.var import BaseVar, Var
 from pynecone.utils import wrap
+from pynecone.var import BaseVar, Var
 
 
 @pytest.mark.parametrize(
