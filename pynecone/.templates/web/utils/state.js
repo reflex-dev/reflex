@@ -70,7 +70,6 @@ export const applyDelta = (state, delta) => {
  * @param socket The socket object to send the event on.
  */
 export const applyEvent = async (event, router, socket) => {
-  console.log('applyEvent called');
   // Handle special events
   if (event.name == "_redirect") {
     router.push(event.payload.path);
@@ -91,8 +90,6 @@ export const applyEvent = async (event, router, socket) => {
   event.token = getToken();
   event.router_data = (({ pathname, query }) => ({ pathname, query }))(router);
   if (socket) {
-    // socket.send(JSON.stringify(event));
-    console.log('have socket');
     socket.emit("event", JSON.stringify(event));
   }
 };
@@ -107,17 +104,10 @@ export const applyEvent = async (event, router, socket) => {
  * @param socket The socket object to send the event on.
  */
 export const updateState = async (state, setState, result, setResult, router, socket) => {
-  console.log('updateState');
   // If we are already processing an event, or there are no events to process, return.
   if (result.processing || state.events.length == 0) {
-    console.log('still processing')
     return;
   }
-
-  // // If the socket is not ready, return.
-  // if (!socket.readyState) {
-  //   return;
-  // }
 
   // Set processing to true to block other events from being processed.
   setResult({ ...result, processing: true });
@@ -147,17 +137,13 @@ export const connect = async (socket, state, setState, result, setResult, router
   });
 
   // Once the socket is open, hydrate the page.
-  // socket.current.onopen = () => {
   socket.current.on('connect', () => {
-    console.log('Successfully connected!');
     updateState(state, setState, result, setResult, router, socket.current);
   });
 
   // On each received message, apply the delta and set the result.
   // socket.current.onmessage = function (update) {
   socket.current.on('event', function (update) {
-    console.log(update);
-    // update = JSON.parse(update.data);
     update = JSON.parse(update);
     applyDelta(state, update.delta);
     setResult({
@@ -166,16 +152,6 @@ export const connect = async (socket, state, setState, result, setResult, router
       events: update.events,
     });
   });
-
-  // socket.current.on('event', function (update) {
-  //   console.log(update);
-  //   console.log('event');
-  //   setResult({
-  //     processing: false,
-  //     state: state,
-  //     events: update.events,
-  //   });
-  // });
 };
 
 /**
