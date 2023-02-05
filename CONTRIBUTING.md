@@ -93,6 +93,6 @@ find pynecone tests -name "*.py" -not -path pynecone/pc.py | xargs poetry run da
 ```
 Finally run `black` to format your code.
 ``` bash
-poetry run black pynecone
+poetry run black pynecone tests
 ```
 That's it you can now submit your pr. Thanks for contributing to Pynecone!
