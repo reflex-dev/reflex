@@ -60,7 +60,7 @@ class App(Base):
         super().__init__(*args, **kwargs)
 
         # Add middleware.
-        # self.middleware.append(HydrateMiddleware())
+        self.middleware.append(HydrateMiddleware())
 
         # Set up the state manager.
         self.state_manager.setup(state=self.state)
