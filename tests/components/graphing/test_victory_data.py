@@ -1,4 +1,3 @@
-
 from pynecone import data
 
 # Test data.
