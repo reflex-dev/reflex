@@ -130,13 +130,13 @@ class Tr(ChakraComponent):
     tag = "Tr"
 
     @classmethod
-    def create(cls, *children, cell_type=None, cells=None, **props) -> Component:
+    def create(cls, *children, cell_type: str = "", cells=None, **props) -> Component:
         """Create a table row component.
 
         Args:
             children: The children of the component.
             props: The properties of the component.
-            cell_type (str, optional): the type of cells in this table row. "header" or "data". Defaults to None.
+            cell_type (str): the type of cells in this table row. "header" or "data". Defaults to None.
             cells (list, optional): The cells value to add in the table row. Defaults to None.
 
         Returns:
@@ -144,7 +144,7 @@ class Tr(ChakraComponent):
         """
         types = {"header": Th, "data": Td}
         cell_cls = types.get(cell_type)
-        if len(children) == 0:
+        if len(children) == 0 and cell_cls:
             children = [cell_cls.create(cell) for cell in cells or []]
         return super().create(*children, **props)
 
