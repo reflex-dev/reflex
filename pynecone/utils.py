@@ -298,7 +298,7 @@ def get_config() -> Config:
     try:
         return __import__(constants.CONFIG_MODULE).config
     except ImportError:
-        return Config(app_name="")
+        return Config(app_name="")  # type: ignore
 
 
 def check_node_version(min_version):

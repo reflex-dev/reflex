@@ -144,7 +144,6 @@ def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
         expected: The expected formatted tag.
         windows_platform: Whether the system is windows.
     """
-
     expected = expected.replace("\n", "\r\n") if windows_platform else expected
     assert str(tag) == expected
 

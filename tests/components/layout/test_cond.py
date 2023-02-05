@@ -23,7 +23,7 @@ def cond_state(request):
     indirect=True,
 )
 def test_validate_cond(cond_state: pc.Var):
-    """Test if cond can be a pc.Val with any values
+    """Test if cond can be a pc.Val with any values.
 
     Args:
         cond_state: A fixture.

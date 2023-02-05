@@ -16,7 +16,7 @@ from pynecone.var import BaseVar, Var
     ],
 )
 def test_validate_propcond(prop1: Any, prop2: Any):
-    """Test the creation of conditional props
+    """Test the creation of conditional props.
 
     Args:
         prop1: truth condition value
