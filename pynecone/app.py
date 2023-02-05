@@ -69,20 +69,20 @@ class App(Base):
         self.api = FastAPI()
 
         # Set up the Socket.IO AsyncServer.
-        self.sio = AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+        self.sio = AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 
         # Create the socket app. Note 'event' replaces the default 'socket.io' path.
-        socket_app = ASGIApp(self.sio, socketio_path='event')
+        socket_app = ASGIApp(self.sio, socketio_path="event")
 
         # Create the event namespace and attach the main app. Not related to the path above.
-        event_namespace = EventNamespace('/event')
+        event_namespace = EventNamespace("/event")
         event_namespace.app = self
 
         # Register the event namespace with the socket.
         self.sio.register_namespace(event_namespace)
 
         # Mount the socket app with the API.
-        self.api.mount('/', socket_app)
+        self.api.mount("/", socket_app)
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
@@ -357,14 +357,15 @@ async def process(app: App, event: Event) -> StateUpdate:
     # Return the update.
     return update
 
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
     # The backend API object.
-    app: App = None
+    app: App
 
     def on_connect(self, sid, environ):
-        """The websocket connected event.
+        """Event for when the websocket disconnects.
 
         Args:
             sid: The Socket.IO session id.
@@ -373,7 +374,7 @@ class EventNamespace(AsyncNamespace):
         pass
 
     def on_disconnect(self, sid):
-        """The websocket disconnected event.
+        """Event for when the websocket disconnects.
 
         Args:
             sid: The Socket.IO session id.
@@ -381,7 +382,7 @@ class EventNamespace(AsyncNamespace):
         pass
 
     async def on_event(self, sid, data):
-        """The websocket 'event' event.
+        """Event for receiving front-end websocket events.
 
         Args:
             sid: The Socket.IO session id.
@@ -394,4 +395,4 @@ class EventNamespace(AsyncNamespace):
         update = await process(self.app, event)
 
         # Emit the event.
-        await self.emit('event', update.json(), to=sid)
+        await self.emit("event", update.json(), to=sid)
