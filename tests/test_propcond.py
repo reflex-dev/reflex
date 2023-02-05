@@ -4,7 +4,7 @@ import pytest
 
 from pynecone.propcond import PropCond
 from pynecone.utils import wrap
-from pynecone.var import BaseVar, Var
+from pynecone.var import BaseVar
 
 
 @pytest.mark.parametrize(

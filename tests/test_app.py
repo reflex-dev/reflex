@@ -1,11 +1,10 @@
 import os.path
-from typing import List, Tuple, Type
+from typing import Type
 
 import pytest
 
 from pynecone.app import App, DefaultState
 from pynecone.components import Box
-from pynecone.event import Event
 from pynecone.middleware import HydrateMiddleware
 from pynecone.state import State
 from pynecone.style import Style

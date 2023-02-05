@@ -1,10 +1,8 @@
-import platform
 from typing import Dict
 
 import pytest
 
-from pynecone.components import Box
-from pynecone.components.tags import CondTag, IterTag, Tag
+from pynecone.components.tags import CondTag, Tag
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.propcond import PropCond
 from pynecone.var import BaseVar, Var

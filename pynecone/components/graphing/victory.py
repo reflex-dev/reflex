@@ -1,9 +1,8 @@
 """Victory graphing components."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pynecone.components.component import Component
-from pynecone.components.tags import Tag
 from pynecone.style import Style
 from pynecone.var import Var
 

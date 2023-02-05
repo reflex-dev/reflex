@@ -13,7 +13,7 @@ from redis import Redis
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, PCList, Var
+from pynecone.var import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
 

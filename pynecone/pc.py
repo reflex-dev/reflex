@@ -5,7 +5,6 @@ from pathlib import Path
 
 import httpx
 import typer
-from rich.prompt import Prompt
 
 from pynecone import constants, utils
 

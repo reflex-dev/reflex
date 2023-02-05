@@ -1,4 +1,3 @@
-import pytest
 
 from pynecone import data
 
