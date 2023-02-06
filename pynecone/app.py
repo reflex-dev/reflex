@@ -397,14 +397,11 @@ class EventNamespace(AsyncNamespace):
         # Emit the event.
         await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
 
-
     async def on_ping(self, sid):
-            """Event for testing the API endpoint.
+        """Event for testing the API endpoint.
 
-            Args:
-                sid: The Socket.IO session id.
-            """
-
-            # Emit the test event.
-            await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
-
+        Args:
+            sid: The Socket.IO session id.
+        """
+        # Emit the test event.
+        await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)

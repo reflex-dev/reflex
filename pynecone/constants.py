@@ -190,6 +190,7 @@ class Endpoint(Enum):
         # Return the url.
         return url
 
+
 class SocketEvent(Enum):
     """Socket events sent by the pynecone backend API."""
 
