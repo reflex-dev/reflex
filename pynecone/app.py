@@ -71,8 +71,8 @@ class App(Base):
         # Set up the Socket.IO AsyncServer.
         self.sio = AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 
-        # Create the socket app. Note 'event' replaces the default 'socket.io' path.
-        socket_app = ASGIApp(self.sio, socketio_path="event")
+        # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
+        socket_app = ASGIApp(self.sio, socketio_path=constants.Endpoint.EVENT)
 
         # Create the event namespace and attach the main app. Not related to the path above.
         event_namespace = EventNamespace("/event")
@@ -395,4 +395,4 @@ class EventNamespace(AsyncNamespace):
         update = await process(self.app, event)
 
         # Emit the event.
-        await self.emit("event", update.json(), to=sid)
+        await self.emit(constants.Endpoint.EVENT, update.json(), to=sid)
