@@ -36,5 +36,13 @@ class Icon(ChakraIconComponent):
             )
         if "tag" not in props.keys():
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
+        else:
+            tag_keywords = [
+                "add", "allowed", "arrow", "back", "circle", "clock", "close", "down", "forward",
+                "handle", "icon", "left", "link", "off", "outline", "right", "sign", "two", "up"
+            ]
+            props['tag'] = props['tag'].title()
+            for keyword in tag_keywords:
+                props['tag'] = re.sub(keyword, keyword.title(), props['tag'])
 
         return super().create(*children, **props)
