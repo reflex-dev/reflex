@@ -68,22 +68,24 @@ export const applyDelta = (state, delta) => {
  * @param event The event to send.
  * @param router The router object.
  * @param socket The socket object to send the event on.
+ *
+ * @returns True if the event was sent, false if it was handled locally.
  */
 export const applyEvent = async (event, router, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
     router.push(event.payload.path);
-    return;
+    return false;
   }
 
   if (event.name == "_console") {
     console.log(event.payload.message);
-    return;
+    return false;
   }
 
   if (event.name == "_alert") {
     alert(event.payload.message);
-    return;
+    return false;
   }
 
   // Send the event to the server.
@@ -92,6 +94,7 @@ export const applyEvent = async (event, router, socket) => {
   if (socket) {
     socket.emit("event", JSON.stringify(event));
   }
+  return true;
 };
 
 /**
@@ -119,7 +122,11 @@ export const updateState = async (state, setState, result, setResult, router, so
   setState({ ...state, events: state.events });
 
   // Apply the event.
-  await applyEvent(event, router, socket);
+  const eventSent = await applyEvent(event, router, socket);
+  if (!eventSent) {
+    // If no event was sent, set processing to false and return.
+    setResult({...state, processing: false})
+  }
 };
 
 /**
