@@ -93,8 +93,10 @@ export const applyEvent = async (event, router, socket) => {
   event.router_data = (({ pathname, query }) => ({ pathname, query }))(router);
   if (socket) {
     socket.emit("event", JSON.stringify(event));
+    return true;
   }
-  return true;
+
+  return false;
 };
 
 /**
