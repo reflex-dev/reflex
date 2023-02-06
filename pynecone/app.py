@@ -72,7 +72,7 @@ class App(Base):
         self.sio = AsyncServer(async_mode="asgi", cors_allowed_origins="*")
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        socket_app = ASGIApp(self.sio, socketio_path=constants.Endpoint.EVENT)
+        socket_app = ASGIApp(self.sio, socketio_path=str(constants.Endpoint.EVENT))
 
         # Create the event namespace and attach the main app. Not related to the path above.
         event_namespace = EventNamespace("/event")
@@ -395,4 +395,16 @@ class EventNamespace(AsyncNamespace):
         update = await process(self.app, event)
 
         # Emit the event.
-        await self.emit(constants.Endpoint.EVENT, update.json(), to=sid)
+        await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+
+
+    async def on_ping(self, sid):
+            """Event for testing the API endpoint.
+
+            Args:
+                sid: The Socket.IO session id.
+            """
+
+            # Emit the test event.
+            await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
