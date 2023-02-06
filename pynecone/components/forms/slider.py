@@ -68,7 +68,7 @@ class Slider(ChakraComponent):
         Returns:
             The slider component.
         """
-        if not children:
+        if len(children) == 0:
             children = [
                 SliderTrack.create(
                     SliderFilledTrack.create(),

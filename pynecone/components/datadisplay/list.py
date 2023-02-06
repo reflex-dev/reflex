@@ -19,6 +19,24 @@ class List(ChakraComponent):
     # Shorthand prop for listStyleType
     style_type: Var[str]
 
+    @classmethod
+    def create(cls, *children, items=None, **props) -> Component:
+        """Create a list component.
+
+        Args:
+            children: The children of the component.
+            items: A list of items to add to the list.
+            props: The properties of the component.
+
+        Returns:
+            The list component.
+        """
+        if len(children) == 0:
+            children = []
+            for item in items or []:
+                children.append(ListItem.create(*item))
+        return super().create(*children, **props)
+
 
 class ListItem(ChakraComponent):
     """A single list item."""
@@ -26,13 +44,13 @@ class ListItem(ChakraComponent):
     tag = "ListItem"
 
 
-class OrderedList(ChakraComponent):
+class OrderedList(List):
     """An ordered list component with numbers."""
 
     tag = "OrderedList"
 
 
-class UnorderedList(ChakraComponent):
+class UnorderedList(List):
     """An unordered list component with bullets."""
 
     tag = "UnorderedList"
