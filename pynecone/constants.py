@@ -159,7 +159,6 @@ class LogLevel(str, Enum):
 class Endpoint(Enum):
     """Endpoints for the pynecone backend API."""
 
-    PING = "ping"
     EVENT = "event"
 
     def __str__(self) -> str:
@@ -190,6 +189,21 @@ class Endpoint(Enum):
 
         # Return the url.
         return url
+
+
+class SocketEvent(Enum):
+    """Socket events sent by the pynecone backend API."""
+
+    PING = "ping"
+    EVENT = "event"
+
+    def __str__(self) -> str:
+        """Get the string representation of the event name.
+
+        Returns:
+            The event name string.
+        """
+        return str(self.value)
 
 
 class RouteArgType(SimpleNamespace):
