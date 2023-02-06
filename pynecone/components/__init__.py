@@ -18,6 +18,7 @@ from .overlay import *
 from .typography import *
 
 if TYPE_CHECKING:
+    from typing import Any
     from pynecone.var import Var
 
 # Add the convenience methods for all the components.
@@ -96,7 +97,7 @@ def mobile_and_tablet(*children, **props):
     return Box.create(*children, **props, display=["block", "block", "block", "none"])
 
 
-def cond(condition: Var, c1: Any, c2: Any = None):
+def cond(condition: Any, c1: Any, c2: Any = None):
     """Create a conditional component or Prop.
 
     Args:
@@ -113,6 +114,7 @@ def cond(condition: Var, c1: Any, c2: Any = None):
 
     # Convert the condition to a Var.
     cond_var = Var.create(condition)
+    assert cond_var is not None, "The condition must be set."
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, Component):
