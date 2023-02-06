@@ -97,7 +97,7 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
-    route = "\\test" if windows_platform else "/test"
+    route = "test" if windows_platform else "/test"
     assert app.pages == {}
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test"}
@@ -111,7 +111,7 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
-    route = "\\test\\nested" if windows_platform else "/test/nested"
+    route = "test\\nested" if windows_platform else "/test/nested"
     assert app.pages == {}
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {route.strip(os.path.sep)}
