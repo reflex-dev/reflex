@@ -1,7 +1,9 @@
 """Import all the components."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from pynecone import utils
-from pynecone.propcond import PropCond
 
 from .component import Component
 from .datadisplay import *
@@ -14,6 +16,9 @@ from .media import *
 from .navigation import *
 from .overlay import *
 from .typography import *
+
+if TYPE_CHECKING:
+    from pynecone.var import Var
 
 # Add the convenience methods for all the components.
 locals().update(
@@ -91,17 +96,31 @@ def mobile_and_tablet(*children, **props):
     return Box.create(*children, **props, display=["block", "block", "block", "none"])
 
 
-def cond(cond_var, c1, c2=None):
+def cond(condition: Var, c1: Any, c2: Any = None):
     """Create a conditional component or Prop.
 
     Args:
-        cond_var: The cond to determine which component to render.
+        condition: The cond to determine which component to render.
         c1: The component or prop to render if the cond_var is true.
         c2: The component or prop to render if the cond_var is false.
 
     Returns:
         The conditional component.
     """
-    if isinstance(c1, Component) and isinstance(c2, Component):
+    # Import here to avoid circular imports.
+    from .tags.tag import PropCond
+    from pynecone.var import Var
+
+    # Convert the condition to a Var.
+    cond_var = Var.create(condition)
+
+    # If the first component is a component, create a Cond component.
+    if isinstance(c1, Component):
+        assert c2 is None or isinstance(
+            c2, Component
+        ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
+
+    # Otherwise, create a PropCond.
+    assert not isinstance(c2, Component), "Both arguments must be props."
     return PropCond.create(cond_var, c1, c2)
