@@ -36,6 +36,6 @@ class HydrateMiddleware(Middleware):
                 load_event = None
             if load_event:
                 substate_path = utils.format_event_handler(load_event).split(".")
-                state = state.get_substate(substate_path[:-1])
-                load_event.fn(state)
+                ex_state = state.get_substate(substate_path[:-1])
+                load_event.fn(ex_state)
             return utils.format_state({state.get_name(): state.dict()})
