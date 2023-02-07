@@ -1,8 +1,10 @@
 """Modal components."""
 
 from typing import Set
+from pynecone.components.component import Component
 
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.components.media import Icon
 from pynecone.var import Var
 
 
@@ -64,8 +66,62 @@ class Modal(ChakraComponent):
             "on_overlay_click",
         }
 
+    @classmethod
+    def create(
+        cls, *children, header=None, body=None, footer=None, close_button=None, **props
+    ) -> Component:
+        """Create a modal component.
 
-class ModalOverlay(Modal):
+        Args:
+            children: The children of the component.
+            header: The header of the modal.
+            body: The body of the modal.
+            footer: The footer of the modal.
+            close_button: The close button of the modal.
+            props: The properties of the component.
+
+        Raises:
+            AttributeError: error that occurs if conflicting props are passed
+
+        Returns:
+            The modal component.
+        """
+        if len(children) == 0:
+            contents = []
+
+            # add header if present in props
+            if header:
+                contents.append(ModalHeader.create(header))
+
+            # add ModalBody if present in props
+            if body:
+                contents.append(ModalBody.create(body))
+
+            # add ModalFooter if present in props
+            if footer:
+                contents.append(ModalFooter.create(footer))
+
+            # add ModalCloseButton if either a prop for one was passed, or if
+            if props.get("on_close"):
+                # get user defined close button or use default one
+                if not close_button:
+                    close_button = Icon.create(tag="CloseIcon")
+                contents.append(ModalCloseButton.create(close_button))
+            elif close_button:
+                raise AttributeError(
+                    "Close button can not be used if on_close event handler is not defined"
+                )
+
+            children = [
+                ModalOverlay.create(
+                    ModalContent.create(*contents),
+                )
+            ]
+
+        return super().create(*children, **props)
+
+
+class ModalOverlay(ChakraComponent):
     """The dimmed overlay behind the modal dialog."""
 
     tag = "ModalOverlay"
@@ -83,7 +139,7 @@ class ModalFooter(ChakraComponent):
     tag = "ModalFooter"
 
 
-class ModalContent(Modal):
+class ModalContent(ChakraComponent):
     """The container for the modal dialog's content."""
 
     tag = "ModalContent"
@@ -95,7 +151,7 @@ class ModalBody(ChakraComponent):
     tag = "ModalBody"
 
 
-class ModalCloseButton(Modal):
+class ModalCloseButton(ChakraComponent):
     """The button that closes the modal."""
 
     tag = "ModalCloseButton"

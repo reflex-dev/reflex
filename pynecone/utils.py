@@ -1306,11 +1306,6 @@ def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
             name = format_event_handler(e.handler)
             payload = dict(e.args)
 
-        # Remove any extra quotes introduced by json.dumps(..) and escape the characters.
-        for k, v in payload.items():
-            if isinstance(v, str):
-                payload[k] = json.loads(v)
-
         # Create an event and append it to the list.
         out.append(
             Event(

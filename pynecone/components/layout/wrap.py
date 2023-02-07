@@ -1,5 +1,6 @@
 """Container to stack elements with spacing."""
 
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -29,6 +30,25 @@ class Wrap(ChakraComponent):
 
     # The vertical spacing between the items.
     spacing_y: Var[str]
+
+    @classmethod
+    def create(cls, *children, items=None, **props) -> Component:
+        """Return a wrap component.
+
+        Args:
+            children: The children of the component.
+            items (list): The items of the wrap component.
+            props: The properties of the component.
+
+        Returns:
+            The wrap component.
+        """
+        if len(children) == 0:
+            children = []
+            for item in items or []:
+                children.append(WrapItem.create(*item))
+
+        return super().create(*children, **props)
 
 
 class WrapItem(ChakraComponent):

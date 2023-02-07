@@ -2,7 +2,8 @@ from typing import Any
 
 import pytest
 
-from pynecone.propcond import PropCond
+from pynecone.components.tags.tag import PropCond
+from pynecone.var import BaseVar, Var
 from pynecone.utils import wrap
 from pynecone.var import BaseVar
 
@@ -21,7 +22,6 @@ def test_validate_propcond(prop1: Any, prop2: Any):
     Args:
         prop1: truth condition value
         prop2: false condition value
-
     """
     prop_cond = PropCond.create(
         cond=BaseVar(name="cond_state.value", type_=str), prop1=prop1, prop2=prop2

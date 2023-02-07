@@ -21,6 +21,9 @@ class Object(Base):
 class TestState(State):
     """A test state."""
 
+    # Set this class as not test one
+    __test__ = False
+
     num1: int
     num2: float = 3.14
     key: str
