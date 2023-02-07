@@ -1,8 +1,6 @@
 """Table components."""
 
-from typing import List
 from pynecone.components.component import Component
-
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 

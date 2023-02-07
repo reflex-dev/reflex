@@ -475,11 +475,11 @@ def is_latest_template() -> bool:
     Returns:
         Whether the app is using the latest template.
     """
-    with open(constants.PCVERSION_TEMPLATE_FILE) as f:
+    with open(constants.PCVERSION_TEMPLATE_FILE) as f:  # type: ignore
         template_version = f.read()
     if not os.path.exists(constants.PCVERSION_APP_FILE):
         return False
-    with open(constants.PCVERSION_APP_FILE) as f:
+    with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
         app_version = f.read()
     return app_version >= template_version
 

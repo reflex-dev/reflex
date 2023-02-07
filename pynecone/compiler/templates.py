@@ -169,7 +169,7 @@ USE_EFFECT = join(
         "  }}",
         f"  if (typeof {SOCKET}.current !== 'undefined') {{{{",
         f"    if (!{SOCKET}.current) {{{{",
-        f"      window.addEventListener('focus', reconnectSocket)",
+        "      window.addEventListener('focus', reconnectSocket)",
         f"      connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",
         "    }}",
         "  }}",

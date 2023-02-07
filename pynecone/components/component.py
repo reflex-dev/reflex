@@ -5,7 +5,7 @@ from __future__ import annotations
 import typing
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from pynecone import constants, utils
 from pynecone.base import Base

@@ -3,7 +3,6 @@ from typing import Any
 import pytest
 
 from pynecone.components.tags.tag import PropCond
-from pynecone.var import BaseVar, Var
 from pynecone.utils import wrap
 from pynecone.var import BaseVar
 

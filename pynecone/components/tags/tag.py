@@ -13,7 +13,6 @@ from plotly.io import to_json
 from pynecone import utils
 from pynecone.base import Base
 from pynecone.event import EventChain
-from pynecone.propcond import PropCond
 from pynecone.var import Var
 
 if TYPE_CHECKING:
