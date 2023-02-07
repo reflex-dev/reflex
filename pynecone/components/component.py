@@ -321,6 +321,15 @@ class Component(Base, ABC):
             else Bare.create(contents=Var.create(child, is_string=True))
             for child in children
         ]
+
+        if "key" in props.keys():
+            # Import here to avoid circular imports.
+            from pynecone.components.base.anchor import Anchor
+
+            # Add anchor tag for hash link
+            hash_name = props.get("key")
+            children.insert(0, Anchor.create(id=hash_name, name=hash_name))
+
         return cls(children=children, **props)
 
     def _add_style(self, style):
