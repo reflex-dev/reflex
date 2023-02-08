@@ -320,6 +320,14 @@ def test_invalid_event_handler_args(component2, TestState):
     # This is not okay.
     with pytest.raises(ValueError):
         component2.create(on_click=TestState.do_something_arg)
+    # However lambdas are okay.
+    component2.create(on_click=lambda: TestState.do_something_arg(1))
+    component2.create(
+        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something]
+    )
+    component2.create(
+        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something()]
+    )
 
     # Controlled event handlers should take args.
     # This is okay.
@@ -327,3 +335,5 @@ def test_invalid_event_handler_args(component2, TestState):
     # This is not okay.
     with pytest.raises(ValueError):
         component2.create(on_open=TestState.do_something)
+    with pytest.raises(ValueError):
+        component2.create(on_open=[TestState.do_something_arg, TestState.do_something])

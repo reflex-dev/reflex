@@ -1238,16 +1238,43 @@ def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
     Raises:
         ValueError: If the lambda has an invalid signature.
     """
+    # Import here to avoid circular imports.
+    from pynecone.event import EventHandler, EventSpec
+
+    # Get the args of the lambda.
     args = inspect.getfullargspec(fn).args
+
+    # Call the lambda.
     if len(args) == 0:
         out = fn()
     elif len(args) == 1:
         out = fn(arg)
     else:
         raise ValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+
+    # Convert the output to a list.
     if not isinstance(out, List):
         out = [out]
-    return out
+
+    # Convert any event specs to event specs.
+    events = []
+    for e in out:
+        # Convert handlers to event specs.
+        if isinstance(e, EventHandler):
+            if len(args) == 0:
+                e = e()
+            elif len(args) == 1:
+                e = e(arg)
+
+        # Make sure the event spec is valid.
+        if not isinstance(e, EventSpec):
+            raise ValueError(f"Lambda {fn} returned an invalid event spec: {e}.")
+
+        # Add the event spec to the chain.
+        events.append(e)
+
+    # Return the events.
+    return events
 
 
 def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], ...]:
