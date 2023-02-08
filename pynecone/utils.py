@@ -500,7 +500,10 @@ def export_app(app: App, zip: bool = False):
 
     # Zip up the app.
     if zip:
-        cmd = r"cd .web/_static && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
+        if os.name == "posix":
+            cmd = r"cd .web/_static && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
+        if os.name == "nt":
+            cmd = r'powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip; Set-Location ..\..; Compress-Archive -Path .\* -DestinationPath backend.zip -Exclude .web\*, assets\*, frontend.zip, backend.zip"'
         os.system(cmd)
 
 

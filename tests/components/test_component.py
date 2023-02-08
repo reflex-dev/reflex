@@ -27,7 +27,6 @@ def component1() -> Type[Component]:
     """
 
     class TestComponent1(Component):
-
         # A test string prop.
         text: Var[str]
 
@@ -52,7 +51,6 @@ def component2() -> Type[Component]:
     """
 
     class TestComponent2(Component):
-
         # A test list prop.
         arr: Var[List[str]]
 
