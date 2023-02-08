@@ -363,7 +363,9 @@ class Component(Base, ABC):
         """
         tag = self._render()
         return str(
-            tag.add_props(**self.event_triggers, key=self.key, sx=self.style, id=self.id).set(
+            tag.add_props(
+                **self.event_triggers, key=self.key, sx=self.style, id=self.id
+            ).set(
                 contents=utils.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
                 ).strip(),
