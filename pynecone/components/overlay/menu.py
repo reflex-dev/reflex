@@ -1,6 +1,7 @@
 """Menu components."""
 
 from typing import Set
+from pynecone.components.component import Component
 
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
@@ -68,6 +69,25 @@ class Menu(ChakraComponent):
         """
         return super().get_triggers() | {"on_close", "on_open"}
 
+    @classmethod
+    def create(cls, *children, items=None, **props) -> Component:
+        """Create a menu component.
+
+        Args:
+            children: The children of the component.
+            items (list): The item of the menu.
+            props: The properties of the component.
+
+        Returns:
+            The menu component.
+        """
+        if len(children) == 0:
+            button = MenuButton.create(*props.pop("button"))
+            if not items:
+                items = []
+            children = [button, MenuList.create(*items)]
+        return super().create(*children, **props)
+
 
 class MenuButton(ChakraComponent):
     """The trigger for the menu list. Must be a direct child of Menu."""
@@ -87,7 +107,7 @@ class MenuList(ChakraComponent):
     tag = "MenuList"
 
 
-class MenuItem(Menu):
+class MenuItem(ChakraComponent):
     """The trigger that handles menu selection. Must be a direct child of a MenuList."""
 
     tag = "MenuItem"
@@ -108,7 +128,7 @@ class MenuItem(Menu):
     is_focusable: Var[bool]
 
 
-class MenuItemOption(Menu):
+class MenuItemOption(ChakraComponent):
     """The checkable menu item, to be used with MenuOptionGroup."""
 
     tag = "MenuItemOption"
@@ -138,13 +158,13 @@ class MenuItemOption(Menu):
     value: Var[str]
 
 
-class MenuGroup(Menu):
+class MenuGroup(ChakraComponent):
     """A wrapper to group related menu items."""
 
     tag = "MenuGroup"
 
 
-class MenuOptionGroup(Menu):
+class MenuOptionGroup(ChakraComponent):
     """A wrapper for checkable menu items (radio and checkbox)."""
 
     tag = "MenuOptionGroup"
@@ -156,7 +176,7 @@ class MenuOptionGroup(Menu):
     value: Var[str]
 
 
-class MenuDivider(Menu):
+class MenuDivider(ChakraComponent):
     """A visual separator for menu items and groups."""
 
     tag = "MenuDivider"

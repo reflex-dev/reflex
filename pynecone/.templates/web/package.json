@@ -25,11 +25,11 @@
     "react-markdown": "^8.0.3",
     "react-plotly.js": "^2.6.0",
     "react-syntax-highlighter": "^15.5.0",
-    "reconnecting-websocket": "^4.4.0",
     "rehype-katex": "^6.0.2",
     "rehype-raw": "^6.1.1",
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
+    "socket.io-client": "^4.5.4",
     "victory": "^36.6.8"
   }
 }

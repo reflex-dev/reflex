@@ -2,6 +2,8 @@
 
 from typing import Set
 
+from pynecone.components.component import Component
+from pynecone.components.media.icon import Icon
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -63,6 +65,57 @@ class AlertDialog(ChakraComponent):
             "on_esc",
             "on_overlay_click",
         }
+
+    @classmethod
+    def create(
+        cls, *children, header=None, body=None, footer=None, close_button=None, **props
+    ) -> Component:
+        """Create an alert dialog component.
+
+        Args:
+            children: The children of the alert dialog component.
+            header: The header of the alert dialog.
+            body: The body of the alert dialog.
+            footer: The footer of the alert dialog.
+            close_button: The close button of the alert dialog.
+            props: The properties of the alert dialog component.
+
+        Raises:
+            AttributeError: if there is a conflict between the props used.
+
+        Returns:
+            The alert dialog component.
+        """
+        if len(children) == 0:
+            contents = []
+
+            if header:
+                contents.append(AlertDialogHeader.create(header))
+
+            if body:
+                contents.append(AlertDialogBody.create(body))
+
+            if footer:
+                contents.append(AlertDialogFooter.create(footer))
+
+            # add AlertDialogCloseButton if either a prop for one was passed, or if on_close callback is present
+            if props.get("on_close"):
+                # get user defined close button or use default one
+                if not close_button:
+                    close_button = Icon.create(tag="CloseIcon")
+                contents.append(AlertDialogCloseButton.create(close_button))
+            elif close_button:
+                raise AttributeError(
+                    "Close button can not be used if on_close event handler is not defined"
+                )
+
+            children = [
+                AlertDialogOverlay.create(
+                    AlertDialogContent.create(*contents),
+                )
+            ]
+
+        return super().create(*children, **props)
 
 
 class AlertDialogBody(ChakraComponent):

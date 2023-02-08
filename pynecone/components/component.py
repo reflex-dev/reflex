@@ -5,7 +5,7 @@ from __future__ import annotations
 import typing
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 from pynecone import constants, utils
 from pynecone.base import Base
@@ -176,7 +176,14 @@ class Component(Base, ABC):
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
-            events = [utils.call_event_handler(v, arg) for v in value]
+            events = []
+            for v in value:
+                if isinstance(v, EventHandler):
+                    events.append(utils.call_event_handler(v, arg))
+                elif isinstance(v, Callable):
+                    events.extend(utils.call_event_fn(v, arg))
+                else:
+                    raise ValueError(f"Invalid event: {v}")
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
@@ -227,6 +234,15 @@ class Component(Base, ABC):
         """
         return EVENT_ARG
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias for the component.
+
+        Returns:
+            The alias.
+        """
+        return None
+
     def __repr__(self) -> str:
         """Represent the component in React.
 
@@ -250,7 +266,9 @@ class Component(Base, ABC):
             The tag to render.
         """
         # Create the base tag.
-        tag = Tag(name=self.tag)
+        alias = self.get_alias()
+        name = alias if alias is not None else self.tag
+        tag = Tag(name=name)
 
         # Add component props to the tag.
         props = {attr: getattr(self, attr) for attr in self.get_props()}
@@ -380,7 +398,9 @@ class Component(Base, ABC):
 
     def _get_imports(self) -> ImportDict:
         if self.library is not None and self.tag is not None:
-            return {self.library: {self.tag}}
+            alias = self.get_alias()
+            tag = self.tag if alias is None else " as ".join([self.tag, alias])
+            return {self.library: {tag}}
         return {}
 
     def get_imports(self) -> ImportDict:
@@ -517,14 +537,6 @@ class CustomComponent(Component):
             seen.add(self.tag)
             custom_components |= self.get_component().get_custom_components(seen=seen)
         return custom_components
-
-    def _render(self) -> Tag:
-        """Define how to render the component in React.
-
-        Returns:
-            The tag to render.
-        """
-        return Tag(name=self.tag).add_props(**self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.

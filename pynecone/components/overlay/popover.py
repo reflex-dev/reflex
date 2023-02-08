@@ -1,6 +1,8 @@
 """Popover components."""
 
 from typing import Set
+from pynecone.components.component import Component
+from pynecone.components.forms.button import Button
 
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
@@ -83,8 +85,55 @@ class Popover(ChakraComponent):
         """
         return super().get_triggers() | {"on_close", "on_open"}
 
+    @classmethod
+    def create(
+        cls,
+        *children,
+        trigger=None,
+        header=None,
+        body=None,
+        footer=None,
+        use_close_button=False,
+        **props
+    ) -> Component:
+        """Create a popover component.
 
-class PopoverContent(Popover):
+        Args:
+            children: The children of the component.
+            trigger: The trigger that opens the popover.
+            header: The header of the popover.
+            body: The body of the popover.
+            footer: The footer of the popover.
+            use_close_button: Whether to add a close button on the popover.
+            props: The properties of the component.
+
+        Returns:
+            The popover component.
+        """
+        if len(children) == 0:
+            contents = []
+
+            trigger = PopoverTrigger.create(trigger)
+
+            # add header if present in props
+            if header:
+                contents.append(PopoverHeader.create(header))
+
+            if body:
+                contents.append(PopoverBody.create(body))
+
+            if footer:
+                contents.append(PopoverFooter.create(footer))
+
+            if use_close_button:
+                contents.append(PopoverCloseButton.create())
+
+            children = [trigger, PopoverContent.create(*contents)]
+
+        return super().create(*children, **props)
+
+
+class PopoverContent(ChakraComponent):
     """The popover itself."""
 
     tag = "PopoverContent"
@@ -108,25 +157,25 @@ class PopoverBody(ChakraComponent):
     tag = "PopoverBody"
 
 
-class PopoverArrow(Popover):
+class PopoverArrow(ChakraComponent):
     """A visual arrow that points to the reference (or trigger)."""
 
     tag = "PopoverArrow"
 
 
-class PopoverCloseButton(Popover):
+class PopoverCloseButton(ChakraComponent):
     """A button to close the popover."""
 
     tag = "PopoverCloseButton"
 
 
-class PopoverAnchor(Popover):
+class PopoverAnchor(ChakraComponent):
     """Used to wrap the position-reference element."""
 
     tag = "PopoverAnchor"
 
 
-class PopoverTrigger(Popover):
+class PopoverTrigger(ChakraComponent):
     """Used to wrap the reference (or trigger) element."""
 
     tag = "PopoverTrigger"

@@ -11,6 +11,7 @@
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/pynecone-io.svg)
 [![License](https://img.shields.io/badge/License-Apache_2.0-yellowgreen.svg)](https://opensource.org/licenses/Apache-2.0)  
+[![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 <div align="left">
 

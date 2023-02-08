@@ -1,5 +1,6 @@
 """Alert components."""
 
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -14,6 +15,35 @@ class Alert(ChakraComponent):
 
     # "subtle" | "left-accent" | "top-accent" | "solid"
     variant: Var[str]
+
+    @classmethod
+    def create(
+        cls, *children, icon=True, title="Alert title", desc=None, **props
+    ) -> Component:
+        """Create an alert component.
+
+        Args:
+            children: The children of the component.
+            icon (bool): The icon of the alert.
+            title (str): The title of the alert.
+            desc (str): The description of the alert
+            props: The properties of the component.
+
+        Returns:
+            The alert component.
+        """
+        if len(children) == 0:
+            contents = []
+
+            if icon:
+                contents.append(AlertIcon.create())
+
+            contents.append(AlertTitle.create(title))
+
+            if desc:
+                contents.append(AlertDescription.create(desc))
+
+        return super().create(*children, **props)
 
 
 class AlertIcon(ChakraComponent):

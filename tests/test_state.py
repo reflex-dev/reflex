@@ -8,6 +8,7 @@ from pynecone.constants import RouteVar
 from pynecone.event import Event
 from pynecone.state import State
 from pynecone.var import BaseVar, ComputedVar
+from plotly.graph_objects import Figure
 
 
 class Object(Base):
@@ -20,6 +21,9 @@ class Object(Base):
 class TestState(State):
     """A test state."""
 
+    # Set this class as not test one
+    __test__ = False
+
     num1: int
     num2: float = 3.14
     key: str
@@ -27,6 +31,7 @@ class TestState(State):
     mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
+    fig: Figure = Figure()
 
     @ComputedVar
     def sum(self) -> float:
@@ -195,6 +200,7 @@ def test_class_vars(test_state):
         "complex",
         "sum",
         "upper",
+        "fig",
     }
 
 
@@ -622,7 +628,6 @@ def test_get_token(test_state):
 
 
 def test_get_current_page(test_state):
-
     assert test_state.get_current_page() == ""
 
     route = "mypage/subpage"
