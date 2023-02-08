@@ -152,7 +152,8 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 @cli.command()
 def export(
     zipping: bool = typer.Option(
-        True, "--no-zip", help="Disable zip for backend and frontend exports.")
+        True, "--no-zip", help="Disable zip for backend and frontend exports."
+    )
 ):
     """Export the app to a zip file."""
     # Get the app config.
