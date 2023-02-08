@@ -206,6 +206,13 @@ class Component(Base, ABC):
                 )
                 for e in events
             ]
+        else:
+            # Make sure the event handler doesn't have any args.
+            for e in events:
+                if len(e.args) > 0:
+                    raise ValueError(
+                        f"Found unexpected args for event handler: {e.handler.fn}. The handler for {event_trigger} should not have any args."
+                    )
 
         # Return the event chain.
         return EventChain(events=events)
