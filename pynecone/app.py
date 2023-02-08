@@ -337,7 +337,11 @@ async def process(app: App, event: Event) -> StateUpdate:
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
+    # pass router_data to the state of the App
     state.router_data = event.router_data
+    # also pass router_data to all substates
+    for _, substate in state.substates.items():
+        substate.router_data = event.router_data
     state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
 
     # Preprocess the event.
