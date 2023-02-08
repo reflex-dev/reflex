@@ -139,10 +139,11 @@ export const updateState = async (state, setState, result, setResult, router, so
  * @param setResult The function to set the result.
  * @param endpoint The endpoint to connect to.
  */
-export const connect = async (socket, state, setState, result, setResult, router, endpoint) => {
+export const connect = async (socket, state, setState, result, setResult, router, endpoint, transports) => {
   // Create the socket.
   socket.current = io(endpoint, {
-    'path': '/event',
+    path: "/event",
+    transports: transports,
   });
 
   // Once the socket is open, hydrate the page.
