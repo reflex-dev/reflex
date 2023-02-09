@@ -45,7 +45,7 @@ darglint = "^1.8.1"
 toml = "^0.10.2"
 pytest-asyncio = "^0.20.1"
 black = "^22.10.0"
-ruff = "^0.0.241"
+ruff = "^0.0.244"
 
 [tool.poetry.scripts]
 pc = "pynecone.pc:main"
