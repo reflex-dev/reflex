@@ -18,7 +18,6 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT
 from types import ModuleType
-from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,11 +28,12 @@ from typing import (
     Tuple,
     Type,
     Union,
+    _GenericAlias,  # type: ignore  # type: ignore
 )
-from typing import _GenericAlias  # type: ignore
 from urllib.parse import urlparse
-import psutil
+
 import plotly.graph_objects as go
+import psutil
 import typer
 import uvicorn
 from plotly.io import to_json
@@ -298,7 +298,7 @@ def get_config() -> Config:
     try:
         return __import__(constants.CONFIG_MODULE).config
     except ImportError:
-        return Config(app_name="")
+        return Config(app_name="")  # type: ignore
 
 
 def check_node_version(min_version):
@@ -319,7 +319,7 @@ def check_node_version(min_version):
         version = result.stdout.decode().strip().split("v")[1]
         # Compare the version numbers
         return version.split(".") >= min_version.split(".")
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -475,10 +475,12 @@ def is_latest_template() -> bool:
     Returns:
         Whether the app is using the latest template.
     """
-    template_version = open(constants.PCVERSION_TEMPLATE_FILE).read()
+    with open(constants.PCVERSION_TEMPLATE_FILE) as f:  # type: ignore
+        template_version = f.read()
     if not os.path.exists(constants.PCVERSION_APP_FILE):
         return False
-    app_version = open(constants.PCVERSION_APP_FILE).read()
+    with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
+        app_version = f.read()
     return app_version >= template_version
 
 
@@ -1149,7 +1151,7 @@ def format_state(value: Any) -> Dict:
 
     # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
-        return json.loads(to_json(value))["data"]
+        return json.loads(to_json(value))["data"]  # type: ignore
 
     # Convert pandas dataframes to JSON.
     if is_dataframe(type(value)):

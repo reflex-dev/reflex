@@ -3,8 +3,8 @@
 from typing import Set
 
 from pynecone.components.component import Component
-from pynecone.components.media.icon import Icon
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.components.media.icon import Icon
 from pynecone.var import Var
 
 

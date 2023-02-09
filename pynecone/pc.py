@@ -8,8 +8,6 @@ import typer
 
 from pynecone import constants, utils
 
-from rich.prompt import Prompt
-
 # Create the app.
 cli = typer.Typer()
 

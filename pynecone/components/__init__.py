@@ -19,7 +19,6 @@ from .typography import *
 
 if TYPE_CHECKING:
     from typing import Any
-    from pynecone.var import Var
 
 # Add the convenience methods for all the components.
 locals().update(
@@ -109,8 +108,9 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         The conditional component.
     """
     # Import here to avoid circular imports.
-    from .tags.tag import PropCond
     from pynecone.var import Var
+
+    from .tags.tag import PropCond
 
     # Convert the condition to a Var.
     cond_var = Var.create(condition)

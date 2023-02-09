@@ -231,7 +231,7 @@ def test_format_route(route: str, expected: bool):
 
 def test_setup_frontend(tmp_path, mocker):
     """Test checking if assets content have been
-    copied into the .web/public folder
+    copied into the .web/public folder.
 
     Args:
         tmp_path: root path of test case data directory

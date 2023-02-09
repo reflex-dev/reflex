@@ -1,5 +1,3 @@
-import pytest
-
 from pynecone import data
 
 # Test data.

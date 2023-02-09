@@ -1,9 +1,8 @@
 """Component for displaying a plotly graph."""
 
-from typing import Dict, Union
+from typing import Dict
 
 from plotly.graph_objects import Figure
-from plotly.io import to_json
 
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag

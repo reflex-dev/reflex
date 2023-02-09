@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 import pytest
+from plotly.graph_objects import Figure
 
 from pynecone import utils
 from pynecone.base import Base
@@ -8,7 +9,6 @@ from pynecone.constants import RouteVar
 from pynecone.event import Event
 from pynecone.state import State
 from pynecone.var import BaseVar, ComputedVar
-from plotly.graph_objects import Figure
 
 
 class Object(Base):
@@ -651,7 +651,7 @@ def test_add_var(test_state):
 
     test_state.add_var("dynamic_list", List[int], [5, 10])
     assert test_state.dynamic_list == [5, 10]
-    assert getattr(test_state, "dynamic_list") == [5, 10]
+    assert test_state.dynamic_list == [5, 10]
 
     # how to test that one?
     # test_state.dynamic_list.append(15)
@@ -659,4 +659,4 @@ def test_add_var(test_state):
 
     test_state.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
-    assert getattr(test_state, "dynamic_dict") == {"k1": 5, "k2": 10}
+    assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
