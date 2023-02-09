@@ -150,7 +150,11 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
 
 @cli.command()
-def export():
+def export(
+    zipping: bool = typer.Option(
+        True, "--no-zip", help="Disable zip for backend and frontend exports."
+    )
+):
     """Export the app to a zip file."""
     # Get the app config.
     config = utils.get_config()
@@ -159,10 +163,17 @@ def export():
     # Compile the app in production mode and export it.
     utils.console.rule("[bold]Compiling production app and preparing for export.")
     app = utils.get_app().app
-    utils.export_app(app, zip=True)
-    utils.console.rule(
-        "Backend & Frontend compiled. See [green bold]backend.zip[/green bold] and [green bold]frontend.zip[/green bold]."
-    )
+    utils.export_app(app, zip=zipping)
+    if zipping:
+        utils.console.rule(
+            """Backend & Frontend compiled. See [green bold]backend.zip[/green bold] 
+            and [green bold]frontend.zip[/green bold]."""
+        )
+    else:
+        utils.console.rule(
+            """Backend & Frontend compiled. See [green bold]app[/green bold] 
+            and [green bold].web/_static[/green bold] directories."""
+        )
 
 
 main = cli
