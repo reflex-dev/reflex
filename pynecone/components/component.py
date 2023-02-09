@@ -185,13 +185,19 @@ class Component(Base, ABC):
             events = []
             for v in value:
                 if isinstance(v, EventHandler):
+                    # Call the event handler to get the event.
                     event = utils.call_event_handler(v, arg)
+
+                    # Check that the event handler takes no args if it's uncontrolled.
                     if not is_controlled_event and len(event.args) > 0:
                         raise ValueError(
                             f"Event handler: {v.fn} for uncontrolled event {event_trigger} should not take any args."
                         )
+
+                    # Add the event to the chain.
                     events.append(event)
                 elif isinstance(v, Callable):
+                    # Call the lambda to get the event chain.
                     events.extend(utils.call_event_fn(v, arg))
                 else:
                     raise ValueError(f"Invalid event: {v}")
@@ -214,13 +220,6 @@ class Component(Base, ABC):
                 )
                 for e in events
             ]
-        # else:
-        #     # Make sure the event handler doesn't have any args.
-        #     for e in events:
-        #         if len(e.args) > 0:
-        #             raise ValueError(
-        #                 f"Found unexpected args for event handler: {e.handler.fn}. The handler for {event_trigger} should not have any args."
-        #             )
 
         # Return the event chain.
         return EventChain(events=events)
