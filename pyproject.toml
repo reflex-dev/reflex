@@ -60,7 +60,7 @@ build-backend = "poetry.core.masonry.api"
 
 select = ["B", "D", "E", "F", "I", "SIM", "W"]
 
-ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405"]
+ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
 
 target-version = "py37"
 
