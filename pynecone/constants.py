@@ -282,5 +282,4 @@ TOGGLE_COLOR_MODE = "toggleColorMode"
 
 # Server socket configuration variables
 CORS_ALLOWED_ORIGINS = "*"
-POLLING_MAX_HTTP_BUFFER_SIZE = 1000*1000
-
+POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000

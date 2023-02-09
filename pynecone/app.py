@@ -76,14 +76,11 @@ class App(Base):
             async_mode="asgi",
             cors_allowed_origins="*",
             cors_credentials=True,
-            max_http_buffer_size=1000*1000,
+            max_http_buffer_size=1000 * 1000,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        self.socket_app = ASGIApp(
-            self.sio,
-            socketio_path=""
-        )
+        self.socket_app = ASGIApp(self.sio, socketio_path="")
 
         # Create the event namespace and attach the main app. Not related to any paths.
         event_namespace = EventNamespace("/event", self)
@@ -334,12 +331,17 @@ class App(Base):
         compiler.compile_components(custom_components)
 
 
-async def process(app: App, event: Event, sid: str, headers: Dict, client_ip: str) -> StateUpdate:
+async def process(
+    app: App, event: Event, sid: str, headers: Dict, client_ip: str
+) -> StateUpdate:
     """Process an event.
 
     Args:
         app: The app to process the event for.
         event: The event to process.
+        sid: The Socket.IO session id.
+        headers: The client headers.
+        client_ip: The client_ip.
 
     Returns:
         The state update after processing the event.
@@ -419,10 +421,13 @@ class EventNamespace(AsyncNamespace):
         environ = self.app.sio.get_environ(sid, self.namespace)
 
         # Get the client headers.
-        headers = {k.decode("utf-8"):v.decode("utf-8") for (k, v) in environ['asgi.scope']['headers']}
+        headers = {
+            k.decode("utf-8"): v.decode("utf-8")
+            for (k, v) in environ["asgi.scope"]["headers"]
+        }
 
         # Get the client IP
-        client_ip = environ['REMOTE_ADDR']
+        client_ip = environ["REMOTE_ADDR"]
 
         # Process the event.
         update = await process(self.app, event, sid, headers, client_ip)

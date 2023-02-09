@@ -151,7 +151,9 @@ def compile_effects(state: Type[State]) -> str:
     state_name = state.get_name()
     set_state = templates.format_state_setter(state_name)
     transports = constants.SocketTransports.TRANSPORTS.get_transports()
-    return templates.USE_EFFECT(state=state_name, set_state=set_state, transports=transports)
+    return templates.USE_EFFECT(
+        state=state_name, set_state=set_state, transports=transports
+    )
 
 
 def compile_render(component: Component) -> str:
