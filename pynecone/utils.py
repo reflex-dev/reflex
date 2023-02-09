@@ -503,7 +503,7 @@ def export_app(app: App, zip: bool = False):
         if os.name == "posix":
             cmd = r"cd .web/_static && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
         if os.name == "nt":
-            cmd = r'powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip; Set-Location ..\..; Compress-Archive -Path .\* -DestinationPath backend.zip -Exclude .web\*, assets\*, frontend.zip, backend.zip"'
+            cmd = r'''powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip -Force;cd ..\..;Get-ChildItem .\* -Directory  | where {`$_.Name -notin @('.web', 'assets', 'frontend.zip', 'backend.zip')} | Compress-Archive -DestinationPath backend.zip -Update"'''
         os.system(cmd)
 
 
