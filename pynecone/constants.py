@@ -207,10 +207,13 @@ class SocketEvent(Enum):
         return str(self.value)
 
 
-class SocketTransports(Enum):
-    """Socket events sent by the pynecone backend API."""
+class Transports(Enum):
+    """Socket transports used by the pynecone backend API."""
 
-    TRANSPORTS = ["polling", "websocket"]
+    POLLING_WEBSOCKET = "['polling', 'websocket']"
+    WEBSOCKET_POLLING = "['websocket', 'polling']"
+    WEBSOCKET_ONLY = "['websocket']"
+    POLLING_ONLY = "['polling']"
 
     def __str__(self) -> str:
         """Get the string representation of the transports.
@@ -218,7 +221,7 @@ class SocketTransports(Enum):
         Returns:
             The transports string.
         """
-        return json.dumps(self.value)
+        return str(self.value)
 
     def get_transports(self) -> str:
         """Get the transports config for the backend.
@@ -231,10 +234,7 @@ class SocketTransports(Enum):
 
         # Get the transports from the config.
         config = utils.get_config()
-        if config.backend_transports == SocketTransports.TRANSPORTS:
-            return str(SocketTransports.TRANSPORTS)
-        else:
-            return json.dumps(config.backend_transports)
+        return str(config.backend_transports)
 
 
 class RouteArgType(SimpleNamespace):

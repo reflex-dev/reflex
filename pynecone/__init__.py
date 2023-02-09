@@ -9,7 +9,7 @@ from .components import *
 from .components.component import custom_component as component
 from .components.graphing.victory import data
 from .config import Config
-from .constants import Env
+from .constants import Env, Transports
 from .event import EventChain, console_log, redirect, window_alert
 from .middleware import Middleware
 from .model import Model, session
