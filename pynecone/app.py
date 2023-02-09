@@ -62,6 +62,9 @@ class App(Base):
         """
         super().__init__(*args, **kwargs)
 
+        # Get the config
+        config = utils.get_config()
+
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
@@ -71,12 +74,17 @@ class App(Base):
         # Set up the API.
         self.api = FastAPI()
 
+        # Set up CORS options.
+        cors_allowed_origins = config.cors_allowed_origins
+        if config.cors_allowed_origins == [constants.CORS_ALLOWED_ORIGINS]:
+            cors_allowed_origins = "*"
+
         # Set up the Socket.IO AsyncServer.
         self.sio = AsyncServer(
             async_mode="asgi",
-            cors_allowed_origins="*",
-            cors_credentials=True,
-            max_http_buffer_size=1000 * 1000,
+            cors_allowed_origins=cors_allowed_origins,
+            cors_credentials=config.cors_credentials,
+            max_http_buffer_size=config.polling_max_http_buffer_size,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.

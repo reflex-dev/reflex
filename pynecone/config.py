@@ -45,7 +45,7 @@ class Config(Base):
     ] = constants.Transports.POLLING_WEBSOCKET
 
     # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: Optional[list[str]] = [constants.CORS_ALLOWED_ORIGINS]
+    cors_allowed_origins: Optional[list] = [constants.CORS_ALLOWED_ORIGINS]
 
     # Whether credentials (cookies, authentication) are allowed in requests to the backend API.
     cors_credentials: Optional[bool] = True
