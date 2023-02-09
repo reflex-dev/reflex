@@ -40,7 +40,7 @@ class Config(Base):
     frontend_packages: List[str] = []
 
     # Backend transport methods.
-    backend_transports: Optional[list[str]] = constants.SocketTransports.TRANSPORTS
+    backend_transports: Optional[list[str]] = constants.SocketTransports.TRANSPORTS.value
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: Optional[list[str]] = [constants.CORS_ALLOWED_ORIGINS]

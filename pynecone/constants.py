@@ -210,7 +210,7 @@ class SocketEvent(Enum):
 class SocketTransports(Enum):
     """Socket events sent by the pynecone backend API."""
 
-    TRANSPORTS: list[str] = ["polling", "websocket"]
+    TRANSPORTS = ["polling", "websocket"]
 
     def __str__(self) -> str:
         """Get the string representation of the transports.

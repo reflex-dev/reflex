@@ -140,10 +140,13 @@ export const updateState = async (state, setState, result, setResult, router, so
  * @param endpoint The endpoint to connect to.
  */
 export const connect = async (socket, state, setState, result, setResult, router, endpoint, transports) => {
+  // Get backend URL object from the endpoint
+  const endpoint_url = new URL(endpoint)
   // Create the socket.
   socket.current = io(endpoint, {
-    path: "/event",
+    path: endpoint_url['pathname'],
     transports: transports,
+    autoUnref: false,
   });
 
   // Once the socket is open, hydrate the page.

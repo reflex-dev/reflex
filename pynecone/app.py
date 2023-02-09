@@ -82,17 +82,17 @@ class App(Base):
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         self.socket_app = ASGIApp(
             self.sio,
-            socketio_path=str(constants.Endpoint.EVENT)
+            socketio_path=""
         )
 
-        # Create the event namespace and attach the main app. Not related to the path above.
+        # Create the event namespace and attach the main app. Not related to any paths.
         event_namespace = EventNamespace("/event", self)
 
         # Register the event namespace with the socket.
         self.sio.register_namespace(event_namespace)
 
         # Mount the socket app with the API.
-        self.api.mount("/", self.socket_app)
+        self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
