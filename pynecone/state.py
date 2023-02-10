@@ -3,17 +3,17 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import cloudpickle
 import traceback
 from abc import ABC
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set, Type
 
+import cloudpickle
 from redis import Redis
 
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, Var, PCList
+from pynecone.var import BaseVar, ComputedVar, PCList, Var
 
 Delta = Dict[str, Any]
 

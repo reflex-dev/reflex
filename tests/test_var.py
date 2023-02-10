@@ -1,10 +1,10 @@
 from typing import Dict, List
 
-import pytest
 import cloudpickle
+import pytest
 
 from pynecone.base import Base
-from pynecone.var import BaseVar, Var, PCList
+from pynecone.var import BaseVar, PCList, Var
 
 test_vars = [
     BaseVar(name="prop1", type_=int),
