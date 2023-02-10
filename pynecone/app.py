@@ -429,6 +429,7 @@ class EventNamespace(AsyncNamespace):
         event = Event.parse_raw(data)
 
         # Get the event environment.
+        assert self.app.sio is not None
         environ = self.app.sio.get_environ(sid, self.namespace)
 
         # Get the client headers.
