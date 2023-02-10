@@ -37,6 +37,7 @@ httpx = "^0.23.1"
 python-socketio = "^5.7.2"
 psutil = "^5.9.4"
 websockets = "^10.4"
+cloudpickle = "^2.2.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
