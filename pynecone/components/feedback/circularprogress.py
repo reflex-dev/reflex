@@ -1,5 +1,6 @@
 """Container to stack elements with spacing."""
 
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -32,6 +33,23 @@ class CircularProgress(ChakraComponent):
 
     # The desired valueText to use in place of the value.
     value_text: Var[str]
+
+    @classmethod
+    def create(cls, label=None, *children, **props) -> Component:
+        """Create a circular progress component.
+
+        Args:
+            label: A label to add in the circular progress. Defaults to None.
+
+        Returns:
+            The circular progress component.
+        """
+        if len(children) == 0:
+            children = []
+
+            if label:
+                children.append(CircularProgressLabel.create(label))
+        return super().create(*children, **props)
 
 
 class CircularProgressLabel(ChakraComponent):
