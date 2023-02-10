@@ -1,3 +1,8 @@
+# type: ignore
+# For now, the langurage server can't detect our component functions
+# which is dynamiclly created, so you will face some "Module is not callable" warning.
+# This line will disable type checking for this file to slient these noise.
+# We are working on this problem, stay tuned :)
 """Welcome to Pynecone! This file outlines the steps to create a basic app."""
 from pcconfig import config
 
@@ -13,7 +18,7 @@ class State(pc.State):
     pass
 
 
-def index():
+def index() -> None:
     return pc.center(
         pc.vstack(
             pc.heading("Welcome to Pynecone!", font_size="2em"),
