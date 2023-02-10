@@ -151,7 +151,13 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 def export(
     zipping: bool = typer.Option(
         True, "--no-zip", help="Disable zip for backend and frontend exports."
-    )
+    ),
+    frontend: bool = typer.Option(
+        True, "--backend-only", help="Export only backend.", show_default=False
+    ),
+    backend: bool = typer.Option(
+        True, "--frontend-only", help="Export only frontend.", show_default=False
+    ),
 ):
     """Export the app to a zip file."""
     # Get the app config.
@@ -161,7 +167,7 @@ def export(
     # Compile the app in production mode and export it.
     utils.console.rule("[bold]Compiling production app and preparing for export.")
     app = utils.get_app().app
-    utils.export_app(app, zip=zipping)
+    utils.export_app(app, backend=backend, frontend=frontend, zip=zipping)
     if zipping:
         utils.console.rule(
             """Backend & Frontend compiled. See [green bold]backend.zip[/green bold] 
