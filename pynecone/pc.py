@@ -141,10 +141,10 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
     # Upload the frontend and backend.
     with open(constants.FRONTEND_ZIP, "rb") as f:
-        response = httpx.put(frontend, data=f)  # type: ignore
+        httpx.put(frontend, data=f)  # type: ignore
 
     with open(constants.BACKEND_ZIP, "rb") as f:
-        response = httpx.put(backend, data=f)  # type: ignore
+        httpx.put(backend, data=f)  # type: ignore
 
 
 @cli.command()

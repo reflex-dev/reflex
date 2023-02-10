@@ -821,7 +821,7 @@ class PCList(list):
             kargs: The kwargs passed.
         """
         super().extend(*args, **kargs)
-        self._reassign_field()
+        self._reassign_field() if hasattr(self, "_reassign_field") else None
 
     def pop(self, *args, **kargs):
         """Remove an element.
