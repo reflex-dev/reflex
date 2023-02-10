@@ -620,8 +620,8 @@ class State(Base, ABC):
             k: v.dict(include_computed=include_computed, **kwargs)
             for k, v in self.substates.items()
         }
-        vars = {**base_vars, **computed_vars, **substate_vars}
-        return {k: vars[k] for k in sorted(vars)}
+        variables = {**base_vars, **computed_vars, **substate_vars}
+        return {k: variables[k] for k in sorted(variables)}
 
 
 class DefaultState(State):
