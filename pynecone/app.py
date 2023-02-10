@@ -36,7 +36,7 @@ class App(Base):
     sio: Optional[AsyncServer] = None
 
     # The socket app.
-    socket_app: ASGIApp = None
+    socket_app: Optional[ASGIApp] = None
 
     # The state class to use for the app.
     state: Type[State] = DefaultState
@@ -50,7 +50,7 @@ class App(Base):
     # Middleware to add to the app.
     middleware: List[Middleware] = []
 
-    # Events handlers to trigger when a page loads.
+    # Event handlers to trigger when a page loads.
     load_events: Dict[str, EventHandler] = {}
 
     def __init__(self, *args, **kwargs):
