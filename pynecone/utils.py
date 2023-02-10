@@ -512,7 +512,7 @@ def export_app(
             nt_export(backend, frontend)
 
 
-def nt_export(backend, frontend):
+def nt_export(backend: bool = True, frontend: bool = True):
     """Export for nt (Windows) systems.
 
     Args:
@@ -528,7 +528,7 @@ def nt_export(backend, frontend):
         os.system(cmd)
 
 
-def posix_export(backend, frontend):
+def posix_export(backend: bool = True, frontend: bool = True):
     """Export for posix (Linux, OSX) systems.
 
     Args:
