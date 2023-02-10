@@ -631,7 +631,8 @@ def test_get_sid(test_state):
     """Test getting session id.
 
     Args:
-        test_state: A state."""
+        test_state: A state.
+    """
     assert test_state.get_sid() == ""
 
     sid = "9fpxSzPb9aFMb4wFAAAH"
@@ -644,7 +645,8 @@ def test_get_headers(test_state):
     """Test getting client headers.
 
     Args:
-        test_state: A state."""
+        test_state: A state.
+    """
     assert test_state.get_headers() == {}
 
     headers = {"host": "localhost:8000", "connection": "keep-alive"}
@@ -657,7 +659,8 @@ def test_get_client_ip(test_state):
     """Test getting client IP.
 
     Args:
-        test_state: A state."""
+        test_state: A state.
+    """
     assert test_state.get_client_ip() == ""
 
     client_ip = "127.0.0.1"
