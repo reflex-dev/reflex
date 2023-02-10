@@ -38,3 +38,17 @@ class Config(Base):
 
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
+
+    # Backend transport methods.
+    backend_transports: Optional[
+        constants.Transports
+    ] = constants.Transports.POLLING_WEBSOCKET
+
+    # List of origins that are allowed to connect to the backend API.
+    cors_allowed_origins: Optional[list] = [constants.CORS_ALLOWED_ORIGINS]
+
+    # Whether credentials (cookies, authentication) are allowed in requests to the backend API.
+    cors_credentials: Optional[bool] = True
+
+    # The maximum size of a message when using the polling backend transport.
+    polling_max_http_buffer_size: Optional[int] = constants.POLLING_MAX_HTTP_BUFFER_SIZE

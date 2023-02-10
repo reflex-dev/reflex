@@ -206,6 +206,36 @@ class SocketEvent(Enum):
         return str(self.value)
 
 
+class Transports(Enum):
+    """Socket transports used by the pynecone backend API."""
+
+    POLLING_WEBSOCKET = "['polling', 'websocket']"
+    WEBSOCKET_POLLING = "['websocket', 'polling']"
+    WEBSOCKET_ONLY = "['websocket']"
+    POLLING_ONLY = "['polling']"
+
+    def __str__(self) -> str:
+        """Get the string representation of the transports.
+
+        Returns:
+            The transports string.
+        """
+        return str(self.value)
+
+    def get_transports(self) -> str:
+        """Get the transports config for the backend.
+
+        Returns:
+            The transports config for the backend.
+        """
+        # Import here to avoid circular imports.
+        from pynecone import utils
+
+        # Get the transports from the config.
+        config = utils.get_config()
+        return str(config.backend_transports)
+
+
 class RouteArgType(SimpleNamespace):
     """Type of dynamic route arg extracted from URI route."""
 
@@ -217,8 +247,11 @@ class RouteArgType(SimpleNamespace):
 class RouteVar(SimpleNamespace):
     """Names of variables used in the router_data dict stored in State."""
 
+    CLIENT_IP = "ip"
     CLIENT_TOKEN = "token"
+    HEADERS = "headers"
     PATH = "pathname"
+    SESSION_ID = "sid"
     QUERY = "query"
 
 
@@ -245,3 +278,7 @@ DESCRIPTION_404 = "The page was not found"
 USE_COLOR_MODE = "useColorMode"
 COLOR_MODE = "colorMode"
 TOGGLE_COLOR_MODE = "toggleColorMode"
+
+# Server socket configuration variables
+CORS_ALLOWED_ORIGINS = "*"
+POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000

@@ -165,7 +165,7 @@ USE_EFFECT = join(
         "    return;",
         "  }}",
         f"  if (!{SOCKET}.current) {{{{",
-        f"    connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT})",
+        f"    connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT}, {{transports}})",
         "  }}",
         "  const update = async () => {{",
         f"    if ({RESULT}.{STATE} != null) {{{{",
