@@ -702,3 +702,4 @@ def test_add_var(test_state):
     test_state.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
+
