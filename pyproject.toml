@@ -42,11 +42,10 @@ pytest = "^7.1.2"
 pytest-mock = "^3.10.0"
 pyright = "^1.1.229"
 darglint = "^1.8.1"
-pydocstyle = "^6.1.1"
 toml = "^0.10.2"
-isort = "^5.10.1"
 pytest-asyncio = "^0.20.1"
 black = "^22.10.0"
+ruff = "^0.0.244"
 
 [tool.poetry.scripts]
 pc = "pynecone.pc:main"
@@ -56,3 +55,17 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
+
+[tool.ruff]
+
+select = ["B", "D", "E", "F", "I", "SIM", "W"]
+
+ignore = ["B008", "D203", "D205", "D213", "D401", "D406", "D407", "E501", "F403", "F405", "F541"]
+
+target-version = "py37"
+
+[tool.ruff.per-file-ignores]
+
+"__init__.py" = ["F401"]
+"tests/*.py" = ["D100", "D103", "D104"]
+"pynecone/.templates/*.py" = ["D100", "D103", "D104"]

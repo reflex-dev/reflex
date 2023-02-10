@@ -13,7 +13,7 @@ from pynecone.components.typography.text import Text
 @pytest.fixture
 def cond_state(request):
     class CondState(pc.State):
-        value: request.param["value_type"] = request.param["value"]
+        value: request.param["value_type"] = request.param["value"]  # noqa
 
     return CondState
 
@@ -28,7 +28,7 @@ def cond_state(request):
     indirect=True,
 )
 def test_validate_cond(cond_state: pc.Var):
-    """Test if cond can be a pc.Val with any values
+    """Test if cond can be a pc.Val with any values.
 
     Args:
         cond_state: A fixture.
@@ -71,18 +71,18 @@ def test_prop_cond(c1: Any, c2: Any):
     assert isinstance(prop_cond, PropCond)
     assert prop_cond.prop1 == c1
     assert prop_cond.prop2 == c2
-    assert prop_cond.cond == True
+    assert prop_cond.cond == True  # noqa
 
 
 def test_cond_no_else():
-    """Test if cond can be used without else"""
+    """Test if cond can be used without else."""
     # Components should support the use of cond without else
     comp = cond(True, Text.create("hello"))
     assert isinstance(comp, Cond)
-    assert comp.cond == True
+    assert comp.cond == True  # noqa
     assert comp.comp1 == Text.create("hello")
     assert comp.comp2 == Fragment.create()
 
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
-        prop_cond = cond(True, "hello")
+        cond(True, "hello")

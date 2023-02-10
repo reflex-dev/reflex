@@ -3,8 +3,17 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from typing import _GenericAlias  # type: ignore
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    _GenericAlias,  # type: ignore
+)
 
 from plotly.graph_objects import Figure
 from plotly.io import to_json
@@ -61,7 +70,7 @@ class Var(ABC):
 
         # Special case for plotly figures.
         if isinstance(value, Figure):
-            value = json.loads(to_json(value))["data"]
+            value = json.loads(to_json(value))["data"]  # type: ignore
             type_ = Figure
 
         name = value if isinstance(value, str) else json.dumps(value)

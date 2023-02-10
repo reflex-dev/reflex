@@ -1,6 +1,6 @@
 """A heading component."""
 
-from typing import List, Union
+from typing import List
 
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var

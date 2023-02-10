@@ -6,7 +6,6 @@ from pynecone import constants, utils
 from pynecone.event import EventChain
 from pynecone.var import BaseVar, Var
 
-
 toggle_color_mode = BaseVar(name=constants.TOGGLE_COLOR_MODE, type_=EventChain)
 
 

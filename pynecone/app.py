@@ -33,7 +33,7 @@ class App(Base):
     api: FastAPI = None  # type: ignore
 
     # The Socket.IO AsyncServer.
-    sio: AsyncServer = None
+    sio: Optional[AsyncServer] = None
 
     # The socket app.
     socket_app: ASGIApp = None
