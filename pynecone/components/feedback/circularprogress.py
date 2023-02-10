@@ -35,11 +35,13 @@ class CircularProgress(ChakraComponent):
     value_text: Var[str]
 
     @classmethod
-    def create(cls, label=None, *children, **props) -> Component:
+    def create(cls, *children, label=None, **props) -> Component:
         """Create a circular progress component.
 
         Args:
+            children: the children of the component.
             label: A label to add in the circular progress. Defaults to None.
+            props: the props of the component.
 
         Returns:
             The circular progress component.
