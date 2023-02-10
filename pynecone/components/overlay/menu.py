@@ -70,22 +70,26 @@ class Menu(ChakraComponent):
         return super().get_triggers() | {"on_close", "on_open"}
 
     @classmethod
-    def create(cls, *children, items=None, **props) -> Component:
+    def create(cls, *children, button=None, items=None, **props) -> Component:
         """Create a menu component.
 
         Args:
             children: The children of the component.
-            items (list): The item of the menu.
+            button: the button that open the menu.
+            items (list): The items of the menu.
             props: The properties of the component.
 
         Returns:
             The menu component.
         """
         if len(children) == 0:
-            button = MenuButton.create(*props.pop("button"))
+            children = []
+
+            if button:
+                children.append(MenuButton.create(button))
             if not items:
                 items = []
-            children = [button, MenuList.create(*items)]
+            children.append(MenuList.create(*items))
         return super().create(*children, **props)
 
 
