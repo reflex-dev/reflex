@@ -13,7 +13,7 @@ from redis import Redis
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, PCList, Var
+from pynecone.var import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
 
@@ -353,6 +353,30 @@ class State(Base, ABC):
             The token of the client.
         """
         return self.router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+
+    def get_sid(self) -> str:
+        """Return the session ID of the client associated with this state.
+
+        Returns:
+            The session ID of the client.
+        """
+        return self.router_data.get(constants.RouteVar.SESSION_ID, "")
+
+    def get_headers(self) -> Dict:
+        """Return the headers of the client associated with this state.
+
+        Returns:
+            The headers of the client.
+        """
+        return self.router_data.get(constants.RouteVar.HEADERS, {})
+
+    def get_client_ip(self) -> str:
+        """Return the IP of the client associated with this state.
+
+        Returns:
+            The IP of the client.
+        """
+        return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
 
     def get_current_page(self) -> str:
         """Obtain the path of current page from the router data.

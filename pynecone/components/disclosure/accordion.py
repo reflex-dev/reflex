@@ -1,8 +1,8 @@
 """Container to stack elements with spacing."""
 
 from typing import List, Optional, Union
-from pynecone.components.component import Component
 
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 

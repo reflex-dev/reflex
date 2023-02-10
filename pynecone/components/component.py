@@ -5,7 +5,7 @@ from __future__ import annotations
 import typing
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from pynecone import constants, utils
 from pynecone.base import Base
@@ -43,6 +43,9 @@ class Component(Base, ABC):
 
     # A unique key for the component.
     key: Any = None
+
+    # The id for the component.
+    id: Any = None
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -162,6 +165,9 @@ class Component(Base, ABC):
         Raises:
             ValueError: If the value is not a valid event chain.
         """
+        # Check if the trigger is a controlled event.
+        is_controlled_event = event_trigger in self.get_controlled_triggers()
+
         # If it's an event chain var, return it.
         if isinstance(value, Var):
             if value.type_ is not EventChain:
@@ -179,8 +185,19 @@ class Component(Base, ABC):
             events = []
             for v in value:
                 if isinstance(v, EventHandler):
-                    events.append(utils.call_event_handler(v, arg))
+                    # Call the event handler to get the event.
+                    event = utils.call_event_handler(v, arg)
+
+                    # Check that the event handler takes no args if it's uncontrolled.
+                    if not is_controlled_event and len(event.args) > 0:
+                        raise ValueError(
+                            f"Event handler: {v.fn} for uncontrolled event {event_trigger} should not take any args."
+                        )
+
+                    # Add the event to the chain.
+                    events.append(event)
                 elif isinstance(v, Callable):
+                    # Call the lambda to get the event chain.
                     events.extend(utils.call_event_fn(v, arg))
                 else:
                     raise ValueError(f"Invalid event: {v}")
@@ -194,7 +211,7 @@ class Component(Base, ABC):
             raise ValueError(f"Invalid event chain: {value}")
 
         # Add args to the event specs if necessary.
-        if event_trigger in self.get_controlled_triggers():
+        if is_controlled_event:
             events = [
                 EventSpec(
                     handler=e.handler,
@@ -275,7 +292,7 @@ class Component(Base, ABC):
 
         # Special case for props named `type_`.
         if hasattr(self, "type_"):
-            props["type"] = getattr(self, "type_")
+            props["type"] = self.type_  # type: ignore
 
         return tag.add_props(**props)
 
@@ -360,7 +377,9 @@ class Component(Base, ABC):
         """
         tag = self._render()
         return str(
-            tag.add_props(**self.event_triggers, key=self.key, sx=self.style).set(
+            tag.add_props(
+                **self.event_triggers, key=self.key, sx=self.style, id=self.id
+            ).set(
                 contents=utils.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
                 ).strip(),

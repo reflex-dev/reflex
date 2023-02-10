@@ -1,8 +1,8 @@
 """Menu components."""
 
 from typing import Set
-from pynecone.components.component import Component
 
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 

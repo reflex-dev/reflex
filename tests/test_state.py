@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 import pytest
+from plotly.graph_objects import Figure
 
 from pynecone import utils
 from pynecone.base import Base
@@ -8,7 +9,6 @@ from pynecone.constants import RouteVar
 from pynecone.event import Event
 from pynecone.state import State
 from pynecone.var import BaseVar, ComputedVar
-from plotly.graph_objects import Figure
 
 
 class Object(Base):
@@ -627,6 +627,48 @@ def test_get_token(test_state):
     assert test_state.get_token() == token
 
 
+def test_get_sid(test_state):
+    """Test getting session id.
+
+    Args:
+        test_state: A state.
+    """
+    assert test_state.get_sid() == ""
+
+    sid = "9fpxSzPb9aFMb4wFAAAH"
+    test_state.router_data = {RouteVar.SESSION_ID: sid}
+
+    assert test_state.get_sid() == sid
+
+
+def test_get_headers(test_state):
+    """Test getting client headers.
+
+    Args:
+        test_state: A state.
+    """
+    assert test_state.get_headers() == {}
+
+    headers = {"host": "localhost:8000", "connection": "keep-alive"}
+    test_state.router_data = {RouteVar.HEADERS: headers}
+
+    assert test_state.get_headers() == headers
+
+
+def test_get_client_ip(test_state):
+    """Test getting client IP.
+
+    Args:
+        test_state: A state.
+    """
+    assert test_state.get_client_ip() == ""
+
+    client_ip = "127.0.0.1"
+    test_state.router_data = {RouteVar.CLIENT_IP: client_ip}
+
+    assert test_state.get_client_ip() == client_ip
+
+
 def test_get_current_page(test_state):
     assert test_state.get_current_page() == ""
 
@@ -651,7 +693,7 @@ def test_add_var(test_state):
 
     test_state.add_var("dynamic_list", List[int], [5, 10])
     assert test_state.dynamic_list == [5, 10]
-    assert getattr(test_state, "dynamic_list") == [5, 10]
+    assert test_state.dynamic_list == [5, 10]
 
     # how to test that one?
     # test_state.dynamic_list.append(15)
@@ -659,4 +701,4 @@ def test_add_var(test_state):
 
     test_state.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
-    assert getattr(test_state, "dynamic_dict") == {"k1": 5, "k2": 10}
+    assert test_state.dynamic_dict == {"k1": 5, "k2": 10}

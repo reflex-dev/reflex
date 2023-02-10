@@ -18,7 +18,6 @@ from collections import defaultdict
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT
 from types import ModuleType
-from typing import _GenericAlias  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,11 +28,12 @@ from typing import (
     Tuple,
     Type,
     Union,
+    _GenericAlias,  # type: ignore  # type: ignore
 )
-from typing import _GenericAlias  # type: ignore
 from urllib.parse import urlparse
-import psutil
+
 import plotly.graph_objects as go
+import psutil
 import typer
 import uvicorn
 from plotly.io import to_json
@@ -298,7 +298,7 @@ def get_config() -> Config:
     try:
         return __import__(constants.CONFIG_MODULE).config
     except ImportError:
-        return Config(app_name="")
+        return Config(app_name="")  # type: ignore
 
 
 def check_node_version(min_version):
@@ -319,7 +319,7 @@ def check_node_version(min_version):
         version = result.stdout.decode().strip().split("v")[1]
         # Compare the version numbers
         return version.split(".") >= min_version.split(".")
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -475,10 +475,12 @@ def is_latest_template() -> bool:
     Returns:
         Whether the app is using the latest template.
     """
-    template_version = open(constants.PCVERSION_TEMPLATE_FILE).read()
+    with open(constants.PCVERSION_TEMPLATE_FILE) as f:  # type: ignore
+        template_version = f.read()
     if not os.path.exists(constants.PCVERSION_APP_FILE):
         return False
-    app_version = open(constants.PCVERSION_APP_FILE).read()
+    with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
+        app_version = f.read()
     return app_version >= template_version
 
 
@@ -500,7 +502,10 @@ def export_app(app: App, zip: bool = False):
 
     # Zip up the app.
     if zip:
-        cmd = r"cd .web/_static && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
+        if os.name == "posix":
+            cmd = r"cd .web/_static && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
+        if os.name == "nt":
+            cmd = r'''powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip -Force;cd ..\..;Get-ChildItem .\* -Directory  | where {`$_.Name -notin @('.web', 'assets', 'frontend.zip', 'backend.zip')} | Compress-Archive -DestinationPath backend.zip -Update"'''
         os.system(cmd)
 
 
@@ -1146,7 +1151,7 @@ def format_state(value: Any) -> Dict:
 
     # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
-        return json.loads(to_json(value))["data"]
+        return json.loads(to_json(value))["data"]  # type: ignore
 
     # Convert pandas dataframes to JSON.
     if is_dataframe(type(value)):
@@ -1235,16 +1240,43 @@ def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
     Raises:
         ValueError: If the lambda has an invalid signature.
     """
+    # Import here to avoid circular imports.
+    from pynecone.event import EventHandler, EventSpec
+
+    # Get the args of the lambda.
     args = inspect.getfullargspec(fn).args
+
+    # Call the lambda.
     if len(args) == 0:
         out = fn()
     elif len(args) == 1:
         out = fn(arg)
     else:
         raise ValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+
+    # Convert the output to a list.
     if not isinstance(out, List):
         out = [out]
-    return out
+
+    # Convert any event specs to event specs.
+    events = []
+    for e in out:
+        # Convert handlers to event specs.
+        if isinstance(e, EventHandler):
+            if len(args) == 0:
+                e = e()
+            elif len(args) == 1:
+                e = e(arg)
+
+        # Make sure the event spec is valid.
+        if not isinstance(e, EventSpec):
+            raise ValueError(f"Lambda {fn} returned an invalid event spec: {e}.")
+
+        # Add the event spec to the chain.
+        events.append(e)
+
+    # Return the events.
+    return events
 
 
 def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], ...]:
@@ -1258,11 +1290,11 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
         The handler args.
 
     Raises:
-        TypeError: If the event handler has an invalid signature.
+        ValueError: If the event handler has an invalid signature.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
     if len(args) < 2:
-        raise TypeError(
+        raise ValueError(
             f"Event handler has an invalid signature, needed a method with a parameter, got {event_spec.handler}."
         )
     return event_spec.args if len(args) > 2 else ((args[1], arg.name),)

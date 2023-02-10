@@ -3,8 +3,8 @@ from typing import Any
 import pytest
 
 from pynecone.components.tags.tag import PropCond
-from pynecone.var import BaseVar, Var
 from pynecone.utils import wrap
+from pynecone.var import BaseVar
 
 
 @pytest.mark.parametrize(
@@ -16,7 +16,7 @@ from pynecone.utils import wrap
     ],
 )
 def test_validate_propcond(prop1: Any, prop2: Any):
-    """Test the creation of conditional props
+    """Test the creation of conditional props.
 
     Args:
         prop1: truth condition value

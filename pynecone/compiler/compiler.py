@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, List, Set, Tuple, Type
+from typing import Callable, List, Set, Tuple, Type
 
 from pynecone import constants
 from pynecone.compiler import templates, utils

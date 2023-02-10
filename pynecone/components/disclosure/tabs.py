@@ -54,7 +54,7 @@ class Tabs(ChakraComponent):
             for label, panel in items:
                 tabs.append(Tab.create(label))
                 panels.append(TabPanel.create(panel))
-            children = [TabList.create(*tabs), TabPanels.create(*panels)]
+            children = [TabList.create(*tabs), TabPanels.create(*panels)]  # type: ignore
         return super().create(*children, **props)
 
 

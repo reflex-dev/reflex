@@ -1,10 +1,8 @@
-import platform
 from typing import Dict
 
 import pytest
 
-from pynecone.components import Box
-from pynecone.components.tags import CondTag, IterTag, Tag
+from pynecone.components.tags import CondTag, Tag
 from pynecone.components.tags.tag import PropCond
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
@@ -144,7 +142,6 @@ def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
         expected: The expected formatted tag.
         windows_platform: Whether the system is windows.
     """
-
     expected = expected.replace("\n", "\r\n") if windows_platform else expected
     assert str(tag) == expected
 

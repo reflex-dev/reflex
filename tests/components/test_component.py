@@ -15,6 +15,12 @@ def TestState():
     class TestState(State):
         num: int
 
+        def do_something(self):
+            pass
+
+        def do_something_arg(self, arg):
+            pass
+
     return TestState
 
 
@@ -27,7 +33,6 @@ def component1() -> Type[Component]:
     """
 
     class TestComponent1(Component):
-
         # A test string prop.
         text: Var[str]
 
@@ -52,7 +57,6 @@ def component2() -> Type[Component]:
     """
 
     class TestComponent2(Component):
-
         # A test list prop.
         arr: Var[List[str]]
 
@@ -301,3 +305,35 @@ def test_custom_component_hash(my_component):
     component1 = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     component2 = CustomComponent(component_fn=my_component, prop1="test", prop2=2)
     assert {component1, component2} == {component1}
+
+
+def test_invalid_event_handler_args(component2, TestState):
+    """Test that an invalid event handler raises an error.
+
+    Args:
+        component2: A test component.
+        TestState: A test state.
+    """
+    # Uncontrolled event handlers should not take args.
+    # This is okay.
+    component2.create(on_click=TestState.do_something)
+    # This is not okay.
+    with pytest.raises(ValueError):
+        component2.create(on_click=TestState.do_something_arg)
+    # However lambdas are okay.
+    component2.create(on_click=lambda: TestState.do_something_arg(1))
+    component2.create(
+        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something]
+    )
+    component2.create(
+        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something()]
+    )
+
+    # Controlled event handlers should take args.
+    # This is okay.
+    component2.create(on_open=TestState.do_something_arg)
+    # This is not okay.
+    with pytest.raises(ValueError):
+        component2.create(on_open=TestState.do_something)
+    with pytest.raises(ValueError):
+        component2.create(on_open=[TestState.do_something_arg, TestState.do_something])

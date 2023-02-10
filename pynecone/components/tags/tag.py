@@ -82,16 +82,14 @@ class Tag(Base):
             return json.dumps(prop)
 
         elif isinstance(prop, Figure):
-            prop = json.loads(to_json(prop))["data"]
+            prop = json.loads(to_json(prop))["data"]  # type: ignore
 
         # For dictionaries, convert any properties to strings.
         else:
             if isinstance(prop, dict):
                 # Convert any var keys to strings.
                 prop = {
-                    key: str(val)
-                    if isinstance(val, Var) or isinstance(val, PropCond)
-                    else val
+                    key: str(val) if isinstance(val, (Var, PropCond)) else val
                     for key, val in prop.items()
                 }
 

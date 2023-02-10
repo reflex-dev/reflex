@@ -33,7 +33,10 @@ class App(Base):
     api: FastAPI = None  # type: ignore
 
     # The Socket.IO AsyncServer.
-    sio: AsyncServer = None
+    sio: Optional[AsyncServer] = None
+
+    # The socket app.
+    socket_app: Optional[ASGIApp] = None
 
     # The state class to use for the app.
     state: Type[State] = DefaultState
@@ -47,7 +50,7 @@ class App(Base):
     # Middleware to add to the app.
     middleware: List[Middleware] = []
 
-    # events handlers to trigger when a page load
+    # Event handlers to trigger when a page loads.
     load_events: Dict[str, EventHandler] = {}
 
     def __init__(self, *args, **kwargs):
@@ -59,6 +62,9 @@ class App(Base):
         """
         super().__init__(*args, **kwargs)
 
+        # Get the config
+        config = utils.get_config()
+
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
@@ -68,21 +74,30 @@ class App(Base):
         # Set up the API.
         self.api = FastAPI()
 
+        # Set up CORS options.
+        cors_allowed_origins = config.cors_allowed_origins
+        if config.cors_allowed_origins == [constants.CORS_ALLOWED_ORIGINS]:
+            cors_allowed_origins = "*"
+
         # Set up the Socket.IO AsyncServer.
-        self.sio = AsyncServer(async_mode="asgi", cors_allowed_origins="*")
+        self.sio = AsyncServer(
+            async_mode="asgi",
+            cors_allowed_origins=cors_allowed_origins,
+            cors_credentials=config.cors_credentials,
+            max_http_buffer_size=config.polling_max_http_buffer_size,
+        )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        socket_app = ASGIApp(self.sio, socketio_path=str(constants.Endpoint.EVENT))
+        self.socket_app = ASGIApp(self.sio, socketio_path="")
 
-        # Create the event namespace and attach the main app. Not related to the path above.
-        event_namespace = EventNamespace("/event")
-        event_namespace.app = self
+        # Create the event namespace and attach the main app. Not related to any paths.
+        event_namespace = EventNamespace("/event", self)
 
         # Register the event namespace with the socket.
         self.sio.register_namespace(event_namespace)
 
         # Mount the socket app with the API.
-        self.api.mount("/", socket_app)
+        self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
@@ -324,12 +339,17 @@ class App(Base):
         compiler.compile_components(custom_components)
 
 
-async def process(app: App, event: Event) -> StateUpdate:
+async def process(
+    app: App, event: Event, sid: str, headers: Dict, client_ip: str
+) -> StateUpdate:
     """Process an event.
 
     Args:
         app: The app to process the event for.
         event: The event to process.
+        sid: The Socket.IO session id.
+        headers: The client headers.
+        client_ip: The client_ip.
 
     Returns:
         The state update after processing the event.
@@ -337,12 +357,15 @@ async def process(app: App, event: Event) -> StateUpdate:
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
-    # pass router_data to the state of the App
+    # Pass router_data to the state of the App.
     state.router_data = event.router_data
     # also pass router_data to all substates
     for _, substate in state.substates.items():
         substate.router_data = event.router_data
     state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
+    state.router_data[constants.RouteVar.SESSION_ID] = sid
+    state.router_data[constants.RouteVar.HEADERS] = headers
+    state.router_data[constants.RouteVar.CLIENT_IP] = client_ip
 
     # Preprocess the event.
     pre = app.preprocess(state, event)
@@ -365,8 +388,18 @@ async def process(app: App, event: Event) -> StateUpdate:
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
-    # The backend API object.
+    # The application object.
     app: App
+
+    def __init__(self, namespace: str, app: App):
+        """Initialize the event namespace.
+
+        Args:
+            namespace: The namespace.
+            app: The application object.
+        """
+        super().__init__(namespace)
+        self.app = app
 
     def on_connect(self, sid, environ):
         """Event for when the websocket disconnects.
@@ -395,8 +428,21 @@ class EventNamespace(AsyncNamespace):
         # Get the event.
         event = Event.parse_raw(data)
 
+        # Get the event environment.
+        assert self.app.sio is not None
+        environ = self.app.sio.get_environ(sid, self.namespace)
+
+        # Get the client headers.
+        headers = {
+            k.decode("utf-8"): v.decode("utf-8")
+            for (k, v) in environ["asgi.scope"]["headers"]
+        }
+
+        # Get the client IP
+        client_ip = environ["REMOTE_ADDR"]
+
         # Process the event.
-        update = await process(self.app, event)
+        update = await process(self.app, event, sid, headers, client_ip)
 
         # Emit the event.
         await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)

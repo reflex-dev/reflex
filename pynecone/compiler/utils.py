@@ -8,6 +8,7 @@ from pynecone import constants, utils
 from pynecone.compiler import templates
 from pynecone.components.base import (
     Body,
+    ColorModeScript,
     Description,
     DocumentHead,
     Head,
@@ -17,7 +18,6 @@ from pynecone.components.base import (
     Main,
     Script,
     Title,
-    ColorModeScript,
 )
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.state import State
@@ -150,7 +150,10 @@ def compile_effects(state: Type[State]) -> str:
     """
     state_name = state.get_name()
     set_state = templates.format_state_setter(state_name)
-    return templates.USE_EFFECT(state=state_name, set_state=set_state)
+    transports = constants.Transports.POLLING_WEBSOCKET.get_transports()
+    return templates.USE_EFFECT(
+        state=state_name, set_state=set_state, transports=transports
+    )
 
 
 def compile_render(component: Component) -> str:
