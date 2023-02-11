@@ -369,13 +369,17 @@ class Component(Base, ABC):
             child.add_style(style)
         return self
 
-    def render(self) -> str:
+    def render(self, *args, **kwargs) -> str:
         """Render the component.
+
+        Args:
+            args: ordered arguments
+            kwargs: key word arguments
 
         Returns:
             The code to render the component.
         """
-        tag = self._render()
+        tag = self._render(*args, **kwargs)
         return str(
             tag.add_props(
                 **self.event_triggers, key=self.key, sx=self.style, id=self.id
