@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from pynecone.components.component import Component
+from pynecone.components.layout.foreach import Foreach
 from pynecone.components.layout.fragment import Fragment
 from pynecone.components.tags import CondTag, Tag
 from pynecone.var import Var
@@ -51,10 +52,16 @@ class Cond(Component):
             children=[comp1, comp2],
         )  # type: ignore
 
+    @staticmethod
+    def _render_comp(comp):
+        if isinstance(comp, Foreach):
+            return comp.render(wrapped_with_bracket=False)
+        return comp.render()
+
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
-            true_value=self.comp1.render(),
-            false_value=self.comp2.render(),
+            true_value=self._render_comp(self.comp1),
+            false_value=self._render_comp(self.comp2),
             is_nested=self.is_nested,
         )
