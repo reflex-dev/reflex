@@ -1,10 +1,12 @@
 from typing import Any
 
 import pytest
+import pytest_mock
 
 import pynecone as pc
 from pynecone.components import cond
 from pynecone.components.layout.cond import Cond
+from pynecone.components.layout.foreach import Foreach
 from pynecone.components.layout.fragment import Fragment
 from pynecone.components.tags.tag import PropCond
 from pynecone.components.typography.text import Text
@@ -86,3 +88,21 @@ def test_cond_no_else():
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
         cond(True, "hello")
+
+
+def test_cond_foreach(mocker: pytest_mock.MockFixture):
+    var_name = "abc"
+    mocker.patch("pynecone.utils.get_unique_variable_name", return_value=var_name)
+
+    cond_component = Cond.create(
+        True,  # pyright: reportGeneralTypeIssues=false
+        Foreach.create(
+            ["Tommy", "is", "cool"],  # pyright: reportGeneralTypeIssues=false
+            lambda x: Text.create(x),
+        ),
+        Text.create("anything else"),
+    )
+
+    assert str(cond_component) == (
+        f'{{true ? ["Tommy", "is", "cool"].map(({var_name}, i) => <Text key={{i}}>{{{var_name}}}</Text>) : <Text>{{`anything else`}}</Text>}}'
+    )
