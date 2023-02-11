@@ -14,6 +14,7 @@ from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
+from pynecone.components.layout import Fragment
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -217,7 +218,10 @@ class App(Base):
 
         # Generate the component if it is a callable.
         component = component if isinstance(component, Component) else component()
-
+        
+        if isinstance(component, tuple):
+            component = Fragment(*component)
+        
         # Add meta information to the component.
         compiler_utils.add_meta(
             component, title=title, image=image, description=description
