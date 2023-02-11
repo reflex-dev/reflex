@@ -1066,6 +1066,19 @@ def format_event(event_spec: EventSpec) -> str:
     return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 
+def format_query_params(router_data: Dict[str, Any]):
+    """Convert back query params name to python-friendly case.
+
+    Args:
+        router_data: the router_data dict containing the query params
+
+    Returns:
+        The reformatted query params
+    """
+    params = router_data[constants.RouteVar.QUERY]
+    return {k.replace("-", "_"): v for k, v in params.items()}
+
+
 USED_VARIABLES = set()
 
 
