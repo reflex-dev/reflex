@@ -1,5 +1,4 @@
 """The route decorator and associated variables."""
-from functools import wraps
 
 DECORATED_ROUTES = []
 
