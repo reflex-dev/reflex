@@ -1101,7 +1101,7 @@ def format_event(event_spec: EventSpec) -> str:
     return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 
-def format_query_params(router_data: Dict[str, Any]):
+def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     """Convert back query params name to python-friendly case.
 
     Args:
