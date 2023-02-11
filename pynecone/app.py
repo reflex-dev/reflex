@@ -13,6 +13,7 @@ from pynecone.components.component import Component, ComponentStyle
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
+from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 
 # Define custom types.
@@ -312,6 +313,9 @@ class App(Base):
         if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
+
+        for render, kwargs in DECORATED_ROUTES:
+            self.add_page(render, **kwargs)
 
         # Create the database models.
         if config.db_url is not None:
