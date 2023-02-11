@@ -1,7 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List
 
 from pynecone.components.component import Component
 from pynecone.components.tags import IterTag, Tag
