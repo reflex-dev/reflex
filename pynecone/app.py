@@ -308,14 +308,14 @@ class App(Base):
         Args:
             force_compile: Whether to force the app to compile.
         """
+        for render, kwargs in DECORATED_ROUTES:
+            self.add_page(render, **kwargs)
+
         # Get the env mode.
         config = utils.get_config()
         if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
-
-        for render, kwargs in DECORATED_ROUTES:
-            self.add_page(render, **kwargs)
 
         # Create the database models.
         if config.db_url is not None:
