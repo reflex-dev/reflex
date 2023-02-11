@@ -33,15 +33,15 @@ class Alert(ChakraComponent):
             The alert component.
         """
         if len(children) == 0:
-            contents = []
+            children = []
 
             if icon:
-                contents.append(AlertIcon.create())
+                children.append(AlertIcon.create())
 
-            contents.append(AlertTitle.create(title))
+            children.append(AlertTitle.create(title))
 
             if desc:
-                contents.append(AlertDescription.create(desc))
+                children.append(AlertDescription.create(desc))
 
         return super().create(*children, **props)
 

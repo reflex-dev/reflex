@@ -484,11 +484,15 @@ def is_latest_template() -> bool:
     return app_version >= template_version
 
 
-def export_app(app: App, zip: bool = False):
+def export_app(
+    app: App, backend: bool = True, frontend: bool = True, zip: bool = False
+):
     """Zip up the app for deployment.
 
     Args:
         app: The app.
+        backend: Whether to zip up the backend app.
+        frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
     """
     # Force compile the app.
@@ -503,9 +507,40 @@ def export_app(app: App, zip: bool = False):
     # Zip up the app.
     if zip:
         if os.name == "posix":
-            cmd = r"cd .web/_static && zip -r ../../frontend.zip ./* && cd ../.. && zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
+            posix_export(backend, frontend)
         if os.name == "nt":
-            cmd = r'''powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip -Force;cd ..\..;Get-ChildItem .\* -Directory  | where {`$_.Name -notin @('.web', 'assets', 'frontend.zip', 'backend.zip')} | Compress-Archive -DestinationPath backend.zip -Update"'''
+            nt_export(backend, frontend)
+
+
+def nt_export(backend: bool = True, frontend: bool = True):
+    """Export for nt (Windows) systems.
+
+    Args:
+        backend: Whether to zip up the backend app.
+        frontend: Whether to zip up the frontend app.
+    """
+    cmd = r""
+    if frontend:
+        cmd = r'''powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip -Force"'''
+        os.system(cmd)
+    if backend:
+        cmd = r'''powershell -Command "Get-ChildItem .\* -Directory  | where {`$_.Name -notin @('.web', 'assets', 'frontend.zip', 'backend.zip')} | Compress-Archive -DestinationPath backend.zip -Update"'''
+        os.system(cmd)
+
+
+def posix_export(backend: bool = True, frontend: bool = True):
+    """Export for posix (Linux, OSX) systems.
+
+    Args:
+        backend: Whether to zip up the backend app.
+        frontend: Whether to zip up the frontend app.
+    """
+    cmd = r""
+    if frontend:
+        cmd = r"cd .web/_static && zip -r ../../frontend.zip ./*"
+        os.system(cmd)
+    if backend:
+        cmd = r"zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
         os.system(cmd)
 
 
