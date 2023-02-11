@@ -160,10 +160,6 @@ def export(
     ),
 ):
     """Export the app to a zip file."""
-    # Get the app config.
-    config = utils.get_config()
-    config.api_url = utils.get_production_backend_url()
-
     # Compile the app in production mode and export it.
     utils.console.rule("[bold]Compiling production app and preparing for export.")
     app = utils.get_app().app
