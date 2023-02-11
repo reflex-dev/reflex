@@ -24,6 +24,10 @@ class IterTag(Tag):
     # The component render function for each item in the iterable.
     render_fn: Callable
 
+    # Whether the rendered js would be wrapped with {}
+    # Default to be True
+    wrapped_with_bracket: bool = True
+
     @staticmethod
     def get_index_var() -> Var:
         """Get the index var for the tag.
@@ -99,7 +103,13 @@ class IterTag(Tag):
         )
         index_arg = self.get_index_var_arg()
         component = self.render_component(self.render_fn, arg)
-        return utils.wrap(
-            f"{self.iterable.full_name}.map(({arg.name}, {index_arg}) => {component})",
-            "{",
+
+        to_wrap = (
+            f"{self.iterable.full_name}.map(({arg.name}, {index_arg})"
+            f" => {component})"
         )
+
+        if not self.wrapped_with_bracket:
+            return to_wrap
+
+        return utils.wrap(to_wrap, "{")

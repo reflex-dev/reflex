@@ -1,7 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Union
 
 from pynecone.components.component import Component
 from pynecone.components.tags import IterTag, Tag
@@ -41,5 +41,9 @@ class Foreach(Component):
             **props,
         )
 
-    def _render(self) -> Tag:
-        return IterTag(iterable=self.iterable, render_fn=self.render_fn)
+    def _render(self, wrapped_with_bracket=True) -> Tag:
+        return IterTag(
+            iterable=self.iterable,
+            render_fn=self.render_fn,
+            wrapped_with_bracket=wrapped_with_bracket,
+        )
