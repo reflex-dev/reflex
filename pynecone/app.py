@@ -12,7 +12,6 @@ from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
-from pynecone.model import Model
 from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 
@@ -317,10 +316,6 @@ class App(Base):
             print("Skipping compilation in non-dev mode.")
             return
 
-        # Create the database models.
-        if config.db_url is not None:
-            Model.create_all()
-
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
 
@@ -361,11 +356,14 @@ async def process(
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
+    formatted_params = utils.format_query_params(event.router_data)
+
     # Pass router_data to the state of the App.
     state.router_data = event.router_data
     # also pass router_data to all substates
     for _, substate in state.substates.items():
         substate.router_data = event.router_data
+    state.router_data[constants.RouteVar.QUERY] = formatted_params
     state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
     state.router_data[constants.RouteVar.SESSION_ID] = sid
     state.router_data[constants.RouteVar.HEADERS] = headers

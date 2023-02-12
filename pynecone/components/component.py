@@ -557,6 +557,14 @@ class CustomComponent(Component):
             custom_components |= self.get_component().get_custom_components(seen=seen)
         return custom_components
 
+    def _render(self) -> Tag:
+        """Define how to render the component in React.
+
+        Returns:
+            The tag to render.
+        """
+        return Tag(name=self.tag).add_props(**self.props)
+
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.
 
