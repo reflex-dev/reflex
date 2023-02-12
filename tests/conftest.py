@@ -95,7 +95,7 @@ def dict_mutation_state():
         details = {"name": "Tommy"}
 
         def add_age(self):
-            self.details.update({"age": 20})
+            self.details.update({"age": 20})  # type: ignore
 
         def change_name(self):
             self.details["name"] = "Jenny"

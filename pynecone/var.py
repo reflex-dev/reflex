@@ -849,18 +849,18 @@ class PCDict(dict):
 
     def __init__(
         self,
-        original_dict: dict,
+        original_dict: Dict,
         reassign_field: Callable = lambda _field_name: None,
         field_name: str = "",
     ):
-        """Initialize PCList.
+        """Initialize PCDict.
 
         Args:
-            original_dict (Dict): The original dict
-            reassign_field (Callable):
+            original_dict: The original dict
+            reassign_field:
                 The method in the parent state to reassign the field.
                 Default to be a no-op function
-            field_name (str): the name of field in the parent state
+            field_name: the name of field in the parent state
         """
         super().__init__(original_dict)
         self._reassign_field = lambda: reassign_field(field_name)
@@ -896,14 +896,14 @@ class PCDict(dict):
         super().pop(k, d)
         self._reassign_field()
 
-    def update(self, E=None, **F):
+    def update(self, *args, **kwargs):
         """update dict.
 
         Args:
-            E: E value.
-            F: F value.
+            args: The args passed.
+            kwargs: The kwargs passed.
         """
-        super().update(E, **F)
+        super().update(*args, **kwargs)
         self._reassign_field()
 
     def __setitem__(self, *args, **kwargs):
