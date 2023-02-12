@@ -219,8 +219,14 @@ class App(Base):
         # Generate the component if it is a callable.
         component = component if isinstance(component, Component) else component()
         
-        if isinstance(component, tuple):
-            component = Fragment(*component)
+        # If the returned component is iterable, wrap it in a Fragment component
+        if not isinstance(component, Component):    
+            try:
+                iter(component)
+            except:
+                pass
+            else:
+                component = Fragment(children = [i for i in component])
         
         # Add meta information to the component.
         compiler_utils.add_meta(
