@@ -158,11 +158,17 @@ def export(
     backend: bool = typer.Option(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
+    for_pc_deploy: bool = typer.Option(
+        False,
+        "--for-pc-deploy",
+        help="Whether export the app for Pynecone Deploy Service.",
+    ),
 ):
     """Export the app to a zip file."""
-    # Get the app config.
-    config = utils.get_config()
-    config.api_url = utils.get_production_backend_url()
+    if for_pc_deploy:
+        # Get the app config and modify the api_url base on username and app_name.
+        config = utils.get_config()
+        config.api_url = utils.get_production_backend_url()
 
     # Compile the app in production mode and export it.
     utils.console.rule("[bold]Compiling production app and preparing for export.")

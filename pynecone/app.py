@@ -352,11 +352,14 @@ async def process(
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
+    formatted_params = utils.format_query_params(event.router_data)
+
     # Pass router_data to the state of the App.
     state.router_data = event.router_data
     # also pass router_data to all substates
     for _, substate in state.substates.items():
         substate.router_data = event.router_data
+    state.router_data[constants.RouteVar.QUERY] = formatted_params
     state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
     state.router_data[constants.RouteVar.SESSION_ID] = sid
     state.router_data[constants.RouteVar.HEADERS] = headers
