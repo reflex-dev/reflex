@@ -70,7 +70,7 @@ jobs:
       run: poetry run pc init
     - name: Run Website
       working-directory: ./pcweb
-      run: timeout 1m poetry run pc run --env prod || exit 0
+      run: timeout 2m poetry run pc run --env prod || exit 0
     - name: Delete Poetry Environment
       run: poetry env remove --all
 
