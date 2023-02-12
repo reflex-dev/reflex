@@ -49,7 +49,6 @@ if TYPE_CHECKING:
     from pynecone.components.component import ImportDict
     from pynecone.config import Config
     from pynecone.event import Event, EventHandler, EventSpec
-    from pynecone.model import Model
     from pynecone.var import Var
 
 # Shorthand for join.
@@ -720,6 +719,9 @@ def setup_backend():
 
     Specifically ensures backend database is updated when running --no-frontend.
     """
+    # Import here to avoid circular imports.
+    from pynecone.model import Model
+
     config = get_config()
     if config.db_url is not None:
         Model.create_all()

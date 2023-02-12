@@ -12,6 +12,7 @@ from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
+from pynecone.model import Model
 from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 
@@ -315,6 +316,10 @@ class App(Base):
         if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
+
+        # Update models during hot reload.
+        if config.db_url is not None:
+            Model.create_all()
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
