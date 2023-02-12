@@ -10,8 +10,6 @@ class CircularProgress(ChakraComponent):
 
     tag = "CircularProgress"
 
-    color: Var[str]
-
     # If true, the cap of the progress indicator will be rounded.
     cap_is_round: Var[bool]
 
