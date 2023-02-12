@@ -159,6 +159,7 @@ class LogLevel(str, Enum):
 class Endpoint(Enum):
     """Endpoints for the pynecone backend API."""
 
+    PING = "ping"
     EVENT = "event"
 
     def __str__(self) -> str:
