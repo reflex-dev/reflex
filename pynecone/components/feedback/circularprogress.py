@@ -34,6 +34,9 @@ class CircularProgress(ChakraComponent):
     # The desired valueText to use in place of the value.
     value_text: Var[str]
 
+    # The color name of the progress bar
+    color: Var[str]
+
     @classmethod
     def create(cls, *children, label=None, **props) -> Component:
         """Create a circular progress component.
