@@ -1,6 +1,6 @@
 """A checkbox component."""
 
-from typing import Set
+from typing import Dict
 
 from pynecone.components.component import EVENT_ARG
 from pynecone.components.libs.chakra import ChakraComponent
@@ -46,22 +46,15 @@ class Checkbox(ChakraComponent):
     spacing: Var[str]
 
     @classmethod
-    def get_controlled_triggers(cls) -> Set[str]:
+    def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
-            The controlled event triggers.
+            A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {"on_change"}
-
-    @classmethod
-    def get_controlled_value(cls) -> Var:
-        """Get the var that is passed to the event handler for controlled triggers.
-
-        Returns:
-            The controlled value.
-        """
-        return EVENT_ARG.target.checked
+        return {
+            "on_change": EVENT_ARG.target.checked,
+        }
 
 
 class CheckboxGroup(ChakraComponent):

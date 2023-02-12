@@ -1,10 +1,10 @@
-from typing import List, Set, Type
+from typing import Dict, List, Type
 
 import pytest
 
 from pynecone.components.component import Component, CustomComponent, ImportDict
 from pynecone.components.layout.box import Box
-from pynecone.event import EVENT_TRIGGERS, EventHandler
+from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
 from pynecone.style import Style
 from pynecone.var import Var
@@ -61,13 +61,16 @@ def component2() -> Type[Component]:
         arr: Var[List[str]]
 
         @classmethod
-        def get_controlled_triggers(cls) -> Set[str]:
+        def get_controlled_triggers(cls) -> Dict[str, Var]:
             """Test controlled triggers.
 
             Returns:
                 Test controlled triggers.
             """
-            return {"on_open", "on_close"}
+            return {
+                "on_open": EVENT_ARG,
+                "on_close": EVENT_ARG,
+            }
 
         def _get_imports(self) -> ImportDict:
             return {"react-redux": {"connect"}}
@@ -269,8 +272,8 @@ def test_get_controlled_triggers(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1.get_controlled_triggers() == set()
-    assert component2.get_controlled_triggers() == {"on_open", "on_close"}
+    assert component1.get_controlled_triggers() == dict()
+    assert set(component2.get_controlled_triggers()) == {"on_open", "on_close"}
 
 
 def test_get_triggers(component1, component2):

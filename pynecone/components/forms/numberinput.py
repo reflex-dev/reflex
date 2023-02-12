@@ -1,9 +1,10 @@
 """A number input component."""
 
-from typing import Set
+from typing import Dict
 
 from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.event import EVENT_ARG
 from pynecone.var import Var
 
 
@@ -64,13 +65,15 @@ class NumberInput(ChakraComponent):
     variant: Var[str]
 
     @classmethod
-    def get_controlled_triggers(cls) -> Set[str]:
+    def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
-            The controlled event triggers.
+            A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {"on_change"}
+        return {
+            "on_change": EVENT_ARG,
+        }
 
     @classmethod
     def create(cls, *children, **props) -> Component:
