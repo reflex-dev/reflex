@@ -38,8 +38,14 @@ class Cond(Component):
         Returns:
             The conditional component.
         """
+        from pynecone.components.layout.foreach import Foreach
+
         if comp2 is None:
             comp2 = Fragment.create()
+        if isinstance(comp1, Foreach):
+            comp1 = Fragment.create(comp1)
+        if isinstance(comp2, Foreach):
+            comp2 = Fragment.create(comp2)
         if isinstance(comp1, Cond):
             comp1.is_nested = True
         if isinstance(comp2, Cond):
