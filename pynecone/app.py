@@ -75,7 +75,7 @@ class App(Base):
 
         # Set up the API.
         self.api = FastAPI()
-        self.add_cors(config.cors_allowed_origins)
+        self.add_cors()
         self.add_default_endpoints()
 
         # Set up CORS options.
@@ -124,16 +124,14 @@ class App(Base):
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
-    def add_cors(self, allowed_origins: Optional[List[str]] = None):
+    def add_cors(self):
         """Add CORS middleware to the app.
 
         Args:
             allowed_origins: A list of allowed origins.
         """
-        allowed_origins = allowed_origins or ["*"]
         self.api.add_middleware(
             cors.CORSMiddleware,
-            allow_origins=allowed_origins,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
