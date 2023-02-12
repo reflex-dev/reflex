@@ -12,7 +12,6 @@ from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
-from pynecone.model import Model
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 
 # Define custom types.
@@ -312,10 +311,6 @@ class App(Base):
         if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
-
-        # Create the database models.
-        if config.db_url is not None:
-            Model.create_all()
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
