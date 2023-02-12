@@ -13,6 +13,7 @@ from .constants import Env, Transports
 from .event import EventChain, console_log, redirect, window_alert
 from .middleware import Middleware
 from .model import Model, session
+from .route import route
 from .state import ComputedVar as var
 from .state import State
 from .style import toggle_color_mode

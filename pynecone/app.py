@@ -12,6 +12,7 @@ from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
+from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 
 # Define custom types.
@@ -306,6 +307,9 @@ class App(Base):
         Args:
             force_compile: Whether to force the app to compile.
         """
+        for render, kwargs in DECORATED_ROUTES:
+            self.add_page(render, **kwargs)
+
         # Get the env mode.
         config = utils.get_config()
         if config.env != constants.Env.DEV and not force_compile:
