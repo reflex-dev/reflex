@@ -1,7 +1,7 @@
 """A password input component."""
 
-from pynecone.var import Var
 from pynecone.components.forms.input import Input
+from pynecone.var import Var
 
 
 class Password(Input):

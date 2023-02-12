@@ -49,7 +49,6 @@ if TYPE_CHECKING:
     from pynecone.components.component import ImportDict
     from pynecone.config import Config
     from pynecone.event import Event, EventHandler, EventSpec
-    from pynecone.model import Model
     from pynecone.var import Var
 
 # Shorthand for join.
