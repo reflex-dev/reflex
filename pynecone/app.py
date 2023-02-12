@@ -16,6 +16,7 @@ from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
+from pynecone.components.layout import Fragment
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -235,6 +236,13 @@ class App(Base):
 
         # Generate the component if it is a callable.
         component = component if isinstance(component, Component) else component()
+
+        # If component is not a Component object, try to unwrap it into a Fragment
+        if not isinstance(component, Component):
+            try:
+                component = Fragment(children=[i for i in component])
+            except:
+                pass
 
         # Add meta information to the component.
         compiler_utils.add_meta(
