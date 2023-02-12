@@ -125,11 +125,7 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
     def add_cors(self):
-        """Add CORS middleware to the app.
-
-        Args:
-            allowed_origins: A list of allowed origins.
-        """
+        """Add CORS middleware to the app."""
         self.api.add_middleware(
             cors.CORSMiddleware,
             allow_credentials=True,
