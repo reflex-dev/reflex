@@ -1,6 +1,6 @@
 """A select component."""
 
-from typing import Any, List, Set
+from typing import Any, Dict, List
 
 from pynecone import utils
 from pynecone.components.component import EVENT_ARG, Component
@@ -46,22 +46,15 @@ class Select(ChakraComponent):
     variant: Var[str]
 
     @classmethod
-    def get_controlled_triggers(cls) -> Set[str]:
+    def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
-            The controlled event triggers.
+            A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {"on_change"}
-
-    @classmethod
-    def get_controlled_value(cls) -> Var:
-        """Get the var that is passed to the event handler for controlled triggers.
-
-        Returns:
-            The controlled value.
-        """
-        return EVENT_ARG.target.value
+        return {
+            "on_change": EVENT_ARG.target.value,
+        }
 
     @classmethod
     def create(cls, *children, **props) -> Component:
