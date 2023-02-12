@@ -716,8 +716,9 @@ def change_or_terminate_port(port, _type) -> str:
 
 
 def setup_backend():
-    """Sets up backend. Specifically ensures backend
-    database is updated when running --no-frontend.
+    """Set up backend.
+
+    Specifically ensures backend database is updated when running --no-frontend.
     """
     config = get_config()
     if config.db_url is not None:
