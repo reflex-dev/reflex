@@ -42,7 +42,7 @@ class Config(Base):
     # Backend transport methods.
     backend_transports: Optional[
         constants.Transports
-    ] = constants.Transports.POLLING_WEBSOCKET
+    ] = constants.Transports.WEBSOCKET_POLLING
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: Optional[list] = [constants.CORS_ALLOWED_ORIGINS]
