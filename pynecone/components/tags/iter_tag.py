@@ -58,6 +58,7 @@ class IterTag(Tag):
             The rendered component.
         """
         # Import here to avoid circular imports.
+        from pynecone.components.layout.cond import Cond
         from pynecone.components.layout.foreach import Foreach
         from pynecone.components.layout.fragment import Fragment
 
@@ -73,8 +74,8 @@ class IterTag(Tag):
             assert len(args) == 2
             component = render_fn(arg, index)
 
-        # Nested foreach components must be wrapped in fragments.
-        if isinstance(component, Foreach):
+        # Nested foreach components or cond must be wrapped in fragments.
+        if isinstance(component, (Foreach, Cond)):
             component = Fragment.create(component)
 
         # Set the component key.
