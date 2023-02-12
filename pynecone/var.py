@@ -773,72 +773,155 @@ class PCList(list):
 
         super().__init__(original_list)
 
-    def append(self, *args, **kargs):
+    def append(self, *args, **kwargs):
         """Append.
 
         Args:
             args: The args passed.
-            kargs: The kwargs passed.
+            kwargs: The kwargs passed.
         """
-        super().append(*args, **kargs)
+        super().append(*args, **kwargs)
         self._reassign_field()
 
-    def __setitem__(self, *args, **kargs):
+    def __setitem__(self, *args, **kwargs):
         """Set item.
 
         Args:
             args: The args passed.
-            kargs: The kwargs passed.
+            kwargs: The kwargs passed.
         """
-        super().__setitem__(*args, **kargs)
+        super().__setitem__(*args, **kwargs)
         self._reassign_field()
 
-    def __delitem__(self, *args, **kargs):
+    def __delitem__(self, *args, **kwargs):
         """Delete item.
 
         Args:
             args: The args passed.
-            kargs: The kwargs passed.
+            kwargs: The kwargs passed.
         """
-        super().__delitem__(*args, **kargs)
+        super().__delitem__(*args, **kwargs)
         self._reassign_field()
 
-    def clear(self, *args, **kargs):
+    def clear(self, *args, **kwargs):
         """Remove all item from the list.
 
         Args:
             args: The args passed.
-            kargs: The kwargs passed.
+            kwargs: The kwargs passed.
         """
-        super().clear(*args, **kargs)
+        super().clear(*args, **kwargs)
         self._reassign_field()
 
-    def extend(self, *args, **kargs):
+    def extend(self, *args, **kwargs):
         """Add all item of a list to the end of the list.
 
         Args:
             args: The args passed.
-            kargs: The kwargs passed.
+            kwargs: The kwargs passed.
         """
-        super().extend(*args, **kargs)
+        super().extend(*args, **kwargs)
         self._reassign_field() if hasattr(self, "_reassign_field") else None
 
-    def pop(self, *args, **kargs):
+    def pop(self, *args, **kwargs):
         """Remove an element.
 
         Args:
             args: The args passed.
-            kargs: The kwargs passed.
+            kwargs: The kwargs passed.
         """
-        super().pop(*args, **kargs)
+        super().pop(*args, **kwargs)
         self._reassign_field()
 
-    def remove(self, *args, **kargs):
+    def remove(self, *args, **kwargs):
         """Remove an element.
 
         Args:
             args: The args passed.
-            kargs: The kwargs passed.
+            kwargs: The kwargs passed.
         """
-        super().remove(*args, **kargs)
+        super().remove(*args, **kwargs)
+        self._reassign_field()
+
+
+class PCDict(dict):
+    """A custom dict that pynecone can detect its mutation."""
+
+    def __init__(
+        self,
+        original_dict: Dict,
+        reassign_field: Callable = lambda _field_name: None,
+        field_name: str = "",
+    ):
+        """Initialize PCDict.
+
+        Args:
+            original_dict: The original dict
+            reassign_field:
+                The method in the parent state to reassign the field.
+                Default to be a no-op function
+            field_name: the name of field in the parent state
+        """
+        super().__init__(original_dict)
+        self._reassign_field = lambda: reassign_field(field_name)
+
+    def clear(self):
+        """Remove all item from the list."""
+        super().clear()
+
+        self._reassign_field()
+
+    def setdefault(self, *args, **kwargs):
+        """set default.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().setdefault(*args, **kwargs)
+        self._reassign_field()
+
+    def popitem(self):
+        """Pop last item."""
+        super().popitem()
+        self._reassign_field()
+
+    def pop(self, k, d=None):
+        """Remove an element.
+
+        Args:
+            k: The args passed.
+            d: The kwargs passed.
+        """
+        super().pop(k, d)
+        self._reassign_field()
+
+    def update(self, *args, **kwargs):
+        """update dict.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().update(*args, **kwargs)
+        self._reassign_field()
+
+    def __setitem__(self, *args, **kwargs):
+        """set item.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().__setitem__(*args, **kwargs)
+        self._reassign_field() if hasattr(self, "_reassign_field") else None
+
+    def __delitem__(self, *args, **kwargs):
+        """delete item.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().__delitem__(*args, **kwargs)
         self._reassign_field()

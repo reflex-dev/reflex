@@ -5,7 +5,18 @@ import asyncio
 import functools
 import traceback
 from abc import ABC
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set, Type
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+)
 
 import cloudpickle
 from redis import Redis
@@ -13,7 +24,7 @@ from redis import Redis
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, PCList, Var
+from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
 
 Delta = Dict[str, Any]
 
@@ -79,7 +90,7 @@ class State(Base, ABC):
                 value, self._reassign_field, field.name
             )
 
-            if utils._issubclass(field.type_, List):
+            if utils._issubclass(field.type_, Union[List, Dict]):
                 setattr(self, field.name, value_in_pc_data)
 
         self.clean()
@@ -727,5 +738,7 @@ def _convert_mutable_datatypes(
             field_value[key] = _convert_mutable_datatypes(
                 value, reassign_field, field_name
             )
-
+        field_value = PCDict(
+            field_value, reassign_field=reassign_field, field_name=field_name
+        )
     return field_value
