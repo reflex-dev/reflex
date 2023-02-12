@@ -130,7 +130,7 @@ class App(Base):
         Args:
            allowed_origins: The allowed origins.
         """
-        allowed_origins = allowed_origins or []
+        allowed_origins = allowed_origins or ["*"]
         self.api.add_middleware(
             cors.CORSMiddleware,
             allow_origins=allowed_origins,
