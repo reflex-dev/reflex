@@ -223,10 +223,9 @@ class App(Base):
         if not isinstance(component, Component):    
             try:
                 iter(component)
+                component = Fragment(children = [i for i in component])
             except:
                 pass
-            else:
-                component = Fragment(children = [i for i in component])
         
         # Add meta information to the component.
         compiler_utils.add_meta(
