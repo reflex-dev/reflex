@@ -8,7 +8,6 @@ from pynecone.utils import join
 # Template for the Pynecone config file.
 PCCONFIG = f"""import pynecone as pc
 
-
 config = pc.Config(
     app_name="{{app_name}}",
     db_url="{constants.DB_URL}",
