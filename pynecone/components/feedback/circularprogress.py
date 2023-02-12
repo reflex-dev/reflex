@@ -24,10 +24,7 @@ class CircularProgress(ChakraComponent):
 
     # This defines the stroke width of the svg circle.
     thickness: Var[int]
-    
-    # The color name of the progress bar
-    color: Var[str]
-    
+
     # The color name of the progress track. Use a color key in the theme object
     track_color: Var[str]
 
@@ -36,7 +33,10 @@ class CircularProgress(ChakraComponent):
 
     # The desired valueText to use in place of the value.
     value_text: Var[str]
-    
+
+    # The color name of the progress bar
+    color: Var[str]
+
     @classmethod
     def create(cls, *children, label=None, **props) -> Component:
         """Create a circular progress component.
