@@ -1,22 +1,34 @@
 """The route decorator and associated variables."""
 
+from typing import Optional
+
+from pynecone.event import EventHandler
+
 DECORATED_ROUTES = []
 
 
-def route(route=None, title=None, image=None, description=None, on_load=None):
+def route(
+    route: Optional[str] = None,
+    title: Optional[str] = None,
+    image: Optional[str] = None,
+    description: Optional[str] = None,
+    on_load: Optional[EventHandler] = None,
+):
     """Decorate a function as a page.
 
     pc.App() will automatically call add_page() for any method decorated with route
     when App.compile is called.
 
-    Note: the decorated functions still need to be imported
+    All defaults are None because they will use the one from add_page().
+
+    Note: the decorated functions still need to be imported.
 
     Args:
-        route (_type_, optional): The route to reach the page. Defaults to None.
-        title (_type_, optional): The title of the page. Defaults to None.
-        image (_type_, optional): The favicon of the page. Defaults to None.
-        description (_type_, optional): The description of the page. Defaults to None.
-        on_load (_type_, optional): The event handler called when the page load. Defaults to None.
+        route: The route to reach the page. Defaults to None.
+        title: The title of the page. Defaults to None.
+        image: The favicon of the page. Defaults to None.
+        description: The description of the page. Defaults to None.
+        on_load: The event handler called when the page load. Defaults to None.
 
     Returns:
         The decorated function.
