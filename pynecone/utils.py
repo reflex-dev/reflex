@@ -720,6 +720,9 @@ def setup_backend():
 
     Specifically ensures backend database is updated when running --no-frontend.
     """
+    # Import here to avoid circular imports.
+    from pynecone.model import Model
+
     config = get_config()
     if config.db_url is not None:
         Model.create_all()
