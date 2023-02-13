@@ -1067,9 +1067,7 @@ def format_cond(
         prop1 = Var.create(true_value, is_string=type(true_value) == str)
         prop2 = Var.create(false_value, is_string=type(false_value) == str)
         assert prop1 is not None and prop2 is not None, "Invalid prop values"
-        expr = f"{cond} ? {prop1} : {prop2}".replace("{", "").replace(
-            "}", ""
-        )
+        expr = f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
     else:
         expr = f"{cond} ? {true_value} : {false_value}"
 
