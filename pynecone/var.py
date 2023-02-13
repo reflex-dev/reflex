@@ -148,7 +148,7 @@ class Var(ABC):
         if not (
             utils._issubclass(self.type_, Union[List, Dict])
             or utils.is_dataframe(self.type_)
-        ):  
+        ):
             if self.type_ == Any:
                 raise TypeError(
                     f"Could not index into var of type Any. (If you are trying to index into a state var, add a type annotation to the var.)"
