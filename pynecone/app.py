@@ -241,7 +241,7 @@ class App(Base):
         if not isinstance(component, Component):
             try:
                 component = Fragment.create(*[i for i in component])  # type: ignore
-            except:
+            except TypeError:
                 pass
 
         # Add meta information to the component.
