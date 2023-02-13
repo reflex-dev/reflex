@@ -1060,11 +1060,12 @@ def format_cond(
     Returns:
         The formatted conditional expression.
     """
+    # Import here to avoid circular imports.
+    from pynecone.var import Var
+
     if is_prop:
-        if isinstance(true_value, str):
-            true_value = wrap(true_value, "'")
-        if isinstance(false_value, str):
-            false_value = wrap(false_value, "'")
+        true_value = Var.create(true_value, is_string=type(true_value) == str)
+        false_value = Var.create(false_value, is_string=type(false_value) == str)
         expr = f"{cond} ? {true_value} : {false_value}".replace("{", "").replace(
             "}", ""
         )

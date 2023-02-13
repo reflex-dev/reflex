@@ -60,7 +60,6 @@ class Input(ChakraComponent):
             "on_focus": EVENT_ARG.target.value,
             "on_blur": EVENT_ARG.target.value,
             "on_key_down": EVENT_ARG.key,
-            "on_key_press": EVENT_ARG.key,
             "on_key_up": EVENT_ARG.key,
         }
 

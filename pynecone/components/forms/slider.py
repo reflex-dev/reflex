@@ -16,6 +16,9 @@ class Slider(ChakraComponent):
     # State var to bind the the input.
     value: Var[int]
 
+    # The color scheme.
+    color_scheme: Var[str]
+
     # The placeholder text.
     default_value: Var[int]
 
