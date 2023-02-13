@@ -240,7 +240,7 @@ class App(Base):
         # If component is not a Component object, try to unwrap it into a Fragment
         if not isinstance(component, Component):
             try:
-                component = Fragment(children=[i for i in component])
+                component = Fragment.create(*[i for i in component])
             except:
                 pass
 
