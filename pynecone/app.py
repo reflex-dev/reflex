@@ -1,5 +1,6 @@
 """The main Pynecone app."""
 
+from contextlib import suppress
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
 from fastapi import FastAPI
@@ -11,13 +12,12 @@ from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
+from pynecone.components.layout import Fragment
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
-from pynecone.components.layout import Fragment
-from contextlib import suppress
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
