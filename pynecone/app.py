@@ -17,6 +17,7 @@ from pynecone.model import Model
 from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 from pynecone.components.layout import Fragment
+from contextlib import suppress
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -239,10 +240,8 @@ class App(Base):
 
         # If component is not a Component object, try to unwrap it into a Fragment
         if not isinstance(component, Component):
-            try:
+            with suppress(TypeError):
                 component = Fragment.create(*[i for i in component])  # type: ignore
-            except TypeError:
-                pass
 
         # Add meta information to the component.
         compiler_utils.add_meta(
