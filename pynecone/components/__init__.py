@@ -139,5 +139,5 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             false_value=c2,
             is_prop=True,
         ),
-        type_=type(c1),
+        type_=c1.type_ if isinstance(c1, BaseVar) else type(c1),
     )
