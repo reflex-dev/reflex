@@ -876,7 +876,7 @@ class PCDict(dict):
         self._reassign_field()
 
     def setdefault(self, *args, **kwargs):
-        """set default.
+        """Return value of key if or set default.
 
         Args:
             args: The args passed.
@@ -901,7 +901,7 @@ class PCDict(dict):
         self._reassign_field()
 
     def update(self, *args, **kwargs):
-        """update dict.
+        """Update the dict with another dict.
 
         Args:
             args: The args passed.
@@ -911,7 +911,7 @@ class PCDict(dict):
         self._reassign_field()
 
     def __setitem__(self, *args, **kwargs):
-        """set item.
+        """Set an item in the dict.
 
         Args:
             args: The args passed.
@@ -921,7 +921,7 @@ class PCDict(dict):
         self._reassign_field() if hasattr(self, "_reassign_field") else None
 
     def __delitem__(self, *args, **kwargs):
-        """delete item.
+        """Delete an item in the dict.
 
         Args:
             args: The args passed.

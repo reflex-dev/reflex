@@ -24,11 +24,11 @@ def route(
     Note: the decorated functions still need to be imported.
 
     Args:
-        route: The route to reach the page. Defaults to None.
-        title: The title of the page. Defaults to None.
-        image: The favicon of the page. Defaults to None.
-        description: The description of the page. Defaults to None.
-        on_load: The event handler called when the page load. Defaults to None.
+        route: The route to reach the page.
+        title: The title of the page.
+        image: The favicon of the page.
+        description: The description of the page
+        on_load: The event handler called when the page load.
 
     Returns:
         The decorated function.

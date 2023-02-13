@@ -3,7 +3,6 @@ from typing import Dict
 import pytest
 
 from pynecone.components.tags import CondTag, Tag
-from pynecone.components.tags.tag import PropCond
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
 
@@ -39,14 +38,6 @@ def mock_event(arg):
                 ]
             ),
             '{(e) => Event([E("mock_event", {arg:e.target.value})])}',
-        ),
-        (
-            PropCond.create(
-                cond=BaseVar(name="random_var", type_=str),
-                prop1="true_value",
-                prop2="false_value",
-            ),
-            "{random_var ? 'true_value' : 'false_value'}",
         ),
     ],
 )

@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -6,8 +7,8 @@ import pynecone as pc
 from pynecone.components import cond
 from pynecone.components.layout.cond import Cond
 from pynecone.components.layout.fragment import Fragment
-from pynecone.components.tags.tag import PropCond
 from pynecone.components.typography.text import Text
+from pynecone.var import Var
 
 
 @pytest.fixture
@@ -68,10 +69,10 @@ def test_prop_cond(c1: Any, c2: Any):
         c2,
     )
 
-    assert isinstance(prop_cond, PropCond)
-    assert prop_cond.prop1 == c1
-    assert prop_cond.prop2 == c2
-    assert prop_cond.cond == True  # noqa
+    assert isinstance(prop_cond, Var)
+    c1 = json.dumps(c1).replace('"', "`")
+    c2 = json.dumps(c2).replace('"', "`")
+    assert str(prop_cond) == f"{{true ? {c1} : {c2}}}"
 
 
 def test_cond_no_else():
