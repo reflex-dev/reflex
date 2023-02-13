@@ -1064,9 +1064,10 @@ def format_cond(
     from pynecone.var import Var
 
     if is_prop:
-        true_value = Var.create(true_value, is_string=type(true_value) == str)
-        false_value = Var.create(false_value, is_string=type(false_value) == str)
-        expr = f"{cond} ? {true_value} : {false_value}".replace("{", "").replace(
+        prop1 = Var.create(true_value, is_string=type(true_value) == str)
+        prop2 = Var.create(false_value, is_string=type(false_value) == str)
+        assert prop1 is not None and prop2 is not None, "Invalid prop values"
+        expr = f"{cond} ? {prop1} : {prop2}".replace("{", "").replace(
             "}", ""
         )
     else:
