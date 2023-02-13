@@ -106,6 +106,9 @@ def cond(condition: Any, c1: Any, c2: Any = None):
 
     Returns:
         The conditional component.
+
+    Raises:
+        ValueError: If the arguments are invalid.
     """
     # Import here to avoid circular imports.
     from pynecone.var import BaseVar, Var

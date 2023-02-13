@@ -19,7 +19,7 @@ def windows_platform() -> Generator:
 
 @pytest.fixture
 def list_mutation_state():
-    """A fixture to create a state with list mutation features.
+    """Create a state with list mutation features.
 
     Returns:
         A state with list mutation features.
@@ -82,7 +82,7 @@ def list_mutation_state():
 
 @pytest.fixture
 def dict_mutation_state():
-    """A fixture to create a state with dict mutation features.
+    """Create a state with dict mutation features.
 
     Returns:
         A state with dict mutation features.
