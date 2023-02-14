@@ -524,7 +524,7 @@ def nt_export(backend: bool = True, frontend: bool = True):
         cmd = r'''powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip -Force"'''
         os.system(cmd)
     if backend:
-        cmd = r'''powershell -Command "Get-ChildItem .\* -Directory | where {($_.Name -notin @('.web', 'assets', 'frontend.zip', 'backend.zip'))} | Compress-Archive -DestinationPath backend.zip -Update"'''
+        cmd = r'''powershell -Command "Get-ChildItem -File | Where-Object { $_.Name -notin @('.web', 'assets', 'frontend.zip', 'backend.zip') } | Compress-Archive -DestinationPath backend.zip -Update"'''
         os.system(cmd)
 
 
