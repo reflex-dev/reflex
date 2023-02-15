@@ -34,7 +34,7 @@ class List(ChakraComponent):
         if len(children) == 0:
             children = []
             for item in items or []:
-                children.append(ListItem.create(*item))
+                children.append(ListItem.create(item))
         return super().create(*children, **props)
 
 
