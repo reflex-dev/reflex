@@ -89,8 +89,13 @@ class Tag(Base):
                     for key, val in prop.items()
                 }
 
-            # Dump the prop as JSON.
-            prop = json.dumps(prop)
+            # Check if object has __to_prop method otherwise dump the prop as JSON
+            prop = json.dumps(
+                prop,
+                default=lambda obj: obj.__to_prop()
+                if callable(getattr(obj, "__to_prop", None))
+                else None,
+            )
 
             # This substitution is necessary to unwrap var values.
             prop = re.sub('"{', "", prop)
