@@ -47,6 +47,9 @@ class Component(Base, ABC):
     # The id for the component.
     id: Any = None
 
+    # The class name for the component.
+    class_name: Any = None
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -144,6 +147,11 @@ class Component(Base, ABC):
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
         )
+
+        # Convert class_name to str if it's list
+        class_name = kwargs.get("class_name", "")
+        if isinstance(class_name, (List, tuple)):
+            kwargs["class_name"] = " ".join(class_name)
 
         # Construct the component.
         super().__init__(*args, **kwargs)
@@ -370,7 +378,11 @@ class Component(Base, ABC):
         tag = self._render()
         return str(
             tag.add_props(
-                **self.event_triggers, key=self.key, sx=self.style, id=self.id
+                **self.event_triggers,
+                key=self.key,
+                sx=self.style,
+                id=self.id,
+                className=self.class_name,
             ).set(
                 contents=utils.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
