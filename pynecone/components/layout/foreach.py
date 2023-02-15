@@ -36,7 +36,7 @@ class Foreach(Component):
             type_ = iterable.type_.__args__[0]
         except Exception:
             type_ = Any
-        iterable = Var.create(iterable)
+        iterable = Var.create(iterable)  # type: ignore
         if iterable.type_ == Any:
             raise TypeError(
                 f"Could not foreach over var of type Any. (If you are trying to foreach over a state var, add a type annotation to the var.)"
