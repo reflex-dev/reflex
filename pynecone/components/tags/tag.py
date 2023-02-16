@@ -92,8 +92,8 @@ class Tag(Base):
             # Check if object has __to_prop method otherwise dump the prop as JSON
             prop = json.dumps(
                 prop,
-                default=lambda obj: obj.__to_prop()
-                if callable(getattr(obj, "__to_prop", None))
+                default=lambda obj: obj._to_prop()
+                if callable(getattr(obj, "_to_prop", None))
                 else None,
             )
 
