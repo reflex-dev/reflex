@@ -493,8 +493,32 @@ def set_pynecone_project_hash():
         json.dump(pynecone_json, f, ensure_ascii=False)
 
 
+def generate_sitemap(deploy_url: str):
+    """Generate the sitemap config file.
+
+    Args:
+        deploy_url: The URL of the deployed app.
+    """
+    # Import here to avoid circular imports.
+    from pynecone.compiler import templates
+
+    config = json.dumps(
+        {
+            "siteUrl": deploy_url,
+            "generateRobotsTxt": True,
+        }
+    )
+
+    with open(constants.SITEMAP_CONFIG_FILE, "w") as f:
+        f.write(templates.SITEMAP_CONFIG(config=config))
+
+
 def export_app(
-    app: App, backend: bool = True, frontend: bool = True, zip: bool = False
+    app: App,
+    backend: bool = True,
+    frontend: bool = True,
+    zip: bool = False,
+    deploy_url: Optional[str] = None,
 ):
     """Zip up the app for deployment.
 
@@ -503,12 +527,17 @@ def export_app(
         backend: Whether to zip up the backend app.
         frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
+        deploy_url: The URL of the deployed app.
     """
     # Force compile the app.
     app.compile(force_compile=True)
 
     # Remove the static folder.
     rm(constants.WEB_STATIC_DIR)
+
+    # Generate the sitemap file.
+    if deploy_url is not None:
+        generate_sitemap(deploy_url)
 
     # Export the Next app.
     subprocess.run([get_package_manager(), "run", "export"], cwd=constants.WEB_DIR)

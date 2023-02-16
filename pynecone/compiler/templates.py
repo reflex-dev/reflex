@@ -193,3 +193,6 @@ SOCKET = "const socket = useRef(null)"
 
 # Color toggle
 COLORTOGGLE = f"const {{ {constants.COLOR_MODE}, {constants.TOGGLE_COLOR_MODE} }} = {constants.USE_COLOR_MODE}()"
+
+# Sitemap config file.
+SITEMAP_CONFIG = "module.exports = {config}".format

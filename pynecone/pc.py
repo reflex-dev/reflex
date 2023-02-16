@@ -129,14 +129,14 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
     config.api_url = utils.get_production_backend_url()
 
     # Check if the deploy url is set.
-    if config.deploy_url is None:
+    if config.pcdeploy_url is None:
         typer.echo("This feature is coming soon!")
         return
 
     # Compile the app in production mode.
     typer.echo("Compiling production app")
     app = utils.get_app().app
-    utils.export_app(app, zip=True)
+    utils.export_app(app, zip=True, deploy_url=config.deploy_url)
 
     # Exit early if this is a dry run.
     if dry_run:
@@ -144,7 +144,7 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
     # Deploy the app.
     data = {"userId": config.username, "projectId": config.app_name}
-    original_response = httpx.get(config.deploy_url, params=data)
+    original_response = httpx.get(config.pcdeploy_url, params=data)
     response = original_response.json()
     frontend = response["frontend_resources_url"]
     backend = response["backend_resources_url"]
@@ -175,15 +175,22 @@ def export(
     ),
 ):
     """Export the app to a zip file."""
+    config = utils.get_config()
+
     if for_pc_deploy:
         # Get the app config and modify the api_url base on username and app_name.
-        config = utils.get_config()
         config.api_url = utils.get_production_backend_url()
 
     # Compile the app in production mode and export it.
     utils.console.rule("[bold]Compiling production app and preparing for export.")
     app = utils.get_app().app
-    utils.export_app(app, backend=backend, frontend=frontend, zip=zipping)
+    utils.export_app(
+        app,
+        backend=backend,
+        frontend=frontend,
+        zip=zipping,
+        deploy_url=config.deploy_url,
+    )
 
     # Post a telemetry event.
     pynecone_telemetry("export", utils.get_config().telemetry_enabled)

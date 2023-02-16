@@ -2,7 +2,7 @@
   "name": "pynecone",
   "scripts": {
     "dev": "next dev",
-    "export": "next build && next export -o _static",
+    "export": "next build && next-sitemap && next export -o _static",
     "prod": "next start"
   },
   "dependencies": {
@@ -17,6 +17,7 @@
     "gridjs": "^4.0.0",
     "gridjs-react": "^4.0.0",
     "next": "^12.1.0",
+    "next-sitemap": "^3.1.52",
     "plotly.js": "2.6.4",
     "prettier": "^2.8.1",
     "react": "^17.0.2",

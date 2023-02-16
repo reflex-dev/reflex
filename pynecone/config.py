@@ -21,6 +21,9 @@ class Config(Base):
     # The backend API url.
     api_url: str = constants.API_URL
 
+    # The deploy url.
+    deploy_url: Optional[str] = None
+
     # The database url.
     db_url: Optional[str] = constants.DB_URL
 
@@ -30,8 +33,8 @@ class Config(Base):
     # Telemetry opt-in.
     telemetry_enabled: bool = True
 
-    # The deploy url.
-    deploy_url: Optional[str] = None
+    # The pcdeploy url.
+    pcdeploy_url: Optional[str] = None
 
     # The environment mode.
     env: constants.Env = constants.Env.DEV
