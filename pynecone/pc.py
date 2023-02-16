@@ -1,14 +1,14 @@
 """Pynecone CLI to create, run, and deploy apps."""
 
 import os
-import time
 from pathlib import Path
 
 import httpx
 import typer
 
 from pynecone import constants, utils
-from pynecone.telemetry import pynecone_telemetry, Telemetry
+from pynecone.telemetry import pynecone_telemetry
+
 # Create the app.
 cli = typer.Typer()
 
@@ -49,7 +49,6 @@ def init():
 
         # Post a telemetry event.
         pynecone_telemetry("init", utils.get_config().telemetry_enabled)
- 
 
         # Finish initializing the app.
         utils.console.log(f"[bold green]Finished Initializing: {app_name}")
@@ -101,7 +100,7 @@ def run(
     app = utils.get_app()
 
     # Get the frontend and backend commands, based on the environment.
-    frontend_cmd = backend_cmd = None 
+    frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
         frontend_cmd, backend_cmd = utils.run_frontend, utils.run_backend
     if env == constants.Env.PROD:
@@ -110,7 +109,7 @@ def run(
 
     # Post a telemetry event.
     pynecone_telemetry(f"run-{env}", utils.get_config().telemetry_enabled)
-   
+
     # Run the frontend and backend.
     try:
         if frontend:
@@ -188,7 +187,7 @@ def export(
 
     # Post a telemetry event.
     pynecone_telemetry("export", utils.get_config().telemetry_enabled)
- 
+
     if zipping:
         utils.console.rule(
             """Backend & Frontend compiled. See [green bold]backend.zip[/green bold] 

@@ -5,7 +5,6 @@ from __future__ import annotations
 import contextlib
 import inspect
 import json
-import random
 import os
 import platform
 import random
@@ -484,17 +483,15 @@ def is_latest_template() -> bool:
         app_version = f.read()
     return app_version >= template_version
 
+
 def set_pynecone_project_hash():
-    "Write the hash of the Pynecone project to a PCVERSION_APP_FILE."
+    """Write the hash of the Pynecone project to a PCVERSION_APP_FILE."""
     with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
         pynecone_json = json.load(f)
         pynecone_json["project_hash"] = random.getrandbits(128)
-    with open(constants.PCVERSION_APP_FILE, 'w') as f:
+    with open(constants.PCVERSION_APP_FILE, "w") as f:
         json.dump(pynecone_json, f, ensure_ascii=False)
 
-    
-
-    
 
 def export_app(
     app: App, backend: bool = True, frontend: bool = True, zip: bool = False

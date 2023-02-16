@@ -12,28 +12,19 @@ def test_telemetry():
     tel = telemetry.Telemetry()
 
     # Check that the user OS is one of the supported operating systems.
-    tel.get_os()
-
     assert tel.user_os is not None
     assert tel.user_os in ["Linux", "Darwin", "Java", "Windows"]
 
     # Check that the CPU count and memory are greater than 0.
-    tel.get_cpu_count()
-
     assert tel.cpu_count > 0
 
     # Check that the available memory is greater than 0
-    tel.get_memory()
-
     assert tel.memory > 0
 
     # Check that the Pynecone version is not None.
-    tel.get_python_version()
     assert tel.pynecone_version is not None
 
     # Check that the Python version is greater than 3.7.
-    tel.get_pynecone_version()
-
     assert tel.python_version is not None
     assert versiontuple(tel.python_version) >= versiontuple("3.7")
 

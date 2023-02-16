@@ -1,54 +1,87 @@
 """Anonymous telemetry for Pynecone."""
 
+import json
 import multiprocessing
 import platform
-import json
+from datetime import datetime
+
 import psutil
+import requests
 
 from pynecone import constants
 from pynecone.base import Base
-import requests
-from datetime import datetime
 
 
-def get_os():
-    """Get the operating system."""
+def get_os() -> str:
+    """Get the operating system.
+
+    Returns:
+        The operating system.
+    """
     return platform.system()
 
-def get_python_version():
-    """Get the Python version."""
+
+def get_python_version() -> str:
+    """Get the Python version.
+
+    Returns:
+        The Python version.
+    """
     return platform.python_version()
 
-def get_pynecone_version():
-    """Get the Pynecone version."""
+
+def get_pynecone_version() -> str:
+    """Get the Pynecone version.
+
+    Returns:
+        The Pynecone version.
+    """
     return constants.VERSION
 
-def get_cpu_count():
-    """Get the number of CPUs."""
+
+def get_cpu_count() -> int:
+    """Get the number of CPUs.
+
+    Returns:
+        The number of CPUs.
+    """
     return multiprocessing.cpu_count()
 
-def get_memory():
-    """Get the total memory in MB."""
+
+def get_memory() -> int:
+    """Get the total memory in MB.
+
+    Returns:
+        The total memory in MB.
+    """
     return psutil.virtual_memory().total >> 20
+
 
 class Telemetry(Base):
     """Anonymous telemetry for Pynecone."""
 
     user_os: str = get_os()
     cpu_count: int = get_cpu_count()
-    memory: int =  get_memory()
+    memory: int = get_memory()
     pynecone_version: str = get_pynecone_version()
     python_version: str = get_python_version()
-    
-def pynecone_telemetry(event, telemetry_enabled):
-    """Post to PostHog."""
+
+
+def pynecone_telemetry(event: str, telemetry_enabled: bool) -> None:
+    """Send anonymous telemetry for Pynecone.
+
+    Args:
+        event: The event name.
+        telemetry_enabled: Whether to send the telemetry.
+    """
+
     try:
         if telemetry_enabled:
             telemetry = Telemetry()
             with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
                 pynecone_json = json.load(f)
-                distinct_id = pynecone_json["project_hash"] 
-            post_hog  = {
+                distinct_id = pynecone_json["project_hash"]
+            post_hog = {
                 "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
                 "event": event,
                 "properties": {
@@ -57,10 +90,10 @@ def pynecone_telemetry(event, telemetry_enabled):
                     "pynecone_version": telemetry.pynecone_version,
                     "python_version": telemetry.python_version,
                     "cpu_count": telemetry.cpu_count,
-                    "memory": telemetry.memory
+                    "memory": telemetry.memory,
                 },
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
-            requests.post('https://app.posthog.com/capture/', json = post_hog)
+            requests.post("https://app.posthog.com/capture/", json=post_hog)
     except Exception:
         pass
