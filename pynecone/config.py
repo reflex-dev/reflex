@@ -27,6 +27,9 @@ class Config(Base):
     # The redis url.
     redis_url: Optional[str] = None
 
+    # Telemetry opt-in.
+    telemetry_enabled: bool = True
+
     # The deploy url.
     deploy_url: Optional[str] = None
 

@@ -476,12 +476,21 @@ def is_latest_template() -> bool:
         Whether the app is using the latest template.
     """
     with open(constants.PCVERSION_TEMPLATE_FILE) as f:  # type: ignore
-        template_version = f.read()
+        template_version = json.load(f)["version"]
     if not os.path.exists(constants.PCVERSION_APP_FILE):
         return False
     with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
         app_version = f.read()
     return app_version >= template_version
+
+
+def set_pynecone_project_hash():
+    """Write the hash of the Pynecone project to a PCVERSION_APP_FILE."""
+    with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
+        pynecone_json = json.load(f)
+        pynecone_json["project_hash"] = random.getrandbits(128)
+    with open(constants.PCVERSION_APP_FILE, "w") as f:
+        json.dump(pynecone_json, f, ensure_ascii=False)
 
 
 def export_app(
