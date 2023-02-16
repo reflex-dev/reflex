@@ -382,7 +382,7 @@ class Component(Base, ABC):
                 key=self.key,
                 sx=self.style,
                 id=self.id,
-                className=self.class_name,
+                class_name=self.class_name,
             ).set(
                 contents=utils.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
