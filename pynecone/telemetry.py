@@ -74,7 +74,6 @@ def pynecone_telemetry(event: str, telemetry_enabled: bool) -> None:
         event: The event name.
         telemetry_enabled: Whether to send the telemetry.
     """
-
     try:
         if telemetry_enabled:
             telemetry = Telemetry()
