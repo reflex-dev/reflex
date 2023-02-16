@@ -5,8 +5,8 @@ import multiprocessing
 import platform
 from datetime import datetime
 
+import httpx
 import psutil
-import requests
 
 from pynecone import constants
 from pynecone.base import Base
@@ -93,6 +93,6 @@ def pynecone_telemetry(event: str, telemetry_enabled: bool) -> None:
                 },
                 "timestamp": datetime.utcnow().isoformat(),
             }
-            requests.post("https://app.posthog.com/capture/", json=post_hog)
+            httpx.post("https://app.posthog.com/capture/", json=post_hog)
     except Exception:
         pass

@@ -108,7 +108,7 @@ def run(
     assert frontend_cmd and backend_cmd, "Invalid env"
 
     # Post a telemetry event.
-    pynecone_telemetry(f"run-{env}", utils.get_config().telemetry_enabled)
+    pynecone_telemetry(f"run-{env.value}", utils.get_config().telemetry_enabled)
 
     # Run the frontend and backend.
     try:
