@@ -1,4 +1,5 @@
 @echo off
+cd ..
 
 echo "start darglint"
 
