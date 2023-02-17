@@ -106,11 +106,12 @@ def cond(condition: Any, c1: Any, c2: Any = None):
 
     Returns:
         The conditional component.
+
+    Raises:
+        ValueError: If the arguments are invalid.
     """
     # Import here to avoid circular imports.
-    from pynecone.var import Var
-
-    from .tags.tag import PropCond
+    from pynecone.var import BaseVar, Var
 
     # Convert the condition to a Var.
     cond_var = Var.create(condition)
@@ -123,6 +124,20 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
 
-    # Otherwise, create a PropCond.
-    assert not isinstance(c2, Component), "Both arguments must be props."
-    return PropCond.create(cond_var, c1, c2)
+    # Otherwise, create a conditionl Var.
+    # Check that the second argument is valid.
+    if isinstance(c2, Component):
+        raise ValueError("Both arguments must be props.")
+    if c2 is None:
+        raise ValueError("For conditional vars, the second argument must be set.")
+
+    # Create the conditional var.
+    return BaseVar(
+        name=utils.format_cond(
+            cond=cond_var.full_name,
+            true_value=c1,
+            false_value=c2,
+            is_prop=True,
+        ),
+        type_=c1.type_ if isinstance(c1, BaseVar) else type(c1),
+    )

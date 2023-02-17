@@ -3,17 +3,28 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import pickle
 import traceback
 from abc import ABC
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set, Type
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+)
 
+import cloudpickle
 from redis import Redis
 
 from pynecone import constants, utils
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, window_alert
-from pynecone.var import BaseVar, ComputedVar, Var
+from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
 
 Delta = Dict[str, Any]
 
@@ -79,7 +90,7 @@ class State(Base, ABC):
                 value, self._reassign_field, field.name
             )
 
-            if utils._issubclass(field.type_, List):
+            if utils._issubclass(field.type_, Union[List, Dict]):
                 setattr(self, field.name, value_in_pc_data)
 
         self.clean()
@@ -620,8 +631,8 @@ class State(Base, ABC):
             k: v.dict(include_computed=include_computed, **kwargs)
             for k, v in self.substates.items()
         }
-        vars = {**base_vars, **computed_vars, **substate_vars}
-        return {k: vars[k] for k in sorted(vars)}
+        variables = {**base_vars, **computed_vars, **substate_vars}
+        return {k: variables[k] for k in sorted(variables)}
 
 
 class DefaultState(State):
@@ -678,7 +689,7 @@ class StateManager(Base):
             if redis_state is None:
                 self.set_state(token, self.state())
                 return self.get_state(token)
-            return pickle.loads(redis_state)
+            return cloudpickle.loads(redis_state)
 
         if token not in self.states:
             self.states[token] = self.state()
@@ -693,7 +704,7 @@ class StateManager(Base):
         """
         if self.redis is None:
             return
-        self.redis.set(token, pickle.dumps(state), ex=self.token_expiration)
+        self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
 
 
 def _convert_mutable_datatypes(
@@ -712,22 +723,22 @@ def _convert_mutable_datatypes(
     Returns:
         The converted field_value
     """
-    # TODO: The PCList class needs to be pickleable to work with Redis.
-    # We will uncomment this code once this is fixed.
-    # if isinstance(field_value, list):
-    #     for index in range(len(field_value)):
-    #         field_value[index] = _convert_mutable_datatypes(
-    #             field_value[index], reassign_field, field_name
-    #         )
+    if isinstance(field_value, list):
+        for index in range(len(field_value)):
+            field_value[index] = _convert_mutable_datatypes(
+                field_value[index], reassign_field, field_name
+            )
 
-    #     field_value = PCList(
-    #         field_value, reassign_field=reassign_field, field_name=field_name
-    #     )
+        field_value = PCList(
+            field_value, reassign_field=reassign_field, field_name=field_name
+        )
 
     if isinstance(field_value, dict):
         for key, value in field_value.items():
             field_value[key] = _convert_mutable_datatypes(
                 value, reassign_field, field_name
             )
-
+        field_value = PCDict(
+            field_value, reassign_field=reassign_field, field_name=field_name
+        )
     return field_value

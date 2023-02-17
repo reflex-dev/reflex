@@ -50,14 +50,16 @@ WEB_STATIC_DIR = os.path.join(WEB_DIR, "_static")
 WEB_UTILS_DIR = os.path.join(WEB_DIR, UTILS_DIR)
 # The directory where the assets are located.
 WEB_ASSETS_DIR = os.path.join(WEB_DIR, "public")
+# The sitemap config file.
+SITEMAP_CONFIG_FILE = os.path.join(WEB_DIR, "next-sitemap.config.js")
 # The node modules directory.
 NODE_MODULES = "node_modules"
 # The package lock file.
 PACKAGE_LOCK = "package-lock.json"
 # The pcversion template file.
-PCVERSION_TEMPLATE_FILE = os.path.join(WEB_TEMPLATE_DIR, "pcversion.txt")
+PCVERSION_TEMPLATE_FILE = os.path.join(WEB_TEMPLATE_DIR, "pynecone.json")
 # The pcversion app file.
-PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pcversion.txt")
+PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pynecone.json")
 
 
 # Commands to run the app.
@@ -159,6 +161,7 @@ class LogLevel(str, Enum):
 class Endpoint(Enum):
     """Endpoints for the pynecone backend API."""
 
+    PING = "ping"
     EVENT = "event"
 
     def __str__(self) -> str:

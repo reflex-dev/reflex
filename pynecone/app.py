@@ -3,6 +3,7 @@
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
 from fastapi import FastAPI
+from fastapi.middleware import cors
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 
 from pynecone import constants, utils
@@ -13,6 +14,7 @@ from pynecone.components.component import Component, ComponentStyle
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
+from pynecone.route import DECORATED_ROUTES
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
 
 # Define custom types.
@@ -73,6 +75,8 @@ class App(Base):
 
         # Set up the API.
         self.api = FastAPI()
+        self.add_cors()
+        self.add_default_endpoints()
 
         # Set up CORS options.
         cors_allowed_origins = config.cors_allowed_origins
@@ -114,6 +118,20 @@ class App(Base):
             The backend api.
         """
         return self.api
+
+    def add_default_endpoints(self):
+        """Add the default endpoints."""
+        # To test the server.
+        self.api.get(str(constants.Endpoint.PING))(ping)
+
+    def add_cors(self):
+        """Add CORS middleware to the app."""
+        self.api.add_middleware(
+            cors.CORSMiddleware,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
         """Preprocess the event.
@@ -307,13 +325,16 @@ class App(Base):
         Args:
             force_compile: Whether to force the app to compile.
         """
+        for render, kwargs in DECORATED_ROUTES:
+            self.add_page(render, **kwargs)
+
         # Get the env mode.
         config = utils.get_config()
         if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
 
-        # Create the database models.
+        # Update models during hot reload.
         if config.db_url is not None:
             Model.create_all()
 
@@ -357,11 +378,14 @@ async def process(
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
+    formatted_params = utils.format_query_params(event.router_data)
+
     # Pass router_data to the state of the App.
     state.router_data = event.router_data
     # also pass router_data to all substates
     for _, substate in state.substates.items():
         substate.router_data = event.router_data
+    state.router_data[constants.RouteVar.QUERY] = formatted_params
     state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
     state.router_data[constants.RouteVar.SESSION_ID] = sid
     state.router_data[constants.RouteVar.HEADERS] = headers
@@ -383,6 +407,15 @@ async def process(
 
     # Return the update.
     return update
+
+
+async def ping() -> str:
+    """Test API endpoint.
+
+    Returns:
+        The response.
+    """
+    return "pong"
 
 
 class EventNamespace(AsyncNamespace):

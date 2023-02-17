@@ -115,6 +115,7 @@ class FrontendEvent(Base):
     """A Javascript event."""
 
     target: Target = Target()
+    key: str = ""
 
 
 # The default event argument.

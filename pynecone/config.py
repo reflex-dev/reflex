@@ -21,14 +21,20 @@ class Config(Base):
     # The backend API url.
     api_url: str = constants.API_URL
 
+    # The deploy url.
+    deploy_url: Optional[str] = None
+
     # The database url.
     db_url: Optional[str] = constants.DB_URL
 
     # The redis url.
     redis_url: Optional[str] = None
 
-    # The deploy url.
-    deploy_url: Optional[str] = None
+    # Telemetry opt-in.
+    telemetry_enabled: bool = True
+
+    # The pcdeploy url.
+    pcdeploy_url: Optional[str] = None
 
     # The environment mode.
     env: constants.Env = constants.Env.DEV
@@ -42,7 +48,7 @@ class Config(Base):
     # Backend transport methods.
     backend_transports: Optional[
         constants.Transports
-    ] = constants.Transports.POLLING_WEBSOCKET
+    ] = constants.Transports.WEBSOCKET_POLLING
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: Optional[list] = [constants.CORS_ALLOWED_ORIGINS]

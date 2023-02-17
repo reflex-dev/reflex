@@ -1,9 +1,10 @@
 """A slider component."""
 
-from typing import Set
+from typing import Dict
 
 from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.event import EVENT_ARG
 from pynecone.var import Var
 
 
@@ -14,6 +15,9 @@ class Slider(ChakraComponent):
 
     # State var to bind the the input.
     value: Var[int]
+
+    # The color scheme.
+    color_scheme: Var[str]
 
     # The placeholder text.
     default_value: Var[int]
@@ -43,16 +47,16 @@ class Slider(ChakraComponent):
     min_steps_between_thumbs: Var[int]
 
     @classmethod
-    def get_controlled_triggers(cls) -> Set[str]:
+    def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
-            The controlled event triggers.
+            A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            "on_change",
-            "on_change_end",
-            "on_change_start",
+            "on_change": EVENT_ARG,
+            "on_change_end": EVENT_ARG,
+            "on_change_start": EVENT_ARG,
         }
 
     @classmethod

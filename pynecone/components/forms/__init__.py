@@ -14,6 +14,7 @@ from .numberinput import (
     NumberInputField,
     NumberInputStepper,
 )
+from .password import Password
 from .pininput import PinInput, PinInputField
 from .radio import Radio, RadioGroup
 from .rangeslider import (

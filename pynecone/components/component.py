@@ -47,6 +47,9 @@ class Component(Base, ABC):
     # The id for the component.
     id: Any = None
 
+    # The class name for the component.
+    class_name: Any = None
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -145,6 +148,11 @@ class Component(Base, ABC):
             }
         )
 
+        # Convert class_name to str if it's list
+        class_name = kwargs.get("class_name", "")
+        if isinstance(class_name, (List, tuple)):
+            kwargs["class_name"] = " ".join(class_name)
+
         # Construct the component.
         super().__init__(*args, **kwargs)
 
@@ -166,7 +174,8 @@ class Component(Base, ABC):
             ValueError: If the value is not a valid event chain.
         """
         # Check if the trigger is a controlled event.
-        is_controlled_event = event_trigger in self.get_controlled_triggers()
+        controlled_triggers = self.get_controlled_triggers()
+        is_controlled_event = event_trigger in controlled_triggers
 
         # If it's an event chain var, return it.
         if isinstance(value, Var):
@@ -174,7 +183,7 @@ class Component(Base, ABC):
                 raise ValueError(f"Invalid event chain: {value}")
             return value
 
-        arg = self.get_controlled_value()
+        arg = controlled_triggers.get(event_trigger, EVENT_ARG)
 
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, EventHandler):
@@ -231,25 +240,16 @@ class Component(Base, ABC):
         Returns:
             The event triggers.
         """
-        return EVENT_TRIGGERS | cls.get_controlled_triggers()
+        return EVENT_TRIGGERS | set(cls.get_controlled_triggers())
 
     @classmethod
-    def get_controlled_triggers(cls) -> Set[str]:
+    def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
-            The controlled event triggers.
+            A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return set()
-
-    @classmethod
-    def get_controlled_value(cls) -> Var:
-        """Get the var that is passed to the event handler for controlled triggers.
-
-        Returns:
-            The controlled value.
-        """
-        return EVENT_ARG
+        return {}
 
     @classmethod
     def get_alias(cls) -> Optional[str]:
@@ -378,7 +378,11 @@ class Component(Base, ABC):
         tag = self._render()
         return str(
             tag.add_props(
-                **self.event_triggers, key=self.key, sx=self.style, id=self.id
+                **self.event_triggers,
+                key=self.key,
+                sx=self.style,
+                id=self.id,
+                class_name=self.class_name,
             ).set(
                 contents=utils.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
@@ -556,6 +560,14 @@ class CustomComponent(Component):
             seen.add(self.tag)
             custom_components |= self.get_component().get_custom_components(seen=seen)
         return custom_components
+
+    def _render(self) -> Tag:
+        """Define how to render the component in React.
+
+        Returns:
+            The tag to render.
+        """
+        return Tag(name=self.tag).add_props(**self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.

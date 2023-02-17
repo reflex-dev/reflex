@@ -8,7 +8,6 @@ from pynecone.utils import join
 # Template for the Pynecone config file.
 PCCONFIG = f"""import pynecone as pc
 
-
 config = pc.Config(
     app_name="{{app_name}}",
     db_url="{constants.DB_URL}",
@@ -194,3 +193,6 @@ SOCKET = "const socket = useRef(null)"
 
 # Color toggle
 COLORTOGGLE = f"const {{ {constants.COLOR_MODE}, {constants.TOGGLE_COLOR_MODE} }} = {constants.USE_COLOR_MODE}()"
+
+# Sitemap config file.
+SITEMAP_CONFIG = "module.exports = {config}".format

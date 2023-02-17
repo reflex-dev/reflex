@@ -1,5 +1,6 @@
 """An image component."""
 
+from pynecone import utils
 from pynecone.components.component import Component
 
 
@@ -36,5 +37,5 @@ class Icon(ChakraIconComponent):
             )
         if "tag" not in props.keys():
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
-
+        props["tag"] = utils.to_title_case(props["tag"]) + "Icon"
         return super().create(*children, **props)

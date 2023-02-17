@@ -1,3 +1,4 @@
+# type: ignore
 """Welcome to Pynecone! This file outlines the steps to create a basic app."""
 from pcconfig import config
 
@@ -13,7 +14,7 @@ class State(pc.State):
     pass
 
 
-def index():
+def index() -> pc.Component:
     return pc.center(
         pc.vstack(
             pc.heading("Welcome to Pynecone!", font_size="2em"),

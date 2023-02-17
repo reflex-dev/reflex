@@ -1,39 +1,98 @@
 """Anonymous telemetry for Pynecone."""
 
+import json
 import multiprocessing
 import platform
+from datetime import datetime
 
+import httpx
 import psutil
 
 from pynecone import constants
 from pynecone.base import Base
 
 
+def get_os() -> str:
+    """Get the operating system.
+
+    Returns:
+        The operating system.
+    """
+    return platform.system()
+
+
+def get_python_version() -> str:
+    """Get the Python version.
+
+    Returns:
+        The Python version.
+    """
+    return platform.python_version()
+
+
+def get_pynecone_version() -> str:
+    """Get the Pynecone version.
+
+    Returns:
+        The Pynecone version.
+    """
+    return constants.VERSION
+
+
+def get_cpu_count() -> int:
+    """Get the number of CPUs.
+
+    Returns:
+        The number of CPUs.
+    """
+    return multiprocessing.cpu_count()
+
+
+def get_memory() -> int:
+    """Get the total memory in MB.
+
+    Returns:
+        The total memory in MB.
+    """
+    return psutil.virtual_memory().total >> 20
+
+
 class Telemetry(Base):
     """Anonymous telemetry for Pynecone."""
 
-    user_os: str = ""
-    cpu_count: int = 0
-    memory: int = 0
-    pynecone_version: str = ""
-    python_version: str = ""
+    user_os: str = get_os()
+    cpu_count: int = get_cpu_count()
+    memory: int = get_memory()
+    pynecone_version: str = get_pynecone_version()
+    python_version: str = get_python_version()
 
-    def get_os(self) -> None:
-        """Get the operating system."""
-        self.user_os = platform.system()
 
-    def get_python_version(self) -> None:
-        """Get the Python version."""
-        self.python_version = platform.python_version()
+def pynecone_telemetry(event: str, telemetry_enabled: bool) -> None:
+    """Send anonymous telemetry for Pynecone.
 
-    def get_pynecone_version(self) -> None:
-        """Get the Pynecone version."""
-        self.pynecone_version = constants.VERSION
-
-    def get_cpu_count(self) -> None:
-        """Get the number of CPUs."""
-        self.cpu_count = multiprocessing.cpu_count()
-
-    def get_memory(self) -> None:
-        """Get the total memory in MB."""
-        self.memory = psutil.virtual_memory().total >> 20
+    Args:
+        event: The event name.
+        telemetry_enabled: Whether to send the telemetry.
+    """
+    try:
+        if telemetry_enabled:
+            telemetry = Telemetry()
+            with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
+                pynecone_json = json.load(f)
+                distinct_id = pynecone_json["project_hash"]
+            post_hog = {
+                "api_key": "phc_JoMo0fOyi0GQAooY3UyO9k0hebGkMyFJrrCw1Gt5SGb",
+                "event": event,
+                "properties": {
+                    "distinct_id": distinct_id,
+                    "user_os": telemetry.user_os,
+                    "pynecone_version": telemetry.pynecone_version,
+                    "python_version": telemetry.python_version,
+                    "cpu_count": telemetry.cpu_count,
+                    "memory": telemetry.memory,
+                },
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+            httpx.post("https://app.posthog.com/capture/", json=post_hog)
+    except Exception:
+        pass
