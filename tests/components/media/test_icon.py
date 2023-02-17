@@ -22,7 +22,7 @@ def test_children_errors():
 )
 def test_valid_icon(tag: str):
     """Test that a valid icon does not raise an error.
-    
+
     Args:
         tag: The icon tag.
     """
@@ -33,7 +33,7 @@ def test_valid_icon(tag: str):
 @pytest.mark.parametrize("tag", ["", " ", "invalid", 123])
 def test_invalid_icon(tag):
     """Test that an invalid icon raises an error.
-    
+
     Args:
         tag: The icon tag.
     """
