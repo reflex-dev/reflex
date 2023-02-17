@@ -3,7 +3,7 @@ cd ..
 
 echo "start darglint"
 
-echo "pynecon folder"
+echo "pynecone folder"
 for /R pynecone %%f in (*.py) do (
     echo %%f
     echo %%f|findstr /r "^.*pynecone\\pc\.py$"
