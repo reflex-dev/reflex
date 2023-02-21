@@ -168,6 +168,8 @@ class Endpoint(Enum):
 
     PING = "ping"
     EVENT = "event"
+    UPLOAD = "upload"
+
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
