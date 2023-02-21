@@ -799,16 +799,33 @@ def run_backend_prod(
     setup_backend()
 
     num_workers = get_num_workers()
-    command = constants.RUN_BACKEND_PROD + [
-        "--bind",
-        f"0.0.0.0:{port}",
+    command = (
+        constants.RUN_BACKEND_PROD_WINDOWS
+        + [
+            "--host",
+            "0.0.0.0",
+            "--port",
+            str(port),
+            "--log-level",
+            loglevel,
+            f"{app_name}:{constants.APP_VAR}",
+        ]
+        if platform.system() == "Windows"
+        else constants.RUN_BACKEND_PROD
+        + [
+            "--bind",
+            f"0.0.0.0:{port}",
+            "--threads",
+            str(num_workers),
+            "--log-level",
+            str(loglevel),
+            f"{app_name}:{constants.APP_VAR}()",
+        ]
+    )
+
+    command += [
         "--workers",
         str(num_workers),
-        "--threads",
-        str(num_workers),
-        "--log-level",
-        str(loglevel),
-        f"{app_name}:{constants.APP_VAR}()",
     ]
     subprocess.run(command)
 
