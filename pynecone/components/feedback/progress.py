@@ -1,8 +1,9 @@
 """Container to stack elements with spacing."""
 
+from typing import Union
+
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
-from typing import Union
 
 
 class Progress(ChakraComponent):
