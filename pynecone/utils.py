@@ -480,7 +480,7 @@ def is_latest_template() -> bool:
     if not os.path.exists(constants.PCVERSION_APP_FILE):
         return False
     with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
-        app_version = f.read()
+        app_version = json.load(f)["version"]
     return app_version >= template_version
 
 
