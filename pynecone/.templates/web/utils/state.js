@@ -1,4 +1,5 @@
 // State management for Pynecone web apps.
+import axios from "axios";
 import io from 'socket.io-client';
 
 // Global variable to hold the token.
@@ -103,7 +104,7 @@ export const applyEvent = async (event, router, socket) => {
  * Process an event off the event queue.
  * @param state The state with the event queue.
  * @param setState The function to set the state.
- * @param result The current result
+ * @param result The current result.
  * @param setResult The function to set the result.
  * @param router The router object.
  * @param socket The socket object to send the event on.
@@ -136,8 +137,10 @@ export const updateState = async (state, setState, result, setResult, router, so
  * @param socket The socket object to connect.
  * @param state The state object to apply the deltas to.
  * @param setState The function to set the state.
+ * @param result The current result.
  * @param setResult The function to set the result.
  * @param endpoint The endpoint to connect to.
+ * @param transports The transports to use.
  */
 export const connect = async (socket, state, setState, result, setResult, router, endpoint, transports) => {
   // Get backend URL object from the endpoint
@@ -165,6 +168,23 @@ export const connect = async (socket, state, setState, result, setResult, router
     });
   });
 };
+
+/**
+ * Upload files to the server.
+ * 
+ * @param files The files to upload.
+ */
+export const uploadFiles = async (files) => {
+  // Currently only supports uploading one file.
+  const file = files[0]
+  const headers={'Content-Type': file.type}
+  const formdata = new FormData();
+  formdata.append("file", file)
+  await axios.post("http://localhost:8000/upload",formdata,headers).then((response) => {
+    console.log(response);
+  }
+  )
+}
 
 /**
  * Create an event object.

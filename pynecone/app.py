@@ -123,6 +123,7 @@ class App(Base):
         """Add the default endpoints."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload_file)
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -131,6 +132,7 @@ class App(Base):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            allow_origins=["*"],
         )
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
@@ -426,6 +428,18 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+from fastapi import UploadFile
+
+async def upload_file(file: UploadFile):
+    upload_data = await file.read()
+    print(upload_data)
+    with open("uploads/" + file.filename, "wb") as file_object:
+        file_object.write(upload_data)
+    with open(".web/public/img.png", "wb") as file_object:
+        file_object.write(upload_data)
+    return {"filename": file.filename}
 
 
 class EventNamespace(AsyncNamespace):
