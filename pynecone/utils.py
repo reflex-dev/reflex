@@ -716,7 +716,8 @@ def kill_process_on_port(port):
         port: The port.
     """
     if get_process_on_port(port) is not None:
-        get_process_on_port(port).kill()  # type: ignore
+        with contextlib.suppress(psutil.AccessDenied):
+            get_process_on_port(port).kill()  # type: ignore
 
 
 def change_or_terminate_port(port, _type) -> str:
