@@ -2,7 +2,7 @@
   "name": "pynecone",
   "scripts": {
     "dev": "next dev",
-    "export": "next build && next-sitemap && next export -o _static",
+    "export": "next build && next export -o _static",
     "prod": "next start"
   },
   "dependencies": {
