@@ -2,6 +2,7 @@
 
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
+from typing import Union
 
 
 class Progress(ChakraComponent):
@@ -25,7 +26,7 @@ class Progress(ChakraComponent):
     min_: Var[int]
 
     # The value of the progress indicator. If undefined the progress bar will be in indeterminate state
-    value: Var[int]
+    value: Var[Union[int, float]]
 
     # The color scheme of the progress bar.
     color_scheme: Var[str]

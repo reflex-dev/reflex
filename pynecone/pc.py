@@ -36,20 +36,19 @@ def init():
         utils.install_bun()
         utils.initialize_web_directory()
 
+        # Set the pynecone project hash.
+        utils.set_pynecone_project_hash()
+
         # Set up the app directory, only if the config doesn't exist.
         if not os.path.exists(constants.CONFIG_FILE):
             utils.create_config(app_name)
             utils.initialize_app_directory(app_name)
+            pynecone_telemetry("init", utils.get_config().telemetry_enabled)
+        else:
+            pynecone_telemetry("reinit", utils.get_config().telemetry_enabled)
 
         # Initialize the .gitignore.
         utils.initialize_gitignore()
-
-        # Set the pynecone project hash.
-        utils.set_pynecone_project_hash()
-
-        # Post a telemetry event.
-        pynecone_telemetry("init", utils.get_config().telemetry_enabled)
-
         # Finish initializing the app.
         utils.console.log(f"[bold green]Finished Initializing: {app_name}")
 
