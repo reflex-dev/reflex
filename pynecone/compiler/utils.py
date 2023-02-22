@@ -279,7 +279,7 @@ def get_components_path() -> str:
 
 
 def add_meta(
-    page: Component, title: str, image: str, description: str, meta: List[Dict] | None
+    page: Component, title: str, image: str, description: str, meta: List[Dict]
 ) -> Component:
     """Add metadata to a page.
 
@@ -293,7 +293,7 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
-    meta_tags = [Meta.create(**item) for item in meta] if meta is not None else []
+    meta_tags = [Meta.create(**item) for item in meta]
 
     page.children.append(
         Head.create(

@@ -199,7 +199,7 @@ class App(Base):
         image=constants.DEFAULT_IMAGE,
         on_load: Optional[EventHandler] = None,
         path: Optional[str] = None,
-        meta: Optional[List[Dict]] = None,
+        meta: List[Dict] = constants.DEFAULT_META_LIST,
     ):
         """Add a page to the app.
 
@@ -287,7 +287,12 @@ class App(Base):
                 )
 
     def add_custom_404_page(
-        self, component, title=None, image=None, description=None, meta=None
+        self,
+        component,
+        title=None,
+        image=None,
+        description=None,
+        meta=constants.DEFAULT_META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
