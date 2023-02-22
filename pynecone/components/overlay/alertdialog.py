@@ -102,7 +102,7 @@ class AlertDialog(ChakraComponent):
             if props.get("on_close"):
                 # get user defined close button or use default one
                 if not close_button:
-                    close_button = Icon.create(tag="CloseIcon")
+                    close_button = Icon.create(tag="close")
                 contents.append(AlertDialogCloseButton.create(close_button))
             elif close_button:
                 raise AttributeError(
