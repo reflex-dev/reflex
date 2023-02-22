@@ -16,6 +16,7 @@ from pynecone.components.base import (
     Image,
     Link,
     Main,
+    Meta,
     Script,
     Title,
 )
@@ -277,7 +278,9 @@ def get_components_path() -> str:
     return os.path.join(constants.WEB_UTILS_DIR, "components" + constants.JS_EXT)
 
 
-def add_meta(page: Component, title: str, image: str, description: str) -> Component:
+def add_meta(
+    page: Component, title: str, image: str, description: str, meta: List[Dict] | None
+) -> Component:
     """Add metadata to a page.
 
     Args:
@@ -285,15 +288,19 @@ def add_meta(page: Component, title: str, image: str, description: str) -> Compo
         title: The title of the page.
         image: The image for the page.
         description: The description of the page.
+        meta: The metadata list.
 
     Returns:
         The component with the metadata added.
     """
+    meta_tags = [Meta.create(**item) for item in meta] if meta is not None else []
+
     page.children.append(
         Head.create(
             Title.create(title),
             Description.create(content=description),
             Image.create(content=image),
+            *meta_tags,
         )
     )
 

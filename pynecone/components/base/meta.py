@@ -30,12 +30,21 @@ class Meta(Component):
 
     tag = "meta"
 
+    # The description of character encoding.
+    char_set: Optional[str] = None
+
+    # The value of meta.
+    content: Optional[str] = None
+
+    # The name of metadata.
+    name: Optional[str] = None
+
+    # The type of metadata value.
+    property: Optional[str] = None
+
 
 class Description(Meta):
     """A component that displays the title of the current page."""
-
-    # The description of the page.
-    content: Optional[str] = None
 
     # The type of the description.
     name: str = "description"
@@ -43,9 +52,6 @@ class Description(Meta):
 
 class Image(Meta):
     """A component that displays the title of the current page."""
-
-    # The image of the page.
-    content: Optional[str] = None
 
     # The type of the image.
     property: str = "og:image"
