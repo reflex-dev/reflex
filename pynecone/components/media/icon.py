@@ -38,7 +38,7 @@ class Icon(ChakraIconComponent):
             )
         if "tag" not in props.keys():
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
-        if props["tag"] not in ICON_LIST:
+        if type(props["tag"]) != str or props["tag"].lower() not in ICON_LIST:
             raise ValueError(
                 f"Invalid icon tag: {props['tag']}. Please use one of the following: {ICON_LIST}"
             )
