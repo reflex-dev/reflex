@@ -39,3 +39,17 @@ def test_invalid_icon(tag):
     """
     with pytest.raises(ValueError):
         Icon.create(tag=tag)
+
+
+@pytest.mark.parametrize(
+    "tag",
+    ["Check", "Close", "eDit"],
+)
+def test_tag_with_capital(tag: str):
+    """Test that an icon that tag with capital does not raise an error.
+
+    Args:
+        tag: The icon tag.
+    """
+    icon = Icon.create(tag=tag)
+    assert icon.tag == utils.to_title_case(tag) + "Icon"
