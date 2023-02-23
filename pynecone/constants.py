@@ -124,6 +124,8 @@ DEFAULT_TITLE = "Pynecone App"
 DEFAULT_DESCRIPTION = "A Pynecone app."
 # The default image to show for Pynecone apps.
 DEFAULT_IMAGE = "favicon.ico"
+# The default meta list to show for Pynecone apps.
+DEFAULT_META_LIST = []
 
 
 # The gitignore file.

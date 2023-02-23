@@ -199,6 +199,7 @@ class App(Base):
         image=constants.DEFAULT_IMAGE,
         on_load: Optional[EventHandler] = None,
         path: Optional[str] = None,
+        meta: List[Dict] = constants.DEFAULT_META_LIST,
     ):
         """Add a page to the app.
 
@@ -213,6 +214,7 @@ class App(Base):
             description: The description of the page.
             image: The image to display on the page.
             on_load: The event handler that will be called each time the page load.
+            meta: The metadata of the page.
         """
         if path is not None:
             utils.deprecate(
@@ -238,7 +240,7 @@ class App(Base):
 
         # Add meta information to the component.
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description
+            component, title=title, image=image, description=description, meta=meta
         )
 
         # Format the route.
@@ -284,7 +286,14 @@ class App(Base):
                     f"You cannot use multiple catchall for the same dynamic route ({route} !== {new_route})"
                 )
 
-    def add_custom_404_page(self, component, title=None, image=None, description=None):
+    def add_custom_404_page(
+        self,
+        component,
+        title=None,
+        image=None,
+        description=None,
+        meta=constants.DEFAULT_META_LIST,
+    ):
         """Define a custom 404 page for any url having no match.
 
         If there is no page defined on 'index' route, add the 404 page to it.
@@ -295,6 +304,7 @@ class App(Base):
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
+            meta: The metadata of the page.
         """
         title = title or constants.TITLE_404
         image = image or constants.FAVICON_404
@@ -303,7 +313,7 @@ class App(Base):
         component = component if isinstance(component, Component) else component()
 
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description
+            component, title=title, image=image, description=description, meta=meta
         )
 
         froute = utils.format_route
