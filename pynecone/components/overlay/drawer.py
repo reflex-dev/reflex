@@ -107,7 +107,7 @@ class Drawer(ChakraComponent):
             if props.get("on_close"):
                 # use default close button if undefined
                 if not close_button:
-                    close_button = Icon.create(tag="CloseIcon")
+                    close_button = Icon.create(tag="close")
                 contents.append(DrawerCloseButton.create(close_button))
             elif close_button:
                 raise AttributeError(
