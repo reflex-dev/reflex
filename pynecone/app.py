@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 
@@ -123,7 +123,7 @@ class App(Base):
         """Add the default endpoints."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
-        self.api.post(str(constants.Endpoint.UPLOAD))(upload_file)
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -430,16 +430,38 @@ async def ping() -> str:
     return "pong"
 
 
-from fastapi import UploadFile
+def upload(app: App):
+    """Upload a file.
 
-async def upload_file(file: UploadFile):
-    upload_data = await file.read()
-    print(upload_data)
-    with open("uploads/" + file.filename, "wb") as file_object:
-        file_object.write(upload_data)
-    with open(".web/public/img.png", "wb") as file_object:
-        file_object.write(upload_data)
-    return {"filename": file.filename}
+    Args:
+        app: The app to upload the file for.
+    """
+    async def upload_file(file: UploadFile):
+        """Upload a file.
+        
+        Args:
+            file: The file to upload.
+        """
+        # Get the token and filename.
+        token, handler, filename = file.filename.split(':', 2)
+        file.filename = filename
+        breakpoint()
+
+        # Get the state for the session.
+        state = app.state_manager.get_state(token)
+        await state.handle_upload.fn(state, file)
+        state.upload_files = [file]
+
+        # upload_data = await file.read()
+
+        # # Save the file.
+        # with open("uploads/" + file.filename, "wb") as file_object:
+        #     file_object.write(upload_data)
+        # with open(".web/public/img.png", "wb") as file_object:
+        #     file_object.write(upload_data)
+        return {"filename": file.filename}
+
+    return upload_file
 
 
 class EventNamespace(AsyncNamespace):
