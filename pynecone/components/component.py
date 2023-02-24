@@ -159,7 +159,9 @@ class Component(Base, ABC):
     def _create_event_chain(
         self,
         event_trigger: str,
-        value: Union[Var, EventHandler, List[EventHandler], Callable],
+        value: Union[
+            Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
+        ],
     ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
@@ -186,7 +188,7 @@ class Component(Base, ABC):
         arg = controlled_triggers.get(event_trigger, EVENT_ARG)
 
         # If the input is a single event handler, wrap it in a list.
-        if isinstance(value, EventHandler):
+        if isinstance(value, (EventHandler, EventSpec)):
             value = [value]
 
         # If the input is a list of event handlers, create an event chain.
@@ -205,6 +207,9 @@ class Component(Base, ABC):
 
                     # Add the event to the chain.
                     events.append(event)
+                elif isinstance(v, EventSpec):
+                    # Add the event to the chain.
+                    events.append(v)
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
                     events.extend(utils.call_event_fn(v, arg))
