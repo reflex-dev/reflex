@@ -27,5 +27,6 @@ from .select import Option, Select
 from .slider import Slider, SliderFilledTrack, SliderMark, SliderThumb, SliderTrack
 from .switch import Switch
 from .textarea import TextArea
+from .upload import Upload
 
 __all__ = [f for f in dir() if f[0].isupper()]  # type: ignore

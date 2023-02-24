@@ -3,7 +3,7 @@
 Anything imported here will be available in the default Pynecone import as `pc.*`.
 """
 
-from .app import App
+from .app import App, UploadFile
 from .base import Base
 from .components import *
 from .components.component import custom_component as component
