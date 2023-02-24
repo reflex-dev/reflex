@@ -1,5 +1,3 @@
-import pytest
-
 from pynecone import event
 from pynecone.event import Event, EventHandler, EventSpec
 from pynecone.var import Var
