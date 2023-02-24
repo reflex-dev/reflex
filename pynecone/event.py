@@ -123,7 +123,7 @@ EVENT_ARG = BaseVar(name="_e", type_=FrontendEvent, is_local=True)
 
 
 # Special server-side events.
-def redirect(path: str) -> Event:
+def redirect(path: str) -> EventSpec:
     """Redirect to a new path.
 
     Args:
@@ -132,14 +132,18 @@ def redirect(path: str) -> Event:
     Returns:
         An event to redirect to the path.
     """
-    return Event(
-        token="",
-        name="_redirect",
-        payload={"path": path},
+
+    def fn():
+        return None
+
+    fn.__qualname__ = "_redirect"
+    return EventSpec(
+        handler=EventHandler(fn=fn),
+        args=(("path", path),),
     )
 
 
-def console_log(message: str) -> Event:
+def console_log(message: str) -> EventSpec:
     """Do a console.log on the browser.
 
     Args:
@@ -148,14 +152,18 @@ def console_log(message: str) -> Event:
     Returns:
         An event to log the message.
     """
-    return Event(
-        token="",
-        name="_console",
-        payload={"message": message},
+
+    def fn():
+        return None
+
+    fn.__qualname__ = "_console"
+    return EventSpec(
+        handler=EventHandler(fn=fn),
+        args=(("message", message),),
     )
 
 
-def window_alert(message: str) -> Event:
+def window_alert(message: str) -> EventSpec:
     """Create a window alert on the browser.
 
     Args:
@@ -164,10 +172,14 @@ def window_alert(message: str) -> Event:
     Returns:
         An event to alert the message.
     """
-    return Event(
-        token="",
-        name="_alert",
-        payload={"message": message},
+
+    def fn():
+        return None
+
+    fn.__qualname__ = "_alert"
+    return EventSpec(
+        handler=EventHandler(fn=fn),
+        args=(("message", message),),
     )
 
 

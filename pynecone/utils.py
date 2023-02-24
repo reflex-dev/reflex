@@ -1403,7 +1403,9 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
     return event_spec.args if len(args) > 2 else ((args[1], arg.name),)
 
 
-def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
+def fix_events(
+    events: Optional[List[Union[EventHandler, EventSpec]]], token: str
+) -> List[Event]:
     """Fix a list of events returned by an event handler.
 
     Args:
@@ -1426,18 +1428,12 @@ def fix_events(events: Optional[List[Event]], token: str) -> List[Event]:
     # Fix the events created by the handler.
     out = []
     for e in events:
-        # If it is already an event, don't modify it.
-        if isinstance(e, Event):
-            name = e.name
-            payload = e.payload
-
         # Otherwise, create an event from the event spec.
-        else:
-            if isinstance(e, EventHandler):
-                e = e()
-            assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
-            name = format_event_handler(e.handler)
-            payload = dict(e.args)
+        if isinstance(e, EventHandler):
+            e = e()
+        assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
+        name = format_event_handler(e.handler)
+        payload = dict(e.args)
 
         # Create an event and append it to the list.
         out.append(
