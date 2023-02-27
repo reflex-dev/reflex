@@ -53,7 +53,7 @@ class App(Base):
     middleware: List[Middleware] = []
 
     # Event handlers to trigger when a page loads.
-    load_events: Dict[str, EventHandler] = {}
+    load_events: Dict[str, Union[EventHandler, List[EventHandler]]] = {}
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -197,7 +197,7 @@ class App(Base):
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
-        on_load: Optional[EventHandler] = None,
+        on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
         path: Optional[str] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
     ):
@@ -213,7 +213,7 @@ class App(Base):
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
-            on_load: The event handler that will be called each time the page load.
+            on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
         if path is not None:

@@ -1,6 +1,6 @@
 """The route decorator and associated variables."""
 
-from typing import Optional
+from typing import List, Optional, Union
 
 from pynecone.event import EventHandler
 
@@ -12,7 +12,7 @@ def route(
     title: Optional[str] = None,
     image: Optional[str] = None,
     description: Optional[str] = None,
-    on_load: Optional[EventHandler] = None,
+    on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
 ):
     """Decorate a function as a page.
 
@@ -28,7 +28,7 @@ def route(
         title: The title of the page.
         image: The favicon of the page.
         description: The description of the page
-        on_load: The event handler called when the page load.
+        on_load: The event handler(s) called when the page load.
 
     Returns:
         The decorated function.

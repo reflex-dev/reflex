@@ -545,9 +545,10 @@ class State(Base, ABC):
         except Exception:
             error = traceback.format_exc()
             print(error)
-            return StateUpdate(
-                events=[window_alert("An error occurred. See logs for details.")]
+            events = utils.fix_events(
+                [window_alert("An error occurred. See logs for details.")], event.token
             )
+            return StateUpdate(events=events)
 
         # Fix the returned events.
         events = utils.fix_events(events, event.token)
