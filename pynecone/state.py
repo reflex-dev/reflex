@@ -47,6 +47,9 @@ class State(Base, ABC):
     # Backend vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
 
+    # Backend vars inherited
+    inherited_backend_vars: ClassVar[Dict[str, Any]] = {}
+
     # The parent state.
     parent_state: Optional[State] = None
 
@@ -130,12 +133,16 @@ class State(Base, ABC):
         parent_state = cls.get_parent_state()
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
+            cls.inherited_backend_vars = parent_state.backend_vars
 
-        cls.backend_vars = {
+        cls.new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
             if utils.is_backend_variable(name)
+            and name not in cls.inherited_backend_vars
         }
+
+        cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
 
         # Set the base and computed vars.
         skip_vars = set(cls.inherited_vars) | {
@@ -450,8 +457,11 @@ class State(Base, ABC):
         Returns:
             The value of the var.
         """
-        # Get the var from the parent state.
-        if name in super().__getattribute__("inherited_vars"):
+        inherited_vars = {
+            **super().__getattribute__("inherited_vars"),
+            **super().__getattribute__("inherited_backend_vars"),
+        }
+        if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
         elif name in super().__getattribute__("backend_vars"):
             return super().__getattribute__("backend_vars").__getitem__(name)
@@ -467,7 +477,8 @@ class State(Base, ABC):
             value: The value of the attribute.
         """
         # Set the var on the parent state.
-        if name in self.inherited_vars:
+        inherited_vars = {**self.inherited_vars, **self.inherited_backend_vars}
+        if name in inherited_vars:
             setattr(self.parent_state, name, value)
             return
 
