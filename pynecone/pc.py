@@ -70,7 +70,7 @@ def run(
 ):
     """Run the app in the current directory."""
     frontend_port = utils.get_config().port if port is None else port
-    backend_port = utils.get_api_port()
+    backend_port = utils.get_config().backend_port
 
     # If something is running on the ports, ask the user if they want to kill or change it.
     if utils.is_process_on_port(frontend_port):

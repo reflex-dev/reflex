@@ -65,6 +65,8 @@ PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pynecone.json")
 # Commands to run the app.
 # The frontend default port.
 FRONTEND_PORT = "3000"
+# The backend default port.
+BACKEND_PORT = "8000"
 # The backend api url.
 API_URL = "http://localhost:8000"
 # The default path where bun is installed.
