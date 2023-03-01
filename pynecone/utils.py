@@ -159,8 +159,16 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
         return True
     if cls in [Any, Callable]:
         return False
+
+    # Get the base classes.
     cls_base = get_base_class(cls)
     cls_check_base = get_base_class(cls_check)
+
+    # The class we're checking should not be a union.
+    if isinstance(cls_base, tuple):
+        return False
+
+    # Check if the types match.
     return cls_check_base == Any or issubclass(cls_base, cls_check_base)
 
 
