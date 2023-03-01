@@ -165,7 +165,7 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
     cls_check_base = get_base_class(cls_check)
 
     # The class we're checking should not be a union.
-    if not isinstance(cls_base, type):
+    if isinstance(cls_base, tuple):
         return False
 
     # Check if the types match.

@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Any, List, Union
 
 import pytest
 
@@ -276,6 +276,9 @@ def test_is_backend_variable(input, output):
         (List[int], List[float], True),
         (Union[int, float], Union[int, float], False),
         (Union[int, Var[int]], Var[int], False),
+        (int, Any, True),
+        (Any, Any, True),
+        (Union[int, float], Any, True),
     ],
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
