@@ -1,8 +1,9 @@
-import typing
+from typing import List, Union
 
 import pytest
 
 from pynecone import utils
+from pynecone.var import Var
 
 
 @pytest.mark.parametrize(
@@ -195,8 +196,8 @@ def test_merge_imports():
         (int, False),
         (float, False),
         (bool, False),
-        (typing.List, True),
-        (typing.List[int], True),
+        (List, True),
+        (List[int], True),
     ],
 )
 def test_is_generic_alias(cls: type, expected: bool):
@@ -261,3 +262,21 @@ def test_setup_frontend(tmp_path, mocker):
 )
 def test_is_backend_variable(input, output):
     assert utils.is_backend_variable(input) == output
+
+
+@pytest.mark.parametrize(
+    "cls, cls_check, expected",
+    [
+        (int, int, True),
+        (int, float, False),
+        (int, Union[int, float], True),
+        (float, Union[int, float], True),
+        (str, Union[int, float], False),
+        (List[int], List[int], True),
+        (List[int], List[float], True),
+        (Union[int, float], Union[int, float], False),
+        (Union[int, Var[int]], Var[int], False),
+    ],
+)
+def test_issubclass(cls: type, cls_check: type, expected: bool):
+    assert utils._issubclass(cls, cls_check) == expected
