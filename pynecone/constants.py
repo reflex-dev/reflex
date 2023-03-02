@@ -170,7 +170,6 @@ class Endpoint(Enum):
     EVENT = "event"
     UPLOAD = "upload"
 
-
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
 

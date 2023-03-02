@@ -143,8 +143,9 @@ class Tr(ChakraComponent):
         types = {"header": Th, "data": Td}
         cell_cls = types.get(cell_type)
         if len(children) == 0 and cell_cls:
-            from pynecone.var import Var
             from pynecone.components.layout.foreach import Foreach
+            from pynecone.var import Var
+
             if isinstance(cells, Var):
                 children = [Foreach.create(cells, cell_cls.create)]
             else:

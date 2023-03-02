@@ -86,8 +86,10 @@ def compile_constants() -> str:
         A string of all the compiled constants.
     """
     return templates.join(
-        [compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
-            for endpoint in constants.Endpoint]
+        [
+            compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
+            for endpoint in constants.Endpoint
+        ]
     )
 
 
