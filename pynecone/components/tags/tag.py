@@ -68,10 +68,10 @@ class Tag(Base):
         # Handle event props.
         elif isinstance(prop, EventChain):
             local_args = ",".join(prop.events[0].local_args)
-    
+
             # Special case for upload events.
             if len(prop.events) == 1 and prop.events[0].upload:
-                prop = f"({local_args}) => uploadFiles(state.files, \"{prop.events[0].handler.fn.__qualname__.lower()}\", UPLOAD)"
+                prop = f'({local_args}) => uploadFiles(state.files, "{prop.events[0].handler.fn.__qualname__.lower()}", UPLOAD)'
                 print(prop)
             else:
                 events = ",".join([utils.format_event(event) for event in prop.events])

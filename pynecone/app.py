@@ -436,14 +436,15 @@ def upload(app: App):
     Args:
         app: The app to upload the file for.
     """
+
     async def upload_file(file: UploadFile):
         """Upload a file.
-        
+
         Args:
             file: The file to upload.
         """
         # Get the token and filename.
-        token, handler, filename = file.filename.split(':', 2)
+        token, handler, filename = file.filename.split(":", 2)
         file.filename = filename
 
         # Get the state for the session.
@@ -454,9 +455,10 @@ def upload(app: App):
         substate = state.get_substate(path)
         handler = getattr(substate, name)
         import functools
+
         fn = functools.partial(handler.fn, substate)
         print("handler", handler)
-        await fn (file)
+        await fn(file)
         # await state.handle_upload.fn(state, file)
         return {"filename": file.filename}
 
