@@ -174,14 +174,17 @@ export const connect = async (socket, state, setState, result, setResult, router
  * 
  * @param files The files to upload.
  */
-export const uploadFiles = async (files, endpoint) => {
+export const uploadFiles = async (files, handler, endpoint) => {
+  if (files.length == 0) {
+    return;
+  }
   // Currently only supports uploading one file.
   const file = files[0]
   const headers = {
     "Content-Type": file.type,
   }
   const formdata = new FormData();
-  formdata.append("file", file, getToken() + ":" + "state.handle_upload" + ":" + file.name)
+  formdata.append("file", file, getToken() + ":" + handler + ":" + file.name)
   await axios.post(endpoint, formdata, headers).then((response) => {
     console.log(response);
   }

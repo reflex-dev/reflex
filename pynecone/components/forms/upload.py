@@ -8,7 +8,6 @@ from pynecone.var import BaseVar, Var
 
 upload_file = BaseVar(name="e => File(e)", type_=EventChain)
 
-
 class Upload(Input):
     """A file upload component."""
 

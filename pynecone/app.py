@@ -445,20 +445,19 @@ def upload(app: App):
         # Get the token and filename.
         token, handler, filename = file.filename.split(':', 2)
         file.filename = filename
-        breakpoint()
 
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-        await state.handle_upload.fn(state, file)
-        state.upload_files = [file]
-
-        # upload_data = await file.read()
-
-        # # Save the file.
-        # with open("uploads/" + file.filename, "wb") as file_object:
-        #     file_object.write(upload_data)
-        # with open(".web/public/img.png", "wb") as file_object:
-        #     file_object.write(upload_data)
+        print(handler)
+        path = handler.split(".")
+        path, name = path[:-1], path[-1]
+        substate = state.get_substate(path)
+        handler = getattr(substate, name)
+        import functools
+        fn = functools.partial(handler.fn, substate)
+        print("handler", handler)
+        await fn (file)
+        # await state.handle_upload.fn(state, file)
         return {"filename": file.filename}
 
     return upload_file

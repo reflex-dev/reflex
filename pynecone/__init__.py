@@ -10,7 +10,7 @@ from .components.component import custom_component as component
 from .components.graphing.victory import data
 from .config import Config
 from .constants import Env, Transports
-from .event import EVENT_ARG, EventChain, console_log, redirect, window_alert
+from .event import EVENT_ARG, EventChain, upload_files, console_log, redirect, window_alert
 from .middleware import Middleware
 from .model import Model, session
 from .route import route
