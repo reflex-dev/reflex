@@ -117,6 +117,7 @@ slider_thumb = SliderThumb.create
 slider_track = SliderTrack.create
 switch = Switch.create
 text_area = TextArea.create
+upload = Upload.create
 area = Area.create
 bar = Bar.create
 box_plot = BoxPlot.create
