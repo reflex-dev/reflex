@@ -4,8 +4,7 @@ from typing import Any
 import pytest
 
 import pynecone as pc
-from pynecone.components import cond
-from pynecone.components.layout.cond import Cond
+from pynecone.components.layout.cond import Cond, cond
 from pynecone.components.layout.fragment import Fragment
 from pynecone.components.typography.text import Text
 from pynecone.var import Var
