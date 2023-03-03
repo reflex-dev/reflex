@@ -457,7 +457,7 @@ def upload(app: App):
 
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-        event = Event(token=token, name=handler, payload={"files": [file]})
+        event = Event(token=token, name=handler, payload={"file": file})
         update = await state.process(event)
         return update
 

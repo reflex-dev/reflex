@@ -140,9 +140,12 @@ def compile_events(state: Type[State]) -> str:
     """
     state_name = state.get_name()
     state_setter = templates.format_state_setter(state_name)
-    event_fn = templates.EVENT_FN(state=state_name, set_state=state_setter)
-    upload_fn = templates.UPLOAD_FN(state=state_name, set_state=state_setter)
-    return templates.join([event_fn, upload_fn])
+    return templates.join(
+        [
+            templates.EVENT_FN(state=state_name, set_state=state_setter),
+            templates.UPLOAD_FN(state=state_name, set_state=state_setter),
+        ]
+    )
 
 
 def compile_effects(state: Type[State]) -> str:
