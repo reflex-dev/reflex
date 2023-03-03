@@ -188,28 +188,45 @@ export const connect = async (
 /**
  * Upload files to the server.
  *
+ * @param state The state to apply the delta to.
+ * @param setResult The function to set the result.
  * @param files The files to upload.
+ * @param handler The handler to use.
+ * @param endpoint The endpoint to upload to.
  */
 export const uploadFiles = async (
   state,
+  result,
   setResult,
   files,
   handler,
   endpoint
 ) => {
-  if (files.length == 0) {
+  // If we are already processing an event, or there are no upload files, return.
+  if (result.processing || files.length == 0) {
     return;
   }
+
+  // Set processing to true to block other events from being processed.
+  setResult({ ...result, processing: true });
+
   // Currently only supports uploading one file.
   const file = files[0];
   const headers = {
     "Content-Type": file.type,
   };
   const formdata = new FormData();
+
+  // Add the token and handler to the file name.
   formdata.append("file", file, getToken() + ":" + handler + ":" + file.name);
+
+  // Send the file to the server.
   await axios.post(endpoint, formdata, headers).then((response) => {
+    // Apply the delta and set the result.
     const update = response.data;
     applyDelta(state, update.delta);
+
+    // Set processing to false and return.
     setResult({
       processing: false,
       state: state,
