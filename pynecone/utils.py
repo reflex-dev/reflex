@@ -1226,6 +1226,7 @@ def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
+# Set of unique variable names.
 USED_VARIABLES = set()
 
 
