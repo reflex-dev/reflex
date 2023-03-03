@@ -1,6 +1,6 @@
 // State management for Pynecone web apps.
 import axios from "axios";
-import io from 'socket.io-client';
+import io from "socket.io-client";
 
 // Global variable to hold the token.
 let token;
@@ -109,7 +109,14 @@ export const applyEvent = async (event, router, socket) => {
  * @param router The router object.
  * @param socket The socket object to send the event on.
  */
-export const updateState = async (state, setState, result, setResult, router, socket) => {
+export const updateState = async (
+  state,
+  setState,
+  result,
+  setResult,
+  router,
+  socket
+) => {
   // If we are already processing an event, or there are no events to process, return.
   if (result.processing || state.events.length == 0) {
     return;
@@ -119,7 +126,7 @@ export const updateState = async (state, setState, result, setResult, router, so
   setResult({ ...result, processing: true });
 
   // Pop the next event off the queue and apply it.
-  const event = state.events.shift()
+  const event = state.events.shift();
 
   // Set new events to avoid reprocessing the same event.
   setState({ ...state, events: state.events });
@@ -128,7 +135,7 @@ export const updateState = async (state, setState, result, setResult, router, so
   const eventSent = await applyEvent(event, router, socket);
   if (!eventSent) {
     // If no event was sent, set processing to false and return.
-    setResult({...state, processing: false})
+    setResult({ ...state, processing: false });
   }
 };
 
@@ -142,23 +149,32 @@ export const updateState = async (state, setState, result, setResult, router, so
  * @param endpoint The endpoint to connect to.
  * @param transports The transports to use.
  */
-export const connect = async (socket, state, setState, result, setResult, router, endpoint, transports) => {
+export const connect = async (
+  socket,
+  state,
+  setState,
+  result,
+  setResult,
+  router,
+  endpoint,
+  transports
+) => {
   // Get backend URL object from the endpoint
-  const endpoint_url = new URL(endpoint)
+  const endpoint_url = new URL(endpoint);
   // Create the socket.
   socket.current = io(endpoint, {
-    path: endpoint_url['pathname'],
+    path: endpoint_url["pathname"],
     transports: transports,
     autoUnref: false,
   });
 
   // Once the socket is open, hydrate the page.
-  socket.current.on('connect', () => {
+  socket.current.on("connect", () => {
     updateState(state, setState, result, setResult, router, socket.current);
   });
 
   // On each received message, apply the delta and set the result.
-  socket.current.on('event', function (update) {
+  socket.current.on("event", function (update) {
     update = JSON.parse(update);
     applyDelta(state, update.delta);
     setResult({
@@ -171,25 +187,36 @@ export const connect = async (socket, state, setState, result, setResult, router
 
 /**
  * Upload files to the server.
- * 
+ *
  * @param files The files to upload.
  */
-export const uploadFiles = async (files, handler, endpoint) => {
+export const uploadFiles = async (
+  state,
+  setResult,
+  files,
+  handler,
+  endpoint
+) => {
   if (files.length == 0) {
     return;
   }
   // Currently only supports uploading one file.
-  const file = files[0]
+  const file = files[0];
   const headers = {
     "Content-Type": file.type,
-  }
+  };
   const formdata = new FormData();
-  formdata.append("file", file, getToken() + ":" + handler + ":" + file.name)
+  formdata.append("file", file, getToken() + ":" + handler + ":" + file.name);
   await axios.post(endpoint, formdata, headers).then((response) => {
-    console.log(response);
-  }
-  )
-}
+    const update = response.data;
+    applyDelta(state, update.delta);
+    setResult({
+      processing: false,
+      state: state,
+      events: update.events,
+    });
+  });
+};
 
 /**
  * Create an event object.

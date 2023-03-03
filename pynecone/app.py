@@ -451,18 +451,9 @@ def upload(app: App):
 
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-        print(handler)
-        path = handler.split(".")
-        path, name = path[:-1], path[-1]
-        substate = state.get_substate(path)
-        handler = getattr(substate, name)
-        import functools
-
-        fn = functools.partial(handler.fn, substate)
-        print("handler", handler)
-        await fn(file)
-        # await state.handle_upload.fn(state, file)
-        return {"filename": file.filename}
+        event = Event(token=token, name=handler, payload={"files": [file]})
+        update = await state.process(event)
+        return update
 
     return upload_file
 
