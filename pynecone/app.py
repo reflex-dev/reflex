@@ -437,6 +437,9 @@ def upload(app: App):
 
     Args:
         app: The app to upload the file for.
+
+    Returns:
+        The upload function.
     """
 
     async def upload_file(file: UploadFile):
@@ -444,6 +447,9 @@ def upload(app: App):
 
         Args:
             file: The file to upload.
+
+        Returns:
+            The state update after processing the event.
         """
         # Get the token and filename.
         token, handler, filename = file.filename.split(":", 2)
