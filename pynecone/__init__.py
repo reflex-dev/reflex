@@ -15,9 +15,9 @@ from .event import (
     EventChain,
     console_log,
     redirect,
-    upload_files,
     window_alert,
 )
+from .event import FileUpload as upload_files
 from .middleware import Middleware
 from .model import Model, session
 from .route import route

@@ -19,7 +19,6 @@ from typing import (
 )
 
 import cloudpickle
-from fastapi import UploadFile
 from redis import Redis
 
 from pynecone import constants, utils
@@ -65,9 +64,6 @@ class State(Base, ABC):
 
     # The routing path that triggered the state
     router_data: Dict[str, Any] = {}
-
-    # The uploaded files.
-    upload_files: List[UploadFile] = []
 
     def __init__(self, *args, **kwargs):
         """Initialize the state.

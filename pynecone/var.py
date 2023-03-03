@@ -145,17 +145,17 @@ class Var(ABC):
             TypeError: If the var is not indexable.
         """
         # Indexing is only supported for lists, dicts, and dataframes.
-        # if not (
-        #     utils._issubclass(self.type_, Union[List, Dict])
-        #     or utils.is_dataframe(self.type_)
-        # ):
-        #     if self.type_ == Any:
-        #         raise TypeError(
-        #             f"Could not index into var of type Any. (If you are trying to index into a state var, add a type annotation to the var.)"
-        #         )
-        #     raise TypeError(
-        #         f"Var {self.name} of type {self.type_} does not support indexing."
-        #     )
+        if not (
+            utils._issubclass(self.type_, Union[List, Dict])
+            or utils.is_dataframe(self.type_)
+        ):
+            if self.type_ == Any:
+                raise TypeError(
+                    f"Could not index into var of type Any. (If you are trying to index into a state var, add a type annotation to the var.)"
+                )
+            raise TypeError(
+                f"Var {self.name} of type {self.type_} does not support indexing."
+            )
 
         # The type of the indexed var.
         type_ = Any
