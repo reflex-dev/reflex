@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Set, Tuple
 
 from pynecone.base import Base
 from pynecone.var import BaseVar, Var
@@ -129,11 +129,9 @@ EVENT_ARG = BaseVar(name="_e", type_=FrontendEvent, is_local=True)
 
 
 class FileUpload(Base):
-    handler: Optional[EventHandler] = None
+    """Class to represent a file upload."""
 
-
-def upload_files():
-    return FileUpload()
+    pass
 
 
 # Special server-side events.

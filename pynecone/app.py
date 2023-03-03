@@ -123,6 +123,8 @@ class App(Base):
         """Add the default endpoints."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
+
+        # To upload files.
         self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
