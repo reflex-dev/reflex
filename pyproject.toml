@@ -39,7 +39,7 @@ psutil = "^5.9.4"
 websockets = "^10.4"
 cloudpickle = "^2.2.1"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
 pytest-mock = "^3.10.0"
 pyright = "^1.1.229"
