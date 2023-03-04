@@ -20,4 +20,13 @@ from .spacer import Spacer
 from .stack import Hstack, Stack, Vstack
 from .wrap import Wrap, WrapItem
 
-__all__ = [f for f in dir() if f[0].isupper()]  # type: ignore
+helpers = [
+    "cond",
+    "desktop_only",
+    "mobile_and_tablet",
+    "mobile_only",
+    "tablet_and_desktop",
+    "tablet_only",
+]
+
+__all__ = [f for f in dir() if f[0].isupper()] + helpers  # type: ignore
