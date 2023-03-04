@@ -32,7 +32,7 @@ class Tag(Base):
     contents: str = ""
 
     # Args to pass to the tag.
-    args: Optional[Tuple[str]] = None
+    args: Optional[Tuple[str, ...]] = None
 
     # Special props that aren't key value pairs.
     special_props: Set[Var] = set()
