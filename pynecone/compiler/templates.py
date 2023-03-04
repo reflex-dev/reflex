@@ -148,9 +148,9 @@ EVENT_FN = join(
 ).format
 UPLOAD_FN = join(
     [
-        "const File = event => {set_state}({{",
+        "const File = files => {set_state}({{",
         "  ...{state},",
-        "  files: event.target.files,",
+        "  files,",
         "}})",
     ]
 ).format
