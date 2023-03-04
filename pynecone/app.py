@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 
@@ -124,6 +124,9 @@ class App(Base):
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
+        # To upload files.
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
     def add_cors(self):
         """Add CORS middleware to the app."""
         self.api.add_middleware(
@@ -131,6 +134,7 @@ class App(Base):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            allow_origins=["*"],
         )
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
@@ -426,6 +430,38 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+def upload(app: App):
+    """Upload a file.
+
+    Args:
+        app: The app to upload the file for.
+
+    Returns:
+        The upload function.
+    """
+
+    async def upload_file(file: UploadFile):
+        """Upload a file.
+
+        Args:
+            file: The file to upload.
+
+        Returns:
+            The state update after processing the event.
+        """
+        # Get the token and filename.
+        token, handler, filename = file.filename.split(":", 2)
+        file.filename = filename
+
+        # Get the state for the session.
+        state = app.state_manager.get_state(token)
+        event = Event(token=token, name=handler, payload={"file": file})
+        update = await state.process(event)
+        return update
+
+    return upload_file
 
 
 class EventNamespace(AsyncNamespace):

@@ -62,6 +62,9 @@ class EventHandler(Base):
                 values.append(arg.full_name)
                 continue
 
+            if isinstance(arg, FileUpload):
+                return EventSpec(handler=self, upload=True)
+
             # Otherwise, convert to JSON.
             try:
                 values.append(json.dumps(arg, ensure_ascii=False))
@@ -90,6 +93,9 @@ class EventSpec(Base):
 
     # The arguments to pass to the function.
     args: Tuple[Any, ...] = ()
+
+    # Whether to upload files.
+    upload: bool = False
 
     class Config:
         """The Pydantic config."""
@@ -120,6 +126,12 @@ class FrontendEvent(Base):
 
 # The default event argument.
 EVENT_ARG = BaseVar(name="_e", type_=FrontendEvent, is_local=True)
+
+
+class FileUpload(Base):
+    """Class to represent a file upload."""
+
+    pass
 
 
 # Special server-side events.

@@ -15,7 +15,7 @@ from pynecone.style import Style
 DEFAULT_IMPORTS: ImportDict = {
     "react": {"useEffect", "useRef", "useState"},
     "next/router": {"useRouter"},
-    f"/{constants.STATE_PATH}": {"connect", "updateState", "E"},
+    f"/{constants.STATE_PATH}": {"connect", "updateState", "uploadFiles", "E"},
     "": {"focus-visible/dist/focus-visible"},
     "@chakra-ui/react": {constants.USE_COLOR_MODE},
 }

@@ -1138,21 +1138,21 @@ def format_cond(
     return expr
 
 
-def format_event_handler(handler: EventHandler) -> str:
-    """Format an event handler.
+def get_event_handler_parts(handler: EventHandler) -> Tuple[str, str]:
+    """Get the state and function name of an event handler.
 
     Args:
-        handler: The event handler to format.
+        handler: The event handler to get the parts of.
 
     Returns:
-        The formatted function.
+        The state and function name.
     """
     # Get the class that defines the event handler.
     parts = handler.fn.__qualname__.split(".")
 
     # If there's no enclosing class, just return the function name.
     if len(parts) == 1:
-        return parts[-1]
+        return ("", parts[-1])
 
     # Get the state and the function name.
     state_name, name = parts[-2:]
@@ -1163,8 +1163,24 @@ def format_event_handler(handler: EventHandler) -> str:
         state = vars(sys.modules[handler.fn.__module__])[state_name]
     except Exception:
         # If the state isn't in the module, just return the function name.
-        return handler.fn.__qualname__
-    return ".".join([state.get_full_name(), name])
+        return ("", handler.fn.__qualname__)
+
+    return (state.get_full_name(), name)
+
+
+def format_event_handler(handler: EventHandler) -> str:
+    """Format an event handler.
+
+    Args:
+        handler: The event handler to format.
+
+    Returns:
+        The formatted function.
+    """
+    state, name = get_event_handler_parts(handler)
+    if state == "":
+        return name
+    return f"{state}.{name}"
 
 
 def format_event(event_spec: EventSpec) -> str:
@@ -1180,6 +1196,21 @@ def format_event(event_spec: EventSpec) -> str:
     return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 
+def format_upload_event(event_spec: EventSpec) -> str:
+    """Format an upload event.
+
+    Args:
+        event_spec: The event to format.
+
+    Returns:
+        The compiled event.
+    """
+    from pynecone.compiler import templates
+
+    state, name = get_event_handler_parts(event_spec.handler)
+    return f'uploadFiles({state}, {templates.RESULT}, {templates.SET_RESULT}, {state}.files, "{name}", UPLOAD)'
+
+
 def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     """Convert back query params name to python-friendly case.
 
@@ -1193,6 +1224,7 @@ def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
+# Set of unique variable names.
 USED_VARIABLES = set()
 
 
