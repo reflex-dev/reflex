@@ -1,4 +1,3 @@
-# type: ignore
 """Welcome to Pynecone! This file outlines the steps to create a basic app."""
 from pcconfig import config
 
