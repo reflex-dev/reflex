@@ -94,7 +94,7 @@ class DataTable(Gridjs):
         # If given a pandas df break up the data and columns
         if utils.is_dataframe(type(self.data)):
             self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
-            self.data = Var.create(list(self.data.values.tolist()))  # type: ignore
+            self.data = Var.create(utils.format_dataframe_values(self.data))  # type: ignore
 
         # Render the table.
         return super()._render()
