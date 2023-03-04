@@ -41,8 +41,7 @@ class Tag(Base):
         # Convert any props to vars.
         if "props" in kwargs:
             kwargs["props"] = {
-                name: Var.create(value)
-                for name, value in kwargs["props"].items()
+                name: Var.create(value) for name, value in kwargs["props"].items()
             }
         super().__init__(*args, **kwargs)
 
@@ -69,8 +68,7 @@ class Tag(Base):
         # Handle event props.
         elif isinstance(prop, EventChain):
             local_args = ",".join(prop.events[0].local_args)
-            events = ",".join(
-                [utils.format_event(event) for event in prop.events])
+            events = ",".join([utils.format_event(event) for event in prop.events])
             prop = f"({local_args}) => Event([{events}])"
 
         # Handle other types.
@@ -113,9 +111,11 @@ class Tag(Base):
             return ""
 
         # Format all the props.
-        return os.linesep.join(f"{name}={self.format_prop(prop)}"
-                               for name, prop in self.props.items()
-                               if prop is not None)
+        return os.linesep.join(
+            f"{name}={self.format_prop(prop)}"
+            for name, prop in self.props.items()
+            if prop is not None
+        )
 
     def __str__(self) -> str:
         """Render the tag as a React string.
@@ -148,12 +148,15 @@ class Tag(Base):
         Returns:
             The tag with the props added.
         """
-        self.props.update({
-            utils.to_camel_case(name):
-            prop if utils._isinstance(prop, Union[EventChain,
-                                                  dict]) else Var.create(prop)
-            for name, prop in kwargs.items() if self.is_valid_prop(prop)
-        })
+        self.props.update(
+            {
+                utils.to_camel_case(name): prop
+                if utils._isinstance(prop, Union[EventChain, dict])
+                else Var.create(prop)
+                for name, prop in kwargs.items()
+                if self.is_valid_prop(prop)
+            }
+        )
         return self
 
     def remove_props(self, *args: str) -> Tag:
@@ -180,5 +183,4 @@ class Tag(Base):
         Returns:
             Whether the prop is valid.
         """
-        return prop is not None and not (isinstance(prop, dict)
-                                         and len(prop) == 0)
+        return prop is not None and not (isinstance(prop, dict) and len(prop) == 0)
