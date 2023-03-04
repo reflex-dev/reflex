@@ -1,6 +1,6 @@
 """A file upload component."""
 
-from typing import Dict
+from typing import Dict, List, Optional
 
 from pynecone.components.component import EVENT_ARG, Component
 from pynecone.components.forms.input import Input
@@ -17,6 +17,33 @@ class Upload(Component):
     library = "react-dropzone"
 
     tag = "ReactDropzone"
+
+    # The list of accepted file types.
+    accept: Var[Optional[List[str]]]
+
+    # Whether the dropzone is disabled.
+    disabled: Var[bool]
+
+    # The maximum number of files that can be uploaded.
+    max_files: Var[int]
+
+    # The maximum file size (bytes) that can be uploaded.
+    max_size: Var[int]
+
+    # The minimum file size (bytes) that can be uploaded.
+    min_size: Var[int]
+
+    # Whether to allow multiple files to be uploaded.
+    multiple: Var[bool] = True  # type: ignore
+
+    # Whether to disable click to upload.
+    no_click: Var[bool]
+
+    # Whether to disable drag and drop.
+    no_drag: Var[bool]
+
+    # Whether to disable using the space/enter keys to upload.
+    no_keyboard: Var[bool]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
