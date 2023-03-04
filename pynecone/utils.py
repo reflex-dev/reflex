@@ -1288,6 +1288,28 @@ def is_valid_var_type(var: Type) -> bool:
     return _issubclass(var, StateVar) or is_dataframe(var) or is_figure(var)
 
 
+def format_dataframe_values(value: Type) -> List[Any]:
+    """Format dataframe values.
+
+    Args:
+        value: The value to format.
+
+    Returns:
+        Format data
+    """
+    if not is_dataframe(type(value)):
+        return value
+
+    format_data = []
+    for data in list(value.values.tolist()):
+        element = []
+        for d in data:
+            element.append(str(d) if isinstance(d, (list, tuple)) else d)
+        format_data.append(element)
+
+    return format_data
+
+
 def format_state(value: Any) -> Dict:
     """Recursively format values in the given state.
 
@@ -1316,7 +1338,7 @@ def format_state(value: Any) -> Dict:
     if is_dataframe(type(value)):
         return {
             "columns": value.columns.tolist(),
-            "data": value.values.tolist(),
+            "data": format_dataframe_values(value),
         }
 
     raise TypeError(
