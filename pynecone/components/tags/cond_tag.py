@@ -19,9 +19,6 @@ class CondTag(Tag):
     # The code to render if the condition is false.
     false_value: str
 
-    # Whether the cond tag is nested.
-    is_nested: bool = False
-
     def __str__(self) -> str:
         """Render the tag as a React string.
 
@@ -33,5 +30,4 @@ class CondTag(Tag):
             cond=self.cond.full_name,
             true_value=self.true_value,
             false_value=self.false_value,
-            is_nested=self.is_nested,
         )
