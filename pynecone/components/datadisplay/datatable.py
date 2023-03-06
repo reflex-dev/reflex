@@ -1,6 +1,8 @@
 """Table components."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
+
+from pandas import DataFrame
 
 from pynecone import utils
 from pynecone.components.component import Component, ImportDict
@@ -20,7 +22,7 @@ class DataTable(Gridjs):
     tag = "Grid"
 
     # The data to display. Either a list of dictionaries or a pandas dataframe.
-    data: Any
+    data: Union[Var[List], DataFrame]
 
     # The columns to display.
     columns: Var[List]
@@ -67,7 +69,11 @@ class DataTable(Gridjs):
             )
 
         # If data is a list and columns are not provided, throw an error
-        if (isinstance(data := props.get("data"), Var) and isinstance(data.type_, List) or isinstance(data, List)) and not props.get("columns"):
+        if (
+            isinstance(data := props.get("data"), Var)
+            and isinstance(data.type_, List)
+            or isinstance(data, List)
+        ) and not props.get("columns"):
             raise ValueError(
                 "column field should be specified when the data field is a list type"
             )
@@ -84,32 +90,22 @@ class DataTable(Gridjs):
         )
 
     def _render(self) -> Tag:
-        # If given a var dataframe, get the data and columns
-        if isinstance(self.data, Var):
-            if utils.is_dataframe(self.data.type_):
-                self.columns = BaseVar(
-                    name=f"{self.data.name}.columns",
-                    type_=List[Any],
-                    state=self.data.state,
-                )
-                self.data = BaseVar(
-                    name=f"{self.data.name}.data",
-                    type_=List[List[Any]],
-                    state=self.data.state,
-                )
-            else:
-                self.columns = BaseVar(
-                    name=f"{self.columns.name}",
-                    type_=List[Any],
-                    state=self.data.state,
-                ) if self.columns else None
-                self.data = BaseVar(
-                    name=f"{self.data.name}",
-                    type_=List[List[Any]],
-                    state=self.data.state,
-                )
 
-        # If given a pandas df break up the data and columns
+        if isinstance(self.data, Var):
+            self.columns = BaseVar(
+                name=f"{self.data.name}.columns"
+                if utils.is_dataframe(self.data.type_)
+                else f"{self.columns.name}",
+                type_=List[Any],
+                state=self.data.state,
+            )
+            self.data = BaseVar(
+                name=f"{self.data.name}.data"
+                if utils.is_dataframe(self.data.type_)
+                else f"{self.data.name}",
+                type_=List[List[Any]],
+                state=self.data.state,
+            )
         if utils.is_dataframe(type(self.data)):
             self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
             self.data = Var.create(utils.format_dataframe_values(self.data))  # type: ignore
