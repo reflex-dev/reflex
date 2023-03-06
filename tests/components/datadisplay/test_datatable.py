@@ -1,11 +1,11 @@
 import os
 
-import pytest
 import pandas as pd
+import pytest
 
 import pynecone as pc
-from pynecone.components import data_table
 from pynecone import utils
+from pynecone.components import data_table
 
 
 @pytest.mark.parametrize(
@@ -25,10 +25,11 @@ from pynecone import utils
     indirect=["data_table_state"],
 )
 def test_validate_data_table(data_table_state: pc.Var, expected):
-    """Test the str/render function
+    """Test the str/render function.
 
     Args:
         data_table_state: The state fixture.
+        expected: expected var name.
 
     """
     props = {"data": data_table_state.data}

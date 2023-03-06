@@ -1,6 +1,6 @@
-import pynecone as pc
-
 import pytest
+
+import pynecone as pc
 
 
 @pytest.fixture
