@@ -39,10 +39,6 @@ psutil = "^5.9.4"
 websockets = "^10.4"
 cloudpickle = "^2.2.1"
 python-multipart = "^0.0.5"
-pandas = [
-    {version = "^1.5.3", python = ">=3.8,<4.0"},
-    {version = "^1.1", python = ">=3.7, <3.8"}
-]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -53,6 +49,10 @@ toml = "^0.10.2"
 pytest-asyncio = "^0.20.1"
 black = "^22.10.0"
 ruff = "^0.0.244"
+pandas = [
+    {version = "^1.5.3", python = ">=3.8,<4.0"},
+    {version = "^1.1", python = ">=3.7, <3.8"}
+]
 
 [tool.poetry.scripts]
 pc = "pynecone.pc:main"

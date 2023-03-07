@@ -11,8 +11,6 @@ from pynecone.components import data_table
 @pytest.mark.parametrize(
     "data_table_state,expected",
     [
-        pytest.param({"data": ["foo", "bar"]}, "data_table_state"),
-        pytest.param({"data": [["foo", "bar"], ["foo1", "bar1"]]}, "data_table_state"),
         pytest.param(
             {
                 "data": pd.DataFrame(
@@ -21,6 +19,8 @@ from pynecone.components import data_table
             },
             "data_table_state.data",
         ),
+        pytest.param({"data": ["foo", "bar"]}, "data_table_state"),
+        pytest.param({"data": [["foo", "bar"], ["foo1", "bar1"]]}, "data_table_state"),
     ],
     indirect=["data_table_state"],
 )
@@ -38,14 +38,10 @@ def test_validate_data_table(data_table_state: pc.Var, expected):
     data_table_component = data_table(**props)
 
     assert (
-        str(data_table_component) == f"<DataTableGrid data={{"
-        f"{expected}.data}}{os.linesep}columns={{{expected}.columns}}/>"
+        str(data_table_component)
+        == f"<DataTableGrid columns={{{expected}.columns}}{os.linesep}data={{"
+        f"{expected}.data}}/>"
     )
-    # assert (
-    #         str(data_table_component)
-    #         == f"<DataTableGrid columns={{{expected}.columns}}{os.linesep}data={{"
-    #            f"{expected}.data}}/>"
-    # )
 
 
 @pytest.mark.parametrize(

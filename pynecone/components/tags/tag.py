@@ -127,7 +127,7 @@ class Tag(Base):
         # Format all the props.
         return os.linesep.join(
             f"{name}={self.format_prop(prop)}"
-            for name, prop in self.props.items()
+            for name, prop in sorted(self.props.items())
             if prop is not None
         )
 
