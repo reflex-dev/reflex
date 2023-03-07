@@ -108,6 +108,7 @@ class Tag(Base):
             # This substitution is necessary to unwrap var values.
             prop = re.sub('"{', "", prop)
             prop = re.sub('}"', "", prop)
+            prop = re.sub('\\\\"', '"', prop)
 
         # Wrap the variable in braces.
         assert isinstance(prop, str), "The prop must be a string."

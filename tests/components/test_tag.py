@@ -39,9 +39,18 @@ def mock_event(arg):
             ),
             '{(e) => Event([E("mock_event", {arg:e.target.value})])}',
         ),
+        ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
+        (BaseVar(name="var", type_="int"), "{var}"),
+        (BaseVar(name='state.colors["a"]', type_="str"), '{state.colors["a"]}'),
+        ({"a": BaseVar(name="val", type_="str")}, '{{"a": val}}'),
+        ({"a": BaseVar(name='"val"', type_="str")}, '{{"a": "val"}}'),
+        (
+            {"a": BaseVar(name='state.colors["val"]', type_="str")},
+            '{{"a": state.colors["val"]}}',
+        ),
     ],
 )
-def test_format_value(prop: Var, formatted: str):
+def test_format_prop(prop: Var, formatted: str):
     """Test that the formatted value of an prop is correct.
 
     Args:
