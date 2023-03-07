@@ -60,10 +60,24 @@ class DataTable(Gridjs):
         Raises:
             ValueError: If a pandas dataframe is passed in and columns are also provided.
         """
+        data = props.get("data")
+
         # If data is a pandas dataframe and columns are provided throw an error.
-        if utils.is_dataframe(type(props.get("data"))) and props.get("columns"):
+        if (
+            utils.is_dataframe(type(data))
+            or (isinstance(data, Var) and utils.is_dataframe(data.type_))
+        ) and props.get("columns"):
             raise ValueError(
                 "Cannot pass in both a pandas dataframe and columns to the data_table component."
+            )
+
+        # If data is a list and columns are not provided, throw an error
+        if (
+            (isinstance(data, Var) and issubclass(data.type_, List))
+            or issubclass(type(data), List)
+        ) and not props.get("columns"):
+            raise ValueError(
+                "column field should be specified when the data field is a list type"
             )
 
         # Create the component.
@@ -78,15 +92,19 @@ class DataTable(Gridjs):
         )
 
     def _render(self) -> Tag:
-        # If given a var dataframe, get the data and columns
+
         if isinstance(self.data, Var):
             self.columns = BaseVar(
-                name=f"{self.data.name}.columns",
+                name=f"{self.data.name}.columns"
+                if utils.is_dataframe(self.data.type_)
+                else f"{self.columns.name}",
                 type_=List[Any],
                 state=self.data.state,
             )
             self.data = BaseVar(
-                name=f"{self.data.name}.data",
+                name=f"{self.data.name}.data"
+                if utils.is_dataframe(self.data.type_)
+                else f"{self.data.name}",
                 type_=List[List[Any]],
                 state=self.data.state,
             )
