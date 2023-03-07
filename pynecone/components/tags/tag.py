@@ -68,7 +68,7 @@ class Tag(Base):
             if not prop.is_local or prop.is_string:
                 return str(prop)
             if issubclass(prop.type_, str):
-                return json.dumps(prop.full_name, ensure_ascii=False)
+                return utils.json_dumps(prop.full_name)
             prop = prop.full_name
 
         # Handle event props.
@@ -88,7 +88,7 @@ class Tag(Base):
         elif isinstance(prop, str):
             if utils.is_wrapped(prop, "{"):
                 return prop
-            return json.dumps(prop, ensure_ascii=False)
+            return utils.json_dumps(prop)
 
         elif isinstance(prop, Figure):
             prop = json.loads(to_json(prop))["data"]  # type: ignore
@@ -103,7 +103,7 @@ class Tag(Base):
                 }
 
             # Dump the prop as JSON.
-            prop = json.dumps(prop, ensure_ascii=False)
+            prop = utils.json_dumps(prop)
 
             # This substitution is necessary to unwrap var values.
             prop = re.sub('"{', "", prop)
