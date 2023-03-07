@@ -73,10 +73,7 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (
-                isinstance(data, Var)
-                and issubclass(data.type_, List)
-            )
+            (isinstance(data, Var) and issubclass(data.type_, List))
             or issubclass(type(data), List)
         ) and not props.get("columns"):
             raise ValueError(
