@@ -60,9 +60,11 @@ class DataTable(Gridjs):
         Raises:
             ValueError: If a pandas dataframe is passed in and columns are also provided.
         """
+        data = props.get("data")
+
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
-            utils.is_dataframe(type(data := props.get("data")))
+            utils.is_dataframe(type(data))
             or (isinstance(data, Var) and utils.is_dataframe(data.type_))
         ) and props.get("columns"):
             raise ValueError(
@@ -72,7 +74,7 @@ class DataTable(Gridjs):
         # If data is a list and columns are not provided, throw an error
         if (
             (
-                isinstance(data := props.get("data"), Var)
+                isinstance(data, Var)
                 and issubclass(data.type_, List)
             )
             or issubclass(type(data), List)
