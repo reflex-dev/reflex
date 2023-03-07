@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import inspect
-import json
 from typing import Any, Callable, Dict, List, Set, Tuple
 
+from pynecone import utils
 from pynecone.base import Base
 from pynecone.var import BaseVar, Var
 
@@ -67,7 +67,7 @@ class EventHandler(Base):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(json.dumps(arg, ensure_ascii=False))
+                values.append(utils.json_dumps(arg))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."

@@ -1576,5 +1576,17 @@ def is_backend_variable(name: str) -> bool:
     return name.startswith("_") and not name.startswith("__")
 
 
+def json_dumps(obj: Any):
+    """Serialize ``obj`` to a JSON formatted ``str``, ensure_ascii=False.
+
+    Args:
+        obj: The obj to be fromatted
+
+    Returns:
+        str: The result of the json dumps
+    """
+    return json.dumps(obj, ensure_ascii=False)
+
+
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
