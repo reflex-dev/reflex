@@ -22,13 +22,10 @@ class Cond(Component):
     # The component to render if the cond is false.
     comp2: Component
 
-    # Whether the cond is within another cond.
-    is_nested: bool = False
-
     @classmethod
     def create(
         cls, cond: Var, comp1: Component, comp2: Optional[Component] = None
-    ) -> Cond:
+    ) -> Component:
         """Create a conditional component.
 
         Args:
@@ -39,31 +36,23 @@ class Cond(Component):
         Returns:
             The conditional component.
         """
-        from pynecone.components.layout.foreach import Foreach
-
-        if comp2 is None:
-            comp2 = Fragment.create()
-        if isinstance(comp1, Foreach):
-            comp1 = Fragment.create(comp1)
-        if isinstance(comp2, Foreach):
-            comp2 = Fragment.create(comp2)
-        if isinstance(comp1, Cond):
-            comp1.is_nested = True
-        if isinstance(comp2, Cond):
-            comp2.is_nested = True
-        return cls(
-            cond=cond,
-            comp1=comp1,
-            comp2=comp2,
-            children=[comp1, comp2],
-        )  # type: ignore
+        # Wrap everything in fragments.
+        comp1 = Fragment.create(comp1)
+        comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
+        return Fragment.create(
+            cls(
+                cond=cond,
+                comp1=comp1,
+                comp2=comp2,
+                children=[comp1, comp2],
+            )
+        )
 
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
             true_value=self.comp1.render(),
             false_value=self.comp2.render(),
-            is_nested=self.is_nested,
         )
 
 
