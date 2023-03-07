@@ -52,4 +52,3 @@ jobs:
     - run: poetry run ruff check . --format github
     - run: find pynecone tests -name "*.py" -not -path pynecone/pc.py | xargs poetry run darglint
     - run: poetry run black --check pynecone tests
-
