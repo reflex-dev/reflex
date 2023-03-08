@@ -43,6 +43,7 @@ from rich.prompt import Prompt
 
 from pynecone import constants
 from pynecone.base import Base
+from pynecone.watch import AssetFolderWatch
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -590,6 +591,16 @@ def posix_export(backend: bool = True, frontend: bool = True):
         os.system(cmd)
 
 
+def start_watching_assets_folder(root):
+    """Start watching assets folder.
+
+    Args:
+        root: root path of the project.
+    """
+    asset_watch = AssetFolderWatch(root)
+    asset_watch.start()
+
+
 def setup_frontend(root: Path):
     """Set up the frontend.
 
@@ -621,6 +632,9 @@ def run_frontend(app: App, root: Path, port: str):
     """
     # Set up the frontend.
     setup_frontend(root)
+
+    # start watching asset folder
+    start_watching_assets_folder(root)
 
     # Compile the frontend.
     app.compile(force_compile=True)
