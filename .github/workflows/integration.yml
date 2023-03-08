@@ -4,7 +4,6 @@ on:
   pull_request_review:
     types: [submitted]
 
-
 permissions:
   contents: read
 
@@ -35,8 +34,8 @@ jobs:
     - name: Clone Pynecone Website Repo
       uses: actions/checkout@v3
       with:
-        repository: pynecone-io/pcweb
-        path: pcweb
+        repository: pynecone-io/pynecone-examples
+        path: pynecone-examples
     
     # Install poetry
     - name: cache poetry install
@@ -58,17 +57,36 @@ jobs:
         path: .venv
         key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
-    # Begin the integration test
-    # Commenting this out for now while we improve it.
-    # - name: Poetry Install
-    #   run: poetry install --no-interaction --no-root
-    #   if: steps.cache-deps.outputs.cache-hit != 'true'
-    # - name: Install Requirements
-    #   working-directory: ./pcweb
-    #   run: poetry run pip install -r requirements.txt
-    # - name: Init Website
-    #   working-directory: ./pcweb
-    #   run: poetry run pc init
-    # - name: Run Website
-    #   working-directory: ./pcweb
-    #   run: timeout 1m poetry run pc run || exit 0
+    - name: Poetry Install
+      run: poetry install --no-interaction --no-root
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+    - name: Install Requirements
+      working-directory: ./pynecone-examples/counter
+      run: poetry run pip install -r requirements.txt
+    - name: Init Website
+      working-directory: ./pynecone-examples/counter
+      run: poetry run pc init
+    - name: Run Website and check for errors
+      working-directory: ./pynecone-examples/counter
+      run: |
+        curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.5
+        timeout 2m poetry run pc run &
+        sleep 10
+        URL="127.0.0.1:3000"
+
+        # make the curl request and save the response and HTTP status code
+        RESPONSE=$(curl -s -w "\n%{http_code}" $URL)
+
+        # extract the HTTP status code from the response
+        HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+
+        # check for errors based on the HTTP status code
+        if [[ $HTTP_STATUS -ge 400 ]]; then
+          echo "Error: HTTP status code $HTTP_STATUS"
+          exit 1
+        fi
+
+        # if no errors, print the response body
+        RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
+        echo "success with HTTP STATUS: $HTTP_STATUS"
+
