@@ -86,7 +86,5 @@ jobs:
           exit 1
         fi
 
-        # if no errors, print the response body
-        RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
         echo "success with HTTP STATUS: $HTTP_STATUS"
 
