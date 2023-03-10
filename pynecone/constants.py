@@ -80,6 +80,9 @@ TIMEOUT = 120
 # The command to run the backend in production mode.
 RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {TIMEOUT} --log-level critical".split()
 RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {TIMEOUT}".split()
+# Socket.IO web server
+PING_INTERVAL = 25
+PING_TIMEOUT = 5
 
 # Compiler variables.
 # The extension for compiled Javascript files.
