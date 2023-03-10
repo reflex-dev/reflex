@@ -1,4 +1,4 @@
-"""Dynamically generate tag classes."""
+"""Dynamically generate element classes."""
 import os
 from pynecone.el.constants import ELEMENT_TO_PROPS, ELEMENTS
 
