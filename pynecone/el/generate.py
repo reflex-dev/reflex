@@ -61,11 +61,10 @@ for element in ELEMENTS:
 
     # Handle the "del" element, which is a Python keyword.
     # Note that the class name is still "Del".
-    if element == "del":
-        element = "del_"
+    element_name_override = "del_" if element == "del" else element
 
     code = TEMPLATE.format(
-        name=element,
+        name=element_name_override,
         pyclass=pyclass,
         props=format_prop_attrs(element),
     )
