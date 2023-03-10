@@ -1,7 +1,12 @@
 """Dynamically generate tag classes."""
-
 import os
 from pynecone.el.constants import ELEMENT_TO_PROPS, ELEMENTS
+
+FILE_DIR = os.path.dirname(os.path.realpath(__file__))
+ELEMENTS_DIR = os.path.join(FILE_DIR, "elements")
+INIT_PY_PATH = os.path.join(ELEMENTS_DIR, "__init__.py")
+
+os.makedirs(ELEMENTS_DIR, exist_ok=True)
 
 TEMPLATE = """
 from typing import Union
@@ -17,12 +22,6 @@ class {pyclass}(Element):
 
 {name} = {pyclass}.create
 """
-
-
-FILE_DIR = os.path.dirname(os.path.realpath(__file__))
-ELEMENTS_DIR = os.path.join(FILE_DIR, "elements")
-
-os.makedirs(ELEMENTS_DIR, exist_ok=True)
 
 
 def pyclass_name(element: str) -> str:
@@ -66,5 +65,5 @@ for element in ELEMENTS:
     INIT_PY.append(f"from .{element} import {pyclass}, {element}")
 
 # Write the __init__.py file.
-with open(os.path.join(ELEMENTS_DIR, "__init__.py"), "w+") as f:
+with open(INIT_PY_PATH, "w+") as f:
     f.write("\n".join(INIT_PY))
