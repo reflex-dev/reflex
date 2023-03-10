@@ -1,3 +1,4 @@
+# This is an auto-generated file. Do not edit. See ../generate.py.
 from typing import Union
 from pynecone.var import Var
 from pynecone.el.element import Element
@@ -2271,7 +2272,25 @@ class Del(Element):
 
     tag = "del_"
 
-
+    access_key: Var[Union[str, int, bool]]
+    auto_capitalize: Var[Union[str, int, bool]]
+    cite: Var[Union[str, int, bool]]
+    content_editable: Var[Union[str, int, bool]]
+    context_menu: Var[Union[str, int, bool]]
+    date_time: Var[Union[str, int, bool]]
+    dir: Var[Union[str, int, bool]]
+    draggable: Var[Union[str, int, bool]]
+    enter_key_hint: Var[Union[str, int, bool]]
+    hidden: Var[Union[str, int, bool]]
+    input_mode: Var[Union[str, int, bool]]
+    item_prop: Var[Union[str, int, bool]]
+    lang: Var[Union[str, int, bool]]
+    role: Var[Union[str, int, bool]]
+    slot: Var[Union[str, int, bool]]
+    spell_check: Var[Union[str, int, bool]]
+    tab_index: Var[Union[str, int, bool]]
+    title: Var[Union[str, int, bool]]
+    translate: Var[Union[str, int, bool]]
 
 del_ = Del.create
 
