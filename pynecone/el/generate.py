@@ -31,7 +31,7 @@ def element_path(element: str) -> str:
 def format_prop_attrs(element: str):
     """Return the code for the prop attributes."""
     return "\n".join(
-        f"    {prop}: pc.Var[Union[str, int, bool]]"
+        f"    {prop}: PCVar[Union[str, int, bool]]"
         for prop in ELEMENT_TO_PROPS[element]
     )
 
@@ -52,7 +52,7 @@ class {pyclass}(Element):
 INIT_PY = [
     """# This is an auto-generated file. Do not edit. See ../generate.py.
 from typing import Union
-import pynecone as pc
+from pynecone.var import Var as PCVar
 from pynecone.el.element import Element""",
 ]
 
