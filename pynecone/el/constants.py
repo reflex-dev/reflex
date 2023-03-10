@@ -22,7 +22,7 @@ details dialog summary slot template
 # - https://github.com/facebook/react/blob/d1ad984db1591b131d16739a24dee4ba44886a09/packages/react-dom-bindings/src/shared/DOMProperty.js.
 # TODO: Support data-* and aria-* attributes.
 
-PROP_TO_ELEMENTS = {
+ATTR_TO_ELEMENTS = {
     "accept": ["form", "input"],
     "accept-charset": ["form"],
     "accesskey": ELEMENTS,
@@ -247,14 +247,14 @@ PROP_TO_ELEMENTS = {
 }
 
 # Remove attributes that are already provided by Pynecone.
-del PROP_TO_ELEMENTS["class"]
-del PROP_TO_ELEMENTS["id"]
-del PROP_TO_ELEMENTS["style"]
+del ATTR_TO_ELEMENTS["class"]
+del ATTR_TO_ELEMENTS["id"]
+del ATTR_TO_ELEMENTS["style"]
 
 
 # Sources:
 # - https://github.com/facebook/react/blob/d1ad984db1591b131d16739a24dee4ba44886a09/packages/react-dom-bindings/src/shared/possibleStandardNames.js#L22
-POSSIBLE_STANDARD_NAMES = {
+_POSSIBLE_STANDARD_NAMES = {
     "accept": "accept",
     "acceptcharset": "acceptCharset",
     "accept-charset": "acceptCharset",
@@ -751,8 +751,8 @@ POSSIBLE_STANDARD_NAMES = {
 # React prop names. So we normalize HTML attribute names to their React prop
 # forms. (e.g. for -> htmlFor, class -> className, etc.)
 PROP_TO_ELEMENTS = {
-    POSSIBLE_STANDARD_NAMES.get(name, name): elements
-    for name, elements in PROP_TO_ELEMENTS.items()
+    _POSSIBLE_STANDARD_NAMES.get(name, name): elements
+    for name, elements in ATTR_TO_ELEMENTS.items()
 }
 
 # Now, convert all the props to snake_case.
