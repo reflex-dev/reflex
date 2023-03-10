@@ -1,4 +1,13 @@
-"""Dynamically generate element classes."""
+"""Dynamically generate element classes.
+
+This script generates the element classes in the pynecone.el.elements module.
+Run as follows:
+
+    python -m pynecone.el.generate
+
+Make sure to delete the __init__.py file in the elements directory before
+running this script.
+"""
 import os
 from pynecone.el.constants import ELEMENT_TO_PROPS, ELEMENTS
 
