@@ -178,7 +178,7 @@ export const connect = async (
     update = JSON.parse(update);
     applyDelta(state, update.delta);
     setResult({
-      processing: false,
+      processing: true,
       state: state,
       events: update.events,
     });
