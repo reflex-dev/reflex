@@ -8,21 +8,6 @@ INIT_PY_PATH = os.path.join(ELEMENTS_DIR, "__init__.py")
 
 os.makedirs(ELEMENTS_DIR, exist_ok=True)
 
-TEMPLATE = """
-from typing import Union
-from pynecone.var import Var
-from pynecone.el.element import Element
-
-class {pyclass}(Element):
-    \"\"\"Display the {name} element.\"\"\"
-
-    tag = "{name}"
-
-{props}
-
-{name} = {pyclass}.create
-"""
-
 
 def pyclass_name(element: str) -> str:
     """Return the name of the Python class for the given element."""
@@ -41,7 +26,25 @@ def format_prop_attrs(element: str):
     )
 
 
-INIT_PY = []
+TEMPLATE = """
+class {pyclass}(Element):
+    \"\"\"Display the {name} element.\"\"\"
+
+    tag = "{name}"
+
+{props}
+
+{name} = {pyclass}.create
+"""
+
+
+INIT_PY = [
+    """# This is an auto-generated file. Do not edit. See ../generate.py.
+from typing import Union
+from pynecone.var import Var
+from pynecone.el.element import Element""",
+]
+
 
 for element in ELEMENTS:
     # Name of the Python class we're generating.
@@ -52,17 +55,14 @@ for element in ELEMENTS:
     if element == "del":
         element = "del_"
 
-    # Write the code for the class out to a new file.
     code = TEMPLATE.format(
         name=element,
         pyclass=pyclass,
         props=format_prop_attrs(element),
     )
-    with open(element_path(element), "w+") as f:
-        f.write(code)
 
-    # Add the class to the __init__.py file.
-    INIT_PY.append(f"from .{element} import {pyclass}, {element}")
+    # Add the element to the __init__.py file.
+    INIT_PY.append(code)
 
 # Write the __init__.py file.
 with open(INIT_PY_PATH, "w+") as f:
