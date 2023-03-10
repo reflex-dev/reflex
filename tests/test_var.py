@@ -138,6 +138,23 @@ def test_create(value, expected):
         assert prop.equals(expected)  # type: ignore
 
 
+def test_create_type_error():
+    """Test the var create function when inputs type error."""
+
+    class ErrorType:
+        pass
+
+    value = ErrorType()
+
+    with pytest.raises(TypeError) as exception:
+        Var.create(value)
+
+    assert (
+        exception.value.args[0]
+        == f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
+    )
+
+
 def v(value) -> Var:
     val = Var.create(value)
     assert val is not None
