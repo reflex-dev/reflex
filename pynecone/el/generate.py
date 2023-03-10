@@ -1,388 +1,70 @@
 """Dynamically generate tag classes."""
 
+import os
+from pynecone.el.constants import ELEMENT_TO_PROPS, ELEMENTS
+
 TEMPLATE = """
-\"\"\"Display a {name} tag.\"\"\"
+from typing import Union
+from pynecone.var import Var
+from pynecone.el.element import Element
 
-from pynecone import utils
-from pynecone.components.component import Component
-
-class {cls}(Component):
-    \"\"\"A {name} component.\"\"\"
+class {pyclass}(Element):
+    \"\"\"Display the {name} element.\"\"\"
 
     tag = "{name}"
 
 {props}
 
-    def render(self) -> str:
-        \"\"\"Render the component.
-
-        Returns:
-            The code to render the component.
-        \"\"\"
-        tag = self._render()
-        return str(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                id=self.id,
-                class_name=self.class_name,
-            ).set(
-                contents=utils.join(
-                    [str(tag.contents)] + [child.render() for child in self.children]
-                ).strip(),
-            )
-        )
+{name} = {pyclass}.create
 """
 
-# Sourced from https://developer.mozilla.org/en-US/docs/Web/HTML/Element.
-_elements = (
-    "html",
-    "base",
-    "head",
-    "link",
-    "meta",
-    "style",
-    "title",
-    "body",
-    "address",
-    "article",
-    "aside",
-    "footer",
-    "header",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "main",
-    "nav",
-    "section",
-    "blockquote",
-    "dd",
-    "div",
-    "dl",
-    "dt",
-    "figcaption",
-    "figure",
-    "hr",
-    "li",
-    "menu",
-    "ol",
-    "p",
-    "pre",
-    "ul",
-    "a",
-    "abbr",
-    "b",
-    "bdi",
-    "bdo",
-    "br",
-    "cite",
-    "code",
-    "data",
-    "dfn",
-    "em",
-    "i",
-    "kbd",
-    "mark",
-    "q",
-    "rp",
-    "rt",
-    "ruby",
-    "s",
-    "samp",
-    "small",
-    "span",
-    "strong",
-    "sub",
-    "sup",
-    "time",
-    "u",
-    "var",
-    "wbr",
-    "area",
-    "audio",
-    "img",
-    "map",
-    "track",
-    "video",
-    "embed",
-    "iframe",
-    "object",
-    "picture",
-    "portal",
-    "source",
-    "svg",
-    "math",
-    "canvas",
-    "noscript",
-    "script",
-    "del",
-    "ins",
-    "caption",
-    "col",
-    "colgroup",
-    "table",
-    "tbody",
-    "td",
-    "tfoot",
-    "th",
-    "thead",
-    "tr",
-    "button",
-    "datalist",
-    "fieldset",
-    "form",
-    "input",
-    "label",
-    "legend",
-    "meter",
-    "optgroup",
-    "option",
-    "output",
-    "progress",
-    "select",
-    "textarea",
-    "details",
-    "dialog",
-    "summary",
-    "slot",
-    "template",
-)
 
-# Sourced from https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes.
-# TODO: Support data-* attributes.
-_attrs = {
-    "accept": ["form", "input"],
-    "accept-charset": ["form"],
-    "accesskey": _elements,
-    "action": ["form"],
-    "align": [
-        "applet",
-        "caption",
-        "col",
-        "colgroup",
-        "hr",
-        "iframe",
-        "img",
-        "table",
-        "tbody",
-        "td",
-        "tfoot",
-        "th",
-        "thead",
-        "tr",
-    ],
-    "allow": ["iframe"],
-    "alt": ["applet", "area", "img", "input"],
-    "async": ["script"],
-    "autocapitalize": _elements,
-    "autocomplete": ["form", "input", "select", "textarea"],
-    "autofocus": ["button", "input", "keygen", "select", "textarea"],
-    "autoplay": ["audio", "video"],
-    "background": ["body", "table", "td", "th"],
-    "bgcolor": [
-        "body",
-        "col",
-        "colgroup",
-        "marquee",
-        "table",
-        "tbody",
-        "tfoot",
-        "td",
-        "th",
-        "tr",
-    ],
-    "border": ["img", "object", "table"],
-    "buffered": ["audio", "video"],
-    "capture": ["input"],
-    "challenge": ["keygen"],
-    "charset": ["meta", "script"],
-    "checked": ["input"],
-    "cite": ["blockquote", "del", "ins", "q"],
-    "class": _elements,
-    "code": ["applet"],
-    "codebase": ["applet"],
-    "color": ["font", "hr"],
-    "cols": ["textarea"],
-    "colspan": ["td", "th"],
-    "content": ["meta"],
-    "contenteditable": _elements,
-    "contextmenu": _elements,
-    "controls": ["audio", "video"],
-    "coords": ["area"],
-    "crossorigin": ["audio", "img", "link", "script", "video"],
-    "csp": ["iframe"],
-    "data": ["object"],
-    "datetime": ["del", "ins", "time"],
-    "decoding": ["img"],
-    "default": ["track"],
-    "defer": ["script"],
-    "dir": _elements,
-    "dirname": ["input", "textarea"],
-    "disabled": [
-        "button",
-        "fieldset",
-        "input",
-        "keygen",
-        "optgroup",
-        "option",
-        "select",
-        "textarea",
-    ],
-    "download": ["a", "area"],
-    "draggable": _elements,
-    "enctype": ["form"],
-    "enterkeyhint": _elements,
-    "for": ["label", "output"],
-    "form": [
-        "button",
-        "fieldset",
-        "input",
-        "keygen",
-        "label",
-        "meter",
-        "object",
-        "output",
-        "progress",
-        "select",
-        "textarea",
-    ],
-    "formaction": ["button", "input"],
-    "formenctype": ["button", "input"],
-    "formmethod": ["button", "input"],
-    "formnovalidate": ["button", "input"],
-    "formtarget": ["button", "input"],
-    "headers": ["td", "th"],
-    "height": ["canvas", "embed", "iframe", "img", "input", "object", "video"],
-    "hidden": _elements,
-    "high": ["meter"],
-    "href": ["a", "area", "base", "link"],
-    "hreflang": ["a", "area", "link"],
-    "http-equiv": ["meta"],
-    "icon": ["command"],
-    "id": _elements,
-    "integrity": ["link", "script"],
-    "intrinsicsize": ["img"],
-    "inputmode": _elements,
-    "ismap": ["img"],
-    "itemprop": _elements,
-    "keytype": ["keygen"],
-    "kind": ["track"],
-    "label": ["optgroup", "option", "track"],
-    "lang": _elements,
-    "language": ["script"],
-    "loading": ["img", "iframe"],
-    "list": ["input"],
-    "loop": ["audio", "bgsound", "marquee", "video"],
-    "low": ["meter"],
-    "manifest": ["html"],
-    "max": ["input", "meter", "progress"],
-    "maxlength": ["input", "textarea"],
-    "minlength": ["input", "textarea"],
-    "media": ["a", "area", "link", "source", "style"],
-    "method": ["form"],
-    "min": ["input", "meter"],
-    "multiple": ["input", "select"],
-    "muted": ["audio", "video"],
-    "name": [
-        "button",
-        "form",
-        "fieldset",
-        "iframe",
-        "input",
-        "keygen",
-        "object",
-        "output",
-        "select",
-        "textarea",
-        "map",
-        "meta",
-        "param",
-    ],
-    "novalidate": ["form"],
-    "open": ["details", "dialog"],
-    "optimum": ["meter"],
-    "pattern": ["input"],
-    "ping": ["a", "area"],
-    "placeholder": ["input", "textarea"],
-    "playsinline": ["video"],
-    "poster": ["video"],
-    "preload": ["audio", "video"],
-    "readonly": ["input", "textarea"],
-    "referrerpolicy": ["a", "area", "iframe", "img", "link", "script"],
-    "rel": ["a", "area", "link"],
-    "required": ["input", "select", "textarea"],
-    "reversed": ["ol"],
-    "role": _elements,
-    "rows": ["textarea"],
-    "rowspan": ["td", "th"],
-    "sandbox": ["iframe"],
-    "scope": ["th"],
-    "scoped": ["style"],
-    "selected": ["option"],
-    "shape": ["a", "area"],
-    "size": ["input", "select"],
-    "sizes": ["link", "img", "source"],
-    "slot": _elements,
-    "span": ["col", "colgroup"],
-    "spellcheck": _elements,
-    "src": [
-        "audio",
-        "embed",
-        "iframe",
-        "img",
-        "input",
-        "script",
-        "source",
-        "track",
-        "video",
-    ],
-    "srcdoc": ["iframe"],
-    "srclang": ["track"],
-    "srcset": ["img", "source"],
-    "start": ["ol"],
-    "step": ["input"],
-    "style": _elements,
-    "summary": ["table"],
-    "tabindex": _elements,
-    "target": ["a", "area", "base", "form"],
-    "title": _elements,
-    "translate": _elements,
-    "type": [
-        "button",
-        "input",
-        "embed",
-        "object",
-        "ol",
-        "script",
-        "source",
-        "style",
-        "menu",
-        "link",
-    ],
-    "usemap": ["img", "input", "object"],
-    "value": [
-        "button",
-        "data",
-        "input",
-        "li",
-        "meter",
-        "option",
-        "progress",
-        "param",
-    ],
-    "width": ["canvas", "embed", "iframe", "img", "input", "object", "video"],
-    "wrap": ["textarea"],
-}
+FILE_DIR = os.path.dirname(os.path.realpath(__file__))
+ELEMENTS_DIR = os.path.join(FILE_DIR, "elements")
 
-_clslist = [el.capitalize() for el in _elements]
+os.makedirs(ELEMENTS_DIR, exist_ok=True)
 
-for _el, _cls in zip(_elements, _clslist):
-    code = TEMPLATE.format(name=_el, cls=_cls)
-    exec(code)
-    globals()[_cls] = eval(_cls)
-    globals()[_el] = eval(_cls).create
 
-__all__ = _clslist
+def pyclass_name(element: str) -> str:
+    """Return the name of the Python class for the given element."""
+    return element.capitalize()
+
+
+def element_path(element: str) -> str:
+    """Return the name of the Python file for the given element."""
+    return os.path.join(ELEMENTS_DIR, f"{element}.py")
+
+
+def format_prop_attrs(element: str):
+    """Return the code for the prop attributes."""
+    return "\n".join(
+        f"    {prop}: Var[Union[str, int, bool]]" for prop in ELEMENT_TO_PROPS[element]
+    )
+
+
+INIT_PY = []
+
+for element in ELEMENTS:
+    # Name of the Python class we're generating.
+    pyclass = pyclass_name(element)
+
+    # Handle the "del" element, which is a Python keyword.
+    # Note that the class name is still "Del".
+    if element == "del":
+        element = "del_"
+
+    # Write the code for the class out to a new file.
+    code = TEMPLATE.format(
+        name=element,
+        pyclass=pyclass,
+        props=format_prop_attrs(element),
+    )
+    with open(element_path(element), "w+") as f:
+        f.write(code)
+
+    # Add the class to the __init__.py file.
+    INIT_PY.append(f"from .{element} import {pyclass}, {element}")
+
+# Write the __init__.py file.
+with open(os.path.join(ELEMENTS_DIR, "__init__.py"), "w+") as f:
+    f.write("\n".join(INIT_PY))
