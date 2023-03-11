@@ -4,6 +4,7 @@ on:
   pull_request_review:
     types: [submitted]
 
+
 permissions:
   contents: read
 
@@ -15,9 +16,9 @@ jobs:
     # Specify python/node versions to test against
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
-        node-version: ["15.x"]
-      
+        python-version: ["3.10", "3.11"]
+        node-version: ["16.x"]
+
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
@@ -29,14 +30,14 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    
-    # Clone Pynecone Website Repo For integration tests
+
+      # Clone Pynecone Website Repo For integration tests
     - name: Clone Pynecone Website Repo
       uses: actions/checkout@v3
       with:
-        repository: pynecone-io/pynecone-examples
-        path: pynecone-examples
-    
+        repository: pynecone-io/pcweb
+        path: pcweb
+
     # Install poetry
     - name: cache poetry install
       uses: actions/cache@v2
@@ -61,30 +62,12 @@ jobs:
       run: poetry install --no-interaction --no-root
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - name: Install Requirements
-      working-directory: ./pynecone-examples/counter
-      run: poetry run pip install -r requirements.txt
+      working-directory: ./pcweb
+      run: poetry run pip install -r requirements.txt && poetry run pip install pynecone==0.1.19 && poetry run pip install googletrans
     - name: Init Website
-      working-directory: ./pynecone-examples/counter
+      working-directory: ./pcweb
       run: poetry run pc init
-    - name: Run Website and check for errors
-      working-directory: ./pynecone-examples/counter
+    - name: Run Website and Check for errors
       run: |
-        curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.5
-        timeout 2m poetry run pc run &
-        sleep 10
-        URL="127.0.0.1:3000"
-
-        # make the curl request and save the response and HTTP status code
-        RESPONSE=$(curl -s -w "\n%{http_code}" $URL)
-
-        # extract the HTTP status code from the response
-        HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
-
-        # check for errors based on the HTTP status code
-        if [[ $HTTP_STATUS -ge 400 ]]; then
-          echo "Error: HTTP status code $HTTP_STATUS"
-          exit 1
-        fi
-
-        echo "success with HTTP STATUS: $HTTP_STATUS"
-
+        chmod +x ./scripts/integration.sh
+        ./scripts/integration.sh ./pcweb prod
