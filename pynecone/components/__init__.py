@@ -1,6 +1,7 @@
 """Import all the components."""
 from __future__ import annotations
 
+from .base import ScriptTag
 from .component import Component
 from .datadisplay import *
 from .disclosure import *
@@ -201,3 +202,4 @@ heading = Heading.create
 markdown = Markdown.create
 span = Span.create
 text = Text.create
+script = ScriptTag.create

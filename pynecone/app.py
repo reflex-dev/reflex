@@ -206,6 +206,7 @@ class App(Base):
         on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
         path: Optional[str] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
+        script_tags: Optional[List[Component]] = None,
     ):
         """Add a page to the app.
 
@@ -221,6 +222,7 @@ class App(Base):
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
+            script_tags: List of script tags to be added to component
         """
         if path is not None:
             utils.deprecate(
@@ -248,6 +250,10 @@ class App(Base):
         compiler_utils.add_meta(
             component, title=title, image=image, description=description, meta=meta
         )
+
+        # Add script tags if given
+        if script_tags:
+            component.children.extend(script_tags)
 
         # Format the route.
         route = utils.format_route(route)
