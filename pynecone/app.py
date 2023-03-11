@@ -204,7 +204,7 @@ class App(Base):
         on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
         path: Optional[str] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
-        script_tags: Optional[List[Component]] = None
+        script_tags: Optional[List[Component]] = None,
     ):
         """Add a page to the app.
 
