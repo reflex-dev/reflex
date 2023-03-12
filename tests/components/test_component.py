@@ -2,11 +2,12 @@ from typing import Dict, List, Type
 
 import pytest
 
-from pynecone.components.component import Component, CustomComponent, ImportDict
+from pynecone.components.component import Component, CustomComponent
 from pynecone.components.layout.box import Box
 from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
 from pynecone.style import Style
+from pynecone.utils import imports
 from pynecone.var import Var
 
 
@@ -39,7 +40,7 @@ def component1() -> Type[Component]:
         # A test number prop.
         number: Var[int]
 
-        def _get_imports(self) -> ImportDict:
+        def _get_imports(self) -> imports.ImportDict:
             return {"react": {"Component"}}
 
         def _get_custom_code(self) -> str:
@@ -72,7 +73,7 @@ def component2() -> Type[Component]:
                 "on_close": EVENT_ARG,
             }
 
-        def _get_imports(self) -> ImportDict:
+        def _get_imports(self) -> imports.ImportDict:
             return {"react-redux": {"connect"}}
 
         def _get_custom_code(self) -> str:

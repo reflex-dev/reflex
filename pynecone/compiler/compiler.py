@@ -7,12 +7,13 @@ from typing import Callable, List, Set, Tuple, Type
 
 from pynecone import constants
 from pynecone.compiler import templates, utils
-from pynecone.components.component import Component, CustomComponent, ImportDict
+from pynecone.components.component import Component, CustomComponent
 from pynecone.state import State
 from pynecone.style import Style
+from pynecone.utils import imports, path_ops
 
 # Imports to be included in every Pynecone app.
-DEFAULT_IMPORTS: ImportDict = {
+DEFAULT_IMPORTS: imports.ImportDict = {
     "react": {"useEffect", "useRef", "useState"},
     "next/router": {"useRouter"},
     f"/{constants.STATE_PATH}": {"connect", "updateState", "uploadFiles", "E"},
@@ -64,7 +65,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
     # Compile the code to render the component.
     return templates.PAGE(
         imports=utils.compile_imports(imports),
-        custom_code=templates.join(component.get_custom_code()),
+        custom_code=path_ops.join(component.get_custom_code()),
         constants=utils.compile_constants(),
         state=utils.compile_state(state),
         events=utils.compile_events(state),
@@ -97,7 +98,7 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     # Compile the components page.
     return templates.COMPONENTS(
         imports=utils.compile_imports(imports),
-        components=templates.join(component_defs),
+        components=path_ops.join(component_defs),
     )
 
 

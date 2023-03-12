@@ -246,7 +246,7 @@ def test_setup_frontend(tmp_path, mocker):
 
     assert str(web_folder) == prerequisites.create_web_directory(tmp_path)
 
-    mocker.patch("pynecone.prerequisites.install_frontend_packages")
+    mocker.patch("pynecone.utils.prerequisites.install_frontend_packages")
 
     build.setup_frontend(tmp_path)
     assert web_folder.exists()
