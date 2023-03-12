@@ -1,7 +1,7 @@
 """A tag with no tag."""
 
-from pynecone import utils
 from pynecone.components.tags import Tag
+from pynecone.format import wrap
 
 
 class Tagless(Tag):
@@ -14,7 +14,7 @@ class Tagless(Tag):
             The string representation of the tag.
         """
         out = self.contents
-        space = utils.wrap(" ", "{")
+        space = wrap(" ", "{")
         if len(self.contents) > 0 and self.contents[0] == " ":
             out = space + out
         if len(self.contents) > 0 and self.contents[-1] == " ":

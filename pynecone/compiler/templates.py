@@ -3,7 +3,7 @@
 from typing import Optional, Set
 
 from pynecone import constants
-from pynecone.utils import join
+from pynecone.path import join
 
 # Template for the Pynecone config file.
 PCCONFIG = f"""import pynecone as pc

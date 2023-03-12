@@ -2,9 +2,9 @@
 
 from typing import Dict
 
-from pynecone import utils
-from pynecone.components.component import Component, ImportDict
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.imports import ImportDict, merge_imports
 from pynecone.style import Style
 from pynecone.var import Var
 
@@ -43,9 +43,7 @@ class CodeBlock(Component):
     def _get_imports(self) -> ImportDict:
         imports = super()._get_imports()
         if self.theme is not None:
-            imports = utils.merge_imports(
-                imports, {PRISM_STYLES_PATH: {self.theme.name}}
-            )
+            imports = merge_imports(imports, {PRISM_STYLES_PATH: {self.theme.name}})
         return imports
 
     @classmethod

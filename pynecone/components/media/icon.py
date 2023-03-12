@@ -1,7 +1,7 @@
 """An icon component."""
 
-from pynecone import utils
 from pynecone.components.component import Component
+from pynecone.format import to_title_case
 
 
 class ChakraIconComponent(Component):
@@ -42,7 +42,7 @@ class Icon(ChakraIconComponent):
             raise ValueError(
                 f"Invalid icon tag: {props['tag']}. Please use one of the following: {ICON_LIST}"
             )
-        props["tag"] = utils.to_title_case(props["tag"]) + "Icon"
+        props["tag"] = to_title_case(props["tag"]) + "Icon"
         return super().create(*children, **props)
 
 
