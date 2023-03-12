@@ -7,5 +7,4 @@ from pynecone.components.tags import Tag
 class Body(Component):
     """A body component."""
 
-    def _render(self) -> Tag:
-        return Tag(name="body")
+    tag = "body"

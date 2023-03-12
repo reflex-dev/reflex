@@ -44,6 +44,7 @@ class AssetFolderHandler(FileSystemEventHandler):
 
     def on_modified(self, event: FileSystemEvent):
         """Event handler when a file or folder was modified.
+
         This is called every time after a file is created, modified and deleted.
 
         Args:

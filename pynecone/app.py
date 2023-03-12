@@ -215,7 +215,6 @@ class App(Base):
 
         Args:
             component: The component to display at the page.
-            path: (deprecated) The path to the component.
             route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
@@ -223,13 +222,10 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
-        """
-        if path is not None:
-            utils.deprecate(
-                "The `path` argument is deprecated for `add_page`. Use `route` instead."
-            )
-            route = path
 
+        Raises:
+            TypeError: If an invalid var operation is used.
+        """
         # If the route is not set, get it from the callable.
         if route is None:
             assert isinstance(
@@ -244,7 +240,17 @@ class App(Base):
         self.state.setup_dynamic_args(utils.get_route_args(route))
 
         # Generate the component if it is a callable.
-        component = component if isinstance(component, Component) else component()
+        try:
+            component = component if isinstance(component, Component) else component()
+        except TypeError as e:
+            message = str(e)
+            if "BaseVar" in message or "ComputedVar" in message:
+                raise TypeError(
+                    "You may be trying to use an invalid Python function on a state var. "
+                    "When referencing a var inside your render code, only limited var operations are supported. "
+                    "See the var operation docs here: https://pynecone.io/docs/state/vars "
+                ) from e
+            raise e
 
         # Add meta information to the component.
         compiler_utils.add_meta(
