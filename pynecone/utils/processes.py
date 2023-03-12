@@ -11,9 +11,9 @@ from urllib.parse import urlparse
 
 import psutil
 
-from pynecone import console, constants
+from pynecone import constants
 from pynecone.config import get_config
-from pynecone.prerequisites import get_redis
+from pynecone.utils import console, prerequisites
 
 
 def kill(pid):
@@ -31,7 +31,7 @@ def get_num_workers() -> int:
     Returns:
         The number of backend worker processes.
     """
-    return 1 if get_redis() is None else (os.cpu_count() or 1) * 2 + 1
+    return 1 if prerequisites.get_redis() is None else (os.cpu_count() or 1) * 2 + 1
 
 
 def get_api_port() -> int:

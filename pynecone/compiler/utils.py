@@ -20,16 +20,14 @@ from pynecone.components.base import (
     Script,
     Title,
 )
-from pynecone.components.component import Component, CustomComponent, ImportDict
+from pynecone.components.component import Component, CustomComponent
 from pynecone.event import get_hydrate_event
-from pynecone.format import format_state
-from pynecone.imports import merge_imports
-from pynecone.path import mkdir, rm
 from pynecone.state import State
 from pynecone.style import Style
+from pynecone.utils import imports, path_ops
 
 # To re-export this function.
-merge_imports = merge_imports
+merge_imports = imports.merge_imports
 
 
 def compile_import_statement(lib: str, fields: Set[str]) -> str:
@@ -56,7 +54,7 @@ def compile_import_statement(lib: str, fields: Set[str]) -> str:
     return templates.format_import(lib=lib, default=default, rest=rest)
 
 
-def compile_imports(imports: ImportDict) -> str:
+def compile_imports(imports: imports.ImportDict) -> str:
     """Compile an import dict.
 
     Args:
@@ -65,7 +63,7 @@ def compile_imports(imports: ImportDict) -> str:
     Returns:
         The compiled import dict.
     """
-    return templates.join(
+    return path_ops.join(
         [compile_import_statement(lib, fields) for lib, fields in imports.items()]
     )
 
@@ -89,7 +87,7 @@ def compile_constants() -> str:
     Returns:
         A string of all the compiled constants.
     """
-    return templates.join(
+    return path_ops.join(
         [
             compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
             for endpoint in constants.Endpoint
@@ -113,7 +111,7 @@ def compile_state(state: Type[State]) -> str:
             "files": [],
         }
     )
-    initial_state = format_state(initial_state)
+    initial_state = format.format_state(initial_state)
     synced_state = templates.format_state(
         state=state.get_name(), initial_state=json.dumps(initial_state)
     )
@@ -130,7 +128,7 @@ def compile_state(state: Type[State]) -> str:
     socket = templates.SOCKET
     ready = templates.READY
     color_toggle = templates.COLORTOGGLE
-    return templates.join([synced_state, result, router, socket, ready, color_toggle])
+    return path_ops.join([synced_state, result, router, socket, ready, color_toggle])
 
 
 def compile_events(state: Type[State]) -> str:
@@ -144,7 +142,7 @@ def compile_events(state: Type[State]) -> str:
     """
     state_name = state.get_name()
     state_setter = templates.format_state_setter(state_name)
-    return templates.join(
+    return path_ops.join(
         [
             templates.EVENT_FN(state=state_name, set_state=state_setter),
             templates.UPLOAD_FN(state=state_name, set_state=state_setter),
@@ -181,7 +179,9 @@ def compile_render(component: Component) -> str:
     return component.render()
 
 
-def compile_custom_component(component: CustomComponent) -> Tuple[str, ImportDict]:
+def compile_custom_component(
+    component: CustomComponent,
+) -> Tuple[str, imports.ImportDict]:
     """Compile a custom component.
 
     Args:
@@ -326,7 +326,7 @@ def write_page(path: str, code: str):
         path: The path to write the code to.
         code: The code to write.
     """
-    mkdir(os.path.dirname(path))
+    path_ops.mkdir(os.path.dirname(path))
     with open(path, "w", encoding="utf-8") as f:
         f.write(code)
 
@@ -347,4 +347,4 @@ def empty_dir(path: str, keep_files: Optional[List[str]] = None):
     directory_contents = os.listdir(path)
     for element in directory_contents:
         if element not in keep_files:
-            rm(os.path.join(path, element))
+            path_ops.rm(os.path.join(path, element))

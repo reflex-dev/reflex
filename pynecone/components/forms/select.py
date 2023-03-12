@@ -6,7 +6,7 @@ from pynecone.components.component import EVENT_ARG, Component
 from pynecone.components.layout.foreach import Foreach
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.typography.text import Text
-from pynecone.types import _issubclass
+from pynecone.utils import types
 from pynecone.var import Var
 
 
@@ -75,7 +75,7 @@ class Select(ChakraComponent):
         if (
             len(children) == 1
             and isinstance(children[0], Var)
-            and _issubclass(children[0].type_, List)
+            and types._issubclass(children[0].type_, List)
         ):
             children = [Foreach.create(children[0], lambda item: Option.create(item))]
         return super().create(*children, **props)

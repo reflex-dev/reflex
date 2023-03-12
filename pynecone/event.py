@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from pynecone import constants
 from pynecone.base import Base
-from pynecone.format import format_event_handler, json_dumps
+from pynecone.utils import format
 from pynecone.var import BaseVar, Var
 
 
@@ -68,7 +68,7 @@ class EventHandler(Base):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(json_dumps(arg))
+                values.append(format.json_dumps(arg))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -350,7 +350,7 @@ def fix_events(
         if isinstance(e, EventHandler):
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
-        name = format_event_handler(e.handler)
+        name = format.format_event_handler(e.handler)
         payload = dict(e.args)
 
         # Create an event and append it to the list.

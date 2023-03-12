@@ -23,8 +23,7 @@ from pydantic.fields import ModelField
 
 from pynecone import constants
 from pynecone.base import Base
-from pynecone.format import format_string, wrap
-from pynecone.types import _issubclass, get_args, is_dataframe, is_generic_alias
+from pynecone.utils import format, types
 
 if TYPE_CHECKING:
     from pynecone.state import State
@@ -156,9 +155,9 @@ class Var(ABC):
         Returns:
             The wrapped var, i.e. {state.var}.
         """
-        out = self.full_name if self.is_local else wrap(self.full_name, "{")
+        out = self.full_name if self.is_local else format.wrap(self.full_name, "{")
         if self.is_string:
-            out = format_string(out)
+            out = format.format_string(out)
         return out
 
     def __getitem__(self, i: Any) -> Var:
@@ -174,7 +173,10 @@ class Var(ABC):
             TypeError: If the var is not indexable.
         """
         # Indexing is only supported for lists, dicts, and dataframes.
-        if not (_issubclass(self.type_, Union[List, Dict]) or is_dataframe(self.type_)):
+        if not (
+            types._issubclass(self.type_, Union[List, Dict])
+            or types.is_dataframe(self.type_)
+        ):
             if self.type_ == Any:
                 raise TypeError(
                     f"Could not index into var of type Any. (If you are trying to index into a state var, add a type annotation to the var.)"
@@ -191,9 +193,9 @@ class Var(ABC):
             i = BaseVar(name=i.name, type_=i.type_, state=i.state, is_local=True)
 
         # Handle list indexing.
-        if _issubclass(self.type_, List):
+        if types._issubclass(self.type_, List):
             # List indices must be ints, slices, or vars.
-            if not isinstance(i, get_args(Union[int, slice, Var])):
+            if not isinstance(i, types.get_args(Union[int, slice, Var])):
                 raise TypeError("Index must be an integer.")
 
             # Handle slices first.
@@ -210,7 +212,11 @@ class Var(ABC):
                 )
 
             # Get the type of the indexed var.
-            type_ = get_args(self.type_)[0] if is_generic_alias(self.type_) else Any
+            type_ = (
+                types.get_args(self.type_)[0]
+                if types.is_generic_alias(self.type_)
+                else Any
+            )
 
             # Use `at` to support negative indices.
             return BaseVar(
@@ -222,8 +228,10 @@ class Var(ABC):
         # Dictionary / dataframe indexing.
         # Get the type of the indexed var.
         if isinstance(i, str):
-            i = wrap(i, '"')
-        type_ = get_args(self.type_)[1] if is_generic_alias(self.type_) else Any
+            i = format.wrap(i, '"')
+        type_ = (
+            types.get_args(self.type_)[1] if types.is_generic_alias(self.type_) else Any
+        )
 
         # Use normal indexing here.
         return BaseVar(
@@ -296,7 +304,7 @@ class Var(ABC):
             props = (other, self) if flip else (self, other)
             name = f"{props[0].full_name} {op} {props[1].full_name}"
             if fn is None:
-                name = wrap(name, "(")
+                name = format.wrap(name, "(")
         if fn is not None:
             name = f"{fn}({name})"
         return BaseVar(
@@ -349,7 +357,7 @@ class Var(ABC):
         Raises:
             TypeError: If the var is not a list.
         """
-        if not _issubclass(self.type_, List):
+        if not types._issubclass(self.type_, List):
             raise TypeError(f"Cannot get length of non-list var {self}.")
         return BaseVar(
             name=f"{self.full_name}.length",
@@ -697,10 +705,12 @@ class BaseVar(Var, Base):
         Returns:
             The default value of the var.
         """
-        type_ = self.type_.__origin__ if is_generic_alias(self.type_) else self.type_
+        type_ = (
+            self.type_.__origin__ if types.is_generic_alias(self.type_) else self.type_
+        )
         if issubclass(type_, str):
             return ""
-        if issubclass(type_, get_args(Union[int, float])):
+        if issubclass(type_, types.get_args(Union[int, float])):
             return 0
         if issubclass(type_, bool):
             return False

@@ -20,11 +20,8 @@ from pynecone.event import (
     call_event_handler,
     get_handler_args,
 )
-from pynecone.format import to_camel_case, to_title_case
-from pynecone.imports import ImportDict, merge_imports
-from pynecone.path import join
 from pynecone.style import Style
-from pynecone.types import PrimitiveType, _isinstance, _issubclass, get_args
+from pynecone.utils import format, imports, path_ops, types
 from pynecone.var import BaseVar, Var
 
 
@@ -77,7 +74,7 @@ class Component(Base, ABC):
                 continue
 
             # Set default values for any props.
-            if _issubclass(field.type_, Var):
+            if types._issubclass(field.type_, Var):
                 field.required = False
                 field.default = Var.create(field.default)
 
@@ -114,7 +111,7 @@ class Component(Base, ABC):
                 continue
 
             # Check whether the key is a component prop.
-            if _issubclass(field_type, Var):
+            if types._issubclass(field_type, Var):
                 try:
                     # Try to create a var from the value.
                     kwargs[key] = Var.create(value)
@@ -130,7 +127,7 @@ class Component(Base, ABC):
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
-                if not _issubclass(passed_type, expected_type):
+                if not types._issubclass(passed_type, expected_type):
                     raise TypeError(
                         f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value} of type {passed_type}."
                     )
@@ -338,7 +335,7 @@ class Component(Base, ABC):
         # Validate all the children.
         for child in children:
             # Make sure the child is a valid type.
-            if not _isinstance(child, ComponentChild):
+            if not types._isinstance(child, ComponentChild):
                 raise TypeError(
                     "Children of Pynecone components must be other components, "
                     "state vars, or primitive Python types. "
@@ -397,7 +394,7 @@ class Component(Base, ABC):
                 id=self.id,
                 class_name=self.class_name,
             ).set(
-                contents=join(
+                contents=path_ops.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
                 ).strip(),
             )
@@ -432,20 +429,20 @@ class Component(Base, ABC):
         # Return the code.
         return code
 
-    def _get_imports(self) -> ImportDict:
+    def _get_imports(self) -> imports.ImportDict:
         if self.library is not None and self.tag is not None:
             alias = self.get_alias()
             tag = self.tag if alias is None else " as ".join([self.tag, alias])
             return {self.library: {tag}}
         return {}
 
-    def get_imports(self) -> ImportDict:
+    def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
         Returns:
             The import dict with the required imports.
         """
-        return merge_imports(
+        return imports.merge_imports(
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
@@ -472,7 +469,7 @@ class Component(Base, ABC):
 
 # Map from component to styling.
 ComponentStyle = Dict[Union[str, Type[Component]], Any]
-ComponentChild = Union[PrimitiveType, Var, Component]
+ComponentChild = Union[types.PrimitiveType, Var, Component]
 
 
 class CustomComponent(Component):
@@ -500,7 +497,7 @@ class CustomComponent(Component):
         self.style = Style()
 
         # Set the tag to the name of the function.
-        self.tag = to_title_case(self.component_fn.__name__)
+        self.tag = format.to_title_case(self.component_fn.__name__)
 
         # Set the props.
         props = typing.get_type_hints(self.component_fn)
@@ -508,19 +505,19 @@ class CustomComponent(Component):
             if key not in props:
                 continue
             type_ = props[key]
-            if _issubclass(type_, EventChain):
+            if types._issubclass(type_, EventChain):
                 value = self._create_event_chain(key, value)
-                self.props[to_camel_case(key)] = value
+                self.props[format.to_camel_case(key)] = value
                 continue
-            type_ = get_args(type_)[0]
-            if _issubclass(type_, Base):
+            type_ = types.get_args(type_)[0]
+            if types._issubclass(type_, Base):
                 try:
                     value = BaseVar(name=value.json(), type_=type_, is_local=True)
                 except Exception:
                     value = Var.create(value)
             else:
                 value = Var.create(value, is_string=type(value) is str)
-            self.props[to_camel_case(key)] = value
+            self.props[format.to_camel_case(key)] = value
 
     def __eq__(self, other: Any) -> bool:
         """Check if the component is equal to another.
@@ -591,7 +588,7 @@ class CustomComponent(Component):
         return [
             BaseVar(
                 name=name,
-                type_=prop.type_ if _isinstance(prop, Var) else type(prop),
+                type_=prop.type_ if types._isinstance(prop, Var) else type(prop),
             )
             for name, prop in self.props.items()
         ]

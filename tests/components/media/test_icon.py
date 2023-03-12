@@ -1,7 +1,7 @@
 import pytest
 
 from pynecone.components.media.icon import ICON_LIST, Icon
-from pynecone.format import to_title_case
+from pynecone.utils import format
 
 
 def test_no_tag_errors():
@@ -27,7 +27,7 @@ def test_valid_icon(tag: str):
         tag: The icon tag.
     """
     icon = Icon.create(tag=tag)
-    assert icon.tag == to_title_case(tag) + "Icon"
+    assert icon.tag == format.to_title_case(tag) + "Icon"
 
 
 @pytest.mark.parametrize("tag", ["", " ", "invalid", 123])
@@ -52,4 +52,4 @@ def test_tag_with_capital(tag: str):
         tag: The icon tag.
     """
     icon = Icon.create(tag=tag)
-    assert icon.tag == to_title_case(tag) + "Icon"
+    assert icon.tag == format.to_title_case(tag) + "Icon"

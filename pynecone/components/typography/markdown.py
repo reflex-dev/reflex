@@ -4,7 +4,7 @@ import textwrap
 from typing import List, Union
 
 from pynecone.components.component import Component
-from pynecone.types import _isinstance
+from pynecone.utils import types
 from pynecone.var import BaseVar, Var
 
 
@@ -26,7 +26,7 @@ class Markdown(Component):
         Returns:
             The markdown component.
         """
-        assert len(children) == 1 and _isinstance(
+        assert len(children) == 1 and types._isinstance(
             children[0], Union[str, Var]
         ), "Markdown component must have exactly one child containing the markdown source."
 

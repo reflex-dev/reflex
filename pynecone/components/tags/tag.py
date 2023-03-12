@@ -12,15 +12,7 @@ from plotly.io import to_json
 
 from pynecone.base import Base
 from pynecone.event import EventChain
-from pynecone.format import (
-    format_event,
-    format_upload_event,
-    is_wrapped,
-    json_dumps,
-    to_camel_case,
-    wrap,
-)
-from pynecone.types import _isinstance
+from pynecone.utils import format, types
 from pynecone.var import Var
 
 if TYPE_CHECKING:
@@ -76,7 +68,7 @@ class Tag(Base):
             if not prop.is_local or prop.is_string:
                 return str(prop)
             if issubclass(prop.type_, str):
-                return json_dumps(prop.full_name)
+                return format.json_dumps(prop.full_name)
             prop = prop.full_name
 
         # Handle event props.
@@ -85,18 +77,18 @@ class Tag(Base):
 
             if len(prop.events) == 1 and prop.events[0].upload:
                 # Special case for upload events.
-                event = format_upload_event(prop.events[0])
+                event = format.format_upload_event(prop.events[0])
             else:
                 # All other events.
-                chain = ",".join([format_event(event) for event in prop.events])
+                chain = ",".join([format.format_event(event) for event in prop.events])
                 event = f"Event([{chain}])"
             prop = f"({local_args}) => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
-            if is_wrapped(prop, "{"):
+            if format.is_wrapped(prop, "{"):
                 return prop
-            return json_dumps(prop)
+            return format.json_dumps(prop)
 
         elif isinstance(prop, Figure):
             prop = json.loads(to_json(prop))["data"]  # type: ignore
@@ -111,7 +103,7 @@ class Tag(Base):
                 }
 
             # Dump the prop as JSON.
-            prop = json_dumps(prop)
+            prop = format.json_dumps(prop)
 
             # This substitution is necessary to unwrap var values.
             prop = re.sub('"{', "", prop)
@@ -120,7 +112,7 @@ class Tag(Base):
 
         # Wrap the variable in braces.
         assert isinstance(prop, str), "The prop must be a string."
-        return wrap(prop, "{", check_first=False)
+        return format.wrap(prop, "{", check_first=False)
 
     def format_props(self) -> str:
         """Format the tag's props.
@@ -157,7 +149,7 @@ class Tag(Base):
 
         if len(self.contents) == 0:
             # If there is no inner content, we don't need a closing tag.
-            tag_str = wrap(f"{self.name}{props_str}/", "<")
+            tag_str = format.wrap(f"{self.name}{props_str}/", "<")
         else:
             if self.args is not None:
                 # If there are args, wrap the tag in a function call.
@@ -166,9 +158,9 @@ class Tag(Base):
             else:
                 contents = self.contents
             # Otherwise wrap it in opening and closing tags.
-            open = wrap(f"{self.name}{props_str}", "<")
-            close = wrap(f"/{self.name}", "<")
-            tag_str = wrap(contents, open, close)
+            open = format.wrap(f"{self.name}{props_str}", "<")
+            close = format.wrap(f"/{self.name}", "<")
+            tag_str = format.wrap(contents, open, close)
 
         return tag_str
 
@@ -183,8 +175,8 @@ class Tag(Base):
         """
         self.props.update(
             {
-                to_camel_case(name): prop
-                if _isinstance(prop, Union[EventChain, dict])
+                format.to_camel_case(name): prop
+                if types._isinstance(prop, Union[EventChain, dict])
                 else Var.create(prop)
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)

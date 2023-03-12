@@ -5,7 +5,7 @@ import inspect
 from typing import TYPE_CHECKING, Any, Callable, List
 
 from pynecone.components.tags.tag import Tag
-from pynecone.format import wrap
+from pynecone.utils import format
 from pynecone.var import BaseVar, Var, get_unique_variable_name
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ class IterTag(Tag):
         )
         index_arg = self.get_index_var_arg()
         component = self.render_component(self.render_fn, arg)
-        return wrap(
+        return format.wrap(
             f"{self.iterable.full_name}.map(({arg.name}, {index_arg}) => {component})",
             "{",
         )

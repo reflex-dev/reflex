@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 import plotly.graph_objects as go
 from plotly.io import to_json
 
-from pynecone import constants, types
+from pynecone import constants
+from pynecone.utils import types
 
 if TYPE_CHECKING:
     from pynecone.event import EventHandler, EventSpec

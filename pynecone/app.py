@@ -13,7 +13,6 @@ from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.config import get_config
 from pynecone.event import Event, EventHandler
-from pynecone.format import format_query_params, format_route
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.route import (
@@ -24,6 +23,7 @@ from pynecone.route import (
     verify_route_validity,
 )
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
+from pynecone.utils import format
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -269,7 +269,7 @@ class App(Base):
             component.children.extend(script_tags)
 
         # Format the route.
-        route = format_route(route)
+        route = format.format_route(route)
 
         # Add the page.
         self._check_routes_conflict(route)
@@ -341,7 +341,7 @@ class App(Base):
             component, title=title, image=image, description=description, meta=meta
         )
 
-        froute = format_route
+        froute = format.format_route
         if (froute(constants.ROOT_404) not in self.pages) and (
             not any(page.startswith("[[...") for page in self.pages)
         ):
@@ -413,7 +413,7 @@ async def process(
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
-    formatted_params = format_query_params(event.router_data)
+    formatted_params = format.format_query_params(event.router_data)
 
     # Pass router_data to the state of the App.
     state.router_data = event.router_data

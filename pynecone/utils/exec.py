@@ -10,15 +10,10 @@ from typing import TYPE_CHECKING
 
 import uvicorn
 
-from pynecone import console, constants
-from pynecone.build import export_app, setup_backend, setup_frontend
+from pynecone import constants
 from pynecone.config import get_config
-from pynecone.prerequisites import (
-    create_web_directory,
-    get_package_manager,
-    install_frontend_packages,
-)
-from pynecone.processes import get_num_workers
+from pynecone.utils import console, prerequisites, processes
+from pynecone.utils.build import export_app, setup_backend, setup_frontend
 from pynecone.watch import AssetFolderWatch
 
 if TYPE_CHECKING:
@@ -44,10 +39,10 @@ def run_frontend(app: App, root: Path, port: str):
         port: port of the app.
     """
     # Initialize the web directory if it doesn't exist.
-    web_dir = create_web_directory(root)
+    web_dir = prerequisites.create_web_directory(root)
 
     # Install frontend packages
-    install_frontend_packages(web_dir)
+    prerequisites.install_frontend_packages(web_dir)
 
     # Set up the frontend.
     setup_frontend(root)
@@ -63,7 +58,7 @@ def run_frontend(app: App, root: Path, port: str):
     os.environ["PORT"] = get_config().port if port is None else port
 
     subprocess.Popen(
-        [get_package_manager(), "run", "next", "telemetry", "disable"],
+        [prerequisites.get_package_manager(), "run", "next", "telemetry", "disable"],
         cwd=constants.WEB_DIR,
         env=os.environ,
         stdout=subprocess.DEVNULL,
@@ -71,7 +66,9 @@ def run_frontend(app: App, root: Path, port: str):
     )
 
     subprocess.Popen(
-        [get_package_manager(), "run", "dev"], cwd=constants.WEB_DIR, env=os.environ
+        [prerequisites.get_package_manager(), "run", "dev"],
+        cwd=constants.WEB_DIR,
+        env=os.environ,
     )
 
 
@@ -93,7 +90,9 @@ def run_frontend_prod(app: App, root: Path, port: str):
 
     # Run the frontend in production mode.
     subprocess.Popen(
-        [get_package_manager(), "run", "prod"], cwd=constants.WEB_DIR, env=os.environ
+        [prerequisites.get_package_manager(), "run", "prod"],
+        cwd=constants.WEB_DIR,
+        env=os.environ,
     )
 
 
@@ -130,7 +129,7 @@ def run_backend_prod(
     """
     setup_backend()
 
-    num_workers = get_num_workers()
+    num_workers = processes.get_num_workers()
     command = (
         [
             *constants.RUN_BACKEND_PROD_WINDOWS,

@@ -6,27 +6,10 @@ from pathlib import Path
 import httpx
 import typer
 
-from pynecone import build, console, constants
+from pynecone import constants
 from pynecone.config import get_config
-from pynecone.prerequisites import (
-    create_config,
-    get_app,
-    get_default_app_name,
-    get_production_backend_url,
-    initialize_app_directory,
-    initialize_gitignore,
-    initialize_web_directory,
-    install_bun,
-    is_initialized,
-    is_latest_template,
-)
-from pynecone.processes import (
-    change_or_terminate_port,
-    is_process_on_port,
-    kill_process_on_port,
-)
-from pynecone.run import run_backend, run_backend_prod, run_frontend, run_frontend_prod
 from pynecone.telemetry import pynecone_telemetry
+from pynecone.utils import build, console, exec, prerequisites, processes
 
 # Create the app.
 cli = typer.Typer()
@@ -41,7 +24,7 @@ def version():
 @cli.command()
 def init():
     """Initialize a new Pynecone app in the current directory."""
-    app_name = get_default_app_name()
+    app_name = prerequisites.get_default_app_name()
 
     # Make sure they don't name the app "pynecone".
     if app_name == constants.MODULE_NAME:
@@ -52,13 +35,13 @@ def init():
 
     with console.status(f"[bold]Initializing {app_name}"):
         # Set up the web directory.
-        install_bun()
-        initialize_web_directory()
+        prerequisites.install_bun()
+        prerequisites.initialize_web_directory()
 
         # Set up the app directory, only if the config doesn't exist.
         if not os.path.exists(constants.CONFIG_FILE):
-            create_config(app_name)
-            initialize_app_directory(app_name)
+            prerequisites.create_config(app_name)
+            prerequisites.initialize_app_directory(app_name)
             build.set_pynecone_project_hash()
             pynecone_telemetry("init", get_config().telemetry_enabled)
         else:
@@ -66,9 +49,9 @@ def init():
             pynecone_telemetry("reinit", get_config().telemetry_enabled)
 
         # Initialize the .gitignore.
-        initialize_gitignore()
+        prerequisites.initialize_gitignore()
         # Finish initializing the app.
-        build.console.log(f"[bold green]Finished Initializing: {app_name}")
+        console.log(f"[bold green]Finished Initializing: {app_name}")
 
 
 @cli.command()
@@ -92,36 +75,36 @@ def run(
     backend_port = get_config().backend_port
 
     # If something is running on the ports, ask the user if they want to kill or change it.
-    if is_process_on_port(frontend_port):
-        frontend_port = change_or_terminate_port(frontend_port, "frontend")
+    if processes.is_process_on_port(frontend_port):
+        frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
 
-    if is_process_on_port(backend_port):
-        backend_port = change_or_terminate_port(backend_port, "backend")
+    if processes.is_process_on_port(backend_port):
+        backend_port = processes.change_or_terminate_port(backend_port, "backend")
 
     # Check that the app is initialized.
-    if frontend and not is_initialized():
-        build.console.print(
+    if frontend and not prerequisites.is_initialized():
+        console.print(
             "[red]The app is not initialized. Run [bold]pc init[/bold] first."
         )
         raise typer.Exit()
 
     # Check that the template is up to date.
-    if frontend and not is_latest_template():
-        build.console.print(
+    if frontend and not prerequisites.is_latest_template():
+        console.print(
             "[red]The base app template has updated. Run [bold]pc init[/bold] again."
         )
         raise typer.Exit()
 
     # Get the app module.
-    build.console.rule("[bold]Starting Pynecone App")
-    app = get_app()
+    console.rule("[bold]Starting Pynecone App")
+    app = prerequisites.get_app()
 
     # Get the frontend and backend commands, based on the environment.
     frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
-        frontend_cmd, backend_cmd = run_frontend, run_backend
+        frontend_cmd, backend_cmd = exec.run_frontend, exec.run_backend
     if env == constants.Env.PROD:
-        frontend_cmd, backend_cmd = run_frontend_prod, run_backend_prod
+        frontend_cmd, backend_cmd = exec.run_frontend_prod, exec.run_backend_prod
     assert frontend_cmd and backend_cmd, "Invalid env"
 
     # Post a telemetry event.
@@ -134,8 +117,8 @@ def run(
         if backend:
             backend_cmd(app.__name__, port=int(backend_port), loglevel=loglevel)
     finally:
-        kill_process_on_port(frontend_port)
-        kill_process_on_port(backend_port)
+        processes.kill_process_on_port(frontend_port)
+        processes.kill_process_on_port(backend_port)
 
 
 @cli.command()
@@ -143,7 +126,7 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
     """Deploy the app to the Pynecone hosting service."""
     # Get the app config.
     config = get_config()
-    config.api_url = get_production_backend_url()
+    config.api_url = prerequisites.get_production_backend_url()
 
     # Check if the deploy url is set.
     if config.pcdeploy_url is None:
@@ -152,7 +135,7 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
     # Compile the app in production mode.
     typer.echo("Compiling production app")
-    app = get_app().app
+    app = prerequisites.get_app().app
     build.export_app(app, zip=True, deploy_url=config.deploy_url)
 
     # Exit early if this is a dry run.
@@ -196,11 +179,11 @@ def export(
 
     if for_pc_deploy:
         # Get the app config and modify the api_url base on username and app_name.
-        config.api_url = get_production_backend_url()
+        config.api_url = prerequisites.get_production_backend_url()
 
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
-    app = get_app().app
+    app = prerequisites.get_app().app
     build.export_app(
         app,
         backend=backend,

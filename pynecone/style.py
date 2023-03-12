@@ -4,7 +4,7 @@ from typing import Optional
 
 from pynecone import constants
 from pynecone.event import EventChain
-from pynecone.format import to_camel_case
+from pynecone.utils import format
 from pynecone.var import BaseVar, Var
 
 toggle_color_mode = BaseVar(name=constants.TOGGLE_COLOR_MODE, type_=EventChain)
@@ -21,7 +21,7 @@ def convert(style_dict):
     """
     out = {}
     for key, value in style_dict.items():
-        key = to_camel_case(key)
+        key = format.to_camel_case(key)
         if isinstance(value, dict):
             out[key] = convert(value)
         elif isinstance(value, Var):

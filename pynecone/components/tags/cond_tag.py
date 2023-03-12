@@ -3,7 +3,7 @@
 from typing import Any
 
 from pynecone.components.tags.tag import Tag
-from pynecone.format import format_cond
+from pynecone.utils import format
 from pynecone.var import Var
 
 
@@ -26,7 +26,7 @@ class CondTag(Tag):
             The React code to render the tag.
         """
         assert self.cond is not None, "The condition must be set."
-        return format_cond(
+        return format.format_cond(
             cond=self.cond.full_name,
             true_value=self.true_value,
             false_value=self.false_value,

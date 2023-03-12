@@ -6,7 +6,7 @@ from typing import Any, Optional
 from pynecone.components.component import Component
 from pynecone.components.layout.fragment import Fragment
 from pynecone.components.tags import CondTag, Tag
-from pynecone.format import format_cond
+from pynecone.utils import format
 from pynecone.var import Var
 
 
@@ -93,7 +93,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
 
     # Create the conditional var.
     return BaseVar(
-        name=format_cond(
+        name=format.format_cond(
             cond=cond_var.full_name,
             true_value=c1,
             false_value=c2,

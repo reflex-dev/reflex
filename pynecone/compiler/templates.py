@@ -3,7 +3,7 @@
 from typing import Optional, Set
 
 from pynecone import constants
-from pynecone.path import join
+from pynecone.utils import path_ops
 
 # Template for the Pynecone config file.
 PCCONFIG = f"""import pynecone as pc
@@ -37,7 +37,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
     if not lib:
         assert not default, "No default field allowed for empty library."
         assert rest is not None and len(rest) > 0, "No fields to import."
-        return join([IMPORT_LIB(lib=lib) for lib in sorted(rest)])
+        return path_ops.join([IMPORT_LIB(lib=lib) for lib in sorted(rest)])
 
     # Handle importing from a library.
     rest = rest or set()
@@ -52,7 +52,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
 
 
 # Code to render a NextJS Document root.
-DOCUMENT_ROOT = join(
+DOCUMENT_ROOT = path_ops.join(
     [
         "{imports}",
         "export default function Document() {{",
@@ -67,7 +67,7 @@ DOCUMENT_ROOT = join(
 THEME = "export default {theme}".format
 
 # Code to render a single NextJS page.
-PAGE = join(
+PAGE = path_ops.join(
     [
         "{imports}",
         "{custom_code}",
@@ -84,7 +84,7 @@ PAGE = join(
 ).format
 
 # Code to render a single exported custom component.
-COMPONENT = join(
+COMPONENT = path_ops.join(
     [
         "export const {name} = memo(({{{props}}}) => (",
         "{render}",
@@ -93,7 +93,7 @@ COMPONENT = join(
 ).format
 
 # Code to render the custom components page.
-COMPONENTS = join(
+COMPONENTS = path_ops.join(
     [
         "{imports}",
         "{components}",
@@ -138,7 +138,7 @@ def format_state(
 
 # Events.
 EVENT_ENDPOINT = constants.Endpoint.EVENT.name
-EVENT_FN = join(
+EVENT_FN = path_ops.join(
     [
         "const Event = events => {set_state}({{",
         "  ...{state},",
@@ -146,7 +146,7 @@ EVENT_FN = join(
         "}})",
     ]
 ).format
-UPLOAD_FN = join(
+UPLOAD_FN = path_ops.join(
     [
         "const File = files => {set_state}({{",
         "  ...{state},",
@@ -165,7 +165,7 @@ STATE = constants.STATE
 EVENTS = constants.EVENTS
 SET_RESULT = format_state_setter(RESULT)
 READY = f"const {{ isReady }} = {ROUTER};"
-USE_EFFECT = join(
+USE_EFFECT = path_ops.join(
     [
         "useEffect(() => {{",
         "  if(!isReady) {{",

@@ -14,8 +14,7 @@ from typing import (
 
 from pynecone import constants
 from pynecone.config import get_config
-from pynecone.path import cp, mkdir, rm
-from pynecone.prerequisites import get_package_manager
+from pynecone.utils import path_ops, prerequisites
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -70,14 +69,16 @@ def export_app(
     app.compile(force_compile=True)
 
     # Remove the static folder.
-    rm(constants.WEB_STATIC_DIR)
+    path_ops.rm(constants.WEB_STATIC_DIR)
 
     # Generate the sitemap file.
     if deploy_url is not None:
         generate_sitemap(deploy_url)
 
     # Export the Next app.
-    subprocess.run([get_package_manager(), "run", "export"], cwd=constants.WEB_DIR)
+    subprocess.run(
+        [prerequisites.get_package_manager(), "run", "export"], cwd=constants.WEB_DIR
+    )
 
     # Zip up the app.
     if zip:
@@ -126,8 +127,8 @@ def setup_frontend(root: Path):
         root: root path of the project.
     """
     # copy asset files to public folder
-    mkdir(str(root / constants.WEB_ASSETS_DIR))
-    cp(
+    path_ops.mkdir(str(root / constants.WEB_ASSETS_DIR))
+    path_ops.cp(
         src=str(root / constants.APP_ASSETS_DIR),
         dest=str(root / constants.WEB_ASSETS_DIR),
     )

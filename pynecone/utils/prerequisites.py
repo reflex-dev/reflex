@@ -14,9 +14,9 @@ from typing import Optional
 import typer
 from redis import Redis
 
-from pynecone import console, constants
+from pynecone import constants
 from pynecone.config import get_config
-from pynecone.path import cp, join, mv, rm, which
+from pynecone.utils import console, path_ops
 
 
 def check_node_version(min_version):
@@ -61,7 +61,7 @@ def get_package_manager() -> str:
 
     # On Windows, we use npm instead of bun.
     if platform.system() == "Windows":
-        npm_path = which("npm")
+        npm_path = path_ops.which("npm")
         if npm_path is None:
             raise FileNotFoundError("Pynecone requires npm to be installed on Windows.")
         return npm_path
@@ -144,7 +144,7 @@ def create_web_directory(root: Path) -> str:
       The path to the web directory.
     """
     web_dir = str(root / constants.WEB_DIR)
-    cp(constants.WEB_TEMPLATE_DIR, web_dir, overwrite=False)
+    path_ops.cp(constants.WEB_TEMPLATE_DIR, web_dir, overwrite=False)
     return web_dir
 
 
@@ -160,7 +160,7 @@ def initialize_gitignore():
 
     # Add the new files to the .gitignore file.
     with open(constants.GITIGNORE_FILE, "a") as f:
-        f.write(join(files))
+        f.write(path_ops.join(files))
 
 
 def initialize_app_directory(app_name: str):
@@ -170,20 +170,20 @@ def initialize_app_directory(app_name: str):
         app_name: The name of the app.
     """
     console.log("Initializing the app directory.")
-    cp(constants.APP_TEMPLATE_DIR, app_name)
-    mv(
+    path_ops.cp(constants.APP_TEMPLATE_DIR, app_name)
+    path_ops.mv(
         os.path.join(app_name, constants.APP_TEMPLATE_FILE),
         os.path.join(app_name, app_name + constants.PY_EXT),
     )
-    cp(constants.ASSETS_TEMPLATE_DIR, constants.APP_ASSETS_DIR)
+    path_ops.cp(constants.ASSETS_TEMPLATE_DIR, constants.APP_ASSETS_DIR)
 
 
 def initialize_web_directory():
     """Initialize the web directory on pc init."""
     console.log("Initializing the web directory.")
-    rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
-    rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
-    cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
+    path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
+    path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
+    path_ops.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
 
 
 def install_bun():
@@ -202,12 +202,12 @@ def install_bun():
         console.log("Installing bun...")
 
         # Check if curl is installed
-        curl_path = which("curl")
+        curl_path = path_ops.which("curl")
         if curl_path is None:
             raise FileNotFoundError("Pynecone requires curl to be installed.")
 
         # Check if unzip is installed
-        unzip_path = which("unzip")
+        unzip_path = path_ops.which("unzip")
         if unzip_path is None:
             raise FileNotFoundError("Pynecone requires unzip to be installed.")
 

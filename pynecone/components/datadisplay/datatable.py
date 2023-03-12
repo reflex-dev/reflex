@@ -4,9 +4,7 @@ from typing import Any, List, Optional
 
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
-from pynecone.format import format_dataframe_values
-from pynecone.imports import ImportDict, merge_imports
-from pynecone.types import is_dataframe
+from pynecone.utils import format, imports, types
 from pynecone.var import BaseVar, Var
 
 
@@ -66,8 +64,8 @@ class DataTable(Gridjs):
 
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
-            is_dataframe(type(data))
-            or (isinstance(data, Var) and is_dataframe(data.type_))
+            types.is_dataframe(type(data))
+            or (isinstance(data, Var) and types.is_dataframe(data.type_))
         ) and props.get("columns"):
             raise ValueError(
                 "Cannot pass in both a pandas dataframe and columns to the data_table component."
@@ -88,8 +86,8 @@ class DataTable(Gridjs):
             **props,
         )
 
-    def _get_imports(self) -> ImportDict:
-        return merge_imports(
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
             super()._get_imports(), {"": {"gridjs/dist/theme/mermaid.css"}}
         )
 
@@ -98,23 +96,23 @@ class DataTable(Gridjs):
         if isinstance(self.data, Var):
             self.columns = BaseVar(
                 name=f"{self.data.name}.columns"
-                if is_dataframe(self.data.type_)
+                if types.is_dataframe(self.data.type_)
                 else f"{self.columns.name}",
                 type_=List[Any],
                 state=self.data.state,
             )
             self.data = BaseVar(
                 name=f"{self.data.name}.data"
-                if is_dataframe(self.data.type_)
+                if types.is_dataframe(self.data.type_)
                 else f"{self.data.name}",
                 type_=List[List[Any]],
                 state=self.data.state,
             )
 
         # If given a pandas df break up the data and columns
-        if is_dataframe(type(self.data)):
+        if types.is_dataframe(type(self.data)):
             self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
-            self.data = Var.create(format_dataframe_values(self.data))  # type: ignore
+            self.data = Var.create(format.format_dataframe_values(self.data))  # type: ignore
 
         # Render the table.
         return super()._render()
