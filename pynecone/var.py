@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import random
+import string
 from abc import ABC
 from typing import (
     TYPE_CHECKING,
@@ -19,11 +21,30 @@ from plotly.graph_objects import Figure
 from plotly.io import to_json
 from pydantic.fields import ModelField
 
-from pynecone import constants, utils
+from pynecone import constants
 from pynecone.base import Base
+from pynecone.format import format_string, wrap
+from pynecone.types import _issubclass, get_args, is_dataframe, is_generic_alias
 
 if TYPE_CHECKING:
     from pynecone.state import State
+
+
+# Set of unique variable names.
+USED_VARIABLES = set()
+
+
+def get_unique_variable_name() -> str:
+    """Get a unique variable name.
+
+    Returns:
+        The unique variable name.
+    """
+    name = "".join([random.choice(string.ascii_lowercase) for _ in range(8)])
+    if name not in USED_VARIABLES:
+        USED_VARIABLES.add(name)
+        return name
+    return get_unique_variable_name()
 
 
 class Var(ABC):
@@ -135,9 +156,9 @@ class Var(ABC):
         Returns:
             The wrapped var, i.e. {state.var}.
         """
-        out = self.full_name if self.is_local else utils.wrap(self.full_name, "{")
+        out = self.full_name if self.is_local else wrap(self.full_name, "{")
         if self.is_string:
-            out = utils.format_string(out)
+            out = format_string(out)
         return out
 
     def __getitem__(self, i: Any) -> Var:
@@ -153,10 +174,7 @@ class Var(ABC):
             TypeError: If the var is not indexable.
         """
         # Indexing is only supported for lists, dicts, and dataframes.
-        if not (
-            utils._issubclass(self.type_, Union[List, Dict])
-            or utils.is_dataframe(self.type_)
-        ):
+        if not (_issubclass(self.type_, Union[List, Dict]) or is_dataframe(self.type_)):
             if self.type_ == Any:
                 raise TypeError(
                     f"Could not index into var of type Any. (If you are trying to index into a state var, add a type annotation to the var.)"
@@ -173,9 +191,9 @@ class Var(ABC):
             i = BaseVar(name=i.name, type_=i.type_, state=i.state, is_local=True)
 
         # Handle list indexing.
-        if utils._issubclass(self.type_, List):
+        if _issubclass(self.type_, List):
             # List indices must be ints, slices, or vars.
-            if not isinstance(i, utils.get_args(Union[int, slice, Var])):
+            if not isinstance(i, get_args(Union[int, slice, Var])):
                 raise TypeError("Index must be an integer.")
 
             # Handle slices first.
@@ -192,10 +210,7 @@ class Var(ABC):
                 )
 
             # Get the type of the indexed var.
-            if utils.is_generic_alias(self.type_):
-                type_ = utils.get_args(self.type_)[0]
-            else:
-                type_ = Any
+            type_ = get_args(self.type_)[0] if is_generic_alias(self.type_) else Any
 
             # Use `at` to support negative indices.
             return BaseVar(
@@ -207,11 +222,8 @@ class Var(ABC):
         # Dictionary / dataframe indexing.
         # Get the type of the indexed var.
         if isinstance(i, str):
-            i = utils.wrap(i, '"')
-        if utils.is_generic_alias(self.type_):
-            type_ = utils.get_args(self.type_)[1]
-        else:
-            type_ = Any
+            i = wrap(i, '"')
+        type_ = get_args(self.type_)[1] if is_generic_alias(self.type_) else Any
 
         # Use normal indexing here.
         return BaseVar(
@@ -284,7 +296,7 @@ class Var(ABC):
             props = (other, self) if flip else (self, other)
             name = f"{props[0].full_name} {op} {props[1].full_name}"
             if fn is None:
-                name = utils.wrap(name, "(")
+                name = wrap(name, "(")
         if fn is not None:
             name = f"{fn}({name})"
         return BaseVar(
@@ -337,7 +349,7 @@ class Var(ABC):
         Raises:
             TypeError: If the var is not a list.
         """
-        if not utils._issubclass(self.type_, List):
+        if not _issubclass(self.type_, List):
             raise TypeError(f"Cannot get length of non-list var {self}.")
         return BaseVar(
             name=f"{self.full_name}.length",
@@ -607,7 +619,7 @@ class Var(ABC):
             A var representing foreach operation.
         """
         arg = BaseVar(
-            name=utils.get_unique_variable_name(),
+            name=get_unique_variable_name(),
             type_=self.type_,
         )
         return BaseVar(
@@ -685,13 +697,10 @@ class BaseVar(Var, Base):
         Returns:
             The default value of the var.
         """
-        if utils.is_generic_alias(self.type_):
-            type_ = self.type_.__origin__
-        else:
-            type_ = self.type_
+        type_ = self.type_.__origin__ if is_generic_alias(self.type_) else self.type_
         if issubclass(type_, str):
             return ""
-        if issubclass(type_, utils.get_args(Union[int, float])):
+        if issubclass(type_, get_args(Union[int, float])):
             return 0
         if issubclass(type_, bool):
             return False
