@@ -1,5 +1,7 @@
 """The route decorator and associated variables and functions."""
 
+from __future__ import annotations
+
 import re
 from typing import Dict, List, Optional, Union
 
