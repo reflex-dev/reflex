@@ -204,7 +204,6 @@ class App(Base):
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
         on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
-        path: Optional[str] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
         script_tags: Optional[List[Component]] = None,
     ):
