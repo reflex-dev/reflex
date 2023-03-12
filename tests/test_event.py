@@ -1,7 +1,8 @@
 import pytest
 
-from pynecone import event, utils
+from pynecone import event
 from pynecone.event import Event, EventHandler, EventSpec
+from pynecone.format import json_dumps
 from pynecone.var import Var
 
 
@@ -57,8 +58,8 @@ def test_call_event_handler():
     assert event_spec.handler == handler
     assert event_spec.local_args == ()
     assert event_spec.args == (
-        ("arg1", utils.json_dumps(first)),
-        ("arg2", utils.json_dumps(second)),
+        ("arg1", json_dumps(first)),
+        ("arg2", json_dumps(second)),
     )
 
     handler = EventHandler(fn=test_fn_with_args)

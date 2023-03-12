@@ -3,10 +3,10 @@ from typing import Dict, List
 import pytest
 from plotly.graph_objects import Figure
 
-from pynecone import utils
 from pynecone.base import Base
 from pynecone.constants import RouteVar
 from pynecone.event import Event
+from pynecone.format import format_event_handler
 from pynecone.state import State
 from pynecone.var import BaseVar, ComputedVar
 
@@ -606,14 +606,14 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
 def test_format_event_handler():
     """Test formatting an event handler."""
     assert (
-        utils.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
+        format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
     )
     assert (
-        utils.format_event_handler(ChildState.change_both)  # type: ignore
+        format_event_handler(ChildState.change_both)  # type: ignore
         == "test_state.child_state.change_both"
     )
     assert (
-        utils.format_event_handler(GrandchildState.do_nothing)  # type: ignore
+        format_event_handler(GrandchildState.do_nothing)  # type: ignore
         == "test_state.child_state.grandchild_state.do_nothing"
     )
 

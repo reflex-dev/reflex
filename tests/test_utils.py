@@ -2,7 +2,21 @@ from typing import Any, List, Union
 
 import pytest
 
-from pynecone import utils
+from pynecone import build
+from pynecone.format import (
+    format_cond,
+    format_route,
+    get_close_char,
+    indent,
+    is_wrapped,
+    to_camel_case,
+    to_snake_case,
+    to_title_case,
+    wrap,
+)
+from pynecone.imports import merge_imports
+from pynecone.prerequisites import create_web_directory
+from pynecone.types import _issubclass, is_backend_variable, is_generic_alias
 from pynecone.var import Var
 
 
@@ -25,7 +39,7 @@ def test_to_snake_case(input: str, output: str):
         input: The input string.
         output: The expected output string.
     """
-    assert utils.to_snake_case(input) == output
+    assert to_snake_case(input) == output
 
 
 @pytest.mark.parametrize(
@@ -45,7 +59,7 @@ def test_to_camel_case(input: str, output: str):
         input: The input string.
         output: The expected output string.
     """
-    assert utils.to_camel_case(input) == output
+    assert to_camel_case(input) == output
 
 
 @pytest.mark.parametrize(
@@ -65,7 +79,7 @@ def test_to_title_case(input: str, output: str):
         input: The input string.
         output: The expected output string.
     """
-    assert utils.to_title_case(input) == output
+    assert to_title_case(input) == output
 
 
 @pytest.mark.parametrize(
@@ -86,7 +100,7 @@ def test_get_close_char(input: str, output: str):
         input: The open character.
         output: The expected close character.
     """
-    assert utils.get_close_char(input) == output
+    assert get_close_char(input) == output
 
 
 @pytest.mark.parametrize(
@@ -107,7 +121,7 @@ def test_is_wrapped(text: str, open: str, expected: bool):
         open: The open character.
         expected: Whether the text is wrapped.
     """
-    assert utils.is_wrapped(text, open) == expected
+    assert is_wrapped(text, open) == expected
 
 
 @pytest.mark.parametrize(
@@ -133,7 +147,7 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
         check_first: Whether to check if the text is already wrapped.
         num: The number of times to wrap the text.
     """
-    assert utils.wrap(text, open, check_first=check_first, num=num) == expected
+    assert wrap(text, open, check_first=check_first, num=num) == expected
 
 
 @pytest.mark.parametrize(
@@ -155,7 +169,7 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
         expected: The expected output string.
         windows_platform: Whether the system is windows.
     """
-    assert utils.indent(text, indent_level) == (
+    assert indent(text, indent_level) == (
         expected.replace("\n", "\r\n") if windows_platform else expected
     )
 
@@ -176,14 +190,14 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         false_value: The value to return if the condition is false.
         expected: The expected output string.
     """
-    assert utils.format_cond(condition, true_value, false_value) == expected
+    assert format_cond(condition, true_value, false_value) == expected
 
 
 def test_merge_imports():
     """Test that imports are merged correctly."""
     d1 = {"react": {"Component"}}
     d2 = {"react": {"Component"}, "react-dom": {"render"}}
-    d = utils.merge_imports(d1, d2)
+    d = merge_imports(d1, d2)
     assert set(d.keys()) == {"react", "react-dom"}
     assert set(d["react"]) == {"Component"}
     assert set(d["react-dom"]) == {"render"}
@@ -207,7 +221,7 @@ def test_is_generic_alias(cls: type, expected: bool):
         cls: The class to check.
         expected: Whether the class is a GenericAlias.
     """
-    assert utils.is_generic_alias(cls) == expected
+    assert is_generic_alias(cls) == expected
 
 
 @pytest.mark.parametrize(
@@ -227,7 +241,7 @@ def test_format_route(route: str, expected: bool):
         route: The route to format.
         expected: The expected formatted route.
     """
-    assert utils.format_route(route) == expected
+    assert format_route(route) == expected
 
 
 def test_setup_frontend(tmp_path, mocker):
@@ -244,9 +258,11 @@ def test_setup_frontend(tmp_path, mocker):
     assets.mkdir()
     (assets / "favicon.ico").touch()
 
-    mocker.patch("pynecone.utils.install_frontend_packages")
+    assert str(web_folder) == create_web_directory(tmp_path)
 
-    utils.setup_frontend(tmp_path)
+    mocker.patch("pynecone.prerequisites.install_frontend_packages")
+
+    build.setup_frontend(tmp_path)
     assert web_folder.exists()
     assert web_public_folder.exists()
     assert (web_public_folder / "favicon.ico").exists()
@@ -261,7 +277,7 @@ def test_setup_frontend(tmp_path, mocker):
     ],
 )
 def test_is_backend_variable(input, output):
-    assert utils.is_backend_variable(input) == output
+    assert is_backend_variable(input) == output
 
 
 @pytest.mark.parametrize(
@@ -282,4 +298,4 @@ def test_is_backend_variable(input, output):
     ],
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
-    assert utils._issubclass(cls, cls_check) == expected
+    assert _issubclass(cls, cls_check) == expected
