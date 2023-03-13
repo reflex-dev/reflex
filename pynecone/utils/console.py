@@ -25,7 +25,7 @@ def log(msg: str) -> None:
     """Takes a string and logs it to the console.
 
     Args:
-      msg (str): The message to log.
+        msg (str): The message to log.
     """
     _console.log(msg)
 
@@ -34,7 +34,7 @@ def print(msg: str) -> None:
     """Prints the given message to the console.
 
     Args:
-      msg (str): The message to print to the console.
+        msg (str): The message to print to the console.
     """
     _console.print(msg)
 
@@ -43,7 +43,7 @@ def rule(title: str) -> None:
     """Prints a horizontal rule with a title.
 
     Args:
-      title (str): The title of the rule.
+        title (str): The title of the rule.
     """
     _console.rule(title)
 
@@ -53,12 +53,11 @@ def ask(question: str, choices: Optional[List[str]] = None) -> str:
      and returns the user input.
 
     Args:
-      question (str): The question to ask the user.
-      choices (Optional[List[str]]): A list of strings
-      that will be used as the choices for the user to select from.
+        question (str): The question to ask the user.
+        choices (Optional[List[str]]): A list of choices to select from
 
     Returns:
-      A string
+        A string
     """
     return Prompt.ask(question, choices=choices)
 
@@ -67,7 +66,10 @@ def status(msg: str) -> Status:
     """Returns a status,
     which can be used as a context manager.
 
+    Args:
+        msg (str): The message to be used as status title.
+
     Returns:
-      The status of the console.
+        The status of the console.
     """
     return _console.status(msg)

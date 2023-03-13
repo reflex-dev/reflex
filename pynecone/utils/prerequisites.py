@@ -138,10 +138,10 @@ def create_web_directory(root: Path) -> str:
     and returns the path to the directory.
 
     Args:
-      root (Path): The root directory of the project.
+        root (Path): The root directory of the project.
 
     Returns:
-      The path to the web directory.
+        The path to the web directory.
     """
     web_dir = str(root / constants.WEB_DIR)
     path_ops.cp(constants.WEB_TEMPLATE_DIR, web_dir, overwrite=False)
@@ -219,7 +219,7 @@ def install_frontend_packages(web_dir: str):
     into the given web directory.
 
     Args:
-      web_dir (str): The directory where the frontend code is located.
+        web_dir (str): The directory where the frontend code is located.
     """
     # Install the frontend packages.
     console.rule("[bold]Installing frontend packages")

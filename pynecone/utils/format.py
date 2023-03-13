@@ -376,11 +376,12 @@ def format_state(value: Any) -> Dict:
 
 
 def json_dumps(obj: Any) -> str:
-    """Serialize ``obj`` to a JSON formatted ``str``, ensure_ascii=False.
+    """Takes an object and returns a jsonified string.
 
     Args:
-        obj: The obj to be fromatted
+        obj: The object to be serialized.
+
     Returns:
-        str: The result of the json dumps
+        A string
     """
     return json.dumps(obj, ensure_ascii=False)
