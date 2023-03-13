@@ -152,7 +152,7 @@ This `index` function defines the frontend of the app.
 We use different components such as `center`, `vstack`, `input`, and `button` to build the frontend. Components can be nested within each other
  to create complex layouts. And you can use keyword args to style them with the full power of CSS.
 
-Pynecone comes with [60+ built-in components](https://pynecone.io/docs/library) to help you get started. We are actively adding more components, plus it's easy to (create your own components)[https://pynecone.io/docs/advanced-guide/wrapping-react].
+Pynecone comes with [60+ built-in components](https://pynecone.io/docs/library) to help you get started. We are actively adding more components, plus it's easy to [create your own components](https://pynecone.io/docs/advanced-guide/wrapping-react).
 
 ### **State**
 
