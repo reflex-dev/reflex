@@ -50,6 +50,9 @@ class State(Base, ABC):
     # Backend vars inherited
     inherited_backend_vars: ClassVar[Dict[str, Any]] = {}
 
+    # The event handlers.
+    event_handlers: ClassVar[Dict[str, EventHandler]] = {}
+
     # The parent state.
     parent_state: Optional[State] = None
 
@@ -180,7 +183,17 @@ class State(Base, ABC):
         }
         for name, fn in events.items():
             event_handler = EventHandler(fn=fn)
+            cls.event_handlers[name] = event_handler
             setattr(cls, name, event_handler)
+
+    @classmethod
+    def convert_handlers_to_fns(cls):
+        """Convert the event handlers to functions.
+
+        This is done so the state functions can be called as normal functions during runtime.
+        """
+        for name, event_handler in cls.event_handlers.items():
+            setattr(cls, name, event_handler.fn)
 
     @classmethod
     @functools.lru_cache()
@@ -544,7 +557,7 @@ class State(Base, ABC):
         path = event.name.split(".")
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
-        handler = getattr(substate, name)
+        handler = substate.event_handlers[name]  # type: ignore
 
         # Process the event.
         fn = functools.partial(handler.fn, substate)

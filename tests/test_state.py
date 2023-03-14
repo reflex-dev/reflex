@@ -204,6 +204,33 @@ def test_class_vars(test_state):
     }
 
 
+def test_event_handlers(test_state):
+    """Test that event handler is set correctly.
+
+    Args:
+        test_state: A state.
+    """
+    expected = {
+        "change_both",
+        "do_nothing",
+        "do_something",
+        "set_array",
+        "set_complex",
+        "set_count",
+        "set_fig",
+        "set_key",
+        "set_mapping",
+        "set_num1",
+        "set_num2",
+        "set_obj",
+        "set_value",
+        "set_value2",
+    }
+
+    cls = type(test_state)
+    assert set(cls.event_handlers.keys()).intersection(expected) == expected
+
+
 def test_default_value(test_state):
     """Test that the default value of a var is correct.
 
