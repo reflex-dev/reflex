@@ -16,7 +16,7 @@ def get_template_render(name: str) -> Callable[[Any], str]:
     Returns:
         A render function.
     """
-    env = Environment(loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR))
+    env = Environment(loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR),extensions=['jinja2.ext.debug'])
     return env.get_template(name=name).render
 
 
@@ -75,21 +75,8 @@ DOCUMENT_ROOT = join(
 THEME = get_template_render('web/utils/theme.js')
 
 # Code to render a single NextJS page.
-PAGE = join(
-    [
-        "{imports}",
-        "{custom_code}",
-        "{constants}",
-        "export default function Component() {{",
-        "{state}",
-        "{events}",
-        "{effects}",
-        "return (",
-        "{render}",
-        ")",
-        "}}",
-    ]
-).format
+PAGE = get_template_render('web/pages/index.js.jinja2')
+
 
 # Code to render a single exported custom component.
 COMPONENT = join(
