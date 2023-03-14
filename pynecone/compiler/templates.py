@@ -1,19 +1,27 @@
 """Templates to use in the pynecone compiler."""
 
-from typing import Optional, Set
+from typing import Optional, Set, Callable, Any
+from jinja2 import Environment, FileSystemLoader
 
 from pynecone import constants
 from pynecone.utils import join
 
-# Template for the Pynecone config file.
-PCCONFIG = f"""import pynecone as pc
 
-config = pc.Config(
-    app_name="{{app_name}}",
-    db_url="{constants.DB_URL}",
-    env=pc.Env.DEV,
-)
-"""
+def get_template_render(name: str) -> Callable[[Any], str]:
+    """Get render function that work with a template.
+
+    Args:
+        name: The template name. "/" is used as the path separator.
+
+    Returns:
+        A render function.
+    """
+    env = Environment(loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR))
+    return env.get_template(name=name).render
+
+
+# Template for the Pynecone config file.
+PCCONFIG = get_template_render('app/pcconfig.py')
 
 # Javascript formatting.
 CONST = "const {name} = {value}".format
@@ -64,7 +72,7 @@ DOCUMENT_ROOT = join(
 ).format
 
 # Template for the theme file.
-THEME = "export default {theme}".format
+THEME = get_template_render('web/utils/theme.js')
 
 # Code to render a single NextJS page.
 PAGE = join(

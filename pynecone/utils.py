@@ -382,7 +382,7 @@ def create_config(app_name: str):
     from pynecone.compiler import templates
 
     with open(constants.CONFIG_FILE, "w") as f:
-        f.write(templates.PCCONFIG.format(app_name=app_name))
+        f.write(templates.PCCONFIG(app_name=app_name, db_url=constants.DB_URL))
 
 
 def initialize_gitignore():
