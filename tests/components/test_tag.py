@@ -154,3 +154,30 @@ def test_format_cond_tag():
         cond=BaseVar(name="logged_in", type_=bool),
     )
     assert str(tag) == "{logged_in ? <h1>True content</h1> : <h2>False content</h2>}"
+
+
+@pytest.mark.parametrize(
+    "prop,valid",
+    [
+        (
+            {"fontFamily": "{hello_state.font_family}"},
+            '{{"fontFamily": hello_state.font_family}}',
+        ),
+        (
+            {"fontFamily": '"Fira Code", Menlo, Consolas, monospace'},
+            '{{"fontFamily": "\\"Fira Code\\", Menlo, ' 'Consolas, monospace"}}',
+        ),
+        (
+            {"fontFamily": "Menlo, Consolas, monospace"},
+            '{{"fontFamily": "Menlo, Consolas, monospace"}}',
+        ),
+    ],
+)
+def test_format_style(prop: dict, valid: str):
+    """Test format style.
+
+    Args:
+        prop: The prop to test.
+        valid: The expected validity of the prop.
+    """
+    assert Tag.format_style(prop) == valid

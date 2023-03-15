@@ -127,6 +127,8 @@ class Tag(Base):
         # Format all the props.
         return os.linesep.join(
             f"{name}={self.format_prop(prop)}"
+            if name != "sx"
+            else f"{name}={self.format_style(prop)}"
             for name, prop in sorted(self.props.items())
             if prop is not None
         )
@@ -209,3 +211,23 @@ class Tag(Base):
             Whether the prop is valid.
         """
         return prop is not None and not (isinstance(prop, dict) and len(prop) == 0)
+
+    @staticmethod
+    def format_style(prop: dict) -> str:
+        """Format style.
+
+        Args:
+            prop: The style.
+
+        Returns:
+            The formatted style.
+        """
+        ret = utils.json_dumps(prop)
+
+        # This substitution is necessary to unwrap var values.
+        if ret.find('"{') > 0:
+            ret = re.sub('"{', "", ret)
+            ret = re.sub('}"', "", ret)
+            ret = re.sub('\\\\"', '"', ret)
+
+        return utils.wrap(ret, "{", check_first=False)
