@@ -1594,7 +1594,7 @@ def json_dumps(obj: Any):
     """Serialize ``obj`` to a JSON formatted ``str``, ensure_ascii=False.
 
     Args:
-        obj: The obj to be fromatted
+        obj: The obj to be formatted
 
     Returns:
         str: The result of the json dumps
