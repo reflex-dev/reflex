@@ -11,6 +11,7 @@ from .graphing import *
 from .layout import *
 from .media import *
 from .navigation import *
+from .other import *
 from .overlay import *
 from .typography import *
 
@@ -203,3 +204,7 @@ markdown = Markdown.create
 span = Span.create
 text = Text.create
 script = ScriptTag.create
+aspect_ratio = AspectRatio.create
+kbd = KeyboardKey.create
+show = Show.create
+hide = Hide.create

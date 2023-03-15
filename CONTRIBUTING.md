@@ -91,7 +91,7 @@ poetry run ruff check .
 poetry run pyright pynecone tests
 find pynecone tests -name "*.py" -not -path pynecone/pc.py | xargs poetry run darglint
 ```
-Finally run `black` to format your code.
+Finally, run `black` to format your code.
 ``` bash
 poetry run black pynecone tests
 ```
