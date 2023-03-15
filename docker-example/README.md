@@ -4,7 +4,7 @@ This example describes how to create and use a container image for Pynecone with
 
 ## Update Requirements
 
-The `requirements.txt` includes the pynecone-io package which is need to install Pynecone framework. If you use additional packages in your project you have add this in the `requirements.txt` first. Copy the `Dockerfile` and the `requirements.txt` file in your project folder.
+The `requirements.txt` includes the pynecone package which is need to install Pynecone framework. If you use additional packages in your project you have add this in the `requirements.txt` first. Copy the `Dockerfile` and the `requirements.txt` file in your project folder.
 
 ## Customize Pynecone Config
 
@@ -34,5 +34,5 @@ docker build -t pynecone-project:latest .
 Finally, you can start your Pynecone container service as follows:
 
 ```bash
-docker run -d -p 3000:3000 -p 8000:8000 --name pynecone pynecone:latest
+docker run -d -p 3000:3000 -p 8000:8000 --name pynecone pynecone-project:latest
 ```
