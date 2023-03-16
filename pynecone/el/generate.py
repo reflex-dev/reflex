@@ -9,6 +9,7 @@ Make sure to delete the __init__.py file in the elements directory before
 running this script.
 """
 import os
+
 from pynecone.el.constants import ELEMENT_TO_PROPS, ELEMENTS
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))

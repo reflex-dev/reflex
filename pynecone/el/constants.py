@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from pynecone.utils import to_snake_case
 
-
 ELEMENTS = """
 html base head link meta style title body address article aside
 footer header h1 h2 h3 h4 h5 h6 main nav section blockquote dd

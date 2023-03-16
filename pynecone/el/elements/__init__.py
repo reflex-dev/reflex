@@ -1,7 +1,9 @@
 # This is an auto-generated file. Do not edit. See ../generate.py.
 from typing import Union
-from pynecone.var import Var as PCVar
+
 from pynecone.el.element import Element
+from pynecone.var import Var as PCVar
+
 
 class Html(Element):
     """Display the html element."""

@@ -3,6 +3,7 @@
 Anything imported here will be available in the default Pynecone import as `pc.*`.
 """
 
+from . import el
 from .app import App
 from .base import Base
 from .components import *
@@ -17,5 +18,4 @@ from .route import route
 from .state import ComputedVar as var
 from .state import State
 from .style import toggle_color_mode
-from . import el
 from .var import Var
