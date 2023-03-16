@@ -23,7 +23,7 @@ INIT_PY_PATH = os.path.join(ELEMENTS_DIR, "__init__.py")
 
 def element_path(element: str) -> str:
     """Get the name of the Python file for the given element."""
-    return join(ELEMENTS_DIR, f"{element}.py")
+    return os.path.join(ELEMENTS_DIR, f"{element}.py")
 
 
 PROP = "    {prop}: PCVar[Union[str, int, bool]]".format
