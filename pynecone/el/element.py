@@ -1,13 +1,22 @@
+"""Base class definition for raw HTML elements."""
+
 from pynecone import utils
 from pynecone.components.component import Component
 
 
 class Element(Component):
+    """The base class for all raw HTML elements.
+
+    The key difference between `Element` and `Component` is that elements do not
+    use Chakra's `sx` prop, instead passing styles directly to the React style
+    prop.
+    """
+
     def render(self) -> str:
-        """Render the component.
+        """Render the element.
 
         Returns:
-            The code to render the component.
+            The code to render the element.
         """
         tag = self._render()
         return str(
@@ -25,4 +34,5 @@ class Element(Component):
         )
 
     def __eq__(self, other):
+        """Two elements are equal if they have the same tag."""
         return isinstance(other, Element) and self.tag == other.tag
