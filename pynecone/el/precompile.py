@@ -22,15 +22,29 @@ INIT_PY_PATH = os.path.join(ELEMENTS_DIR, "__init__.py")
 
 
 def element_path(element: str) -> str:
-    """Get the name of the Python file for the given element."""
+    """Get the name of the Python file for the given element.
+
+    Args:
+        element: The name of the element. For example, `a` or `div`.
+
+    Returns:
+        The name of the Python file for the given element.
+    """
     return os.path.join(ELEMENTS_DIR, f"{element}.py")
 
 
 PROP = "    {prop}: PCVar[Union[str, int, bool]]".format
 
 
-def compile_pyclass_props(element: str):
-    """Compile props for an element."""
+def compile_pyclass_props(element: str) -> str:
+    """Compile props for an element.
+
+    Args:
+        element: The name of the element. For example, `a` or `div`.
+
+    Returns:
+        A string containing compiled props for the element.
+    """
     return join(PROP(prop=prop) for prop in ELEMENT_TO_PROPS[element])
 
 
@@ -50,8 +64,15 @@ PYCLASS = join(
 ).format
 
 
-def compile_pyclass(element: str):
-    """Compile a Python class for an element."""
+def compile_pyclass(element: str) -> str:
+    """Compile a Python class for an element.
+
+    Args:
+        element: The name of the element. For example, `a` or `div`.
+
+    Returns:
+        A string containing a Python class for the element.
+    """
     name = element.capitalize()
     props = compile_pyclass_props(element)
 

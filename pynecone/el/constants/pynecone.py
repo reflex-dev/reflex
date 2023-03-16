@@ -14,12 +14,18 @@ ATTR_TO_PROP_OVERRIDES = {
 }
 
 
-def attr_to_prop(attr_name):
+def attr_to_prop(attr_name: str) -> str:
     """Convert an HTML attribute name to its Pynecone name.
 
     This function first uses React's `possibleStandardNames` to convert the
     HTML attribute name to its standard React name, then converts the standard
     name to a Pynecone name.
+
+    Args:
+        attr_name: The HTML attribute name.
+
+    Returns:
+        A Pynecone prop name that maps to the HTML attribute.
     """
     if attr_name in ATTR_TO_PROP_OVERRIDES:
         return ATTR_TO_PROP_OVERRIDES[attr_name]
