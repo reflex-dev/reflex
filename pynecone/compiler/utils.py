@@ -24,7 +24,7 @@ from pynecone.components.component import Component, CustomComponent
 from pynecone.event import get_hydrate_event
 from pynecone.state import State
 from pynecone.style import Style
-from pynecone.utils import imports, path_ops
+from pynecone.utils import format, imports, path_ops
 
 # To re-export this function.
 merge_imports = imports.merge_imports
