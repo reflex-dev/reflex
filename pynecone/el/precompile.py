@@ -58,6 +58,7 @@ PYCLASS = join(
         "",
         "{props}",
         "",
+        "",
         "{call_name} = {name}.create",
         "",
     ]
