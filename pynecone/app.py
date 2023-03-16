@@ -394,6 +394,8 @@ class App(Base):
         # Compile the custom components.
         compiler.compile_components(custom_components)
 
+        self.state.convert_handlers_to_fns()
+
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
