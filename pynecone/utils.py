@@ -350,11 +350,18 @@ def get_package_manager() -> str:
         )
         raise typer.Exit()
 
+    npm_path = which("npm")
+
     # On Windows, we use npm instead of bun.
     if platform.system() == "Windows":
-        npm_path = which("npm")
+        # npm_path = which("npm")
         if npm_path is None:
             raise FileNotFoundError("Pynecone requires npm to be installed on Windows.")
+        return npm_path
+
+    # use existing npm install on the platform
+    if npm_path is not None:
+
         return npm_path
 
     # On other platforms, we use bun.
@@ -433,6 +440,14 @@ def install_bun():
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
+        return
+
+    # check an if npm is aready installed on other platforms
+
+    if shutil.which("npm"):
+
+        # set npm as the package manager
+
         return
 
     # Only install if bun is not already installed.
