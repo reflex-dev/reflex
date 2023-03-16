@@ -37,6 +37,7 @@ class A(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 a = A.create
 
 
@@ -63,6 +64,7 @@ class Abbr(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 abbr = Abbr.create
 
 
@@ -88,6 +90,7 @@ class Address(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 address = Address.create
 
@@ -126,6 +129,7 @@ class Area(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 area = Area.create
 
 
@@ -152,6 +156,7 @@ class Article(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 article = Article.create
 
 
@@ -177,6 +182,7 @@ class Aside(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 aside = Aside.create
 
@@ -212,6 +218,7 @@ class Audio(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 audio = Audio.create
 
 
@@ -237,6 +244,7 @@ class B(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 b = B.create
 
@@ -266,6 +274,7 @@ class Base(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 base = Base.create
 
 
@@ -291,6 +300,7 @@ class Bdi(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 bdi = Bdi.create
 
@@ -318,6 +328,7 @@ class Bdo(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 bdo = Bdo.create
 
 
@@ -344,6 +355,7 @@ class Blockquote(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 blockquote = Blockquote.create
 
@@ -373,6 +385,7 @@ class Body(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 body = Body.create
 
 
@@ -398,6 +411,7 @@ class Br(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 br = Br.create
 
@@ -436,6 +450,7 @@ class Button(Element):  # noqa: E742
     type: PCVar[Union[str, int, bool]]
     value: PCVar[Union[str, int, bool]]
 
+
 button = Button.create
 
 
@@ -464,6 +479,7 @@ class Canvas(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     width: PCVar[Union[str, int, bool]]
 
+
 canvas = Canvas.create
 
 
@@ -491,6 +507,7 @@ class Caption(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 caption = Caption.create
 
 
@@ -517,6 +534,7 @@ class Cite(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 cite = Cite.create
 
 
@@ -542,6 +560,7 @@ class Code(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 code = Code.create
 
@@ -572,6 +591,7 @@ class Col(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 col = Col.create
 
 
@@ -601,6 +621,7 @@ class Colgroup(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 colgroup = Colgroup.create
 
 
@@ -628,6 +649,7 @@ class Data(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     value: PCVar[Union[str, int, bool]]
 
+
 data = Data.create
 
 
@@ -654,6 +676,7 @@ class Datalist(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 datalist = Datalist.create
 
 
@@ -679,6 +702,7 @@ class Dd(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 dd = Dd.create
 
@@ -708,6 +732,7 @@ class Del(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 del_ = Del.create
 
 
@@ -735,6 +760,7 @@ class Details(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 details = Details.create
 
 
@@ -760,6 +786,7 @@ class Dfn(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 dfn = Dfn.create
 
@@ -788,6 +815,7 @@ class Dialog(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 dialog = Dialog.create
 
 
@@ -813,6 +841,7 @@ class Div(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 div = Div.create
 
@@ -840,6 +869,7 @@ class Dl(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 dl = Dl.create
 
 
@@ -866,6 +896,7 @@ class Dt(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 dt = Dt.create
 
 
@@ -891,6 +922,7 @@ class Em(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 em = Em.create
 
@@ -922,6 +954,7 @@ class Embed(Element):  # noqa: E742
     type: PCVar[Union[str, int, bool]]
     width: PCVar[Union[str, int, bool]]
 
+
 embed = Embed.create
 
 
@@ -951,6 +984,7 @@ class Fieldset(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 fieldset = Fieldset.create
 
 
@@ -976,6 +1010,7 @@ class Figcaption(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 figcaption = Figcaption.create
 
@@ -1003,6 +1038,7 @@ class Figure(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 figure = Figure.create
 
 
@@ -1028,6 +1064,7 @@ class Footer(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 footer = Footer.create
 
@@ -1064,6 +1101,7 @@ class Form(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 form = Form.create
 
 
@@ -1089,6 +1127,7 @@ class H1(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 h1 = H1.create
 
@@ -1116,6 +1155,7 @@ class H2(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 h2 = H2.create
 
 
@@ -1141,6 +1181,7 @@ class H3(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 h3 = H3.create
 
@@ -1168,6 +1209,7 @@ class H4(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 h4 = H4.create
 
 
@@ -1193,6 +1235,7 @@ class H5(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 h5 = H5.create
 
@@ -1220,6 +1263,7 @@ class H6(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 h6 = H6.create
 
 
@@ -1246,6 +1290,7 @@ class Head(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 head = Head.create
 
 
@@ -1271,6 +1316,7 @@ class Header(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 header = Header.create
 
@@ -1300,6 +1346,7 @@ class Hr(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 hr = Hr.create
 
 
@@ -1327,6 +1374,7 @@ class Html(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 html = Html.create
 
 
@@ -1352,6 +1400,7 @@ class I(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 i = I.create
 
@@ -1389,6 +1438,7 @@ class Iframe(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
     width: PCVar[Union[str, int, bool]]
+
 
 iframe = Iframe.create
 
@@ -1430,6 +1480,7 @@ class Img(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     use_map: PCVar[Union[str, int, bool]]
     width: PCVar[Union[str, int, bool]]
+
 
 img = Img.create
 
@@ -1490,6 +1541,7 @@ class Input(Element):  # noqa: E742
     value: PCVar[Union[str, int, bool]]
     width: PCVar[Union[str, int, bool]]
 
+
 input = Input.create
 
 
@@ -1518,6 +1570,7 @@ class Ins(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 ins = Ins.create
 
 
@@ -1543,6 +1596,7 @@ class Kbd(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 kbd = Kbd.create
 
@@ -1572,6 +1626,7 @@ class Label(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 label = Label.create
 
 
@@ -1597,6 +1652,7 @@ class Legend(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 legend = Legend.create
 
@@ -1624,6 +1680,7 @@ class Li(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
     value: PCVar[Union[str, int, bool]]
+
 
 li = Li.create
 
@@ -1660,6 +1717,7 @@ class Link(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     type: PCVar[Union[str, int, bool]]
 
+
 link = Link.create
 
 
@@ -1685,6 +1743,7 @@ class Main(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 main = Main.create
 
@@ -1713,6 +1772,7 @@ class Map(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 map = Map.create
 
 
@@ -1738,6 +1798,7 @@ class Mark(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 mark = Mark.create
 
@@ -1765,6 +1826,7 @@ class Math(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 math = Math.create
 
 
@@ -1791,6 +1853,7 @@ class Menu(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
     type: PCVar[Union[str, int, bool]]
+
 
 menu = Menu.create
 
@@ -1821,6 +1884,7 @@ class Meta(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 meta = Meta.create
 
@@ -1855,6 +1919,7 @@ class Meter(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     value: PCVar[Union[str, int, bool]]
 
+
 meter = Meter.create
 
 
@@ -1881,6 +1946,7 @@ class Nav(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 nav = Nav.create
 
 
@@ -1906,6 +1972,7 @@ class Noscript(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 noscript = Noscript.create
 
@@ -1941,6 +2008,7 @@ class Object(Element):  # noqa: E742
     use_map: PCVar[Union[str, int, bool]]
     width: PCVar[Union[str, int, bool]]
 
+
 object = Object.create
 
 
@@ -1970,6 +2038,7 @@ class Ol(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     type: PCVar[Union[str, int, bool]]
 
+
 ol = Ol.create
 
 
@@ -1997,6 +2066,7 @@ class Optgroup(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 optgroup = Optgroup.create
 
@@ -2028,6 +2098,7 @@ class Option(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     value: PCVar[Union[str, int, bool]]
 
+
 option = Option.create
 
 
@@ -2057,6 +2128,7 @@ class Output(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 output = Output.create
 
 
@@ -2082,6 +2154,7 @@ class P(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 p = P.create
 
@@ -2109,6 +2182,7 @@ class Picture(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 picture = Picture.create
 
 
@@ -2135,6 +2209,7 @@ class Portal(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 portal = Portal.create
 
 
@@ -2160,6 +2235,7 @@ class Pre(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 pre = Pre.create
 
@@ -2190,6 +2266,7 @@ class Progress(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     value: PCVar[Union[str, int, bool]]
 
+
 progress = Progress.create
 
 
@@ -2217,6 +2294,7 @@ class Q(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 q = Q.create
 
 
@@ -2242,6 +2320,7 @@ class Rp(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 rp = Rp.create
 
@@ -2269,6 +2348,7 @@ class Rt(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 rt = Rt.create
 
 
@@ -2294,6 +2374,7 @@ class Ruby(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 ruby = Ruby.create
 
@@ -2321,6 +2402,7 @@ class S(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 s = S.create
 
 
@@ -2346,6 +2428,7 @@ class Samp(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 samp = Samp.create
 
@@ -2382,6 +2465,7 @@ class Script(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     type: PCVar[Union[str, int, bool]]
 
+
 script = Script.create
 
 
@@ -2407,6 +2491,7 @@ class Section(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 section = Section.create
 
@@ -2442,6 +2527,7 @@ class Select(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 select = Select.create
 
 
@@ -2468,6 +2554,7 @@ class Slot(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 slot = Slot.create
 
 
@@ -2493,6 +2580,7 @@ class Small(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 small = Small.create
 
@@ -2525,6 +2613,7 @@ class Source(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     type: PCVar[Union[str, int, bool]]
 
+
 source = Source.create
 
 
@@ -2551,6 +2640,7 @@ class Span(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 span = Span.create
 
 
@@ -2576,6 +2666,7 @@ class Strong(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 strong = Strong.create
 
@@ -2606,6 +2697,7 @@ class Style(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     type: PCVar[Union[str, int, bool]]
 
+
 style = Style.create
 
 
@@ -2631,6 +2723,7 @@ class Sub(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 sub = Sub.create
 
@@ -2658,6 +2751,7 @@ class Summary(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 summary = Summary.create
 
 
@@ -2684,6 +2778,7 @@ class Sup(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 sup = Sup.create
 
 
@@ -2709,6 +2804,7 @@ class Svg(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 svg = Svg.create
 
@@ -2741,6 +2837,7 @@ class Table(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 table = Table.create
 
 
@@ -2768,6 +2865,7 @@ class Tbody(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 tbody = Tbody.create
 
@@ -2801,6 +2899,7 @@ class Td(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 td = Td.create
 
 
@@ -2826,6 +2925,7 @@ class Template(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 template = Template.create
 
@@ -2867,6 +2967,7 @@ class Textarea(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     wrap: PCVar[Union[str, int, bool]]
 
+
 textarea = Textarea.create
 
 
@@ -2894,6 +2995,7 @@ class Tfoot(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 tfoot = Tfoot.create
 
@@ -2928,6 +3030,7 @@ class Th(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 th = Th.create
 
 
@@ -2954,6 +3057,7 @@ class Thead(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 thead = Thead.create
 
@@ -2982,6 +3086,7 @@ class Time(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 time = Time.create
 
 
@@ -3007,6 +3112,7 @@ class Title(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 title = Title.create
 
@@ -3035,6 +3141,7 @@ class Tr(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 tr = Tr.create
 
@@ -3067,6 +3174,7 @@ class Track(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 track = Track.create
 
 
@@ -3092,6 +3200,7 @@ class U(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 u = U.create
 
@@ -3119,6 +3228,7 @@ class Ul(Element):  # noqa: E742
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
 
+
 ul = Ul.create
 
 
@@ -3144,6 +3254,7 @@ class Var(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 var = Var.create
 
@@ -3183,6 +3294,7 @@ class Video(Element):  # noqa: E742
     translate: PCVar[Union[str, int, bool]]
     width: PCVar[Union[str, int, bool]]
 
+
 video = Video.create
 
 
@@ -3208,5 +3320,6 @@ class Wbr(Element):  # noqa: E742
     tab_index: PCVar[Union[str, int, bool]]
     title: PCVar[Union[str, int, bool]]
     translate: PCVar[Union[str, int, bool]]
+
 
 wbr = Wbr.create
