@@ -1,4 +1,4 @@
-"""An image component."""
+"""An icon component."""
 
 from pynecone import utils
 from pynecone.components.component import Component

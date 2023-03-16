@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import inspect
-import json
 from typing import Any, Callable, Dict, List, Set, Tuple
 
+from pynecone import utils
 from pynecone.base import Base
 from pynecone.var import BaseVar, Var
 
@@ -62,9 +62,12 @@ class EventHandler(Base):
                 values.append(arg.full_name)
                 continue
 
+            if isinstance(arg, FileUpload):
+                return EventSpec(handler=self, upload=True)
+
             # Otherwise, convert to JSON.
             try:
-                values.append(json.dumps(arg, ensure_ascii=False))
+                values.append(utils.json_dumps(arg))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -90,6 +93,9 @@ class EventSpec(Base):
 
     # The arguments to pass to the function.
     args: Tuple[Any, ...] = ()
+
+    # Whether to upload files.
+    upload: bool = False
 
     class Config:
         """The Pydantic config."""
@@ -120,6 +126,12 @@ class FrontendEvent(Base):
 
 # The default event argument.
 EVENT_ARG = BaseVar(name="_e", type_=FrontendEvent, is_local=True)
+
+
+class FileUpload(Base):
+    """Class to represent a file upload."""
+
+    pass
 
 
 # Special server-side events.

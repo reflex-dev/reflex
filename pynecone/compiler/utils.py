@@ -85,9 +85,11 @@ def compile_constants() -> str:
     Returns:
         A string of all the compiled constants.
     """
-    endpoint = constants.Endpoint.EVENT
     return templates.join(
-        [compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())]
+        [
+            compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
+            for endpoint in constants.Endpoint
+        ]
     )
 
 
@@ -104,6 +106,7 @@ def compile_state(state: Type[State]) -> str:
     initial_state.update(
         {
             "events": [{"name": utils.get_hydrate_event(state)}],
+            "files": [],
         }
     )
     initial_state = utils.format_state(initial_state)
@@ -137,7 +140,12 @@ def compile_events(state: Type[State]) -> str:
     """
     state_name = state.get_name()
     state_setter = templates.format_state_setter(state_name)
-    return templates.EVENT_FN(state=state_name, set_state=state_setter)
+    return templates.join(
+        [
+            templates.EVENT_FN(state=state_name, set_state=state_setter),
+            templates.UPLOAD_FN(state=state_name, set_state=state_setter),
+        ]
+    )
 
 
 def compile_effects(state: Type[State]) -> str:

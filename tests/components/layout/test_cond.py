@@ -4,8 +4,7 @@ from typing import Any
 import pytest
 
 import pynecone as pc
-from pynecone.components import cond
-from pynecone.components.layout.cond import Cond
+from pynecone.components.layout.cond import Cond, cond
 from pynecone.components.layout.fragment import Fragment
 from pynecone.components.typography.text import Text
 from pynecone.var import Var
@@ -29,7 +28,7 @@ def cond_state(request):
     indirect=True,
 )
 def test_validate_cond(cond_state: pc.Var):
-    """Test if cond can be a pc.Val with any values.
+    """Test if cond can be a pc.Var with any values.
 
     Args:
         cond_state: A fixture.
@@ -41,9 +40,9 @@ def test_validate_cond(cond_state: pc.Var):
     )
 
     assert str(cond_component) == (
-        "{cond_state.value ? "
-        "<Text>{`cond is True`}</Text> : "
-        "<Text>{`cond is False`}</Text>}"
+        "<Fragment>{cond_state.value ? "
+        "<Fragment><Text>{`cond is True`}</Text></Fragment> : "
+        "<Fragment><Text>{`cond is False`}</Text></Fragment>}</Fragment>"
     )
 
 
@@ -79,9 +78,11 @@ def test_cond_no_else():
     """Test if cond can be used without else."""
     # Components should support the use of cond without else
     comp = cond(True, Text.create("hello"))
+    assert isinstance(comp, Fragment)
+    comp = comp.children[0]
     assert isinstance(comp, Cond)
     assert comp.cond == True  # noqa
-    assert comp.comp1 == Text.create("hello")
+    assert comp.comp1 == Fragment.create(Text.create("hello"))
     assert comp.comp2 == Fragment.create()
 
     # Props do not support the use of cond without else

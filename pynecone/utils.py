@@ -43,6 +43,7 @@ from rich.prompt import Prompt
 
 from pynecone import constants
 from pynecone.base import Base
+from pynecone.watch import AssetFolderWatch
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -590,6 +591,16 @@ def posix_export(backend: bool = True, frontend: bool = True):
         os.system(cmd)
 
 
+def start_watching_assets_folder(root):
+    """Start watching assets folder.
+
+    Args:
+        root: root path of the project.
+    """
+    asset_watch = AssetFolderWatch(root)
+    asset_watch.start()
+
+
 def setup_frontend(root: Path):
     """Set up the frontend.
 
@@ -621,6 +632,9 @@ def run_frontend(app: App, root: Path, port: str):
     """
     # Set up the frontend.
     setup_frontend(root)
+
+    # start watching asset folder
+    start_watching_assets_folder(root)
 
     # Compile the frontend.
     app.compile(force_compile=True)
@@ -1107,7 +1121,6 @@ def format_cond(
     cond: str,
     true_value: str,
     false_value: str = '""',
-    is_nested: bool = False,
     is_prop=False,
 ) -> str:
     """Format a conditional expression.
@@ -1116,7 +1129,6 @@ def format_cond(
         cond: The cond.
         true_value: The value to return if the cond is true.
         false_value: The value to return if the cond is false.
-        is_nested: Whether the cond is nested.
         is_prop: Whether the cond is a prop
 
     Returns:
@@ -1125,17 +1137,45 @@ def format_cond(
     # Import here to avoid circular imports.
     from pynecone.var import Var
 
+    # Format prop conds.
     if is_prop:
         prop1 = Var.create(true_value, is_string=type(true_value) == str)
         prop2 = Var.create(false_value, is_string=type(false_value) == str)
         assert prop1 is not None and prop2 is not None, "Invalid prop values"
-        expr = f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
-    else:
-        expr = f"{cond} ? {true_value} : {false_value}"
+        return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
-    if not is_nested:
-        expr = wrap(expr, "{")
-    return expr
+    # Format component conds.
+    return wrap(f"{cond} ? {true_value} : {false_value}", "{")
+
+
+def get_event_handler_parts(handler: EventHandler) -> Tuple[str, str]:
+    """Get the state and function name of an event handler.
+
+    Args:
+        handler: The event handler to get the parts of.
+
+    Returns:
+        The state and function name.
+    """
+    # Get the class that defines the event handler.
+    parts = handler.fn.__qualname__.split(".")
+
+    # If there's no enclosing class, just return the function name.
+    if len(parts) == 1:
+        return ("", parts[-1])
+
+    # Get the state and the function name.
+    state_name, name = parts[-2:]
+
+    # Construct the full event handler name.
+    try:
+        # Try to get the state from the module.
+        state = vars(sys.modules[handler.fn.__module__])[state_name]
+    except Exception:
+        # If the state isn't in the module, just return the function name.
+        return ("", handler.fn.__qualname__)
+
+    return (state.get_full_name(), name)
 
 
 def format_event_handler(handler: EventHandler) -> str:
@@ -1147,24 +1187,10 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
-    # Get the class that defines the event handler.
-    parts = handler.fn.__qualname__.split(".")
-
-    # If there's no enclosing class, just return the function name.
-    if len(parts) == 1:
-        return parts[-1]
-
-    # Get the state and the function name.
-    state_name, name = parts[-2:]
-
-    # Construct the full event handler name.
-    try:
-        # Try to get the state from the module.
-        state = vars(sys.modules[handler.fn.__module__])[state_name]
-    except Exception:
-        # If the state isn't in the module, just return the function name.
-        return handler.fn.__qualname__
-    return ".".join([state.get_full_name(), name])
+    state, name = get_event_handler_parts(handler)
+    if state == "":
+        return name
+    return f"{state}.{name}"
 
 
 def format_event(event_spec: EventSpec) -> str:
@@ -1180,6 +1206,21 @@ def format_event(event_spec: EventSpec) -> str:
     return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 
+def format_upload_event(event_spec: EventSpec) -> str:
+    """Format an upload event.
+
+    Args:
+        event_spec: The event to format.
+
+    Returns:
+        The compiled event.
+    """
+    from pynecone.compiler import templates
+
+    state, name = get_event_handler_parts(event_spec.handler)
+    return f'uploadFiles({state}, {templates.RESULT}, {templates.SET_RESULT}, {state}.files, "{name}", UPLOAD)'
+
+
 def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     """Convert back query params name to python-friendly case.
 
@@ -1193,6 +1234,7 @@ def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
+# Set of unique variable names.
 USED_VARIABLES = set()
 
 
@@ -1256,6 +1298,28 @@ def is_valid_var_type(var: Type) -> bool:
     return _issubclass(var, StateVar) or is_dataframe(var) or is_figure(var)
 
 
+def format_dataframe_values(value: Type) -> List[Any]:
+    """Format dataframe values.
+
+    Args:
+        value: The value to format.
+
+    Returns:
+        Format data
+    """
+    if not is_dataframe(type(value)):
+        return value
+
+    format_data = []
+    for data in list(value.values.tolist()):
+        element = []
+        for d in data:
+            element.append(str(d) if isinstance(d, (list, tuple)) else d)
+        format_data.append(element)
+
+    return format_data
+
+
 def format_state(value: Any) -> Dict:
     """Recursively format values in the given state.
 
@@ -1284,7 +1348,7 @@ def format_state(value: Any) -> Dict:
     if is_dataframe(type(value)):
         return {
             "columns": value.columns.tolist(),
-            "data": value.values.tolist(),
+            "data": format_dataframe_values(value),
         }
 
     raise TypeError(
@@ -1524,6 +1588,18 @@ def is_backend_variable(name: str) -> bool:
         bool: The result of the check
     """
     return name.startswith("_") and not name.startswith("__")
+
+
+def json_dumps(obj: Any):
+    """Serialize ``obj`` to a JSON formatted ``str``, ensure_ascii=False.
+
+    Args:
+        obj: The obj to be fromatted
+
+    Returns:
+        str: The result of the json dumps
+    """
+    return json.dumps(obj, ensure_ascii=False)
 
 
 # Store this here for performance.

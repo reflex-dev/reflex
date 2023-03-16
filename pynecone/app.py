@@ -2,7 +2,7 @@
 
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 
@@ -89,6 +89,8 @@ class App(Base):
             cors_allowed_origins=cors_allowed_origins,
             cors_credentials=config.cors_credentials,
             max_http_buffer_size=config.polling_max_http_buffer_size,
+            ping_interval=constants.PING_INTERVAL,
+            ping_timeout=constants.PING_TIMEOUT,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
@@ -124,6 +126,9 @@ class App(Base):
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
+        # To upload files.
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
     def add_cors(self):
         """Add CORS middleware to the app."""
         self.api.add_middleware(
@@ -131,6 +136,7 @@ class App(Base):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            allow_origins=["*"],
         )
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
@@ -198,8 +204,8 @@ class App(Base):
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
         on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
-        path: Optional[str] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
+        script_tags: Optional[List[Component]] = None,
     ):
         """Add a page to the app.
 
@@ -208,20 +214,17 @@ class App(Base):
 
         Args:
             component: The component to display at the page.
-            path: (deprecated) The path to the component.
             route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
-        """
-        if path is not None:
-            utils.deprecate(
-                "The `path` argument is deprecated for `add_page`. Use `route` instead."
-            )
-            route = path
+            script_tags: List of script tags to be added to component
 
+        Raises:
+            TypeError: If an invalid var operation is used.
+        """
         # If the route is not set, get it from the callable.
         if route is None:
             assert isinstance(
@@ -236,12 +239,26 @@ class App(Base):
         self.state.setup_dynamic_args(utils.get_route_args(route))
 
         # Generate the component if it is a callable.
-        component = component if isinstance(component, Component) else component()
+        try:
+            component = component if isinstance(component, Component) else component()
+        except TypeError as e:
+            message = str(e)
+            if "BaseVar" in message or "ComputedVar" in message:
+                raise TypeError(
+                    "You may be trying to use an invalid Python function on a state var. "
+                    "When referencing a var inside your render code, only limited var operations are supported. "
+                    "See the var operation docs here: https://pynecone.io/docs/state/vars "
+                ) from e
+            raise e
 
         # Add meta information to the component.
         compiler_utils.add_meta(
             component, title=title, image=image, description=description, meta=meta
         )
+
+        # Add script tags if given
+        if script_tags:
+            component.children.extend(script_tags)
 
         # Format the route.
         route = utils.format_route(route)
@@ -426,6 +443,38 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+def upload(app: App):
+    """Upload a file.
+
+    Args:
+        app: The app to upload the file for.
+
+    Returns:
+        The upload function.
+    """
+
+    async def upload_file(file: UploadFile):
+        """Upload a file.
+
+        Args:
+            file: The file to upload.
+
+        Returns:
+            The state update after processing the event.
+        """
+        # Get the token and filename.
+        token, handler, filename = file.filename.split(":", 2)
+        file.filename = filename
+
+        # Get the state for the session.
+        state = app.state_manager.get_state(token)
+        event = Event(token=token, name=handler, payload={"file": file})
+        update = await state.process(event)
+        return update
+
+    return upload_file
 
 
 class EventNamespace(AsyncNamespace):

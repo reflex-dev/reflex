@@ -57,6 +57,9 @@ class Var(ABC):
 
         Returns:
             The var.
+
+        Raises:
+            TypeError: If the value is JSON-unserializable.
         """
         # Check for none values.
         if value is None:
@@ -73,7 +76,12 @@ class Var(ABC):
             value = json.loads(to_json(value))["data"]  # type: ignore
             type_ = Figure
 
-        name = value if isinstance(value, str) else json.dumps(value)
+        try:
+            name = value if isinstance(value, str) else json.dumps(value)
+        except TypeError as e:
+            raise TypeError(
+                f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
+            ) from e
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
 

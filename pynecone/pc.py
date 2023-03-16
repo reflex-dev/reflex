@@ -1,6 +1,7 @@
 """Pynecone CLI to create, run, and deploy apps."""
 
 import os
+import platform
 from pathlib import Path
 
 import httpx
@@ -69,6 +70,11 @@ def run(
     port: str = typer.Option(None, help="Specify a different port."),
 ):
     """Run the app in the current directory."""
+    if platform.system() == "Windows":
+        utils.console.print(
+            "[yellow][WARNING] We strongly advise you to use Windows Subsystem for Linux (WSL) for optimal performance when using Pynecone. Due to compatibility issues with one of our dependencies, Bun, you may experience slower performance on Windows. By using WSL, you can expect to see a significant speed increase."
+        )
+
     frontend_port = utils.get_config().port if port is None else port
     backend_port = utils.get_config().backend_port
 

@@ -50,6 +50,9 @@ class Component(Base, ABC):
     # The class name for the component.
     class_name: Any = None
 
+    # Special component props.
+    special_props: Set[Var] = set()
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -290,7 +293,7 @@ class Component(Base, ABC):
         # Create the base tag.
         alias = self.get_alias()
         name = alias if alias is not None else self.tag
-        tag = Tag(name=name)
+        tag = Tag(name=name, special_props=self.special_props)
 
         # Add component props to the tag.
         props = {attr: getattr(self, attr) for attr in self.get_props()}

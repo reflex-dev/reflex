@@ -146,6 +146,14 @@ EVENT_FN = join(
         "}})",
     ]
 ).format
+UPLOAD_FN = join(
+    [
+        "const File = files => {set_state}({{",
+        "  ...{state},",
+        "  files,",
+        "}})",
+    ]
+).format
 
 
 # Effects.
