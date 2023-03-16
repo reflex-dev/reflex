@@ -2,10 +2,10 @@
 
 from typing import Dict
 
-from pynecone import utils
-from pynecone.components.component import Component, ImportDict
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.style import Style
+from pynecone.utils import imports
 from pynecone.var import Var
 
 # Path to the prism styles.
@@ -40,13 +40,13 @@ class CodeBlock(Component):
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
 
-    def _get_imports(self) -> ImportDict:
-        imports = super()._get_imports()
+    def _get_imports(self) -> imports.ImportDict:
+        merged_imports = super()._get_imports()
         if self.theme is not None:
-            imports = utils.merge_imports(
-                imports, {PRISM_STYLES_PATH: {self.theme.name}}
+            merged_imports = imports.merge_imports(
+                merged_imports, {PRISM_STYLES_PATH: {self.theme.name}}
             )
-        return imports
+        return merged_imports
 
     @classmethod
     def create(cls, *children, **props):

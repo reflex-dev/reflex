@@ -1,5 +1,7 @@
 """The Pynecone config."""
 
+import os
+import sys
 from typing import List, Optional
 
 from pynecone import constants
@@ -61,3 +63,18 @@ class Config(Base):
 
     # The maximum size of a message when using the polling backend transport.
     polling_max_http_buffer_size: Optional[int] = constants.POLLING_MAX_HTTP_BUFFER_SIZE
+
+
+def get_config() -> Config:
+    """Get the app config.
+
+    Returns:
+        The app config.
+    """
+    from pynecone.config import Config
+
+    sys.path.append(os.getcwd())
+    try:
+        return __import__(constants.CONFIG_MODULE).config
+    except ImportError:
+        return Config(app_name="")  # type: ignore

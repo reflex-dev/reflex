@@ -188,10 +188,10 @@ class Endpoint(Enum):
             The full URL for the endpoint.
         """
         # Import here to avoid circular imports.
-        from pynecone import utils
+        from pynecone.config import get_config
 
         # Get the API URL from the config.
-        config = utils.get_config()
+        config = get_config()
         url = "".join([config.api_url, str(self)])
 
         # The event endpoint is a websocket.
@@ -241,10 +241,10 @@ class Transports(Enum):
             The transports config for the backend.
         """
         # Import here to avoid circular imports.
-        from pynecone import utils
+        from pynecone.config import get_config
 
-        # Get the transports from the config.
-        config = utils.get_config()
+        # Get the API URL from the config.
+        config = get_config()
         return str(config.backend_transports)
 
 

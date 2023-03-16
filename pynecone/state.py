@@ -21,9 +21,10 @@ from typing import (
 import cloudpickle
 from redis import Redis
 
-from pynecone import constants, utils
+from pynecone import constants
 from pynecone.base import Base
-from pynecone.event import Event, EventHandler, window_alert
+from pynecone.event import Event, EventHandler, fix_events, window_alert
+from pynecone.utils import format, prerequisites, types
 from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
 
 Delta = Dict[str, Any]
@@ -93,7 +94,7 @@ class State(Base, ABC):
                 value, self._reassign_field, field.name
             )
 
-            if utils._issubclass(field.type_, Union[List, Dict]):
+            if types._issubclass(field.type_, Union[List, Dict]):
                 setattr(self, field.name, value_in_pc_data)
 
         self.clean()
@@ -138,7 +139,7 @@ class State(Base, ABC):
         cls.new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
-            if utils.is_backend_variable(name)
+            if types.is_backend_variable(name)
             and name not in cls.inherited_backend_vars
         }
 
@@ -193,7 +194,7 @@ class State(Base, ABC):
         parent_states = [
             base
             for base in cls.__bases__
-            if utils._issubclass(base, State) and base is not State
+            if types._issubclass(base, State) and base is not State
         ]
         assert len(parent_states) < 2, "Only one parent state is allowed."
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
@@ -216,7 +217,7 @@ class State(Base, ABC):
         Returns:
             The name of the state.
         """
-        return utils.to_snake_case(cls.__name__)
+        return format.to_snake_case(cls.__name__)
 
     @classmethod
     @functools.lru_cache()
@@ -286,7 +287,7 @@ class State(Base, ABC):
         Raises:
             TypeError: if the variable has an incorrect type
         """
-        if not utils.is_valid_var_type(prop.type_):
+        if not types.is_valid_var_type(prop.type_):
             raise TypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
@@ -482,7 +483,7 @@ class State(Base, ABC):
             setattr(self.parent_state, name, value)
             return
 
-        if utils.is_backend_variable(name):
+        if types.is_backend_variable(name):
             self.backend_vars.__setitem__(name, value)
             self.mark_dirty()
             return
@@ -556,13 +557,13 @@ class State(Base, ABC):
         except Exception:
             error = traceback.format_exc()
             print(error)
-            events = utils.fix_events(
+            events = fix_events(
                 [window_alert("An error occurred. See logs for details.")], event.token
             )
             return StateUpdate(events=events)
 
         # Fix the returned events.
-        events = utils.fix_events(events, event.token)
+        events = fix_events(events, event.token)
 
         # Get the delta after processing the event.
         delta = self.get_delta()
@@ -595,7 +596,7 @@ class State(Base, ABC):
             delta.update(substates[substate].get_delta())
 
         # Format the delta.
-        delta = utils.format_state(delta)
+        delta = format.format_state(delta)
 
         # Return the delta.
         return delta
@@ -685,7 +686,7 @@ class StateManager(Base):
             state: The state class to use.
         """
         self.state = state
-        self.redis = utils.get_redis()
+        self.redis = prerequisites.get_redis()
 
     def get_state(self, token: str) -> State:
         """Get the state for a token.

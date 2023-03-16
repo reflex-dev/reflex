@@ -4,9 +4,9 @@ from __future__ import annotations
 import inspect
 from typing import TYPE_CHECKING, Any, Callable, List
 
-from pynecone import utils
 from pynecone.components.tags.tag import Tag
-from pynecone.var import BaseVar, Var
+from pynecone.utils import format
+from pynecone.var import BaseVar, Var, get_unique_variable_name
 
 if TYPE_CHECKING:
     from pynecone.components.component import Component
@@ -95,12 +95,12 @@ class IterTag(Tag):
         except Exception:
             type_ = Any
         arg = BaseVar(
-            name=utils.get_unique_variable_name(),
+            name=get_unique_variable_name(),
             type_=type_,
         )
         index_arg = self.get_index_var_arg()
         component = self.render_component(self.render_fn, arg)
-        return utils.wrap(
+        return format.wrap(
             f"{self.iterable.full_name}.map(({arg.name}, {index_arg}) => {component})",
             "{",
         )
