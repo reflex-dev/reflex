@@ -63,7 +63,7 @@ jobs:
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - name: Install Requirements
       working-directory: ./pcweb
-      run: poetry run pip install -r requirements.txt && poetry run pip install pynecone==0.1.19 && poetry run pip install googletrans
+      run: poetry run pip install -r requirements.txt && poetry run pip install googletrans
     - name: Init Website
       working-directory: ./pcweb
       run: poetry run pc init
