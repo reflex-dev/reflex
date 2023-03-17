@@ -60,16 +60,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
 
 
 # Code to render a NextJS Document root.
-DOCUMENT_ROOT = join(
-    [
-        "{imports}",
-        "export default function Document() {{",
-        "return (",
-        "{document}",
-        ")",
-        "}}",
-    ]
-).format
+DOCUMENT_ROOT = get_template('web/pages/_document.js.jinja2')
 
 # Template for the theme file.
 THEME = get_template('web/utils/theme.js')

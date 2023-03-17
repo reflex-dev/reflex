@@ -30,7 +30,7 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
-    return templates.DOCUMENT_ROOT(
+    return templates.DOCUMENT_ROOT.render(
         imports=utils.compile_imports(root.get_imports()),
         document=root.render(),
     )
