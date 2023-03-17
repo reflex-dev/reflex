@@ -1,13 +1,13 @@
 """Templates to use in the pynecone compiler."""
 
 from typing import Optional, Set, Callable, Any
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 
 from pynecone import constants
 from pynecone.utils import join
 
 
-def get_template_render(name: str) -> Callable[[Any], str]:
+def get_template(name: str) -> Template:
     """Get render function that work with a template.
 
     Args:
@@ -17,17 +17,17 @@ def get_template_render(name: str) -> Callable[[Any], str]:
         A render function.
     """
     env = Environment(loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR),extensions=['jinja2.ext.debug'])
-    return env.get_template(name=name).render
+    return env.get_template(name=name)
 
 
 # Template for the Pynecone config file.
-PCCONFIG = get_template_render('app/pcconfig.py')
+PCCONFIG = get_template('app/pcconfig.py')
 
 # Javascript formatting.
 CONST = "const {name} = {value}".format
 PROP = "{object}.{property}".format
-IMPORT_LIB = 'import "{lib}"'.format
-IMPORT_FIELDS = 'import {default}{others} from "{lib}"'.format
+IMPORT_LIB = get_template('web/pages/parts/import_lib.js.jinja2')
+IMPORT_FIELDS = get_template('web/pages/parts/import_fields.js.jinja2')
 
 
 def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) -> str:
@@ -45,18 +45,18 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
     if not lib:
         assert not default, "No default field allowed for empty library."
         assert rest is not None and len(rest) > 0, "No fields to import."
-        return join([IMPORT_LIB(lib=lib) for lib in sorted(rest)])
+        return join([IMPORT_LIB.render(lib=lib) for lib in sorted(rest)])
 
     # Handle importing from a library.
     rest = rest or set()
     if len(default) == 0 and len(rest) == 0:
         # Handle the case of importing a library with no fields.
-        return IMPORT_LIB(lib=lib)
+        return IMPORT_LIB.render(lib=lib)
     # Handle importing specific fields from a library.
     others = f'{{{", ".join(sorted(rest))}}}' if len(rest) > 0 else ""
     if default != "" and len(rest) > 0:
         default += ", "
-    return IMPORT_FIELDS(default=default, others=others, lib=lib)
+    return IMPORT_FIELDS.render(default=default, others=others, lib=lib)
 
 
 # Code to render a NextJS Document root.
@@ -72,10 +72,10 @@ DOCUMENT_ROOT = join(
 ).format
 
 # Template for the theme file.
-THEME = get_template_render('web/utils/theme.js')
+THEME = get_template('web/utils/theme.js')
 
 # Code to render a single NextJS page.
-PAGE = get_template_render('web/pages/index.js.jinja2')
+PAGE = get_template('web/pages/index.js.jinja2')
 
 
 # Code to render a single exported custom component.
