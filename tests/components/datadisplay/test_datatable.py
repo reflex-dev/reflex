@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 
 import pynecone as pc
-from pynecone import utils
 from pynecone.components import data_table
+from pynecone.utils import types
 
 
 @pytest.mark.parametrize(
@@ -33,7 +33,7 @@ def test_validate_data_table(data_table_state: pc.Var, expected):
 
     """
     props = {"data": data_table_state.data}
-    if not utils.is_dataframe(data_table_state.data.type_):
+    if not types.is_dataframe(data_table_state.data.type_):
         props["columns"] = data_table_state.columns
     data_table_component = data_table(**props)
 

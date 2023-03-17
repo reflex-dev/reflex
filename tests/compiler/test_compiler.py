@@ -3,6 +3,7 @@ from typing import Set
 import pytest
 
 from pynecone.compiler import utils
+from pynecone.utils import imports
 
 
 @pytest.mark.parametrize(
@@ -42,7 +43,7 @@ def test_compile_import_statement(lib: str, fields: Set[str], output: str):
     ],
 )
 def test_compile_imports(
-    import_dict: utils.ImportDict, output: str, windows_platform: bool
+    import_dict: imports.ImportDict, output: str, windows_platform: bool
 ):
     """Test the compile_imports function.
 

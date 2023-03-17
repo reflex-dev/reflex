@@ -3,11 +3,11 @@ from typing import Dict, List
 import pytest
 from plotly.graph_objects import Figure
 
-from pynecone import utils
 from pynecone.base import Base
 from pynecone.constants import RouteVar
 from pynecone.event import Event
 from pynecone.state import State
+from pynecone.utils import format
 from pynecone.var import BaseVar, ComputedVar
 
 
@@ -202,6 +202,33 @@ def test_class_vars(test_state):
         "upper",
         "fig",
     }
+
+
+def test_event_handlers(test_state):
+    """Test that event handler is set correctly.
+
+    Args:
+        test_state: A state.
+    """
+    expected = {
+        "change_both",
+        "do_nothing",
+        "do_something",
+        "set_array",
+        "set_complex",
+        "set_count",
+        "set_fig",
+        "set_key",
+        "set_mapping",
+        "set_num1",
+        "set_num2",
+        "set_obj",
+        "set_value",
+        "set_value2",
+    }
+
+    cls = type(test_state)
+    assert set(cls.event_handlers.keys()).intersection(expected) == expected
 
 
 def test_default_value(test_state):
@@ -606,14 +633,14 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
 def test_format_event_handler():
     """Test formatting an event handler."""
     assert (
-        utils.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
+        format.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
     )
     assert (
-        utils.format_event_handler(ChildState.change_both)  # type: ignore
+        format.format_event_handler(ChildState.change_both)  # type: ignore
         == "test_state.child_state.change_both"
     )
     assert (
-        utils.format_event_handler(GrandchildState.do_nothing)  # type: ignore
+        format.format_event_handler(GrandchildState.do_nothing)  # type: ignore
         == "test_state.child_state.grandchild_state.do_nothing"
     )
 
