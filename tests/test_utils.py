@@ -309,8 +309,6 @@ def test_format_sub_state_event(upload_sub_state_event_spec):
     """
     assert (
         format.format_upload_event(upload_sub_state_event_spec)
-        == "uploadFiles(base_state, result, setResult, "
-        "base_state.files, "
-        '"base_state.sub_upload_state.handle_upload", '
-        "UPLOAD) "
+        == "uploadFiles(base_state, result, setResult, base_state.files, "
+        '"base_state.sub_upload_state.handle_upload", UPLOAD)'
     )

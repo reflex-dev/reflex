@@ -196,4 +196,4 @@ def upload_sub_state_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=UploadState.handle_upload, upload=True)  # type: ignore
+    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # type: ignore
