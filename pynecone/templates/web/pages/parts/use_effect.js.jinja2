@@ -1,0 +1,7 @@
+useEffect(()=>{
+  if(!isReady) {
+    return;
+  }
+  if (!{{socket}}.current) {
+    connect({{socket}}, {state}, {set_state}, {{result}}, {{set_result}}, {{router}}, {{event_endpoint}}, {transports})
+  }
