@@ -64,11 +64,11 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 
 
 def wrap(
-        text: str,
-        open: str,
-        close: Optional[str] = None,
-        check_first: bool = True,
-        num: int = 1,
+    text: str,
+    open: str,
+    close: Optional[str] = None,
+    check_first: bool = True,
+    num: int = 1,
 ) -> str:
     """Wrap the given text in the given open and close characters.
 
@@ -202,10 +202,10 @@ def format_route(route: str) -> str:
 
 
 def format_cond(
-        cond: str,
-        true_value: str,
-        false_value: str = '""',
-        is_prop=False,
+    cond: str,
+    true_value: str,
+    false_value: str = '""',
+    is_prop=False,
 ) -> str:
     """Format a conditional expression.
 
