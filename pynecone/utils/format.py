@@ -167,8 +167,6 @@ def format_string(string: str) -> str:
     Returns:
         The formatted string.
     """
-    # Replace string interpolation from Python style to JS style
-    string = string.replace("{", "${")
 
     # Escape backticks.
     string = string.replace(r"\`", "`")
