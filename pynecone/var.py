@@ -66,7 +66,7 @@ class Var(ABC):
 
     @classmethod
     def create(
-            cls, value: Any, is_local: bool = True, is_string: bool = False
+        cls, value: Any, is_local: bool = True, is_string: bool = False
     ) -> Optional[Var]:
         """Create a var from a value.
 
@@ -127,10 +127,10 @@ class Var(ABC):
             Whether the vars are equal.
         """
         return (
-                self.name == other.name
-                and self.type_ == other.type_
-                and self.state == other.state
-                and self.is_local == other.is_local
+            self.name == other.name
+            and self.type_ == other.type_
+            and self.state == other.state
+            and self.is_local == other.is_local
         )
 
     def to_string(self) -> Var:
@@ -158,7 +158,7 @@ class Var(ABC):
         out = self.full_name if self.is_local else format.wrap(self.full_name, "{")
 
         # Python to JS strings interpolation
-        if self.state != '' and types._issubclass(self.type_, str):
+        if self.state != "" and types._issubclass(self.type_, str):
             out = out.replace("{", "${")
 
         if self.is_string:
@@ -180,8 +180,8 @@ class Var(ABC):
         """
         # Indexing is only supported for lists, dicts, and dataframes.
         if not (
-                types._issubclass(self.type_, Union[List, Dict])
-                or types.is_dataframe(self.type_)
+            types._issubclass(self.type_, Union[List, Dict])
+            or types.is_dataframe(self.type_)
         ):
             if self.type_ == Any:
                 raise TypeError(
@@ -263,9 +263,9 @@ class Var(ABC):
         except Exception as e:
             # Check if the attribute is one of the class fields.
             if (
-                    not name.startswith("_")
-                    and hasattr(self.type_, "__fields__")
-                    and name in self.type_.__fields__
+                not name.startswith("_")
+                and hasattr(self.type_, "__fields__")
+                and name in self.type_.__fields__
             ):
                 type_ = self.type_.__fields__[name].outer_type_
                 if isinstance(type_, ModelField):
@@ -278,12 +278,12 @@ class Var(ABC):
             raise e
 
     def operation(
-            self,
-            op: str = "",
-            other: Optional[Var] = None,
-            type_: Optional[Type] = None,
-            flip: bool = False,
-            fn: Optional[str] = None,
+        self,
+        op: str = "",
+        other: Optional[Var] = None,
+        type_: Optional[Type] = None,
+        flip: bool = False,
+        fn: Optional[str] = None,
     ) -> Var:
         """Perform an operation on a var.
 
@@ -792,10 +792,10 @@ class PCList(list):
     """A custom list that pynecone can detect its mutation."""
 
     def __init__(
-            self,
-            original_list: List,
-            reassign_field: Callable = lambda _field_name: None,
-            field_name: str = "",
+        self,
+        original_list: List,
+        reassign_field: Callable = lambda _field_name: None,
+        field_name: str = "",
     ):
         """Initialize PCList.
 
@@ -885,10 +885,10 @@ class PCDict(dict):
     """A custom dict that pynecone can detect its mutation."""
 
     def __init__(
-            self,
-            original_dict: Dict,
-            reassign_field: Callable = lambda _field_name: None,
-            field_name: str = "",
+        self,
+        original_dict: Dict,
+        reassign_field: Callable = lambda _field_name: None,
+        field_name: str = "",
     ):
         """Initialize PCDict.
 
