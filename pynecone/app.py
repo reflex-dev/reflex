@@ -465,7 +465,7 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(files: list[UploadFile]):
+    async def upload_file(files: List[UploadFile]):
         """Upload a file.
 
         Args:
