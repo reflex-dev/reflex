@@ -2,20 +2,28 @@
 
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 
-from pynecone import constants, utils
+from pynecone import constants
 from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
+from pynecone.config import get_config
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
-from pynecone.route import DECORATED_ROUTES
+from pynecone.route import (
+    DECORATED_ROUTES,
+    catchall_in_route,
+    catchall_prefix,
+    get_route_args,
+    verify_route_validity,
+)
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
+from pynecone.utils import format
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -65,7 +73,7 @@ class App(Base):
         super().__init__(*args, **kwargs)
 
         # Get the config
-        config = utils.get_config()
+        config = get_config()
 
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
@@ -89,6 +97,8 @@ class App(Base):
             cors_allowed_origins=cors_allowed_origins,
             cors_credentials=config.cors_credentials,
             max_http_buffer_size=config.polling_max_http_buffer_size,
+            ping_interval=constants.PING_INTERVAL,
+            ping_timeout=constants.PING_TIMEOUT,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
@@ -124,6 +134,9 @@ class App(Base):
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
+        # To upload files.
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
     def add_cors(self):
         """Add CORS middleware to the app."""
         self.api.add_middleware(
@@ -131,6 +144,7 @@ class App(Base):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            allow_origins=["*"],
         )
 
     def preprocess(self, state: State, event: Event) -> Optional[Delta]:
@@ -198,8 +212,8 @@ class App(Base):
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
         on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
-        path: Optional[str] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
+        script_tags: Optional[List[Component]] = None,
     ):
         """Add a page to the app.
 
@@ -208,20 +222,17 @@ class App(Base):
 
         Args:
             component: The component to display at the page.
-            path: (deprecated) The path to the component.
             route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
-        """
-        if path is not None:
-            utils.deprecate(
-                "The `path` argument is deprecated for `add_page`. Use `route` instead."
-            )
-            route = path
+            script_tags: List of script tags to be added to component
 
+        Raises:
+            TypeError: If an invalid var operation is used.
+        """
         # If the route is not set, get it from the callable.
         if route is None:
             assert isinstance(
@@ -230,21 +241,35 @@ class App(Base):
             route = component.__name__
 
         # Check if the route given is valid
-        utils.verify_route_validity(route)
+        verify_route_validity(route)
 
         # Apply dynamic args to the route.
-        self.state.setup_dynamic_args(utils.get_route_args(route))
+        self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
-        component = component if isinstance(component, Component) else component()
+        try:
+            component = component if isinstance(component, Component) else component()
+        except TypeError as e:
+            message = str(e)
+            if "BaseVar" in message or "ComputedVar" in message:
+                raise TypeError(
+                    "You may be trying to use an invalid Python function on a state var. "
+                    "When referencing a var inside your render code, only limited var operations are supported. "
+                    "See the var operation docs here: https://pynecone.io/docs/state/vars "
+                ) from e
+            raise e
 
         # Add meta information to the component.
         compiler_utils.add_meta(
             component, title=title, image=image, description=description, meta=meta
         )
 
+        # Add script tags if given
+        if script_tags:
+            component.children.extend(script_tags)
+
         # Format the route.
-        route = utils.format_route(route)
+        route = format.format_route(route)
 
         # Add the page.
         self._check_routes_conflict(route)
@@ -264,7 +289,7 @@ class App(Base):
         Args:
             new_route: the route being newly added.
         """
-        newroute_catchall = utils.catchall_in_route(new_route)
+        newroute_catchall = catchall_in_route(new_route)
         if not newroute_catchall:
             return
 
@@ -276,11 +301,11 @@ class App(Base):
                     f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
                 )
 
-            route_catchall = utils.catchall_in_route(route)
+            route_catchall = catchall_in_route(route)
             if (
                 route_catchall
                 and newroute_catchall
-                and utils.catchall_prefix(route) == utils.catchall_prefix(new_route)
+                and catchall_prefix(route) == catchall_prefix(new_route)
             ):
                 raise ValueError(
                     f"You cannot use multiple catchall for the same dynamic route ({route} !== {new_route})"
@@ -316,7 +341,7 @@ class App(Base):
             component, title=title, image=image, description=description, meta=meta
         )
 
-        froute = utils.format_route
+        froute = format.format_route
         if (froute(constants.ROOT_404) not in self.pages) and (
             not any(page.startswith("[[...") for page in self.pages)
         ):
@@ -339,7 +364,7 @@ class App(Base):
             self.add_page(render, **kwargs)
 
         # Get the env mode.
-        config = utils.get_config()
+        config = get_config()
         if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
@@ -369,6 +394,8 @@ class App(Base):
         # Compile the custom components.
         compiler.compile_components(custom_components)
 
+        self.state.convert_handlers_to_fns()
+
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
@@ -388,7 +415,7 @@ async def process(
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
-    formatted_params = utils.format_query_params(event.router_data)
+    formatted_params = format.format_query_params(event.router_data)
 
     # Pass router_data to the state of the App.
     state.router_data = event.router_data
@@ -426,6 +453,38 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+def upload(app: App):
+    """Upload a file.
+
+    Args:
+        app: The app to upload the file for.
+
+    Returns:
+        The upload function.
+    """
+
+    async def upload_file(file: UploadFile):
+        """Upload a file.
+
+        Args:
+            file: The file to upload.
+
+        Returns:
+            The state update after processing the event.
+        """
+        # Get the token and filename.
+        token, handler, filename = file.filename.split(":", 2)
+        file.filename = filename
+
+        # Get the state for the session.
+        state = app.state_manager.get_state(token)
+        event = Event(token=token, name=handler, payload={"file": file})
+        update = await state.process(event)
+        return update
+
+    return upload_file
 
 
 class EventNamespace(AsyncNamespace):
@@ -474,6 +533,7 @@ class EventNamespace(AsyncNamespace):
         # Get the event environment.
         assert self.app.sio is not None
         environ = self.app.sio.get_environ(sid, self.namespace)
+        assert environ is not None
 
         # Get the client headers.
         headers = {

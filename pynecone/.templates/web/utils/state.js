@@ -1,5 +1,6 @@
 // State management for Pynecone web apps.
-import io from 'socket.io-client';
+import axios from "axios";
+import io from "socket.io-client";
 
 // Global variable to hold the token.
 let token;
@@ -103,12 +104,19 @@ export const applyEvent = async (event, router, socket) => {
  * Process an event off the event queue.
  * @param state The state with the event queue.
  * @param setState The function to set the state.
- * @param result The current result
+ * @param result The current result.
  * @param setResult The function to set the result.
  * @param router The router object.
  * @param socket The socket object to send the event on.
  */
-export const updateState = async (state, setState, result, setResult, router, socket) => {
+export const updateState = async (
+  state,
+  setState,
+  result,
+  setResult,
+  router,
+  socket
+) => {
   // If we are already processing an event, or there are no events to process, return.
   if (result.processing || state.events.length == 0) {
     return;
@@ -118,7 +126,7 @@ export const updateState = async (state, setState, result, setResult, router, so
   setResult({ ...result, processing: true });
 
   // Pop the next event off the queue and apply it.
-  const event = state.events.shift()
+  const event = state.events.shift();
 
   // Set new events to avoid reprocessing the same event.
   setState({ ...state, events: state.events });
@@ -127,7 +135,7 @@ export const updateState = async (state, setState, result, setResult, router, so
   const eventSent = await applyEvent(event, router, socket);
   if (!eventSent) {
     // If no event was sent, set processing to false and return.
-    setResult({...state, processing: false})
+    setResult({ ...state, processing: false });
   }
 };
 
@@ -136,28 +144,89 @@ export const updateState = async (state, setState, result, setResult, router, so
  * @param socket The socket object to connect.
  * @param state The state object to apply the deltas to.
  * @param setState The function to set the state.
+ * @param result The current result.
  * @param setResult The function to set the result.
  * @param endpoint The endpoint to connect to.
+ * @param transports The transports to use.
  */
-export const connect = async (socket, state, setState, result, setResult, router, endpoint, transports) => {
+export const connect = async (
+  socket,
+  state,
+  setState,
+  result,
+  setResult,
+  router,
+  endpoint,
+  transports
+) => {
   // Get backend URL object from the endpoint
-  const endpoint_url = new URL(endpoint)
+  const endpoint_url = new URL(endpoint);
   // Create the socket.
   socket.current = io(endpoint, {
-    path: endpoint_url['pathname'],
+    path: endpoint_url["pathname"],
     transports: transports,
     autoUnref: false,
   });
 
   // Once the socket is open, hydrate the page.
-  socket.current.on('connect', () => {
+  socket.current.on("connect", () => {
     updateState(state, setState, result, setResult, router, socket.current);
   });
 
   // On each received message, apply the delta and set the result.
-  socket.current.on('event', function (update) {
+  socket.current.on("event", function (update) {
     update = JSON.parse(update);
     applyDelta(state, update.delta);
+    setResult({
+      processing: true,
+      state: state,
+      events: update.events,
+    });
+  });
+};
+
+/**
+ * Upload files to the server.
+ *
+ * @param state The state to apply the delta to.
+ * @param setResult The function to set the result.
+ * @param files The files to upload.
+ * @param handler The handler to use.
+ * @param endpoint The endpoint to upload to.
+ */
+export const uploadFiles = async (
+  state,
+  result,
+  setResult,
+  files,
+  handler,
+  endpoint
+) => {
+  // If we are already processing an event, or there are no upload files, return.
+  if (result.processing || files.length == 0) {
+    return;
+  }
+
+  // Set processing to true to block other events from being processed.
+  setResult({ ...result, processing: true });
+
+  // Currently only supports uploading one file.
+  const file = files[0];
+  const headers = {
+    "Content-Type": file.type,
+  };
+  const formdata = new FormData();
+
+  // Add the token and handler to the file name.
+  formdata.append("file", file, getToken() + ":" + handler + ":" + file.name);
+
+  // Send the file to the server.
+  await axios.post(endpoint, formdata, headers).then((response) => {
+    // Apply the delta and set the result.
+    const update = response.data;
+    applyDelta(state, update.delta);
+
+    // Set processing to false and return.
     setResult({
       processing: false,
       state: state,

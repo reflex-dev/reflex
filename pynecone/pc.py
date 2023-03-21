@@ -1,13 +1,16 @@
 """Pynecone CLI to create, run, and deploy apps."""
 
 import os
+import platform
 from pathlib import Path
 
 import httpx
 import typer
 
-from pynecone import constants, utils
+from pynecone import constants
+from pynecone.config import get_config
 from pynecone.telemetry import pynecone_telemetry
+from pynecone.utils import build, console, exec, prerequisites, processes
 
 # Create the app.
 cli = typer.Typer()
@@ -16,40 +19,40 @@ cli = typer.Typer()
 @cli.command()
 def version():
     """Get the Pynecone version."""
-    utils.console.print(constants.VERSION)
+    console.print(constants.VERSION)
 
 
 @cli.command()
 def init():
     """Initialize a new Pynecone app in the current directory."""
-    app_name = utils.get_default_app_name()
+    app_name = prerequisites.get_default_app_name()
 
     # Make sure they don't name the app "pynecone".
     if app_name == constants.MODULE_NAME:
-        utils.console.print(
+        console.print(
             f"[red]The app directory cannot be named [bold]{constants.MODULE_NAME}."
         )
         raise typer.Exit()
 
-    with utils.console.status(f"[bold]Initializing {app_name}"):
+    with console.status(f"[bold]Initializing {app_name}"):
         # Set up the web directory.
-        utils.install_bun()
-        utils.initialize_web_directory()
+        prerequisites.install_bun()
+        prerequisites.initialize_web_directory()
 
         # Set up the app directory, only if the config doesn't exist.
         if not os.path.exists(constants.CONFIG_FILE):
-            utils.create_config(app_name)
-            utils.initialize_app_directory(app_name)
-            utils.set_pynecone_project_hash()
-            pynecone_telemetry("init", utils.get_config().telemetry_enabled)
+            prerequisites.create_config(app_name)
+            prerequisites.initialize_app_directory(app_name)
+            build.set_pynecone_project_hash()
+            pynecone_telemetry("init", get_config().telemetry_enabled)
         else:
-            utils.set_pynecone_project_hash()
-            pynecone_telemetry("reinit", utils.get_config().telemetry_enabled)
+            build.set_pynecone_project_hash()
+            pynecone_telemetry("reinit", get_config().telemetry_enabled)
 
         # Initialize the .gitignore.
-        utils.initialize_gitignore()
+        prerequisites.initialize_gitignore()
         # Finish initializing the app.
-        utils.console.log(f"[bold green]Finished Initializing: {app_name}")
+        console.log(f"[bold green]Finished Initializing: {app_name}")
 
 
 @cli.command()
@@ -69,44 +72,49 @@ def run(
     port: str = typer.Option(None, help="Specify a different port."),
 ):
     """Run the app in the current directory."""
-    frontend_port = utils.get_config().port if port is None else port
-    backend_port = utils.get_config().backend_port
+    if platform.system() == "Windows":
+        console.print(
+            "[yellow][WARNING] We strongly advise you to use Windows Subsystem for Linux (WSL) for optimal performance when using Pynecone. Due to compatibility issues with one of our dependencies, Bun, you may experience slower performance on Windows. By using WSL, you can expect to see a significant speed increase."
+        )
+
+    frontend_port = get_config().port if port is None else port
+    backend_port = get_config().backend_port
 
     # If something is running on the ports, ask the user if they want to kill or change it.
-    if utils.is_process_on_port(frontend_port):
-        frontend_port = utils.change_or_terminate_port(frontend_port, "frontend")
+    if processes.is_process_on_port(frontend_port):
+        frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
 
-    if utils.is_process_on_port(backend_port):
-        backend_port = utils.change_or_terminate_port(backend_port, "backend")
+    if processes.is_process_on_port(backend_port):
+        backend_port = processes.change_or_terminate_port(backend_port, "backend")
 
     # Check that the app is initialized.
-    if frontend and not utils.is_initialized():
-        utils.console.print(
+    if frontend and not prerequisites.is_initialized():
+        console.print(
             "[red]The app is not initialized. Run [bold]pc init[/bold] first."
         )
         raise typer.Exit()
 
     # Check that the template is up to date.
-    if frontend and not utils.is_latest_template():
-        utils.console.print(
+    if frontend and not prerequisites.is_latest_template():
+        console.print(
             "[red]The base app template has updated. Run [bold]pc init[/bold] again."
         )
         raise typer.Exit()
 
     # Get the app module.
-    utils.console.rule("[bold]Starting Pynecone App")
-    app = utils.get_app()
+    console.rule("[bold]Starting Pynecone App")
+    app = prerequisites.get_app()
 
     # Get the frontend and backend commands, based on the environment.
     frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
-        frontend_cmd, backend_cmd = utils.run_frontend, utils.run_backend
+        frontend_cmd, backend_cmd = exec.run_frontend, exec.run_backend
     if env == constants.Env.PROD:
-        frontend_cmd, backend_cmd = utils.run_frontend_prod, utils.run_backend_prod
+        frontend_cmd, backend_cmd = exec.run_frontend_prod, exec.run_backend_prod
     assert frontend_cmd and backend_cmd, "Invalid env"
 
     # Post a telemetry event.
-    pynecone_telemetry(f"run-{env.value}", utils.get_config().telemetry_enabled)
+    pynecone_telemetry(f"run-{env.value}", get_config().telemetry_enabled)
 
     # Run the frontend and backend.
     try:
@@ -115,16 +123,16 @@ def run(
         if backend:
             backend_cmd(app.__name__, port=int(backend_port), loglevel=loglevel)
     finally:
-        utils.kill_process_on_port(frontend_port)
-        utils.kill_process_on_port(backend_port)
+        processes.kill_process_on_port(frontend_port)
+        processes.kill_process_on_port(backend_port)
 
 
 @cli.command()
 def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
     """Deploy the app to the Pynecone hosting service."""
     # Get the app config.
-    config = utils.get_config()
-    config.api_url = utils.get_production_backend_url()
+    config = get_config()
+    config.api_url = prerequisites.get_production_backend_url()
 
     # Check if the deploy url is set.
     if config.pcdeploy_url is None:
@@ -133,8 +141,8 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
     # Compile the app in production mode.
     typer.echo("Compiling production app")
-    app = utils.get_app().app
-    utils.export_app(app, zip=True, deploy_url=config.deploy_url)
+    app = prerequisites.get_app().app
+    build.export_app(app, zip=True, deploy_url=config.deploy_url)
 
     # Exit early if this is a dry run.
     if dry_run:
@@ -173,16 +181,16 @@ def export(
     ),
 ):
     """Export the app to a zip file."""
-    config = utils.get_config()
+    config = get_config()
 
     if for_pc_deploy:
         # Get the app config and modify the api_url base on username and app_name.
-        config.api_url = utils.get_production_backend_url()
+        config.api_url = prerequisites.get_production_backend_url()
 
     # Compile the app in production mode and export it.
-    utils.console.rule("[bold]Compiling production app and preparing for export.")
-    app = utils.get_app().app
-    utils.export_app(
+    console.rule("[bold]Compiling production app and preparing for export.")
+    app = prerequisites.get_app().app
+    build.export_app(
         app,
         backend=backend,
         frontend=frontend,
@@ -191,15 +199,15 @@ def export(
     )
 
     # Post a telemetry event.
-    pynecone_telemetry("export", utils.get_config().telemetry_enabled)
+    pynecone_telemetry("export", get_config().telemetry_enabled)
 
     if zipping:
-        utils.console.rule(
+        console.rule(
             """Backend & Frontend compiled. See [green bold]backend.zip[/green bold] 
             and [green bold]frontend.zip[/green bold]."""
         )
     else:
-        utils.console.rule(
+        console.rule(
             """Backend & Frontend compiled. See [green bold]app[/green bold] 
             and [green bold].web/_static[/green bold] directories."""
         )

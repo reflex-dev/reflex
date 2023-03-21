@@ -4,7 +4,7 @@ from typing import Optional, Set, Callable, Any
 from jinja2 import Environment, FileSystemLoader, Template
 
 from pynecone import constants
-from pynecone.utils import join
+from pynecone.utils import path_ops
 
 
 def get_template(name: str) -> Template:
@@ -45,7 +45,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
     if not lib:
         assert not default, "No default field allowed for empty library."
         assert rest is not None and len(rest) > 0, "No fields to import."
-        return join([IMPORT_LIB.render(lib=lib) for lib in sorted(rest)])
+        return path_ops.join([IMPORT_LIB.render(lib=lib) for lib in sorted(rest)])
 
     # Handle importing from a library.
     rest = rest or set()
@@ -70,7 +70,7 @@ PAGE = get_template('web/pages/index.js.jinja2')
 
 
 # Code to render a single exported custom component.
-COMPONENT = join(
+COMPONENT = path_ops.join(
     [
         "export const {name} = memo(({{{props}}}) => (",
         "{render}",
@@ -79,7 +79,7 @@ COMPONENT = join(
 ).format
 
 # Code to render the custom components page.
-COMPONENTS = join(
+COMPONENTS = path_ops.join(
     [
         "{imports}",
         "{components}",

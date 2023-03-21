@@ -2,8 +2,8 @@
 
 import sqlmodel
 
-from pynecone import utils
 from pynecone.base import Base
+from pynecone.config import get_config
 
 
 def get_engine():
@@ -15,7 +15,7 @@ def get_engine():
     Raises:
         ValueError: If the database url is None.
     """
-    url = utils.get_config().db_url
+    url = get_config().db_url
     if url is None:
         raise ValueError("No database url in config")
     return sqlmodel.create_engine(url, echo=False)

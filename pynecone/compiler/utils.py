@@ -4,7 +4,7 @@ import json
 import os
 from typing import Dict, List, Optional, Set, Tuple, Type
 
-from pynecone import constants, utils
+from pynecone import constants
 from pynecone.compiler import templates
 from pynecone.components.base import (
     Body,
@@ -20,12 +20,14 @@ from pynecone.components.base import (
     Script,
     Title,
 )
-from pynecone.components.component import Component, CustomComponent, ImportDict
+from pynecone.components.component import Component, CustomComponent
+from pynecone.event import get_hydrate_event
 from pynecone.state import State
 from pynecone.style import Style
+from pynecone.utils import format, imports, path_ops
 
 # To re-export this function.
-merge_imports = utils.merge_imports
+merge_imports = imports.merge_imports
 
 
 def compile_import_statement(lib: str, fields: Set[str]) -> str:
@@ -52,7 +54,7 @@ def compile_import_statement(lib: str, fields: Set[str]) -> str:
     return templates.format_import(lib=lib, default=default, rest=rest)
 
 
-def compile_imports(imports: ImportDict) -> str:
+def compile_imports(imports: imports.ImportDict) -> str:
     """Compile an import dict.
 
     Args:
@@ -61,7 +63,7 @@ def compile_imports(imports: ImportDict) -> str:
     Returns:
         The compiled import dict.
     """
-    return templates.join(
+    return path_ops.join(
         [compile_import_statement(lib, fields) for lib, fields in imports.items()]
     )
 
@@ -85,9 +87,11 @@ def compile_constants() -> str:
     Returns:
         A string of all the compiled constants.
     """
-    endpoint = constants.Endpoint.EVENT
-    return templates.join(
-        [compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())]
+    return path_ops.join(
+        [
+            compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
+            for endpoint in constants.Endpoint
+        ]
     )
 
 
@@ -103,10 +107,14 @@ def compile_state(state: Type[State]) -> str:
     initial_state = state().dict()
     initial_state.update(
         {
-            "events": [{"name": utils.get_hydrate_event(state)}],
+            "events": [{"name": get_hydrate_event(state)}],
+            "files": [],
         }
     )
-    initial_state = utils.format_state(initial_state)
+    initial_state = format.format_state(initial_state)
+    synced_state = templates.format_state(
+        state=state.get_name(), initial_state=json.dumps(initial_state)
+    )
     initial_result = {
         constants.STATE: None,
         constants.EVENTS: [],
@@ -171,7 +179,9 @@ def compile_render(component: Component) -> str:
     return component.render()
 
 
-def compile_custom_component(component: CustomComponent) -> Tuple[str, ImportDict]:
+def compile_custom_component(
+    component: CustomComponent,
+) -> Tuple[str, imports.ImportDict]:
     """Compile a custom component.
 
     Args:
@@ -316,7 +326,7 @@ def write_page(path: str, code: str):
         path: The path to write the code to.
         code: The code to write.
     """
-    utils.mkdir(os.path.dirname(path))
+    path_ops.mkdir(os.path.dirname(path))
     with open(path, "w", encoding="utf-8") as f:
         f.write(code)
 
@@ -337,4 +347,4 @@ def empty_dir(path: str, keep_files: Optional[List[str]] = None):
     directory_contents = os.listdir(path)
     for element in directory_contents:
         if element not in keep_files:
-            utils.rm(os.path.join(path, element))
+            path_ops.rm(os.path.join(path, element))
