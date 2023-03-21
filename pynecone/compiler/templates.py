@@ -126,18 +126,10 @@ def format_state(
 EVENT_FN = get_template('web/pages/parts/event_fn.js.jinja2')
 
 # Effects.
-ROUTER = constants.ROUTER
-READY = f"const {{ isReady }} = {ROUTER};"
 USE_EFFECT = get_template('web/pages/parts/use_effect.js.jinja2')
-
-# Routing
-ROUTER = f"const {constants.ROUTER} = useRouter()"
-
-# Sockets.
-SOCKET = "const socket = useRef(null)"
-
-# Color toggle
-COLORTOGGLE = f"const {{ {constants.COLOR_MODE}, {constants.TOGGLE_COLOR_MODE} }} = {constants.USE_COLOR_MODE}()"
 
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
+
+# state of app
+STATE = get_template('web/pages/parts/state.js.jinja2')

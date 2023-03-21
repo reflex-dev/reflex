@@ -119,12 +119,14 @@ def compile_state(state: Type[State]) -> str:
         state="result",
         initial_state=json.dumps(initial_result),
     )
-    router = templates.ROUTER
-    socket = templates.SOCKET
-    ready = templates.READY
-    color_toggle = templates.COLORTOGGLE
-    return templates.join([synced_state, result, router, socket, ready, color_toggle])
-
+    return templates.STATE.render(
+        synced_state = synced_state, 
+        result = result, 
+        router = constants.ROUTER, 
+        color_mode = constants.COLOR_MODE,
+        toggle_color_mode = constants.TOGGLE_COLOR_MODE,
+        use_color_mode = constants.USE_COLOR_MODE,
+    )
 
 def compile_events(state: Type[State]) -> str:
     """Compile all the events for a given component.
