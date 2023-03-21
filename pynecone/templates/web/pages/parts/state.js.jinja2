@@ -1,5 +1,5 @@
-{{synced_state}}
-{{result}}
+const [{{synced_state}}, set{{synced_state.capitalize()}}] = useState({{initial_state}})
+const [{{result_state}}, set{{result_state.capitalize()}}] = useState({{initial_result}})
 const {{router}} = useRouter()
 const socket = useRef(null)
 const { isReady } = {{router}}

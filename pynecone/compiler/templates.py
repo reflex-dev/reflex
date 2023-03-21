@@ -103,22 +103,6 @@ def format_state_setter(state: str) -> str:
     return f"set{state[0].upper() + state[1:]}"
 
 
-def format_state(
-    state: str,
-    initial_state: str,
-) -> str:
-    """Format a state declaration.
-
-    Args:
-        state: The name of the state variable.
-        initial_state: The initial state of the state variable.
-
-    Returns:
-        The compiled state declaration.
-    """
-    return USE_STATE.render(state=state, initial_state=initial_state)
-
-
 # Events.
 EVENT_FN = get_template('web/pages/parts/event_fn.js.jinja2')
 

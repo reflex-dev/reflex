@@ -107,21 +107,16 @@ def compile_state(state: Type[State]) -> str:
         }
     )
     initial_state = utils.format_state(initial_state)
-    synced_state = templates.format_state(
-        state=state.get_name(), initial_state=json.dumps(initial_state)
-    )
     initial_result = {
         constants.STATE: None,
         constants.EVENTS: [],
         constants.PROCESSING: False,
     }
-    result = templates.format_state(
-        state="result",
-        initial_state=json.dumps(initial_result),
-    )
     return templates.STATE.render(
-        synced_state = synced_state, 
-        result = result, 
+        synced_state = state.get_name(),
+        initial_state = json.dumps(initial_state),
+        result_state = "result", 
+        initial_result = json.dumps(initial_result),
         router = constants.ROUTER, 
         color_mode = constants.COLOR_MODE,
         toggle_color_mode = constants.TOGGLE_COLOR_MODE,
