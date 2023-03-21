@@ -88,9 +88,7 @@ COMPONENTS = join(
 
 
 # React state declarations.
-USE_STATE = CONST(
-    name="[{state}, {set_state}]", value="useState({initial_state})"
-).format
+USE_STATE = get_template('web/pages/parts/use_state.js.jinja2')
 
 
 def format_state_setter(state: str) -> str:
@@ -118,8 +116,7 @@ def format_state(
     Returns:
         The compiled state declaration.
     """
-    set_state = format_state_setter(state)
-    return USE_STATE(state=state, set_state=set_state, initial_state=initial_state)
+    return USE_STATE.render(state=state, initial_state=initial_state)
 
 
 # Events.
