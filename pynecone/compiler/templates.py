@@ -90,19 +90,6 @@ COMPONENTS = join(
 # React state declarations.
 USE_STATE = get_template('web/pages/parts/use_state.js.jinja2')
 
-
-def format_state_setter(state: str) -> str:
-    """Format a state setter.
-
-    Args:
-        state: The name of the state variable.
-
-    Returns:
-        The compiled state setter.
-    """
-    return f"set{state[0].upper() + state[1:]}"
-
-
 # Events.
 EVENT_FN = get_template('web/pages/parts/event_fn.js.jinja2')
 
