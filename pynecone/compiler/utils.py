@@ -137,7 +137,7 @@ def compile_events(state: Type[State]) -> str:
     """
     state_name = state.get_name()
     state_setter = templates.format_state_setter(state_name)
-    return templates.EVENT_FN(state=state_name, set_state=state_setter)
+    return templates.EVENT_FN.render(state=state_name, set_state=state_setter)
 
 
 def compile_effects(state: Type[State]) -> str:

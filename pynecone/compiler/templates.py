@@ -123,15 +123,7 @@ def format_state(
 
 
 # Events.
-EVENT_FN = join(
-    [
-        "const Event = events => {set_state}({{",
-        "  ...{state},",
-        "  events: [...{state}.events, ...events],",
-        "}})",
-    ]
-).format
-
+EVENT_FN = get_template('web/pages/parts/event_fn.js.jinja2')
 
 # Effects.
 ROUTER = constants.ROUTER
