@@ -151,9 +151,19 @@ def compile_effects(state: Type[State]) -> str:
     """
     state_name = state.get_name()
     set_state = templates.format_state_setter(state_name)
+    result = constants.RESULT
+    const_set_result = templates.format_state_setter(result)
     transports = constants.Transports.POLLING_WEBSOCKET.get_transports()
-    return templates.USE_EFFECT(
-        state=state_name, set_state=set_state, transports=transports
+    return templates.USE_EFFECT.render(
+        state=state_name, set_state=set_state, transports=transports,
+        const_socket=constants.SOCKET,
+        const_result=constants.RESULT,
+        const_set_result=const_set_result,
+        const_router=constants.ROUTER,
+        const_event_endpoint=constants.Endpoint.EVENT.name,
+        const_events=constants.EVENTS,
+        const_state=constants.STATE,
+        const_processing=constants.PROCESSING,
     )
 
 

@@ -2,6 +2,24 @@ useEffect(()=>{
   if(!isReady) {
     return;
   }
-  if (!{{socket}}.current) {
-    connect({{socket}}, {state}, {set_state}, {{result}}, {{set_result}}, {{router}}, {{event_endpoint}}, {transports})
+  if (!{{const_socket}}.current) {
+    connect({{const_socket}}, {{state}}, {{set_state}}, {{const_result}}, {{const_set_result}}, {{const_router}}, {{const_event_endpoint}}, {{transports}})
   }
+  const update = async () => {
+    if ({{const_result}}.{{const_state}} != null){
+      {{set_state}}({
+        ...{{const_result}}.{{const_state}},
+        events: [...{{state}}.{{const_events}}, ...{{const_result}}.{{const_events}}],
+      })
+
+      {{const_set_result}}({
+        {{const_state}}: null,
+        {{const_events}}: [],
+        {{const_processing}}: false,
+      })
+
+      await updateState({{state}}, {{set_state}}, {{const_result}}, {{const_set_result}}, {{const_router}}, {{const_socket}}.current)
+    }
+    update()
+  }
+})

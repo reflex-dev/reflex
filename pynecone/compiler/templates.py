@@ -123,7 +123,6 @@ def format_state(
 
 
 # Events.
-EVENT_ENDPOINT = constants.Endpoint.EVENT.name
 EVENT_FN = join(
     [
         "const Event = events => {set_state}({{",
@@ -136,40 +135,8 @@ EVENT_FN = join(
 
 # Effects.
 ROUTER = constants.ROUTER
-RESULT = constants.RESULT
-PROCESSING = constants.PROCESSING
-SOCKET = constants.SOCKET
-STATE = constants.STATE
-EVENTS = constants.EVENTS
-SET_RESULT = format_state_setter(RESULT)
 READY = f"const {{ isReady }} = {ROUTER};"
-USE_EFFECT = join(
-    [
-        "useEffect(() => {{",
-        "  if(!isReady) {{",
-        "    return;",
-        "  }}",
-        f"  if (!{SOCKET}.current) {{{{",
-        f"    connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT}, {{transports}})",
-        "  }}",
-        "  const update = async () => {{",
-        f"    if ({RESULT}.{STATE} != null) {{{{",
-        f"      {{set_state}}({{{{",
-        f"        ...{RESULT}.{STATE},",
-        f"        events: [...{{state}}.{EVENTS}, ...{RESULT}.{EVENTS}],",
-        "      }})",
-        f"      {SET_RESULT}({{{{",
-        f"        {STATE}: null,",
-        f"        {EVENTS}: [],",
-        f"        {PROCESSING}: false,",
-        "      }})",
-        "    }}",
-        f"    await updateState({{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {SOCKET}.current)",
-        "  }}",
-        "  update()",
-        "}})",
-    ]
-).format
+USE_EFFECT = get_template('web/pages/parts/use_effect.js.jinja2')
 
 # Routing
 ROUTER = f"const {constants.ROUTER} = useRouter()"
