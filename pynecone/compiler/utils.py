@@ -146,7 +146,6 @@ def compile_effects(state: Type[State]) -> str:
         A string of the compiled effects for the component.
     """
     state_name = state.get_name()
-    result = constants.RESULT
     transports = constants.Transports.POLLING_WEBSOCKET.get_transports()
     return templates.USE_EFFECT.render(
         state=state_name, transports=transports,
