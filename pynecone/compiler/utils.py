@@ -112,9 +112,6 @@ def compile_state(state: Type[State]) -> str:
         }
     )
     initial_state = format.format_state(initial_state)
-    synced_state = templates.format_state(
-        state=state.get_name(), initial_state=json.dumps(initial_state)
-    )
     initial_result = {
         constants.STATE: None,
         constants.EVENTS: [],
