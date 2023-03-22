@@ -7,6 +7,16 @@ from pynecone import constants
 from pynecone.utils import path_ops, format
 
 
+class PyneconeJinjaEnvironment(Environment):
+    def __init__(self) -> None:
+        extensions=[
+            'jinja2.ext.debug'
+        ]
+        super().__init__(extensions=extensions)
+        self.filters["json_dumps"] = format.json_dumps
+        self.loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
+
+
 def get_template(name: str) -> Template:
     """Get render function that work with a template.
 
@@ -16,11 +26,7 @@ def get_template(name: str) -> Template:
     Returns:
         A render function.
     """
-    env = Environment(
-        loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR),extensions=['jinja2.ext.debug']
-    )
-    env.filters["json_dumps"] = format.json_dumps
-    return env.get_template(name=name)
+    return PyneconeJinjaEnvironment().get_template(name=name)
 
 
 # Template for the Pynecone config file.
