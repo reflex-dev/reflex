@@ -78,7 +78,7 @@ def compile_constant_declaration(name: str, value: str) -> str:
     Returns:
         The compiled constant declaration.
     """
-    return templates.CONST(name=name, value=json.dumps(value))
+    return templates.CONST.render(name=name, value=value)
 
 
 def compile_constants() -> str:
