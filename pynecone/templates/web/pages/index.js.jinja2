@@ -1,6 +1,8 @@
 
 {{imports}}
+{% for custom_code in custom_codes %}
 {{custom_code}}
+{% endfor %}
 {% for name, url in endpoints.items() %}
 const {{name}} = {{url|json_dumps}}
 {% endfor %}
