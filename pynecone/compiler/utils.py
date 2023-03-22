@@ -81,20 +81,6 @@ def compile_constant_declaration(name: str, value: str) -> str:
     return templates.CONST.render(name=name, value=value)
 
 
-def compile_constants() -> str:
-    """Compile all the necessary constants.
-
-    Returns:
-        A string of all the compiled constants.
-    """
-    return path_ops.join(
-        [
-            compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
-            for endpoint in constants.Endpoint
-        ]
-    )
-
-
 def compile_state(state: Type[State]) -> str:
     """Compile the state of the app.
 

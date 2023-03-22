@@ -1,6 +1,6 @@
 """Templates to use in the pynecone compiler."""
 
-from typing import Optional, Set, Callable, Any
+from typing import Optional, Set
 from jinja2 import Environment, FileSystemLoader, Template
 
 from pynecone import constants
@@ -12,7 +12,11 @@ class PyneconeJinjaEnvironment(Environment):
         extensions=[
             'jinja2.ext.debug'
         ]
-        super().__init__(extensions=extensions)
+        super().__init__(
+            extensions=extensions,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
         self.filters["json_dumps"] = format.json_dumps
         self.loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
 

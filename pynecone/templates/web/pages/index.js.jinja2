@@ -1,7 +1,9 @@
 
 {{imports}}
 {{custom_code}}
-{{constants}}
+{% for name, url in endpoints.items() %}
+const {{name}} = {{url|json_dumps}}
+{% endfor %}
 export default function Component() {
 {{state}}
 {{events}}
