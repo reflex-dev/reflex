@@ -57,14 +57,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
 
     # Handle importing from a library.
     rest = rest or set()
-    if len(default) == 0 and len(rest) == 0:
-        # Handle the case of importing a library with no fields.
-        return IMPORT_LIB.render(lib=lib)
-    # Handle importing specific fields from a library.
-    others = f'{{{", ".join(sorted(rest))}}}' if len(rest) > 0 else ""
-    if default != "" and len(rest) > 0:
-        default += ", "
-    return IMPORT_FIELDS.render(default=default, others=others, lib=lib)
+    return IMPORT_FIELDS.render(default=default, rest=rest, lib=lib)
 
 
 # Code to render a NextJS Document root.
