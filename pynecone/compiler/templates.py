@@ -4,7 +4,7 @@ from typing import Optional, Set, Callable, Any
 from jinja2 import Environment, FileSystemLoader, Template
 
 from pynecone import constants
-from pynecone.utils import path_ops
+from pynecone.utils import path_ops, format
 
 
 def get_template(name: str) -> Template:
@@ -16,7 +16,10 @@ def get_template(name: str) -> Template:
     Returns:
         A render function.
     """
-    env = Environment(loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR),extensions=['jinja2.ext.debug'])
+    env = Environment(
+        loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR),extensions=['jinja2.ext.debug']
+    )
+    env.filters["json_dumps"] = format.json_dumps
     return env.get_template(name=name)
 
 
