@@ -114,18 +114,6 @@ def compile_state(state: Type[State]) -> str:
         use_color_mode = constants.USE_COLOR_MODE,
     )
 
-def compile_events(state: Type[State]) -> str:
-    """Compile all the events for a given component.
-
-    Args:
-        state: The state class for the component.
-
-    Returns:
-        A string of the compiled events for the component.
-    """
-    state_name = state.get_name()
-    return templates.EVENT_FN.render(state=state_name)
-
 
 def compile_effects(state: Type[State]) -> str:
     """Compile all the effects for a given component.

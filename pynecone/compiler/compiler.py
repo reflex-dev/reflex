@@ -68,7 +68,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
         custom_codes=component.get_custom_code(),
         endpoints = {constant.name: constant.get_url() for constant in constants.Endpoint},
         state=utils.compile_state(state),
-        events=utils.compile_events(state),
+        state_name=state.get_name(),
         effects=utils.compile_effects(state),
         render=component.render(),
     )

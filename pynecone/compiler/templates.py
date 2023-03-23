@@ -95,9 +95,6 @@ COMPONENTS = path_ops.join(
 # React state declarations.
 USE_STATE = get_template('web/pages/parts/use_state.js.jinja2')
 
-# Events.
-EVENT_FN = get_template('web/pages/parts/event_fn.js.jinja2')
-
 # Effects.
 USE_EFFECT = get_template('web/pages/parts/use_effect.js.jinja2')
 

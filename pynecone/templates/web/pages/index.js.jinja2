@@ -1,4 +1,3 @@
-
 {{imports}}
 {% for custom_code in custom_codes %}
 {{custom_code}}
@@ -8,7 +7,10 @@ const {{name}} = {{url|json_dumps}}
 {% endfor %}
 export default function Component() {
 {{state}}
-{{events}}
+const Event = events => set{{state_name.capitalize()}}({
+  ...{{state_name}},
+  events: [...{{state_name}}.events, ...events],
+})
 {{effects}}
 return (
     {{render}}
