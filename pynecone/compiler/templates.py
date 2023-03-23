@@ -28,6 +28,14 @@ class PyneconeJinjaEnvironment(Environment):
             "events": constants.EVENTS,
             "state": constants.STATE,
             "processing": constants.PROCESSING,
+            "initial_result": {
+                constants.STATE: None,
+                constants.EVENTS: [],
+                constants.PROCESSING: False,
+            },
+            "color_mode" : constants.COLOR_MODE,
+            "toggle_color_mode" : constants.TOGGLE_COLOR_MODE,
+            "use_color_mode" : constants.USE_COLOR_MODE,
         }
 
 
@@ -102,12 +110,5 @@ COMPONENTS = path_ops.join(
     ]
 ).format
 
-
-# React state declarations.
-USE_STATE = get_template('web/pages/parts/use_state.js.jinja2')
-
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
-
-# state of app
-STATE = get_template('web/pages/parts/state.js.jinja2')

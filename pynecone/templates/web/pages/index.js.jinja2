@@ -6,7 +6,13 @@
 const {{name}} = {{url|json_dumps}}
 {% endfor %}
 export default function Component() {
-{{state}}
+const [{{state_name}}, {{state_name|react_setter}}] = useState({{initial_state|json_dumps}})
+const [{{const.result}}, {{const.result|react_setter}}] = useState({{const.initial_result|json_dumps}})
+const {{const.router}} = useRouter()
+const {{const.socket}} = useRef(null)
+const { isReady } = {{const.router}}
+const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
+
 const Event = events => {{state_name|react_setter}}({
   ...{{state_name}},
   events: [...{{state_name}}.events, ...events],

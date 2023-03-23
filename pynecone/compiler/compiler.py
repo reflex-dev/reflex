@@ -67,7 +67,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
         imports=utils.compile_imports(imports),
         custom_codes=component.get_custom_code(),
         endpoints = {constant.name: constant.get_url() for constant in constants.Endpoint},
-        state=utils.compile_state(state),
+        initial_state=utils.compile_state(state),
         state_name=state.get_name(),
         render=component.render(),
         transports = constants.Transports.POLLING_WEBSOCKET.get_transports(),

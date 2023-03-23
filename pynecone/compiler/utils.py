@@ -98,22 +98,7 @@ def compile_state(state: Type[State]) -> str:
         }
     )
     initial_state = format.format_state(initial_state)
-    initial_result = {
-        constants.STATE: None,
-        constants.EVENTS: [],
-        constants.PROCESSING: False,
-    }
-    return templates.STATE.render(
-        synced_state = state.get_name(),
-        initial_state = initial_state,
-        result_state = constants.RESULT, 
-        initial_result = initial_result,
-        router = constants.ROUTER, 
-        color_mode = constants.COLOR_MODE,
-        toggle_color_mode = constants.TOGGLE_COLOR_MODE,
-        use_color_mode = constants.USE_COLOR_MODE,
-    )
-
+    return initial_state
 
 def compile_render(component: Component) -> str:
     """Compile the component's render method.
