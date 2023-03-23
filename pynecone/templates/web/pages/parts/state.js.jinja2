@@ -1,5 +1,5 @@
-const [{{synced_state}}, set{{synced_state.capitalize()}}] = useState({{initial_state|json_dumps}})
-const [{{result_state}}, set{{result_state.capitalize()}}] = useState({{initial_result|json_dumps}})
+const [{{synced_state}}, {{synced_state|react_setter}}] = useState({{initial_state|json_dumps}})
+const [{{result_state}}, {{result_state|react_setter}}] = useState({{initial_result|json_dumps}})
 const {{router}} = useRouter()
 const socket = useRef(null)
 const { isReady } = {{router}}

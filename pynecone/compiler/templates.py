@@ -18,6 +18,7 @@ class PyneconeJinjaEnvironment(Environment):
             lstrip_blocks=True,
         )
         self.filters["json_dumps"] = format.json_dumps
+        self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
         self.loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
 
 

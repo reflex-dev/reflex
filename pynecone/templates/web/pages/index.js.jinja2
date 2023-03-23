@@ -7,7 +7,7 @@ const {{name}} = {{url|json_dumps}}
 {% endfor %}
 export default function Component() {
 {{state}}
-const Event = events => set{{state_name.capitalize()}}({
+const Event = events => {{state_name|react_setter}}({
   ...{{state_name}},
   events: [...{{state_name}}.events, ...events],
 })
