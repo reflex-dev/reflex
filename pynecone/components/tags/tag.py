@@ -153,9 +153,7 @@ class Tag(Base):
             else:
                 contents = self.contents
             # Otherwise wrap it in opening and closing tags.
-            open = templates.OPEN_TAG.render(tag_name=self.name, props=props)
-            close = templates.CLOSE_TAG.render(tag_name=self.name)
-            tag_str = format.wrap(contents, open, close)
+            tag_str = templates.WRAP_TAG.render(open=open,contents=contents,tag_name=self.name, props=props)
 
         return tag_str
 
