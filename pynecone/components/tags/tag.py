@@ -14,6 +14,7 @@ from pynecone.base import Base
 from pynecone.event import EventChain
 from pynecone.utils import format, types
 from pynecone.var import Var
+from pynecone.compiler import templates
 
 if TYPE_CHECKING:
     from pynecone.components.component import ComponentStyle
@@ -114,7 +115,7 @@ class Tag(Base):
         assert isinstance(prop, str), "The prop must be a string."
         return format.wrap(prop, "{", check_first=False)
 
-    def format_props(self) -> str:
+    def format_props(self) -> list:
         """Format the tag's props.
 
         Returns:
@@ -125,11 +126,13 @@ class Tag(Base):
             return ""
 
         # Format all the props.
-        return os.linesep.join(
+        return [
             f"{name}={self.format_prop(prop)}"
             for name, prop in sorted(self.props.items())
             if prop is not None
-        )
+        ] + [
+            str(prop) for prop in self.special_props
+        ]
 
     def __str__(self) -> str:
         """Render the tag as a React string.
@@ -137,19 +140,11 @@ class Tag(Base):
         Returns:
             The React code to render the tag.
         """
-        # Get the tag props.
-        props_str = self.format_props()
-
-        # Add the special props.
-        props_str += " ".join([str(prop) for prop in self.special_props])
-
-        # Add a space if there are props.
-        if len(props_str) > 0:
-            props_str = " " + props_str
+        props = self.format_props()
 
         if len(self.contents) == 0:
             # If there is no inner content, we don't need a closing tag.
-            tag_str = format.wrap(f"{self.name}{props_str}/", "<")
+            tag_str = templates.NO_CONTENT_TAG.render(tag_name=self.name, props=props)
         else:
             if self.args is not None:
                 # If there are args, wrap the tag in a function call.
@@ -158,7 +153,7 @@ class Tag(Base):
             else:
                 contents = self.contents
             # Otherwise wrap it in opening and closing tags.
-            open = format.wrap(f"{self.name}{props_str}", "<")
+            open = templates.OPEN_TAG.render(tag_name=self.name, props=props)
             close = format.wrap(f"/{self.name}", "<")
             tag_str = format.wrap(contents, open, close)
 

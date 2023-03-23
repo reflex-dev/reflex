@@ -1,0 +1,7 @@
+<{{tag_name}}
+{%- if props|length -%}
+{# props with white space at each one #}
+{% for prop in props%} {{prop}}{% endfor %}
+{%- endif -%}
+{# if no props, no white space #}
+>

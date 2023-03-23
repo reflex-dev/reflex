@@ -112,3 +112,8 @@ COMPONENTS = path_ops.join(
 
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
+
+
+# Tags
+NO_CONTENT_TAG = get_template("web/pages/tags/no_content_tag.js.jinja2")
+OPEN_TAG = get_template("web/pages/tags/open_tag.js.jinja2")
