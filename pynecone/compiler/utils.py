@@ -115,29 +115,6 @@ def compile_state(state: Type[State]) -> str:
     )
 
 
-def compile_effects(state: Type[State]) -> str:
-    """Compile all the effects for a given component.
-
-    Args:
-        state: The state class for the component.
-
-    Returns:
-        A string of the compiled effects for the component.
-    """
-    state_name = state.get_name()
-    transports = constants.Transports.POLLING_WEBSOCKET.get_transports()
-    return templates.USE_EFFECT.render(
-        state=state_name, transports=transports,
-        const_socket=constants.SOCKET,
-        const_result=constants.RESULT,
-        const_router=constants.ROUTER,
-        const_event_endpoint=constants.Endpoint.EVENT.name,
-        const_events=constants.EVENTS,
-        const_state=constants.STATE,
-        const_processing=constants.PROCESSING,
-    )
-
-
 def compile_render(component: Component) -> str:
     """Compile the component's render method.
 

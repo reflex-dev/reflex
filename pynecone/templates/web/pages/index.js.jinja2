@@ -11,7 +11,34 @@ const Event = events => {{state_name|react_setter}}({
   ...{{state_name}},
   events: [...{{state_name}}.events, ...events],
 })
-{{effects}}
+
+useEffect(()=>{
+  if(!isReady) {
+    return;
+  }
+  if (!{{const.socket}}.current) {
+    connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.event_endpoint}}, {{transports}})
+  }
+  const update = async () => {
+    if ({{const.result}}.{{const.state}} != null){
+      {{state_name|react_setter}}({
+        ...{{const.result}}.{{const.state}},
+        events: [...{{state_name}}.{{const.events}}, ...{{const.result}}.{{const.events}}],
+      })
+
+      {{const.result|react_setter}}({
+        {{const.state}}: null,
+        {{const.events}}: [],
+        {{const.processing}}: false,
+      })
+
+      await updateState({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
+    }
+    update()
+  }
+})
+
+
 return (
     {{render}}
 )

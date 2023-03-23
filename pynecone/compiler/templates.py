@@ -20,6 +20,16 @@ class PyneconeJinjaEnvironment(Environment):
         self.filters["json_dumps"] = format.json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
         self.loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
+        self.globals["const"] = {
+            "socket": constants.SOCKET,
+            "result": constants.RESULT,
+            "router": constants.ROUTER,
+            "event_endpoint": constants.Endpoint.EVENT.name,
+            "events": constants.EVENTS,
+            "state": constants.STATE,
+            "processing": constants.PROCESSING,
+        }
+
 
 
 def get_template(name: str) -> Template:
@@ -95,9 +105,6 @@ COMPONENTS = path_ops.join(
 
 # React state declarations.
 USE_STATE = get_template('web/pages/parts/use_state.js.jinja2')
-
-# Effects.
-USE_EFFECT = get_template('web/pages/parts/use_effect.js.jinja2')
 
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
