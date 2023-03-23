@@ -192,6 +192,7 @@ export const connect = async (
  * @param setResult The function to set the result.
  * @param files The files to upload.
  * @param handler The handler to use.
+ * @param multiUpload Whether handler args on backend is multiupload
  * @param endpoint The endpoint to upload to.
  */
 export const uploadFiles = async (
@@ -200,6 +201,7 @@ export const uploadFiles = async (
   setResult,
   files,
   handler,
+  multiUpload,
   endpoint
 ) => {
   // If we are already processing an event, or there are no upload files, return.
@@ -210,15 +212,16 @@ export const uploadFiles = async (
   // Set processing to true to block other events from being processed.
   setResult({ ...result, processing: true });
 
-  // Currently only supports uploading one file.
-  const file = files[0];
+  const name = multiUpload ? "files" : "file"
   const headers = {
-    "Content-Type": file.type,
+    "Content-Type": files[0].type,
   };
   const formdata = new FormData();
 
   // Add the token and handler to the file name.
-  formdata.append("file", file, getToken() + ":" + handler + ":" + file.name);
+  for (let i = 0; i < files.length; i++) {
+    formdata.append("files", files[i], getToken() + ":" + handler + ":" + name + ":" + files[i].name);
+  }
 
   // Send the file to the server.
   await axios.post(endpoint, formdata, headers).then((response) => {

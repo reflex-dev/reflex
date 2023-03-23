@@ -1,6 +1,6 @@
 """Test fixtures."""
 import platform
-from typing import Generator
+from typing import Generator, List
 
 import pytest
 
@@ -141,6 +141,7 @@ class UploadState(pc.State):
     """The base state for uploading a file."""
 
     img: str
+    img_list: List[str]
 
     async def handle_upload(self, file: pc.UploadFile):
         """Handle the upload of a file.
@@ -157,6 +158,23 @@ class UploadState(pc.State):
 
         # Update the img var.
         self.img = file.filename
+
+    async def multi_handle_upload(self, files: List[pc.UploadFile]):
+        """Handle the upload of a file.
+
+        Args:
+            files: The uploaded files.
+        """
+        for file in files:
+            upload_data = await file.read()
+            outfile = f".web/public/{file.filename}"
+
+            # Save the file.
+            with open(outfile, "wb") as file_object:
+                file_object.write(upload_data)
+
+            # Update the img var.
+            self.img_list.append(file.filename)
 
 
 class BaseState(pc.State):
@@ -197,3 +215,13 @@ def upload_sub_state_event_spec():
         Event Spec.
     """
     return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # type: ignore
+
+
+@pytest.fixture
+def multi_upload_event_spec():
+    """Create an event Spec for a multi-upload base state.
+
+    Returns:
+        Event Spec.
+    """
+    return EventSpec(handler=UploadState.multi_handle_upload, upload=True)  # type: ignore
