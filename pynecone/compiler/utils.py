@@ -105,9 +105,9 @@ def compile_state(state: Type[State]) -> str:
     }
     return templates.STATE.render(
         synced_state = state.get_name(),
-        initial_state = json.dumps(initial_state),
-        result_state = "result", 
-        initial_result = json.dumps(initial_result),
+        initial_state = initial_state,
+        result_state = constants.RESULT, 
+        initial_result = initial_result,
         router = constants.ROUTER, 
         color_mode = constants.COLOR_MODE,
         toggle_color_mode = constants.TOGGLE_COLOR_MODE,
