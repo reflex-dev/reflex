@@ -136,7 +136,7 @@ DEFAULT_META_LIST = []
 # The gitignore file.
 GITIGNORE_FILE = ".gitignore"
 # Files to gitignore.
-DEFAULT_GITIGNORE = {WEB_DIR, DB_NAME}
+DEFAULT_GITIGNORE = {WEB_DIR, DB_NAME, "__pycache__/", "*.py[cod]"}
 # The name of the pynecone config module.
 CONFIG_MODULE = "pcconfig"
 # The python config file.
