@@ -13,6 +13,7 @@ from plotly.io import to_json
 
 from pynecone import constants
 from pynecone.utils import types
+from pynecone.compiler import templates
 
 if TYPE_CHECKING:
     from pynecone.event import EventHandler, EventSpec
@@ -284,7 +285,8 @@ def format_event(event_spec: EventSpec) -> str:
         The compiled event.
     """
     args = ",".join([":".join((name, val)) for name, val in event_spec.args])
-    return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
+    handler =format_event_handler(event_spec.handler)
+    return templates.FORMAT_EVENT.render(handler=handler, args=args)
 
 
 def format_upload_event(event_spec: EventSpec) -> str:
