@@ -57,7 +57,6 @@ PCCONFIG = get_template('app/pcconfig.py')
 
 # Javascript formatting.
 CONST = get_template('web/pages/parts/const.js.jinja2')
-IMPORT_LIB = get_template('web/pages/parts/import_lib.js.jinja2')
 IMPORT_FIELDS = get_template('web/pages/parts/import_fields.js.jinja2')
 
 
@@ -76,7 +75,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
     if not lib:
         assert not default, "No default field allowed for empty library."
         assert rest is not None and len(rest) > 0, "No fields to import."
-        return path_ops.join([IMPORT_LIB.render(lib=lib) for lib in sorted(rest)])
+        return path_ops.join([IMPORT_FIELDS.render(lib=lib) for lib in sorted(rest)])
 
     # Handle importing from a library.
     rest = rest or set()
