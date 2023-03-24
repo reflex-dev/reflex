@@ -284,7 +284,7 @@ def format_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    args = ",".join([":".join((name, val)) for name, val in event_spec.args])
+    args = [":".join((name, val)) for name, val in event_spec.args]
     handler =format_event_handler(event_spec.handler)
     return templates.FORMAT_EVENT.render(handler=handler, args=args)
 
