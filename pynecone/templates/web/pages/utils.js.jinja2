@@ -1,0 +1,5 @@
+{% macro render(component, indent_width=2) %}
+{% filter indent(width=indent_width)%}
+{{component}}
+{% endfilter %}
+{% endmacro %}
