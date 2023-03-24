@@ -67,19 +67,6 @@ def compile_imports(imports: imports.ImportDict) -> str:
     return templates.IMPORTS.render(imports=imports)
 
 
-def compile_constant_declaration(name: str, value: str) -> str:
-    """Compile a constant declaration.
-
-    Args:
-        name: The name of the constant.
-        value: The value of the constant.
-
-    Returns:
-        The compiled constant declaration.
-    """
-    return templates.CONST.render(name=name, value=value)
-
-
 def compile_state(state: Type[State]) -> str:
     """Compile the state of the app.
 

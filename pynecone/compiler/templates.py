@@ -56,7 +56,6 @@ def get_template(name: str) -> Template:
 PCCONFIG = get_template('app/pcconfig.py')
 
 # Javascript formatting.
-CONST = get_template('web/pages/parts/const.js.jinja2')
 IMPORT_FIELDS = get_template('web/pages/parts/import_fields.js.jinja2')
 
 
