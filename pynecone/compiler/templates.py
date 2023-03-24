@@ -92,6 +92,8 @@ THEME = get_template('web/utils/theme.js')
 # Code to render a single NextJS page.
 PAGE = get_template('web/pages/index.js.jinja2')
 
+# imports
+IMPORTS = get_template('web/pages/parts/imports.js.jinja2')
 
 # Code to render a single exported custom component.
 COMPONENT = path_ops.join(

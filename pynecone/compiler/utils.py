@@ -63,9 +63,8 @@ def compile_imports(imports: imports.ImportDict) -> str:
     Returns:
         The compiled import dict.
     """
-    return path_ops.join(
-        [compile_import_statement(lib, fields) for lib, fields in imports.items()]
-    )
+    imports = [compile_import_statement(lib, fields) for lib, fields in imports.items()]
+    return templates.IMPORTS.render(imports=imports)
 
 
 def compile_constant_declaration(name: str, value: str) -> str:
