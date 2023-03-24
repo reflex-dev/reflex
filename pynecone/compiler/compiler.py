@@ -61,10 +61,11 @@ def _compile_page(component: Component, state: Type[State]) -> str:
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    imports = [utils.compile_import_statement(lib, fields) for lib, fields in imports.items()]
 
     # Compile the code to render the component.
     return templates.PAGE.render(
-        imports=utils.compile_imports(imports),
+        imports=imports,
         custom_codes=component.get_custom_code(),
         endpoints = {constant.name: constant.get_url() for constant in constants.Endpoint},
         initial_state=utils.compile_state(state),

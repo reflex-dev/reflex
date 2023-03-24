@@ -1,4 +1,6 @@
-{{imports}}
+{% for lib in imports%}
+{{lib}}
+{% endfor %}
 
 {% for custom_code in custom_codes %}
 {{custom_code}}
