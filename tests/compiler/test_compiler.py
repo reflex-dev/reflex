@@ -10,8 +10,8 @@ from pynecone.utils import imports
     "lib,fields,output",
     [
         ("axios", {"axios"}, 'import axios from "axios"'),
-        ("axios", {"foo", "bar"}, 'import {bar, foo} from "axios"'),
-        ("axios", {"axios", "foo", "bar"}, 'import axios, {bar, foo} from "axios"'),
+        ("axios", {"foo", "bar"}, 'import { bar, foo } from "axios"'),
+        ("axios", {"axios", "foo", "bar"}, 'import axios, { bar, foo } from "axios"'),
     ],
 )
 def test_compile_import_statement(lib: str, fields: Set[str], output: str):
@@ -30,10 +30,10 @@ def test_compile_import_statement(lib: str, fields: Set[str], output: str):
     [
         ({}, ""),
         ({"axios": {"axios"}}, 'import axios from "axios"'),
-        ({"axios": {"foo", "bar"}}, 'import {bar, foo} from "axios"'),
+        ({"axios": {"foo", "bar"}}, 'import { bar, foo } from "axios"'),
         (
             {"axios": {"axios", "foo", "bar"}, "react": {"react"}},
-            'import axios, {bar, foo} from "axios"\nimport react from "react"',
+            'import axios, { bar, foo } from "axios"\nimport react from "react"',
         ),
         ({"": {"lib1.js", "lib2.js"}}, 'import "lib1.js"\nimport "lib2.js"'),
         (

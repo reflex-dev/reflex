@@ -63,36 +63,8 @@ def compile_imports(imports: imports.ImportDict) -> str:
     Returns:
         The compiled import dict.
     """
-    return path_ops.join(
-        [compile_import_statement(lib, fields) for lib, fields in imports.items()]
-    )
-
-
-def compile_constant_declaration(name: str, value: str) -> str:
-    """Compile a constant declaration.
-
-    Args:
-        name: The name of the constant.
-        value: The value of the constant.
-
-    Returns:
-        The compiled constant declaration.
-    """
-    return templates.CONST(name=name, value=json.dumps(value))
-
-
-def compile_constants() -> str:
-    """Compile all the necessary constants.
-
-    Returns:
-        A string of all the compiled constants.
-    """
-    return path_ops.join(
-        [
-            compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
-            for endpoint in constants.Endpoint
-        ]
-    )
+    imports = [compile_import_statement(lib, fields) for lib, fields in imports.items()]
+    return templates.IMPORTS.render(imports=imports)
 
 
 def compile_state(state: Type[State]) -> str:
@@ -112,60 +84,7 @@ def compile_state(state: Type[State]) -> str:
         }
     )
     initial_state = format.format_state(initial_state)
-    synced_state = templates.format_state(
-        state=state.get_name(), initial_state=json.dumps(initial_state)
-    )
-    initial_result = {
-        constants.STATE: None,
-        constants.EVENTS: [],
-        constants.PROCESSING: False,
-    }
-    result = templates.format_state(
-        state="result",
-        initial_state=json.dumps(initial_result),
-    )
-    router = templates.ROUTER
-    socket = templates.SOCKET
-    ready = templates.READY
-    color_toggle = templates.COLORTOGGLE
-    return path_ops.join([synced_state, result, router, socket, ready, color_toggle])
-
-
-def compile_events(state: Type[State]) -> str:
-    """Compile all the events for a given component.
-
-    Args:
-        state: The state class for the component.
-
-    Returns:
-        A string of the compiled events for the component.
-    """
-    state_name = state.get_name()
-    state_setter = templates.format_state_setter(state_name)
-    return path_ops.join(
-        [
-            templates.EVENT_FN(state=state_name, set_state=state_setter),
-            templates.UPLOAD_FN(state=state_name, set_state=state_setter),
-        ]
-    )
-
-
-def compile_effects(state: Type[State]) -> str:
-    """Compile all the effects for a given component.
-
-    Args:
-        state: The state class for the component.
-
-    Returns:
-        A string of the compiled effects for the component.
-    """
-    state_name = state.get_name()
-    set_state = templates.format_state_setter(state_name)
-    transports = constants.Transports.POLLING_WEBSOCKET.get_transports()
-    return templates.USE_EFFECT(
-        state=state_name, set_state=set_state, transports=transports
-    )
-
+    return initial_state
 
 def compile_render(component: Component) -> str:
     """Compile the component's render method.

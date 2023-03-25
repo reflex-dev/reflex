@@ -23,7 +23,7 @@ from pynecone.event import (
 from pynecone.style import Style
 from pynecone.utils import format, imports, path_ops, types
 from pynecone.var import BaseVar, Var
-
+from pynecone.compiler import templates
 
 class Component(Base, ABC):
     """The base class for all Pynecone components."""
@@ -386,6 +386,7 @@ class Component(Base, ABC):
             The code to render the component.
         """
         tag = self._render()
+        tag_list = [str(tag.contents)] + [child.render() for child in self.children]
         return str(
             tag.add_props(
                 **self.event_triggers,
@@ -394,9 +395,7 @@ class Component(Base, ABC):
                 id=self.id,
                 class_name=self.class_name,
             ).set(
-                contents=path_ops.join(
-                    [str(tag.contents)] + [child.render() for child in self.children]
-                ).strip(),
+                contents=templates.CONTENTS.render(contents=tag_list)
             )
         )
 

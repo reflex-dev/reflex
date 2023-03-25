@@ -1,0 +1,57 @@
+{% import 'web/pages/utils.js.jinja2' as utils %}
+{% for lib in imports%}
+{{lib}}
+{% endfor %}
+
+{% for custom_code in custom_codes %}
+{{custom_code}}
+{% endfor %}
+
+{% for name, url in endpoints.items() %}
+const {{name}} = {{url|json_dumps}}
+{% endfor %}
+
+export default function Component() {
+  const [{{state_name}}, {{state_name|react_setter}}] = useState({{initial_state|json_dumps}})
+  const [{{const.result}}, {{const.result|react_setter}}] = useState({{const.initial_result|json_dumps}})
+  const {{const.router}} = useRouter()
+  const {{const.socket}} = useRef(null)
+  const { isReady } = {{const.router}}
+  const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
+
+  const Event = events => {{state_name|react_setter}}({
+    ...{{state_name}},
+    events: [...{{state_name}}.events, ...events],
+  })
+
+  useEffect(()=>{
+    if(!isReady) {
+      return;
+    }
+    if (!{{const.socket}}.current) {
+      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.event_endpoint}}, {{transports}})
+    }
+    const update = async () => {
+      if ({{const.result}}.{{const.state}} != null){
+        {{state_name|react_setter}}({
+          ...{{const.result}}.{{const.state}},
+          events: [...{{state_name}}.{{const.events}}, ...{{const.result}}.{{const.events}}],
+        })
+
+        {{const.result|react_setter}}({
+          {{const.state}}: null,
+          {{const.events}}: [],
+          {{const.processing}}: false,
+        })
+
+        await updateState({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
+      }
+      update()
+    }
+  })
+
+
+  return (
+    {{utils.render(render, indent_width=4)}}
+  )
+}

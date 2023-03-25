@@ -31,7 +31,7 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
-    return templates.DOCUMENT_ROOT(
+    return templates.DOCUMENT_ROOT.render(
         imports=utils.compile_imports(root.get_imports()),
         document=root.render(),
     )
@@ -46,7 +46,7 @@ def _compile_theme(theme: dict) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME(theme=json.dumps(theme))
+    return templates.THEME.render(theme=theme)
 
 
 def _compile_page(component: Component, state: Type[State]) -> str:
@@ -61,16 +61,17 @@ def _compile_page(component: Component, state: Type[State]) -> str:
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    imports = [utils.compile_import_statement(lib, fields) for lib, fields in imports.items()]
 
     # Compile the code to render the component.
-    return templates.PAGE(
-        imports=utils.compile_imports(imports),
-        custom_code=path_ops.join(component.get_custom_code()),
-        constants=utils.compile_constants(),
-        state=utils.compile_state(state),
-        events=utils.compile_events(state),
-        effects=utils.compile_effects(state),
+    return templates.PAGE.render(
+        imports=imports,
+        custom_codes=component.get_custom_code(),
+        endpoints = {constant.name: constant.get_url() for constant in constants.Endpoint},
+        initial_state=utils.compile_state(state),
+        state_name=state.get_name(),
         render=component.render(),
+        transports = constants.Transports.POLLING_WEBSOCKET.get_transports(),
     )
 
 

@@ -1,25 +1,62 @@
 """Templates to use in the pynecone compiler."""
 
 from typing import Optional, Set
+from jinja2 import Environment, FileSystemLoader, Template
 
 from pynecone import constants
-from pynecone.utils import path_ops
+from pynecone.utils import path_ops, format
+
+
+class PyneconeJinjaEnvironment(Environment):
+    def __init__(self) -> None:
+        extensions=[
+            'jinja2.ext.debug'
+        ]
+        super().__init__(
+            extensions=extensions,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        self.filters["json_dumps"] = format.json_dumps
+        self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
+        self.loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
+        self.globals["const"] = {
+            "socket": constants.SOCKET,
+            "result": constants.RESULT,
+            "router": constants.ROUTER,
+            "event_endpoint": constants.Endpoint.EVENT.name,
+            "events": constants.EVENTS,
+            "state": constants.STATE,
+            "processing": constants.PROCESSING,
+            "initial_result": {
+                constants.STATE: None,
+                constants.EVENTS: [],
+                constants.PROCESSING: False,
+            },
+            "color_mode" : constants.COLOR_MODE,
+            "toggle_color_mode" : constants.TOGGLE_COLOR_MODE,
+            "use_color_mode" : constants.USE_COLOR_MODE,
+        }
+
+
+
+def get_template(name: str) -> Template:
+    """Get render function that work with a template.
+
+    Args:
+        name: The template name. "/" is used as the path separator.
+
+    Returns:
+        A render function.
+    """
+    return PyneconeJinjaEnvironment().get_template(name=name)
+
 
 # Template for the Pynecone config file.
-PCCONFIG = f"""import pynecone as pc
-
-config = pc.Config(
-    app_name="{{app_name}}",
-    db_url="{constants.DB_URL}",
-    env=pc.Env.DEV,
-)
-"""
+PCCONFIG = get_template('app/pcconfig.py')
 
 # Javascript formatting.
-CONST = "const {name} = {value}".format
-PROP = "{object}.{property}".format
-IMPORT_LIB = 'import "{lib}"'.format
-IMPORT_FIELDS = 'import {default}{others} from "{lib}"'.format
+IMPORT_FIELDS = get_template('web/pages/parts/import_fields.js.jinja2')
 
 
 def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) -> str:
@@ -37,51 +74,24 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
     if not lib:
         assert not default, "No default field allowed for empty library."
         assert rest is not None and len(rest) > 0, "No fields to import."
-        return path_ops.join([IMPORT_LIB(lib=lib) for lib in sorted(rest)])
+        return path_ops.join([IMPORT_FIELDS.render(lib=lib) for lib in sorted(rest)])
 
     # Handle importing from a library.
     rest = rest or set()
-    if len(default) == 0 and len(rest) == 0:
-        # Handle the case of importing a library with no fields.
-        return IMPORT_LIB(lib=lib)
-    # Handle importing specific fields from a library.
-    others = f'{{{", ".join(sorted(rest))}}}' if len(rest) > 0 else ""
-    if default != "" and len(rest) > 0:
-        default += ", "
-    return IMPORT_FIELDS(default=default, others=others, lib=lib)
+    return IMPORT_FIELDS.render(default=default, rest=rest, lib=lib)
 
 
 # Code to render a NextJS Document root.
-DOCUMENT_ROOT = path_ops.join(
-    [
-        "{imports}",
-        "export default function Document() {{",
-        "return (",
-        "{document}",
-        ")",
-        "}}",
-    ]
-).format
+DOCUMENT_ROOT = get_template('web/pages/_document.js.jinja2')
 
 # Template for the theme file.
-THEME = "export default {theme}".format
+THEME = get_template('web/utils/theme.js.jinja2')
 
 # Code to render a single NextJS page.
-PAGE = path_ops.join(
-    [
-        "{imports}",
-        "{custom_code}",
-        "{constants}",
-        "export default function Component() {{",
-        "{state}",
-        "{events}",
-        "{effects}",
-        "return (",
-        "{render}",
-        ")",
-        "}}",
-    ]
-).format
+PAGE = get_template('web/pages/index.js.jinja2')
+
+# imports
+IMPORTS = get_template('web/pages/parts/imports.js.jinja2')
 
 # Code to render a single exported custom component.
 COMPONENT = path_ops.join(
@@ -100,107 +110,14 @@ COMPONENTS = path_ops.join(
     ]
 ).format
 
-
-# React state declarations.
-USE_STATE = CONST(
-    name="[{state}, {set_state}]", value="useState({initial_state})"
-).format
-
-
-def format_state_setter(state: str) -> str:
-    """Format a state setter.
-
-    Args:
-        state: The name of the state variable.
-
-    Returns:
-        The compiled state setter.
-    """
-    return f"set{state[0].upper() + state[1:]}"
-
-
-def format_state(
-    state: str,
-    initial_state: str,
-) -> str:
-    """Format a state declaration.
-
-    Args:
-        state: The name of the state variable.
-        initial_state: The initial state of the state variable.
-
-    Returns:
-        The compiled state declaration.
-    """
-    set_state = format_state_setter(state)
-    return USE_STATE(state=state, set_state=set_state, initial_state=initial_state)
-
-
-# Events.
-EVENT_ENDPOINT = constants.Endpoint.EVENT.name
-EVENT_FN = path_ops.join(
-    [
-        "const Event = events => {set_state}({{",
-        "  ...{state},",
-        "  events: [...{state}.events, ...events],",
-        "}})",
-    ]
-).format
-UPLOAD_FN = path_ops.join(
-    [
-        "const File = files => {set_state}({{",
-        "  ...{state},",
-        "  files,",
-        "}})",
-    ]
-).format
-
-
-# Effects.
-ROUTER = constants.ROUTER
-RESULT = constants.RESULT
-PROCESSING = constants.PROCESSING
-SOCKET = constants.SOCKET
-STATE = constants.STATE
-EVENTS = constants.EVENTS
-SET_RESULT = format_state_setter(RESULT)
-READY = f"const {{ isReady }} = {ROUTER};"
-USE_EFFECT = path_ops.join(
-    [
-        "useEffect(() => {{",
-        "  if(!isReady) {{",
-        "    return;",
-        "  }}",
-        f"  if (!{SOCKET}.current) {{{{",
-        f"    connect({SOCKET}, {{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {EVENT_ENDPOINT}, {{transports}})",
-        "  }}",
-        "  const update = async () => {{",
-        f"    if ({RESULT}.{STATE} != null) {{{{",
-        f"      {{set_state}}({{{{",
-        f"        ...{RESULT}.{STATE},",
-        f"        events: [...{{state}}.{EVENTS}, ...{RESULT}.{EVENTS}],",
-        "      }})",
-        f"      {SET_RESULT}({{{{",
-        f"        {STATE}: null,",
-        f"        {EVENTS}: [],",
-        f"        {PROCESSING}: false,",
-        "      }})",
-        "    }}",
-        f"    await updateState({{state}}, {{set_state}}, {RESULT}, {SET_RESULT}, {ROUTER}, {SOCKET}.current)",
-        "  }}",
-        "  update()",
-        "}})",
-    ]
-).format
-
-# Routing
-ROUTER = f"const {constants.ROUTER} = useRouter()"
-
-# Sockets.
-SOCKET = "const socket = useRef(null)"
-
-# Color toggle
-COLORTOGGLE = f"const {{ {constants.COLOR_MODE}, {constants.TOGGLE_COLOR_MODE} }} = {constants.USE_COLOR_MODE}()"
-
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
+
+
+# Tags
+NO_CONTENT_TAG = get_template("web/pages/tags/no_content_tag.js.jinja2")
+WRAP_TAG = get_template("web/pages/tags/wrap_tag.js.jinja2")
+CONTENTS = get_template("web/pages/tags/contents.js.jinja2")
+
+# args
+FORMAT_EVENT = get_template("web/pages/format_event.js.jinja2")
