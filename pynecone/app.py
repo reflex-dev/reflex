@@ -465,22 +465,27 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(file: UploadFile):
+    async def upload_file(files: List[UploadFile]):
         """Upload a file.
 
         Args:
-            file: The file to upload.
+            files: The file(s) to upload.
 
         Returns:
             The state update after processing the event.
         """
-        # Get the token and filename.
-        token, handler, filename = file.filename.split(":", 2)
-        file.filename = filename
+        token, handler, key = files[0].filename.split(":")[:3]
+        for file in files:
+            file.filename = file.filename.split(":")[-1]
 
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-        event = Event(token=token, name=handler, payload={"file": file})
+        # Event payload should have `files` as key for multi-uploads and `file` otherwise
+        event = Event(
+            token=token,
+            name=handler,
+            payload={key: files[0] if key == "file" else files},
+        )
         update = await state.process(event)
         return update
 

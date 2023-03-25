@@ -203,3 +203,5 @@ markdown = Markdown.create
 span = Span.create
 text = Text.create
 script = ScriptTag.create
+aspect_ratio = AspectRatio.create
+kbd = KeyboardKey.create

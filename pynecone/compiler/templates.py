@@ -85,7 +85,7 @@ def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) 
 DOCUMENT_ROOT = get_template('web/pages/_document.js.jinja2')
 
 # Template for the theme file.
-THEME = get_template('web/utils/theme.js')
+THEME = get_template('web/utils/theme.js.jinja2')
 
 # Code to render a single NextJS page.
 PAGE = get_template('web/pages/index.js.jinja2')

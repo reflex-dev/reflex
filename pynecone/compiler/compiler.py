@@ -46,7 +46,7 @@ def _compile_theme(theme: dict) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME.render(theme=json.dumps(theme))
+    return templates.THEME.render(theme=theme)
 
 
 def _compile_page(component: Component, state: Type[State]) -> str:

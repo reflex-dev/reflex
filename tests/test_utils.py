@@ -285,3 +285,44 @@ def test_is_backend_variable(input, output):
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
     assert types._issubclass(cls, cls_check) == expected
+
+
+def test_format_upload_event(upload_event_spec):
+    """Test formatting an upload event spec.
+
+    Args:
+        upload_event_spec: The event spec fixture.
+    """
+    assert (
+        format.format_upload_event(upload_event_spec)
+        == "uploadFiles(upload_state, result, setResult, "
+        'upload_state.files, "upload_state.handle_upload",false ,'
+        "UPLOAD)"
+    )
+
+
+def test_format_sub_state_event(upload_sub_state_event_spec):
+    """Test formatting an upload event spec of substate.
+
+    Args:
+        upload_sub_state_event_spec: The event spec fixture.
+    """
+    assert (
+        format.format_upload_event(upload_sub_state_event_spec)
+        == "uploadFiles(base_state, result, setResult, base_state.files, "
+        '"base_state.sub_upload_state.handle_upload",false ,UPLOAD)'
+    )
+
+
+def test_format_multi_upload_event(multi_upload_event_spec):
+    """Test formatting an upload event spec.
+
+    Args:
+        multi_upload_event_spec: The event spec fixture.
+    """
+    assert (
+        format.format_upload_event(multi_upload_event_spec)
+        == "uploadFiles(upload_state, result, setResult, "
+        'upload_state.files, "upload_state.multi_handle_upload",true ,'
+        "UPLOAD)"
+    )
