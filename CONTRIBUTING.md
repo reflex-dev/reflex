@@ -35,7 +35,7 @@ Navigate into the repo:
 cd pynecone
 ```
 
-Install poetry and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
+Install poetry version >= 1.4.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
 
 Install your local Pynecone build:
 ``` bash
