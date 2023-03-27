@@ -23,9 +23,9 @@ def version():
 
 
 @cli.command()
-def init():
+def init(name: str = typer.Option(None, help="Name of the app to be initialized.")):
     """Initialize a new Pynecone app in the current directory."""
-    app_name = prerequisites.get_default_app_name()
+    app_name = prerequisites.get_default_app_name() if name is None else name
 
     # Make sure they don't name the app "pynecone".
     if app_name == constants.MODULE_NAME:
