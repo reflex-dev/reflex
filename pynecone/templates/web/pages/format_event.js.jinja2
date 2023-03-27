@@ -1,3 +1,5 @@
 E("{{handler}}", {
-{{- args|join(",") -}}
+{% for arg in args %}
+{{arg}},
+{% endfor %}
 })
