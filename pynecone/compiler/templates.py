@@ -121,3 +121,4 @@ CONTENTS = get_template("web/pages/tags/contents.js.jinja2")
 
 # args
 FORMAT_EVENT = get_template("web/pages/format_event.js.jinja2")
+FORMAT_ARGS = get_template("web/pages/format_args.js.jinja2")

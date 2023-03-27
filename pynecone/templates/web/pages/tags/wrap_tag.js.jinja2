@@ -4,4 +4,14 @@
 {% for prop in props%} {{prop}}{% endfor %}
 {%- endif -%}
 {# if no props, no white space #}
->{{contents}}</{{tag_name}}>
+>
+{% filter indent(width=4)%}
+{%- if args is not none %}
+{({ {{args|join(", ")}} }) => (
+  {{contents}}
+)}
+{%- else %}
+{{contents}}
+{%- endif %}
+{% endfilter %}
+</{{tag_name}}>

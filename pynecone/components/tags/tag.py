@@ -146,14 +146,8 @@ class Tag(Base):
             # If there is no inner content, we don't need a closing tag.
             tag_str = templates.NO_CONTENT_TAG.render(tag_name=self.name, props=props)
         else:
-            if self.args is not None:
-                # If there are args, wrap the tag in a function call.
-                args_str = ", ".join(self.args)
-                contents = f"{{({{{args_str}}}) => ({self.contents})}}"
-            else:
-                contents = self.contents
             # Otherwise wrap it in opening and closing tags.
-            tag_str = templates.WRAP_TAG.render(contents=contents,tag_name=self.name, props=props)
+            tag_str = templates.WRAP_TAG.render(args=self.args, contents=self.contents,tag_name=self.name, props=props)
 
         return tag_str
 
