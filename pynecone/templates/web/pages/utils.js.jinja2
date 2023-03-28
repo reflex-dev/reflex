@@ -3,10 +3,14 @@
 <{{component.name}}
 {%- if component.props|length -%}
 {# props with white space at each one #}
-{% for prop in component.props%} {{prop}}{% endfor %}
+
+  {% for prop in component.props%}
+  {{prop}}
+  {% endfor %}
 {%- endif -%}
 {# if no props, no white space #}
 >
+{%- if component is mapping %}
   {%- if component.args is not none %}
   {({ {{component.args|join(", ")}} }) => (
   {% for child in component.children %}
@@ -19,6 +23,11 @@
   {{render(child)}}
   {% endfor %}
   {%- endif %}
+{% else %}
+  {# in the case of string show the component #}
+  {{component}}
+{% endif %}
+
 </{{component.name}}>
 {%- endfilter %}
 {% endmacro %}
