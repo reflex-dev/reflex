@@ -113,11 +113,5 @@ COMPONENTS = path_ops.join(
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
 
-
-# Tags
-NO_CONTENT_TAG = get_template("web/pages/tags/no_content_tag.js.jinja2")
-WRAP_TAG = get_template("web/pages/tags/wrap_tag.js.jinja2")
-CONTENTS = get_template("web/pages/tags/contents.js.jinja2")
-
 # args
 FORMAT_EVENT = get_template("web/pages/format_event.js.jinja2")

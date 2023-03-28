@@ -379,14 +379,13 @@ class Component(Base, ABC):
             child.add_style(style)
         return self
 
-    def render(self) -> str:
+    def render(self) -> dict:
         """Render the component.
 
         Returns:
             The code to render the component.
         """
         tag = self._render()
-        tag_list = [str(tag.contents)]
         data: Tag = tag.add_props(
                 **self.event_triggers,
                 key=self.key,
