@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Union, List
 
 from plotly.graph_objects import Figure
 from plotly.io import to_json
@@ -37,6 +37,8 @@ class Tag(Base):
 
     # Special props that aren't key value pairs.
     special_props: Set[Var] = set()
+
+    children: List[Any] = []
 
     def __init__(self, *args, **kwargs):
         """Initialize the tag.

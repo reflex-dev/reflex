@@ -386,18 +386,19 @@ class Component(Base, ABC):
             The code to render the component.
         """
         tag = self._render()
-        tag_list = [str(tag.contents)] + [child.render() for child in self.children]
-        return str(
-            tag.add_props(
+        tag_list = [str(tag.contents)]
+        data: Tag = tag.add_props(
                 **self.event_triggers,
                 key=self.key,
                 sx=self.style,
                 id=self.id,
                 class_name=self.class_name,
             ).set(
-                contents=templates.CONTENTS.render(contents=tag_list)
+                children=[child.render() for child in self.children],
+                contents=str(tag.contents),
+                props = tag.format_props(),
             )
-        )
+        return dict(data)
 
     def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.

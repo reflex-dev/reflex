@@ -1,5 +1,24 @@
 {% macro render(component, indent_width=2) %}
 {% filter indent(width=indent_width)%}
-{{component}}
-{% endfilter %}
+<{{component.name}}
+{%- if component.props|length -%}
+{# props with white space at each one #}
+{% for prop in component.props%} {{prop}}{% endfor %}
+{%- endif -%}
+{# if no props, no white space #}
+>
+  {%- if component.args is not none %}
+  {({ {{component.args|join(", ")}} }) => (
+  {% for child in component.children %}
+  {{render(child)}}
+  {% endfor %}
+  )}
+  {%- else %}
+  {{component.contents}}
+  {% for child in component.children %}
+  {{render(child)}}
+  {% endfor %}
+  {%- endif %}
+</{{component.name}}>
+{%- endfilter %}
 {% endmacro %}
