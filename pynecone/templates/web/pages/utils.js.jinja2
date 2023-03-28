@@ -1,7 +1,9 @@
 {% macro render(component, indent_width=2) %}
 {# {{component}} #}
 {% filter indent(width=indent_width)%}
-{%- if component.children|length %}
+{%- if component is not mapping %}
+{{component}}
+{%- elif component.children|length %}
 {{render_tag(component)}}
 {%- else %}
 {{render_self_close_tag(component)}}
@@ -10,6 +12,7 @@
 {%- endmacro %}
 
 {% macro render_self_close_tag(component) %}
+{%- if component.name|length %}
 <{{component.name}}
 {%- if component.props|length -%}
 {# props with white space at each one #}
@@ -17,6 +20,9 @@
 {%- endif -%}
 {# if no props, no white space #}
 />
+{%- else %}
+{{component.contents}}
+{%- endif %}
 {%- endmacro %}
 
 {% macro render_tag(component) %}
@@ -27,23 +33,20 @@
 {%- endif -%}
 {# if no props, no white space #}
 >
-{%- if component is mapping %}
-  {%- if component.args is not none %}
+{%- if component.args is not none %}
 
   {({ {{component.args|join(", ")}} }) => (
-  {% for child in component.children %}
-  {{render(child)}}
-  {% endfor %}
+    {% filter indent(width=2)%}
+    {% for child in component.children %}
+    {{render(child, )}}
+    {% endfor %}
+    {%- endfilter %}
   )}
-  {%- else %}
+{%- else %}
   {{component.contents}}
   {% for child in component.children %}
   {{render(child)}}
   {% endfor %}
-  {%- endif %}
-{%- else %}
-  {# in the case of string show the component #}
-  {{component}}
 {%- endif %}
 </{{component.name}}>
 {%- endmacro %}
