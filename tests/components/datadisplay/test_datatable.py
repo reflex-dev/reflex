@@ -62,3 +62,17 @@ def test_invalid_props(props):
     """
     with pytest.raises(ValueError):
         data_table(**props)
+
+
+def test_computed_var_without_annotation(data_table_state2):
+    """Test if value error is thrown when the computed var assigned to the data prop is not annotated.
+
+    Args:
+        data_table_state2: the state.
+    """
+    with pytest.raises(ValueError) as err:
+        data_table(data=data_table_state2.data)
+    assert (
+        err.value.args[0]
+        == "Annotation of the computed var assigned to the data field should be provided."
+    )
