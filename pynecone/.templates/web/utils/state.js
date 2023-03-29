@@ -1,6 +1,7 @@
 // State management for Pynecone web apps.
 import axios from "axios";
 import io from "socket.io-client";
+import JSON5 from "json5";
 
 // Global variable to hold the token.
 let token;
@@ -175,7 +176,7 @@ export const connect = async (
 
   // On each received message, apply the delta and set the result.
   socket.current.on("event", function (update) {
-    update = JSON.parse(update);
+    update = JSON5.parse(update);
     applyDelta(state, update.delta);
     setResult({
       processing: true,

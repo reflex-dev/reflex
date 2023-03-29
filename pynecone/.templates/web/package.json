@@ -32,6 +32,7 @@
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
     "socket.io-client": "^4.5.4",
-    "victory": "^36.6.8"
+    "victory": "^36.6.8",
+    "json5": "^2.2.3"
   }
 }
