@@ -373,7 +373,7 @@ class Var(ABC):
         Returns:
             A var representing the equality comparison.
         """
-        return self.compare("==", other)
+        return self.compare("===", other)
 
     def __ne__(self, other: Var) -> Var:
         """Perform an inequality comparison.
@@ -384,7 +384,7 @@ class Var(ABC):
         Returns:
             A var representing the inequality comparison.
         """
-        return self.compare("!=", other)
+        return self.compare("!==", other)
 
     def __gt__(self, other: Var) -> Var:
         """Perform a greater than comparison.
