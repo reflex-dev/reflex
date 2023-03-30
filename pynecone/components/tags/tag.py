@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Union, List
 
@@ -14,7 +13,6 @@ from pynecone.base import Base
 from pynecone.event import EventChain
 from pynecone.utils import format, types
 from pynecone.var import Var
-from pynecone.compiler import templates
 
 if TYPE_CHECKING:
     from pynecone.components.component import ComponentStyle
