@@ -1,62 +1,68 @@
 {% macro render(component, indent_width=2) %}
-{% filter indent(width=indent_width)%}
-{%- if component is not mapping %}
-{{component}}
-{%- elif component.children|length %}
-{{render_tag(component)}}
-{%- else %}
-{{render_self_close_tag(component)}}
-{%- endif %}
-{%- endfilter %}
-{%- endmacro %}
+{% filter indent(width=indent_width) %}
+  {%- if component is not mapping %}
+    {{- component }}
+  {%- elif component.children|length %}
+    {{- render_tag(component) }}
+  {%- else %}
+    {{- render_self_close_tag(component) }}
+  {%- endif %}
+{% endfilter %}
+{% endmacro %}
 
 {% macro render_self_close_tag(component) %}
 {%- if component.name|length %}
-<{{component.name}}
-{%- if component.props|length -%}
-{# props with white space at each one #}
-{% for prop in component.props%} {{prop}}{% endfor %}
-{%- endif -%}
-{# if no props, no white space #}
-/>
+<{{ component.name }} {{- get_props(component.props) }}/>
 {%- else %}
-{{component.contents}}
+  {{- component.contents }}
 {%- endif %}
-{%- endmacro %}
+{% endmacro %}
 
 {% macro render_tag(component) %}
-<{{component.name}}
-{%- if component.props|length -%}
-{# props with white space at each one #}
-{% for prop in component.props%} {{prop}}{% endfor %}
-{%- endif -%}
-{# if no props, no white space #}
->
-{%- if component.args is not none +%}
-  {({ {{component.args|join(", ")}} }) => (
-    {% filter indent(width=2)%}
-    {% for child in component.children %}
-    {{render(child, )}}
-    {% endfor %}
-    {%- endfilter %}
-  )}
-{% else -%}
-  {{component.contents}}
+<{{component.name}} {{- get_props(component.props) }}>
+{%- if component.args is not none -%}
+{# no string below for a line break #}
+
+  {{- get_arg_content(component) }}
+{%- else %}
+  {{ component.contents }}
   {% for child in component.children %}
-  {{render(child)}}
+  {{ render(child) }}
   {% endfor %}
-{%- endif %}
+{%- endif -%}
+{# comment here for a line break #}
 </{{component.name}}>
 {%- endmacro %}
 
+{% macro get_props(props) %}
+{% if props|length %} {{ props|join(" ") }}{% endif %}
+{% endmacro %}
+
+{% macro get_arg_content(component) %}
+{%- filter indent(width=2) %}
+{# no string below for a line break #}
+
+{({ {{component.args|join(", ")}} }) => (
+  {% for child in component.children %}
+  {{ render(child) }}
+  {% endfor %}
+)}
+{% endfilter %}
+{% endmacro %}
+
+{% macro get_children(component) %}
+{% filter indent(width=2) %}
+{% endfilter %}
+{% endmacro %}
+
 {% macro get_import(module)%}
 {%- if module.default|length and module.rest|length -%}
-import {{module.default}}, { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+  import {{module.default}}, { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
 {%- elif module.default|length -%}
-import {{module.default}} from "{{module.lib}}"
+  import {{module.default}} from "{{module.lib}}"
 {%- elif module.rest|length -%}
-import { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+  import { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
 {%- else -%}
-import "{{module.lib}}"
+  import "{{module.lib}}"
 {%- endif -%}
 {% endmacro %}
