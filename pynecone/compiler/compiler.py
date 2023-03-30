@@ -1,7 +1,6 @@
 """Compiler for the pynecone apps."""
 from __future__ import annotations
 
-import json
 from functools import wraps
 from typing import Callable, List, Set, Tuple, Type
 
@@ -10,7 +9,7 @@ from pynecone.compiler import templates, utils
 from pynecone.components.component import Component, CustomComponent
 from pynecone.state import State
 from pynecone.style import Style
-from pynecone.utils import imports, path_ops
+from pynecone.utils import imports
 
 # Imports to be included in every Pynecone app.
 DEFAULT_IMPORTS: imports.ImportDict = {
@@ -61,7 +60,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
-    imports = [utils.compile_import_statement(lib, fields) for lib, fields in imports.items()]
+    imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
     return templates.PAGE.render(

@@ -1,5 +1,7 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
-{{imports}}
+{% for module in imports%}
+{{utils.get_import(module)}}
+{% endfor %}
 
 {% for component in components %}
 export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => (

@@ -1,5 +1,8 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
-{{imports}}
+{% for module in imports%}
+{{utils.get_import(module)}}
+{% endfor %}
+
 export default function Document() {
   return (
     {{utils.render(document, indent_width=4)}}

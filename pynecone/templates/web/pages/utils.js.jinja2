@@ -48,3 +48,15 @@
 {%- endif %}
 </{{component.name}}>
 {%- endmacro %}
+
+{% macro get_import(module)%}
+{%- if module.default|length and module.rest|length -%}
+import {{module.default}}, { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+{%- elif module.default|length -%}
+import {{module.default}} from "{{module.lib}}"
+{%- elif module.rest|length -%}
+import { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+{%- else -%}
+import "{{module.lib}}"
+{%- endif -%}
+{% endmacro %}

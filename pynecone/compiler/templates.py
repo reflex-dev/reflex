@@ -1,10 +1,9 @@
 """Templates to use in the pynecone compiler."""
 
-from typing import Optional, Set
 from jinja2 import Environment, FileSystemLoader, Template
 
 from pynecone import constants
-from pynecone.utils import path_ops, format
+from pynecone.utils import format
 
 
 class PyneconeJinjaEnvironment(Environment):
@@ -55,32 +54,6 @@ def get_template(name: str) -> Template:
 # Template for the Pynecone config file.
 PCCONFIG = get_template('app/pcconfig.py')
 
-# Javascript formatting.
-IMPORT_FIELDS = get_template('web/pages/parts/import_fields.js.jinja2')
-
-
-def format_import(lib: str, default: str = "", rest: Optional[Set[str]] = None) -> str:
-    """Format an import statement.
-
-    Args:
-        lib: The library to import from.
-        default: The default field to import.
-        rest: The set of fields to import from the library.
-
-    Returns:
-        The compiled import statement.
-    """
-    # Handle the case of direct imports with no libraries.
-    if not lib:
-        assert not default, "No default field allowed for empty library."
-        assert rest is not None and len(rest) > 0, "No fields to import."
-        return path_ops.join([IMPORT_FIELDS.render(lib=lib) for lib in sorted(rest)])
-
-    # Handle importing from a library.
-    rest = rest or set()
-    return IMPORT_FIELDS.render(default=default, rest=rest, lib=lib)
-
-
 # Code to render a NextJS Document root.
 DOCUMENT_ROOT = get_template('web/pages/_document.js.jinja2')
 
@@ -89,9 +62,6 @@ THEME = get_template('web/utils/theme.js.jinja2')
 
 # Code to render a single NextJS page.
 PAGE = get_template('web/pages/index.js.jinja2')
-
-# imports
-IMPORTS = get_template('web/pages/parts/imports.js.jinja2')
 
 # Code to render the custom components page.
 COMPONENTS = get_template("web/pages/custom_component.js.jinja2")

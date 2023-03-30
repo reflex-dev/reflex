@@ -1,11 +1,9 @@
 """Common utility functions used in the compiler."""
 
-import json
 import os
 from typing import Dict, List, Optional, Set, Tuple, Type
 
 from pynecone import constants
-from pynecone.compiler import templates
 from pynecone.components.base import (
     Body,
     ColorModeScript,
@@ -51,7 +49,8 @@ def compile_import_statement(lib: str, fields: Set[str]) -> str:
     # Get the default import, and the specific imports.
     default = next(iter(defaults), "")
     rest = fields - defaults
-    return templates.format_import(lib=lib, default=default, rest=rest)
+
+    return default, rest
 
 
 def compile_imports(imports: imports.ImportDict) -> str:
@@ -63,9 +62,25 @@ def compile_imports(imports: imports.ImportDict) -> str:
     Returns:
         The compiled import dict.
     """
-    imports = [compile_import_statement(lib, fields) for lib, fields in imports.items()]
-    return templates.IMPORTS.render(imports=imports)
+    imports_dists = []
+    for lib, fields in imports.items():
+        default, rest = compile_import_statement(lib, fields)
+        if not lib:
+            assert not default, "No default field allowed for empty library."
+            assert rest is not None and len(rest) > 0, "No fields to import."
+            for module in sorted(rest):
+                imports_dists.append(get_import_dict(module, "", ""))
+            continue
 
+        imports_dists.append(get_import_dict(lib,default,rest))
+    return imports_dists
+
+def get_import_dict(lib, default, rest):
+    return {
+        "lib": lib,
+        "default": default,
+        "rest": rest,
+    }
 
 def compile_state(state: Type[State]) -> str:
     """Compile the state of the app.

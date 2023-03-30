@@ -1,9 +1,0 @@
-{%- if default|length and rest|length -%}
-import {{default}}, { {{rest|sort|join(", ")}} } from "{{lib}}"
-{%- elif default|length -%}
-import {{default}} from "{{lib}}"
-{%- elif rest|length -%}
-import { {{rest|sort|join(", ")}} } from "{{lib}}"
-{%- else -%}
-import "{{lib}}"
-{%- endif -%}
