@@ -42,7 +42,7 @@
     {% endfor %}
     {%- endfilter %}
   )}
-{%- else %}
+{% else -%}
   {{component.contents}}
   {% for child in component.children %}
   {{render(child)}}
