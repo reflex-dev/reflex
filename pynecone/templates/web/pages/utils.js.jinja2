@@ -1,3 +1,7 @@
+{# Renderting components recursively. #}
+{# Args: #}
+{#     component: component dictionary #}
+{#     indent_width: indent width #}
 {% macro render(component, indent_width=2) %}
 {% filter indent(width=indent_width) %}
   {%- if component is not mapping %}
@@ -10,20 +14,26 @@
 {% endfilter %}
 {% endmacro %}
 
+{# Renderting self close tag. #}
+{# Args: #}
+{#     component: component dictionary #}
 {% macro render_self_close_tag(component) %}
 {%- if component.name|length %}
-<{{ component.name }} {{- get_props(component.props) }}/>
+<{{ component.name }} {{- render_props(component.props) }}/>
 {%- else %}
   {{- component.contents }}
 {%- endif %}
 {% endmacro %}
 
+{# Renderting close tag with args and props. #}
+{# Args: #}
+{#     component: component dictionary #}
 {% macro render_tag(component) %}
-<{{component.name}} {{- get_props(component.props) }}>
+<{{component.name}} {{- render_props(component.props) }}>
 {%- if component.args is not none -%}
 {# no string below for a line break #}
 
-  {{- get_arg_content(component) }}
+  {{- render_arg_content(component) }}
 {%- else %}
   {{ component.contents }}
   {% for child in component.children %}
@@ -34,12 +44,18 @@
 </{{component.name}}>
 {%- endmacro %}
 
-{% macro get_props(props) %}
+{# Renderting props of a component. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_props(props) %}
 {% if props|length %} {{ props|join(" ") }}{% endif %}
 {% endmacro %}
 
-{% macro get_arg_content(component) %}
-{%- filter indent(width=2) %}
+{# Renderting content with args. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_arg_content(component) %}
+{% filter indent(width=2) %}
 {# no string below for a line break #}
 
 {({ {{component.args|join(", ")}} }) => (
@@ -50,11 +66,9 @@
 {% endfilter %}
 {% endmacro %}
 
-{% macro get_children(component) %}
-{% filter indent(width=2) %}
-{% endfilter %}
-{% endmacro %}
-
+{# Get react libraries import . #}
+{# Args: #}
+{#     module: react module dicrionary #}
 {% macro get_import(module)%}
 {%- if module.default|length and module.rest|length -%}
   import {{module.default}}, { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
