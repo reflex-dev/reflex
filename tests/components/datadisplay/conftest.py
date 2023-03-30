@@ -1,4 +1,5 @@
 """Data display component tests fixtures."""
+from typing import List
 
 import pandas as pd
 import pytest
@@ -38,5 +39,51 @@ def data_table_state2():
         @pc.var  # type: ignore
         def data(self):
             return self._data
+
+    return DataTableState
+
+
+@pytest.fixture
+def data_table_state3():
+    """Get a data table state.
+
+    Returns:
+        The data table state class.
+    """
+
+    class DataTableState(pc.State):
+        _data: List = []
+        _columns: List = ["col1", "col2"]
+
+        @pc.var  # type: ignore
+        def data(self) -> List:
+            return self._data
+
+        @pc.var  # type: ignore
+        def columns(self):
+            return self._columns
+
+    return DataTableState
+
+
+@pytest.fixture
+def data_table_state4():
+    """Get a data table state.
+
+    Returns:
+        The data table state class.
+    """
+
+    class DataTableState(pc.State):
+        _data: List = []
+        _columns: List = ["col1", "col2"]
+
+        @pc.var  # type: ignore
+        def data(self):
+            return self._data
+
+        @pc.var  # type: ignore
+        def columns(self) -> List:
+            return self._columns
 
     return DataTableState
