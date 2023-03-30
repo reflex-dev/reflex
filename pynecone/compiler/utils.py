@@ -101,17 +101,6 @@ def compile_state(state: Type[State]) -> str:
     initial_state = format.format_state(initial_state)
     return initial_state
 
-def compile_render(component: Component) -> str:
-    """Compile the component's render method.
-
-    Args:
-        component: The component to compile the render method for.
-
-    Returns:
-        A string of the compiled render method.
-    """
-    return component.render()
-
 
 def compile_custom_component(
     component: CustomComponent,
