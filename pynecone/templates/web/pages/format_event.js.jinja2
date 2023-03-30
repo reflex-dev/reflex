@@ -1,5 +1,1 @@
-E("{{handler}}", {
-{% for arg in args %}
-{{arg}},
-{% endfor %}
-})
+E("{{handler}}", { {%- for arg in args %}{{arg}},{% endfor -%} })
