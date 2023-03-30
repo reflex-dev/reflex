@@ -1,11 +1,9 @@
-{% import 'web/pages/utils.js.jinja2' as utils %}
-{% for module in imports%}
-{{utils.get_import(module)}}
-{% endfor %}
+{% extends "web/pages/base_page.js.jinja2" %}
 
+{% block export %}
 export default function Document() {
   return (
     {{utils.render(document, indent_width=4)}}
   )
 }
-
+{% endblock %}

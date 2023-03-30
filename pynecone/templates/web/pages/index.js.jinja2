@@ -1,8 +1,6 @@
-{% import 'web/pages/utils.js.jinja2' as utils %}
-{% for module in imports%}
-{{utils.get_import(module)}}
-{% endfor %}
+{% extends "web/pages/base_page.js.jinja2" %}
 
+{% block declaration %}
 {% for custom_code in custom_codes %}
 {{custom_code}}
 {% endfor %}
@@ -10,7 +8,9 @@
 {% for name, url in endpoints.items() %}
 const {{name}} = {{url|json_dumps}}
 {% endfor %}
+{% endblock %}
 
+{% block export %}
 export default function Component() {
   const [{{state_name}}, {{state_name|react_setter}}] = useState({{initial_state|json_dumps}})
   const [{{const.result}}, {{const.result|react_setter}}] = useState({{const.initial_result|json_dumps}})
@@ -50,9 +50,8 @@ export default function Component() {
     }
   })
 
-
   return (
     {{utils.render(render, indent_width=4)}}
   )
 }
-
+{% endblock %}
