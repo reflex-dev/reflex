@@ -33,8 +33,7 @@
 {%- endif -%}
 {# if no props, no white space #}
 >
-{%- if component.args is not none %}
-
+{%- if component.args is not none +%}
   {({ {{component.args|join(", ")}} }) => (
     {% filter indent(width=2)%}
     {% for child in component.children %}
