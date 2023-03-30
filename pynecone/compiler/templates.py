@@ -52,7 +52,7 @@ def get_template(name: str) -> Template:
 
 
 # Template for the Pynecone config file.
-PCCONFIG = get_template('app/pcconfig.py')
+PCCONFIG = get_template('app/pcconfig.py.jinja2')
 
 # Code to render a NextJS Document root.
 DOCUMENT_ROOT = get_template('web/pages/_document.js.jinja2')
