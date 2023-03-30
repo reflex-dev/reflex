@@ -56,16 +56,25 @@ class Upload(Component):
         Returns:
             The upload component.
         """
+        # get only upload component props
+        supported_props = cls.get_props()
+        upload_props = {
+            key: value for key, value in props.items() if key in supported_props
+        }
         # The file input to use.
         upload = Input.create(type_="file")
         upload.special_props = {BaseVar(name="{...getInputProps()}", type_=None)}
 
         # The dropzone to use.
-        zone = Box.create(upload, *children, **props)
+        zone = Box.create(
+            upload,
+            *children,
+            **{k: v for k, v in props.items() if k not in supported_props}
+        )
         zone.special_props = {BaseVar(name="{...getRootProps()}", type_=None)}
 
         # Create the component.
-        return super().create(zone, on_drop=upload_file)
+        return super().create(zone, on_drop=upload_file, **upload_props)
 
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
