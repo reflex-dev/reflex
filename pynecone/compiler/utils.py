@@ -120,15 +120,15 @@ def compile_custom_component(
     }
 
     # Concatenate the props.
-    props = ", ".join([prop.name for prop in component.get_prop_vars()])
+    props = [prop.name for prop in component.get_prop_vars()]
 
     # Compile the component.
     return (
-        templates.COMPONENT(
-            name=component.tag,
-            props=props,
-            render=render,
-        ),
+        {
+            "name":component.tag,
+            "props":props,
+            "render":render.render(),
+        },
         imports,
     )
 

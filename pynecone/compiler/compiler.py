@@ -97,9 +97,9 @@ def _compile_components(components: Set[CustomComponent]) -> str:
         imports = utils.merge_imports(imports, component_imports)
 
     # Compile the components page.
-    return templates.COMPONENTS(
+    return templates.COMPONENTS.render(
         imports=utils.compile_imports(imports),
-        components=path_ops.join(component_defs),
+        components=component_defs,
     )
 
 

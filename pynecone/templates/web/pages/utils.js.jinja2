@@ -1,5 +1,4 @@
 {% macro render(component, indent_width=2) %}
-{# {{component}} #}
 {% filter indent(width=indent_width)%}
 {%- if component is not mapping %}
 {{component}}

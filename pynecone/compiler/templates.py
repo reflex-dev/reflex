@@ -93,22 +93,8 @@ PAGE = get_template('web/pages/index.js.jinja2')
 # imports
 IMPORTS = get_template('web/pages/parts/imports.js.jinja2')
 
-# Code to render a single exported custom component.
-COMPONENT = path_ops.join(
-    [
-        "export const {name} = memo(({{{props}}}) => (",
-        "{render}",
-        "))",
-    ]
-).format
-
 # Code to render the custom components page.
-COMPONENTS = path_ops.join(
-    [
-        "{imports}",
-        "{components}",
-    ]
-).format
+COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
