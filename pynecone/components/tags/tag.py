@@ -125,7 +125,7 @@ class Tag(Base):
         """
         # If there are no props, return an empty string.
         if len(self.props) == 0:
-            return ""
+            return []
 
         # Format all the props.
         return [
