@@ -53,7 +53,7 @@ def compile_import_statement(lib: str, fields: Set[str]) -> str:
     return default, rest
 
 
-def compile_imports(imports: imports.ImportDict) -> str:
+def compile_imports(imports: imports.ImportDict) -> dict:
     """Compile an import dict.
 
     Args:
