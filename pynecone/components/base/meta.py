@@ -11,7 +11,7 @@ class Title(Component):
 
     tag = "title"
 
-    def render(self) -> str:
+    def render(self) -> dict:
         """Render the title component.
 
         Returns:
@@ -22,7 +22,7 @@ class Title(Component):
         assert len(self.children) == 1 and isinstance(
             self.children[0], Bare
         ), "Title must be a single string."
-        return str(tag.set(contents=str(self.children[0].contents)))
+        return super().render()
 
 
 class Meta(Component):
