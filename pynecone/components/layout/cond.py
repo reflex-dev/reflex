@@ -24,7 +24,7 @@ class Cond(Component):
 
     @classmethod
     def create(
-        cls, cond: Var, comp1: Component, comp2: Optional[Component] = None
+        cls, cond: Var, comp1: Component, comp2: Component = Fragment.create()
     ) -> Component:
         """Create a conditional component.
 
@@ -40,7 +40,7 @@ class Cond(Component):
         if comp1.__class__.__name__ != "Fragment":
             comp1 = Fragment.create(comp1)
         if comp2.__class__.__name__ != "Fragment":
-            comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
+            comp2 = Fragment.create(comp2)
         return Fragment.create(
             cls(
                 cond=cond,

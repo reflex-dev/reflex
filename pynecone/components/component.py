@@ -276,7 +276,7 @@ class Component(Base, ABC):
         Returns:
             The code to render the component.
         """
-        return self.render()
+        return format.json_dumps(self.render())
 
     def __str__(self) -> str:
         """Represent the component in React.
@@ -284,7 +284,7 @@ class Component(Base, ABC):
         Returns:
             The code to render the component.
         """
-        return self.render()
+        return format.json_dumps(self.render())
 
     def _render(self) -> Tag:
         """Define how to render the component in React.

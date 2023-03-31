@@ -130,7 +130,7 @@ def create_config(app_name: str):
     from pynecone.compiler import templates
 
     with open(constants.CONFIG_FILE, "w") as f:
-        f.write(templates.PCCONFIG.format(app_name=app_name))
+        f.write(templates.PCCONFIG.render(app_name=app_name))
 
 
 def create_web_directory(root: Path) -> str:

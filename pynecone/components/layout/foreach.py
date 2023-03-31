@@ -49,7 +49,7 @@ class Foreach(Component):
             **props,
         )
 
-    def _render(self) -> Tag:
+    def _render(self) -> IterTag:
         return IterTag(iterable=self.iterable, render_fn=self.render_fn)
 
     def render(self):
@@ -58,7 +58,7 @@ class Foreach(Component):
         Returns:
             The dictionary for template of component.
         """
-        tag: IterTag = self._render()
+        tag = self._render()
         try:
             type_ = self.iterable.type_.__args__[0]
         except Exception:

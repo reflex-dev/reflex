@@ -1,6 +1,6 @@
 """Tag to conditionally render components."""
 
-from typing import Any
+from typing import Any, Optional
 
 from pynecone.components.tags.tag import Tag
 from pynecone.var import Var
@@ -16,4 +16,4 @@ class CondTag(Tag):
     true_value: dict
 
     # The code to render if the condition is false.
-    false_value: dict
+    false_value: Optional[dict]
