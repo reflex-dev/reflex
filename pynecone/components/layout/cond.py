@@ -55,6 +55,20 @@ class Cond(Component):
             false_value=self.comp2.render(),
         )
 
+    def render(self) -> dict:
+        tag = self._render()
+        data: CondTag = tag.add_props(
+                **self.event_triggers,
+                key=self.key,
+                sx=self.style,
+                id=self.id,
+                class_name=self.class_name,
+            ).set(
+                props = tag.format_props(),
+                cond_state = self.cond.full_name,
+            )
+        return dict(data)
+
 
 def cond(condition: Any, c1: Any, c2: Any = None):
     """Create a conditional component or Prop.

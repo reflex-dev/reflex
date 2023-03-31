@@ -4,6 +4,9 @@
 {#     indent_width: indent width #}
 {% macro render(component, indent_width=2) %}
 {% filter indent(width=indent_width) %}
+  {%- if component.cond %}
+    {{- render_condition_tag(component) }}
+  {%- endif %}
   {%- if component is not mapping %}
     {{- component }}
   {%- elif component.children|length %}
@@ -40,6 +43,15 @@
 {%- endif -%}
 </{{component.name}}>
 {%- endmacro %}
+
+{% macro render_condition_tag(component) %}
+{ {{- component.cond_state }} ? (
+  {{ render(component.true_value) }}
+) : (
+  {{ render(component.false_value) }}
+)}
+{%- endmacro %}
+
 
 {# Renderting props of a component. #}
 {# Args: #}

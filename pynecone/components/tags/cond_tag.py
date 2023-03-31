@@ -19,6 +19,7 @@ class CondTag(Tag):
     # The code to render if the condition is false.
     false_value: dict
 
+    cond_state: str = ""
     def __str__(self) -> str:
         """Render the tag as a React string.
 

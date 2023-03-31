@@ -43,11 +43,11 @@ export default function Component() {
           {{const.events}}: [],
           {{const.processing}}: false,
         })
+      }
 
-        await updateState({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
+      await updateState({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
       }
       update()
-    }
   })
 
   return (
