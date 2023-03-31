@@ -296,7 +296,7 @@ def test_format_upload_event(upload_event_spec):
     assert (
         format.format_upload_event(upload_event_spec)
         == "uploadFiles(upload_state, result, setResult, "
-        'upload_state.files, "upload_state.handle_upload",false ,'
+        'upload_state.files, "upload_state.handle_upload1",'
         "UPLOAD)"
     )
 
@@ -310,7 +310,7 @@ def test_format_sub_state_event(upload_sub_state_event_spec):
     assert (
         format.format_upload_event(upload_sub_state_event_spec)
         == "uploadFiles(base_state, result, setResult, base_state.files, "
-        '"base_state.sub_upload_state.handle_upload",false ,UPLOAD)'
+        '"base_state.sub_upload_state.handle_upload",UPLOAD)'
     )
 
 
@@ -323,6 +323,6 @@ def test_format_multi_upload_event(multi_upload_event_spec):
     assert (
         format.format_upload_event(multi_upload_event_spec)
         == "uploadFiles(upload_state, result, setResult, "
-        'upload_state.files, "upload_state.multi_handle_upload",true ,'
+        'upload_state.files, "upload_state.multi_handle_upload",'
         "UPLOAD)"
     )

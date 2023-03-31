@@ -201,7 +201,6 @@ export const uploadFiles = async (
   setResult,
   files,
   handler,
-  multiUpload,
   endpoint
 ) => {
   // If we are already processing an event, or there are no upload files, return.
@@ -212,7 +211,6 @@ export const uploadFiles = async (
   // Set processing to true to block other events from being processed.
   setResult({ ...result, processing: true });
 
-  const name = multiUpload ? "files" : "file"
   const headers = {
     "Content-Type": files[0].type,
   };
@@ -220,7 +218,7 @@ export const uploadFiles = async (
 
   // Add the token and handler to the file name.
   for (let i = 0; i < files.length; i++) {
-    formdata.append("files", files[i], getToken() + ":" + handler + ":" + name + ":" + files[i].name);
+    formdata.append("files", files[i], getToken() + ":" + handler + ":" + files[i].name);
   }
 
   // Send the file to the server.

@@ -143,21 +143,13 @@ class UploadState(pc.State):
     img: str
     img_list: List[str]
 
-    async def handle_upload(self, file: pc.UploadFile):
+    async def handle_upload1(self, file: pc.UploadFile):
         """Handle the upload of a file.
 
         Args:
             file: The uploaded file.
         """
-        upload_data = await file.read()
-        outfile = f".web/public/{file.filename}"
-
-        # Save the file.
-        with open(outfile, "wb") as file_object:
-            file_object.write(upload_data)
-
-        # Update the img var.
-        self.img = file.filename
+        pass
 
     async def multi_handle_upload(self, files: List[pc.UploadFile]):
         """Handle the upload of a file.
@@ -165,16 +157,7 @@ class UploadState(pc.State):
         Args:
             files: The uploaded files.
         """
-        for file in files:
-            upload_data = await file.read()
-            outfile = f".web/public/{file.filename}"
-
-            # Save the file.
-            with open(outfile, "wb") as file_object:
-                file_object.write(upload_data)
-
-            # Update the img var.
-            self.img_list.append(file.filename)
+        pass
 
 
 class BaseState(pc.State):
@@ -204,7 +187,7 @@ def upload_event_spec():
     Returns:
         Event Spec.
     """
-    return EventSpec(handler=UploadState.handle_upload, upload=True)  # type: ignore
+    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # type: ignore
 
 
 @pytest.fixture
@@ -225,3 +208,57 @@ def multi_upload_event_spec():
         Event Spec.
     """
     return EventSpec(handler=UploadState.multi_handle_upload, upload=True)  # type: ignore
+
+
+@pytest.fixture
+def upload_state(tmp_path):
+    """Create upload state.
+
+    Args:
+        tmp_path: pytest tmp_path
+
+    Returns:
+        The state
+
+    """
+
+    class FileUploadState(pc.State):
+        """The base state for uploading a file."""
+
+        img: str
+        img_list: List[str]
+
+        async def handle_upload2(self, file):
+            """Handle the upload of a file.
+
+            Args:
+                file: The uploaded file.
+            """
+            upload_data = await file.read()
+            outfile = f"{tmp_path}/{file.filename}"
+
+            # Save the file.
+            with open(outfile, "wb") as file_object:
+                file_object.write(upload_data)
+
+            # Update the img var.
+            self.img = file.filename
+
+        async def multi_handle_upload(self, files: List[pc.UploadFile]):
+            """Handle the upload of a file.
+
+            Args:
+                files: The uploaded files.
+            """
+            for file in files:
+                upload_data = await file.read()
+                outfile = f"{tmp_path}/{file.filename}"
+
+                # Save the file.
+                with open(outfile, "wb") as file_object:
+                    file_object.write(upload_data)
+
+                # Update the img var.
+                self.img_list.append(file.filename)
+
+    return FileUploadState

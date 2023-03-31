@@ -1,6 +1,7 @@
 """The main Pynecone app."""
 
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
+import inspect
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
@@ -23,7 +24,7 @@ from pynecone.route import (
     verify_route_validity,
 )
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
-from pynecone.utils import format
+from pynecone.utils import format, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -474,17 +475,42 @@ def upload(app: App):
         Returns:
             The state update after processing the event.
         """
-        token, handler, key = files[0].filename.split(":")[:3]
+        token, handler = files[0].filename.split(":")[:2]
         for file in files:
             file.filename = file.filename.split(":")[-1]
 
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-        # Event payload should have `files` as key for multi-uploads and `file` otherwise
+        handler_upload_param: Tuple = ()
+
+        # get handler function
+        func = getattr(state, handler.split(".")[-1])
+
+        # check if there exists any handler args with annotation UploadFile or List[UploadFile]
+        for k, v in inspect.get_annotations(
+            func.fn if isinstance(func, EventHandler) else func
+        ).items():
+            if (
+                types.is_generic_alias(v)
+                and types._issubclass(v.__args__[0], UploadFile)
+                or types._issubclass(v, UploadFile)
+            ):
+                handler_upload_param = (k, v)
+                break
+
+        if not handler_upload_param:
+            raise ValueError(
+                f"`{handler}` handler should have a parameter annotated with one of the following: List["
+                f"pc.UploadFile], pc.UploadFile "
+            )
+
+        # check if handler supports multi-upload
+        multi_upload = types._issubclass(handler_upload_param[1], List)
+
         event = Event(
             token=token,
             name=handler,
-            payload={key: files[0] if key == "file" else files},
+            payload={handler_upload_param[0]: files if multi_upload else files[0]},
         )
         update = await state.process(event)
         return update

@@ -1,13 +1,15 @@
+import io
 import os.path
 from typing import List, Tuple, Type
 
 import pytest
+from fastapi import UploadFile
 
-from pynecone.app import App, DefaultState
+from pynecone.app import App, DefaultState, upload
 from pynecone.components import Box
 from pynecone.event import Event
 from pynecone.middleware import HydrateMiddleware
-from pynecone.state import State
+from pynecone.state import State, StateUpdate
 from pynecone.style import Style
 
 
@@ -407,3 +409,69 @@ async def test_dict_mutation_detection__plain_list(
         )
 
         assert result.delta == expected_delta
+
+
+@pytest.mark.asyncio
+async def test_upload_file(upload_state):
+    """Test that file upload works correctly.
+
+    Args:
+        upload_state: the state
+    """
+    data = b"This is binary data"
+
+    # Create a binary IO object and write data to it
+    bio = io.BytesIO()
+    bio.write(data)
+
+    app = App(state=upload_state)
+
+    file1 = UploadFile(
+        filename="token:upload_state.multi_handle_upload:True:image1.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    file2 = UploadFile(
+        filename="token:upload_state.multi_handle_upload:True:image2.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    fn = upload(app)
+    result = await fn([file1, file2])  # type: ignore
+    assert isinstance(result, StateUpdate)
+    assert result.delta == {"upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}}
+
+
+@pytest.mark.asyncio
+async def test_upload_file_without_annotation(upload_state):
+    """Test that an error is thrown when there's no param annotated with pc.UploadFile or List[UploadFile].
+
+    Args:
+        upload_state: the state
+    """
+    data = b"This is binary data"
+
+    # Create a binary IO object and write data to it
+    bio = io.BytesIO()
+    bio.write(data)
+
+    app = App(state=upload_state)
+
+    file1 = UploadFile(
+        filename="token:upload_state.handle_upload2:True:image1.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    file2 = UploadFile(
+        filename="token:upload_state.handle_upload2:True:image2.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    fn = upload(app)
+    with pytest.raises(ValueError) as err:
+        await fn([file1, file2])
+    assert (
+        err.value.args[0]
+        == "`upload_state.handle_upload2` handler should have a parameter annotated with one of the following: "
+        "List[pc.UploadFile], pc.UploadFile "
+    )
