@@ -70,4 +70,4 @@ COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 SITEMAP_CONFIG = "module.exports = {config}".format
 
 # args
-FORMAT_EVENT = get_template("web/pages/format_event.js.jinja2")
+FORMAT_EVENT = get_template("web/pages/tag/format_event.js.jinja2")
