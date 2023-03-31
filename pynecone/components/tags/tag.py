@@ -13,6 +13,7 @@ from pynecone.base import Base
 from pynecone.event import EventChain
 from pynecone.utils import format, types
 from pynecone.var import Var
+from pynecone.compiler import templates
 
 if TYPE_CHECKING:
     from pynecone.components.component import ComponentStyle
@@ -74,8 +75,6 @@ class Tag(Base):
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-            local_args = ",".join(prop.events[0].local_args)
-
             if len(prop.events) == 1 and prop.events[0].upload:
                 # Special case for upload events.
                 event = format.format_upload_event(prop.events[0])
@@ -83,7 +82,7 @@ class Tag(Base):
                 # All other events.
                 chain = ",".join([format.format_event(event) for event in prop.events])
                 event = f"Event([{chain}])"
-            prop = f"({local_args}) => {event}"
+            prop = templates.ARROW_FUNCTION.render(param=prop.events[0].local_args, expression=event)
 
         # Handle other types.
         elif isinstance(prop, str):

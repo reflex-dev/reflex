@@ -72,3 +72,4 @@ SITEMAP_CONFIG = "module.exports = {config}".format
 # args
 FORMAT_EVENT = get_template("web/pages/tag/format_event.js.jinja2")
 UPLOAD_FILE_EVENT = get_template("web/pages/tag/upload_file_event.js.jinja2")
+ARROW_FUNCTION = get_template("web/pages/tag/arrow_function.js.jinja2")
