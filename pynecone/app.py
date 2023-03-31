@@ -474,6 +474,9 @@ def upload(app: App):
 
         Returns:
             The state update after processing the event.
+
+        Raises:
+            Value Error if there are no args with supported annotation.
         """
         token, handler = files[0].filename.split(":")[:2]
         for file in files:

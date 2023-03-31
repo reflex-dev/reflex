@@ -439,7 +439,9 @@ async def test_upload_file(upload_state):
     fn = upload(app)
     result = await fn([file1, file2])  # type: ignore
     assert isinstance(result, StateUpdate)
-    assert result.delta == {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}}
+    assert result.delta == {
+        "file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}
+    }
 
 
 @pytest.mark.asyncio
