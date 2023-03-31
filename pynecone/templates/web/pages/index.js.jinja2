@@ -24,6 +24,11 @@ export default function Component() {
     events: [...{{state_name}}.events, ...events],
   })
 
+  const File = files => {{state_name|react_setter}}({
+    ...{{state_name}},
+    files,
+  })
+
   useEffect(()=>{
     if(!isReady) {
       return;
