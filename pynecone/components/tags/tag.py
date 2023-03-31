@@ -119,7 +119,7 @@ class Tag(Base):
         """Format the tag's props.
 
         Returns:
-            The formatted props.
+            The formatted props list.
         """
         # If there are no props, return an empty string.
         if len(self.props) == 0:
@@ -130,9 +130,7 @@ class Tag(Base):
             f"{name}={self.format_prop(prop)}"
             for name, prop in sorted(self.props.items())
             if prop is not None
-        ] + [
-            str(prop) for prop in self.special_props
-        ]
+        ] + [str(prop) for prop in self.special_props]
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
         """Add props to the tag.

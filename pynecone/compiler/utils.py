@@ -72,8 +72,9 @@ def compile_imports(imports: imports.ImportDict) -> list[dict]:
                 imports_dists.append(get_import_dict(module, "", ""))
             continue
 
-        imports_dists.append(get_import_dict(lib,default,rest))
+        imports_dists.append(get_import_dict(lib, default, rest))
     return imports_dists
+
 
 def get_import_dict(lib, default, rest) -> dict:
     """Get dictionary for import template.
@@ -91,6 +92,7 @@ def get_import_dict(lib, default, rest) -> dict:
         "default": default,
         "rest": rest,
     }
+
 
 def compile_state(state: Type[State]) -> dict:
     """Compile the state of the app.
@@ -139,9 +141,9 @@ def compile_custom_component(
     # Compile the component.
     return (
         {
-            "name":component.tag,
-            "props":props,
-            "render":render.render(),
+            "name": component.tag,
+            "props": props,
+            "render": render.render(),
         },
         imports,
     )

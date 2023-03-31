@@ -78,9 +78,9 @@ class Foreach(Component):
                 class_name=self.class_name,
             ).set(
                 children=[component.render()],
-                props = tag.format_props(),
+                props=tag.format_props(),
             ),
-            iterable_state = tag.iterable.full_name,
-            arg_name = arg.name,
-            arg_index = index_arg,
+            iterable_state=tag.iterable.full_name,
+            arg_name=arg.name,
+            arg_index=index_arg,
         )

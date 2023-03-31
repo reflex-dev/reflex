@@ -396,7 +396,7 @@ class Component(Base, ABC):
             ).set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
-                props = tag.format_props(),
+                props=tag.format_props(),
             ),
         )
 

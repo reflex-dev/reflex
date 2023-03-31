@@ -11,9 +11,7 @@ class PyneconeJinjaEnvironment(Environment):
 
     def __init__(self) -> None:
         """Set default environment."""
-        extensions=[
-            'jinja2.ext.debug'
-        ]
+        extensions = ["jinja2.ext.debug"]
         super().__init__(
             extensions=extensions,
             trim_blocks=True,
@@ -21,7 +19,7 @@ class PyneconeJinjaEnvironment(Environment):
         )
         self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
-        self.loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
+        self.loader = FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
         self.globals["const"] = {
             "socket": constants.SOCKET,
             "result": constants.RESULT,
@@ -35,11 +33,10 @@ class PyneconeJinjaEnvironment(Environment):
                 constants.EVENTS: [],
                 constants.PROCESSING: False,
             },
-            "color_mode" : constants.COLOR_MODE,
-            "toggle_color_mode" : constants.TOGGLE_COLOR_MODE,
-            "use_color_mode" : constants.USE_COLOR_MODE,
+            "color_mode": constants.COLOR_MODE,
+            "toggle_color_mode": constants.TOGGLE_COLOR_MODE,
+            "use_color_mode": constants.USE_COLOR_MODE,
         }
-
 
 
 def get_template(name: str) -> Template:
@@ -55,16 +52,16 @@ def get_template(name: str) -> Template:
 
 
 # Template for the Pynecone config file.
-PCCONFIG = get_template('app/pcconfig.py.jinja2')
+PCCONFIG = get_template("app/pcconfig.py.jinja2")
 
 # Code to render a NextJS Document root.
-DOCUMENT_ROOT = get_template('web/pages/_document.js.jinja2')
+DOCUMENT_ROOT = get_template("web/pages/_document.js.jinja2")
 
 # Template for the theme file.
-THEME = get_template('web/utils/theme.js.jinja2')
+THEME = get_template("web/utils/theme.js.jinja2")
 
 # Code to render a single NextJS page.
-PAGE = get_template('web/pages/index.js.jinja2')
+PAGE = get_template("web/pages/index.js.jinja2")
 
 # Code to render the custom components page.
 COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
