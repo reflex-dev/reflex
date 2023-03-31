@@ -31,16 +31,13 @@
 {% macro render_tag(component) %}
 <{{component.name}} {{- render_props(component.props) }}>
 {%- if component.args is not none -%}
-{# no string below for a line break #}
-
   {{- render_arg_content(component) }}
-{%- else %}
+{%- else -%}
   {{ component.contents }}
   {% for child in component.children %}
   {{ render(child) }}
   {% endfor %}
 {%- endif -%}
-{# comment here for a line break #}
 </{{component.name}}>
 {%- endmacro %}
 
