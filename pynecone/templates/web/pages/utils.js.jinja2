@@ -45,6 +45,10 @@
 </{{component.name}}>
 {%- endmacro %}
 
+
+{# Renderting condition component. #}
+{# Args: #}
+{#     component: component dictionary #}
 {% macro render_condition_tag(component) %}
 { {{- component.cond_state }} ? (
   {{ render(component.true_value) }}
@@ -54,6 +58,9 @@
 {%- endmacro %}
 
 
+{# Renderting iterable component. #}
+{# Args: #}
+{#     component: component dictionary #}
 {% macro render_iterable_tag(component) %}
 { {{- component.iterable_state }}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
   {% for child in component.children %}
@@ -70,6 +77,7 @@
 {% if props|length %} {{ props|join(" ") }}{% endif %}
 {% endmacro %}
 
+
 {# Renderting content with args. #}
 {# Args: #}
 {#     component: component dictionary #}
@@ -84,6 +92,7 @@
 )}
 {% endfilter %}
 {% endmacro %}
+
 
 {# Get react libraries import . #}
 {# Args: #}
