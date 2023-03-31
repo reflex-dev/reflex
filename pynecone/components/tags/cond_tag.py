@@ -14,10 +14,10 @@ class CondTag(Tag):
     cond: Var[Any]
 
     # The code to render if the condition is true.
-    true_value: str
+    true_value: dict
 
     # The code to render if the condition is false.
-    false_value: str
+    false_value: dict
 
     def __str__(self) -> str:
         """Render the tag as a React string.
