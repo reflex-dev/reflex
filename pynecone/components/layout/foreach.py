@@ -53,6 +53,11 @@ class Foreach(Component):
         return IterTag(iterable=self.iterable, render_fn=self.render_fn)
 
     def render(self):
+        """Render the component.
+
+        Returns:
+            The dictionary for template of component.
+        """
         tag: IterTag = self._render()
         try:
             type_ = self.iterable.type_.__args__[0]

@@ -75,7 +75,17 @@ def compile_imports(imports: imports.ImportDict) -> dict:
         imports_dists.append(get_import_dict(lib,default,rest))
     return imports_dists
 
-def get_import_dict(lib, default, rest):
+def get_import_dict(lib, default, rest) -> dict:
+    """Get dictionary for import template.
+
+    Args:
+        lib: The importing react library.
+        default: The default module to import.
+        rest: The rest module to import.
+
+    Returns:
+        A dictionary for import template.
+    """
     return {
         "lib": lib,
         "default": default,

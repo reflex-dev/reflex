@@ -7,7 +7,10 @@ from pynecone.utils.format import json_dumps
 
 
 class PyneconeJinjaEnvironment(Environment):
+    """The template class for jinja environment."""
+
     def __init__(self) -> None:
+        """Set default environment."""
         extensions=[
             'jinja2.ext.debug'
         ]

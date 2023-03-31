@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List
+from typing import TYPE_CHECKING, Callable, List
 
 from pynecone.components.tags.tag import Tag
-from pynecone.utils import format
-from pynecone.var import BaseVar, Var, get_unique_variable_name
+from pynecone.var import Var
 
 if TYPE_CHECKING:
     from pynecone.components.component import Component

@@ -58,6 +58,11 @@ class Cond(Component):
         )
 
     def render(self) -> dict:
+        """Render the component.
+
+        Returns:
+            The dictionary for template of component.
+        """
         tag = self._render()
         return dict(
             tag.add_props(

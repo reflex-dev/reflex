@@ -21,9 +21,9 @@ from pynecone.event import (
     get_handler_args,
 )
 from pynecone.style import Style
-from pynecone.utils import format, imports, path_ops, types
+from pynecone.utils import format, imports, types
 from pynecone.var import BaseVar, Var
-from pynecone.compiler import templates
+
 
 class Component(Base, ABC):
     """The base class for all Pynecone components."""
@@ -383,7 +383,7 @@ class Component(Base, ABC):
         """Render the component.
 
         Returns:
-            The code to render the component.
+            The dictionary for template of component.
         """
         tag = self._render()
         return dict(

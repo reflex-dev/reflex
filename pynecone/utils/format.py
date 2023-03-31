@@ -210,7 +210,6 @@ def format_cond_var(
         cond: The cond.
         true_value: The value to return if the cond is true.
         false_value: The value to return if the cond is false.
-        is_prop: Whether the cond is a prop
 
     Returns:
         The formatted conditional expression.
