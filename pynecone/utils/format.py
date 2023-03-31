@@ -14,7 +14,6 @@ from plotly.io import to_json
 
 from pynecone import constants
 from pynecone.utils import types
-from pynecone.compiler import templates
 
 if TYPE_CHECKING:
     from pynecone.event import EventHandler, EventSpec
