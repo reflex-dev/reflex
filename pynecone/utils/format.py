@@ -199,11 +199,10 @@ def format_route(route: str) -> str:
     return route
 
 
-def format_cond(
+def format_cond_var(
     cond: str,
     true_value: str,
     false_value: str = '""',
-    is_prop=False,
 ) -> str:
     """Format a conditional expression.
 
@@ -219,15 +218,10 @@ def format_cond(
     # Import here to avoid circular imports.
     from pynecone.var import Var
 
-    # Format prop conds.
-    if is_prop:
-        prop1 = Var.create(true_value, is_string=type(true_value) == str)
-        prop2 = Var.create(false_value, is_string=type(false_value) == str)
-        assert prop1 is not None and prop2 is not None, "Invalid prop values"
-        return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
-
-    # Format component conds.
-    return wrap(f"{cond} ? {true_value} : {false_value}", "{")
+    prop1 = Var.create(true_value, is_string=type(true_value) == str)
+    prop2 = Var.create(false_value, is_string=type(false_value) == str)
+    assert prop1 is not None and prop2 is not None, "Invalid prop values"
+    return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
 
 def get_event_handler_parts(handler: EventHandler) -> Tuple[str, str]:

@@ -107,11 +107,10 @@ def cond(condition: Any, c1: Any, c2: Any = None):
 
     # Create the conditional var.
     return BaseVar(
-        name=format.format_cond(
+        name=format.format_cond_var(
             cond=cond_var.full_name,
             true_value=c1,
             false_value=c2,
-            is_prop=True,
         ),
         type_=c1.type_ if isinstance(c1, BaseVar) else type(c1),
     )
