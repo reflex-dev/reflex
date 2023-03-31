@@ -68,8 +68,8 @@ class Cond(Component):
                 class_name=self.class_name,
             ).set(
                 props = tag.format_props(),
-                cond_state = self.cond.full_name,
-            )
+            ),
+            cond_state = self.cond.full_name,
         )
 
 

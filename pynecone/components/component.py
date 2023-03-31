@@ -397,7 +397,7 @@ class Component(Base, ABC):
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
                 props = tag.format_props(),
-            )
+            ),
         )
 
     def _get_custom_code(self) -> Optional[str]:

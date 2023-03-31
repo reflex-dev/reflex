@@ -17,5 +17,3 @@ class CondTag(Tag):
 
     # The code to render if the condition is false.
     false_value: dict
-
-    cond_state: str = ""

@@ -24,11 +24,6 @@ class IterTag(Tag):
     # The component render function for each item in the iterable.
     render_fn: Callable
 
-    iterable_state: str=""
-
-    arg_name: str=""
-    arg_index: str=""
-
     @staticmethod
     def get_index_var() -> Var:
         """Get the index var for the tag.
