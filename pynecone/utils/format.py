@@ -285,9 +285,8 @@ def format_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    args = [":".join((name, val)) for name, val in event_spec.args]
-    handler =format_event_handler(event_spec.handler)
-    return templates.FORMAT_EVENT.render(handler=handler, args=args)
+    args = ",".join([":".join((name, val)) for name, val in event_spec.args])
+    return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 
 def format_upload_event(event_spec: EventSpec) -> str:
@@ -305,10 +304,10 @@ def format_upload_event(event_spec: EventSpec) -> str:
             event_spec.handler.fn
         ).annotations.values()
     )
-    multi_upload=str(multi_upload).lower()
     state, name = get_event_handler_parts(event_spec.handler)
     parent_state = state.split(".")[0]
-    return templates.UPLOAD_FILE_EVENT.render(parent_state=parent_state, state=state, name=name, multi_upload=multi_upload)
+    return f'uploadFiles({parent_state}, {constants.RESULT}, set{constants.RESULT.capitalize()}, {parent_state}.files, "{state}.{name}",{str(multi_upload).lower()} ,UPLOAD)'
+
 
 def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     """Convert back query params name to python-friendly case.

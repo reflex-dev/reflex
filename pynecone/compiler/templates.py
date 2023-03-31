@@ -68,9 +68,3 @@ COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
-
-# args
-FORMAT_EVENT = get_template("web/pages/tag/format_event.js.jinja2")
-UPLOAD_FILE_EVENT = get_template("web/pages/tag/upload_file_event.js.jinja2")
-ARROW_FUNCTION = get_template("web/pages/tag/arrow_function.js.jinja2")
-EVENT_CHAIN = get_template("web/pages/tag/event_chain.js.jinja2")

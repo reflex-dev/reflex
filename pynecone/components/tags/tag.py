@@ -75,14 +75,16 @@ class Tag(Base):
 
         # Handle event props.
         elif isinstance(prop, EventChain):
+            local_args = ",".join(prop.events[0].local_args)
+
             if len(prop.events) == 1 and prop.events[0].upload:
                 # Special case for upload events.
                 event = format.format_upload_event(prop.events[0])
             else:
                 # All other events.
-                chain = [format.format_event(event) for event in prop.events]
-                event = templates.EVENT_CHAIN.render(event_chain=chain)
-            prop = templates.ARROW_FUNCTION.render(param=prop.events[0].local_args, expression=event)
+                chain = ",".join([format.format_event(event) for event in prop.events])
+                event = f"Event([{chain}])"
+            prop = f"({local_args}) => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
