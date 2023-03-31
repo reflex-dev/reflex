@@ -104,7 +104,7 @@ def compile_state(state: Type[State]) -> str:
 
 def compile_custom_component(
     component: CustomComponent,
-) -> Tuple[str, imports.ImportDict]:
+) -> Tuple[dict, imports.ImportDict]:
     """Compile a custom component.
 
     Args:

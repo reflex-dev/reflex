@@ -3,7 +3,7 @@
 from jinja2 import Environment, FileSystemLoader, Template
 
 from pynecone import constants
-from pynecone.utils import format
+from pynecone.utils.format import json_dumps
 
 
 class PyneconeJinjaEnvironment(Environment):
@@ -16,7 +16,7 @@ class PyneconeJinjaEnvironment(Environment):
             trim_blocks=True,
             lstrip_blocks=True,
         )
-        self.filters["json_dumps"] = format.json_dumps
+        self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
         self.loader=FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
         self.globals["const"] = {

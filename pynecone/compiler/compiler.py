@@ -87,18 +87,18 @@ def _compile_components(components: Set[CustomComponent]) -> str:
         "react": {"memo"},
         f"/{constants.STATE_PATH}": {"E"},
     }
-    component_defs = []
+    component_renders = []
 
     # Compile each component.
     for component in components:
-        component_def, component_imports = utils.compile_custom_component(component)
-        component_defs.append(component_def)
+        component_render, component_imports = utils.compile_custom_component(component)
+        component_renders.append(component_render)
         imports = utils.merge_imports(imports, component_imports)
 
     # Compile the components page.
     return templates.COMPONENTS.render(
         imports=utils.compile_imports(imports),
-        components=component_defs,
+        components=component_renders,
     )
 
 
