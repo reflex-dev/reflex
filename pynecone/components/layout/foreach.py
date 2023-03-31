@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Callable, List
 
 from pynecone.components.component import Component
-from pynecone.components.tags import IterTag, Tag
+from pynecone.components.tags import IterTag
 from pynecone.var import BaseVar, Var, get_unique_variable_name
 
 

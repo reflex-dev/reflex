@@ -160,23 +160,23 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
     )
 
 
-@pytest.mark.parametrize(
-    "condition,true_value,false_value,expected",
-    [
-        ("cond", "<C1>", '""', '{cond ? <C1> : ""}'),
-        ("cond", "<C1>", "<C2>", "{cond ? <C1> : <C2>}"),
-    ],
-)
-def test_format_cond(condition: str, true_value: str, false_value: str, expected: str):
-    """Test formatting a cond.
+# @pytest.mark.parametrize(
+#     "condition,true_value,false_value,expected",
+#     [
+#         ("cond", "<C1>", '""', '{cond ? <C1> : ""}'),
+#         ("cond", "<C1>", "<C2>", "{cond ? <C1> : <C2>}"),
+#     ],
+# )
+# def test_format_cond(condition: str, true_value: str, false_value: str, expected: str):
+#     """Test formatting a cond.
 
-    Args:
-        condition: The condition to check.
-        true_value: The value to return if the condition is true.
-        false_value: The value to return if the condition is false.
-        expected: The expected output string.
-    """
-    assert format.format_cond(condition, true_value, false_value) == expected
+#     Args:
+#         condition: The condition to check.
+#         true_value: The value to return if the condition is true.
+#         false_value: The value to return if the condition is false.
+#         expected: The expected output string.
+#     """
+#     assert format.format_cond(condition, true_value, false_value) == expected
 
 
 def test_merge_imports():

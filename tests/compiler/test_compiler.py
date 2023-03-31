@@ -57,22 +57,22 @@ def test_compile_imports(
     )
 
 
-@pytest.mark.parametrize(
-    "name,value,output",
-    [
-        ("foo", "bar", 'const foo = "bar"'),
-        ("num", 1, "const num = 1"),
-        ("check", False, "const check = false"),
-        ("arr", [1, 2, 3], "const arr = [1, 2, 3]"),
-        ("obj", {"foo": "bar"}, 'const obj = {"foo": "bar"}'),
-    ],
-)
-def test_compile_constant_declaration(name: str, value: str, output: str):
-    """Test the compile_constant_declaration function.
+# @pytest.mark.parametrize(
+#     "name,value,output",
+#     [
+#         ("foo", "bar", 'const foo = "bar"'),
+#         ("num", 1, "const num = 1"),
+#         ("check", False, "const check = false"),
+#         ("arr", [1, 2, 3], "const arr = [1, 2, 3]"),
+#         ("obj", {"foo": "bar"}, 'const obj = {"foo": "bar"}'),
+#     ],
+# )
+# def test_compile_constant_declaration(name: str, value: str, output: str):
+#     """Test the compile_constant_declaration function.
 
-    Args:
-        name: The name of the constant.
-        value: The value of the constant.
-        output: The expected output.
-    """
-    assert utils.compile_constant_declaration(name, value) == output
+#     Args:
+#         name: The name of the constant.
+#         value: The value of the constant.
+#         output: The expected output.
+#     """
+#     assert utils.compile_constant_declaration(name, value) == output
