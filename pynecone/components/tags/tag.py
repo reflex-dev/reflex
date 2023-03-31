@@ -13,7 +13,6 @@ from pynecone.base import Base
 from pynecone.event import EventChain
 from pynecone.utils import format, types
 from pynecone.var import Var
-from pynecone.compiler import templates
 
 if TYPE_CHECKING:
     from pynecone.components.component import ComponentStyle
