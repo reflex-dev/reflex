@@ -487,9 +487,9 @@ def upload(app: App):
         func = getattr(state, handler.split(".")[-1])
 
         # check if there exists any handler args with annotation UploadFile or List[UploadFile]
-        for k, v in inspect.get_annotations(
+        for k, v in inspect.getfullargspec(
             func.fn if isinstance(func, EventHandler) else func
-        ).items():
+        ).annotations.items():
             if (
                 types.is_generic_alias(v)
                 and types._issubclass(v.__args__[0], UploadFile)

@@ -427,19 +427,19 @@ async def test_upload_file(upload_state):
     app = App(state=upload_state)
 
     file1 = UploadFile(
-        filename="token:upload_state.multi_handle_upload:True:image1.jpg",
+        filename="token:file_upload_state.multi_handle_upload:True:image1.jpg",
         file=bio,
         content_type="image/jpeg",
     )
     file2 = UploadFile(
-        filename="token:upload_state.multi_handle_upload:True:image2.jpg",
+        filename="token:file_upload_state.multi_handle_upload:True:image2.jpg",
         file=bio,
         content_type="image/jpeg",
     )
     fn = upload(app)
     result = await fn([file1, file2])  # type: ignore
     assert isinstance(result, StateUpdate)
-    assert result.delta == {"upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}}
+    assert result.delta == {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}}
 
 
 @pytest.mark.asyncio
