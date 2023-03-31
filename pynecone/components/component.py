@@ -386,7 +386,8 @@ class Component(Base, ABC):
             The code to render the component.
         """
         tag = self._render()
-        data: Tag = tag.add_props(
+        return dict(
+            tag.add_props(
                 **self.event_triggers,
                 key=self.key,
                 sx=self.style,
@@ -397,7 +398,7 @@ class Component(Base, ABC):
                 contents=str(tag.contents),
                 props = tag.format_props(),
             )
-        return dict(data)
+        )
 
     def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.

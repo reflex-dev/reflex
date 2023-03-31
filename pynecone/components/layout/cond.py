@@ -57,7 +57,8 @@ class Cond(Component):
 
     def render(self) -> dict:
         tag = self._render()
-        data: CondTag = tag.add_props(
+        return dict(
+            tag.add_props(
                 **self.event_triggers,
                 key=self.key,
                 sx=self.style,
@@ -67,7 +68,7 @@ class Cond(Component):
                 props = tag.format_props(),
                 cond_state = self.cond.full_name,
             )
-        return dict(data)
+        )
 
 
 def cond(condition: Any, c1: Any, c2: Any = None):

@@ -4,11 +4,12 @@
 {#     indent_width: indent width #}
 {% macro render(component, indent_width=2) %}
 {% filter indent(width=indent_width) %}
-  {%- if component.cond %}
-    {{- render_condition_tag(component) }}
-  {%- endif %}
   {%- if component is not mapping %}
     {{- component }}
+  {%- elif component.iterable %}
+    {{- render_iterable_tag(component) }}
+  {%- elif component.cond %}
+    {{- render_condition_tag(component) }}
   {%- elif component.children|length %}
     {{- render_tag(component) }}
   {%- else %}
@@ -50,6 +51,15 @@
 ) : (
   {{ render(component.false_value) }}
 )}
+{%- endmacro %}
+
+
+{% macro render_iterable_tag(component) %}
+{ {{- component.iterable_state }}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
+  {% for child in component.children %}
+  {{ render(child) }}
+  {% endfor %}
+))}
 {%- endmacro %}
 
 
