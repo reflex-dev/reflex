@@ -80,8 +80,8 @@ class Tag(Base):
                 event = format.format_upload_event(prop.events[0])
             else:
                 # All other events.
-                chain = ",".join([format.format_event(event) for event in prop.events])
-                event = f"Event([{chain}])"
+                chain = [format.format_event(event) for event in prop.events]
+                event = templates.EVENT_CHAIN.render(event_chain=chain)
             prop = templates.ARROW_FUNCTION.render(param=prop.events[0].local_args, expression=event)
 
         # Handle other types.
