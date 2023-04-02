@@ -92,7 +92,6 @@ class DataTable(Gridjs):
         )
 
     def _render(self) -> Tag:
-
         if isinstance(self.data, Var):
             self.columns = BaseVar(
                 name=f"{self.data.name}.columns"
