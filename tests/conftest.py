@@ -1,10 +1,11 @@
 """Test fixtures."""
 import platform
-from typing import Generator, List
+from typing import Dict, Generator, List
 
 import pytest
 
 import pynecone as pc
+from pynecone import constants
 from pynecone.event import EventSpec
 
 
@@ -225,3 +226,37 @@ def multi_upload_event_spec():
         Event Spec.
     """
     return EventSpec(handler=UploadState.multi_handle_upload, upload=True)  # type: ignore
+
+
+@pytest.fixture
+def base_config_values() -> Dict:
+    """Get base config values.
+
+    Returns:
+        Dictionary of base config values
+    """
+    return {"app_name": "app", "db_url": constants.DB_URL, "env": pc.Env.DEV}
+
+
+@pytest.fixture
+def base_db_config_values() -> Dict:
+    """Get base DBConfig values.
+
+    Returns:
+        Dictionary of base db config values
+    """
+    return {"database": "db"}
+
+
+@pytest.fixture
+def sqlite_db_config_values(base_db_config_values) -> Dict:
+    """Get sqlite DBConfig values.
+
+    Args:
+        base_db_config_values: Base DBConfig fixture.
+
+    Returns:
+        Dictionary of sqlite DBConfig values
+    """
+    base_db_config_values["engine"] = "sqlite"
+    return base_db_config_values
