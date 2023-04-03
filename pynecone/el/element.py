@@ -1,7 +1,7 @@
 """Base class definition for raw HTML elements."""
 
-from pynecone import utils
 from pynecone.components.component import Component
+from pynecone.utils import path_ops
 
 
 class Element(Component):
@@ -27,7 +27,7 @@ class Element(Component):
                 style=self.style,
                 class_name=self.class_name,
             ).set(
-                contents=utils.join(
+                contents=path_ops.join(
                     [str(tag.contents)] + [child.render() for child in self.children]
                 ).strip(),
             )

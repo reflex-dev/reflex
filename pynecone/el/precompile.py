@@ -12,7 +12,7 @@ running this script.
 
 import os
 
-from pynecone.compiler.templates import join
+from pynecone.utils import path_ops
 
 from .constants import ELEMENT_TO_PROPS, ELEMENTS
 
@@ -45,10 +45,10 @@ def compile_pyclass_props(element: str) -> str:
     Returns:
         A string containing compiled props for the element.
     """
-    return join(PROP(prop=prop) for prop in ELEMENT_TO_PROPS[element])
+    return path_ops.join(PROP(prop=prop) for prop in ELEMENT_TO_PROPS[element])
 
 
-PYCLASS = join(
+PYCLASS = path_ops.join(
     [
         "",
         "class {name}(Element):  # noqa: E742",
@@ -105,4 +105,4 @@ for element in sorted(ELEMENTS):
 
 os.makedirs(ELEMENTS_DIR, exist_ok=True)
 with open(INIT_PY_PATH, "w+") as f:
-    f.write(join(INIT_PY))
+    f.write(path_ops.join(INIT_PY))
