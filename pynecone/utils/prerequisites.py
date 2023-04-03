@@ -216,7 +216,7 @@ def install_bun():
         console.print(
             f"[red]Bun version {get_bun_version()} is not supported by Pynecone. Please downgrade to bun version {constants.MIN_BUN_VERSION} or upgrade to {constants.MAX_BUN_VERSION} or higher."
         )
-        raise typer.Exit()
+        return
 
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
