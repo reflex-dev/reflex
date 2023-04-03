@@ -5,7 +5,7 @@ from typing import Any, List, Optional
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
 from pynecone.utils import format, imports, types
-from pynecone.var import BaseVar, Var
+from pynecone.var import BaseVar, ComputedVar, Var
 
 
 class Gridjs(Component):
@@ -61,6 +61,19 @@ class DataTable(Gridjs):
             ValueError: If a pandas dataframe is passed in and columns are also provided.
         """
         data = props.get("data")
+        columns = props.get("columns")
+
+        # The annotation should be provided if data is a computed var. We need this to know how to
+        # render pandas dataframes.
+        if isinstance(data, ComputedVar) and data.type_ == Any:
+            raise ValueError(
+                "Annotation of the computed var assigned to the data field should be provided."
+            )
+
+        if columns and isinstance(columns, ComputedVar) and columns.type_ == Any:
+            raise ValueError(
+                "Annotation of the computed var assigned to the column field should be provided."
+            )
 
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
@@ -73,7 +86,7 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, Var) and issubclass(data.type_, List))
+            (isinstance(data, Var) and types._issubclass(data.type_, List))
             or issubclass(type(data), List)
         ) and not props.get("columns"):
             raise ValueError(
@@ -92,7 +105,6 @@ class DataTable(Gridjs):
         )
 
     def _render(self) -> Tag:
-
         if isinstance(self.data, Var):
             self.columns = BaseVar(
                 name=f"{self.data.name}.columns"

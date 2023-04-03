@@ -167,8 +167,8 @@ def test_basic_operations(TestObj):
     Args:
         TestObj: The test object.
     """
-    assert str(v(1) == v(2)) == "{(1 == 2)}"
-    assert str(v(1) != v(2)) == "{(1 != 2)}"
+    assert str(v(1) == v(2)) == "{(1 === 2)}"
+    assert str(v(1) != v(2)) == "{(1 !== 2)}"
     assert str(v(1) < v(2)) == "{(1 < 2)}"
     assert str(v(1) <= v(2)) == "{(1 <= 2)}"
     assert str(v(1) > v(2)) == "{(1 > 2)}"

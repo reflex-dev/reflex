@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import inspect
 import json
 import os
 import re
@@ -299,15 +298,9 @@ def format_upload_event(event_spec: EventSpec) -> str:
     """
     from pynecone.compiler import templates
 
-    multi_upload = any(
-        types._issubclass(arg_type, List)
-        for arg_type in inspect.getfullargspec(
-            event_spec.handler.fn
-        ).annotations.values()
-    )
     state, name = get_event_handler_parts(event_spec.handler)
     parent_state = state.split(".")[0]
-    return f'uploadFiles({parent_state}, {templates.RESULT}, {templates.SET_RESULT}, {parent_state}.files, "{state}.{name}",{str(multi_upload).lower()} ,UPLOAD)'
+    return f'uploadFiles({parent_state}, {templates.RESULT}, {templates.SET_RESULT}, {parent_state}.files, "{state}.{name}",UPLOAD)'
 
 
 def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
