@@ -31,7 +31,7 @@ class Plotly(PlotlyLib):
 
     # The height of the graph.
     height: Var[str]
-    
+
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool]
 

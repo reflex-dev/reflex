@@ -58,7 +58,8 @@ def get_bun_version() -> str:
         version = result.stdout.decode().strip()
         return version
     except Exception:
-        raise FileNotFoundError("bun is not installed")
+        raise FileNotFoundError("Pynecone requires bun to be installed.") from None
+
 
 def get_package_manager() -> str:
     """Get the package manager executable.
