@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from pynecone.utils import to_snake_case
+from pynecone.utils import format
 
 from .html import ATTR_TO_ELEMENTS
 from .react import POSSIBLE_STANDARD_NAMES
@@ -29,7 +29,7 @@ def attr_to_prop(attr_name: str) -> str:
     """
     if attr_name in ATTR_TO_PROP_OVERRIDES:
         return ATTR_TO_PROP_OVERRIDES[attr_name]
-    return to_snake_case(POSSIBLE_STANDARD_NAMES.get(attr_name, attr_name))
+    return format.to_snake_case(POSSIBLE_STANDARD_NAMES.get(attr_name, attr_name))
 
 
 # Names of HTML attributes that are provided by Pynecone out of the box.
