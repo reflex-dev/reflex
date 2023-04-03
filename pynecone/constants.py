@@ -17,6 +17,11 @@ VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
 MIN_NODE_VERSION = "12.22.0"
 
+# Valid bun versions.
+MIN_BUN_VERSION = "0.5.5"
+MAX_BUN_VERSION = "0.5.8"
+INVALID_BUN_VERSIONS = ["0.5.6", "0.5.7"]
+
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
