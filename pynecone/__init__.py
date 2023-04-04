@@ -8,7 +8,7 @@ from .base import Base
 from .components import *
 from .components.component import custom_component as component
 from .components.graphing.victory import data
-from .config import Config
+from .config import Config, DBConfig
 from .constants import Env, Transports
 from .event import (
     EVENT_ARG,
