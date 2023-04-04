@@ -2,7 +2,8 @@ from typing import Dict, List, Type
 
 import pytest
 
-from pynecone.components.component import Component, CustomComponent
+import pynecone as pc
+from pynecone.components.component import Component, CustomComponent, custom_component
 from pynecone.components.layout.box import Box
 from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
@@ -309,6 +310,27 @@ def test_custom_component_hash(my_component):
     component1 = CustomComponent(component_fn=my_component, prop1="test", prop2=1)
     component2 = CustomComponent(component_fn=my_component, prop1="test", prop2=2)
     assert {component1, component2} == {component1}
+
+
+def test_custom_component_wrapper():
+    """Test that the wrapper of a custom component is correct."""
+
+    @custom_component
+    def my_component(width: Var[int], color: Var[str]):
+        return pc.box(
+            width=width,
+            color=color,
+        )
+
+    ccomponent = my_component(
+        pc.text("child"), width=Var.create(1), color=Var.create("red")
+    )
+    assert isinstance(ccomponent, CustomComponent)
+    assert len(ccomponent.children) == 1
+    assert isinstance(ccomponent.children[0], pc.Text)
+
+    component = ccomponent.get_component()
+    assert isinstance(component, Box)
 
 
 def test_invalid_event_handler_args(component2, TestState):

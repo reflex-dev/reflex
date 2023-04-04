@@ -7,7 +7,7 @@ from . import el
 from .app import App, UploadFile
 from .base import Base
 from .components import *
-from .components.component import custom_component as component
+from .components.component import custom_component as memo
 from .components.graphing.victory import data
 from .config import Config
 from .constants import Env, Transports
