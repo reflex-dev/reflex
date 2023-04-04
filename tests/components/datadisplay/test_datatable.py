@@ -94,7 +94,6 @@ def test_computed_var_without_annotation(fixture, request, err_msg, is_data_fram
         is_data_frame: whether data field is a pandas dataframe.
     """
     with pytest.raises(ValueError) as err:
-
         if is_data_frame:
             data_table(data=request.getfixturevalue(fixture).data)
         else:

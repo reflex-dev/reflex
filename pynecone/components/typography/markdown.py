@@ -69,7 +69,7 @@ class Markdown(Component):
                     "li": "{ListItem}",
                     "p": "{Text}",
                     "a": "{Link}",
-                    "code": """{({node, inline, className, children, ...props}) => 
+                    "code": """{({node, inline, className, children, ...props}) =>
                     {
         const match = (className || '').match(/language-(?<lang>.*)/);
         return !inline ? (

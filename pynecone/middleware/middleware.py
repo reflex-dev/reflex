@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class Middleware(Base, ABC):
     """Middleware to preprocess and postprocess requests."""
 
-    def preprocess(self, app: App, state: State, event: Event) -> Optional[Delta]:
+    async def preprocess(self, app: App, state: State, event: Event) -> Optional[Delta]:
         """Preprocess the event.
 
         Args:

@@ -546,13 +546,16 @@ class State(Base, ABC):
         return self.substates[path[0]].get_substate(path[1:])
 
     async def process(self, event: Event) -> StateUpdate:
-        """Process an event.
+        """Obtain event info and process event.
 
         Args:
             event: The event to process.
 
         Returns:
             The state update after processing the event.
+
+        Raises:
+            ValueError: If the state value is None.
         """
         # Get the event handler.
         path = event.name.split(".")
@@ -560,23 +563,48 @@ class State(Base, ABC):
         substate = self.get_substate(path)
         handler = substate.event_handlers[name]  # type: ignore
 
-        # Process the event.
-        fn = functools.partial(handler.fn, substate)
+        if substate:
+            return await self.process_event(
+                handler=handler,
+                state=substate,
+                payload=event.payload,
+                token=event.token,
+            )
+        else:
+            raise ValueError(
+                "The value of state cannot be None when processing an event."
+            )
+
+    async def process_event(
+        self, handler: EventHandler, state: State, payload: Dict, token: str
+    ) -> StateUpdate:
+        """Process event.
+
+        Args:
+            handler: Eventhandler to process.
+            state: state to process the handler.
+            payload: the event payload.
+            token: client token.
+
+        Returns:
+            The state update after processing the event.
+        """
+        fn = functools.partial(handler.fn, state)
         try:
             if asyncio.iscoroutinefunction(fn.func):
-                events = await fn(**event.payload)
+                events = await fn(**payload)
             else:
-                events = fn(**event.payload)
+                events = fn(**payload)
         except Exception:
             error = traceback.format_exc()
             print(error)
             events = fix_events(
-                [window_alert("An error occurred. See logs for details.")], event.token
+                [window_alert("An error occurred. See logs for details.")], token
             )
             return StateUpdate(events=events)
 
         # Fix the returned events.
-        events = fix_events(events, event.token)
+        events = fix_events(events, token)
 
         # Get the delta after processing the event.
         delta = self.get_delta()
