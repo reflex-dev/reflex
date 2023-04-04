@@ -509,6 +509,8 @@ class CustomComponent(Component):
                 value = self._create_event_chain(key, value)
                 self.props[format.to_camel_case(key)] = value
                 continue
+            if not types._issubclass(type_, Var):
+                type_ = Var[type_]
             type_ = types.get_args(type_)[0]
             if types._issubclass(type_, Base):
                 try:
