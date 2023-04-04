@@ -72,6 +72,8 @@ def get_package_manager() -> str:
         Exit: If the app directory is invalid.
 
     """
+    config = get_config()
+
     # Check that the node version is valid.
     if not check_node_version(constants.MIN_NODE_VERSION):
         console.print(
@@ -80,7 +82,7 @@ def get_package_manager() -> str:
         raise typer.Exit()
 
     # On Windows, we use npm instead of bun.
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" or config.disable_bun:
         npm_path = path_ops.which("npm")
         if npm_path is None:
             raise FileNotFoundError("Pynecone requires npm to be installed on Windows.")
