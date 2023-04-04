@@ -41,6 +41,26 @@ def check_node_version(min_version):
         return False
 
 
+def get_bun_version() -> str:
+    """Get the version of bun.
+
+    Returns:
+        The version of bun.
+
+    Raises:
+        FileNotFoundError: If bun is not installed.
+    """
+    try:
+        # Run the bun -v command and capture the output
+        result = subprocess.run(
+            ["bun", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        version = result.stdout.decode().strip()
+        return version
+    except Exception:
+        raise FileNotFoundError("Pynecone requires bun to be installed.") from None
+
+
 def get_package_manager() -> str:
     """Get the package manager executable.
 
@@ -192,6 +212,12 @@ def install_bun():
     Raises:
         FileNotFoundError: If the required packages are not installed.
     """
+    if get_bun_version() in constants.INVALID_BUN_VERSIONS:
+        console.print(
+            f"[red]Bun version {get_bun_version()} is not supported by Pynecone. Please downgrade to bun version {constants.MIN_BUN_VERSION} or upgrade to {constants.MAX_BUN_VERSION} or higher."
+        )
+        return
+
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
