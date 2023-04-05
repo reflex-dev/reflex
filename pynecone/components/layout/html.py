@@ -4,6 +4,7 @@ from typing import Any
 
 from pynecone.components.layout.box import Box
 
+
 class Html(Box):
     """Render the html.
 
