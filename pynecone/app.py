@@ -248,17 +248,17 @@ class App(Base):
         self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
-        try:
-            component = component if isinstance(component, Component) else component()
-        except TypeError as e:
-            message = str(e)
-            if "BaseVar" in message or "ComputedVar" in message:
-                raise TypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://pynecone.io/docs/state/vars "
-                ) from e
-            raise e
+        
+        component = component if isinstance(component, Component) else component()
+        # except TypeError as e:
+        #     message = str(e)
+        #     if "BaseVar" in message or "ComputedVar" in message:
+        #         raise TypeError(
+        #             "You may be trying to use an invalid Python function on a state var. "
+        #             "When referencing a var inside your render code, only limited var operations are supported. "
+        #             "See the var operation docs here: https://pynecone.io/docs/state/vars "
+        #         ) from e
+        #     raise e
 
         # Add meta information to the component.
         compiler_utils.add_meta(

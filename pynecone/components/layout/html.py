@@ -1,8 +1,9 @@
 """A html component."""
 
-from typing import Dict
+from typing import Dict, Any
 
 from pynecone.components.layout.box import Box
+from pynecone.components.tags import Tag
 from pynecone.var import Var
 
 
@@ -14,7 +15,7 @@ class Html(Box):
     """
 
     # The HTML to render.
-    dangerouslySetInnerHTML: Var[Dict]
+    dangerouslySetInnerHTML: Any
 
     @classmethod
     def create(cls, *children, **props):
@@ -38,3 +39,6 @@ class Html(Box):
 
         # Create the component.
         return super().create(**props)
+
+    def _render(self) -> Tag:
+        return super()._render()
