@@ -37,12 +37,23 @@ class TestState2(State):
         self.name = "random"
 
 
+class TestState3(State):
+    """A test state with async handler."""
+
+    num: int = 0
+
+    async def test_handler(self):
+        """Test handler."""
+        self.num += 1
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state, expected, event_fixture",
     [
         (TestState, {"test_state": {"num": 1}}, "event1"),
         (TestState2, {"test_state2": {"num": 1}}, "event2"),
+        (TestState3, {"test_state3": {"num": 1}}, "event3"),
     ],
 )
 async def test_preprocess(state, request, event_fixture, expected):

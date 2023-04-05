@@ -27,3 +27,8 @@ def event1():
 @pytest.fixture
 def event2():
     return create_event("test_state2.hydrate")
+
+
+@pytest.fixture
+def event3():
+    return create_event("test_state3.hydrate")
