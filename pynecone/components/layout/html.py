@@ -3,8 +3,6 @@
 from typing import Any
 
 from pynecone.components.layout.box import Box
-from pynecone.components.tags import Tag
-
 
 class Html(Box):
     """Render the html.
@@ -38,6 +36,3 @@ class Html(Box):
 
         # Create the component.
         return super().create(**props)
-
-    def _render(self) -> Tag:
-        return super()._render()
