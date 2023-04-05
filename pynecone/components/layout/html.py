@@ -1,10 +1,9 @@
 """A html component."""
 
-from typing import Dict, Any
+from typing import Any
 
 from pynecone.components.layout.box import Box
 from pynecone.components.tags import Tag
-from pynecone.var import Var
 
 
 class Html(Box):
