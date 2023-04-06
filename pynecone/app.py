@@ -148,7 +148,9 @@ class App(Base):
             allow_origins=["*"],
         )
 
-    async def preprocess(self, state: State, event: Event) -> Optional[Delta]:
+    async def preprocess(
+        self, state: State, event: Event
+    ) -> Optional[Union[StateUpdate, List[StateUpdate]]]:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -169,7 +171,9 @@ class App(Base):
             if out is not None:
                 return out
 
-    def postprocess(self, state: State, event: Event, delta: Delta) -> Optional[Delta]:
+    async def postprocess(
+        self, state: State, event: Event, delta: Delta
+    ) -> Optional[Delta]:
         """Postprocess the event.
 
         This is where middleware can modify the delta after it is processed.
@@ -187,7 +191,7 @@ class App(Base):
             An optional state to return.
         """
         for middleware in self.middleware:
-            out = middleware.postprocess(
+            out = await middleware.postprocess(
                 app=self, state=state, event=event, delta=delta
             )
             if out is not None:
@@ -432,7 +436,7 @@ async def process(
     # Preprocess the event.
     pre = await app.preprocess(state, event)
     if pre is not None and not isinstance(pre, List):
-        return StateUpdate(delta=pre)
+        return pre
 
     # Apply the event to the state.
     updates = pre if pre else await state.process(event)
@@ -443,7 +447,7 @@ async def process(
     # Postprocess the event.
     post_list = []
     for update in updates:
-        post = app.postprocess(state, event, update.delta)  # type: ignore
+        post = await app.postprocess(state, event, update.delta)  # type: ignore
         post_list.append(post) if post else None
 
     if post_list:
@@ -584,17 +588,12 @@ class EventNamespace(AsyncNamespace):
         # Get the client IP
         client_ip = environ["REMOTE_ADDR"]
 
-        # Process the event.
-        update = await process(self.app, event, sid, headers, client_ip)
+        # Process the events.
+        updates = await process(self.app, event, sid, headers, client_ip)
 
         # Emit the event.
-        if isinstance(update, List):
-            for single_update in update:
-                await self.emit(
-                    str(constants.SocketEvent.EVENT), single_update.json(), to=sid
-                )
-        else:
-            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+        for update in updates:
+            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from pynecone import constants
 from pynecone.event import Event, EventHandler, get_hydrate_event
 from pynecone.middleware.middleware import Middleware
-from pynecone.state import Delta, State, StateUpdate
+from pynecone.state import State, StateUpdate
 from pynecone.utils import format
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ class HydrateMiddleware(Middleware):
 
     async def preprocess(
         self, app: App, state: State, event: Event
-    ) -> Union[Optional[Delta], List[StateUpdate]]:
+    ) -> Optional[Union[StateUpdate, List[StateUpdate]]]:
         """Preprocess the event.
 
         Args:
@@ -49,7 +49,8 @@ class HydrateMiddleware(Middleware):
                         )
                     )
                 return updates
-            return format.format_state({state.get_name(): state.dict()})
+            delta = format.format_state({state.get_name(): state.dict()})
+            return StateUpdate(delta=delta) if delta else None
 
     async def execute_load_event(
         self, state: State, load_event: EventHandler, token: str, payload: Dict
@@ -59,8 +60,8 @@ class HydrateMiddleware(Middleware):
         Args:
             state: The client state.
             load_event: A single load event to execute.
-            token: client token
-            payload: the event payload
+            token: Client token
+            payload: The event payload
 
         Returns:
             A state Update.
@@ -70,11 +71,11 @@ class HydrateMiddleware(Middleware):
         """
         substate_path = format.format_event_handler(load_event).split(".")
         ex_state = state.get_substate(substate_path[:-1])
-        if ex_state:
-            return await state.process_event(
-                handler=load_event, state=ex_state, payload=payload, token=token
-            )
-        else:
+        if not ex_state:
             raise ValueError(
                 "The value of state cannot be None when processing an on-load event."
             )
+
+        return await state.process_event(
+            handler=load_event, state=ex_state, payload=payload, token=token
+        )

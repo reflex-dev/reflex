@@ -24,7 +24,7 @@ class LoggingMiddleware(Middleware):
         """
         print(f"Event {event}")
 
-    def postprocess(self, app: App, state: State, event: Event, delta: Delta):
+    async def postprocess(self, app: App, state: State, event: Event, delta: Delta):
         """Postprocess the event.
 
         Args:

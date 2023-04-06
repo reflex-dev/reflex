@@ -563,17 +563,17 @@ class State(Base, ABC):
         substate = self.get_substate(path)
         handler = substate.event_handlers[name]  # type: ignore
 
-        if substate:
-            return await self.process_event(
-                handler=handler,
-                state=substate,
-                payload=event.payload,
-                token=event.token,
-            )
-        else:
+        if not substate:
             raise ValueError(
                 "The value of state cannot be None when processing an event."
             )
+
+        return await self.process_event(
+            handler=handler,
+            state=substate,
+            payload=event.payload,
+            token=event.token,
+        )
 
     async def process_event(
         self, handler: EventHandler, state: State, payload: Dict, token: str
@@ -582,9 +582,9 @@ class State(Base, ABC):
 
         Args:
             handler: Eventhandler to process.
-            state: state to process the handler.
-            payload: the event payload.
-            token: client token.
+            state: State to process the handler.
+            payload: The event payload.
+            token: Client token.
 
         Returns:
             The state update after processing the event.
