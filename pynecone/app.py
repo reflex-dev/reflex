@@ -404,7 +404,7 @@ class App(Base):
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
-) -> Union[StateUpdate, List[StateUpdate]]:
+) -> List[StateUpdate]:
     """Process an event.
 
     Args:
@@ -415,34 +415,37 @@ async def process(
         client_ip: The client_ip.
 
     Returns:
-        The state update(s) after processing the event.
+        The state updates after processing the event.
     """
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
-    formatted_params = format.format_query_params(event.router_data)
-
-    # Pass router_data to the state of the App.
+    # Add request data to the state.
     state.router_data = event.router_data
-    # also pass router_data to all substates
+    state.router_data.update(
+        {
+            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+            constants.RouteVar.CLIENT_TOKEN: event.token,
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        }
+    )
+
+    # Also pass router_data to all substates. (TODO: this isn't recursive currently)
     for _, substate in state.substates.items():
-        substate.router_data = event.router_data
-    state.router_data[constants.RouteVar.QUERY] = formatted_params
-    state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
-    state.router_data[constants.RouteVar.SESSION_ID] = sid
-    state.router_data[constants.RouteVar.HEADERS] = headers
-    state.router_data[constants.RouteVar.CLIENT_IP] = client_ip
+        substate.router_data = state.router_data
 
     # Preprocess the event.
     pre = await app.preprocess(state, event)
-    if pre is not None and not isinstance(pre, List):
-        return pre
+    if isinstance(pre, StateUpdate):
+        return [pre]
+    updates = pre
 
     # Apply the event to the state.
-    updates = pre if pre else await state.process(event)
-    app.state_manager.set_state(event.token, state)
-
-    updates = updates if isinstance(updates, List) else [updates]
+    if updates is None:
+        updates = [await state.process(event)]
+        app.state_manager.set_state(event.token, state)
 
     # Postprocess the event.
     post_list = []
@@ -450,10 +453,10 @@ async def process(
         post = await app.postprocess(state, event, update.delta)  # type: ignore
         post_list.append(post) if post else None
 
-    if post_list:
+    if len(post_list) > 0:
         return [StateUpdate(delta=post) for post in post_list]
 
-    # Return the update.
+    # Return the updates.
     return updates
 
 

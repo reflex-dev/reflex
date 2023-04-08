@@ -346,6 +346,8 @@ def fix_events(
     # Fix the events created by the handler.
     out = []
     for e in events:
+        if not isinstance(e, (EventHandler, EventSpec)):
+            e = EventHandler(fn=e)
         # Otherwise, create an event from the event spec.
         if isinstance(e, EventHandler):
             e = e()
