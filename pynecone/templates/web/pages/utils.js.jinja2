@@ -96,7 +96,7 @@
 
 {# Get react libraries import . #}
 {# Args: #}
-{#     module: react module dicrionary #}
+{#     module: react module dictionary #}
 {% macro get_import(module)%}
 {%- if module.default|length and module.rest|length -%}
   import {{module.default}}, { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
