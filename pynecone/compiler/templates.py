@@ -8,7 +8,10 @@ from pynecone.utils import path_ops
 # Template for the Pynecone config file.
 PCCONFIG = f"""import pynecone as pc
 
-config = pc.Config(
+class {{config_name}}(pc.Config):
+    pass
+
+config = {{config_name}}(
     app_name="{{app_name}}",
     db_url="{constants.DB_URL}",
     env=pc.Env.DEV,
