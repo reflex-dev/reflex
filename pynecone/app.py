@@ -1,5 +1,6 @@
 """The main Pynecone app."""
 
+import asyncio
 import inspect
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
@@ -167,9 +168,12 @@ class App(Base):
             An optional state to return.
         """
         for middleware in self.middleware:
-            out = await middleware.preprocess(app=self, state=state, event=event)
+            if asyncio.iscoroutinefunction(middleware.preprocess):
+                out = await middleware.preprocess(app=self, state=state, event=event)
+            else:
+                out = middleware.preprocess(app=self, state=state, event=event)
             if out is not None:
-                return out
+                return out  # type: ignore
 
     async def postprocess(
         self, state: State, event: Event, delta: Delta
@@ -191,11 +195,16 @@ class App(Base):
             An optional state to return.
         """
         for middleware in self.middleware:
-            out = await middleware.postprocess(
-                app=self, state=state, event=event, delta=delta
-            )
+            if asyncio.iscoroutinefunction(middleware.postprocess):
+                out = await middleware.postprocess(
+                    app=self, state=state, event=event, delta=delta
+                )
+            else:
+                out = middleware.postprocess(
+                    app=self, state=state, event=event, delta=delta
+                )
             if out is not None:
-                return out
+                return out  # type: ignore
 
     def add_middleware(self, middleware: Middleware, index: Optional[int] = None):
         """Add middleware to the app.
