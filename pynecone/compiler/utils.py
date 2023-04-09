@@ -62,18 +62,18 @@ def compile_imports(imports: imports.ImportDict) -> list[dict]:
     Returns:
         The compiled import dict.
     """
-    imports_dists = []
+    imports_dicts = []
     for lib, fields in imports.items():
         default, rest = compile_import_statement(lib, fields)
         if not lib:
             assert not default, "No default field allowed for empty library."
             assert rest is not None and len(rest) > 0, "No fields to import."
             for module in sorted(rest):
-                imports_dists.append(get_import_dict(module, "", ""))
+                imports_dicts.append(get_import_dict(module, "", ""))
             continue
 
-        imports_dists.append(get_import_dict(lib, default, rest))
-    return imports_dists
+        imports_dicts.append(get_import_dict(lib, default, rest))
+    return imports_dicts
 
 
 def get_import_dict(lib, default, rest) -> dict:
