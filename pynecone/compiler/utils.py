@@ -69,7 +69,7 @@ def compile_imports(imports: imports.ImportDict) -> list[dict]:
             assert not default, "No default field allowed for empty library."
             assert rest is not None and len(rest) > 0, "No fields to import."
             for module in sorted(rest):
-                imports_dicts.append(get_import_dict(module, "", ""))
+                imports_dicts.append(get_import_dict(module, "", set()))
             continue
 
         imports_dicts.append(get_import_dict(lib, default, rest))
