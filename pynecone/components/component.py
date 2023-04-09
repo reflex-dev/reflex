@@ -134,7 +134,11 @@ class Component(Base, ABC):
 
             # Check if the key is an event trigger.
             if key in triggers:
-                kwargs["event_triggers"][key] = self._create_event_chain(key, value)
+                state_name = kwargs["value"].name if kwargs.get("value", False) else ""
+                full_control = self.is_full_control(kwargs)
+                kwargs["event_triggers"][key] = self._create_event_chain(
+                    key, value, state_name, full_control
+                )
 
         # Remove any keys that were added as events.
         for key in kwargs["event_triggers"]:
@@ -167,12 +171,16 @@ class Component(Base, ABC):
         value: Union[
             Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
         ],
+        state_name: str = "",
+        full_control: bool = False,
     ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
         Args:
             event_trigger: The event trigger to bind the chain to.
             value: The value to create the event chain from.
+            state_name: The state to be fully controlled.
+            full_control: Whether full contorolled or not.
 
         Returns:
             The event chain.
@@ -240,8 +248,13 @@ class Component(Base, ABC):
                 for e in events
             ]
 
+        # set state name when fully controlled input
+        state_name = state_name if full_control else ""
+
         # Return the event chain.
-        return EventChain(events=events)
+        return EventChain(
+            events=events, state_name=state_name, full_control=full_control
+        )
 
     @classmethod
     def get_triggers(cls) -> Set[str]:
@@ -465,6 +478,27 @@ class Component(Base, ABC):
         for child in self.children:
             custom_components |= child.get_custom_components(seen=seen)
         return custom_components
+
+    def is_full_control(self, kwargs: dict) -> bool:
+        """Return if the component is fully controled input.
+
+        Args:
+            kwargs: The component kwargs.
+
+        Returns:
+            Whether fully contoled.
+        """
+        value = kwargs.get("value")
+        if value is None or type(value) != BaseVar:
+            return False
+
+        on_change = kwargs.get("on_change")
+        if on_change is None or type(on_change) != EventHandler:
+            return False
+
+        value = value.full_name
+        on_change = on_change.fn.__qualname__
+        return value == on_change.replace(constants.SETTER_PREFIX, "")
 
 
 # Map from component to styling.

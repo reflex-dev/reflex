@@ -154,7 +154,15 @@ UPLOAD_FN = path_ops.join(
         "}})",
     ]
 ).format
-
+FULL_CONTROL = path_ops.join(
+    [
+        "{{setState(prev => ({{",
+        "...prev,{state_name}: {arg}",
+        "}}), ",
+        "()=>Event([{chain}])",
+        ")}}",
+    ]
+).format
 
 # Effects.
 ROUTER = constants.ROUTER

@@ -110,6 +110,12 @@ class EventChain(Base):
 
     events: List[EventSpec]
 
+    # Whether events are in fully controlled input.
+    full_control: bool = False
+
+    # State name when fully controlled.
+    state_name: str = ""
+
 
 class Target(Base):
     """A Javascript event target."""
