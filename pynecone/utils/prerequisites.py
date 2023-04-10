@@ -41,14 +41,11 @@ def check_node_version(min_version):
         return False
 
 
-def get_bun_version() -> str:
+def get_bun_version() -> Optional[str]:
     """Get the version of bun.
 
     Returns:
         The version of bun.
-
-    Raises:
-        FileNotFoundError: If bun is not installed.
     """
     try:
         # Run the bun -v command and capture the output
@@ -58,7 +55,7 @@ def get_bun_version() -> str:
         version = result.stdout.decode().strip()
         return version
     except Exception:
-        raise FileNotFoundError("Pynecone requires bun to be installed.") from None
+        return None
 
 
 def get_package_manager() -> str:
@@ -214,9 +211,10 @@ def install_bun():
     Raises:
         FileNotFoundError: If the required packages are not installed.
     """
-    if get_bun_version() in constants.INVALID_BUN_VERSIONS:
+    bun_version = get_bun_version()
+    if bun_version is not None and bun_version in constants.INVALID_BUN_VERSIONS:
         console.print(
-            f"[red]Bun version {get_bun_version()} is not supported by Pynecone. Please downgrade to bun version {constants.MIN_BUN_VERSION} or upgrade to {constants.MAX_BUN_VERSION} or higher."
+            f"[red]Bun version {bun_version} is not supported by Pynecone. Please downgrade to bun version {constants.MIN_BUN_VERSION} or upgrade to {constants.MAX_BUN_VERSION} or higher."
         )
         return
 
