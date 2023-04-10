@@ -52,8 +52,7 @@ def get_bun_version() -> Optional[str]:
         result = subprocess.run(
             ["bun", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        version = result.stdout.decode().strip()
-        return version
+        return result.stdout.decode().strip()
     except Exception:
         return None
 
