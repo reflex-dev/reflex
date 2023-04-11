@@ -63,9 +63,7 @@ def run(
     frontend: bool = typer.Option(
         False, "--frontend-only", help="Execute only frontend."
     ),
-    backend: bool = typer.Option(
-        False, "--backend-only", help="Execute only backend."
-    ),
+    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
     loglevel: constants.LogLevel = typer.Option(
         constants.LogLevel.ERROR, help="The log level to use."
     ),
