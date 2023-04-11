@@ -185,7 +185,8 @@ class State(Base, ABC):
         for name, fn in events.items():
             event_handler = EventHandler(fn=fn)
             cls.event_handlers[name] = event_handler
-            setattr(cls, name, event_handler)
+
+        cls.set_handlers()
 
     @classmethod
     def convert_handlers_to_fns(cls):
@@ -195,6 +196,12 @@ class State(Base, ABC):
         """
         for name, event_handler in cls.event_handlers.items():
             setattr(cls, name, event_handler.fn)
+
+    @classmethod
+    def set_handlers(cls):
+        """Set the state class handlers."""
+        for name, event_handler in cls.event_handlers.items():
+            setattr(cls, name, event_handler)
 
     @classmethod
     @functools.lru_cache()
