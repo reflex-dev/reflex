@@ -180,7 +180,9 @@ class State(Base, ABC):
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
-            if not name.startswith("_") and isinstance(fn, Callable)
+            if not name.startswith("_")
+            and isinstance(fn, Callable)
+            and not isinstance(fn, EventHandler)
         }
         for name, fn in events.items():
             event_handler = EventHandler(fn=fn)
@@ -369,7 +371,9 @@ class State(Base, ABC):
         """
         setter_name = prop.get_setter_name(include_state=False)
         if setter_name not in cls.__dict__:
-            setattr(cls, setter_name, prop.get_setter())
+            event_handler = EventHandler(fn=prop.get_setter())
+            cls.event_handlers[setter_name] = event_handler
+            setattr(cls, setter_name, event_handler)
 
     @classmethod
     def _set_default_value(cls, prop: BaseVar):
