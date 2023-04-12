@@ -304,7 +304,7 @@ def format_upload_event(event_spec: EventSpec) -> str:
 
 
 def format_full_control_event(event_chain: EventChain) -> str:
-    """Format an fully controlled input prop.
+    """Format a fully controlled input prop.
 
     Args:
         event_chain: The event chain for full controlled input.

@@ -480,13 +480,13 @@ class Component(Base, ABC):
         return custom_components
 
     def is_full_control(self, kwargs: dict) -> bool:
-        """Return if the component is fully controled input.
+        """Return if the component is fully controlled input.
 
         Args:
             kwargs: The component kwargs.
 
         Returns:
-            Whether fully contoled.
+            Whether fully controlled.
         """
         value = kwargs.get("value")
         if value is None or type(value) != BaseVar:
