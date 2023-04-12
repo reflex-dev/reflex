@@ -203,12 +203,12 @@ def export(
 
     if zipping:
         console.rule(
-            """Backend & Frontend compiled. See [green bold]backend.zip[/green bold] 
+            """Backend & Frontend compiled. See [green bold]backend.zip[/green bold]
             and [green bold]frontend.zip[/green bold]."""
         )
     else:
         console.rule(
-            """Backend & Frontend compiled. See [green bold]app[/green bold] 
+            """Backend & Frontend compiled. See [green bold]app[/green bold]
             and [green bold].web/_static[/green bold] directories."""
         )
 

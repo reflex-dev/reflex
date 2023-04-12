@@ -489,31 +489,26 @@ def upload(app: App):
         # get handler function
         func = getattr(state, handler.split(".")[-1])
 
-        # check if there exists any handler args with annotation UploadFile or List[UploadFile]
+        # check if there exists any handler args with annotation, List[UploadFile]
         for k, v in inspect.getfullargspec(
             func.fn if isinstance(func, EventHandler) else func
         ).annotations.items():
-            if (
-                types.is_generic_alias(v)
-                and types._issubclass(v.__args__[0], UploadFile)
-                or types._issubclass(v, UploadFile)
+            if types.is_generic_alias(v) and types._issubclass(
+                v.__args__[0], UploadFile
             ):
                 handler_upload_param = (k, v)
                 break
 
         if not handler_upload_param:
             raise ValueError(
-                f"`{handler}` handler should have a parameter annotated with one of the following: List["
-                f"pc.UploadFile], pc.UploadFile "
+                f"`{handler}` handler should have a parameter annotated as List["
+                f"pc.UploadFile]"
             )
-
-        # check if handler supports multi-upload
-        multi_upload = types._issubclass(handler_upload_param[1], List)
 
         event = Event(
             token=token,
             name=handler,
-            payload={handler_upload_param[0]: files if multi_upload else files[0]},
+            payload={handler_upload_param[0]: files},
         )
         update = await state.process(event)
         return update
