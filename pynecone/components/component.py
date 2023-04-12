@@ -446,6 +446,29 @@ class Component(Base, ABC):
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
+    def _get_hooks(self) -> Optional[str]:
+        return None
+
+    def get_hooks(self) -> Set[str]:
+        """Get javascript code for react hooks.
+
+        Returns:
+            The code that should appear just before returning the rendered component.
+        """
+        # Store the code in a set to avoid duplicates.
+        code = set()
+
+        # Add the hook code for this component.
+        hooks = self._get_hooks()
+        if hooks is not None:
+            code.add(hooks)
+
+        # Add the hook code for the children.
+        for child in self.children:
+            code.update(child.get_hooks())
+
+        return code
+
     def get_custom_components(
         self, seen: Optional[Set[str]] = None
     ) -> Set[CustomComponent]:
