@@ -19,7 +19,7 @@ class Upload(Component):
     tag = "ReactDropzone"
 
     # The list of accepted file types.
-    accept: Var[Optional[List[str]]]
+    accept: Var[Optional[Dict[str, List]]]
 
     # Whether the dropzone is disabled.
     disabled: Var[bool]
