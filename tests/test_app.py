@@ -474,6 +474,5 @@ async def test_upload_file_without_annotation(upload_state):
         await fn([file1, file2])
     assert (
         err.value.args[0]
-        == "`upload_state.handle_upload2` handler should have a parameter annotated with one of the following: "
-        "List[pc.UploadFile], pc.UploadFile "
+        == "`upload_state.handle_upload2` handler should have a parameter annotated as List[pc.UploadFile]"
     )
