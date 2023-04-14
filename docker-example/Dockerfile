@@ -2,7 +2,6 @@ FROM python:3.11-slim as base
 
 RUN adduser --disabled-password pynecone
 
-
 FROM base as build
 
 WORKDIR /app
@@ -25,6 +24,9 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     unzip \
     && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://bun.sh/install | bash 
+
+
 
 ENV PATH="/app/venv/bin:$PATH"
 
@@ -38,10 +40,12 @@ RUN pc init
 
 
 FROM runtime
-
 COPY --chown=pynecone --from=init /app/ /app/
-USER pynecone
+USER root
 WORKDIR /app
+RUN npm install next
+RUN npm install @chakra-ui/react @emotion/react socket.io-client json5 axios focus-visible
+
 
 CMD ["pc","run" , "--env", "prod"]
 
