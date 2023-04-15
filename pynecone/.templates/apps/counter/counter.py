@@ -22,8 +22,7 @@ class State(pc.State):
         self.count = random.randint(0, 100)
 
 
-def index():
-    """The main view."""
+def index() -> pc.Component:
     return pc.center(
         pc.vstack(
             pc.heading(State.count),
