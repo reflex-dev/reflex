@@ -78,9 +78,9 @@ def test_format_props(props: Dict[str, Var], test_props: List):
         props: The props to test.
         test_props: The expected props.
     """
-    props = Tag(props=props).format_props()
-    for prop, test_prop in zip(props, test_props):
-        assert prop == test_prop
+    tag_props = Tag(props=props).format_props()
+    for tag_prop, test_prop in zip(tag_props, test_props):
+        assert tag_prop == test_prop
 
 
 @pytest.mark.parametrize(
