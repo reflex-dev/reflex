@@ -9,12 +9,14 @@ from pynecone.utils import imports
 @pytest.mark.parametrize(
     "lib,fields,output_default,output_rest",
     [
-        ("axios", {"axios"}, 'axios', set()),
-        ("axios", {"foo", "bar"}, '', {"foo", "bar"}),
-        ("axios", {"axios", "foo", "bar"}, 'axios', {"foo", "bar"}),
+        ("axios", {"axios"}, "axios", set()),
+        ("axios", {"foo", "bar"}, "", {"foo", "bar"}),
+        ("axios", {"axios", "foo", "bar"}, "axios", {"foo", "bar"}),
     ],
 )
-def test_compile_import_statement(lib: str, fields: Set[str], output_default:str, output_rest: str):
+def test_compile_import_statement(
+    lib: str, fields: Set[str], output_default: str, output_rest: str
+):
     """Test the compile_import_statement function.
 
     Args:
@@ -27,39 +29,41 @@ def test_compile_import_statement(lib: str, fields: Set[str], output_default:str
     assert default == output_default
     assert rest == output_rest
 
+
 @pytest.mark.parametrize(
     "import_dict,test_dicts",
     [
         ({}, []),
         ({"axios": {"axios"}}, [{"lib": "axios", "default": "axios", "rest": set()}]),
-        ({"axios": {"foo", "bar"}}, [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}]),
+        (
+            {"axios": {"foo", "bar"}},
+            [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}],
+        ),
         (
             {"axios": {"axios", "foo", "bar"}, "react": {"react"}},
             [
                 {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
                 {"lib": "react", "default": "react", "rest": set()},
-            ]
+            ],
         ),
         (
-            {"": {"lib1.js", "lib2.js"}}, 
+            {"": {"lib1.js", "lib2.js"}},
             [
                 {"lib": "lib1.js", "default": "", "rest": set()},
-                {"lib": "lib2.js", "default": "", "rest": set()}
-            ]
+                {"lib": "lib2.js", "default": "", "rest": set()},
+            ],
         ),
         (
             {"": {"lib1.js", "lib2.js"}, "axios": {"axios"}},
             [
                 {"lib": "lib1.js", "default": "", "rest": set()},
                 {"lib": "lib2.js", "default": "", "rest": set()},
-                {"lib": "axios", "default": "axios", "rest": set()}
-            ]
+                {"lib": "axios", "default": "axios", "rest": set()},
+            ],
         ),
     ],
 )
-def test_compile_imports(
-    import_dict: imports.ImportDict, test_dicts: List[dict]
-):
+def test_compile_imports(import_dict: imports.ImportDict, test_dicts: List[dict]):
     """Test the compile_imports function.
 
     Args:

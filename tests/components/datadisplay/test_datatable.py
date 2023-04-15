@@ -1,4 +1,3 @@
-
 import pandas as pd
 import pytest
 
@@ -38,10 +37,10 @@ def test_validate_data_table(data_table_state: pc.Var, expected):
 
     data_table_dict = data_table_component.render()
 
-    assert (
-        data_table_dict["props"]
-        == [f"columns={{{expected}.columns}}", f"data={{{expected}.data}}"]
-    )
+    assert data_table_dict["props"] == [
+        f"columns={{{expected}.columns}}",
+        f"data={{{expected}.data}}",
+    ]
 
 
 @pytest.mark.parametrize(
