@@ -169,6 +169,8 @@ class LogLevel(str, Enum):
 
 # Templates
 class Template(str, Enum):
+    """The templates to use for the app."""
+
     DEFAULT = "default"
     COUNTER = "counter"
 

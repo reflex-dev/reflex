@@ -1,6 +1,7 @@
 """Welcome to Pynecone! This file create a counter app."""
-import pynecone as pc
 import random
+
+import pynecone as pc
 
 
 class State(pc.State):
