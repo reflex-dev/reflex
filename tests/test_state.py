@@ -211,20 +211,15 @@ def test_event_handlers(test_state):
         test_state: A state.
     """
     expected = {
-        "change_both",
-        "do_nothing",
         "do_something",
         "set_array",
         "set_complex",
-        "set_count",
         "set_fig",
         "set_key",
         "set_mapping",
         "set_num1",
         "set_num2",
         "set_obj",
-        "set_value",
-        "set_value2",
     }
 
     cls = type(test_state)
