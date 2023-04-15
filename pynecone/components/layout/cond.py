@@ -1,7 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from pynecone.components.component import Component
 from pynecone.components.layout.fragment import Fragment
@@ -24,7 +24,7 @@ class Cond(Component):
 
     @classmethod
     def create(
-        cls, cond: Var, comp1: Component, comp2: Component = Fragment.create()
+        cls, cond: Var, comp1: Component, comp2: Optional[Component]
     ) -> Component:
         """Create a conditional component.
 
@@ -39,8 +39,10 @@ class Cond(Component):
         # Wrap everything in fragments.
         if comp1.__class__.__name__ != "Fragment":
             comp1 = Fragment.create(comp1)
-        if comp2.__class__.__name__ != "Fragment":
-            comp2 = Fragment.create(comp2)
+        if comp2 is None:
+            comp2 = Fragment.create() 
+        elif comp2.__class__.__name__ != "Fragment":
+            comp2 = Fragment.create(comp2) 
         return Fragment.create(
             cls(
                 cond=cond,
