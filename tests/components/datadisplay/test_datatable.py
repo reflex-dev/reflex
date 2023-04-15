@@ -37,10 +37,11 @@ def test_validate_data_table(data_table_state: pc.Var, expected):
         props["columns"] = data_table_state.columns
     data_table_component = data_table(**props)
 
+    data_table_dict = data_table_component.render()
+
     assert (
-        str(data_table_component)
-        == f"<DataTableGrid columns={{{expected}.columns}}{os.linesep}data={{"
-        f"{expected}.data}}/>"
+        data_table_dict["props"]
+        == [f"columns={{{expected}.columns}}", f"data={{{expected}.data}}"]
     )
 
 
