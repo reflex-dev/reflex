@@ -25,8 +25,6 @@ INVALID_BUN_VERSIONS = ["0.5.6", "0.5.7"]
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# The name of the file used for pc init.
-APP_TEMPLATE_FILE = "base.py"
 # The name of the assets directory.
 APP_ASSETS_DIR = "assets"
 # The template directory used during pc init.

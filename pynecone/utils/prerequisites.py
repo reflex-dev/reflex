@@ -190,7 +190,7 @@ def initialize_app_directory(app_name: str, template: str):
     console.log("Initializing the app directory.")
     path_ops.cp(os.path.join(constants.TEMPLATE_DIR, "apps", template.value), app_name)
     path_ops.mv(
-        os.path.join(app_name, constants.APP_TEMPLATE_FILE),
+        os.path.join(app_name, template.value+".py"),
         os.path.join(app_name, app_name + constants.PY_EXT),
     )
     path_ops.cp(constants.ASSETS_TEMPLATE_DIR, constants.APP_ASSETS_DIR)
