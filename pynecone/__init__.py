@@ -2,8 +2,6 @@
 
 Anything imported here will be available in the default Pynecone import as `pc.*`.
 """
-
-from . import el
 from .app import App, UploadFile
 from .base import Base
 from .components import *

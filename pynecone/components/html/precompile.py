@@ -1,10 +1,10 @@
 """Dynamically compile classes for all HTML elements and output them to the
 elements directory.
 
-This script generates the element classes in the pynecone.el.elements module.
+This script generates the element classes in the pynecone.componenets.html.elements module.
 Run as follows:
 
-    python -m pynecone.el.precompile
+    python -m pynecone.componenets.html.precompile
 
 Make sure to delete the __init__.py file in the elements directory before
 running this script.
@@ -93,7 +93,7 @@ INIT_PY = [
     '"""Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""',
     "from typing import Union",
     "",
-    "from pynecone.el.element import Element",
+    "from pynecone.componenets.html.element import Element",
     "from pynecone.var import Var as PCVar",
     "",
 ]
