@@ -23,9 +23,12 @@ def version():
 
 
 @cli.command()
-def init(name: str = typer.Option(None, help="Name of the app to be initialized."),
-        template: constants.Template = typer.Option(constants.Template.DEFAULT, help="Template to use for the app.")
-    ):
+def init(
+    name: str = typer.Option(None, help="Name of the app to be initialized."),
+    template: constants.Template = typer.Option(
+        constants.Template.DEFAULT, help="Template to use for the app."
+    ),
+):
     """Initialize a new Pynecone app in the current directory."""
     app_name = prerequisites.get_default_app_name() if name is None else name
 

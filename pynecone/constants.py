@@ -168,10 +168,12 @@ class LogLevel(str, Enum):
     ERROR = "error"
     CRITICAL = "critical"
 
+
 # Templates
 class Template(str, Enum):
     DEFAULT = "default"
     COUNTER = "counter"
+
 
 class Endpoint(Enum):
     """Endpoints for the pynecone backend API."""
