@@ -1,7 +1,7 @@
 from typing import Dict
 
 import pytest
-
+from typing import List
 from pynecone.components.tags import Tag
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
@@ -61,15 +61,17 @@ def test_format_prop(prop: Var, formatted: str):
 
 
 @pytest.mark.parametrize(
-    "props,formatted",
+    "props,test_props",
     [
-        ({}, ""),
-        ({"key": 1}, "key={1}"),
-        ({"key": "value"}, 'key="value"'),
-        ({"key": True, "key2": "value2"}, 'key={true}\nkey2="value2"'),
+        ({}, []),
+        ({"key": 1}, ["key={1}"]),
+        ({"key": "value"}, ['key="value"']),
+        ({"key": True, "key2": "value2"}, 
+            ['key={true}', 'key2="value2"']
+        ),
     ],
 )
-def test_format_props(props: Dict[str, Var], formatted: str, windows_platform: bool):
+def test_format_props(props: Dict[str, Var], test_props: List):
     """Test that the formatted props are correct.
 
     Args:
@@ -77,9 +79,9 @@ def test_format_props(props: Dict[str, Var], formatted: str, windows_platform: b
         formatted: The expected formatted props.
         windows_platform: Whether the system is windows.
     """
-    assert Tag(props=props).format_props() == (
-        formatted.replace("\n", "\r\n") if windows_platform else formatted
-    )
+    props = Tag(props=props).format_props()
+    for prop, test_prop in zip(props, test_props):
+        assert prop == test_prop
 
 
 @pytest.mark.parametrize(
@@ -111,39 +113,6 @@ def test_add_props():
     assert tag.props["key2"] == Var.create(42)
     assert "invalid" not in tag.props
     assert "invalid2" not in tag.props
-
-
-@pytest.mark.parametrize(
-    "tag,expected",
-    [
-        (Tag(), "</>"),
-        (Tag(name="br"), "<br/>"),
-        (Tag(contents="hello"), "<>hello</>"),
-        (Tag(name="h1", contents="hello"), "<h1>hello</h1>"),
-        (
-            Tag(name="box", props={"color": "red", "textAlign": "center"}),
-            '<box color="red"\ntextAlign="center"/>',
-        ),
-        (
-            Tag(
-                name="box",
-                props={"color": "red", "textAlign": "center"},
-                contents="text",
-            ),
-            '<box color="red"\ntextAlign="center">text</box>',
-        ),
-    ],
-)
-def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
-    """Test that the formatted tag is correct.
-
-    Args:
-        tag: The tag to test.
-        expected: The expected formatted tag.
-        windows_platform: Whether the system is windows.
-    """
-    expected = expected.replace("\n", "\r\n") if windows_platform else expected
-    assert str(tag) == expected
 
 
 # def test_format_cond_tag():

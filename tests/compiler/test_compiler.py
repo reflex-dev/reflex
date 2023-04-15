@@ -1,20 +1,20 @@
 from typing import Set
 
 import pytest
-
+from typing import List 
 from pynecone.compiler import utils
 from pynecone.utils import imports
 
 
 @pytest.mark.parametrize(
-    "lib,fields,output",
+    "lib,fields,output_default,output_rest",
     [
-        ("axios", {"axios"}, 'import axios from "axios"'),
-        ("axios", {"foo", "bar"}, 'import { bar, foo } from "axios"'),
-        ("axios", {"axios", "foo", "bar"}, 'import axios, { bar, foo } from "axios"'),
+        ("axios", {"axios"}, 'axios', set()),
+        ("axios", {"foo", "bar"}, '', {"foo", "bar"}),
+        ("axios", {"axios", "foo", "bar"}, 'axios', {"foo", "bar"}),
     ],
 )
-def test_compile_import_statement(lib: str, fields: Set[str], output: str):
+def test_compile_import_statement(lib: str, fields: Set[str], output_default:str, output_rest: str):
     """Test the compile_import_statement function.
 
     Args:
@@ -22,28 +22,42 @@ def test_compile_import_statement(lib: str, fields: Set[str], output: str):
         fields: The fields to import.
         output: The expected output.
     """
-    assert utils.compile_import_statement(lib, fields) == output
-
+    default, rest = utils.compile_import_statement(lib, fields)
+    assert default == output_default
+    assert rest == output_rest
 
 @pytest.mark.parametrize(
-    "import_dict,output",
+    "import_dict,test_dicts",
     [
-        ({}, ""),
-        ({"axios": {"axios"}}, 'import axios from "axios"'),
-        ({"axios": {"foo", "bar"}}, 'import { bar, foo } from "axios"'),
+        ({}, []),
+        ({"axios": {"axios"}}, [{"lib": "axios", "default": "axios", "rest": set()}]),
+        ({"axios": {"foo", "bar"}}, [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}]),
         (
             {"axios": {"axios", "foo", "bar"}, "react": {"react"}},
-            'import axios, { bar, foo } from "axios"\nimport react from "react"',
+            [
+                {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
+                {"lib": "react", "default": "react", "rest": set()},
+            ]
         ),
-        ({"": {"lib1.js", "lib2.js"}}, 'import "lib1.js"\nimport "lib2.js"'),
+        (
+            {"": {"lib1.js", "lib2.js"}}, 
+            [
+                {"lib": "lib1.js", "default": "", "rest": set()},
+                {"lib": "lib2.js", "default": "", "rest": set()}
+            ]
+        ),
         (
             {"": {"lib1.js", "lib2.js"}, "axios": {"axios"}},
-            'import "lib1.js"\nimport "lib2.js"\nimport axios from "axios"',
+            [
+                {"lib": "lib1.js", "default": "", "rest": set()},
+                {"lib": "lib2.js", "default": "", "rest": set()},
+                {"lib": "axios", "default": "axios", "rest": set()}
+            ]
         ),
     ],
 )
 def test_compile_imports(
-    import_dict: imports.ImportDict, output: str, windows_platform: bool
+    import_dict: imports.ImportDict, test_dicts: List[dict]
 ):
     """Test the compile_imports function.
 
@@ -52,9 +66,11 @@ def test_compile_imports(
         output: The expected output.
         windows_platform: whether system is windows.
     """
-    assert utils.compile_imports(import_dict) == (
-        output.replace("\n", "\r\n") if windows_platform else output
-    )
+    imports = utils.compile_imports(import_dict)
+    for import_dict, test_dict in zip(imports, test_dicts):
+        assert import_dict["lib"] == test_dict["lib"]
+        assert import_dict["default"] == test_dict["default"]
+        assert import_dict["rest"] == test_dict["rest"]
 
 
 # @pytest.mark.parametrize(

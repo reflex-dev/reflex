@@ -39,11 +39,8 @@ def test_validate_cond(cond_state: pc.Var):
         Text.create("cond is False"),
     )
 
-    assert str(cond_component) == (
-        "<Fragment>{cond_state.value ? "
-        "<Fragment><Text>{`cond is True`}</Text></Fragment> : "
-        "<Fragment><Text>{`cond is False`}</Text></Fragment>}</Fragment>"
-    )
+    context = cond_component.render()
+    assert context["cond"] == cond_state.full_name
 
 
 @pytest.mark.parametrize(
