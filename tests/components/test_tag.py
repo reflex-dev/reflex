@@ -1,7 +1,7 @@
-from typing import Dict
+from typing import Dict, List
 
 import pytest
-from typing import List
+
 from pynecone.components.tags import Tag
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
@@ -76,8 +76,7 @@ def test_format_props(props: Dict[str, Var], test_props: List):
 
     Args:
         props: The props to test.
-        formatted: The expected formatted props.
-        windows_platform: Whether the system is windows.
+        test_props: The expected props.
     """
     props = Tag(props=props).format_props()
     for prop, test_prop in zip(props, test_props):

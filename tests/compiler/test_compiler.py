@@ -1,7 +1,7 @@
-from typing import Set
+from typing import List, Set
 
 import pytest
-from typing import List 
+
 from pynecone.compiler import utils
 from pynecone.utils import imports
 
@@ -20,7 +20,8 @@ def test_compile_import_statement(lib: str, fields: Set[str], output_default:str
     Args:
         lib: The library name.
         fields: The fields to import.
-        output: The expected output.
+        output_default: The expected output of default library.
+        output_rest: The expected output rest libraries.
     """
     default, rest = utils.compile_import_statement(lib, fields)
     assert default == output_default
@@ -63,8 +64,7 @@ def test_compile_imports(
 
     Args:
         import_dict: The import dictionary.
-        output: The expected output.
-        windows_platform: whether system is windows.
+        test_dicts: The expected output.
     """
     imports = utils.compile_imports(import_dict)
     for import_dict, test_dict in zip(imports, test_dicts):
