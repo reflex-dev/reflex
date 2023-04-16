@@ -76,6 +76,7 @@ PAGE = path_ops.join(
         "{state}",
         "{events}",
         "{effects}",
+        "{hooks}",
         "return (",
         "{render}",
         ")",

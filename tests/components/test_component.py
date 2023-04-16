@@ -84,6 +84,36 @@ def component2() -> Type[Component]:
 
 
 @pytest.fixture
+def component3() -> Type[Component]:
+    """A test component with hook defined.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent3(Component):
+        def _get_hooks(self) -> str:
+            return "const a = () => true"
+
+    return TestComponent3
+
+
+@pytest.fixture
+def component4() -> Type[Component]:
+    """A test component with hook defined.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent4(Component):
+        def _get_hooks(self) -> str:
+            return "const b = () => false"
+
+    return TestComponent4
+
+
+@pytest.fixture
 def on_click1() -> EventHandler:
     """A sample on click function.
 
@@ -363,3 +393,42 @@ def test_invalid_event_handler_args(component2, TestState):
         component2.create(on_open=TestState.do_something)
     with pytest.raises(ValueError):
         component2.create(on_open=[TestState.do_something_arg, TestState.do_something])
+
+
+def test_get_hooks_nested(component1, component2, component3):
+    """Test that a component returns hooks from child components.
+
+    Args:
+        component1: test component.
+        component2: another component.
+        component3: component with hooks defined.
+    """
+    c = component1.create(
+        component2.create(arr=[]),
+        component3.create(),
+        component3.create(),
+        component3.create(),
+        text="a",
+        number=1,
+    )
+    assert c.get_hooks() == component3().get_hooks()
+
+
+def test_get_hooks_nested2(component3, component4):
+    """Test that a component returns both when parent and child have hooks.
+
+    Args:
+        component3: component with hooks defined.
+        component4: component with different hooks defined.
+    """
+    exp_hooks = component3().get_hooks().union(component4().get_hooks())
+    assert component3.create(component4.create()).get_hooks() == exp_hooks
+    assert component4.create(component3.create()).get_hooks() == exp_hooks
+    assert (
+        component4.create(
+            component3.create(),
+            component4.create(),
+            component3.create(),
+        ).get_hooks()
+        == exp_hooks
+    )

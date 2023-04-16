@@ -70,6 +70,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
         state=utils.compile_state(state),
         events=utils.compile_events(state),
         effects=utils.compile_effects(state),
+        hooks=path_ops.join(component.get_hooks()),
         render=component.render(),
     )
 
