@@ -23,7 +23,12 @@ def version():
 
 
 @cli.command()
-def init(name: str = typer.Option(None, help="Name of the app to be initialized.")):
+def init(
+    name: str = typer.Option(None, help="Name of the app to be initialized."),
+    template: constants.Template = typer.Option(
+        constants.Template.DEFAULT, help="Template to use for the app."
+    ),
+):
     """Initialize a new Pynecone app in the current directory."""
     app_name = prerequisites.get_default_app_name() if name is None else name
 
@@ -42,7 +47,7 @@ def init(name: str = typer.Option(None, help="Name of the app to be initialized.
         # Set up the app directory, only if the config doesn't exist.
         if not os.path.exists(constants.CONFIG_FILE):
             prerequisites.create_config(app_name)
-            prerequisites.initialize_app_directory(app_name)
+            prerequisites.initialize_app_directory(app_name, template)
             build.set_pynecone_project_hash()
             pynecone_telemetry("init", get_config().telemetry_enabled)
         else:
