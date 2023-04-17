@@ -67,7 +67,7 @@ class Tag(Base):
         if isinstance(prop, Var):
             if not prop.is_local or prop.is_string:
                 return str(prop)
-            if issubclass(prop.type_, str):
+            if types._issubclass(prop.type_, str):
                 return format.json_dumps(prop.full_name)
             prop = prop.full_name
 
