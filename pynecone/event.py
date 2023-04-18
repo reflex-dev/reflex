@@ -23,7 +23,7 @@ class Event(Base):
     router_data: Dict[str, Any] = {}
 
     # The event payload.
-    payload: Dict[str, Any] = {}
+    payload: Dict[Any, Any] = {}
 
 
 class EventHandler(Base):
@@ -54,21 +54,23 @@ class EventHandler(Base):
         """
         # Get the function args.
         fn_args = inspect.getfullargspec(self.fn).args[1:]
+        fn_args = (Var.create_safe(arg) for arg in fn_args)
 
         # Construct the payload.
         values = []
         for arg in args:
-            # If it is a Var, add the full name.
-            if isinstance(arg, Var):
-                values.append(arg.full_name)
-                continue
+            # # If it is a Var, add the full name.
+            # if isinstance(arg, Var):
+            #     values.append(arg.full_name)
+            #     continue
 
             if isinstance(arg, FileUpload):
                 return EventSpec(handler=self, upload=True)
 
             # Otherwise, convert to JSON.
             try:
-                values.append(format.json_dumps(arg))
+                values.append(Var.create(arg))
+                # values.append(format.json_dumps(arg))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -90,10 +92,10 @@ class EventSpec(Base):
     handler: EventHandler
 
     # The local arguments on the frontend.
-    local_args: Tuple[str, ...] = ()
+    local_args: Tuple[Var, ...] = ()
 
     # The arguments to pass to the function.
-    args: Tuple[Any, ...] = ()
+    args: Tuple[Tuple[Var, Var], ...] = ()
 
     # Whether to upload files.
     upload: bool = False
@@ -158,7 +160,7 @@ def redirect(path: str) -> EventSpec:
     fn.__qualname__ = "_redirect"
     return EventSpec(
         handler=EventHandler(fn=fn),
-        args=(("path", path),),
+        args=((Var.create_safe("path"), Var.create_safe(path)),),
     )
 
 
@@ -178,7 +180,7 @@ def console_log(message: str) -> EventSpec:
     fn.__qualname__ = "_console"
     return EventSpec(
         handler=EventHandler(fn=fn),
-        args=(("message", message),),
+        args=((Var.create_safe("message"), Var.create_safe(message)),),
     )
 
 
@@ -198,7 +200,7 @@ def window_alert(message: str) -> EventSpec:
     fn.__qualname__ = "_alert"
     return EventSpec(
         handler=EventHandler(fn=fn),
-        args=(("message", message),),
+        args=((Var.create_safe("message"), Var.create_safe(message)),),
     )
 
 
@@ -306,7 +308,7 @@ def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
     return events
 
 
-def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], ...]:
+def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], ...]:
     """Get the handler args for the given event spec.
 
     Args:
@@ -324,7 +326,7 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[str, str], 
         raise ValueError(
             f"Event handler has an invalid signature, needed a method with a parameter, got {event_spec.handler}."
         )
-    return event_spec.args if len(args) > 2 else ((args[1], arg.name),)
+    return event_spec.args if len(args) > 2 else ((Var.create_safe(args[1]), arg),)
 
 
 def fix_events(
@@ -359,6 +361,8 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
+        # payload = {a.name: v for a, v for item in e.args}
+        print(e.args)
         payload = dict(e.args)
 
         # Create an event and append it to the list.

@@ -3,7 +3,7 @@ from typing import Any, Dict
 import pytest
 
 from pynecone.components.tags import CondTag, Tag
-from pynecone.event import EventChain, EventHandler, EventSpec
+from pynecone.event import EVENT_ARG, EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
 
 
@@ -32,12 +32,12 @@ def mock_event(arg):
                 events=[
                     EventSpec(
                         handler=EventHandler(fn=mock_event),
-                        local_args=("e",),
-                        args=(("arg", "e.target.value"),),
+                        local_args=(EVENT_ARG,),
+                        args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
                     )
                 ]
             ),
-            '{(e) => Event([E("mock_event", {arg:e.target.value})])}',
+            '{(_e) => Event([E("mock_event", {arg:_e.target.value})])}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(name="var", type_="int"), "{var}"),

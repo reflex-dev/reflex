@@ -4,6 +4,7 @@ from typing import Dict
 
 from pynecone.components.component import EVENT_ARG
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.utils import imports
 from pynecone.var import Var
 
 
@@ -48,6 +49,15 @@ class Input(ChakraComponent):
     # "lg" | "md" | "sm" | "xs"
     size: Var[str]
 
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            {"react": {"useRef"}, "/utils/state": {"set_val"}},
+        )
+
+    def _get_hooks(self) -> str:
+        return """const ref = useRef(null);"""
+
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
@@ -62,6 +72,21 @@ class Input(ChakraComponent):
             "on_key_down": EVENT_ARG.key,
             "on_key_up": EVENT_ARG.key,
         }
+
+    # def _render(self):
+    #     from pynecone.var import Var
+    #     # print("rendering...")
+    #     out = (
+    #         super()
+    #         ._render()
+    #         .add_props(
+    #             **{
+    #                 "ref": Var.create("ref", is_local=False),
+    #             }
+    #         )
+    #     )
+    #     # print(out)
+    #     return out
 
 
 class InputGroup(ChakraComponent):

@@ -101,6 +101,11 @@ export const applyEvent = async (event, router, socket) => {
   return false;
 };
 
+export const set_val = (ref, val) => {
+  console.log("setval", ref, val)
+  ref.current.value = val;
+}
+
 /**
  * Process an event off the event queue.
  * @param state The state with the event queue.

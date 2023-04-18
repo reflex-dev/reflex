@@ -181,7 +181,7 @@ class Component(Base, ABC):
             event_trigger: The event trigger to bind the chain to.
             value: The value to create the event chain from.
             state_name: The state to be fully controlled.
-            full_control: Whether full contorolled or not.
+            full_control: Whether full controlled or not.
 
         Returns:
             The event chain.
@@ -240,10 +240,11 @@ class Component(Base, ABC):
 
         # Add args to the event specs if necessary.
         if is_controlled_event:
+            print("controlled event", arg, type(arg))
             events = [
                 EventSpec(
                     handler=e.handler,
-                    local_args=(EVENT_ARG.name,),
+                    local_args=(EVENT_ARG,),
                     args=get_handler_args(e, arg),
                 )
                 for e in events
