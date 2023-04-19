@@ -6,6 +6,7 @@ from plotly.graph_objects import Figure
 from pynecone.base import Base
 from pynecone.constants import RouteVar
 from pynecone.event import Event
+from pynecone.middleware.hydrate_middleware import IS_HYDRATED
 from pynecone.state import State
 from pynecone.utils import format
 from pynecone.var import BaseVar, ComputedVar
@@ -191,6 +192,7 @@ def test_class_vars(test_state):
     """
     cls = type(test_state)
     assert set(cls.vars.keys()) == {
+        IS_HYDRATED,  # added by hydrate_middleware to all State
         "num1",
         "num2",
         "key",

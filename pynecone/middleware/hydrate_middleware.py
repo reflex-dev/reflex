@@ -13,6 +13,12 @@ if TYPE_CHECKING:
     from pynecone.app import App
 
 
+IS_HYDRATED = "is_hydrated"
+
+
+State.add_var(IS_HYDRATED, type_=bool, default_value=False)
+
+
 class HydrateMiddleware(Middleware):
     """Middleware to handle initial app hydration."""
 
@@ -55,6 +61,12 @@ class HydrateMiddleware(Middleware):
                             state, single_event, event.token, event.payload
                         )
                     )
+            # extra message telling the client state that hydration is complete
+            updates.append(
+                StateUpdate(
+                    delta=format.format_state({state.get_name(): {IS_HYDRATED: True}})
+                )
+            )
 
             return updates
 
