@@ -197,7 +197,6 @@ class State(Base, ABC):
         for substate in cls.get_substates():
             substate.convert_handlers_to_fns()
 
-
     @classmethod
     def set_handlers(cls):
         """Set the state class handlers."""
