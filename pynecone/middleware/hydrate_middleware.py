@@ -38,19 +38,25 @@ class HydrateMiddleware(Middleware):
             else:
                 load_event = None
 
+            updates = []
+
+            # first get the initial state
+            delta = format.format_state({state.get_name(): state.dict()})
+            if delta:
+                updates.append(StateUpdate(delta=delta))
+
+            # then apply changes from on_load event handlers on top of that
             if load_event:
                 if not isinstance(load_event, List):
                     load_event = [load_event]
-                updates = []
                 for single_event in load_event:
                     updates.append(
                         await self.execute_load_event(
                             state, single_event, event.token, event.payload
                         )
                     )
-                return updates
-            delta = format.format_state({state.get_name(): state.dict()})
-            return StateUpdate(delta=delta) if delta else None
+
+            return updates
 
     async def execute_load_event(
         self, state: State, load_event: EventHandler, token: str, payload: Dict
