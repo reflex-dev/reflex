@@ -194,6 +194,8 @@ class State(Base, ABC):
         """
         for name, event_handler in cls.event_handlers.items():
             setattr(cls, name, event_handler.fn)
+        for substate in cls.get_substates():
+            substate.convert_handlers_to_fns()
 
     @classmethod
     def set_handlers(cls):
