@@ -724,3 +724,98 @@ def test_add_var(test_state):
     test_state.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
+
+
+class InterdependentState(State):
+    """A state with 3 vars and 3 computed vars.
+
+    x: a variable that no computed var depends on
+    v1: a varable that one computed var directly depeneds on
+    _v2: a backend variable that one computed var directly depends on
+
+    v1x2: a computed var that depends on v1
+    v2x2: a computed var that depends on backend var _v2
+    v1x2x2: a computed var that depends on computed var v1x2
+    """
+
+    x: int = 0
+    v1: int = 0
+    _v2: int = 1
+
+    @ComputedVar
+    def v1x2(self) -> int:
+        """depends on var v1.
+
+        Returns:
+            Var v1 multiplied by 2
+        """
+        return self.v1 * 2
+
+    @ComputedVar
+    def v2x2(self) -> int:
+        """depends on backend var _v2.
+
+        Returns:
+            backend var _v2 multiplied by 2
+        """
+        return self._v2 * 2
+
+    @ComputedVar
+    def v1x2x2(self) -> int:
+        """depends on ComputedVar v1x2.
+
+        Returns:
+            ComputedVar v1x2 multiplied by 2
+        """
+        return self.v1x2 * 2
+
+
+@pytest.fixture
+def interdependent_state() -> State:
+    """A state with varying dependency between vars.
+
+    Returns:
+        instance of InterdependentState
+    """
+    s = InterdependentState()
+    s.dict()  # prime initial relationships by accessing all ComputedVars
+    return s
+
+
+def test_not_dirty_computed_var_from_var(interdependent_state):
+    """Set Var that no ComputedVar depends on, expect no recalculation.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.x = 5
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"x": 5},
+    }
+
+
+def test_dirty_computed_var_from_var(interdependent_state):
+    """Set Var that ComputedVar depends on, expect recalculation.
+
+    The other ComputedVar depends on the changed ComputedVar and should also be
+    recalculated. No other ComputedVars should be recalculated.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.v1 = 1
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
+    }
+
+
+def test_dirty_computed_var_from_backend_var(interdependent_state):
+    """Set backend var that ComputedVar depends on, expect recalculation.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state._v2 = 2
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"v2x2": 4},
+    }
