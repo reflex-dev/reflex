@@ -182,9 +182,7 @@ class State(Base, ABC):
             for name, fn in cls.__dict__.items()
             if not name.startswith("_") and isinstance(fn, Callable)
         }
-        for name, fn in events.items():
-            event_handler = EventHandler(fn=fn)
-            cls.event_handlers[name] = event_handler
+        cls.event_handlers = {name: EventHandler(fn=fn) for name, fn in events.items()}
 
         cls.set_handlers()
 
@@ -196,6 +194,8 @@ class State(Base, ABC):
         """
         for name, event_handler in cls.event_handlers.items():
             setattr(cls, name, event_handler.fn)
+        for substate in cls.get_substates():
+            substate.convert_handlers_to_fns()
 
     @classmethod
     def set_handlers(cls):

@@ -25,16 +25,12 @@ INVALID_BUN_VERSIONS = ["0.5.6", "0.5.7"]
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# The name of the file used for pc init.
-APP_TEMPLATE_FILE = "tutorial.py"
 # The name of the assets directory.
 APP_ASSETS_DIR = "assets"
 # The template directory used during pc init.
 TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, ".templates")
 # The web subdirectory of the template directory.
 WEB_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "web")
-# The app subdirectory of the template directory.
-APP_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "app")
 # The assets subdirectory of the template directory.
 ASSETS_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, APP_ASSETS_DIR)
 
@@ -169,6 +165,14 @@ class LogLevel(str, Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
+
+
+# Templates
+class Template(str, Enum):
+    """The templates to use for the app."""
+
+    DEFAULT = "default"
+    COUNTER = "counter"
 
 
 class Endpoint(Enum):
