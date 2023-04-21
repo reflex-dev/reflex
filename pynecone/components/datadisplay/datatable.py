@@ -19,10 +19,11 @@ class DataTable(Gridjs):
 
     tag = "Grid"
 
-    # The data to display. Either a list of dictionaries or a pandas dataframe.
+    # The data to display. Either a list of lists or a pandas dataframe.
     data: Any
 
-    # The columns to display.
+    # The list of columns to display. Required if data is a list and should not be provided
+    # if the data field is a dataframe
     columns: Var[List]
 
     # Enable a search bar.
