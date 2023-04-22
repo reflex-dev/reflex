@@ -272,7 +272,7 @@ async def test_list_mutation_detection__plain_list(
         list_mutation_state: A state with list mutation features.
     """
     for event_name, expected_delta in event_tuples:
-        result = await list_mutation_state.process(
+        result = await list_mutation_state._process(
             Event(
                 token="fake-token",
                 name=event_name,
@@ -399,7 +399,7 @@ async def test_dict_mutation_detection__plain_list(
         dict_mutation_state: A state with dict mutation features.
     """
     for event_name, expected_delta in event_tuples:
-        result = await dict_mutation_state.process(
+        result = await dict_mutation_state._process(
             Event(
                 token="fake-token",
                 name=event_name,

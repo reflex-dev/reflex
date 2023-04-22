@@ -76,6 +76,6 @@ class HydrateMiddleware(Middleware):
                 "The value of state cannot be None when processing an on-load event."
             )
 
-        return await state.process_event(
+        return await state._process_event(
             handler=load_event, state=ex_state, payload=payload, token=token
         )
