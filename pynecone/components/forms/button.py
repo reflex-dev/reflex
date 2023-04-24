@@ -9,9 +9,6 @@ class Button(ChakraComponent):
 
     tag = "Button"
 
-    # The type of button.
-    type: Var[str]
-
     # The space between the button icon and label.
     icon_spacing: Var[int]
 
@@ -37,6 +34,9 @@ class Button(ChakraComponent):
     variant: Var[str]
 
     # Built in color scheme for ease of use.
+    # Options:
+    # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
+    # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     color_scheme: Var[str]
 
 

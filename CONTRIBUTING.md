@@ -35,7 +35,7 @@ Navigate into the repo:
 cd pynecone
 ```
 
-Install poetry and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
+Install poetry version >= 1.4.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
 
 Install your local Pynecone build:
 ``` bash
@@ -91,8 +91,15 @@ poetry run ruff check .
 poetry run pyright pynecone tests
 find pynecone tests -name "*.py" -not -path pynecone/pc.py | xargs poetry run darglint
 ```
-Finally run `black` to format your code.
+Finally, run `black` to format your code.
 ``` bash
 poetry run black pynecone tests
 ```
+
+Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and Black will run automatically before each commit.
+Note that pre-commit will only be installed when you use a Python version >= 3.8.
+``` bash
+pre-commit install
+```
+
 That's it you can now submit your pr. Thanks for contributing to Pynecone!

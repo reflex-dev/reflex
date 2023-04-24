@@ -1,6 +1,7 @@
 """List components."""
 
 from pynecone.components import Component
+from pynecone.components.layout.foreach import Foreach
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -32,9 +33,10 @@ class List(ChakraComponent):
             The list component.
         """
         if len(children) == 0:
-            children = []
-            for item in items or []:
-                children.append(ListItem.create(item))
+            if isinstance(items, Var):
+                children = [Foreach.create(items, ListItem.create)]
+            else:
+                children = [ListItem.create(item) for item in items or []]
         return super().create(*children, **props)
 
 

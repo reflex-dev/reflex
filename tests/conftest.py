@@ -1,10 +1,12 @@
 """Test fixtures."""
 import platform
-from typing import Generator
+from typing import Dict, Generator, List
 
 import pytest
 
-from pynecone.state import State
+import pynecone as pc
+from pynecone import constants
+from pynecone.event import EventSpec
 
 
 @pytest.fixture(scope="function")
@@ -25,7 +27,7 @@ def list_mutation_state():
         A state with list mutation features.
     """
 
-    class TestState(State):
+    class TestState(pc.State):
         """The test state."""
 
         # plain list
@@ -88,7 +90,7 @@ def dict_mutation_state():
         A state with dict mutation features.
     """
 
-    class TestState(State):
+    class TestState(pc.State):
         """The test state."""
 
         # plain dict
@@ -134,3 +136,143 @@ def dict_mutation_state():
             self.friend_in_nested_dict["friend"]["age"] = 30
 
     return TestState()
+
+
+class UploadState(pc.State):
+    """The base state for uploading a file."""
+
+    async def handle_upload1(self, files: List[pc.UploadFile]):
+        """Handle the upload of a file.
+
+        Args:
+            files: The uploaded files.
+        """
+        pass
+
+
+class BaseState(pc.State):
+    """The test base state."""
+
+    pass
+
+
+class SubUploadState(BaseState):
+    """The test substate."""
+
+    img: str
+
+    async def handle_upload(self, files: List[pc.UploadFile]):
+        """Handle the upload of a file.
+
+        Args:
+            files: The uploaded files.
+        """
+        pass
+
+
+@pytest.fixture
+def upload_sub_state_event_spec():
+    """Create an event Spec for a substate.
+
+    Returns:
+        Event Spec.
+    """
+    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # type: ignore
+
+
+@pytest.fixture
+def upload_event_spec():
+    """Create an event Spec for a multi-upload base state.
+
+    Returns:
+        Event Spec.
+    """
+    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # type: ignore
+
+
+@pytest.fixture
+def upload_state(tmp_path):
+    """Create upload state.
+
+    Args:
+        tmp_path: pytest tmp_path
+
+    Returns:
+        The state
+
+    """
+
+    class FileUploadState(pc.State):
+        """The base state for uploading a file."""
+
+        img_list: List[str]
+
+        async def handle_upload2(self, files):
+            """Handle the upload of a file.
+
+            Args:
+                files: The uploaded files.
+            """
+            for file in files:
+                upload_data = await file.read()
+                outfile = f"{tmp_path}/{file.filename}"
+
+                # Save the file.
+                with open(outfile, "wb") as file_object:
+                    file_object.write(upload_data)
+
+                # Update the img var.
+                self.img_list.append(file.filename)
+
+        async def multi_handle_upload(self, files: List[pc.UploadFile]):
+            """Handle the upload of a file.
+
+            Args:
+                files: The uploaded files.
+            """
+            for file in files:
+                upload_data = await file.read()
+                outfile = f"{tmp_path}/{file.filename}"
+
+                # Save the file.
+                with open(outfile, "wb") as file_object:
+                    file_object.write(upload_data)
+
+                # Update the img var.
+                self.img_list.append(file.filename)
+
+    return FileUploadState
+
+
+@pytest.fixture
+def base_config_values() -> Dict:
+    """Get base config values.
+
+    Returns:
+        Dictionary of base config values
+    """
+    return {"app_name": "app", "db_url": constants.DB_URL, "env": pc.Env.DEV}
+
+
+@pytest.fixture
+def base_db_config_values() -> Dict:
+    """Get base DBConfig values.
+
+    Returns:
+        Dictionary of base db config values
+    """
+    return {"database": "db"}
+
+
+@pytest.fixture
+def sqlite_db_config_values(base_db_config_values) -> Dict:
+    """Get sqlite DBConfig values.
+
+    Args:
+        base_db_config_values: Base DBConfig fixture.
+
+    Returns:
+        Dictionary of sqlite DBConfig values
+    """
+    base_db_config_values["engine"] = "sqlite"
+    return base_db_config_values

@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.244
+    hooks:
+    - id: ruff
+
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.297
+    hooks:
+    - id: pyright
+      args: [pynecone, tests]
+      language: system
+
+  - repo: https://github.com/terrencepreilly/darglint
+    rev: v1.8.1
+    hooks:
+    - id: darglint
+      exclude: '^pynecone/pc.py'
+
+  - repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+    - id: black
+      args: [pynecone, tests]

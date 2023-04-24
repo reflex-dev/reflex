@@ -17,19 +17,20 @@ VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
 MIN_NODE_VERSION = "12.22.0"
 
+# Valid bun versions.
+MIN_BUN_VERSION = "0.5.5"
+MAX_BUN_VERSION = "0.5.8"
+INVALID_BUN_VERSIONS = ["0.5.6", "0.5.7"]
+
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# The name of the file used for pc init.
-APP_TEMPLATE_FILE = "tutorial.py"
 # The name of the assets directory.
 APP_ASSETS_DIR = "assets"
 # The template directory used during pc init.
 TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, ".templates")
 # The web subdirectory of the template directory.
 WEB_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "web")
-# The app subdirectory of the template directory.
-APP_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "app")
 # The assets subdirectory of the template directory.
 ASSETS_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, APP_ASSETS_DIR)
 
@@ -65,6 +66,8 @@ PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pynecone.json")
 # Commands to run the app.
 # The frontend default port.
 FRONTEND_PORT = "3000"
+# The backend default port.
+BACKEND_PORT = "8000"
 # The backend api url.
 API_URL = "http://localhost:8000"
 # The default path where bun is installed.
@@ -77,6 +80,10 @@ BACKEND_HOST = "0.0.0.0"
 TIMEOUT = 120
 # The command to run the backend in production mode.
 RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {TIMEOUT} --log-level critical".split()
+RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {TIMEOUT}".split()
+# Socket.IO web server
+PING_INTERVAL = 25
+PING_TIMEOUT = 5
 
 # Compiler variables.
 # The extension for compiled Javascript files.
@@ -123,6 +130,8 @@ DEFAULT_TITLE = "Pynecone App"
 DEFAULT_DESCRIPTION = "A Pynecone app."
 # The default image to show for Pynecone apps.
 DEFAULT_IMAGE = "favicon.ico"
+# The default meta list to show for Pynecone apps.
+DEFAULT_META_LIST = []
 
 
 # The gitignore file.
@@ -158,11 +167,20 @@ class LogLevel(str, Enum):
     CRITICAL = "critical"
 
 
+# Templates
+class Template(str, Enum):
+    """The templates to use for the app."""
+
+    DEFAULT = "default"
+    COUNTER = "counter"
+
+
 class Endpoint(Enum):
     """Endpoints for the pynecone backend API."""
 
     PING = "ping"
     EVENT = "event"
+    UPLOAD = "upload"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
@@ -179,10 +197,10 @@ class Endpoint(Enum):
             The full URL for the endpoint.
         """
         # Import here to avoid circular imports.
-        from pynecone import utils
+        from pynecone.config import get_config
 
         # Get the API URL from the config.
-        config = utils.get_config()
+        config = get_config()
         url = "".join([config.api_url, str(self)])
 
         # The event endpoint is a websocket.
@@ -232,10 +250,10 @@ class Transports(Enum):
             The transports config for the backend.
         """
         # Import here to avoid circular imports.
-        from pynecone import utils
+        from pynecone.config import get_config
 
-        # Get the transports from the config.
-        config = utils.get_config()
+        # Get the API URL from the config.
+        config = get_config()
         return str(config.backend_transports)
 
 

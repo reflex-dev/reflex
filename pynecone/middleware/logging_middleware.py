@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class LoggingMiddleware(Middleware):
     """Middleware to log requests and responses."""
 
-    def preprocess(self, app: App, state: State, event: Event):
+    async def preprocess(self, app: App, state: State, event: Event):
         """Preprocess the event.
 
         Args:
@@ -24,7 +24,7 @@ class LoggingMiddleware(Middleware):
         """
         print(f"Event {event}")
 
-    def postprocess(self, app: App, state: State, event: Event, delta: Delta):
+    async def postprocess(self, app: App, state: State, event: Event, delta: Delta):
         """Postprocess the event.
 
         Args:

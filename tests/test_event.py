@@ -1,4 +1,8 @@
-from pynecone.event import Event, EventHandler
+import pytest
+
+from pynecone import event
+from pynecone.event import Event, EventHandler, EventSpec
+from pynecone.utils import format
 from pynecone.var import Var
 
 
@@ -46,3 +50,42 @@ def test_call_event_handler():
     assert event_spec.handler == handler
     assert event_spec.local_args == ()
     assert event_spec.args == (("arg1", "first"), ("arg2", "second"))
+
+    first, second = 123, "456"
+    handler = EventHandler(fn=test_fn_with_args)
+    event_spec = handler(first, second)  # type: ignore
+
+    assert event_spec.handler == handler
+    assert event_spec.local_args == ()
+    assert event_spec.args == (
+        ("arg1", format.json_dumps(first)),
+        ("arg2", format.json_dumps(second)),
+    )
+
+    handler = EventHandler(fn=test_fn_with_args)
+    with pytest.raises(TypeError):
+        handler(test_fn)  # type: ignore
+
+
+def test_event_redirect():
+    """Test the event redirect function."""
+    spec = event.redirect("/path")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_redirect"
+    assert spec.args == (("path", "/path"),)
+
+
+def test_event_console_log():
+    """Test the event console log function."""
+    spec = event.console_log("message")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_console"
+    assert spec.args == (("message", "message"),)
+
+
+def test_event_window_alert():
+    """Test the event window alert function."""
+    spec = event.window_alert("message")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_alert"
+    assert spec.args == (("message", "message"),)

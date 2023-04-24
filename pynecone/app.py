@@ -1,21 +1,31 @@
 """The main Pynecone app."""
 
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
+import asyncio
+import inspect
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 
-from pynecone import constants, utils
+from pynecone import constants
 from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
+from pynecone.config import get_config
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
-from pynecone.route import DECORATED_ROUTES
+from pynecone.route import (
+    DECORATED_ROUTES,
+    catchall_in_route,
+    catchall_prefix,
+    get_route_args,
+    verify_route_validity,
+)
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
+from pynecone.utils import format, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -53,7 +63,7 @@ class App(Base):
     middleware: List[Middleware] = []
 
     # Event handlers to trigger when a page loads.
-    load_events: Dict[str, EventHandler] = {}
+    load_events: Dict[str, Union[EventHandler, List[EventHandler]]] = {}
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -65,7 +75,7 @@ class App(Base):
         super().__init__(*args, **kwargs)
 
         # Get the config
-        config = utils.get_config()
+        config = get_config()
 
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
@@ -89,6 +99,8 @@ class App(Base):
             cors_allowed_origins=cors_allowed_origins,
             cors_credentials=config.cors_credentials,
             max_http_buffer_size=config.polling_max_http_buffer_size,
+            ping_interval=constants.PING_INTERVAL,
+            ping_timeout=constants.PING_TIMEOUT,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
@@ -124,6 +136,9 @@ class App(Base):
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
 
+        # To upload files.
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
     def add_cors(self):
         """Add CORS middleware to the app."""
         self.api.add_middleware(
@@ -131,9 +146,12 @@ class App(Base):
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+            allow_origins=["*"],
         )
 
-    def preprocess(self, state: State, event: Event) -> Optional[Delta]:
+    async def preprocess(
+        self, state: State, event: Event
+    ) -> Optional[Union[StateUpdate, List[StateUpdate]]]:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -150,11 +168,16 @@ class App(Base):
             An optional state to return.
         """
         for middleware in self.middleware:
-            out = middleware.preprocess(app=self, state=state, event=event)
+            if asyncio.iscoroutinefunction(middleware.preprocess):
+                out = await middleware.preprocess(app=self, state=state, event=event)
+            else:
+                out = middleware.preprocess(app=self, state=state, event=event)
             if out is not None:
-                return out
+                return out  # type: ignore
 
-    def postprocess(self, state: State, event: Event, delta: Delta) -> Optional[Delta]:
+    async def postprocess(
+        self, state: State, event: Event, delta: Delta
+    ) -> Optional[Delta]:
         """Postprocess the event.
 
         This is where middleware can modify the delta after it is processed.
@@ -172,11 +195,16 @@ class App(Base):
             An optional state to return.
         """
         for middleware in self.middleware:
-            out = middleware.postprocess(
-                app=self, state=state, event=event, delta=delta
-            )
+            if asyncio.iscoroutinefunction(middleware.postprocess):
+                out = await middleware.postprocess(
+                    app=self, state=state, event=event, delta=delta
+                )
+            else:
+                out = middleware.postprocess(
+                    app=self, state=state, event=event, delta=delta
+                )
             if out is not None:
-                return out
+                return out  # type: ignore
 
     def add_middleware(self, middleware: Middleware, index: Optional[int] = None):
         """Add middleware to the app.
@@ -197,8 +225,9 @@ class App(Base):
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
-        on_load: Optional[EventHandler] = None,
-        path: Optional[str] = None,
+        on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
+        meta: List[Dict] = constants.DEFAULT_META_LIST,
+        script_tags: Optional[List[Component]] = None,
     ):
         """Add a page to the app.
 
@@ -207,19 +236,17 @@ class App(Base):
 
         Args:
             component: The component to display at the page.
-            path: (deprecated) The path to the component.
             route: The route to display the component at.
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
-            on_load: The event handler that will be called each time the page load.
-        """
-        if path is not None:
-            utils.deprecate(
-                "The `path` argument is deprecated for `add_page`. Use `route` instead."
-            )
-            route = path
+            on_load: The event handler(s) that will be called each time the page load.
+            meta: The metadata of the page.
+            script_tags: List of script tags to be added to component
 
+        Raises:
+            TypeError: If an invalid var operation is used.
+        """
         # If the route is not set, get it from the callable.
         if route is None:
             assert isinstance(
@@ -228,21 +255,35 @@ class App(Base):
             route = component.__name__
 
         # Check if the route given is valid
-        utils.verify_route_validity(route)
+        verify_route_validity(route)
 
         # Apply dynamic args to the route.
-        self.state.setup_dynamic_args(utils.get_route_args(route))
+        self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
-        component = component if isinstance(component, Component) else component()
+        try:
+            component = component if isinstance(component, Component) else component()
+        except TypeError as e:
+            message = str(e)
+            if "BaseVar" in message or "ComputedVar" in message:
+                raise TypeError(
+                    "You may be trying to use an invalid Python function on a state var. "
+                    "When referencing a var inside your render code, only limited var operations are supported. "
+                    "See the var operation docs here: https://pynecone.io/docs/state/vars "
+                ) from e
+            raise e
 
         # Add meta information to the component.
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description
+            component, title=title, image=image, description=description, meta=meta
         )
 
+        # Add script tags if given
+        if script_tags:
+            component.children.extend(script_tags)
+
         # Format the route.
-        route = utils.format_route(route)
+        route = format.format_route(route)
 
         # Add the page.
         self._check_routes_conflict(route)
@@ -262,7 +303,7 @@ class App(Base):
         Args:
             new_route: the route being newly added.
         """
-        newroute_catchall = utils.catchall_in_route(new_route)
+        newroute_catchall = catchall_in_route(new_route)
         if not newroute_catchall:
             return
 
@@ -274,17 +315,24 @@ class App(Base):
                     f"You cannot define a route with the same specificity as a optional catch-all route ('{route}' and '{new_route}')"
                 )
 
-            route_catchall = utils.catchall_in_route(route)
+            route_catchall = catchall_in_route(route)
             if (
                 route_catchall
                 and newroute_catchall
-                and utils.catchall_prefix(route) == utils.catchall_prefix(new_route)
+                and catchall_prefix(route) == catchall_prefix(new_route)
             ):
                 raise ValueError(
                     f"You cannot use multiple catchall for the same dynamic route ({route} !== {new_route})"
                 )
 
-    def add_custom_404_page(self, component, title=None, image=None, description=None):
+    def add_custom_404_page(
+        self,
+        component,
+        title=None,
+        image=None,
+        description=None,
+        meta=constants.DEFAULT_META_LIST,
+    ):
         """Define a custom 404 page for any url having no match.
 
         If there is no page defined on 'index' route, add the 404 page to it.
@@ -295,6 +343,7 @@ class App(Base):
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
+            meta: The metadata of the page.
         """
         title = title or constants.TITLE_404
         image = image or constants.FAVICON_404
@@ -303,10 +352,10 @@ class App(Base):
         component = component if isinstance(component, Component) else component()
 
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description
+            component, title=title, image=image, description=description, meta=meta
         )
 
-        froute = utils.format_route
+        froute = format.format_route
         if (froute(constants.ROOT_404) not in self.pages) and (
             not any(page.startswith("[[...") for page in self.pages)
         ):
@@ -329,7 +378,7 @@ class App(Base):
             self.add_page(render, **kwargs)
 
         # Get the env mode.
-        config = utils.get_config()
+        config = get_config()
         if config.env != constants.Env.DEV and not force_compile:
             print("Skipping compilation in non-dev mode.")
             return
@@ -348,6 +397,7 @@ class App(Base):
         compiler.compile_theme(self.style)
 
         # Compile the pages.
+        self.state.set_handlers()
         custom_components = set()
         for route, component in self.pages.items():
             component.add_style(self.style)
@@ -359,10 +409,13 @@ class App(Base):
         # Compile the custom components.
         compiler.compile_components(custom_components)
 
+        # To support calling event handlers from other handlers.
+        self.state.convert_handlers_to_fns()
+
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
-) -> StateUpdate:
+) -> List[StateUpdate]:
     """Process an event.
 
     Args:
@@ -373,40 +426,49 @@ async def process(
         client_ip: The client_ip.
 
     Returns:
-        The state update after processing the event.
+        The state updates after processing the event.
     """
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
-    formatted_params = utils.format_query_params(event.router_data)
-
-    # Pass router_data to the state of the App.
+    # Add request data to the state.
     state.router_data = event.router_data
-    # also pass router_data to all substates
+    state.router_data.update(
+        {
+            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+            constants.RouteVar.CLIENT_TOKEN: event.token,
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        }
+    )
+
+    # Also pass router_data to all substates. (TODO: this isn't recursive currently)
     for _, substate in state.substates.items():
-        substate.router_data = event.router_data
-    state.router_data[constants.RouteVar.QUERY] = formatted_params
-    state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
-    state.router_data[constants.RouteVar.SESSION_ID] = sid
-    state.router_data[constants.RouteVar.HEADERS] = headers
-    state.router_data[constants.RouteVar.CLIENT_IP] = client_ip
+        substate.router_data = state.router_data
 
     # Preprocess the event.
-    pre = app.preprocess(state, event)
-    if pre is not None:
-        return StateUpdate(delta=pre)
+    pre = await app.preprocess(state, event)
+    if isinstance(pre, StateUpdate):
+        return [pre]
+    updates = pre
 
     # Apply the event to the state.
-    update = await state.process(event)
-    app.state_manager.set_state(event.token, state)
+    if updates is None:
+        updates = [await state._process(event)]
+        app.state_manager.set_state(event.token, state)
 
     # Postprocess the event.
-    post = app.postprocess(state, event, update.delta)
-    if post is not None:
-        return StateUpdate(delta=post)
+    post_list = []
+    for update in updates:
+        post = await app.postprocess(state, event, update.delta)  # type: ignore
+        post_list.append(post) if post else None
 
-    # Return the update.
-    return update
+    if len(post_list) > 0:
+        return [StateUpdate(delta=post) for post in post_list]
+
+    # Return the updates.
+    return updates
 
 
 async def ping() -> str:
@@ -416,6 +478,66 @@ async def ping() -> str:
         The response.
     """
     return "pong"
+
+
+def upload(app: App):
+    """Upload a file.
+
+    Args:
+        app: The app to upload the file for.
+
+    Returns:
+        The upload function.
+    """
+
+    async def upload_file(files: List[UploadFile]):
+        """Upload a file.
+
+        Args:
+            files: The file(s) to upload.
+
+        Returns:
+            The state update after processing the event.
+
+        Raises:
+            ValueError: if there are no args with supported annotation.
+        """
+        token, handler = files[0].filename.split(":")[:2]
+        for file in files:
+            file.filename = file.filename.split(":")[-1]
+
+        # Get the state for the session.
+        state = app.state_manager.get_state(token)
+        handler_upload_param: Tuple = ()
+
+        # get handler function
+        func = getattr(state, handler.split(".")[-1])
+
+        # check if there exists any handler args with annotation, List[UploadFile]
+        for k, v in inspect.getfullargspec(
+            func.fn if isinstance(func, EventHandler) else func
+        ).annotations.items():
+            if types.is_generic_alias(v) and types._issubclass(
+                v.__args__[0], UploadFile
+            ):
+                handler_upload_param = (k, v)
+                break
+
+        if not handler_upload_param:
+            raise ValueError(
+                f"`{handler}` handler should have a parameter annotated as List["
+                f"pc.UploadFile]"
+            )
+
+        event = Event(
+            token=token,
+            name=handler,
+            payload={handler_upload_param[0]: files},
+        )
+        update = await state._process(event)
+        return update
+
+    return upload_file
 
 
 class EventNamespace(AsyncNamespace):
@@ -464,6 +586,7 @@ class EventNamespace(AsyncNamespace):
         # Get the event environment.
         assert self.app.sio is not None
         environ = self.app.sio.get_environ(sid, self.namespace)
+        assert environ is not None
 
         # Get the client headers.
         headers = {
@@ -474,11 +597,12 @@ class EventNamespace(AsyncNamespace):
         # Get the client IP
         client_ip = environ["REMOTE_ADDR"]
 
-        # Process the event.
-        update = await process(self.app, event, sid, headers, client_ip)
+        # Process the events.
+        updates = await process(self.app, event, sid, headers, client_ip)
 
         # Emit the event.
-        await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+        for update in updates:
+            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.

@@ -3,11 +3,11 @@ from typing import Dict, List
 import pytest
 from plotly.graph_objects import Figure
 
-from pynecone import utils
 from pynecone.base import Base
 from pynecone.constants import RouteVar
 from pynecone.event import Event
 from pynecone.state import State
+from pynecone.utils import format
 from pynecone.var import BaseVar, ComputedVar
 
 
@@ -202,6 +202,28 @@ def test_class_vars(test_state):
         "upper",
         "fig",
     }
+
+
+def test_event_handlers(test_state):
+    """Test that event handler is set correctly.
+
+    Args:
+        test_state: A state.
+    """
+    expected = {
+        "do_something",
+        "set_array",
+        "set_complex",
+        "set_fig",
+        "set_key",
+        "set_mapping",
+        "set_num1",
+        "set_num2",
+        "set_obj",
+    }
+
+    cls = type(test_state)
+    assert set(cls.event_handlers.keys()).intersection(expected) == expected
 
 
 def test_default_value(test_state):
@@ -554,13 +576,13 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 0
 
     event = Event(token="t", name="set_num1", payload={"value": 69})
-    update = await test_state.process(event)
+    update = await test_state._process(event)
 
     # The event should update the value.
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.events == []
 
 
@@ -579,12 +601,11 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     event = Event(
         token="t", name="child_state.change_both", payload={"value": "hi", "count": 12}
     )
-    update = await test_state.process(event)
+    update = await test_state._process(event)
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
         "test_state.child_state": {"value": "HI", "count": 24},
-        "test_state": {"sum": 3.14, "upper": ""},
     }
     test_state.clean()
 
@@ -595,25 +616,24 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         name="child_state.grandchild_state.set_value2",
         payload={"value": "new"},
     )
-    update = await test_state.process(event)
+    update = await test_state._process(event)
     assert grandchild_state.value2 == "new"
     assert update.delta == {
         "test_state.child_state.grandchild_state": {"value2": "new"},
-        "test_state": {"sum": 3.14, "upper": ""},
     }
 
 
 def test_format_event_handler():
     """Test formatting an event handler."""
     assert (
-        utils.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
+        format.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
     )
     assert (
-        utils.format_event_handler(ChildState.change_both)  # type: ignore
+        format.format_event_handler(ChildState.change_both)  # type: ignore
         == "test_state.child_state.change_both"
     )
     assert (
-        utils.format_event_handler(GrandchildState.do_nothing)  # type: ignore
+        format.format_event_handler(GrandchildState.do_nothing)  # type: ignore
         == "test_state.child_state.grandchild_state.do_nothing"
     )
 
@@ -702,3 +722,98 @@ def test_add_var(test_state):
     test_state.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
+
+
+class InterdependentState(State):
+    """A state with 3 vars and 3 computed vars.
+
+    x: a variable that no computed var depends on
+    v1: a varable that one computed var directly depeneds on
+    _v2: a backend variable that one computed var directly depends on
+
+    v1x2: a computed var that depends on v1
+    v2x2: a computed var that depends on backend var _v2
+    v1x2x2: a computed var that depends on computed var v1x2
+    """
+
+    x: int = 0
+    v1: int = 0
+    _v2: int = 1
+
+    @ComputedVar
+    def v1x2(self) -> int:
+        """depends on var v1.
+
+        Returns:
+            Var v1 multiplied by 2
+        """
+        return self.v1 * 2
+
+    @ComputedVar
+    def v2x2(self) -> int:
+        """depends on backend var _v2.
+
+        Returns:
+            backend var _v2 multiplied by 2
+        """
+        return self._v2 * 2
+
+    @ComputedVar
+    def v1x2x2(self) -> int:
+        """depends on ComputedVar v1x2.
+
+        Returns:
+            ComputedVar v1x2 multiplied by 2
+        """
+        return self.v1x2 * 2
+
+
+@pytest.fixture
+def interdependent_state() -> State:
+    """A state with varying dependency between vars.
+
+    Returns:
+        instance of InterdependentState
+    """
+    s = InterdependentState()
+    s.dict()  # prime initial relationships by accessing all ComputedVars
+    return s
+
+
+def test_not_dirty_computed_var_from_var(interdependent_state):
+    """Set Var that no ComputedVar depends on, expect no recalculation.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.x = 5
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"x": 5},
+    }
+
+
+def test_dirty_computed_var_from_var(interdependent_state):
+    """Set Var that ComputedVar depends on, expect recalculation.
+
+    The other ComputedVar depends on the changed ComputedVar and should also be
+    recalculated. No other ComputedVars should be recalculated.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.v1 = 1
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
+    }
+
+
+def test_dirty_computed_var_from_backend_var(interdependent_state):
+    """Set backend var that ComputedVar depends on, expect recalculation.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state._v2 = 2
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"v2x2": 4},
+    }

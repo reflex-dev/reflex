@@ -5,14 +5,14 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Union
 
 from plotly.graph_objects import Figure
 from plotly.io import to_json
 
-from pynecone import utils
 from pynecone.base import Base
 from pynecone.event import EventChain
+from pynecone.utils import format, types
 from pynecone.var import Var
 
 if TYPE_CHECKING:
@@ -30,6 +30,12 @@ class Tag(Base):
 
     # The inner contents of the tag.
     contents: str = ""
+
+    # Args to pass to the tag.
+    args: Optional[Tuple[str, ...]] = None
+
+    # Special props that aren't key value pairs.
+    special_props: Set[Var] = set()
 
     def __init__(self, *args, **kwargs):
         """Initialize the tag.
@@ -61,21 +67,31 @@ class Tag(Base):
         if isinstance(prop, Var):
             if not prop.is_local or prop.is_string:
                 return str(prop)
-            if issubclass(prop.type_, str):
-                return json.dumps(prop.full_name)
+            if types._issubclass(prop.type_, str):
+                return format.json_dumps(prop.full_name)
             prop = prop.full_name
 
         # Handle event props.
         elif isinstance(prop, EventChain):
             local_args = ",".join(prop.events[0].local_args)
-            events = ",".join([utils.format_event(event) for event in prop.events])
-            prop = f"({local_args}) => Event([{events}])"
+
+            if len(prop.events) == 1 and prop.events[0].upload:
+                # Special case for upload events.
+                event = format.format_upload_event(prop.events[0])
+            elif prop.full_control:
+                # Full control component events.
+                event = format.format_full_control_event(prop)
+            else:
+                # All other events.
+                chain = ",".join([format.format_event(event) for event in prop.events])
+                event = f"Event([{chain}])"
+            prop = f"({local_args}) => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
-            if utils.is_wrapped(prop, "{"):
+            if format.is_wrapped(prop, "{"):
                 return prop
-            return json.dumps(prop)
+            return format.json_dumps(prop)
 
         elif isinstance(prop, Figure):
             prop = json.loads(to_json(prop))["data"]  # type: ignore
@@ -90,15 +106,16 @@ class Tag(Base):
                 }
 
             # Dump the prop as JSON.
-            prop = json.dumps(prop)
+            prop = format.json_dumps(prop)
 
             # This substitution is necessary to unwrap var values.
             prop = re.sub('"{', "", prop)
             prop = re.sub('}"', "", prop)
+            prop = re.sub('\\\\"', '"', prop)
 
         # Wrap the variable in braces.
         assert isinstance(prop, str), "The prop must be a string."
-        return utils.wrap(prop, "{", check_first=False)
+        return format.wrap(prop, "{", check_first=False)
 
     def format_props(self) -> str:
         """Format the tag's props.
@@ -113,7 +130,7 @@ class Tag(Base):
         # Format all the props.
         return os.linesep.join(
             f"{name}={self.format_prop(prop)}"
-            for name, prop in self.props.items()
+            for name, prop in sorted(self.props.items())
             if prop is not None
         )
 
@@ -125,17 +142,28 @@ class Tag(Base):
         """
         # Get the tag props.
         props_str = self.format_props()
+
+        # Add the special props.
+        props_str += " ".join([str(prop) for prop in self.special_props])
+
+        # Add a space if there are props.
         if len(props_str) > 0:
             props_str = " " + props_str
 
         if len(self.contents) == 0:
             # If there is no inner content, we don't need a closing tag.
-            tag_str = utils.wrap(f"{self.name}{props_str}/", "<")
+            tag_str = format.wrap(f"{self.name}{props_str}/", "<")
         else:
+            if self.args is not None:
+                # If there are args, wrap the tag in a function call.
+                args_str = ", ".join(self.args)
+                contents = f"{{({{{args_str}}}) => ({self.contents})}}"
+            else:
+                contents = self.contents
             # Otherwise wrap it in opening and closing tags.
-            open = utils.wrap(f"{self.name}{props_str}", "<")
-            close = utils.wrap(f"/{self.name}", "<")
-            tag_str = utils.wrap(self.contents, open, close)
+            open = format.wrap(f"{self.name}{props_str}", "<")
+            close = format.wrap(f"/{self.name}", "<")
+            tag_str = format.wrap(contents, open, close)
 
         return tag_str
 
@@ -150,8 +178,8 @@ class Tag(Base):
         """
         self.props.update(
             {
-                utils.to_camel_case(name): prop
-                if utils._isinstance(prop, Union[EventChain, dict])
+                format.to_camel_case(name): prop
+                if types._isinstance(prop, Union[EventChain, dict])
                 else Var.create(prop)
                 for name, prop in kwargs.items()
                 if self.is_valid_prop(prop)

@@ -1,7 +1,7 @@
-"""An image component."""
+"""An icon component."""
 
-from pynecone import utils
 from pynecone.components.component import Component
+from pynecone.utils import format
 
 
 class ChakraIconComponent(Component):
@@ -27,6 +27,7 @@ class Icon(ChakraIconComponent):
 
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.
+            ValueError: If the icon tag is invalid.
 
         Returns:
             The created component.
@@ -37,5 +38,71 @@ class Icon(ChakraIconComponent):
             )
         if "tag" not in props.keys():
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
-        props["tag"] = utils.to_title_case(props["tag"]) + "Icon"
+        if type(props["tag"]) != str or props["tag"].lower() not in ICON_LIST:
+            raise ValueError(
+                f"Invalid icon tag: {props['tag']}. Please use one of the following: {ICON_LIST}"
+            )
+        props["tag"] = format.to_title_case(props["tag"]) + "Icon"
         return super().create(*children, **props)
+
+
+# List of all icons.
+ICON_LIST = [
+    "add",
+    "arrow_back",
+    "arrow_down",
+    "arrow_forward",
+    "arrow_left",
+    "arrow_right",
+    "arrow_up",
+    "arrow_up_down",
+    "at_sign",
+    "attachment",
+    "bell",
+    "calendar",
+    "check_circle",
+    "check",
+    "chevron_down",
+    "chevron_left",
+    "chevron_right",
+    "chevron_up",
+    "close",
+    "copy",
+    "delete",
+    "download",
+    "drag_handle",
+    "edit",
+    "email",
+    "external_link",
+    "hamburger",
+    "info",
+    "info_outline",
+    "link",
+    "lock",
+    "minus",
+    "moon",
+    "not_allowed",
+    "phone",
+    "plus_square",
+    "question",
+    "question_outline",
+    "repeat",
+    "repeat_clock",
+    "search",
+    "search2",
+    "settings",
+    "small_add",
+    "small_close",
+    "spinner",
+    "star",
+    "sun",
+    "time",
+    "triangle_down",
+    "triangle_up",
+    "unlock",
+    "up_down",
+    "view",
+    "view_off",
+    "warning",
+    "warning_two",
+]

@@ -2,11 +2,13 @@ from typing import Dict, List, Type
 
 import pytest
 
-from pynecone.components.component import Component, CustomComponent, ImportDict
+import pynecone as pc
+from pynecone.components.component import Component, CustomComponent, custom_component
 from pynecone.components.layout.box import Box
 from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
 from pynecone.style import Style
+from pynecone.utils import imports
 from pynecone.var import Var
 
 
@@ -39,7 +41,7 @@ def component1() -> Type[Component]:
         # A test number prop.
         number: Var[int]
 
-        def _get_imports(self) -> ImportDict:
+        def _get_imports(self) -> imports.ImportDict:
             return {"react": {"Component"}}
 
         def _get_custom_code(self) -> str:
@@ -72,13 +74,43 @@ def component2() -> Type[Component]:
                 "on_close": EVENT_ARG,
             }
 
-        def _get_imports(self) -> ImportDict:
+        def _get_imports(self) -> imports.ImportDict:
             return {"react-redux": {"connect"}}
 
         def _get_custom_code(self) -> str:
             return "console.log('component2')"
 
     return TestComponent2
+
+
+@pytest.fixture
+def component3() -> Type[Component]:
+    """A test component with hook defined.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent3(Component):
+        def _get_hooks(self) -> str:
+            return "const a = () => true"
+
+    return TestComponent3
+
+
+@pytest.fixture
+def component4() -> Type[Component]:
+    """A test component with hook defined.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent4(Component):
+        def _get_hooks(self) -> str:
+            return "const b = () => false"
+
+    return TestComponent4
 
 
 @pytest.fixture
@@ -310,6 +342,27 @@ def test_custom_component_hash(my_component):
     assert {component1, component2} == {component1}
 
 
+def test_custom_component_wrapper():
+    """Test that the wrapper of a custom component is correct."""
+
+    @custom_component
+    def my_component(width: Var[int], color: Var[str]):
+        return pc.box(
+            width=width,
+            color=color,
+        )
+
+    ccomponent = my_component(
+        pc.text("child"), width=Var.create(1), color=Var.create("red")
+    )
+    assert isinstance(ccomponent, CustomComponent)
+    assert len(ccomponent.children) == 1
+    assert isinstance(ccomponent.children[0], pc.Text)
+
+    component = ccomponent.get_component()
+    assert isinstance(component, Box)
+
+
 def test_invalid_event_handler_args(component2, TestState):
     """Test that an invalid event handler raises an error.
 
@@ -340,3 +393,42 @@ def test_invalid_event_handler_args(component2, TestState):
         component2.create(on_open=TestState.do_something)
     with pytest.raises(ValueError):
         component2.create(on_open=[TestState.do_something_arg, TestState.do_something])
+
+
+def test_get_hooks_nested(component1, component2, component3):
+    """Test that a component returns hooks from child components.
+
+    Args:
+        component1: test component.
+        component2: another component.
+        component3: component with hooks defined.
+    """
+    c = component1.create(
+        component2.create(arr=[]),
+        component3.create(),
+        component3.create(),
+        component3.create(),
+        text="a",
+        number=1,
+    )
+    assert c.get_hooks() == component3().get_hooks()
+
+
+def test_get_hooks_nested2(component3, component4):
+    """Test that a component returns both when parent and child have hooks.
+
+    Args:
+        component3: component with hooks defined.
+        component4: component with different hooks defined.
+    """
+    exp_hooks = component3().get_hooks().union(component4().get_hooks())
+    assert component3.create(component4.create()).get_hooks() == exp_hooks
+    assert component4.create(component3.create()).get_hooks() == exp_hooks
+    assert (
+        component4.create(
+            component3.create(),
+            component4.create(),
+            component3.create(),
+        ).get_hooks()
+        == exp_hooks
+    )

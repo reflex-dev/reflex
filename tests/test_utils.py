@@ -1,8 +1,9 @@
-import typing
+from typing import Any, List, Union
 
 import pytest
 
-from pynecone import utils
+from pynecone.utils import build, format, imports, prerequisites, types
+from pynecone.var import Var
 
 
 @pytest.mark.parametrize(
@@ -24,7 +25,7 @@ def test_to_snake_case(input: str, output: str):
         input: The input string.
         output: The expected output string.
     """
-    assert utils.to_snake_case(input) == output
+    assert format.to_snake_case(input) == output
 
 
 @pytest.mark.parametrize(
@@ -44,7 +45,7 @@ def test_to_camel_case(input: str, output: str):
         input: The input string.
         output: The expected output string.
     """
-    assert utils.to_camel_case(input) == output
+    assert format.to_camel_case(input) == output
 
 
 @pytest.mark.parametrize(
@@ -64,7 +65,7 @@ def test_to_title_case(input: str, output: str):
         input: The input string.
         output: The expected output string.
     """
-    assert utils.to_title_case(input) == output
+    assert format.to_title_case(input) == output
 
 
 @pytest.mark.parametrize(
@@ -85,7 +86,7 @@ def test_get_close_char(input: str, output: str):
         input: The open character.
         output: The expected close character.
     """
-    assert utils.get_close_char(input) == output
+    assert format.get_close_char(input) == output
 
 
 @pytest.mark.parametrize(
@@ -106,7 +107,7 @@ def test_is_wrapped(text: str, open: str, expected: bool):
         open: The open character.
         expected: Whether the text is wrapped.
     """
-    assert utils.is_wrapped(text, open) == expected
+    assert format.is_wrapped(text, open) == expected
 
 
 @pytest.mark.parametrize(
@@ -132,7 +133,7 @@ def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
         check_first: Whether to check if the text is already wrapped.
         num: The number of times to wrap the text.
     """
-    assert utils.wrap(text, open, check_first=check_first, num=num) == expected
+    assert format.wrap(text, open, check_first=check_first, num=num) == expected
 
 
 @pytest.mark.parametrize(
@@ -154,7 +155,7 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
         expected: The expected output string.
         windows_platform: Whether the system is windows.
     """
-    assert utils.indent(text, indent_level) == (
+    assert format.indent(text, indent_level) == (
         expected.replace("\n", "\r\n") if windows_platform else expected
     )
 
@@ -175,14 +176,14 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         false_value: The value to return if the condition is false.
         expected: The expected output string.
     """
-    assert utils.format_cond(condition, true_value, false_value) == expected
+    assert format.format_cond(condition, true_value, false_value) == expected
 
 
 def test_merge_imports():
     """Test that imports are merged correctly."""
     d1 = {"react": {"Component"}}
     d2 = {"react": {"Component"}, "react-dom": {"render"}}
-    d = utils.merge_imports(d1, d2)
+    d = imports.merge_imports(d1, d2)
     assert set(d.keys()) == {"react", "react-dom"}
     assert set(d["react"]) == {"Component"}
     assert set(d["react-dom"]) == {"render"}
@@ -195,8 +196,8 @@ def test_merge_imports():
         (int, False),
         (float, False),
         (bool, False),
-        (typing.List, True),
-        (typing.List[int], True),
+        (List, True),
+        (List[int], True),
     ],
 )
 def test_is_generic_alias(cls: type, expected: bool):
@@ -206,7 +207,7 @@ def test_is_generic_alias(cls: type, expected: bool):
         cls: The class to check.
         expected: Whether the class is a GenericAlias.
     """
-    assert utils.is_generic_alias(cls) == expected
+    assert types.is_generic_alias(cls) == expected
 
 
 @pytest.mark.parametrize(
@@ -226,7 +227,7 @@ def test_format_route(route: str, expected: bool):
         route: The route to format.
         expected: The expected formatted route.
     """
-    assert utils.format_route(route) == expected
+    assert format.format_route(route) == expected
 
 
 def test_setup_frontend(tmp_path, mocker):
@@ -243,9 +244,11 @@ def test_setup_frontend(tmp_path, mocker):
     assets.mkdir()
     (assets / "favicon.ico").touch()
 
-    mocker.patch("pynecone.utils.install_frontend_packages")
+    assert str(web_folder) == prerequisites.create_web_directory(tmp_path)
 
-    utils.setup_frontend(tmp_path)
+    mocker.patch("pynecone.utils.prerequisites.install_frontend_packages")
+
+    build.setup_frontend(tmp_path)
     assert web_folder.exists()
     assert web_public_folder.exists()
     assert (web_public_folder / "favicon.ico").exists()
@@ -260,4 +263,52 @@ def test_setup_frontend(tmp_path, mocker):
     ],
 )
 def test_is_backend_variable(input, output):
-    assert utils.is_backend_variable(input) == output
+    assert types.is_backend_variable(input) == output
+
+
+@pytest.mark.parametrize(
+    "cls, cls_check, expected",
+    [
+        (int, int, True),
+        (int, float, False),
+        (int, Union[int, float], True),
+        (float, Union[int, float], True),
+        (str, Union[int, float], False),
+        (List[int], List[int], True),
+        (List[int], List[float], True),
+        (Union[int, float], Union[int, float], False),
+        (Union[int, Var[int]], Var[int], False),
+        (int, Any, True),
+        (Any, Any, True),
+        (Union[int, float], Any, True),
+    ],
+)
+def test_issubclass(cls: type, cls_check: type, expected: bool):
+    assert types._issubclass(cls, cls_check) == expected
+
+
+def test_format_sub_state_event(upload_sub_state_event_spec):
+    """Test formatting an upload event spec of substate.
+
+    Args:
+        upload_sub_state_event_spec: The event spec fixture.
+    """
+    assert (
+        format.format_upload_event(upload_sub_state_event_spec)
+        == "uploadFiles(base_state, result, setResult, base_state.files, "
+        '"base_state.sub_upload_state.handle_upload",UPLOAD)'
+    )
+
+
+def test_format_upload_event(upload_event_spec):
+    """Test formatting an upload event spec.
+
+    Args:
+        upload_event_spec: The event spec fixture.
+    """
+    assert (
+        format.format_upload_event(upload_event_spec)
+        == "uploadFiles(upload_state, result, setResult, "
+        'upload_state.files, "upload_state.handle_upload1",'
+        "UPLOAD)"
+    )

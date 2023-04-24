@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import inspect
 import traceback
 from abc import ABC
 from typing import (
@@ -14,6 +15,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     Union,
 )
@@ -21,9 +23,10 @@ from typing import (
 import cloudpickle
 from redis import Redis
 
-from pynecone import constants, utils
+from pynecone import constants
 from pynecone.base import Base
-from pynecone.event import Event, EventHandler, window_alert
+from pynecone.event import Event, EventHandler, fix_events, window_alert
+from pynecone.utils import format, prerequisites, types
 from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
 
 Delta = Dict[str, Any]
@@ -46,6 +49,15 @@ class State(Base, ABC):
 
     # Backend vars that are never sent to the client.
     backend_vars: ClassVar[Dict[str, Any]] = {}
+
+    # Backend vars inherited
+    inherited_backend_vars: ClassVar[Dict[str, Any]] = {}
+
+    # Mapping of var name to set of computed variables that depend on it
+    computed_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
+
+    # The event handlers.
+    event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
     # The parent state.
     parent_state: Optional[State] = None
@@ -90,7 +102,7 @@ class State(Base, ABC):
                 value, self._reassign_field, field.name
             )
 
-            if utils._issubclass(field.type_, Union[List, Dict]):
+            if types._issubclass(field.type_, Union[List, Dict]):
                 setattr(self, field.name, value_in_pc_data)
 
         self.clean()
@@ -130,12 +142,16 @@ class State(Base, ABC):
         parent_state = cls.get_parent_state()
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
+            cls.inherited_backend_vars = parent_state.backend_vars
 
-        cls.backend_vars = {
+        cls.new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
-            if utils.is_backend_variable(name)
+            if types.is_backend_variable(name)
+            and name not in cls.inherited_backend_vars
         }
+
+        cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
 
         # Set the base and computed vars.
         skip_vars = set(cls.inherited_vars) | {
@@ -160,6 +176,7 @@ class State(Base, ABC):
             **cls.base_vars,
             **cls.computed_vars,
         }
+        cls.computed_var_dependencies = {}
 
         # Setup the base vars at the class level.
         for prop in cls.base_vars.values():
@@ -171,8 +188,25 @@ class State(Base, ABC):
             for name, fn in cls.__dict__.items()
             if not name.startswith("_") and isinstance(fn, Callable)
         }
-        for name, fn in events.items():
-            event_handler = EventHandler(fn=fn)
+        cls.event_handlers = {name: EventHandler(fn=fn) for name, fn in events.items()}
+
+        cls.set_handlers()
+
+    @classmethod
+    def convert_handlers_to_fns(cls):
+        """Convert the event handlers to functions.
+
+        This is done so the state functions can be called as normal functions during runtime.
+        """
+        for name, event_handler in cls.event_handlers.items():
+            setattr(cls, name, event_handler.fn)
+        for substate in cls.get_substates():
+            substate.convert_handlers_to_fns()
+
+    @classmethod
+    def set_handlers(cls):
+        """Set the state class handlers."""
+        for name, event_handler in cls.event_handlers.items():
             setattr(cls, name, event_handler)
 
     @classmethod
@@ -186,7 +220,7 @@ class State(Base, ABC):
         parent_states = [
             base
             for base in cls.__bases__
-            if utils._issubclass(base, State) and base is not State
+            if types._issubclass(base, State) and base is not State
         ]
         assert len(parent_states) < 2, "Only one parent state is allowed."
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
@@ -209,7 +243,7 @@ class State(Base, ABC):
         Returns:
             The name of the state.
         """
-        return utils.to_snake_case(cls.__name__)
+        return format.to_snake_case(cls.__name__)
 
     @classmethod
     @functools.lru_cache()
@@ -279,7 +313,7 @@ class State(Base, ABC):
         Raises:
             TypeError: if the variable has an incorrect type
         """
-        if not utils.is_valid_var_type(prop.type_):
+        if not types.is_valid_var_type(prop.type_):
             raise TypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
@@ -444,14 +478,33 @@ class State(Base, ABC):
 
         If the var is inherited, get the var from the parent state.
 
+        If the Var is a dependent of a ComputedVar, track this status in computed_var_dependencies.
+
         Args:
             name: The name of the var.
 
         Returns:
             The value of the var.
         """
-        # Get the var from the parent state.
-        if name in super().__getattribute__("inherited_vars"):
+        vars = {
+            **super().__getattribute__("vars"),
+            **super().__getattribute__("backend_vars"),
+        }
+        if name in vars:
+            parent_frame, parent_frame_locals = _get_previous_recursive_frame_info()
+            if parent_frame is not None:
+                computed_vars = super().__getattribute__("computed_vars")
+                requesting_attribute_name = parent_frame_locals.get("name")
+                if requesting_attribute_name in computed_vars:
+                    # Keep track of any ComputedVar that depends on this Var
+                    super().__getattribute__("computed_var_dependencies").setdefault(
+                        name, set()
+                    ).add(requesting_attribute_name)
+        inherited_vars = {
+            **super().__getattribute__("inherited_vars"),
+            **super().__getattribute__("inherited_backend_vars"),
+        }
+        if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
         elif name in super().__getattribute__("backend_vars"):
             return super().__getattribute__("backend_vars").__getitem__(name)
@@ -467,12 +520,14 @@ class State(Base, ABC):
             value: The value of the attribute.
         """
         # Set the var on the parent state.
-        if name in self.inherited_vars:
+        inherited_vars = {**self.inherited_vars, **self.inherited_backend_vars}
+        if name in inherited_vars:
             setattr(self.parent_state, name, value)
             return
 
-        if utils.is_backend_variable(name):
+        if types.is_backend_variable(name):
             self.backend_vars.__setitem__(name, value)
+            self.dirty_vars.add(name)
             self.mark_dirty()
             return
 
@@ -520,37 +575,66 @@ class State(Base, ABC):
             raise ValueError(f"Invalid path: {path}")
         return self.substates[path[0]].get_substate(path[1:])
 
-    async def process(self, event: Event) -> StateUpdate:
-        """Process an event.
+    async def _process(self, event: Event) -> StateUpdate:
+        """Obtain event info and process event.
 
         Args:
             event: The event to process.
 
         Returns:
             The state update after processing the event.
+
+        Raises:
+            ValueError: If the state value is None.
         """
         # Get the event handler.
         path = event.name.split(".")
         path, name = path[:-1], path[-1]
         substate = self.get_substate(path)
-        handler = getattr(substate, name)
+        handler = substate.event_handlers[name]  # type: ignore
 
-        # Process the event.
-        fn = functools.partial(handler.fn, substate)
+        if not substate:
+            raise ValueError(
+                "The value of state cannot be None when processing an event."
+            )
+
+        return await self._process_event(
+            handler=handler,
+            state=substate,
+            payload=event.payload,
+            token=event.token,
+        )
+
+    async def _process_event(
+        self, handler: EventHandler, state: State, payload: Dict, token: str
+    ) -> StateUpdate:
+        """Process event.
+
+        Args:
+            handler: Eventhandler to process.
+            state: State to process the handler.
+            payload: The event payload.
+            token: Client token.
+
+        Returns:
+            The state update after processing the event.
+        """
+        fn = functools.partial(handler.fn, state)
         try:
             if asyncio.iscoroutinefunction(fn.func):
-                events = await fn(**event.payload)
+                events = await fn(**payload)
             else:
-                events = fn(**event.payload)
+                events = fn(**payload)
         except Exception:
             error = traceback.format_exc()
             print(error)
-            return StateUpdate(
-                events=[window_alert("An error occurred. See logs for details.")]
+            events = fix_events(
+                [window_alert("An error occurred. See logs for details.")], token
             )
+            return StateUpdate(events=events)
 
         # Fix the returned events.
-        events = utils.fix_events(events, event.token)
+        events = fix_events(events, token)
 
         # Get the delta after processing the event.
         delta = self.get_delta()
@@ -561,6 +645,28 @@ class State(Base, ABC):
         # Return the state update.
         return StateUpdate(delta=delta, events=events)
 
+    def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
+        """Get ComputedVars that need to be recomputed based on dirty_vars.
+
+        Args:
+            from_vars: find ComputedVar that depend on this set of vars. If unspecified, will use the dirty_vars.
+
+        Returns:
+            Set of computed vars to include in the delta.
+        """
+        dirty_computed_vars = set(
+            cvar
+            for dirty_var in from_vars or self.dirty_vars
+            for cvar in self.computed_vars
+            if cvar in self.computed_var_dependencies.get(dirty_var, set())
+        )
+        if dirty_computed_vars:
+            # recursive call to catch computed vars that depend on computed vars
+            return dirty_computed_vars | self._dirty_computed_vars(
+                from_vars=dirty_computed_vars
+            )
+        return dirty_computed_vars
+
     def get_delta(self) -> Delta:
         """Get the delta for the state.
 
@@ -569,10 +675,11 @@ class State(Base, ABC):
         """
         delta = {}
 
-        # Return the dirty vars, as well as all computed vars.
+        # Return the dirty vars, as well as computed vars depending on dirty vars.
         subdelta = {
             prop: getattr(self, prop)
-            for prop in self.dirty_vars | self.computed_vars.keys()
+            for prop in self.dirty_vars | self._dirty_computed_vars()
+            if not types.is_backend_variable(prop)
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
@@ -583,7 +690,7 @@ class State(Base, ABC):
             delta.update(substates[substate].get_delta())
 
         # Format the delta.
-        delta = utils.format_state(delta)
+        delta = format.format_state(delta)
 
         # Return the delta.
         return delta
@@ -673,7 +780,7 @@ class StateManager(Base):
             state: The state class to use.
         """
         self.state = state
-        self.redis = utils.get_redis()
+        self.redis = prerequisites.get_redis()
 
     def get_state(self, token: str) -> State:
         """Get the state for a token.
@@ -742,3 +849,24 @@ def _convert_mutable_datatypes(
             field_value, reassign_field=reassign_field, field_name=field_name
         )
     return field_value
+
+
+def _get_previous_recursive_frame_info() -> (
+    Tuple[Optional[inspect.FrameInfo], Dict[str, Any]]
+):
+    """Find the previous frame of the same function that calls this helper.
+
+    For example, if this function is called from `State.__getattribute__`
+    (parent frame), then the returned frame will be the next earliest call
+    of the same function.
+
+    Returns:
+        Tuple of (frame_info, local_vars)
+
+    If no previous recursive frame is found up the stack, the frame info will be None.
+    """
+    _this_frame, parent_frame, *prev_frames = inspect.stack()
+    for frame in prev_frames:
+        if frame.frame.f_code == parent_frame.frame.f_code:
+            return frame, frame.frame.f_locals
+    return None, {}

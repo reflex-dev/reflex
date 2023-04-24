@@ -1,6 +1,7 @@
 """Table components."""
 
 from pynecone.components.component import Component
+from pynecone.components.layout.foreach import Foreach
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.var import Var
 
@@ -143,7 +144,10 @@ class Tr(ChakraComponent):
         types = {"header": Th, "data": Td}
         cell_cls = types.get(cell_type)
         if len(children) == 0 and cell_cls:
-            children = [cell_cls.create(cell) for cell in cells or []]
+            if isinstance(cells, Var):
+                children = [Foreach.create(cells, cell_cls.create)]
+            else:
+                children = [cell_cls.create(cell) for cell in cells or []]
         return super().create(*children, **props)
 
 
