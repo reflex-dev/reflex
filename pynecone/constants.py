@@ -19,7 +19,7 @@ MIN_NODE_VERSION = "12.22.0"
 
 # Valid bun versions.
 MIN_BUN_VERSION = "0.5.5"
-MAX_BUN_VERSION = "0.5.8"
+MAX_BUN_VERSION = "0.5.9"
 INVALID_BUN_VERSIONS = ["0.5.6", "0.5.7"]
 
 # Files and directories used to init a new project.
@@ -73,7 +73,7 @@ API_URL = "http://localhost:8000"
 # The default path where bun is installed.
 BUN_PATH = "$HOME/.bun/bin/bun"
 # Command to install bun.
-INSTALL_BUN = "curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.5"
+INSTALL_BUN = "curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.9"
 # Default host in dev mode.
 BACKEND_HOST = "0.0.0.0"
 # The default timeout when launching the gunicorn server.
