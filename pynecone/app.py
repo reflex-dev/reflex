@@ -455,7 +455,7 @@ async def process(
 
     # Apply the event to the state.
     if updates is None:
-        updates = [await state.process(event)]
+        updates = [await state._process(event)]
         app.state_manager.set_state(event.token, state)
 
     # Postprocess the event.
@@ -534,7 +534,7 @@ def upload(app: App):
             name=handler,
             payload={handler_upload_param[0]: files},
         )
-        update = await state.process(event)
+        update = await state._process(event)
         return update
 
     return upload_file

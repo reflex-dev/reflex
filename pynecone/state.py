@@ -575,7 +575,7 @@ class State(Base, ABC):
             raise ValueError(f"Invalid path: {path}")
         return self.substates[path[0]].get_substate(path[1:])
 
-    async def process(self, event: Event) -> StateUpdate:
+    async def _process(self, event: Event) -> StateUpdate:
         """Obtain event info and process event.
 
         Args:
@@ -598,14 +598,14 @@ class State(Base, ABC):
                 "The value of state cannot be None when processing an event."
             )
 
-        return await self.process_event(
+        return await self._process_event(
             handler=handler,
             state=substate,
             payload=event.payload,
             token=event.token,
         )
 
-    async def process_event(
+    async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict, token: str
     ) -> StateUpdate:
         """Process event.
