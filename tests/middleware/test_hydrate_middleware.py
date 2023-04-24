@@ -30,7 +30,7 @@ class TestState2(State):
             Chain of EventHandlers
         """
         self.num += 1
-        return [self.change_name()]
+        return self.change_name
 
     def change_name(self):
         """Test handler to change name."""

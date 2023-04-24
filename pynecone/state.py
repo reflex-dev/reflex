@@ -480,18 +480,15 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             **super().__getattribute__("backend_vars"),
         }
         if name in vars:
-            # print(f"Getting {name}")
-            # parent_frame, parent_frame_locals = _get_previous_recursive_frame_info()
-            # if parent_frame is not None:
-            #     computed_vars = super().__getattribute__("computed_vars")
-            #     requesting_attribute_name = parent_frame_locals.get("name")
-            #     if requesting_attribute_name in computed_vars:
-            #         print(f"Adding {name} to {requesting_attribute_name}")
-            #         # Keep track of any ComputedVar that depends on this Var
-            #         super().__getattribute__("computed_var_dependencies").setdefault(
-            #             name, set()
-            #         ).add(requesting_attribute_name)
-            pass
+            parent_frame, parent_frame_locals = _get_previous_recursive_frame_info()
+            if parent_frame is not None:
+                computed_vars = super().__getattribute__("computed_vars")
+                requesting_attribute_name = parent_frame_locals.get("name")
+                if requesting_attribute_name in computed_vars:
+                    # Keep track of any ComputedVar that depends on this Var
+                    super().__getattribute__("computed_var_dependencies").setdefault(
+                        name, set()
+                    ).add(requesting_attribute_name)
         inherited_vars = {
             **super().__getattribute__("inherited_vars"),
             **super().__getattribute__("inherited_backend_vars"),
