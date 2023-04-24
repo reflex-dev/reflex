@@ -21,6 +21,7 @@ from typing import (
 )
 
 import cloudpickle
+import pydantic
 from redis import Redis
 
 from pynecone import constants
@@ -32,7 +33,7 @@ from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
 Delta = Dict[str, Any]
 
 
-class State(Base, ABC):
+class State(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -87,6 +88,11 @@ class State(Base, ABC):
         for substate in self.get_substates():
             self.substates[substate.get_name()] = substate().set(parent_state=self)
 
+        # Convert the event handlers to functions.
+        for name, event_handler in self.event_handlers.items():
+            setattr(self, name, event_handler.fn)
+
+        # Initialize the mutable fields.
         self._init_mutable_fields()
 
     def _init_mutable_fields(self):
@@ -189,23 +195,6 @@ class State(Base, ABC):
             if not name.startswith("_") and isinstance(fn, Callable)
         }
         cls.event_handlers = {name: EventHandler(fn=fn) for name, fn in events.items()}
-
-        cls.set_handlers()
-
-    @classmethod
-    def convert_handlers_to_fns(cls):
-        """Convert the event handlers to functions.
-
-        This is done so the state functions can be called as normal functions during runtime.
-        """
-        for name, event_handler in cls.event_handlers.items():
-            setattr(cls, name, event_handler.fn)
-        for substate in cls.get_substates():
-            substate.convert_handlers_to_fns()
-
-    @classmethod
-    def set_handlers(cls):
-        """Set the state class handlers."""
         for name, event_handler in cls.event_handlers.items():
             setattr(cls, name, event_handler)
 
@@ -491,15 +480,18 @@ class State(Base, ABC):
             **super().__getattribute__("backend_vars"),
         }
         if name in vars:
-            parent_frame, parent_frame_locals = _get_previous_recursive_frame_info()
-            if parent_frame is not None:
-                computed_vars = super().__getattribute__("computed_vars")
-                requesting_attribute_name = parent_frame_locals.get("name")
-                if requesting_attribute_name in computed_vars:
-                    # Keep track of any ComputedVar that depends on this Var
-                    super().__getattribute__("computed_var_dependencies").setdefault(
-                        name, set()
-                    ).add(requesting_attribute_name)
+            # print(f"Getting {name}")
+            # parent_frame, parent_frame_locals = _get_previous_recursive_frame_info()
+            # if parent_frame is not None:
+            #     computed_vars = super().__getattribute__("computed_vars")
+            #     requesting_attribute_name = parent_frame_locals.get("name")
+            #     if requesting_attribute_name in computed_vars:
+            #         print(f"Adding {name} to {requesting_attribute_name}")
+            #         # Keep track of any ComputedVar that depends on this Var
+            #         super().__getattribute__("computed_var_dependencies").setdefault(
+            #             name, set()
+            #         ).add(requesting_attribute_name)
+            pass
         inherited_vars = {
             **super().__getattribute__("inherited_vars"),
             **super().__getattribute__("inherited_backend_vars"),

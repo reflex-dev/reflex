@@ -397,7 +397,6 @@ class App(Base):
         compiler.compile_theme(self.style)
 
         # Compile the pages.
-        self.state.set_handlers()
         custom_components = set()
         for route, component in self.pages.items():
             component.add_style(self.style)
@@ -408,9 +407,6 @@ class App(Base):
 
         # Compile the custom components.
         compiler.compile_components(custom_components)
-
-        # To support calling event handlers from other handlers.
-        self.state.convert_handlers_to_fns()
 
 
 async def process(
