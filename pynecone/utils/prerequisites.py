@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -147,8 +148,9 @@ def create_config(app_name: str):
     # Import here to avoid circular imports.
     from pynecone.compiler import templates
 
+    config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
     with open(constants.CONFIG_FILE, "w") as f:
-        f.write(templates.PCCONFIG.format(app_name=app_name))
+        f.write(templates.PCCONFIG.format(app_name=app_name, config_name=config_name))
 
 
 def create_web_directory(root: Path) -> str:

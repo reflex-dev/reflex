@@ -312,3 +312,28 @@ def test_format_upload_event(upload_event_spec):
         'upload_state.files, "upload_state.handle_upload1",'
         "UPLOAD)"
     )
+
+
+@pytest.mark.parametrize(
+    "app_name,expected_config_name",
+    [
+        ("appname", "AppnameConfig"),
+        ("app_name", "AppnameConfig"),
+        ("app-name", "AppnameConfig"),
+        ("appname2.io", "AppnameioConfig"),
+    ],
+)
+def test_create_config(app_name, expected_config_name, mocker):
+    """Test templates.PCCONFIG is formatted with correct app name and config class name.
+
+    Args:
+        app_name: App name.
+        expected_config_name: Expected config name.
+        mocker: Mocker object.
+    """
+    mocker.patch("builtins.open")
+    tmpl_mock = mocker.patch("pynecone.compiler.templates.PCCONFIG")
+    prerequisites.create_config(app_name)
+    tmpl_mock.format.assert_called_with(
+        app_name=app_name, config_name=expected_config_name
+    )
