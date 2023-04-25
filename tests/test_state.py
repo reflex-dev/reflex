@@ -155,13 +155,7 @@ def test_base_class_vars(test_state):
     cls = type(test_state)
 
     for field in fields:
-        if field in (
-            "parent_state",
-            "substates",
-            "dirty_vars",
-            "dirty_substates",
-            "router_data",
-        ):
+        if field in test_state.get_skip_vars():
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, BaseVar)
