@@ -813,3 +813,19 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4},
     }
+
+
+def test_child_state():
+    class MainState(State):
+        v: int = 2
+
+    class ChildState(MainState):
+        @ComputedVar
+        def rendered_var(self):
+            return self.v
+
+    ms = MainState()
+    cs = ms.substates[ChildState.get_name()]
+    assert ms.v == 2
+    assert cs.v == 2
+    assert cs.rendered_var == 2

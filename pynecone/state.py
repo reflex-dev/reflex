@@ -5,6 +5,7 @@ import asyncio
 import functools
 import traceback
 from abc import ABC
+from collections import defaultdict
 from typing import (
     Any,
     Callable,
@@ -79,18 +80,20 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # The current set of accessed vars during tracking.
     tracked_vars: Set[str] = set()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
         """Initialize the state.
 
         Args:
             *args: The args to pass to the Pydantic init method.
+            parent_state: The parent state.
             **kwargs: The kwargs to pass to the Pydantic init method.
         """
+        kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
         # Setup the substates.
         for substate in self.get_substates():
-            self.substates[substate.get_name()] = substate().set(parent_state=self)
+            self.substates[substate.get_name()] = substate(parent_state=self)
 
         # Convert the event handlers to functions.
         for name, event_handler in self.event_handlers.items():
@@ -100,8 +103,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         self._init_mutable_fields()
 
         # Initialize computed vars dependencies.
-        from collections import defaultdict
-
         self.computed_var_dependencies = defaultdict(set)
         for cvar in self.computed_vars:
             self.tracked_vars = set()
@@ -512,19 +513,20 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The value of the var.
         """
-        try:
-            # Check if tracking is enabled.
-            if super().__getattribute__("track_vars"):
-                # Get the non-computed vars.
-                all_vars = {
-                    **super().__getattribute__("vars"),
-                    **super().__getattribute__("backend_vars"),
-                }
-                # Add the var to the tracked vars.
-                if name in all_vars:
-                    super().__getattribute__("tracked_vars").add(name)
-        except AttributeError:
-            pass
+        # If the state hasn't been initialized yet, return the default value.
+        if not super().__getattribute__("__dict__"):
+            return super().__getattribute__(name)
+
+        # Check if tracking is enabled.
+        if super().__getattribute__("track_vars"):
+            # Get the non-computed vars.
+            all_vars = {
+                **super().__getattribute__("vars"),
+                **super().__getattribute__("backend_vars"),
+            }
+            # Add the var to the tracked vars.
+            if name in all_vars:
+                super().__getattribute__("tracked_vars").add(name)
 
         inherited_vars = {
             **super().__getattribute__("inherited_vars"),
