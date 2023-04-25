@@ -183,6 +183,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             **cls.computed_vars,
         }
         cls.computed_var_dependencies = {}
+        cls.event_handlers = {}
 
         # Setup the base vars at the class level.
         for prop in cls.base_vars.values():
@@ -196,9 +197,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             and isinstance(fn, Callable)
             and not isinstance(fn, EventHandler)
         }
-        cls.event_handlers = {name: EventHandler(fn=fn) for name, fn in events.items()}
-        for name, event_handler in cls.event_handlers.items():
-            setattr(cls, name, event_handler)
+        for name, fn in events.items():
+            handler = EventHandler(fn=fn)
+            cls.event_handlers[name] = handler
+            setattr(cls, name, handler)
 
     @classmethod
     @functools.lru_cache()
