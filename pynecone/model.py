@@ -1,5 +1,7 @@
 """Database built into Pynecone."""
 
+from typing import Optional
+
 import sqlmodel
 
 from pynecone.base import Base
@@ -25,7 +27,19 @@ class Model(Base, sqlmodel.SQLModel):
     """Base class to define a table in the database."""
 
     # The primary key for the table.
-    id: int = sqlmodel.Field(primary_key=True)
+    id: Optional[int] = sqlmodel.Field(primary_key=True)
+
+    def __init_subclass__(cls):
+        """Drop the default primary key field if any primary key field is defined."""
+        non_default_primary_key_fields = [
+            field_name
+            for field_name, field in cls.__fields__.items()
+            if field_name != "id" and getattr(field.field_info, "primary_key", None)
+        ]
+        if non_default_primary_key_fields:
+            cls.__fields__.pop("id", None)
+
+        super().__init_subclass__()
 
     def dict(self, **kwargs):
         """Convert the object to a dictionary.
