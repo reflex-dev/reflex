@@ -5,7 +5,7 @@ from plotly.graph_objects import Figure
 
 from pynecone.base import Base
 from pynecone.constants import RouteVar
-from pynecone.event import Event
+from pynecone.event import Event, EventHandler
 from pynecone.middleware.hydrate_middleware import IS_HYDRATED
 from pynecone.state import State
 from pynecone.utils import format
@@ -726,6 +726,12 @@ def test_add_var(test_state):
     assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
 
 
+def test_add_var_default_handlers(test_state):
+    test_state.add_var("rand_int", int, 10)
+    assert "set_rand_int" in test_state.event_handlers
+    assert isinstance(test_state.event_handlers["set_rand_int"], EventHandler)
+
+
 class InterdependentState(State):
     """A state with 3 vars and 3 computed vars.
 
@@ -744,7 +750,7 @@ class InterdependentState(State):
 
     @ComputedVar
     def v1x2(self) -> int:
-        """depends on var v1.
+        """Depends on var v1.
 
         Returns:
             Var v1 multiplied by 2
@@ -753,7 +759,7 @@ class InterdependentState(State):
 
     @ComputedVar
     def v2x2(self) -> int:
-        """depends on backend var _v2.
+        """Depends on backend var _v2.
 
         Returns:
             backend var _v2 multiplied by 2
@@ -762,7 +768,7 @@ class InterdependentState(State):
 
     @ComputedVar
     def v1x2x2(self) -> int:
-        """depends on ComputedVar v1x2.
+        """Depends on ComputedVar v1x2.
 
         Returns:
             ComputedVar v1x2 multiplied by 2
