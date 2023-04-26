@@ -216,14 +216,22 @@ def install_bun():
     bun_version = get_bun_version()
     if bun_version is not None and bun_version in constants.INVALID_BUN_VERSIONS:
         console.print(
-            f"[red]Bun version {bun_version} is not supported by Pynecone. Please downgrade to bun version {constants.MIN_BUN_VERSION} or upgrade to {constants.MAX_BUN_VERSION} or higher."
+            f"""[red]Bun version {bun_version} is not supported by Pynecone. Please change your to bun version to be between {constants.MIN_BUN_VERSION} and {constants.MAX_BUN_VERSION}."""
         )
-        return
+        console.print(
+            f"""[red]Upgrade by running the following command:[/red] 
+            
+curl -fsSL https://bun.sh/install | bash -s -- bun-v{constants.MAX_BUN_VERSION}
+
+"""
+        )
+        raise typer.Exit()
+
 
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
-        return
+        raise typer.Exit()
 
     # Only install if bun is not already installed.
     if not os.path.exists(get_package_manager()):
