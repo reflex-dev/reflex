@@ -205,7 +205,8 @@ def initialize_web_directory():
     path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
     path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
     path_ops.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
-    """Write the current version of distributed pynecone package to a PCVERSION_APP_FILE."""
+
+    # Write the current version of distributed pynecone package to a PCVERSION_APP_FILE."""
     with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
         pynecone_json = json.load(f)
         pynecone_json["version"] = constants.VERSION
@@ -298,10 +299,8 @@ def is_latest_template() -> bool:
     Returns:
         Whether the app is using the latest template.
     """
-    with open(constants.PCVERSION_TEMPLATE_FILE) as f:  # type: ignore
-        template_version = json.load(f)["version"]
     if not os.path.exists(constants.PCVERSION_APP_FILE):
         return False
     with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
         app_version = json.load(f)["version"]
-    return app_version >= template_version
+    return app_version == constants.VERSION
