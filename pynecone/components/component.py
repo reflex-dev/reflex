@@ -514,17 +514,15 @@ class Component(Base, ABC):
         """
         value = kwargs.get("value")
         if value is None or type(value) != BaseVar:
-            print("value is None or not BaseVar")
             return False
 
         on_change = kwargs.get("on_change")
         if on_change is None or type(on_change) != EventHandler:
-            print("on_change is None or not EventHandler")
             return False
 
         value = value.full_name
         on_change = on_change.fn.__qualname__
-        return False
+        return value == on_change.replace(constants.SETTER_PREFIX, "")
 
 
 # Map from component to styling.
