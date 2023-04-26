@@ -126,6 +126,12 @@ def setup_frontend(root: Path):
     Args:
         root: root path of the project.
     """
+    # Initialize the web directory if it doesn't exist.
+    web_dir = prerequisites.create_web_directory(root)
+
+    # Install frontend packages
+    prerequisites.install_frontend_packages(web_dir)
+
     # copy asset files to public folder
     path_ops.mkdir(str(root / constants.WEB_ASSETS_DIR))
     path_ops.cp(
