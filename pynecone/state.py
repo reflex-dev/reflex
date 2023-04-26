@@ -673,15 +673,23 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Return the state update.
         return StateUpdate(delta=delta, events=events)
 
-    def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
+    def _dirty_computed_vars(
+        self, from_vars: Optional[Set[str]] = None, check: bool = False
+    ) -> Set[str]:
         """Get ComputedVars that need to be recomputed based on dirty_vars.
 
         Args:
             from_vars: find ComputedVar that depend on this set of vars. If unspecified, will use the dirty_vars.
+            check: Whether to perform the check.
 
         Returns:
             Set of computed vars to include in the delta.
         """
+        # If checking is disabled, return all computed vars.
+        if not check:
+            return set(self.computed_vars)
+
+        # Return only the computed vars that depend on the dirty vars.
         return set(
             cvar
             for dirty_var in from_vars or self.dirty_vars
@@ -689,8 +697,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             if cvar in self.computed_var_dependencies.get(dirty_var, set())
         )
 
-    def get_delta(self) -> Delta:
+    def get_delta(self, check: bool = False) -> Delta:
         """Get the delta for the state.
+
+        Args:
+            check: Whether to check for dirty computed vars.
 
         Returns:
             The delta for the state.
@@ -700,7 +711,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Return the dirty vars, as well as computed vars depending on dirty vars.
         subdelta = {
             prop: getattr(self, prop)
-            for prop in self.dirty_vars | self._dirty_computed_vars()
+            for prop in self.dirty_vars | self._dirty_computed_vars(check=check)
             if not types.is_backend_variable(prop)
         }
         if len(subdelta) > 0:

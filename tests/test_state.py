@@ -578,7 +578,7 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
+    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
     assert update.events == []
 
 
@@ -601,6 +601,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
+        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
     }
     test_state.clean()
@@ -615,6 +616,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     update = await test_state._process(event)
     assert grandchild_state.value2 == "new"
     assert update.delta == {
+        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
     }
 
@@ -783,7 +785,7 @@ def test_not_dirty_computed_var_from_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.x = 5
-    assert interdependent_state.get_delta() == {
+    assert interdependent_state.get_delta(check=True) == {
         interdependent_state.get_full_name(): {"x": 5},
     }
 
@@ -798,7 +800,7 @@ def test_dirty_computed_var_from_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.v1 = 1
-    assert interdependent_state.get_delta() == {
+    assert interdependent_state.get_delta(check=True) == {
         interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
     }
 
@@ -810,12 +812,14 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state._v2 = 2
-    assert interdependent_state.get_delta() == {
+    assert interdependent_state.get_delta(check=True) == {
         interdependent_state.get_full_name(): {"v2x2": 4},
     }
 
 
 def test_child_state():
+    """Test that the child state computed vars can reference parent state vars."""
+
     class MainState(State):
         v: int = 2
 
@@ -829,3 +833,24 @@ def test_child_state():
     assert ms.v == 2
     assert cs.v == 2
     assert cs.rendered_var == 2
+
+
+def test_conditional_computed_vars():
+    """Test that computed vars can have conditionals."""
+
+    class MainState(State):
+        flag: bool = False
+        t1: str = "a"
+        t2: str = "b"
+
+        @ComputedVar
+        def rendered_var(self) -> str:
+            if self.flag:
+                return self.t1
+            return self.t2
+
+    ms = MainState()
+    # Initially there are no dirty computed vars.
+    assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
+    assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
+    assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
