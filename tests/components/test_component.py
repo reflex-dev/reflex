@@ -13,7 +13,7 @@ from pynecone.var import Var
 
 
 @pytest.fixture
-def TestState():
+def test_state():
     class TestState(State):
         num: int
 
@@ -286,15 +286,15 @@ def test_invalid_prop_type(component1, text: str, number: int):
         component1.create(text=text, number=number)
 
 
-def test_var_props(component1, TestState):
+def test_var_props(component1, test_state):
     """Test that we can set a Var prop.
 
     Args:
         component1: A test component.
-        TestState: A test state.
+        test_state: A test state.
     """
-    c1 = component1.create(text="hello", number=TestState.num)
-    assert c1.number == TestState.num
+    c1 = component1.create(text="hello", number=test_state.num)
+    assert c1.number == test_state.num
 
 
 def test_get_controlled_triggers(component1, component2):
@@ -363,36 +363,38 @@ def test_custom_component_wrapper():
     assert isinstance(component, Box)
 
 
-def test_invalid_event_handler_args(component2, TestState):
+def test_invalid_event_handler_args(component2, test_state):
     """Test that an invalid event handler raises an error.
 
     Args:
         component2: A test component.
-        TestState: A test state.
+        test_state: A test state.
     """
     # Uncontrolled event handlers should not take args.
     # This is okay.
-    component2.create(on_click=TestState.do_something)
+    component2.create(on_click=test_state.do_something)
     # This is not okay.
     with pytest.raises(ValueError):
-        component2.create(on_click=TestState.do_something_arg)
+        component2.create(on_click=test_state.do_something_arg)
     # However lambdas are okay.
-    component2.create(on_click=lambda: TestState.do_something_arg(1))
+    component2.create(on_click=lambda: test_state.do_something_arg(1))
     component2.create(
-        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something]
+        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something]
     )
     component2.create(
-        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something()]
+        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something()]
     )
 
     # Controlled event handlers should take args.
     # This is okay.
-    component2.create(on_open=TestState.do_something_arg)
+    component2.create(on_open=test_state.do_something_arg)
     # This is not okay.
     with pytest.raises(ValueError):
-        component2.create(on_open=TestState.do_something)
+        component2.create(on_open=test_state.do_something)
     with pytest.raises(ValueError):
-        component2.create(on_open=[TestState.do_something_arg, TestState.do_something])
+        component2.create(
+            on_open=[test_state.do_something_arg, test_state.do_something]
+        )
 
 
 def test_get_hooks_nested(component1, component2, component3):

@@ -52,7 +52,7 @@ def about_page():
 
 
 @pytest.fixture()
-def TestState() -> Type[State]:
+def test_state() -> Type[State]:
     """A default state.
 
     Returns:
@@ -119,29 +119,29 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     assert set(app.pages.keys()) == {route.strip(os.path.sep)}
 
 
-def test_initialize_with_state(TestState: Type[State]):
+def test_initialize_with_state(test_state):
     """Test setting the state of an app.
 
     Args:
-        TestState: The default state.
+        test_state: The default state.
     """
-    app = App(state=TestState)
-    assert app.state == TestState
+    app = App(state=test_state)
+    assert app.state == test_state
 
     # Get a state for a given token.
     token = "token"
     state = app.state_manager.get_state(token)
-    assert isinstance(state, TestState)
+    assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
 
-def test_set_and_get_state(TestState: Type[State]):
+def test_set_and_get_state(test_state):
     """Test setting and getting the state of an app with different tokens.
 
     Args:
-        TestState: The default state.
+        test_state: The default state.
     """
-    app = App(state=TestState)
+    app = App(state=test_state)
 
     # Create two tokens.
     token1 = "token1"
@@ -164,6 +164,27 @@ def test_set_and_get_state(TestState: Type[State]):
     state2 = app.state_manager.get_state(token2)
     assert state1.var == 1  # type: ignore
     assert state2.var == 2  # type: ignore
+
+
+@pytest.mark.asyncio
+async def test_dynamic_var_event(test_state):
+    """Test that the default handler of a dynamic generated var
+    works as expected.
+
+    Args:
+        test_state: State Fixture.
+    """
+    test_state = test_state()
+    test_state.add_var("int_val", int, 0)
+    result = await test_state._process(
+        Event(
+            token="fake-token",
+            name="test_state.set_int_val",
+            router_data={"pathname": "/", "query": {}},
+            payload={"value": 50},
+        )
+    )
+    assert result.delta == {"test_state": {"int_val": 50}}
 
 
 @pytest.mark.asyncio
