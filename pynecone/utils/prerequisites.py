@@ -205,6 +205,12 @@ def initialize_web_directory():
     path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
     path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
     path_ops.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
+    """Write the current version of distributed pynecone package to a PCVERSION_APP_FILE."""
+    with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
+        pynecone_json = json.load(f)
+        pynecone_json["version"] = constants.VERSION
+    with open(constants.PCVERSION_APP_FILE, "w") as f:
+        json.dump(pynecone_json, f, ensure_ascii=False)
 
 
 def install_bun():
