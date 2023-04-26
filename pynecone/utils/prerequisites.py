@@ -212,6 +212,7 @@ def install_bun():
 
     Raises:
         FileNotFoundError: If the required packages are not installed.
+        Exit: If the bun version is not supported.
     """
     bun_version = get_bun_version()
     if bun_version is not None and bun_version in constants.INVALID_BUN_VERSIONS:
@@ -225,7 +226,7 @@ curl -fsSL https://bun.sh/install | bash -s -- bun-v{constants.MAX_BUN_VERSION}
 
 """
         )
-        return
+        raise typer.Exit()
 
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
