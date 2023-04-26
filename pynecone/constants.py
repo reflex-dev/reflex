@@ -18,9 +18,9 @@ VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 MIN_NODE_VERSION = "12.22.0"
 
 # Valid bun versions.
-MIN_BUN_VERSION = "0.5.5"
+MIN_BUN_VERSION = "0.5.8"
 MAX_BUN_VERSION = "0.5.9"
-INVALID_BUN_VERSIONS = ["0.5.6", "0.5.7"]
+INVALID_BUN_VERSIONS = ["0.5.5", "0.5.6", "0.5.7"]
 
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
