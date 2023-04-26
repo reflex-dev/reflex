@@ -135,7 +135,8 @@ class Component(Base, ABC):
             # Check if the key is an event trigger.
             if key in triggers:
                 state_name = kwargs["value"].name if kwargs.get("value", False) else ""
-                full_control = self.is_full_control(kwargs)
+                # Temporarily disable full control for event triggers.
+                full_control = False
                 kwargs["event_triggers"][key] = self._create_event_chain(
                     key, value, state_name, full_control
                 )
@@ -513,15 +514,17 @@ class Component(Base, ABC):
         """
         value = kwargs.get("value")
         if value is None or type(value) != BaseVar:
+            print("value is None or not BaseVar")
             return False
 
         on_change = kwargs.get("on_change")
         if on_change is None or type(on_change) != EventHandler:
+            print("on_change is None or not EventHandler")
             return False
 
         value = value.full_name
         on_change = on_change.fn.__qualname__
-        return value == on_change.replace(constants.SETTER_PREFIX, "")
+        return False
 
 
 # Map from component to styling.
