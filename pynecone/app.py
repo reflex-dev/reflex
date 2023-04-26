@@ -504,10 +504,14 @@ def upload(app: App):
 
         # Get the state for the session.
         state = app.state_manager.get_state(token)
+
+        # get the current state(parent state/substate)
+        path = handler.split(".")[:-1]
+        current_state = state.get_substate(path)
         handler_upload_param: Tuple = ()
 
         # get handler function
-        func = getattr(state, handler.split(".")[-1])
+        func = getattr(current_state, handler.split(".")[-1])
 
         # check if there exists any handler args with annotation, List[UploadFile]
         for k, v in inspect.getfullargspec(

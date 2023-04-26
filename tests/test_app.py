@@ -412,11 +412,38 @@ async def test_dict_mutation_detection__plain_list(
 
 
 @pytest.mark.asyncio
-async def test_upload_file(upload_state):
+@pytest.mark.parametrize(
+    "fixture, expected",
+    [
+        (
+            "upload_state",
+            {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+        ),
+        (
+            "upload_sub_state",
+            {
+                "file_state.file_upload_state": {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
+        ),
+        (
+            "upload_grand_sub_state",
+            {
+                "base_file_state.file_sub_state.file_upload_state": {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
+        ),
+    ],
+)
+async def test_upload_file(fixture, request, expected):
     """Test that file upload works correctly.
 
     Args:
-        upload_state: the state
+        fixture: The state.
+        request: Fixture request.
+        expected: Expected delta
     """
     data = b"This is binary data"
 
@@ -424,7 +451,7 @@ async def test_upload_file(upload_state):
     bio = io.BytesIO()
     bio.write(data)
 
-    app = App(state=upload_state)
+    app = App(state=request.getfixturevalue(fixture))
 
     file1 = UploadFile(
         filename="token:file_upload_state.multi_handle_upload:True:image1.jpg",
@@ -439,17 +466,19 @@ async def test_upload_file(upload_state):
     fn = upload(app)
     result = await fn([file1, file2])  # type: ignore
     assert isinstance(result, StateUpdate)
-    assert result.delta == {
-        "file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}
-    }
+    assert result.delta == expected
 
 
 @pytest.mark.asyncio
-async def test_upload_file_without_annotation(upload_state):
+@pytest.mark.parametrize(
+    "fixture", ["upload_state", "upload_sub_state", "upload_grand_sub_state"]
+)
+async def test_upload_file_without_annotation(fixture, request):
     """Test that an error is thrown when there's no param annotated with pc.UploadFile or List[UploadFile].
 
     Args:
-        upload_state: the state
+        fixture: The state.
+        request: Fixture request.
     """
     data = b"This is binary data"
 
@@ -457,15 +486,15 @@ async def test_upload_file_without_annotation(upload_state):
     bio = io.BytesIO()
     bio.write(data)
 
-    app = App(state=upload_state)
+    app = App(state=request.getfixturevalue(fixture))
 
     file1 = UploadFile(
-        filename="token:upload_state.handle_upload2:True:image1.jpg",
+        filename="token:file_upload_state.handle_upload2:True:image1.jpg",
         file=bio,
         content_type="image/jpeg",
     )
     file2 = UploadFile(
-        filename="token:upload_state.handle_upload2:True:image2.jpg",
+        filename="token:file_upload_state.handle_upload2:True:image2.jpg",
         file=bio,
         content_type="image/jpeg",
     )
@@ -474,5 +503,5 @@ async def test_upload_file_without_annotation(upload_state):
         await fn([file1, file2])
     assert (
         err.value.args[0]
-        == "`upload_state.handle_upload2` handler should have a parameter annotated as List[pc.UploadFile]"
+        == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[pc.UploadFile]"
     )

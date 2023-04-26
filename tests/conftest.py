@@ -245,6 +245,129 @@ def upload_state(tmp_path):
 
 
 @pytest.fixture
+def upload_sub_state(tmp_path):
+    """Create upload substate.
+
+    Args:
+        tmp_path: pytest tmp_path
+
+    Returns:
+        The state
+
+    """
+
+    class FileState(pc.State):
+        """The base state."""
+
+        pass
+
+    class FileUploadState(FileState):
+        """The substate for uploading a file."""
+
+        img_list: List[str]
+
+        async def handle_upload2(self, files):
+            """Handle the upload of a file.
+
+            Args:
+                files: The uploaded files.
+            """
+            for file in files:
+                upload_data = await file.read()
+                outfile = f"{tmp_path}/{file.filename}"
+
+                # Save the file.
+                with open(outfile, "wb") as file_object:
+                    file_object.write(upload_data)
+
+                # Update the img var.
+                self.img_list.append(file.filename)
+
+        async def multi_handle_upload(self, files: List[pc.UploadFile]):
+            """Handle the upload of a file.
+
+            Args:
+                files: The uploaded files.
+            """
+            for file in files:
+                upload_data = await file.read()
+                outfile = f"{tmp_path}/{file.filename}"
+
+                # Save the file.
+                with open(outfile, "wb") as file_object:
+                    file_object.write(upload_data)
+
+                # Update the img var.
+                self.img_list.append(file.filename)
+
+    return FileUploadState
+
+
+@pytest.fixture
+def upload_grand_sub_state(tmp_path):
+    """Create upload grand-state.
+
+    Args:
+        tmp_path: pytest tmp_path
+
+    Returns:
+        The state
+
+    """
+
+    class BaseFileState(pc.State):
+        """The base state."""
+
+        pass
+
+    class FileSubState(BaseFileState):
+        """The substate."""
+
+        pass
+
+    class FileUploadState(FileSubState):
+        """The grand-substate for uploading a file."""
+
+        img_list: List[str]
+
+        async def handle_upload2(self, files):
+            """Handle the upload of a file.
+
+            Args:
+                files: The uploaded files.
+            """
+            for file in files:
+                upload_data = await file.read()
+                outfile = f"{tmp_path}/{file.filename}"
+
+                # Save the file.
+                with open(outfile, "wb") as file_object:
+                    file_object.write(upload_data)
+
+                # Update the img var.
+                self.img_list.append(file.filename)
+
+        async def multi_handle_upload(self, files: List[pc.UploadFile]):
+            """Handle the upload of a file.
+
+            Args:
+                files: The uploaded files.
+            """
+            for file in files:
+                upload_data = await file.read()
+                outfile = f"{tmp_path}/{file.filename}"
+
+                # Save the file.
+                with open(outfile, "wb") as file_object:
+                    file_object.write(upload_data)
+
+                # Update the img var.
+                self.img_list.append(file.filename)
+
+    return FileUploadState
+
+
+@pytest.fixture
 def base_config_values() -> Dict:
     """Get base config values.
 
