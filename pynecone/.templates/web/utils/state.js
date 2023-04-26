@@ -246,3 +246,13 @@ export const uploadFiles = async (
 export const E = (name, payload) => {
   return { name, payload };
 };
+
+
+/***
+ * Check if a value is truthy in python.
+ * @param val The value to check.
+ * @returns True if the value is truthy, false otherwise.
+ */
+export const isTrue = (val) => {
+    return Array.isArray(val) ? val.length > 0 : !!val
+}
