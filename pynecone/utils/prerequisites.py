@@ -227,7 +227,6 @@ curl -fsSL https://bun.sh/install | bash -s -- bun-v{constants.MAX_BUN_VERSION}
         )
         raise typer.Exit()
 
-
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
