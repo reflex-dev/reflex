@@ -211,6 +211,7 @@ def install_bun():
     """Install bun onto the user's system.
 
     Raises:
+        Exit: If the bun version is not supported.
         FileNotFoundError: If the required packages are not installed.
     """
     bun_version = get_bun_version()
