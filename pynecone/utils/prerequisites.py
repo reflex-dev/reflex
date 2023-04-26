@@ -211,7 +211,6 @@ def install_bun():
     """Install bun onto the user's system.
 
     Raises:
-        Exit: If the bun version is not supported.
         FileNotFoundError: If the required packages are not installed.
     """
     bun_version = get_bun_version()
@@ -220,18 +219,18 @@ def install_bun():
             f"""[red]Bun version {bun_version} is not supported by Pynecone. Please change your to bun version to be between {constants.MIN_BUN_VERSION} and {constants.MAX_BUN_VERSION}."""
         )
         console.print(
-            f"""[red]Upgrade by running the following command:[/red] 
-            
+            f"""[red]Upgrade by running the following command:[/red]
+
 curl -fsSL https://bun.sh/install | bash -s -- bun-v{constants.MAX_BUN_VERSION}
 
 """
         )
-        raise typer.Exit()
+        return
 
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")
-        raise typer.Exit()
+        return
 
     # Only install if bun is not already installed.
     if not os.path.exists(get_package_manager()):
