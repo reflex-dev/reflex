@@ -1,7 +1,6 @@
   GNU nano 4.8                                                                run_bash.sh                                                                          #!/bin/bash
 
 cd "$1"
-curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.5
 
 set -e
 if [ "$2" = "dev" ]; then
