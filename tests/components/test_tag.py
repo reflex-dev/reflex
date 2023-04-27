@@ -163,4 +163,7 @@ def test_format_cond_tag():
         false_value=str(Tag(name="h2", contents="False content")),
         cond=BaseVar(name="logged_in", type_=bool),
     )
-    assert str(tag) == "{logged_in ? <h1>True content</h1> : <h2>False content</h2>}"
+    assert (
+        str(tag)
+        == "{isTrue(logged_in) ? <h1>True content</h1> : <h2>False content</h2>}"
+    )

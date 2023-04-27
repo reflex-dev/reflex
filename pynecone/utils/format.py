@@ -218,6 +218,9 @@ def format_cond(
     # Import here to avoid circular imports.
     from pynecone.var import Var
 
+    # Use Python truthiness.
+    cond = f"isTrue({cond})"
+
     # Format prop conds.
     if is_prop:
         prop1 = Var.create(true_value, is_string=type(true_value) == str)

@@ -40,7 +40,7 @@ def test_validate_cond(cond_state: pc.Var):
     )
 
     assert str(cond_component) == (
-        "<Fragment>{cond_state.value ? "
+        "<Fragment>{isTrue(cond_state.value) ? "
         "<Fragment><Text>{`cond is True`}</Text></Fragment> : "
         "<Fragment><Text>{`cond is False`}</Text></Fragment>}</Fragment>"
     )
@@ -71,7 +71,7 @@ def test_prop_cond(c1: Any, c2: Any):
     assert isinstance(prop_cond, Var)
     c1 = json.dumps(c1).replace('"', "`")
     c2 = json.dumps(c2).replace('"', "`")
-    assert str(prop_cond) == f"{{true ? {c1} : {c2}}}"
+    assert str(prop_cond) == f"{{isTrue(true) ? {c1} : {c2}}}"
 
 
 def test_cond_no_else():
