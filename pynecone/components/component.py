@@ -120,7 +120,7 @@ class Component(Base, ABC):
             if types._issubclass(field_type, Var):
                 try:
                     # Try to create a var from the value.
-                    kwargs[key] = Var.create(value)
+                    kwargs[key] = Var.create(value, is_string=type(value) == str)
 
                     # Check that the var type is not None.
                     if kwargs[key] is None:
@@ -365,7 +365,7 @@ class Component(Base, ABC):
         children = [
             child
             if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, is_string=True))
+            else Bare.create(contents=Var.create(child))
             for child in children
         ]
         return cls(children=children, **props)
