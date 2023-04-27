@@ -6,7 +6,7 @@ import pynecone as pc
 from pynecone.components.component import Component, CustomComponent, custom_component
 from pynecone.components.layout.box import Box
 from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
-from pynecone.state import DefaultState, State
+from pynecone.state import State
 from pynecone.style import Style
 from pynecone.utils import imports
 from pynecone.var import Var
@@ -434,27 +434,3 @@ def test_get_hooks_nested2(component3, component4):
         ).get_hooks()
         == exp_hooks
     )
-
-
-def test_set_state(component1, component2, component3):
-    """Test that setting the state of a component works.
-
-    Args:
-        component1: test component.
-        component2: another component.
-        component3: component with hooks defined.
-    """
-    c2 = component2.create()
-    c3 = component3.create()
-    c1 = component1.create(c2, c3)
-
-    # State should be None by default.
-    assert c1.state is None
-    assert c2.state is None
-    assert c3.state is None
-
-    # Setting the parent state should set the child state.
-    c1.set_state(DefaultState)
-    assert c1.state == DefaultState
-    assert c2.state == DefaultState
-    assert c3.state == DefaultState

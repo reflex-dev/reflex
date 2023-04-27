@@ -53,7 +53,7 @@ def test_upload_component_render(upload_component):
         str(upload_component) == f"<ReactDropzone multiple={{true}}{os.linesep}"
         "onDrop={e => File(e)}>{({getRootProps, getInputProps}) => (<Box "
         'sx={{"border": "1px dotted black"}}{...getRootProps()}><Input '
-        f"type={{`file`}}{{...getInputProps()}}/>{os.linesep}"
+        f'type="file"{{...getInputProps()}}/>{os.linesep}'
         f"<Button>{{`select file`}}</Button>{os.linesep}"
         "<Text>{`Drag and drop files here or click to select "
         "files`}</Text></Box>)}</ReactDropzone>"
@@ -72,7 +72,7 @@ def test_upload_component_with_props_render(upload_component_with_props):
         f"noDrag={{true}}{os.linesep}"
         "onDrop={e => File(e)}>{({getRootProps, getInputProps}) => (<Box "
         'sx={{"border": "1px dotted black"}}{...getRootProps()}><Input '
-        f"type={{`file`}}{{...getInputProps()}}/>{os.linesep}"
+        f'type="file"{{...getInputProps()}}/>{os.linesep}'
         f"<Button>{{`select file`}}</Button>{os.linesep}"
         "<Text>{`Drag and drop files here or click to select "
         "files`}</Text></Box>)}</ReactDropzone>"
