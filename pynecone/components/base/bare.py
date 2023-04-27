@@ -27,8 +27,4 @@ class Bare(Component):
         return cls(contents=str(contents))  # type: ignore
 
     def _render(self) -> Tag:
-        contents = str(self.contents)
-        if self.state is not None:
-            check = f"{{{self.state.get_name()}"
-            contents = str(self.contents).replace(check, f"${check}")
-        return Tagless(contents=contents)
+        return Tagless(contents=str(self.contents))

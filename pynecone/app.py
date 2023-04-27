@@ -263,7 +263,6 @@ class App(Base):
         # Generate the component if it is a callable.
         try:
             component = component if isinstance(component, Component) else component()
-            component.set_state(self.state)
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:
