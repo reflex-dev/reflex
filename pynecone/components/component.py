@@ -24,6 +24,9 @@ from pynecone.style import Style
 from pynecone.utils import format, imports, path_ops, types
 from pynecone.var import BaseVar, Var
 
+if typing.TYPE_CHECKING:
+    from pynecone.state import State
+
 
 class Component(Base, ABC):
     """The base class for all Pynecone components."""
@@ -33,6 +36,9 @@ class Component(Base, ABC):
 
     # The style of the component.
     style: Style = Style()
+
+    # The app state the component is connected to.
+    state: Optional[Type[State]] = None
 
     # A mapping from event triggers to event chains.
     event_triggers: Dict[str, Union[EventChain, Var]] = {}
@@ -392,6 +398,19 @@ class Component(Base, ABC):
         for child in self.children:
             child.add_style(style)
         return self
+
+    def set_state(self, state: Type[State]):
+        """Set the state of the component and its children.
+
+        Args:
+            state: The state to set.
+        """
+        # Set the state of the component.
+        self.state = state
+
+        # Set the state of the children.
+        for child in self.children:
+            child.set_state(state)
 
     def render(self) -> str:
         """Render the component.
