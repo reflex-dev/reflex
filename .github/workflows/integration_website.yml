@@ -60,7 +60,7 @@ jobs:
 
     - name: Poetry Install
       run: poetry install --no-interaction --no-root
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      # if: steps.cache-deps.outputs.cache-hit != 'true'
     - name: Install Requirements
       working-directory: ./pcweb
       run: poetry run pip install -r requirements.txt && poetry run pip install googletrans
