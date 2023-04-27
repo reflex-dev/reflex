@@ -22,4 +22,4 @@ def test_fstrings(contents, expected):
     """
     comp = Bare.create(contents)
     comp.set_state(DefaultState)
-    assert str(comp) == expected
+    assert str(comp) == f"{{`{expected}`}}"
