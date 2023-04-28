@@ -317,6 +317,8 @@ class Component(Base, ABC):
         # Special case for props named `type_`.
         if hasattr(self, "type_"):
             props["type"] = self.type_  # type: ignore
+        if hasattr(self, "as_"):
+            props["as"] = self.as_  # type: ignore
 
         return tag.add_props(**props)
 

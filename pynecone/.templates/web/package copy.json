@@ -1,0 +1,38 @@
+{
+  "name": "pynecone",
+  "scripts": {
+    "dev": "next dev",
+    "export": "next build && next export -o _static",
+    "prod": "next start"
+  },
+  "dependencies": {
+    "@chakra-ui/icons": "1.1.7",
+    "@chakra-ui/react": "1.8.8",
+    "@chakra-ui/system": "1.12.1",
+    "@emotion/react": "^11.9.0",
+    "@emotion/styled": "^11.8.1",
+    "axios": "^0.27.2",
+    "focus-visible": "^5.2.0",
+    "framer-motion": "^6.3.3",
+    "gridjs": "^4.0.0",
+    "gridjs-react": "^4.0.0",
+    "next": "^12.1.0",
+    "next-sitemap": "^3.1.52",
+    "plotly.js": "2.6.4",
+    "prettier": "^2.8.1",
+    "react": "^17.0.2",
+    "react-copy-to-clipboard": "^5.1.0",
+    "react-dom": "^17.0.2",
+    "react-dropzone": "^14.2.3",
+    "react-markdown": "^8.0.3",
+    "react-plotly.js": "^2.6.0",
+    "react-syntax-highlighter": "^15.5.0",
+    "rehype-katex": "^6.0.2",
+    "rehype-raw": "^6.1.1",
+    "remark-gfm": "^3.0.1",
+    "remark-math": "^5.1.1",
+    "socket.io-client": "^4.5.4",
+    "victory": "^36.6.8",
+    "json5": "^2.2.3"
+  }
+}
