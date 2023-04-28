@@ -860,3 +860,39 @@ def test_conditional_computed_vars():
     assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
+
+
+def test_event_handlers_convert_to_fns(test_state, child_state):
+    """Test that when the state is initialized, event handlers are converted to fns.
+
+    Args:
+        test_state: A state with event handlers.
+        child_state: A child state with event handlers.
+    """
+    # The class instances should be event handlers.
+    assert isinstance(TestState.do_something, EventHandler)
+    assert isinstance(ChildState.change_both, EventHandler)
+
+    # The object instances should be fns.
+    test_state.do_something()
+
+    child_state.change_both(value="goose", count=9)
+    assert child_state.value == "GOOSE"
+    assert child_state.count == 18
+
+
+def test_event_handlers_call_other_handlers():
+    """Test that event handlers can call other event handlers."""
+
+    class MainState(State):
+        v: int = 0
+
+        def set_v(self, v: int):
+            self.v = v
+
+        def set_v2(self, v: int):
+            self.set_v(v)
+
+    ms = MainState()
+    ms.set_v2(1)
+    assert ms.v == 1
