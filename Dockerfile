@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     unzip
 
-# Install pynecone
+# Install pynecone.
 RUN pip install pynecone
 
 # Clone your code.
