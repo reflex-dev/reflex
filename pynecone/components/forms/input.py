@@ -52,11 +52,8 @@ class Input(ChakraComponent):
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
-            {"react": {"useRef"}, "/utils/state": {"set_val"}},
+            {"/utils/state": {"set_val"}},
         )
-
-    def _get_hooks(self) -> str:
-        return f"""const ref{self.id} = useRef(null);"""
 
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
@@ -74,18 +71,10 @@ class Input(ChakraComponent):
         }
 
     def _render(self):
-        from pynecone.var import Var
-
-        out = (
-            super()
-            ._render()
-            .add_props(
-                **{
-                    "ref": Var.create(f"ref{self.id}", is_local=False),
-                }
-            )
-        )
-        # print(out)
+        out = super()._render()
+        ref = self.get_ref()
+        if ref is not None:
+            out.add_props(ref=Var.create(ref, is_local=False))
         return out
 
 

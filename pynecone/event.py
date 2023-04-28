@@ -222,7 +222,7 @@ def set_ref(ref: str, value: Any) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=(
-            (Var.create_safe("ref"), Var.create_safe(f"ref{ref}")),
+            (Var.create_safe("ref"), Var.create_safe(f"ref_{ref}")),
             (Var.create_safe("value"), Var.create_safe(value, is_local=True)),
         ),
     )

@@ -462,10 +462,18 @@ class Component(Base, ABC):
         )
 
     def _get_hooks(self) -> Optional[str]:
+        """Get the React hooks for this component.
+
+        Returns:
+            The hooks for just this component.
+        """
+        ref = self.get_ref()
+        if ref is not None:
+            return f"const {ref} = useRef(null);"
         return None
 
     def get_hooks(self) -> Set[str]:
-        """Get javascript code for react hooks.
+        """Get the React hooks for thsi component and its children.
 
         Returns:
             The code that should appear just before returning the rendered component.
@@ -483,6 +491,16 @@ class Component(Base, ABC):
             code.update(child.get_hooks())
 
         return code
+
+    def get_ref(self) -> Optional[str]:
+        """Get the name of the ref for the component.
+
+        Returns:
+            The ref name.
+        """
+        if self.id is None:
+            return None
+        return f"ref_{self.id}"
 
     def get_custom_components(
         self, seen: Optional[Set[str]] = None
