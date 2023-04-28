@@ -204,6 +204,30 @@ def window_alert(message: str) -> EventSpec:
     )
 
 
+def set_ref(ref: str, value: Any) -> EventSpec:
+    """Set the value of a ref.
+
+    Args:
+        ref: The ref.
+        value: The value to set.
+
+    Returns:
+        An event to set the ref.
+    """
+
+    def fn():
+        return None
+
+    fn.__qualname__ = "_set_ref"
+    return EventSpec(
+        handler=EventHandler(fn=fn),
+        args=(
+            (Var.create_safe("ref"), Var.create_safe(f"ref{ref}")),
+            (Var.create_safe("value"), Var.create_safe(value, is_local=True)),
+        ),
+    )
+
+
 def get_event(state, event):
     """Get the event from the given state.
 

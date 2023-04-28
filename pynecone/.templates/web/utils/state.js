@@ -90,6 +90,13 @@ export const applyEvent = async (event, router, socket) => {
     return false;
   }
 
+  if (event.name == "_set_ref") {
+    console.log("set val");
+    console.log(event)
+    event.payload.ref.current.value = "asdfdsf";
+    return false; 
+  }
+
   // Send the event to the server.
   event.token = getToken();
   event.router_data = (({ pathname, query }) => ({ pathname, query }))(router);

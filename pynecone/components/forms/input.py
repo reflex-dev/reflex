@@ -56,7 +56,7 @@ class Input(ChakraComponent):
         )
 
     def _get_hooks(self) -> str:
-        return """const ref = useRef(null);"""
+        return f"""const ref{self.id} = useRef(null);"""
 
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
@@ -73,20 +73,20 @@ class Input(ChakraComponent):
             "on_key_up": EVENT_ARG.key,
         }
 
-    # def _render(self):
-    #     from pynecone.var import Var
-    #     # print("rendering...")
-    #     out = (
-    #         super()
-    #         ._render()
-    #         .add_props(
-    #             **{
-    #                 "ref": Var.create("ref", is_local=False),
-    #             }
-    #         )
-    #     )
-    #     # print(out)
-    #     return out
+    def _render(self):
+        from pynecone.var import Var
+
+        out = (
+            super()
+            ._render()
+            .add_props(
+                **{
+                    "ref": Var.create(f"ref{self.id}", is_local=False),
+                }
+            )
+        )
+        # print(out)
+        return out
 
 
 class InputGroup(ChakraComponent):
