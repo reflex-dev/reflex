@@ -59,7 +59,6 @@ jobs:
 
     - name: Poetry Install
       run: poetry install --no-interaction
-      if: steps.cache-deps.outputs.cache-hit != 'true'
     - name: Install Requirements
       working-directory: ./pynecone-examples/counter
       run: poetry run pip install -r requirements.txt
