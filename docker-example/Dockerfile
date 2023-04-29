@@ -34,7 +34,8 @@ FROM runtime as init
 WORKDIR /app
 ENV BUN_INSTALL="/app/.bun"
 COPY --from=build /app/ /app/
-RUN pc init
+RUN pc init \
+    && /app/.bun/bin/bun install cwd=.web/
 
 
 FROM runtime
