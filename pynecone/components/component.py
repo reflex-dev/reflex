@@ -240,7 +240,6 @@ class Component(Base, ABC):
 
         # Add args to the event specs if necessary.
         if is_controlled_event:
-            print("controlled event", arg, type(arg))
             events = [
                 EventSpec(
                     handler=e.handler,
@@ -473,7 +472,7 @@ class Component(Base, ABC):
         return None
 
     def get_hooks(self) -> Set[str]:
-        """Get the React hooks for thsi component and its children.
+        """Get the React hooks for this component and its children.
 
         Returns:
             The code that should appear just before returning the rendered component.
