@@ -35,7 +35,7 @@ WORKDIR /app
 ENV BUN_INSTALL="/app/.bun"
 COPY --from=build /app/ /app/
 RUN pc init \
-    && /app/.bun/bin/bun install cwd=.web/
+    && /app/.bun/bin/bun install --cwd .web/
 
 
 FROM runtime
