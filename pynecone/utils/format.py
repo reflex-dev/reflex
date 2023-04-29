@@ -286,7 +286,12 @@ def format_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    args = ",".join([":".join((name.name, val.name)) for name, val in event_spec.args])
+    args = ",".join(
+        [
+            ":".join((name.name, json.dumps(val.name) if val.is_string else val.name))
+            for name, val in event_spec.args
+        ]
+    )
     return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 

@@ -200,7 +200,7 @@ def window_alert(message: str) -> EventSpec:
     fn.__qualname__ = "_alert"
     return EventSpec(
         handler=EventHandler(fn=fn),
-        args=((Var.create_safe("message"), Var.create_safe(message)),),
+        args=((Var.create_safe("message"), Var.create_safe(message, is_string=True)),),
     )
 
 
@@ -223,7 +223,7 @@ def set_ref(ref: str, value: Any) -> EventSpec:
         handler=EventHandler(fn=fn),
         args=(
             (Var.create_safe("ref"), Var.create_safe(f"ref_{ref}")),
-            (Var.create_safe("value"), Var.create_safe(value, is_local=True)),
+            (Var.create_safe("value"), Var.create_safe(value, is_string=True)),
         ),
     )
 

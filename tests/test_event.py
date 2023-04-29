@@ -89,7 +89,7 @@ def test_event_window_alert():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_alert"
     assert spec.args == (("message", "message"),)
-    assert str(spec) == "alert(message)"
+    assert format.format_event(spec) == 'E("_alert", {message:"message"})'
 
 
 # def test_format_event_spec():
