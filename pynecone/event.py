@@ -139,6 +139,30 @@ class FileUpload(Base):
 
 
 # Special server-side events.
+def server_side(name: str, **kwargs) -> EventSpec:
+    """A server-side event.
+
+    Args:
+        name: The name of the event.
+        **kwargs: The arguments to pass to the event.
+
+    Returns:
+        An event spec for a server-side event.
+    """
+
+    def fn():
+        return None
+
+    fn.__qualname__ = name
+    return EventSpec(
+        handler=EventHandler(fn=fn),
+        args=tuple(
+            (Var.create_safe(k), Var.create_safe(v, is_string=type(v) is str))
+            for k, v in kwargs.items()
+        ),
+    )
+
+
 def redirect(path: str) -> EventSpec:
     """Redirect to a new path.
 
@@ -148,15 +172,7 @@ def redirect(path: str) -> EventSpec:
     Returns:
         An event to redirect to the path.
     """
-
-    def fn():
-        return None
-
-    fn.__qualname__ = "_redirect"
-    return EventSpec(
-        handler=EventHandler(fn=fn),
-        args=((Var.create_safe("path"), Var.create_safe(path)),),
-    )
+    return server_side("_redirect", path=path)
 
 
 def console_log(message: str) -> EventSpec:
@@ -168,15 +184,7 @@ def console_log(message: str) -> EventSpec:
     Returns:
         An event to log the message.
     """
-
-    def fn():
-        return None
-
-    fn.__qualname__ = "_console"
-    return EventSpec(
-        handler=EventHandler(fn=fn),
-        args=((Var.create_safe("message"), Var.create_safe(message)),),
-    )
+    return server_side("_console", message=message)
 
 
 def window_alert(message: str) -> EventSpec:
@@ -188,15 +196,7 @@ def window_alert(message: str) -> EventSpec:
     Returns:
         An event to alert the message.
     """
-
-    def fn():
-        return None
-
-    fn.__qualname__ = "_alert"
-    return EventSpec(
-        handler=EventHandler(fn=fn),
-        args=((Var.create_safe("message"), Var.create_safe(message, is_string=True)),),
-    )
+    return server_side("_alert", message=message)
 
 
 def set_ref(ref: str, value: Any) -> EventSpec:
@@ -209,18 +209,7 @@ def set_ref(ref: str, value: Any) -> EventSpec:
     Returns:
         An event to set the ref.
     """
-
-    def fn():
-        return None
-
-    fn.__qualname__ = "_set_ref"
-    return EventSpec(
-        handler=EventHandler(fn=fn),
-        args=(
-            (Var.create_safe("ref"), Var.create_safe(f"ref_{ref}")),
-            (Var.create_safe("value"), Var.create_safe(value, is_string=True)),
-        ),
-    )
+    return server_side("_set_ref", ref=Var.create_safe(f"ref_{ref}"), value=value)
 
 
 def get_event(state, event):
