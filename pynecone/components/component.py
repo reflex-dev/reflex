@@ -499,7 +499,7 @@ class Component(Base, ABC):
         """
         if self.id is None:
             return None
-        return f"ref_{self.id}"
+        return format.format_ref(self.id)
 
     def get_custom_components(
         self, seen: Optional[Set[str]] = None

@@ -209,7 +209,9 @@ def set_value(ref: str, value: Any) -> EventSpec:
     Returns:
         An event to set the ref.
     """
-    return server_side("_set_value", ref=Var.create_safe(f"ref_{ref}"), value=value)
+    return server_side(
+        "_set_value", ref=Var.create_safe(format.format_ref(ref)), value=value
+    )
 
 
 def get_event(state, event):
@@ -349,8 +351,6 @@ def fix_events(
     Returns:
         The fixed events.
     """
-    from pynecone.event import Event, EventHandler, EventSpec
-
     # If the event handler returns nothing, return an empty list.
     if events is None:
         return []
@@ -369,7 +369,7 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        payload = dict(e.args)
+        payload = {k.name: v.name for k, v in e.args}
 
         # Create an event and append it to the list.
         out.append(

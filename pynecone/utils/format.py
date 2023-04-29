@@ -403,6 +403,18 @@ def format_state(value: Any) -> Dict:
     )
 
 
+def format_ref(ref: str) -> str:
+    """Format a ref.
+
+    Args:
+        ref: The ref to format.
+
+    Returns:
+        The formatted ref.
+    """
+    return f"ref_{ref.replace('-', '_').replace('.', '_').replace(':', '_').replace(' ', '_')}"
+
+
 def json_dumps(obj: Any) -> str:
     """Takes an object and returns a jsonified string.
 
