@@ -90,19 +90,3 @@ def test_event_window_alert():
     assert spec.handler.fn.__qualname__ == "_alert"
     assert spec.args == (("message", "message"),)
     assert format.format_event(spec) == 'E("_alert", {message:"message"})'
-
-
-# def test_format_event_spec():
-#     """Test formatt ing an event."""
-
-#     def fn():
-#         return None
-
-#     fn.__qualname__ = "_set_ref"
-#     return EventSpec(
-#         handler=EventHandler(fn=fn),
-#         args=(
-#             (Var.create_safe("ref"), Var.create_safe(f"ref{ref}")),
-#             (Var.create_safe("value"), Var.create_safe(value, is_local=True)),
-#         ),
-#     )

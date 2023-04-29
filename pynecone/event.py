@@ -59,18 +59,13 @@ class EventHandler(Base):
         # Construct the payload.
         values = []
         for arg in args:
-            # # If it is a Var, add the full name.
-            # if isinstance(arg, Var):
-            #     values.append(arg.full_name)
-            #     continue
-
+            # Special case for file uploads.
             if isinstance(arg, FileUpload):
                 return EventSpec(handler=self, upload=True)
 
             # Otherwise, convert to JSON.
             try:
                 values.append(Var.create(arg))
-                # values.append(format.json_dumps(arg))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
