@@ -369,8 +369,6 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        # payload = {a.name: v for a, v for item in e.args}
-        print(e.args)
         payload = dict(e.args)
 
         # Create an event and append it to the list.
