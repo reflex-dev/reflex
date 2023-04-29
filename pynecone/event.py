@@ -163,7 +163,7 @@ def server_side(name: str, **kwargs) -> EventSpec:
     )
 
 
-def redirect(path: str) -> EventSpec:
+def redirect(path: Union[str, Var[str]]) -> EventSpec:
     """Redirect to a new path.
 
     Args:
@@ -175,7 +175,7 @@ def redirect(path: str) -> EventSpec:
     return server_side("_redirect", path=path)
 
 
-def console_log(message: str) -> EventSpec:
+def console_log(message: Union[str, Var[str]]) -> EventSpec:
     """Do a console.log on the browser.
 
     Args:
@@ -187,7 +187,7 @@ def console_log(message: str) -> EventSpec:
     return server_side("_console", message=message)
 
 
-def window_alert(message: str) -> EventSpec:
+def window_alert(message: Union[str, Var[str]]) -> EventSpec:
     """Create a window alert on the browser.
 
     Args:
@@ -199,7 +199,7 @@ def window_alert(message: str) -> EventSpec:
     return server_side("_alert", message=message)
 
 
-def set_ref(ref: str, value: Any) -> EventSpec:
+def set_value(ref: str, value: Any) -> EventSpec:
     """Set the value of a ref.
 
     Args:
@@ -209,7 +209,7 @@ def set_ref(ref: str, value: Any) -> EventSpec:
     Returns:
         An event to set the ref.
     """
-    return server_side("_set_ref", ref=Var.create_safe(f"ref_{ref}"), value=value)
+    return server_side("_set_value", ref=Var.create_safe(f"ref_{ref}"), value=value)
 
 
 def get_event(state, event):

@@ -90,7 +90,7 @@ export const applyEvent = async (event, router, socket) => {
     return false;
   }
 
-  if (event.name == "_set_ref") {
+  if (event.name == "_set_value") {
     console.log("set val");
     console.log(event)
     event.payload.ref.current.value = event.payload.value;
