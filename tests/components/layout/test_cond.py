@@ -46,14 +46,14 @@ def test_validate_cond(cond_state: pc.Var):
     # true value
     true_value = condition["true_value"]
     assert true_value["name"] == "Fragment"
-    
+
     [true_value_text] = true_value["children"]
     assert true_value_text["name"] == "Text"
     assert true_value_text["children"][0]["contents"] == "{`cond is True`}"
 
     false_value = condition["false_value"]
     assert false_value["name"] == "Fragment"
-    
+
     [false_value_text] = false_value["children"]
     assert false_value_text["name"] == "Text"
     assert false_value_text["children"][0]["contents"] == "{`cond is False`}"

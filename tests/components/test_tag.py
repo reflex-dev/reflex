@@ -125,12 +125,20 @@ def test_add_props():
 @pytest.mark.parametrize(
     "tag,expected",
     [
-        (Tag(), {"name":"", "contents": "", "props": {}}),
-        (Tag(name="br"), {"name":"br", "contents": "", "props": {}}),
-        (Tag(contents="hello"), {"name":"", "contents": "hello", "props": {}}),
-        (Tag(name="h1", contents="hello"), {"name":"h1", "contents": "hello", "props": {}}),
-        (Tag(name="box", props={"color": "red", "textAlign": "center"}), 
-            {"name":"box", "contents": "", "props": {"color": "red", "textAlign": "center"}}
+        (Tag(), {"name": "", "contents": "", "props": {}}),
+        (Tag(name="br"), {"name": "br", "contents": "", "props": {}}),
+        (Tag(contents="hello"), {"name": "", "contents": "hello", "props": {}}),
+        (
+            Tag(name="h1", contents="hello"),
+            {"name": "h1", "contents": "hello", "props": {}},
+        ),
+        (
+            Tag(name="box", props={"color": "red", "textAlign": "center"}),
+            {
+                "name": "box",
+                "contents": "",
+                "props": {"color": "red", "textAlign": "center"},
+            },
         ),
         (
             Tag(
@@ -138,7 +146,11 @@ def test_add_props():
                 props={"color": "red", "textAlign": "center"},
                 contents="text",
             ),
-            {"name":"box", "contents": "text", "props": {"color": "red", "textAlign": "center"}}
+            {
+                "name": "box",
+                "contents": "text",
+                "props": {"color": "red", "textAlign": "center"},
+            },
         ),
     ],
 )

@@ -1,4 +1,3 @@
-
 import pytest
 
 import pynecone as pc
@@ -59,17 +58,23 @@ def test_upload_component_render(upload_component):
 
     [box] = uplaod["children"]
     assert box["name"] == "Box"
-    assert box["props"] == ['sx={{"border": "1px dotted black"}}', '{...getRootProps()}']
-    
+    assert box["props"] == [
+        'sx={{"border": "1px dotted black"}}',
+        "{...getRootProps()}",
+    ]
+
     [input, button, text] = box["children"]
     assert input["name"] == "Input"
-    assert input["props"] == ['type="file"', '{...getInputProps()}']
+    assert input["props"] == ['type="file"', "{...getInputProps()}"]
 
     assert button["name"] == "Button"
-    assert button["children"][0]["contents"] == '{`select file`}'
+    assert button["children"][0]["contents"] == "{`select file`}"
 
     assert text["name"] == "Text"
-    assert text["children"][0]["contents"] == "{`Drag and drop files here or click to select files`}"
+    assert (
+        text["children"][0]["contents"]
+        == "{`Drag and drop files here or click to select files`}"
+    )
 
 
 def test_upload_component_with_props_render(upload_component_with_props):
