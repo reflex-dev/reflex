@@ -1,7 +1,6 @@
 """Base class definition for raw HTML elements."""
 
 from pynecone.components.component import Component
-from pynecone.utils import path_ops
 
 
 class Element(Component):
@@ -12,14 +11,14 @@ class Element(Component):
     prop.
     """
 
-    def render(self) -> str:
+    def render(self) -> dict:
         """Render the element.
 
         Returns:
             The code to render the element.
         """
         tag = self._render()
-        return str(
+        return dict(
             tag.add_props(
                 **self.event_triggers,
                 key=self.key,
@@ -27,9 +26,8 @@ class Element(Component):
                 style=self.style,
                 class_name=self.class_name,
             ).set(
-                contents=path_ops.join(
-                    [str(tag.contents)] + [child.render() for child in self.children]
-                ).strip(),
+                contents=str(tag.contents),
+                children=[child.render() for child in self.children],
             )
         )
 

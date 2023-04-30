@@ -33,6 +33,8 @@ TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, ".templates")
 WEB_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "web")
 # The assets subdirectory of the template directory.
 ASSETS_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, APP_ASSETS_DIR)
+# The jinja template directory.
+JINJA_TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, "templates")
 
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.

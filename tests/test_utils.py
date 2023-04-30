@@ -334,7 +334,7 @@ def test_create_config(app_name, expected_config_name, mocker):
     mocker.patch("builtins.open")
     tmpl_mock = mocker.patch("pynecone.compiler.templates.PCCONFIG")
     prerequisites.create_config(app_name)
-    tmpl_mock.format.assert_called_with(
+    tmpl_mock.render.assert_called_with(
         app_name=app_name, config_name=expected_config_name
     )
 

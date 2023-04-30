@@ -24,7 +24,7 @@ class Cond(Component):
 
     @classmethod
     def create(
-        cls, cond: Var, comp1: Component, comp2: Optional[Component] = None
+        cls, cond: Var, comp1: Component, comp2: Optional[Component]
     ) -> Component:
         """Create a conditional component.
 
@@ -37,8 +37,10 @@ class Cond(Component):
             The conditional component.
         """
         # Wrap everything in fragments.
-        comp1 = Fragment.create(comp1)
-        comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
+        if comp1.__class__.__name__ != "Fragment":
+            comp1 = Fragment.create(comp1)
+        if comp2 is None or comp2.__class__.__name__ != "Fragment":
+            comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
         return Fragment.create(
             cls(
                 cond=cond,
@@ -53,6 +55,26 @@ class Cond(Component):
             cond=self.cond,
             true_value=self.comp1.render(),
             false_value=self.comp2.render(),
+        )
+
+    def render(self) -> dict:
+        """Render the component.
+
+        Returns:
+            The dictionary for template of component.
+        """
+        tag = self._render()
+        return dict(
+            tag.add_props(
+                **self.event_triggers,
+                key=self.key,
+                sx=self.style,
+                id=self.id,
+                class_name=self.class_name,
+            ).set(
+                props=tag.format_props(),
+            ),
+            cond_state=f"isTrue({self.cond.full_name})",
         )
 
 

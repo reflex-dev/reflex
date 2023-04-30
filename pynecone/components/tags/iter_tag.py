@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List
+from typing import TYPE_CHECKING, Callable, List
 
 from pynecone.components.tags.tag import Tag
-from pynecone.utils import format
-from pynecone.var import BaseVar, Var, get_unique_variable_name
+from pynecone.var import Var
 
 if TYPE_CHECKING:
     from pynecone.components.component import Component
@@ -83,24 +82,3 @@ class IterTag(Tag):
             component.key = index
 
         return component
-
-    def __str__(self) -> str:
-        """Render the tag as a React string.
-
-        Returns:
-            The React code to render the tag.
-        """
-        try:
-            type_ = self.iterable.type_.__args__[0]
-        except Exception:
-            type_ = Any
-        arg = BaseVar(
-            name=get_unique_variable_name(),
-            type_=type_,
-        )
-        index_arg = self.get_index_var_arg()
-        component = self.render_component(self.render_fn, arg)
-        return format.wrap(
-            f"{self.iterable.full_name}.map(({arg.name}, {index_arg}) => {component})",
-            "{",
-        )
