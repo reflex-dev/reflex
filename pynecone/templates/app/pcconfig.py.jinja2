@@ -1,6 +1,9 @@
 import pynecone as pc
 
-config = pc.Config(
+class {{ config_name }}(pc.Config):
+    pass
+
+config = {{ config_name }}(
     app_name="{{ app_name }}",
     db_url="{{ db_url }}",
     env=pc.Env.DEV,
