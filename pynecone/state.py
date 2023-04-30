@@ -101,11 +101,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Initialize computed vars dependencies.
         self.computed_var_dependencies = defaultdict(set)
+        inherited_vars = set(self.inherited_vars).union(
+            set(self.inherited_backend_vars),
+        )
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
             for var in cvar.deps():
                 self.computed_var_dependencies[var].add(cvar_name)
-                if var in self.inherited_vars | self.inherited_backend_vars:
+                if var in inherited_vars:
                     # track that this substate depends on its parent for this var
                     state_name = self.get_name()
                     parent_state = self.parent_state
