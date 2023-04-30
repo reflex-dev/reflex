@@ -578,7 +578,7 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.events == []
 
 
@@ -601,7 +601,6 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
-        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
     }
     test_state.clean()
@@ -616,7 +615,6 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     update = await test_state._process(event)
     assert grandchild_state.value2 == "new"
     assert update.delta == {
-        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
     }
 
