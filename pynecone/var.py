@@ -1,6 +1,7 @@
 """Define a state var."""
 from __future__ import annotations
 
+import contextlib
 import dis
 import json
 import random
@@ -804,8 +805,19 @@ class ComputedVar(property, Var):
         assert self.fget is not None, "Var must have a getter."
         return self.fget.__name__
 
+    @property
+    def cache_attr(self) -> str:
+        """Get the attribute used to cache the value on the instance.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__cached_{self.name}"
+
     def __get__(self, instance, owner):
         """Get the ComputedVar value.
+
+        If the value is already cached on the instance, return the cached value.
 
         If this ComputedVar doesn't know what type of object it is attached to, then save
         a reference as self.__objclass__.
@@ -819,7 +831,14 @@ class ComputedVar(property, Var):
         """
         if not hasattr(self, "__objclass__"):
             self.__objclass__ = owner
-        return super().__get__(instance, owner)
+
+        if instance is None:
+            return super().__get__(instance, owner)
+
+        # handle caching
+        if not hasattr(instance, self.cache_attr):
+            setattr(instance, self.cache_attr, super().__get__(instance, owner))
+        return getattr(instance, self.cache_attr)
 
     def deps(self, obj: Optional[FunctionType] = None) -> Set[str]:
         """Determine var dependencies of this ComputedVar.
@@ -854,6 +873,15 @@ class ComputedVar(property, Var):
                 d.update(self.deps(obj=getattr(self.__objclass__, instruction.argval)))
             self_is_top_of_stack = False
         return d
+
+    def mark_dirty(self, instance) -> None:
+        """Mark this ComputedVar as dirty.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+        """
+        with contextlib.suppress(AttributeError):
+            delattr(instance, self.cache_attr)
 
     @property
     def type_(self):
