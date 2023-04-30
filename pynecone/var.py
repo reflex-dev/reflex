@@ -373,7 +373,7 @@ class Var(ABC):
         Returns:
             A var representing the equality comparison.
         """
-        return self.compare("==", other)
+        return self.compare("===", other)
 
     def __ne__(self, other: Var) -> Var:
         """Perform an inequality comparison.
@@ -384,7 +384,7 @@ class Var(ABC):
         Returns:
             A var representing the inequality comparison.
         """
-        return self.compare("!=", other)
+        return self.compare("!==", other)
 
     def __gt__(self, other: Var) -> Var:
         """Perform a greater than comparison.
@@ -704,6 +704,9 @@ class BaseVar(Var, Base):
 
         Returns:
             The default value of the var.
+
+        Raises:
+            ImportError: If the var is a dataframe and pandas is not installed.
         """
         type_ = (
             self.type_.__origin__ if types.is_generic_alias(self.type_) else self.type_
@@ -720,6 +723,15 @@ class BaseVar(Var, Base):
             return {}
         if issubclass(type_, tuple):
             return ()
+        if types.is_dataframe(type_):
+            try:
+                import pandas as pd
+
+                return pd.DataFrame()
+            except ImportError as e:
+                raise ImportError(
+                    "Please install pandas to use dataframes in your app."
+                ) from e
         return set() if issubclass(type_, set) else None
 
     def get_setter_name(self, include_state: bool = True) -> str:

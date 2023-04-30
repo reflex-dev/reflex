@@ -38,12 +38,6 @@ def run_frontend(app: App, root: Path, port: str):
         root: root path of the project.
         port: port of the app.
     """
-    # Initialize the web directory if it doesn't exist.
-    web_dir = prerequisites.create_web_directory(root)
-
-    # Install frontend packages
-    prerequisites.install_frontend_packages(web_dir)
-
     # Set up the frontend.
     setup_frontend(root)
 

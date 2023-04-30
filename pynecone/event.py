@@ -110,6 +110,12 @@ class EventChain(Base):
 
     events: List[EventSpec]
 
+    # Whether events are in fully controlled input.
+    full_control: bool = False
+
+    # State name when fully controlled.
+    state_name: str = ""
+
 
 class Target(Base):
     """A Javascript event target."""
@@ -346,6 +352,8 @@ def fix_events(
     # Fix the events created by the handler.
     out = []
     for e in events:
+        if not isinstance(e, (EventHandler, EventSpec)):
+            e = EventHandler(fn=e)
         # Otherwise, create an event from the event spec.
         if isinstance(e, EventHandler):
             e = e()

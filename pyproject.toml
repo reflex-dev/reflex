@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pynecone"
-version = "0.1.20"
+version = "0.1.27"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -54,6 +54,7 @@ pandas = [
     {version = "^1.5.3", python = ">=3.8,<4.0"},
     {version = "^1.1", python = ">=3.7, <3.8"}
 ]
+pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 
 [tool.poetry.scripts]
 pc = "pynecone.pc:main"

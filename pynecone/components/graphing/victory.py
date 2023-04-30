@@ -1,6 +1,6 @@
 """Victory graphing components."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pynecone.components.component import Component
 from pynecone.style import Style
@@ -470,7 +470,7 @@ class Pie(Victory):
     tag = "VictoryPie"
 
     # Defines a color scale to be applied to each slice. Takes in an array of colors. Default color scale are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
-    color_scale: Var[str]
+    color_scale: Var[Union[str, List[str]]]
 
     # Specifies the corner radius of the slices rendered in the pie chart.
     corner_radius: Var[float]
@@ -572,7 +572,7 @@ class ChartGroup(Victory):
     tag = "VictoryGroup"
 
     # Optional prop that defines a color scale to be applied to the children of the group. Takes in an array of colors. Default color scale are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
-    color_scale: Var[str]
+    color_scale: Var[Union[str, List[str]]]
 
     # Optional prop that defines a single color to be applied to the children of the group. Overrides color_scale.
     color: Var[str]
@@ -590,7 +590,7 @@ class ChartStack(Victory):
     categories: Var[int]
 
     # Optional prop that defines a color scale to be applied to the children of the group. Takes in an array of colors. Default color scale are: "grayscale", "qualitative", "heatmap", "warm", "cool", "red", "green", "blue".
-    color_scale: Var[List]
+    color_scale: Var[Union[str, List[str]]]
 
 
 class Voronoi(Victory):

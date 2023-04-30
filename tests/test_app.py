@@ -1,13 +1,15 @@
+import io
 import os.path
 from typing import List, Tuple, Type
 
 import pytest
+from fastapi import UploadFile
 
-from pynecone.app import App, DefaultState
+from pynecone.app import App, DefaultState, upload
 from pynecone.components import Box
 from pynecone.event import Event
 from pynecone.middleware import HydrateMiddleware
-from pynecone.state import State
+from pynecone.state import State, StateUpdate
 from pynecone.style import Style
 
 
@@ -50,7 +52,7 @@ def about_page():
 
 
 @pytest.fixture()
-def TestState() -> Type[State]:
+def test_state() -> Type[State]:
     """A default state.
 
     Returns:
@@ -117,29 +119,29 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     assert set(app.pages.keys()) == {route.strip(os.path.sep)}
 
 
-def test_initialize_with_state(TestState: Type[State]):
+def test_initialize_with_state(test_state):
     """Test setting the state of an app.
 
     Args:
-        TestState: The default state.
+        test_state: The default state.
     """
-    app = App(state=TestState)
-    assert app.state == TestState
+    app = App(state=test_state)
+    assert app.state == test_state
 
     # Get a state for a given token.
     token = "token"
     state = app.state_manager.get_state(token)
-    assert isinstance(state, TestState)
+    assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
 
-def test_set_and_get_state(TestState: Type[State]):
+def test_set_and_get_state(test_state):
     """Test setting and getting the state of an app with different tokens.
 
     Args:
-        TestState: The default state.
+        test_state: The default state.
     """
-    app = App(state=TestState)
+    app = App(state=test_state)
 
     # Create two tokens.
     token1 = "token1"
@@ -162,6 +164,27 @@ def test_set_and_get_state(TestState: Type[State]):
     state2 = app.state_manager.get_state(token2)
     assert state1.var == 1  # type: ignore
     assert state2.var == 2  # type: ignore
+
+
+@pytest.mark.asyncio
+async def test_dynamic_var_event(test_state):
+    """Test that the default handler of a dynamic generated var
+    works as expected.
+
+    Args:
+        test_state: State Fixture.
+    """
+    test_state = test_state()
+    test_state.add_var("int_val", int, 0)
+    result = await test_state._process(
+        Event(
+            token="fake-token",
+            name="test_state.set_int_val",
+            router_data={"pathname": "/", "query": {}},
+            payload={"value": 50},
+        )
+    )
+    assert result.delta == {"test_state": {"int_val": 50}}
 
 
 @pytest.mark.asyncio
@@ -270,7 +293,7 @@ async def test_list_mutation_detection__plain_list(
         list_mutation_state: A state with list mutation features.
     """
     for event_name, expected_delta in event_tuples:
-        result = await list_mutation_state.process(
+        result = await list_mutation_state._process(
             Event(
                 token="fake-token",
                 name=event_name,
@@ -397,7 +420,7 @@ async def test_dict_mutation_detection__plain_list(
         dict_mutation_state: A state with dict mutation features.
     """
     for event_name, expected_delta in event_tuples:
-        result = await dict_mutation_state.process(
+        result = await dict_mutation_state._process(
             Event(
                 token="fake-token",
                 name=event_name,
@@ -407,3 +430,99 @@ async def test_dict_mutation_detection__plain_list(
         )
 
         assert result.delta == expected_delta
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "fixture, expected",
+    [
+        (
+            "upload_state",
+            {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+        ),
+        (
+            "upload_sub_state",
+            {
+                "file_state.file_upload_state": {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
+        ),
+        (
+            "upload_grand_sub_state",
+            {
+                "base_file_state.file_sub_state.file_upload_state": {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
+        ),
+    ],
+)
+async def test_upload_file(fixture, request, expected):
+    """Test that file upload works correctly.
+
+    Args:
+        fixture: The state.
+        request: Fixture request.
+        expected: Expected delta
+    """
+    data = b"This is binary data"
+
+    # Create a binary IO object and write data to it
+    bio = io.BytesIO()
+    bio.write(data)
+
+    app = App(state=request.getfixturevalue(fixture))
+
+    file1 = UploadFile(
+        filename="token:file_upload_state.multi_handle_upload:True:image1.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    file2 = UploadFile(
+        filename="token:file_upload_state.multi_handle_upload:True:image2.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    fn = upload(app)
+    result = await fn([file1, file2])  # type: ignore
+    assert isinstance(result, StateUpdate)
+    assert result.delta == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "fixture", ["upload_state", "upload_sub_state", "upload_grand_sub_state"]
+)
+async def test_upload_file_without_annotation(fixture, request):
+    """Test that an error is thrown when there's no param annotated with pc.UploadFile or List[UploadFile].
+
+    Args:
+        fixture: The state.
+        request: Fixture request.
+    """
+    data = b"This is binary data"
+
+    # Create a binary IO object and write data to it
+    bio = io.BytesIO()
+    bio.write(data)
+
+    app = App(state=request.getfixturevalue(fixture))
+
+    file1 = UploadFile(
+        filename="token:file_upload_state.handle_upload2:True:image1.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    file2 = UploadFile(
+        filename="token:file_upload_state.handle_upload2:True:image2.jpg",
+        file=bio,
+        content_type="image/jpeg",
+    )
+    fn = upload(app)
+    with pytest.raises(ValueError) as err:
+        await fn([file1, file2])
+    assert (
+        err.value.args[0]
+        == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[pc.UploadFile]"
+    )

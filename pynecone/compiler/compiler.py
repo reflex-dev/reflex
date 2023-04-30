@@ -15,7 +15,13 @@ from pynecone.utils import imports
 DEFAULT_IMPORTS: imports.ImportDict = {
     "react": {"useEffect", "useRef", "useState"},
     "next/router": {"useRouter"},
-    f"/{constants.STATE_PATH}": {"connect", "updateState", "uploadFiles", "E"},
+    f"/{constants.STATE_PATH}": {
+        "connect",
+        "updateState",
+        "uploadFiles",
+        "E",
+        "isTrue",
+    },
     "": {"focus-visible/dist/focus-visible"},
     "@chakra-ui/react": {constants.USE_COLOR_MODE},
 }
@@ -71,6 +77,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
         },
         initial_state=utils.compile_state(state),
         state_name=state.get_name(),
+        hooks=path_ops.join(component.get_hooks()),
         render=component.render(),
         transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
     )
@@ -87,7 +94,7 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     """
     imports = {
         "react": {"memo"},
-        f"/{constants.STATE_PATH}": {"E"},
+        f"/{constants.STATE_PATH}": {"E", "isTrue"},
     }
     component_renders = []
 

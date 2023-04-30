@@ -68,7 +68,7 @@ class Tag(Base):
         if isinstance(prop, Var):
             if not prop.is_local or prop.is_string:
                 return str(prop)
-            if issubclass(prop.type_, str):
+            if types._issubclass(prop.type_, str):
                 return format.json_dumps(prop.full_name)
             prop = prop.full_name
 
@@ -79,6 +79,9 @@ class Tag(Base):
             if len(prop.events) == 1 and prop.events[0].upload:
                 # Special case for upload events.
                 event = format.format_upload_event(prop.events[0])
+            elif prop.full_control:
+                # Full control component events.
+                event = format.format_full_control_event(prop)
             else:
                 # All other events.
                 chain = ",".join([format.format_event(event) for event in prop.events])

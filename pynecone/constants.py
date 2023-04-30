@@ -17,19 +17,20 @@ VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
 MIN_NODE_VERSION = "12.22.0"
 
+# Valid bun versions.
+MIN_BUN_VERSION = "0.5.8"
+MAX_BUN_VERSION = "0.5.9"
+INVALID_BUN_VERSIONS = ["0.5.5", "0.5.6", "0.5.7"]
+
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# The name of the file used for pc init.
-APP_TEMPLATE_FILE = "tutorial.py"
 # The name of the assets directory.
 APP_ASSETS_DIR = "assets"
 # The template directory used during pc init.
 TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, ".templates")
 # The web subdirectory of the template directory.
 WEB_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "web")
-# The app subdirectory of the template directory.
-APP_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "app")
 # The assets subdirectory of the template directory.
 ASSETS_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, APP_ASSETS_DIR)
 # The jinja template directory.
@@ -58,8 +59,6 @@ SITEMAP_CONFIG_FILE = os.path.join(WEB_DIR, "next-sitemap.config.js")
 NODE_MODULES = "node_modules"
 # The package lock file.
 PACKAGE_LOCK = "package-lock.json"
-# The pcversion template file.
-PCVERSION_TEMPLATE_FILE = os.path.join(WEB_TEMPLATE_DIR, "pynecone.json")
 # The pcversion app file.
 PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pynecone.json")
 
@@ -74,7 +73,7 @@ API_URL = "http://localhost:8000"
 # The default path where bun is installed.
 BUN_PATH = "$HOME/.bun/bin/bun"
 # Command to install bun.
-INSTALL_BUN = "curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.5"
+INSTALL_BUN = "curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.9"
 # Default host in dev mode.
 BACKEND_HOST = "0.0.0.0"
 # The default timeout when launching the gunicorn server.
@@ -166,6 +165,14 @@ class LogLevel(str, Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
+
+
+# Templates
+class Template(str, Enum):
+    """The templates to use for the app."""
+
+    DEFAULT = "default"
+    COUNTER = "counter"
 
 
 class Endpoint(Enum):

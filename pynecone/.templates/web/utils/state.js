@@ -1,6 +1,7 @@
 // State management for Pynecone web apps.
 import axios from "axios";
 import io from "socket.io-client";
+import JSON5 from "json5";
 
 // Global variable to hold the token.
 let token;
@@ -175,7 +176,7 @@ export const connect = async (
 
   // On each received message, apply the delta and set the result.
   socket.current.on("event", function (update) {
-    update = JSON.parse(update);
+    update = JSON5.parse(update);
     applyDelta(state, update.delta);
     setResult({
       processing: true,
@@ -201,7 +202,6 @@ export const uploadFiles = async (
   setResult,
   files,
   handler,
-  multiUpload,
   endpoint
 ) => {
   // If we are already processing an event, or there are no upload files, return.
@@ -212,7 +212,6 @@ export const uploadFiles = async (
   // Set processing to true to block other events from being processed.
   setResult({ ...result, processing: true });
 
-  const name = multiUpload ? "files" : "file"
   const headers = {
     "Content-Type": files[0].type,
   };
@@ -220,7 +219,7 @@ export const uploadFiles = async (
 
   // Add the token and handler to the file name.
   for (let i = 0; i < files.length; i++) {
-    formdata.append("files", files[i], getToken() + ":" + handler + ":" + name + ":" + files[i].name);
+    formdata.append("files", files[i], getToken() + ":" + handler + ":" + files[i].name);
   }
 
   // Send the file to the server.
@@ -247,3 +246,13 @@ export const uploadFiles = async (
 export const E = (name, payload) => {
   return { name, payload };
 };
+
+
+/***
+ * Check if a value is truthy in python.
+ * @param val The value to check.
+ * @returns True if the value is truthy, false otherwise.
+ */
+export const isTrue = (val) => {
+    return Array.isArray(val) ? val.length > 0 : !!val
+}

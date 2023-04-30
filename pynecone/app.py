@@ -1,6 +1,8 @@
 """The main Pynecone app."""
 
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Type, Union
+import asyncio
+import inspect
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
 
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
@@ -23,7 +25,7 @@ from pynecone.route import (
     verify_route_validity,
 )
 from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
-from pynecone.utils import format
+from pynecone.utils import format, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -147,7 +149,9 @@ class App(Base):
             allow_origins=["*"],
         )
 
-    def preprocess(self, state: State, event: Event) -> Optional[Delta]:
+    async def preprocess(
+        self, state: State, event: Event
+    ) -> Optional[Union[StateUpdate, List[StateUpdate]]]:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -164,11 +168,16 @@ class App(Base):
             An optional state to return.
         """
         for middleware in self.middleware:
-            out = middleware.preprocess(app=self, state=state, event=event)
+            if asyncio.iscoroutinefunction(middleware.preprocess):
+                out = await middleware.preprocess(app=self, state=state, event=event)
+            else:
+                out = middleware.preprocess(app=self, state=state, event=event)
             if out is not None:
-                return out
+                return out  # type: ignore
 
-    def postprocess(self, state: State, event: Event, delta: Delta) -> Optional[Delta]:
+    async def postprocess(
+        self, state: State, event: Event, delta: Delta
+    ) -> Optional[Delta]:
         """Postprocess the event.
 
         This is where middleware can modify the delta after it is processed.
@@ -186,11 +195,16 @@ class App(Base):
             An optional state to return.
         """
         for middleware in self.middleware:
-            out = middleware.postprocess(
-                app=self, state=state, event=event, delta=delta
-            )
+            if asyncio.iscoroutinefunction(middleware.postprocess):
+                out = await middleware.postprocess(
+                    app=self, state=state, event=event, delta=delta
+                )
+            else:
+                out = middleware.postprocess(
+                    app=self, state=state, event=event, delta=delta
+                )
             if out is not None:
-                return out
+                return out  # type: ignore
 
     def add_middleware(self, middleware: Middleware, index: Optional[int] = None):
         """Add middleware to the app.
@@ -394,12 +408,10 @@ class App(Base):
         # Compile the custom components.
         compiler.compile_components(custom_components)
 
-        self.state.convert_handlers_to_fns()
-
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
-) -> StateUpdate:
+) -> List[StateUpdate]:
     """Process an event.
 
     Args:
@@ -410,40 +422,49 @@ async def process(
         client_ip: The client_ip.
 
     Returns:
-        The state update after processing the event.
+        The state updates after processing the event.
     """
     # Get the state for the session.
     state = app.state_manager.get_state(event.token)
 
-    formatted_params = format.format_query_params(event.router_data)
-
-    # Pass router_data to the state of the App.
+    # Add request data to the state.
     state.router_data = event.router_data
-    # also pass router_data to all substates
+    state.router_data.update(
+        {
+            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+            constants.RouteVar.CLIENT_TOKEN: event.token,
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        }
+    )
+
+    # Also pass router_data to all substates. (TODO: this isn't recursive currently)
     for _, substate in state.substates.items():
-        substate.router_data = event.router_data
-    state.router_data[constants.RouteVar.QUERY] = formatted_params
-    state.router_data[constants.RouteVar.CLIENT_TOKEN] = event.token
-    state.router_data[constants.RouteVar.SESSION_ID] = sid
-    state.router_data[constants.RouteVar.HEADERS] = headers
-    state.router_data[constants.RouteVar.CLIENT_IP] = client_ip
+        substate.router_data = state.router_data
 
     # Preprocess the event.
-    pre = app.preprocess(state, event)
-    if pre is not None:
-        return StateUpdate(delta=pre)
+    pre = await app.preprocess(state, event)
+    if isinstance(pre, StateUpdate):
+        return [pre]
+    updates = pre
 
     # Apply the event to the state.
-    update = await state.process(event)
-    app.state_manager.set_state(event.token, state)
+    if updates is None:
+        updates = [await state._process(event)]
+        app.state_manager.set_state(event.token, state)
 
     # Postprocess the event.
-    post = app.postprocess(state, event, update.delta)
-    if post is not None:
-        return StateUpdate(delta=post)
+    post_list = []
+    for update in updates:
+        post = await app.postprocess(state, event, update.delta)  # type: ignore
+        post_list.append(post) if post else None
 
-    # Return the update.
-    return update
+    if len(post_list) > 0:
+        return [StateUpdate(delta=post) for post in post_list]
+
+    # Return the updates.
+    return updates
 
 
 async def ping() -> str:
@@ -473,20 +494,47 @@ def upload(app: App):
 
         Returns:
             The state update after processing the event.
+
+        Raises:
+            ValueError: if there are no args with supported annotation.
         """
-        token, handler, key = files[0].filename.split(":")[:3]
+        token, handler = files[0].filename.split(":")[:2]
         for file in files:
             file.filename = file.filename.split(":")[-1]
 
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-        # Event payload should have `files` as key for multi-uploads and `file` otherwise
+
+        # get the current state(parent state/substate)
+        path = handler.split(".")[:-1]
+        current_state = state.get_substate(path)
+        handler_upload_param: Tuple = ()
+
+        # get handler function
+        func = getattr(current_state, handler.split(".")[-1])
+
+        # check if there exists any handler args with annotation, List[UploadFile]
+        for k, v in inspect.getfullargspec(
+            func.fn if isinstance(func, EventHandler) else func
+        ).annotations.items():
+            if types.is_generic_alias(v) and types._issubclass(
+                v.__args__[0], UploadFile
+            ):
+                handler_upload_param = (k, v)
+                break
+
+        if not handler_upload_param:
+            raise ValueError(
+                f"`{handler}` handler should have a parameter annotated as List["
+                f"pc.UploadFile]"
+            )
+
         event = Event(
             token=token,
             name=handler,
-            payload={key: files[0] if key == "file" else files},
+            payload={handler_upload_param[0]: files},
         )
-        update = await state.process(event)
+        update = await state._process(event)
         return update
 
     return upload_file
@@ -549,11 +597,12 @@ class EventNamespace(AsyncNamespace):
         # Get the client IP
         client_ip = environ["REMOTE_ADDR"]
 
-        # Process the event.
-        update = await process(self.app, event, sid, headers, client_ip)
+        # Process the events.
+        updates = await process(self.app, event, sid, headers, client_ip)
 
         # Emit the event.
-        await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+        for update in updates:
+            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.

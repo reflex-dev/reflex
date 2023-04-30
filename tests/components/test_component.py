@@ -2,7 +2,8 @@ from typing import Dict, List, Type
 
 import pytest
 
-from pynecone.components.component import Component, CustomComponent
+import pynecone as pc
+from pynecone.components.component import Component, CustomComponent, custom_component
 from pynecone.components.layout.box import Box
 from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
@@ -12,7 +13,7 @@ from pynecone.var import Var
 
 
 @pytest.fixture
-def TestState():
+def test_state():
     class TestState(State):
         num: int
 
@@ -80,6 +81,36 @@ def component2() -> Type[Component]:
             return "console.log('component2')"
 
     return TestComponent2
+
+
+@pytest.fixture
+def component3() -> Type[Component]:
+    """A test component with hook defined.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent3(Component):
+        def _get_hooks(self) -> str:
+            return "const a = () => true"
+
+    return TestComponent3
+
+
+@pytest.fixture
+def component4() -> Type[Component]:
+    """A test component with hook defined.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent4(Component):
+        def _get_hooks(self) -> str:
+            return "const b = () => false"
+
+    return TestComponent4
 
 
 @pytest.fixture
@@ -255,15 +286,15 @@ def test_invalid_prop_type(component1, text: str, number: int):
         component1.create(text=text, number=number)
 
 
-def test_var_props(component1, TestState):
+def test_var_props(component1, test_state):
     """Test that we can set a Var prop.
 
     Args:
         component1: A test component.
-        TestState: A test state.
+        test_state: A test state.
     """
-    c1 = component1.create(text="hello", number=TestState.num)
-    assert c1.number == TestState.num
+    c1 = component1.create(text="hello", number=test_state.num)
+    assert c1.number == test_state.num
 
 
 def test_get_controlled_triggers(component1, component2):
@@ -311,33 +342,95 @@ def test_custom_component_hash(my_component):
     assert {component1, component2} == {component1}
 
 
-def test_invalid_event_handler_args(component2, TestState):
+def test_custom_component_wrapper():
+    """Test that the wrapper of a custom component is correct."""
+
+    @custom_component
+    def my_component(width: Var[int], color: Var[str]):
+        return pc.box(
+            width=width,
+            color=color,
+        )
+
+    ccomponent = my_component(
+        pc.text("child"), width=Var.create(1), color=Var.create("red")
+    )
+    assert isinstance(ccomponent, CustomComponent)
+    assert len(ccomponent.children) == 1
+    assert isinstance(ccomponent.children[0], pc.Text)
+
+    component = ccomponent.get_component()
+    assert isinstance(component, Box)
+
+
+def test_invalid_event_handler_args(component2, test_state):
     """Test that an invalid event handler raises an error.
 
     Args:
         component2: A test component.
-        TestState: A test state.
+        test_state: A test state.
     """
     # Uncontrolled event handlers should not take args.
     # This is okay.
-    component2.create(on_click=TestState.do_something)
+    component2.create(on_click=test_state.do_something)
     # This is not okay.
     with pytest.raises(ValueError):
-        component2.create(on_click=TestState.do_something_arg)
+        component2.create(on_click=test_state.do_something_arg)
     # However lambdas are okay.
-    component2.create(on_click=lambda: TestState.do_something_arg(1))
+    component2.create(on_click=lambda: test_state.do_something_arg(1))
     component2.create(
-        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something]
+        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something]
     )
     component2.create(
-        on_click=lambda: [TestState.do_something_arg(1), TestState.do_something()]
+        on_click=lambda: [test_state.do_something_arg(1), test_state.do_something()]
     )
 
     # Controlled event handlers should take args.
     # This is okay.
-    component2.create(on_open=TestState.do_something_arg)
+    component2.create(on_open=test_state.do_something_arg)
     # This is not okay.
     with pytest.raises(ValueError):
-        component2.create(on_open=TestState.do_something)
+        component2.create(on_open=test_state.do_something)
     with pytest.raises(ValueError):
-        component2.create(on_open=[TestState.do_something_arg, TestState.do_something])
+        component2.create(
+            on_open=[test_state.do_something_arg, test_state.do_something]
+        )
+
+
+def test_get_hooks_nested(component1, component2, component3):
+    """Test that a component returns hooks from child components.
+
+    Args:
+        component1: test component.
+        component2: another component.
+        component3: component with hooks defined.
+    """
+    c = component1.create(
+        component2.create(arr=[]),
+        component3.create(),
+        component3.create(),
+        component3.create(),
+        text="a",
+        number=1,
+    )
+    assert c.get_hooks() == component3().get_hooks()
+
+
+def test_get_hooks_nested2(component3, component4):
+    """Test that a component returns both when parent and child have hooks.
+
+    Args:
+        component3: component with hooks defined.
+        component4: component with different hooks defined.
+    """
+    exp_hooks = component3().get_hooks().union(component4().get_hooks())
+    assert component3.create(component4.create()).get_hooks() == exp_hooks
+    assert component4.create(component3.create()).get_hooks() == exp_hooks
+    assert (
+        component4.create(
+            component3.create(),
+            component4.create(),
+            component3.create(),
+        ).get_hooks()
+        == exp_hooks
+    )

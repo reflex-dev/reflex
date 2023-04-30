@@ -5,6 +5,7 @@ import asyncio
 import functools
 import traceback
 from abc import ABC
+from collections import defaultdict
 from typing import (
     Any,
     Callable,
@@ -19,6 +20,7 @@ from typing import (
 )
 
 import cloudpickle
+import pydantic
 from redis import Redis
 
 from pynecone import constants
@@ -30,7 +32,7 @@ from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
 Delta = Dict[str, Any]
 
 
-class State(Base, ABC):
+class State(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -69,20 +71,52 @@ class State(Base, ABC):
     # The routing path that triggered the state
     router_data: Dict[str, Any] = {}
 
-    def __init__(self, *args, **kwargs):
+    # Mapping of var name to set of computed variables that depend on it
+    computed_var_dependencies: Dict[str, Set[str]] = {}
+
+    # Whether to track accessed vars.
+    track_vars: bool = False
+
+    # The current set of accessed vars during tracking.
+    tracked_vars: Set[str] = set()
+
+    def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
         """Initialize the state.
 
         Args:
             *args: The args to pass to the Pydantic init method.
+            parent_state: The parent state.
             **kwargs: The kwargs to pass to the Pydantic init method.
         """
+        kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
         # Setup the substates.
         for substate in self.get_substates():
-            self.substates[substate.get_name()] = substate().set(parent_state=self)
+            self.substates[substate.get_name()] = substate(parent_state=self)
 
+        # Convert the event handlers to functions.
+        for name, event_handler in self.event_handlers.items():
+            fn = functools.partial(event_handler.fn, self)
+            fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
+            setattr(self, name, fn)
+
+        # Initialize the mutable fields.
         self._init_mutable_fields()
+
+        # Initialize computed vars dependencies.
+        self.computed_var_dependencies = defaultdict(set)
+        for cvar in self.computed_vars:
+            self.tracked_vars = set()
+
+            # Enable tracking and get the computed var.
+            self.track_vars = True
+            self.__getattribute__(cvar)
+            self.track_vars = False
+
+            # Add the dependencies.
+            for var in self.tracked_vars:
+                self.computed_var_dependencies[var].add(cvar)
 
     def _init_mutable_fields(self):
         """Initialize mutable fields.
@@ -149,17 +183,10 @@ class State(Base, ABC):
         cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
 
         # Set the base and computed vars.
-        skip_vars = set(cls.inherited_vars) | {
-            "parent_state",
-            "substates",
-            "dirty_vars",
-            "dirty_substates",
-            "router_data",
-        }
         cls.base_vars = {
             f.name: BaseVar(name=f.name, type_=f.outer_type_).set_state(cls)
             for f in cls.get_fields().values()
-            if f.name not in skip_vars
+            if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
             v.name: v.set_state(cls)
@@ -171,6 +198,8 @@ class State(Base, ABC):
             **cls.base_vars,
             **cls.computed_vars,
         }
+        cls.computed_var_dependencies = {}
+        cls.event_handlers = {}
 
         # Setup the base vars at the class level.
         for prop in cls.base_vars.values():
@@ -180,21 +209,32 @@ class State(Base, ABC):
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
-            if not name.startswith("_") and isinstance(fn, Callable)
+            if not name.startswith("_")
+            and isinstance(fn, Callable)
+            and not isinstance(fn, EventHandler)
         }
         for name, fn in events.items():
-            event_handler = EventHandler(fn=fn)
-            cls.event_handlers[name] = event_handler
-            setattr(cls, name, event_handler)
+            handler = EventHandler(fn=fn)
+            cls.event_handlers[name] = handler
+            setattr(cls, name, handler)
 
     @classmethod
-    def convert_handlers_to_fns(cls):
-        """Convert the event handlers to functions.
+    def get_skip_vars(cls) -> Set[str]:
+        """Get the vars to skip when serializing.
 
-        This is done so the state functions can be called as normal functions during runtime.
+        Returns:
+            The vars to skip when serializing.
         """
-        for name, event_handler in cls.event_handlers.items():
-            setattr(cls, name, event_handler.fn)
+        return set(cls.inherited_vars) | {
+            "parent_state",
+            "substates",
+            "dirty_vars",
+            "dirty_substates",
+            "router_data",
+            "computed_var_dependencies",
+            "track_vars",
+            "tracked_vars",
+        }
 
     @classmethod
     @functools.lru_cache()
@@ -362,7 +402,9 @@ class State(Base, ABC):
         """
         setter_name = prop.get_setter_name(include_state=False)
         if setter_name not in cls.__dict__:
-            setattr(cls, setter_name, prop.get_setter())
+            event_handler = EventHandler(fn=prop.get_setter())
+            cls.event_handlers[setter_name] = event_handler
+            setattr(cls, setter_name, event_handler)
 
     @classmethod
     def _set_default_value(cls, prop: BaseVar):
@@ -465,12 +507,29 @@ class State(Base, ABC):
 
         If the var is inherited, get the var from the parent state.
 
+        If the Var is a dependent of a ComputedVar, track this status in computed_var_dependencies.
+
         Args:
             name: The name of the var.
 
         Returns:
             The value of the var.
         """
+        # If the state hasn't been initialized yet, return the default value.
+        if not super().__getattribute__("__dict__"):
+            return super().__getattribute__(name)
+
+        # Check if tracking is enabled.
+        if super().__getattribute__("track_vars"):
+            # Get the non-computed vars.
+            all_vars = {
+                **super().__getattribute__("vars"),
+                **super().__getattribute__("backend_vars"),
+            }
+            # Add the var to the tracked vars.
+            if name in all_vars:
+                super().__getattribute__("tracked_vars").add(name)
+
         inherited_vars = {
             **super().__getattribute__("inherited_vars"),
             **super().__getattribute__("inherited_backend_vars"),
@@ -498,6 +557,7 @@ class State(Base, ABC):
 
         if types.is_backend_variable(name):
             self.backend_vars.__setitem__(name, value)
+            self.dirty_vars.add(name)
             self.mark_dirty()
             return
 
@@ -545,14 +605,17 @@ class State(Base, ABC):
             raise ValueError(f"Invalid path: {path}")
         return self.substates[path[0]].get_substate(path[1:])
 
-    async def process(self, event: Event) -> StateUpdate:
-        """Process an event.
+    async def _process(self, event: Event) -> StateUpdate:
+        """Obtain event info and process event.
 
         Args:
             event: The event to process.
 
         Returns:
             The state update after processing the event.
+
+        Raises:
+            ValueError: If the state value is None.
         """
         # Get the event handler.
         path = event.name.split(".")
@@ -560,23 +623,48 @@ class State(Base, ABC):
         substate = self.get_substate(path)
         handler = substate.event_handlers[name]  # type: ignore
 
-        # Process the event.
-        fn = functools.partial(handler.fn, substate)
+        if not substate:
+            raise ValueError(
+                "The value of state cannot be None when processing an event."
+            )
+
+        return await self._process_event(
+            handler=handler,
+            state=substate,
+            payload=event.payload,
+            token=event.token,
+        )
+
+    async def _process_event(
+        self, handler: EventHandler, state: State, payload: Dict, token: str
+    ) -> StateUpdate:
+        """Process event.
+
+        Args:
+            handler: Eventhandler to process.
+            state: State to process the handler.
+            payload: The event payload.
+            token: Client token.
+
+        Returns:
+            The state update after processing the event.
+        """
+        fn = functools.partial(handler.fn, state)
         try:
             if asyncio.iscoroutinefunction(fn.func):
-                events = await fn(**event.payload)
+                events = await fn(**payload)
             else:
-                events = fn(**event.payload)
+                events = fn(**payload)
         except Exception:
             error = traceback.format_exc()
             print(error)
             events = fix_events(
-                [window_alert("An error occurred. See logs for details.")], event.token
+                [window_alert("An error occurred. See logs for details.")], token
             )
             return StateUpdate(events=events)
 
         # Fix the returned events.
-        events = fix_events(events, event.token)
+        events = fix_events(events, token)
 
         # Get the delta after processing the event.
         delta = self.get_delta()
@@ -587,18 +675,46 @@ class State(Base, ABC):
         # Return the state update.
         return StateUpdate(delta=delta, events=events)
 
-    def get_delta(self) -> Delta:
+    def _dirty_computed_vars(
+        self, from_vars: Optional[Set[str]] = None, check: bool = False
+    ) -> Set[str]:
+        """Get ComputedVars that need to be recomputed based on dirty_vars.
+
+        Args:
+            from_vars: find ComputedVar that depend on this set of vars. If unspecified, will use the dirty_vars.
+            check: Whether to perform the check.
+
+        Returns:
+            Set of computed vars to include in the delta.
+        """
+        # If checking is disabled, return all computed vars.
+        if not check:
+            return set(self.computed_vars)
+
+        # Return only the computed vars that depend on the dirty vars.
+        return set(
+            cvar
+            for dirty_var in from_vars or self.dirty_vars
+            for cvar in self.computed_vars
+            if cvar in self.computed_var_dependencies.get(dirty_var, set())
+        )
+
+    def get_delta(self, check: bool = False) -> Delta:
         """Get the delta for the state.
+
+        Args:
+            check: Whether to check for dirty computed vars.
 
         Returns:
             The delta for the state.
         """
         delta = {}
 
-        # Return the dirty vars, as well as all computed vars.
+        # Return the dirty vars, as well as computed vars depending on dirty vars.
         subdelta = {
             prop: getattr(self, prop)
-            for prop in self.dirty_vars | self.computed_vars.keys()
+            for prop in self.dirty_vars | self._dirty_computed_vars(check=check)
+            if not types.is_backend_variable(prop)
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta

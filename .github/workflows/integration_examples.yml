@@ -58,8 +58,7 @@ jobs:
         key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
     - name: Poetry Install
-      run: poetry install --no-interaction --no-root
-      if: steps.cache-deps.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction
     - name: Install Requirements
       working-directory: ./pynecone-examples/counter
       run: poetry run pip install -r requirements.txt

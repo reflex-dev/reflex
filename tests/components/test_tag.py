@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict
 
 import pytest
 
@@ -41,6 +41,16 @@ def mock_event(arg):
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(name="var", type_="int"), "{var}"),
+        (
+            BaseVar(
+                name="_",
+                type_=Any,
+                state="",
+                is_local=True,
+                is_string=False,
+            ),
+            "{_}",
+        ),
         (BaseVar(name='state.colors["a"]', type_="str"), '{state.colors["a"]}'),
         ({"a": BaseVar(name="val", type_="str")}, '{{"a": val}}'),
         ({"a": BaseVar(name='"val"', type_="str")}, '{{"a": "val"}}'),
@@ -112,11 +122,47 @@ def test_add_props():
     assert "invalid2" not in tag.props
 
 
-# def test_format_cond_tag():
-#     """Test that the formatted cond tag is correct."""
-#     tag = CondTag(
-#         true_value=str(Tag(name="h1", contents="True content")),
-#         false_value=str(Tag(name="h2", contents="False content")),
-#         cond=BaseVar(name="logged_in", type_=bool),
-#     )
-#     assert str(tag) == "{logged_in ? <h1>True content</h1> : <h2>False content</h2>}"
+@pytest.mark.parametrize(
+    "tag,expected",
+    [
+        (Tag(), "</>"),
+        (Tag(name="br"), "<br/>"),
+        (Tag(contents="hello"), "<>hello</>"),
+        (Tag(name="h1", contents="hello"), "<h1>hello</h1>"),
+        (
+            Tag(name="box", props={"color": "red", "textAlign": "center"}),
+            '<box color="red"\ntextAlign="center"/>',
+        ),
+        (
+            Tag(
+                name="box",
+                props={"color": "red", "textAlign": "center"},
+                contents="text",
+            ),
+            '<box color="red"\ntextAlign="center">text</box>',
+        ),
+    ],
+)
+def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
+    """Test that the formatted tag is correct.
+
+    Args:
+        tag: The tag to test.
+        expected: The expected formatted tag.
+        windows_platform: Whether the system is windows.
+    """
+    expected = expected.replace("\n", "\r\n") if windows_platform else expected
+    assert str(tag) == expected
+
+
+def test_format_cond_tag():
+    """Test that the formatted cond tag is correct."""
+    tag = CondTag(
+        true_value=str(Tag(name="h1", contents="True content")),
+        false_value=str(Tag(name="h2", contents="False content")),
+        cond=BaseVar(name="logged_in", type_=bool),
+    )
+    assert (
+        str(tag)
+        == "{isTrue(logged_in) ? <h1>True content</h1> : <h2>False content</h2>}"
+    )

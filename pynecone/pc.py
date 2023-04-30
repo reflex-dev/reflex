@@ -23,9 +23,14 @@ def version():
 
 
 @cli.command()
-def init():
+def init(
+    name: str = typer.Option(None, help="Name of the app to be initialized."),
+    template: constants.Template = typer.Option(
+        constants.Template.DEFAULT, help="Template to use for the app."
+    ),
+):
     """Initialize a new Pynecone app in the current directory."""
-    app_name = prerequisites.get_default_app_name()
+    app_name = prerequisites.get_default_app_name() if name is None else name
 
     # Make sure they don't name the app "pynecone".
     if app_name == constants.MODULE_NAME:
@@ -42,7 +47,7 @@ def init():
         # Set up the app directory, only if the config doesn't exist.
         if not os.path.exists(constants.CONFIG_FILE):
             prerequisites.create_config(app_name)
-            prerequisites.initialize_app_directory(app_name)
+            prerequisites.initialize_app_directory(app_name, template)
             build.set_pynecone_project_hash()
             pynecone_telemetry("init", get_config().telemetry_enabled)
         else:
@@ -61,15 +66,14 @@ def run(
         constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
-        True, "--no-frontend", help="Disable frontend execution."
+        False, "--frontend-only", help="Execute only frontend."
     ),
-    backend: bool = typer.Option(
-        True, "--no-backend", help="Disable backend execution."
-    ),
+    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
     loglevel: constants.LogLevel = typer.Option(
         constants.LogLevel.ERROR, help="The log level to use."
     ),
-    port: str = typer.Option(None, help="Specify a different port."),
+    port: str = typer.Option(None, help="Specify a different frontend port."),
+    backend_port: str = typer.Option(None, help="Specify a different backend port."),
 ):
     """Run the app in the current directory."""
     if platform.system() == "Windows":
@@ -78,13 +82,18 @@ def run(
         )
 
     frontend_port = get_config().port if port is None else port
-    backend_port = get_config().backend_port
+    backend_port = get_config().backend_port if backend_port is None else backend_port
+
+    # If --no-frontend-only and no --backend-only, then turn on frontend and backend both
+    if not frontend and not backend:
+        frontend = True
+        backend = True
 
     # If something is running on the ports, ask the user if they want to kill or change it.
-    if processes.is_process_on_port(frontend_port):
+    if frontend and processes.is_process_on_port(frontend_port):
         frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
 
-    if processes.is_process_on_port(backend_port):
+    if backend and processes.is_process_on_port(backend_port):
         backend_port = processes.change_or_terminate_port(backend_port, "backend")
 
     # Check that the app is initialized.
@@ -123,8 +132,10 @@ def run(
         if backend:
             backend_cmd(app.__name__, port=int(backend_port), loglevel=loglevel)
     finally:
-        processes.kill_process_on_port(frontend_port)
-        processes.kill_process_on_port(backend_port)
+        if frontend:
+            processes.kill_process_on_port(frontend_port)
+        if backend:
+            processes.kill_process_on_port(backend_port)
 
 
 @cli.command()
@@ -203,12 +214,12 @@ def export(
 
     if zipping:
         console.rule(
-            """Backend & Frontend compiled. See [green bold]backend.zip[/green bold] 
+            """Backend & Frontend compiled. See [green bold]backend.zip[/green bold]
             and [green bold]frontend.zip[/green bold]."""
         )
     else:
         console.rule(
-            """Backend & Frontend compiled. See [green bold]app[/green bold] 
+            """Backend & Frontend compiled. See [green bold]app[/green bold]
             and [green bold].web/_static[/green bold] directories."""
         )
 

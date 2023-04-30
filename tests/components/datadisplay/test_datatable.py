@@ -61,3 +61,43 @@ def test_invalid_props(props):
     """
     with pytest.raises(ValueError):
         data_table(**props)
+
+
+@pytest.mark.parametrize(
+    "fixture, err_msg, is_data_frame",
+    [
+        (
+            "data_table_state2",
+            "Annotation of the computed var assigned to the data field should be provided.",
+            True,
+        ),
+        (
+            "data_table_state3",
+            "Annotation of the computed var assigned to the column field should be provided.",
+            False,
+        ),
+        (
+            "data_table_state4",
+            "Annotation of the computed var assigned to the data field should be provided.",
+            False,
+        ),
+    ],
+)
+def test_computed_var_without_annotation(fixture, request, err_msg, is_data_frame):
+    """Test if value error is thrown when the computed var assigned to the data/column prop is not annotated.
+
+    Args:
+        fixture: the state.
+        request: fixture request.
+        err_msg: expected error message.
+        is_data_frame: whether data field is a pandas dataframe.
+    """
+    with pytest.raises(ValueError) as err:
+        if is_data_frame:
+            data_table(data=request.getfixturevalue(fixture).data)
+        else:
+            data_table(
+                data=request.getfixturevalue(fixture).data,
+                columns=request.getfixturevalue(fixture).columns,
+            )
+    assert err.value.args[0] == err_msg

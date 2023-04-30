@@ -163,8 +163,8 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
 @pytest.mark.parametrize(
     "condition,true_value,false_value,expected",
     [
-        ("cond", "<C1>", "", 'cond ? `<C1>` : ``'),
-        ("cond", "<C1>", "<C2>", "cond ? `<C1>` : `<C2>`"),
+        ("cond", "<C1>", "", 'isTrue(cond) ? `<C1>` : ``'),
+        ("cond", "<C1>", "<C2>", "isTrue(cond) ? `<C1>` : `<C2>`"),
     ],
 )
 def test_format_cond(condition: str, true_value: str, false_value: str, expected: str):
@@ -287,20 +287,6 @@ def test_issubclass(cls: type, cls_check: type, expected: bool):
     assert types._issubclass(cls, cls_check) == expected
 
 
-def test_format_upload_event(upload_event_spec):
-    """Test formatting an upload event spec.
-
-    Args:
-        upload_event_spec: The event spec fixture.
-    """
-    assert (
-        format.format_upload_event(upload_event_spec)
-        == "uploadFiles(upload_state, result, setResult, "
-        'upload_state.files, "upload_state.handle_upload",false ,'
-        "UPLOAD)"
-    )
-
-
 def test_format_sub_state_event(upload_sub_state_event_spec):
     """Test formatting an upload event spec of substate.
 
@@ -310,19 +296,44 @@ def test_format_sub_state_event(upload_sub_state_event_spec):
     assert (
         format.format_upload_event(upload_sub_state_event_spec)
         == "uploadFiles(base_state, result, setResult, base_state.files, "
-        '"base_state.sub_upload_state.handle_upload",false ,UPLOAD)'
+        '"base_state.sub_upload_state.handle_upload",UPLOAD)'
     )
 
 
-def test_format_multi_upload_event(multi_upload_event_spec):
+def test_format_upload_event(upload_event_spec):
     """Test formatting an upload event spec.
 
     Args:
-        multi_upload_event_spec: The event spec fixture.
+        upload_event_spec: The event spec fixture.
     """
     assert (
-        format.format_upload_event(multi_upload_event_spec)
+        format.format_upload_event(upload_event_spec)
         == "uploadFiles(upload_state, result, setResult, "
-        'upload_state.files, "upload_state.multi_handle_upload",true ,'
+        'upload_state.files, "upload_state.handle_upload1",'
         "UPLOAD)"
+    )
+
+
+@pytest.mark.parametrize(
+    "app_name,expected_config_name",
+    [
+        ("appname", "AppnameConfig"),
+        ("app_name", "AppnameConfig"),
+        ("app-name", "AppnameConfig"),
+        ("appname2.io", "AppnameioConfig"),
+    ],
+)
+def test_create_config(app_name, expected_config_name, mocker):
+    """Test templates.PCCONFIG is formatted with correct app name and config class name.
+
+    Args:
+        app_name: App name.
+        expected_config_name: Expected config name.
+        mocker: Mocker object.
+    """
+    mocker.patch("builtins.open")
+    tmpl_mock = mocker.patch("pynecone.compiler.templates.PCCONFIG")
+    prerequisites.create_config(app_name)
+    tmpl_mock.format.assert_called_with(
+        app_name=app_name, config_name=expected_config_name
     )
