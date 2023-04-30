@@ -77,7 +77,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
         },
         initial_state=utils.compile_state(state),
         state_name=state.get_name(),
-        hooks=path_ops.join(component.get_hooks()),
+        hooks=component.get_hooks(),
         render=component.render(),
         transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
     )

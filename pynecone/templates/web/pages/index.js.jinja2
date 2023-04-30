@@ -55,6 +55,10 @@ export default function Component() {
       update()
   })
 
+  {% for hook in hooks %}
+  {{ hook }}
+  {% endfor %}
+
   return (
     {{utils.render(render, indent_width=4)}}
   )
