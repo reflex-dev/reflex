@@ -19,5 +19,5 @@ def test_fstrings(contents, expected):
         contents: The contents of the component.
         expected: The expected output.
     """
-    comp = Bare.create(contents)
-    assert str(comp) == expected
+    comp = Bare.create(contents).render()
+    assert comp["contents"] == expected

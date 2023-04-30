@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 import pynecone as pc
@@ -49,14 +47,36 @@ def test_upload_component_render(upload_component):
     Args:
         upload_component: component fixture
     """
+    uplaod = upload_component.render()
+
+    # upload
+    assert uplaod["name"] == "ReactDropzone"
+    assert uplaod["props"] == [
+        "multiple={true}",
+        "onDrop={e => File(e)}",
+    ]
+    assert uplaod["args"] == ("getRootProps", "getInputProps")
+
+    # box inside of upload
+    [box] = uplaod["children"]
+    assert box["name"] == "Box"
+    assert box["props"] == [
+        'sx={{"border": "1px dotted black"}}',
+        "{...getRootProps()}",
+    ]
+
+    # input, button and text inside of box
+    [input, button, text] = box["children"]
+    assert input["name"] == "Input"
+    assert input["props"] == ['type="file"', "{...getInputProps()}"]
+
+    assert button["name"] == "Button"
+    assert button["children"][0]["contents"] == "{`select file`}"
+
+    assert text["name"] == "Text"
     assert (
-        str(upload_component) == f"<ReactDropzone multiple={{true}}{os.linesep}"
-        "onDrop={e => File(e)}>{({getRootProps, getInputProps}) => (<Box "
-        'sx={{"border": "1px dotted black"}}{...getRootProps()}><Input '
-        f'type="file"{{...getInputProps()}}/>{os.linesep}'
-        f"<Button>{{`select file`}}</Button>{os.linesep}"
-        "<Text>{`Drag and drop files here or click to select "
-        "files`}</Text></Box>)}</ReactDropzone>"
+        text["children"][0]["contents"]
+        == "{`Drag and drop files here or click to select files`}"
     )
 
 
@@ -66,14 +86,11 @@ def test_upload_component_with_props_render(upload_component_with_props):
     Args:
         upload_component_with_props: component fixture
     """
-    assert (
-        str(upload_component_with_props) == f"<ReactDropzone maxFiles={{2}}{os.linesep}"
-        f"multiple={{true}}{os.linesep}"
-        f"noDrag={{true}}{os.linesep}"
-        "onDrop={e => File(e)}>{({getRootProps, getInputProps}) => (<Box "
-        'sx={{"border": "1px dotted black"}}{...getRootProps()}><Input '
-        f'type="file"{{...getInputProps()}}/>{os.linesep}'
-        f"<Button>{{`select file`}}</Button>{os.linesep}"
-        "<Text>{`Drag and drop files here or click to select "
-        "files`}</Text></Box>)}</ReactDropzone>"
-    )
+    uplaod = upload_component_with_props.render()
+
+    assert uplaod["props"] == [
+        "maxFiles={2}",
+        "multiple={true}",
+        "noDrag={true}",
+        "onDrop={e => File(e)}",
+    ]
