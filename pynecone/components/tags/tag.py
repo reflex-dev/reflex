@@ -36,6 +36,7 @@ class Tag(Base):
     # Special props that aren't key value pairs.
     special_props: Set[Var] = set()
 
+    # The children components.
     children: List[Any] = []
 
     def __init__(self, *args, **kwargs):

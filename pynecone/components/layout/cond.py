@@ -37,12 +37,10 @@ class Cond(Component):
             The conditional component.
         """
         # Wrap everything in fragments.
-        if comp1.__class__.__name__ != "Fragment":
+        if not comp1.__class__.__name__ == "Fragment":
             comp1 = Fragment.create(comp1)
-        if comp2 is None:
-            comp2 = Fragment.create()
-        elif comp2.__class__.__name__ != "Fragment":
-            comp2 = Fragment.create(comp2)
+        if comp2 is None or not comp2.__class__.__name__ == "Fragment":
+            comp2 = Fragment.create(comp2) if comp2 else Fragment.create()
         return Fragment.create(
             cls(
                 cond=cond,

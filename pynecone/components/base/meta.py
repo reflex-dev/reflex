@@ -17,7 +17,6 @@ class Title(Component):
         Returns:
             The rendered title component.
         """
-        self._render()
         # Make sure the title is a single string.
         assert len(self.children) == 1 and isinstance(
             self.children[0], Bare

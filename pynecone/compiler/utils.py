@@ -36,7 +36,9 @@ def compile_import_statement(lib: str, fields: Set[str]) -> Tuple[str, set[str]]
         fields: The set of fields to import from the library.
 
     Returns:
-        The compiled import statement.
+        The libraries for default and rest.
+        default: default library. When install "import def from library".
+        rest: rest of libraries. When install "import {rest1, rest2} from library"
     """
     # Check for default imports.
     defaults = {
@@ -60,23 +62,23 @@ def compile_imports(imports: imports.ImportDict) -> list[dict]:
         imports: The import dict to compile.
 
     Returns:
-        The compiled import dict.
+        The list of import dict.
     """
-    imports_dicts = []
+    import_dicts = []
     for lib, fields in imports.items():
         default, rest = compile_import_statement(lib, fields)
         if not lib:
             assert not default, "No default field allowed for empty library."
             assert rest is not None and len(rest) > 0, "No fields to import."
             for module in sorted(rest):
-                imports_dicts.append(get_import_dict(module, "", set()))
+                import_dicts.append(get_import_dict(module))
             continue
 
-        imports_dicts.append(get_import_dict(lib, default, rest))
-    return imports_dicts
+        import_dicts.append(get_import_dict(lib, default, rest))
+    return import_dicts
 
 
-def get_import_dict(lib, default, rest) -> dict:
+def get_import_dict(lib: str, default:str="", rest:set=set()) -> dict:
     """Get dictionary for import template.
 
     Args:
@@ -101,7 +103,7 @@ def compile_state(state: Type[State]) -> dict:
         state: The app state object.
 
     Returns:
-        A string of the compiled state.
+        A dictionary of the compiled state.
     """
     initial_state = state().dict()
     initial_state.update(
@@ -110,8 +112,7 @@ def compile_state(state: Type[State]) -> dict:
             "files": [],
         }
     )
-    initial_state = format.format_state(initial_state)
-    return initial_state
+    return format.format_state(initial_state)
 
 
 def compile_custom_component(
