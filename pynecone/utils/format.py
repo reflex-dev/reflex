@@ -412,7 +412,9 @@ def format_ref(ref: str) -> str:
     Returns:
         The formatted ref.
     """
-    return f"ref_{ref.replace('-', '_').replace('.', '_').replace(':', '_').replace(' ', '_')}"
+    # Replace all non-word characters with underscores.
+    clean_ref = re.sub(r"[^\w]+", "_", ref)
+    return f"ref_{clean_ref}"
 
 
 def json_dumps(obj: Any) -> str:

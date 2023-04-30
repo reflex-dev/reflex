@@ -337,3 +337,23 @@ def test_create_config(app_name, expected_config_name, mocker):
     tmpl_mock.format.assert_called_with(
         app_name=app_name, config_name=expected_config_name
     )
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("input1", "ref_input1"),
+        ("input 1", "ref_input_1"),
+        ("input-1", "ref_input_1"),
+        ("input_1", "ref_input_1"),
+        ("a long test?1! name", "ref_a_long_test_1_name"),
+    ],
+)
+def test_format_ref(name, expected):
+    """Test formatting a ref.
+
+    Args:
+        name: The name to format.
+        expected: The expected formatted name.
+    """
+    assert format.format_ref(name) == expected
