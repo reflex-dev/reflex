@@ -369,6 +369,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         cls.base_vars.update({name: var})
         cls.vars.update({name: var})
 
+        # let substates know about the new variable
+        for substate_class in cls.__subclasses__():
+            substate_class.vars.setdefault(name, var)
+
     @classmethod
     def _set_var(cls, prop: BaseVar):
         """Set the var as a class member.
