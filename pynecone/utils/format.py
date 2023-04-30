@@ -198,7 +198,7 @@ def format_route(route: str) -> str:
     return route
 
 
-def format_cond_var(
+def format_cond(
     cond: str,
     true_value: str,
     false_value: str = "",

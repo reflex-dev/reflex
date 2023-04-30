@@ -176,7 +176,7 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         false_value: The value to return if the condition is false.
         expected: The expected output string.
     """
-    assert format.format_cond_var(condition, true_value, false_value) == expected
+    assert format.format_cond(condition, true_value, false_value) == expected
 
 
 def test_merge_imports():
