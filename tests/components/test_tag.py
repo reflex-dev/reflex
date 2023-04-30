@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import pytest
 
-from pynecone.components.tags import Tag
+from pynecone.components.tags import Tag, CondTag
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
 
@@ -125,13 +125,12 @@ def test_add_props():
 @pytest.mark.parametrize(
     "tag,expected",
     [
-        (Tag(), "</>"),
-        (Tag(name="br"), "<br/>"),
-        (Tag(contents="hello"), "<>hello</>"),
-        (Tag(name="h1", contents="hello"), "<h1>hello</h1>"),
-        (
-            Tag(name="box", props={"color": "red", "textAlign": "center"}),
-            '<box color="red"\ntextAlign="center"/>',
+        (Tag(), {"name":"", "contents": "", "props": {}}),
+        (Tag(name="br"), {"name":"br", "contents": "", "props": {}}),
+        (Tag(contents="hello"), {"name":"", "contents": "hello", "props": {}}),
+        (Tag(name="h1", contents="hello"), {"name":"h1", "contents": "hello", "props": {}}),
+        (Tag(name="box", props={"color": "red", "textAlign": "center"}), 
+            {"name":"box", "contents": "", "props": {"color": "red", "textAlign": "center"}}
         ),
         (
             Tag(
@@ -139,30 +138,35 @@ def test_add_props():
                 props={"color": "red", "textAlign": "center"},
                 contents="text",
             ),
-            '<box color="red"\ntextAlign="center">text</box>',
+            {"name":"box", "contents": "text", "props": {"color": "red", "textAlign": "center"}}
         ),
     ],
 )
-def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
-    """Test that the formatted tag is correct.
+def test_format_tag(tag: Tag, expected: dict):
+    """Test that the tag dict is correct.
 
     Args:
         tag: The tag to test.
-        expected: The expected formatted tag.
-        windows_platform: Whether the system is windows.
+        expected: The expected tag dictionary.
     """
-    expected = expected.replace("\n", "\r\n") if windows_platform else expected
-    assert str(tag) == expected
+    tag_dict = dict(tag)
+    assert tag_dict["name"] == expected["name"]
+    assert tag_dict["contents"] == expected["contents"]
+    assert tag_dict["props"] == expected["props"]
 
 
 def test_format_cond_tag():
-    """Test that the formatted cond tag is correct."""
+    """Test that the cond tag dict is correct."""
     tag = CondTag(
-        true_value=str(Tag(name="h1", contents="True content")),
-        false_value=str(Tag(name="h2", contents="False content")),
+        true_value=dict(Tag(name="h1", contents="True content")),
+        false_value=dict(Tag(name="h2", contents="False content")),
         cond=BaseVar(name="logged_in", type_=bool),
     )
-    assert (
-        str(tag)
-        == "{isTrue(logged_in) ? <h1>True content</h1> : <h2>False content</h2>}"
-    )
+    tag_dict = dict(tag)
+    assert tag_dict["cond"] == "logged_in"
+
+    assert tag_dict["true_value"]["name"] == "h1"
+    assert tag_dict["true_value"]["contents"] == "True content"
+
+    assert tag_dict["false_value"]["name"] == "h2"
+    assert tag_dict["false_value"]["contents"] == "False content"
