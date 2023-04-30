@@ -789,7 +789,7 @@ def test_not_dirty_computed_var_from_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.x = 5
-    assert interdependent_state.get_delta(check=True) == {
+    assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"x": 5},
     }
 
@@ -804,7 +804,7 @@ def test_dirty_computed_var_from_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.v1 = 1
-    assert interdependent_state.get_delta(check=True) == {
+    assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
     }
 
@@ -816,7 +816,7 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state._v2 = 2
-    assert interdependent_state.get_delta(check=True) == {
+    assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4},
     }
 
