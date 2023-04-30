@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import pytest
 
-from pynecone.components.tags import Tag, CondTag
+from pynecone.components.tags import CondTag, Tag
 from pynecone.event import EventChain, EventHandler, EventSpec
 from pynecone.var import BaseVar, Var
 
