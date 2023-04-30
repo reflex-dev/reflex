@@ -76,7 +76,7 @@ class Cond(Component):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=self.cond.full_name,
+            cond_state=f"isTrue({self.cond.full_name})",
         )
 
 
