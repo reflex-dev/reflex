@@ -37,13 +37,26 @@ def test_validate_cond(cond_state: pc.Var):
         cond_state.value,
         Text.create("cond is True"),
         Text.create("cond is False"),
-    )
+    ).render()
+    assert cond_component["name"] == "Fragment"
 
-    assert str(cond_component) == (
-        "<Fragment>{isTrue(cond_state.value) ? "
-        "<Fragment><Text>{`cond is True`}</Text></Fragment> : "
-        "<Fragment><Text>{`cond is False`}</Text></Fragment>}</Fragment>"
-    )
+    [condition] = cond_component["children"]
+    assert condition["cond_state"] == "isTrue(cond_state.value)"
+
+    # true value
+    true_value = condition["true_value"]
+    assert true_value["name"] == "Fragment"
+    
+    [true_value_text] = true_value["children"]
+    assert true_value_text["name"] == "Text"
+    assert true_value_text["children"][0]["contents"] == "{`cond is True`}"
+
+    false_value = condition["false_value"]
+    assert false_value["name"] == "Fragment"
+    
+    [false_value_text] = false_value["children"]
+    assert false_value_text["name"] == "Text"
+    assert false_value_text["children"][0]["contents"] == "{`cond is False`}"
 
 
 @pytest.mark.parametrize(
