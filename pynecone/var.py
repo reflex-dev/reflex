@@ -15,6 +15,7 @@ from typing import (
     Type,
     Union,
     _GenericAlias,  # type: ignore
+    get_type_hints,
 )
 
 from plotly.graph_objects import Figure
@@ -807,8 +808,9 @@ class ComputedVar(property, Var):
         Returns:
             The type of the var.
         """
-        if "return" in self.fget.__annotations__:
-            return self.fget.__annotations__["return"]
+        hints = get_type_hints(self.fget)
+        if "return" in hints:
+            return hints["return"]
         return Any
 
 
