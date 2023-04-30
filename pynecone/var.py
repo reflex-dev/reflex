@@ -1,10 +1,12 @@
 """Define a state var."""
 from __future__ import annotations
 
+import dis
 import json
 import random
 import string
 from abc import ABC
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,9 +14,11 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Type,
     Union,
     _GenericAlias,  # type: ignore
+    cast,
 )
 
 from plotly.graph_objects import Figure
@@ -799,6 +803,57 @@ class ComputedVar(property, Var):
         """
         assert self.fget is not None, "Var must have a getter."
         return self.fget.__name__
+
+    def __get__(self, instance, owner):
+        """Get the ComputedVar value.
+
+        If this ComputedVar doesn't know what type of object it is attached to, then save
+        a reference as self.__objclass__.
+
+        Args:
+            instance: the instance of the class accessing this computed var.
+            owner: the class that this descriptor is attached to.
+
+        Returns:
+            The value of the var for the given instance.
+        """
+        if not hasattr(self, "__objclass__"):
+            self.__objclass__ = owner
+        return super().__get__(instance, owner)
+
+    def deps(self, obj: Optional[FunctionType] = None) -> Set[str]:
+        """Determine var dependencies of this ComputedVar.
+
+        Save references to attributes accessed on "self".  Recursively called
+        when the function makes a method call on "self".
+
+        Args:
+            obj: the object to disassemble (defaults to the fget function).
+
+        Returns:
+            A set of variable names accessed by the given obj.
+        """
+        d = set()
+        if obj is None:
+            if self.fget is not None:
+                obj = cast(FunctionType, self.fget)
+            else:
+                return set()
+        if not obj.__code__.co_varnames:
+            # cannot reference self if method takes no args
+            return set()
+        self_name = obj.__code__.co_varnames[0]
+        self_is_top_of_stack = False
+        for instruction in dis.get_instructions(obj):
+            if instruction.opname == "LOAD_FAST" and instruction.argval == self_name:
+                self_is_top_of_stack = True
+                continue
+            if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
+                d.add(instruction.argval)
+            elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
+                d.update(self.deps(obj=getattr(self.__objclass__, instruction.argval)))
+            self_is_top_of_stack = False
+        return d
 
     @property
     def type_(self):
