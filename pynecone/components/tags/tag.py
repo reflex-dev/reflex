@@ -73,7 +73,7 @@ class Tag(Base):
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-            local_args = ",".join(prop.events[0].local_args)
+            local_args = ",".join(([str(a) for a in prop.events[0].local_args]))
 
             if len(prop.events) == 1 and prop.events[0].upload:
                 # Special case for upload events.

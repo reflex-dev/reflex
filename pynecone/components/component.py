@@ -181,7 +181,7 @@ class Component(Base, ABC):
             event_trigger: The event trigger to bind the chain to.
             value: The value to create the event chain from.
             state_name: The state to be fully controlled.
-            full_control: Whether full contorolled or not.
+            full_control: Whether full controlled or not.
 
         Returns:
             The event chain.
@@ -243,7 +243,7 @@ class Component(Base, ABC):
             events = [
                 EventSpec(
                     handler=e.handler,
-                    local_args=(EVENT_ARG.name,),
+                    local_args=(EVENT_ARG,),
                     args=get_handler_args(e, arg),
                 )
                 for e in events
@@ -461,10 +461,18 @@ class Component(Base, ABC):
         )
 
     def _get_hooks(self) -> Optional[str]:
+        """Get the React hooks for this component.
+
+        Returns:
+            The hooks for just this component.
+        """
+        ref = self.get_ref()
+        if ref is not None:
+            return f"const {ref} = useRef(null);"
         return None
 
     def get_hooks(self) -> Set[str]:
-        """Get javascript code for react hooks.
+        """Get the React hooks for this component and its children.
 
         Returns:
             The code that should appear just before returning the rendered component.
@@ -482,6 +490,16 @@ class Component(Base, ABC):
             code.update(child.get_hooks())
 
         return code
+
+    def get_ref(self) -> Optional[str]:
+        """Get the name of the ref for the component.
+
+        Returns:
+            The ref name.
+        """
+        if self.id is None:
+            return None
+        return format.format_ref(self.id)
 
     def get_custom_components(
         self, seen: Optional[Set[str]] = None

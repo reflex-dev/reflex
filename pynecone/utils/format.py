@@ -286,7 +286,12 @@ def format_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    args = ",".join([":".join((name, val)) for name, val in event_spec.args])
+    args = ",".join(
+        [
+            ":".join((name.name, json.dumps(val.name) if val.is_string else val.name))
+            for name, val in event_spec.args
+        ]
+    )
     return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
 
 
@@ -396,6 +401,20 @@ def format_state(value: Any) -> Dict:
         "or subclasses of pc.Base. "
         f"Got var of type {type(value)}."
     )
+
+
+def format_ref(ref: str) -> str:
+    """Format a ref.
+
+    Args:
+        ref: The ref to format.
+
+    Returns:
+        The formatted ref.
+    """
+    # Replace all non-word characters with underscores.
+    clean_ref = re.sub(r"[^\w]+", "_", ref)
+    return f"ref_{clean_ref}"
 
 
 def json_dumps(obj: Any) -> str:

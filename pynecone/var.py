@@ -106,6 +106,24 @@ class Var(ABC):
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
 
     @classmethod
+    def create_safe(
+        cls, value: Any, is_local: bool = True, is_string: bool = False
+    ) -> Var:
+        """Create a var from a value, guaranteeing that it is not None.
+
+        Args:
+            value: The value to create the var from.
+            is_local: Whether the var is local.
+            is_string: Whether the var is a string literal.
+
+        Returns:
+            The var.
+        """
+        var = cls.create(value, is_local=is_local, is_string=is_string)
+        assert var is not None
+        return var
+
+    @classmethod
     def __class_getitem__(cls, type_: str) -> _GenericAlias:
         """Get a typed var.
 
