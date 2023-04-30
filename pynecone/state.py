@@ -645,6 +645,18 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Return the state update.
         return StateUpdate(delta=delta, events=events)
 
+    def _mark_dirty_computed_vars(self) -> None:
+        """Mark ComputedVars that need to be recalculated based on dirty_vars."""
+        dirty_vars = self.dirty_vars
+        while dirty_vars:
+            calc_vars, dirty_vars = dirty_vars, set()
+            for cvar in self._dirty_computed_vars(from_vars=calc_vars):
+                self.dirty_vars.add(cvar)
+                dirty_vars.add(cvar)
+                actual_var = self.computed_vars.get(cvar)
+                if actual_var:
+                    actual_var.mark_dirty(instance=self)
+
     def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
@@ -654,17 +666,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        dirty_computed_vars = set(
+        return set(
             cvar
             for dirty_var in from_vars or self.dirty_vars
             for cvar in self.computed_var_dependencies[dirty_var]
         )
-        # sweep up ComputedVar that depends on ComputedVar
-        if dirty_computed_vars:
-            dirty_computed_vars.update(
-                self._dirty_computed_vars(from_vars=dirty_computed_vars),
-            )
-        return dirty_computed_vars
 
     def get_delta(self) -> Delta:
         """Get the delta for the state.
@@ -673,6 +679,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             The delta for the state.
         """
         delta = {}
+
+        # Recursively find the substate deltas.
+        substates = self.substates
+        for substate in self.dirty_substates:
+            delta.update(substates[substate].get_delta())
 
         # Return the dirty vars and dependent computed vars
         delta_vars = self.dirty_vars.intersection(self.base_vars).union(
@@ -686,11 +697,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
 
-        # Recursively find the substate deltas.
-        substates = self.substates
-        for substate in self.dirty_substates:
-            delta.update(substates[substate].get_delta())
-
         # Format the delta.
         delta = format.format_state(delta)
 
@@ -702,6 +708,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if self.parent_state is not None:
             self.parent_state.dirty_substates.add(self.get_name())
             self.parent_state.mark_dirty()
+
+        # have to mark computed vars dirty to allow access to newly computed
+        # values within the same ComputedVar function
+        self._mark_dirty_computed_vars()
 
     def clean(self):
         """Reset the dirty vars."""

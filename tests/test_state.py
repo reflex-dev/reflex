@@ -485,11 +485,11 @@ def test_set_dirty_var(test_state):
 
     # Setting a var should mark it as dirty.
     test_state.num1 = 1
-    assert test_state.dirty_vars == {"num1"}
+    assert test_state.dirty_vars == {"num1", "sum"}
 
     # Setting another var should mark it as dirty.
     test_state.num2 = 2
-    assert test_state.dirty_vars == {"num1", "num2"}
+    assert test_state.dirty_vars == {"num1", "num2", "sum"}
 
     # Cleaning the state should remove all dirty vars.
     test_state.clean()
