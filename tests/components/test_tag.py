@@ -175,10 +175,15 @@ def test_format_cond_tag():
         cond=BaseVar(name="logged_in", type_=bool),
     )
     tag_dict = dict(tag)
-    assert tag_dict["cond"] == "logged_in"
+    cond, true_value, false_value = (
+        tag_dict["cond"],
+        tag_dict["true_value"],
+        tag_dict["false_value"],
+    )
+    assert cond == "logged_in"
 
-    assert tag_dict["true_value"]["name"] == "h1"
-    assert tag_dict["true_value"]["contents"] == "True content"
+    assert true_value["name"] == "h1"
+    assert true_value["contents"] == "True content"
 
-    assert tag_dict["false_value"]["name"] == "h2"
-    assert tag_dict["false_value"]["contents"] == "False content"
+    assert false_value["name"] == "h2"
+    assert false_value["contents"] == "False content"

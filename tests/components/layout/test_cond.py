@@ -37,10 +37,11 @@ def test_validate_cond(cond_state: pc.Var):
         cond_state.value,
         Text.create("cond is True"),
         Text.create("cond is False"),
-    ).render()
-    assert cond_component["name"] == "Fragment"
+    )
+    cond_dict = cond_component.render() if type(cond_component) == Fragment else {}
+    assert cond_dict["name"] == "Fragment"
 
-    [condition] = cond_component["children"]
+    [condition] = cond_dict["children"]
     assert condition["cond_state"] == "isTrue(cond_state.value)"
 
     # true value
