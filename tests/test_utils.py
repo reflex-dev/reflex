@@ -163,8 +163,8 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
 @pytest.mark.parametrize(
     "condition,true_value,false_value,expected",
     [
-        ("cond", "<C1>", '""', '{cond ? <C1> : ""}'),
-        ("cond", "<C1>", "<C2>", "{cond ? <C1> : <C2>}"),
+        ("cond", "<C1>", "", 'cond ? `<C1>` : ``'),
+        ("cond", "<C1>", "<C2>", "cond ? `<C1>` : `<C2>`"),
     ],
 )
 def test_format_cond(condition: str, true_value: str, false_value: str, expected: str):

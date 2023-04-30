@@ -202,7 +202,7 @@ def format_route(route: str) -> str:
 def format_cond_var(
     cond: str,
     true_value: str,
-    false_value: str = '""',
+    false_value: str = "",
 ) -> str:
     """Format a conditional expression.
 
