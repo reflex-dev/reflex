@@ -49,6 +49,7 @@ def test_upload_component_render(upload_component):
     """
     uplaod = upload_component.render()
 
+    # upload
     assert uplaod["name"] == "ReactDropzone"
     assert uplaod["props"] == [
         "multiple={true}",
@@ -56,6 +57,7 @@ def test_upload_component_render(upload_component):
     ]
     assert uplaod["args"] == ("getRootProps", "getInputProps")
 
+    # box inside of upload
     [box] = uplaod["children"]
     assert box["name"] == "Box"
     assert box["props"] == [
@@ -63,6 +65,7 @@ def test_upload_component_render(upload_component):
         "{...getRootProps()}",
     ]
 
+    # input, button and text inside of box
     [input, button, text] = box["children"]
     assert input["name"] == "Input"
     assert input["props"] == ['type="file"', "{...getInputProps()}"]

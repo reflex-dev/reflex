@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 
@@ -79,7 +79,7 @@ def test_format_prop(prop: Var, formatted: str):
         ({"key": True, "key2": "value2"}, ["key={true}", 'key2="value2"']),
     ],
 )
-def test_format_props(props: Dict[str, Var], test_props: Dict):
+def test_format_props(props: Dict[str, Var], test_props: List):
     """Test that the formatted props are correct.
 
     Args:
@@ -87,8 +87,8 @@ def test_format_props(props: Dict[str, Var], test_props: Dict):
         test_props: The expected props.
     """
     tag_props = Tag(props=props).format_props()
-    for tag_prop, test_prop in zip(tag_props, test_props):
-        assert tag_prop == test_prop
+    for i, tag_prop in enumerate(tag_props):
+        assert tag_prop == test_props[i]
 
 
 @pytest.mark.parametrize(
