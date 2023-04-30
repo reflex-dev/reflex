@@ -895,3 +895,29 @@ def test_event_handlers_call_other_handlers():
     ms = MainState()
     ms.set_v2(1)
     assert ms.v == 1
+
+
+def test_computed_var_cached():
+    """Test that a ComputedVar doesn't recalculate when accessed."""
+    comp_v_calls = 0
+
+    class ComputedState(State):
+        v: int = 0
+
+        @ComputedVar
+        def comp_v(self) -> int:
+            nonlocal comp_v_calls
+            comp_v_calls += 1
+            return self.v
+
+    cs = ComputedState()
+    assert cs.dict()["v"] == 0
+    assert comp_v_calls == 1
+    assert cs.dict()["comp_v"] == 0
+    assert comp_v_calls == 1
+    assert cs.comp_v == 0
+    assert comp_v_calls == 1
+    cs.v = 1
+    assert comp_v_calls == 1
+    assert cs.comp_v == 1
+    assert comp_v_calls == 2
