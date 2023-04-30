@@ -11,7 +11,7 @@ class Element(Component):
     prop.
     """
 
-    def render(self) -> str:
+    def render(self) -> dict:
         """Render the element.
 
         Returns:
