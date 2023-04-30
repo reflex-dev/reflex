@@ -79,14 +79,11 @@ def test_upload_component_with_props_render(upload_component_with_props):
     Args:
         upload_component_with_props: component fixture
     """
-    assert (
-        str(upload_component_with_props) == f"<ReactDropzone maxFiles={{2}}{os.linesep}"
-        f"multiple={{true}}{os.linesep}"
-        f"noDrag={{true}}{os.linesep}"
-        "onDrop={e => File(e)}>{({getRootProps, getInputProps}) => (<Box "
-        'sx={{"border": "1px dotted black"}}{...getRootProps()}><Input '
-        f'type="file"{{...getInputProps()}}/>{os.linesep}'
-        f"<Button>{{`select file`}}</Button>{os.linesep}"
-        "<Text>{`Drag and drop files here or click to select "
-        "files`}</Text></Box>)}</ReactDropzone>"
-    )
+    uplaod = upload_component_with_props.render()
+
+    assert uplaod["props"] == [
+        "maxFiles={2}",
+        "multiple={true}",
+        "noDrag={true}",
+        "onDrop={e => File(e)}",
+    ]
