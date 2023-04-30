@@ -74,6 +74,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # Mapping of var name to set of computed variables that depend on it
     computed_var_dependencies: Dict[str, Set[str]] = {}
 
+    # Mapping of var name to set of substates that depend on it
+    substate_var_dependencies: Dict[str, Set[str]] = defaultdict(set)
+
     def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
         """Initialize the state.
 
@@ -102,6 +105,16 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Add the dependencies.
             for var in cvar.deps():
                 self.computed_var_dependencies[var].add(cvar_name)
+                if var in self.inherited_vars | self.inherited_backend_vars:
+                    # track that this substate depends on its parent for this var
+                    state_name = self.get_name()
+                    parent_state = self.parent_state
+                    while parent_state is not None:
+                        parent_state.substate_var_dependencies[var].add(state_name)
+                        state_name, parent_state = (
+                            parent_state.get_name(),
+                            parent_state.parent_state,
+                        )
 
         # Initialize the mutable fields.
         self._init_mutable_fields()
@@ -219,6 +232,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             "dirty_substates",
             "router_data",
             "computed_var_dependencies",
+            "substate_var_dependencies",
         }
 
     @classmethod
@@ -711,13 +725,26 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     def mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
-        if self.parent_state is not None:
+        state_name = self.get_name()
+        if (
+            self.parent_state is not None
+            and state_name not in self.parent_state.dirty_substates
+        ):
             self.parent_state.dirty_substates.add(self.get_name())
             self.parent_state.mark_dirty()
 
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
         self._mark_dirty_computed_vars()
+
+        # Propagate dirty var / computed var status into substates
+        substates = self.substates
+        for var in self.dirty_vars:
+            for substate_name in self.substate_var_dependencies[var]:
+                self.dirty_substates.add(substate_name)
+                substate = substates[substate_name]
+                substate.dirty_vars.add(var)
+                substate.mark_dirty()
 
     def clean(self):
         """Reset the dirty vars."""
