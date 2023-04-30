@@ -78,7 +78,7 @@ def compile_imports(imports: imports.ImportDict) -> list[dict]:
     return import_dicts
 
 
-def get_import_dict(lib: str, default:str="", rest:set=set()) -> dict:
+def get_import_dict(lib: str, default: str = "", rest: set = set()) -> dict:
     """Get dictionary for import template.
 
     Args:
