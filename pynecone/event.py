@@ -92,9 +92,6 @@ class EventSpec(Base):
     # The handler on the client to process event.
     client_handler_name: str = ""
 
-    # The local arguments on the frontend.
-    local_args: Tuple[Var, ...] = ()
-
     # The arguments to pass to the function.
     args: Tuple[Tuple[Var, Var], ...] = ()
 

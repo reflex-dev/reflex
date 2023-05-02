@@ -10,7 +10,7 @@ from plotly.graph_objects import Figure
 from plotly.io import to_json
 
 from pynecone.base import Base
-from pynecone.event import EventChain
+from pynecone.event import EVENT_ARG, EventChain
 from pynecone.utils import format, types
 from pynecone.vars import Var
 
@@ -75,16 +75,14 @@ class Tag(Base):
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-            local_args = ",".join(([str(a) for a in prop.events[0].local_args]))
-
             if prop.full_control:
                 # Full control component events.
                 event = format.format_full_control_event(prop)
             else:
                 # All other events.
                 chain = ",".join([format.format_event(event) for event in prop.events])
-                event = f"Event([{chain}])"
-            prop = f"({local_args}) => {event}"
+                event = f"{{{EVENT_ARG}.preventDefault(); Event([{chain}])}}"
+            prop = f"({EVENT_ARG}) => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):

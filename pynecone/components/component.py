@@ -251,7 +251,6 @@ class Component(Base, ABC):
             events = [
                 EventSpec(
                     handler=e.handler,
-                    local_args=(EVENT_ARG,),
                     args=get_handler_args(e, arg),
                 )
                 for e in events

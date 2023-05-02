@@ -45,7 +45,6 @@ def test_call_event_handler():
     event_spec = handler()
 
     assert event_spec.handler == handler
-    assert event_spec.local_args == ()
     assert event_spec.args == ()
     assert format.format_event(event_spec) == 'E("test_fn", {}, )'
 
@@ -54,7 +53,6 @@ def test_call_event_handler():
 
     # Test passing vars as args.
     assert event_spec.handler == handler
-    assert event_spec.local_args == ()
     assert event_spec.args == (("arg1", "first"), ("arg2", "second"))
     assert (
         format.format_event(event_spec)
@@ -77,7 +75,6 @@ def test_call_event_handler():
     )
 
     assert event_spec.handler == handler
-    assert event_spec.local_args == ()
     assert event_spec.args == (
         ("arg1", format.json_dumps(first)),
         ("arg2", format.json_dumps(second)),

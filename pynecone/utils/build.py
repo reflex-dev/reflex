@@ -160,6 +160,9 @@ def setup_frontend(root: Path, disable_telemetry: bool = True):
         dest=str(root / constants.WEB_ASSETS_DIR),
     )
 
+    # set the upload url in pynecone.json file
+    set_pynecone_upload_endpoint()
+
     # Disable the Next telemetry.
     if disable_telemetry:
         subprocess.Popen(

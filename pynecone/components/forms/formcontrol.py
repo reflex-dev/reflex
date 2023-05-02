@@ -1,8 +1,27 @@
 """Form components."""
 
+from typing import Set
+
 from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.vars import Var
+
+
+class Form(ChakraComponent):
+    """A form component."""
+
+    tag = "Box"
+
+    as_: Var[str] = "form"  # type: ignore
+
+    @classmethod
+    def get_triggers(cls) -> Set[str]:
+        """Get the event triggers for the component.
+
+        Returns:
+            The event triggers.
+        """
+        return super().get_triggers() | {"on_submit"}
 
 
 class FormControl(ChakraComponent):
