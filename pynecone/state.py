@@ -98,6 +98,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Convert the event handlers to functions.
         for name, event_handler in self.event_handlers.items():
             fn = functools.partial(event_handler.fn, self)
+            fn.__module__ = event_handler.fn.__module__  # type: ignore
             fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
             setattr(self, name, fn)
 
