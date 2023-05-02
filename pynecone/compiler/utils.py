@@ -28,7 +28,7 @@ from pynecone.utils import format, imports, path_ops
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(lib: str, fields: Set[str]) -> Tuple[str, set[str]]:
+def compile_import_statement(lib: str, fields: Set[str]) -> Tuple[str, Set[str]]:
     """Compile an import statement.
 
     Args:
@@ -55,7 +55,7 @@ def compile_import_statement(lib: str, fields: Set[str]) -> Tuple[str, set[str]]
     return default, rest
 
 
-def compile_imports(imports: imports.ImportDict) -> list[dict]:
+def compile_imports(imports: imports.ImportDict) -> List[dict]:
     """Compile an import dict.
 
     Args:
