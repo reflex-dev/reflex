@@ -13,7 +13,7 @@ class NumberInput(ChakraComponent):
 
     tag = "NumberInput"
 
-    # State var to bind the the input.
+    # State var to bind the input.
     value: Var[int]
 
     # If true, the input's value will change based on mouse wheel.

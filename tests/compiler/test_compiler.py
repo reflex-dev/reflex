@@ -4,17 +4,34 @@ import pytest
 
 from pynecone.compiler import utils
 from pynecone.utils import imports
+from pynecone.var import ImportVar
 
 
 @pytest.mark.parametrize(
     "lib,fields,output",
     [
-        ("axios", {"axios"}, 'import axios from "axios"'),
-        ("axios", {"foo", "bar"}, 'import {bar, foo} from "axios"'),
-        ("axios", {"axios", "foo", "bar"}, 'import axios, {bar, foo} from "axios"'),
+        (
+            "axios",
+            {ImportVar(tag="axios", is_default=True)},
+            'import axios from "axios"',
+        ),
+        (
+            "axios",
+            {ImportVar(tag="foo"), ImportVar(tag="bar")},
+            'import {bar, foo} from "axios"',
+        ),
+        (
+            "axios",
+            {
+                ImportVar(tag="axios", is_default=True),
+                ImportVar(tag="foo"),
+                ImportVar(tag="bar"),
+            },
+            "import " "axios, " "{bar, " "foo} from " '"axios"',
+        ),
     ],
 )
-def test_compile_import_statement(lib: str, fields: Set[str], output: str):
+def test_compile_import_statement(lib: str, fields: Set[ImportVar], output: str):
     """Test the compile_import_statement function.
 
     Args:
@@ -29,15 +46,34 @@ def test_compile_import_statement(lib: str, fields: Set[str], output: str):
     "import_dict,output",
     [
         ({}, ""),
-        ({"axios": {"axios"}}, 'import axios from "axios"'),
-        ({"axios": {"foo", "bar"}}, 'import {bar, foo} from "axios"'),
         (
-            {"axios": {"axios", "foo", "bar"}, "react": {"react"}},
+            {"axios": {ImportVar(tag="axios", is_default=True)}},
+            'import axios from "axios"',
+        ),
+        (
+            {"axios": {ImportVar(tag="foo"), ImportVar(tag="bar")}},
+            'import {bar, foo} from "axios"',
+        ),
+        (
+            {
+                "axios": {
+                    ImportVar(tag="axios", is_default=True),
+                    ImportVar(tag="foo"),
+                    ImportVar(tag="bar"),
+                },
+                "react": {ImportVar(tag="react", is_default=True)},
+            },
             'import axios, {bar, foo} from "axios"\nimport react from "react"',
         ),
-        ({"": {"lib1.js", "lib2.js"}}, 'import "lib1.js"\nimport "lib2.js"'),
         (
-            {"": {"lib1.js", "lib2.js"}, "axios": {"axios"}},
+            {"": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")}},
+            'import "lib1.js"\nimport "lib2.js"',
+        ),
+        (
+            {
+                "": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")},
+                "axios": {ImportVar(tag="axios", is_default=True)},
+            },
             'import "lib1.js"\nimport "lib2.js"\nimport axios from "axios"',
         ),
     ],

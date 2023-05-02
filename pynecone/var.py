@@ -34,7 +34,6 @@ from pynecone.utils import format, types
 if TYPE_CHECKING:
     from pynecone.state import State
 
-
 # Set of unique variable names.
 USED_VARIABLES = set()
 
@@ -1071,3 +1070,33 @@ class PCDict(dict):
         """
         super().__delitem__(*args, **kwargs)
         self._reassign_field()
+
+
+class ImportVar(Base):
+    """An import var."""
+
+    # The name of the import tag.
+    tag: Optional[str]
+
+    # whether the import is default or named.
+    is_default: Optional[bool] = False
+
+    # The tag alias.
+    alias: Optional[str] = None
+
+    @property
+    def name(self) -> str:
+        """The name of the import.
+
+        Returns:
+            The name(tag name with alias) of tag.
+        """
+        return self.tag if not self.alias else " as ".join([self.tag, self.alias])  # type: ignore
+
+    def __hash__(self) -> int:
+        """Define a hash function for the import var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.tag, self.is_default, self.alias))

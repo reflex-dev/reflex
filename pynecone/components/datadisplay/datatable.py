@@ -1,11 +1,11 @@
 """Table components."""
 
-from typing import Any, List, Optional
+from typing import Any, List
 
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
 from pynecone.utils import format, imports, types
-from pynecone.var import BaseVar, ComputedVar, Var
+from pynecone.var import BaseVar, ComputedVar, ImportVar, Var
 
 
 class Gridjs(Component):
@@ -18,6 +18,8 @@ class DataTable(Gridjs):
     """A data table component."""
 
     tag = "Grid"
+
+    alias = "DataTableGrid"
 
     # The data to display. Either a list of lists or a pandas dataframe.
     data: Any
@@ -37,15 +39,6 @@ class DataTable(Gridjs):
 
     # Enable pagination.
     pagination: Var[bool]
-
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias for the component.
-
-        Returns:
-            The alias.
-        """
-        return "DataTableGrid"
 
     @classmethod
     def create(cls, *children, **props):
@@ -102,7 +95,8 @@ class DataTable(Gridjs):
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
-            super()._get_imports(), {"": {"gridjs/dist/theme/mermaid.css"}}
+            super()._get_imports(),
+            {"": {ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
         )
 
     def _render(self) -> Tag:
