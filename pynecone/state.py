@@ -706,11 +706,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         delta = {}
 
-        # Recursively find the substate deltas.
-        substates = self.substates
-        for substate in self.dirty_substates:
-            delta.update(substates[substate].get_delta())
-
         # Return the dirty vars and dependent computed vars
         delta_vars = self.dirty_vars.intersection(self.base_vars).union(
             self._dirty_computed_vars()
@@ -722,6 +717,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
+
+        # Recursively find the substate deltas.
+        substates = self.substates
+        for substate in self.dirty_substates:
+            delta.update(substates[substate].get_delta())
 
         # Format the delta.
         delta = format.format_state(delta)
