@@ -485,11 +485,11 @@ def test_set_dirty_var(test_state):
 
     # Setting a var should mark it as dirty.
     test_state.num1 = 1
-    assert test_state.dirty_vars == {"num1"}
+    assert test_state.dirty_vars == {"num1", "sum"}
 
     # Setting another var should mark it as dirty.
     test_state.num2 = 2
-    assert test_state.dirty_vars == {"num1", "num2"}
+    assert test_state.dirty_vars == {"num1", "num2", "sum"}
 
     # Cleaning the state should remove all dirty vars.
     test_state.clean()
@@ -578,7 +578,7 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
+    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
     assert update.events == []
 
 
@@ -601,7 +601,6 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
-        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
     }
     test_state.clean()
@@ -616,7 +615,6 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     update = await test_state._process(event)
     assert grandchild_state.value2 == "new"
     assert update.delta == {
-        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
     }
 
@@ -791,7 +789,7 @@ def test_not_dirty_computed_var_from_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.x = 5
-    assert interdependent_state.get_delta(check=True) == {
+    assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"x": 5},
     }
 
@@ -806,7 +804,7 @@ def test_dirty_computed_var_from_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state.v1 = 1
-    assert interdependent_state.get_delta(check=True) == {
+    assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
     }
 
@@ -818,7 +816,7 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
         interdependent_state: A state with varying Var dependencies.
     """
     interdependent_state._v2 = 2
-    assert interdependent_state.get_delta(check=True) == {
+    assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"v2x2": 4},
     }
 
@@ -860,6 +858,7 @@ def test_conditional_computed_vars():
     assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
+    assert ms.computed_vars["rendered_var"].deps() == {"flag", "t1", "t2"}
 
 
 def test_event_handlers_convert_to_fns(test_state, child_state):
@@ -896,3 +895,29 @@ def test_event_handlers_call_other_handlers():
     ms = MainState()
     ms.set_v2(1)
     assert ms.v == 1
+
+
+def test_computed_var_cached():
+    """Test that a ComputedVar doesn't recalculate when accessed."""
+    comp_v_calls = 0
+
+    class ComputedState(State):
+        v: int = 0
+
+        @ComputedVar
+        def comp_v(self) -> int:
+            nonlocal comp_v_calls
+            comp_v_calls += 1
+            return self.v
+
+    cs = ComputedState()
+    assert cs.dict()["v"] == 0
+    assert comp_v_calls == 1
+    assert cs.dict()["comp_v"] == 0
+    assert comp_v_calls == 1
+    assert cs.comp_v == 0
+    assert comp_v_calls == 1
+    cs.v = 1
+    assert comp_v_calls == 1
+    assert cs.comp_v == 1
+    assert comp_v_calls == 2
