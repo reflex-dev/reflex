@@ -75,7 +75,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     computed_var_dependencies: Dict[str, Set[str]] = {}
 
     # Mapping of var name to set of substates that depend on it
-    substate_var_dependencies: Dict[str, Set[str]] = defaultdict(set)
+    substate_var_dependencies: Dict[str, Set[str]] = {}
 
     def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
         """Initialize the state.
@@ -87,6 +87,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
+
+        # initialize per-instance var dependency tracking
+        self.computed_var_dependencies = defaultdict(set)
+        self.substate_var_dependencies = defaultdict(set)
 
         # Setup the substates.
         for substate in self.get_substates():
@@ -100,7 +104,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self, name, fn)
 
         # Initialize computed vars dependencies.
-        self.computed_var_dependencies = defaultdict(set)
         inherited_vars = set(self.inherited_vars).union(
             set(self.inherited_backend_vars),
         )
