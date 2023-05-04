@@ -65,7 +65,7 @@ class EventHandler(Base):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg))
+                values.append(Var.create(arg, is_string=type(arg) is str))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
