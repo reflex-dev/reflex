@@ -119,7 +119,7 @@ class Tag(Base):
         assert isinstance(prop, str), "The prop must be a string."
         return format.wrap(prop, "{", check_first=False)
 
-    def format_props(self) -> list:
+    def format_props(self) -> List:
         """Format the tag's props.
 
         Returns:

@@ -393,7 +393,7 @@ class Component(Base, ABC):
             child.add_style(style)
         return self
 
-    def render(self) -> dict:
+    def render(self) -> Dict:
         """Render the component.
 
         Returns:

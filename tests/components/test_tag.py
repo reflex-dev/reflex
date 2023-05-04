@@ -154,7 +154,7 @@ def test_add_props():
         ),
     ],
 )
-def test_format_tag(tag: Tag, expected: dict):
+def test_format_tag(tag: Tag, expected: Dict):
     """Test that the tag dict is correct.
 
     Args:

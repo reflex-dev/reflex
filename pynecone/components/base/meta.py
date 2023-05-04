@@ -1,6 +1,6 @@
 """Display the title of the current page."""
 
-from typing import Optional
+from typing import Dict, Optional
 
 from pynecone.components.base.bare import Bare
 from pynecone.components.component import Component
@@ -11,7 +11,7 @@ class Title(Component):
 
     tag = "title"
 
-    def render(self) -> dict:
+    def render(self) -> Dict:
         """Render the title component.
 
         Returns:

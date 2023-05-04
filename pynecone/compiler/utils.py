@@ -78,7 +78,7 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
     return import_dicts
 
 
-def get_import_dict(lib: str, default: str = "", rest: Optional[set] = None) -> dict:
+def get_import_dict(lib: str, default: str = "", rest: Optional[Set] = None) -> Dict:
     """Get dictionary for import template.
 
     Args:
@@ -96,7 +96,7 @@ def get_import_dict(lib: str, default: str = "", rest: Optional[set] = None) -> 
     }
 
 
-def compile_state(state: Type[State]) -> dict:
+def compile_state(state: Type[State]) -> Dict:
     """Compile the state of the app.
 
     Args:

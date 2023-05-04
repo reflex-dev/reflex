@@ -1,5 +1,7 @@
 """Base class definition for raw HTML elements."""
 
+from typing import Dict
+
 from pynecone.components.component import Component
 
 
@@ -11,7 +13,7 @@ class Element(Component):
     prop.
     """
 
-    def render(self) -> dict:
+    def render(self) -> Dict:
         """Render the element.
 
         Returns:
