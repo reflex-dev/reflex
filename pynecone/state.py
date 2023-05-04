@@ -72,7 +72,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     router_data: Dict[str, Any] = {}
 
     # Mapping of var name to set of computed variables that depend on it
-    computed_var_dependencies: Dict[str, Set[str]] = defaultdict(set)
+    computed_var_dependencies: Dict[str, Set[str]] = {}
 
     def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
         """Initialize the state.
@@ -95,14 +95,15 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
             setattr(self, name, fn)
 
-        # Initialize the mutable fields.
-        self._init_mutable_fields()
-
         # Initialize computed vars dependencies.
+        self.computed_var_dependencies = defaultdict(set)
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
             for var in cvar.deps():
                 self.computed_var_dependencies[var].add(cvar_name)
+
+        # Initialize the mutable fields.
+        self._init_mutable_fields()
 
     def _init_mutable_fields(self):
         """Initialize mutable fields.
