@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, List
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
 
 from pynecone.components.tags.tag import Tag
 from pynecone.utils import format
@@ -19,7 +19,7 @@ class IterTag(Tag):
     """An iterator tag."""
 
     # The var to iterate over.
-    iterable: Var[List]
+    iterable: Union[Var[List], Var[Dict]]
 
     # The component render function for each item in the iterable.
     render_fn: Callable
@@ -93,14 +93,21 @@ class IterTag(Tag):
         try:
             type_ = self.iterable.type_.__args__[0]
         except Exception:
-            type_ = Any
+            type_ = dict if self.iterable.type_ == dict else Any
         arg = BaseVar(
             name=get_unique_variable_name(),
             type_=type_,
         )
         index_arg = self.get_index_var_arg()
         component = self.render_component(self.render_fn, arg)
-        return format.wrap(
-            f"{self.iterable.full_name}.map(({arg.name}, {index_arg}) => {component})",
-            "{",
-        )
+
+        if type_ == dict:
+            return format.wrap(
+                f"Object.entries({self.iterable.full_name}).map(({arg.name}, {index_arg}) => {component})",
+                "{",
+            )
+        else:
+            return format.wrap(
+                f"{self.iterable.full_name}.map(({arg.name}, {index_arg}) => {component})",
+                "{",
+            )
