@@ -115,7 +115,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                     # track that this substate depends on its parent for this var
                     state_name = self.get_name()
                     parent_state = self.parent_state
-                    while parent_state is not None:
+                    while parent_state is not None and var in parent_state.vars:
                         parent_state.substate_var_dependencies[var].add(state_name)
                         state_name, parent_state = (
                             parent_state.get_name(),
