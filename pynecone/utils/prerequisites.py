@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
+from packaging import version
 
 import typer
 from redis import Redis
@@ -42,7 +43,7 @@ def check_node_version(min_version):
         return False
 
 
-def get_bun_version() -> Optional[str]:
+def get_bun_version() -> Optional[version.Version]:
     """Get the version of bun.
 
     Returns:
@@ -53,7 +54,7 @@ def get_bun_version() -> Optional[str]:
         result = subprocess.run(
             ["bun", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        return result.stdout.decode().strip()
+        return version.parse(result.stdout.decode().strip())
     except Exception:
         return None
 
@@ -220,16 +221,16 @@ def install_bun():
         Exit: If the bun version is not supported.
     """
     bun_version = get_bun_version()
-    if bun_version is not None and bun_version in constants.INVALID_BUN_VERSIONS:
+    if bun_version is not None and (
+        bun_version < version.parse(constants.MIN_BUN_VERSION)
+        or bun_version > version.parse(constants.MAX_BUN_VERSION)
+        or str(bun_version) in constants.INVALID_BUN_VERSIONS
+    ):
         console.print(
             f"""[red]Bun version {bun_version} is not supported by Pynecone. Please change your to bun version to be between {constants.MIN_BUN_VERSION} and {constants.MAX_BUN_VERSION}."""
         )
         console.print(
-            f"""[red]Upgrade by running the following command:[/red]
-
-curl -fsSL https://bun.sh/install | bash -s -- bun-v{constants.MAX_BUN_VERSION}
-
-"""
+            f"""[red]Upgrade by running the following command:[/red]\n\n{constants.INSTALL_BUN}"""
         )
         raise typer.Exit()
 
