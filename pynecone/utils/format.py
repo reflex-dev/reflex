@@ -6,7 +6,7 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import plotly.graph_objects as go
 from plotly.io import to_json
@@ -365,7 +365,7 @@ def format_dataframe_values(value: Type) -> List[Any]:
     return format_data
 
 
-def format_state(value: Any) -> Dict:
+def format_state(value: Any) -> Union[Dict, List]:
     """Recursively format values in the given state.
 
     Args:
@@ -377,6 +377,9 @@ def format_state(value: Any) -> Dict:
     Raises:
         TypeError: If the given value is not a valid state.
     """
+    if isinstance(value, set):
+        return list(value)
+
     # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v) for k, v in value.items()}

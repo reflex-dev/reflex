@@ -29,7 +29,7 @@ from pynecone.event import Event, EventHandler, fix_events, window_alert
 from pynecone.utils import format, prerequisites, types
 from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
 
-Delta = Dict[str, Any]
+Delta = Union[Dict[str, Any], List]
 
 
 class State(Base, ABC, extra=pydantic.Extra.allow):
