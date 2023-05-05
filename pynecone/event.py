@@ -329,9 +329,6 @@ def get_handler_args(
 
     Returns:
         The handler args.
-
-    Raises:
-        ValueError: If the event handler has an invalid signature.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
 
