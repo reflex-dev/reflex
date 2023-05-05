@@ -10,20 +10,25 @@ from pynecone.components.component import Component, CustomComponent
 from pynecone.state import State
 from pynecone.style import Style
 from pynecone.utils import imports
+from pynecone.var import ImportVar
 
 # Imports to be included in every Pynecone app.
 DEFAULT_IMPORTS: imports.ImportDict = {
-    "react": {"useEffect", "useRef", "useState"},
-    "next/router": {"useRouter"},
-    f"/{constants.STATE_PATH}": {
-        "connect",
-        "updateState",
-        "uploadFiles",
-        "E",
-        "isTrue",
+    "react": {
+        ImportVar(tag="useEffect"),
+        ImportVar(tag="useRef"),
+        ImportVar(tag="useState"),
     },
-    "": {"focus-visible/dist/focus-visible"},
-    "@chakra-ui/react": {constants.USE_COLOR_MODE},
+    "next/router": {ImportVar(tag="useRouter")},
+    f"/{constants.STATE_PATH}": {
+        ImportVar(tag="connect"),
+        ImportVar(tag="updateState"),
+        ImportVar(tag="uploadFiles"),
+        ImportVar(tag="E"),
+        ImportVar(tag="isTrue"),
+    },
+    "": {ImportVar(tag="focus-visible/dist/focus-visible")},
+    "@chakra-ui/react": {ImportVar(tag=constants.USE_COLOR_MODE)},
 }
 
 
@@ -93,8 +98,8 @@ def _compile_components(components: Set[CustomComponent]) -> str:
         The compiled components.
     """
     imports = {
-        "react": {"memo"},
-        f"/{constants.STATE_PATH}": {"E", "isTrue"},
+        "react": {ImportVar(tag="memo")},
+        f"/{constants.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
     }
     component_renders = []
 

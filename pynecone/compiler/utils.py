@@ -23,12 +23,13 @@ from pynecone.event import get_hydrate_event
 from pynecone.state import State
 from pynecone.style import Style
 from pynecone.utils import format, imports, path_ops
+from pynecone.var import ImportVar
 
 # To re-export this function.
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(lib: str, fields: Set[str]) -> Tuple[str, Set[str]]:
+def compile_import_statement(lib: str, fields: Set[ImportVar]) -> Tuple[str, Set[str]]:
     """Compile an import statement.
 
     Args:
@@ -41,16 +42,12 @@ def compile_import_statement(lib: str, fields: Set[str]) -> Tuple[str, Set[str]]
         rest: rest of libraries. When install "import {rest1, rest2} from library"
     """
     # Check for default imports.
-    defaults = {
-        field
-        for field in fields
-        if field.lower() == lib.lower().replace("-", "").replace("/", "")
-    }
+    defaults = {field for field in fields if field.is_default}
     assert len(defaults) < 2
 
     # Get the default import, and the specific imports.
-    default = next(iter(defaults), "")
-    rest = fields - defaults
+    default = next(iter({field.name for field in defaults}), "")
+    rest = {field.name for field in fields - defaults}
 
     return default, rest
 

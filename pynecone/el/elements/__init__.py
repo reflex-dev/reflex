@@ -6,7 +6,7 @@ from pynecone.var import Var as PCVar
 
 
 class A(Element):  # noqa: E742
-    """Display the a element."""
+    """Display the 'a' element."""
 
     tag = "a"
 

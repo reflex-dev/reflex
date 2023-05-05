@@ -73,7 +73,7 @@ API_URL = "http://localhost:8000"
 # The default path where bun is installed.
 BUN_PATH = "$HOME/.bun/bin/bun"
 # Command to install bun.
-INSTALL_BUN = "curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.9"
+INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
 # Default host in dev mode.
 BACKEND_HOST = "0.0.0.0"
 # The default timeout when launching the gunicorn server.
@@ -83,7 +83,7 @@ RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --
 RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {TIMEOUT}".split()
 # Socket.IO web server
 PING_INTERVAL = 25
-PING_TIMEOUT = 5
+PING_TIMEOUT = 120
 
 # Compiler variables.
 # The extension for compiled Javascript files.

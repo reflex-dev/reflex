@@ -4,18 +4,38 @@ import pytest
 
 from pynecone.compiler import utils
 from pynecone.utils import imports
+from pynecone.var import ImportVar
 
 
 @pytest.mark.parametrize(
     "lib,fields,test_default,test_rest",
     [
-        ("axios", {"axios"}, "axios", set()),
-        ("axios", {"foo", "bar"}, "", {"foo", "bar"}),
-        ("axios", {"axios", "foo", "bar"}, "axios", {"foo", "bar"}),
+        (
+            "axios",
+            {ImportVar(tag="axios", is_default=True)},
+            "axios",
+            set(),
+        ),
+        (
+            "axios",
+            {ImportVar(tag="foo"), ImportVar(tag="bar")},
+            "",
+            {"foo", "bar"},
+        ),
+        (
+            "axios",
+            {
+                ImportVar(tag="axios", is_default=True),
+                ImportVar(tag="foo"),
+                ImportVar(tag="bar"),
+            },
+            "axios",
+            {"foo", "bar"},
+        ),
     ],
 )
 def test_compile_import_statement(
-    lib: str, fields: Set[str], test_default: str, test_rest: str
+    lib: str, fields: Set[ImportVar], test_default: str, test_rest: str
 ):
     """Test the compile_import_statement function.
 
@@ -34,27 +54,40 @@ def test_compile_import_statement(
     "import_dict,test_dicts",
     [
         ({}, []),
-        ({"axios": {"axios"}}, [{"lib": "axios", "default": "axios", "rest": set()}]),
         (
-            {"axios": {"foo", "bar"}},
+            {"axios": {ImportVar(tag="axios", is_default=True)}},
+            [{"lib": "axios", "default": "axios", "rest": set()}],
+        ),
+        (
+            {"axios": {ImportVar(tag="foo"), ImportVar(tag="bar")}},
             [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}],
         ),
         (
-            {"axios": {"axios", "foo", "bar"}, "react": {"react"}},
+            {
+                "axios": {
+                    ImportVar(tag="axios", is_default=True),
+                    ImportVar(tag="foo"),
+                    ImportVar(tag="bar"),
+                },
+                "react": {ImportVar(tag="react", is_default=True)},
+            },
             [
                 {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
                 {"lib": "react", "default": "react", "rest": set()},
             ],
         ),
         (
-            {"": {"lib1.js", "lib2.js"}},
+            {"": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")}},
             [
                 {"lib": "lib1.js", "default": "", "rest": set()},
                 {"lib": "lib2.js", "default": "", "rest": set()},
             ],
         ),
         (
-            {"": {"lib1.js", "lib2.js"}, "axios": {"axios"}},
+            {
+                "": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")},
+                "axios": {ImportVar(tag="axios", is_default=True)},
+            },
             [
                 {"lib": "lib1.js", "default": "", "rest": set()},
                 {"lib": "lib2.js", "default": "", "rest": set()},

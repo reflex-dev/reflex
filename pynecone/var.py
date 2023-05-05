@@ -1,10 +1,13 @@
 """Define a state var."""
 from __future__ import annotations
 
+import contextlib
+import dis
 import json
 import random
 import string
 from abc import ABC
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,9 +15,12 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Type,
     Union,
     _GenericAlias,  # type: ignore
+    cast,
+    get_type_hints,
 )
 
 from plotly.graph_objects import Figure
@@ -27,7 +33,6 @@ from pynecone.utils import format, types
 
 if TYPE_CHECKING:
     from pynecone.state import State
-
 
 # Set of unique variable names.
 USED_VARIABLES = set()
@@ -801,14 +806,93 @@ class ComputedVar(property, Var):
         return self.fget.__name__
 
     @property
+    def cache_attr(self) -> str:
+        """Get the attribute used to cache the value on the instance.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__cached_{self.name}"
+
+    def __get__(self, instance, owner):
+        """Get the ComputedVar value.
+
+        If the value is already cached on the instance, return the cached value.
+
+        If this ComputedVar doesn't know what type of object it is attached to, then save
+        a reference as self.__objclass__.
+
+        Args:
+            instance: the instance of the class accessing this computed var.
+            owner: the class that this descriptor is attached to.
+
+        Returns:
+            The value of the var for the given instance.
+        """
+        if not hasattr(self, "__objclass__"):
+            self.__objclass__ = owner
+
+        if instance is None:
+            return super().__get__(instance, owner)
+
+        # handle caching
+        if not hasattr(instance, self.cache_attr):
+            setattr(instance, self.cache_attr, super().__get__(instance, owner))
+        return getattr(instance, self.cache_attr)
+
+    def deps(self, obj: Optional[FunctionType] = None) -> Set[str]:
+        """Determine var dependencies of this ComputedVar.
+
+        Save references to attributes accessed on "self".  Recursively called
+        when the function makes a method call on "self".
+
+        Args:
+            obj: the object to disassemble (defaults to the fget function).
+
+        Returns:
+            A set of variable names accessed by the given obj.
+        """
+        d = set()
+        if obj is None:
+            if self.fget is not None:
+                obj = cast(FunctionType, self.fget)
+            else:
+                return set()
+        if not obj.__code__.co_varnames:
+            # cannot reference self if method takes no args
+            return set()
+        self_name = obj.__code__.co_varnames[0]
+        self_is_top_of_stack = False
+        for instruction in dis.get_instructions(obj):
+            if instruction.opname == "LOAD_FAST" and instruction.argval == self_name:
+                self_is_top_of_stack = True
+                continue
+            if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
+                d.add(instruction.argval)
+            elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
+                d.update(self.deps(obj=getattr(self.__objclass__, instruction.argval)))
+            self_is_top_of_stack = False
+        return d
+
+    def mark_dirty(self, instance) -> None:
+        """Mark this ComputedVar as dirty.
+
+        Args:
+            instance: the state instance that needs to recompute the value.
+        """
+        with contextlib.suppress(AttributeError):
+            delattr(instance, self.cache_attr)
+
+    @property
     def type_(self):
         """Get the type of the var.
 
         Returns:
             The type of the var.
         """
-        if "return" in self.fget.__annotations__:
-            return self.fget.__annotations__["return"]
+        hints = get_type_hints(self.fget)
+        if "return" in hints:
+            return hints["return"]
         return Any
 
 
@@ -986,3 +1070,33 @@ class PCDict(dict):
         """
         super().__delitem__(*args, **kwargs)
         self._reassign_field()
+
+
+class ImportVar(Base):
+    """An import var."""
+
+    # The name of the import tag.
+    tag: Optional[str]
+
+    # whether the import is default or named.
+    is_default: Optional[bool] = False
+
+    # The tag alias.
+    alias: Optional[str] = None
+
+    @property
+    def name(self) -> str:
+        """The name of the import.
+
+        Returns:
+            The name(tag name with alias) of tag.
+        """
+        return self.tag if not self.alias else " as ".join([self.tag, self.alias])  # type: ignore
+
+    def __hash__(self) -> int:
+        """Define a hash function for the import var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.tag, self.is_default, self.alias))
