@@ -263,6 +263,10 @@ class RouteArgType(SimpleNamespace):
     LIST = str("arg_list")
 
 
+# the name of the backend var containing path and client information
+ROUTER_DATA = "router_data"
+
+
 class RouteVar(SimpleNamespace):
     """Names of variables used in the router_data dict stored in State."""
 

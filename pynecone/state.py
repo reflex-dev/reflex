@@ -68,9 +68,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # The set of dirty substates.
     dirty_substates: Set[str] = set()
 
-    # The routing path that triggered the state
-    router_data: Dict[str, Any] = {}
-
     # Mapping of var name to set of computed variables that depend on it
     computed_var_dependencies: Dict[str, Set[str]] = {}
 
@@ -167,6 +164,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             if types.is_backend_variable(name)
             and name not in cls.inherited_backend_vars
         }
+        if parent_state is None:
+            cls.new_backend_vars[constants.ROUTER_DATA] = {}
 
         cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
 
@@ -217,7 +216,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             "substates",
             "dirty_vars",
             "dirty_substates",
-            "router_data",
+            constants.ROUTER_DATA,
             "computed_var_dependencies",
         }
 
@@ -527,7 +526,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if types.is_backend_variable(name):
+        if name in self.backend_vars:
             self.backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self.mark_dirty()

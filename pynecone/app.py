@@ -428,8 +428,8 @@ async def process(
     state = app.state_manager.get_state(event.token)
 
     # Add request data to the state.
-    state.router_data = event.router_data
-    state.router_data.update(
+    router_data = event.router_data
+    router_data.update(
         {
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
             constants.RouteVar.CLIENT_TOKEN: event.token,
@@ -438,10 +438,8 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         }
     )
-
-    # Also pass router_data to all substates. (TODO: this isn't recursive currently)
-    for _, substate in state.substates.items():
-        substate.router_data = state.router_data
+    if state.router_data != router_data:
+        state.router_data = router_data
 
     # Preprocess the event.
     pre = await app.preprocess(state, event)
