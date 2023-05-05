@@ -12,7 +12,7 @@ class TextArea(ChakraComponent):
 
     tag = "Textarea"
 
-    # State var to bind the the input.
+    # State var to bind the input.
     value: Var[str]
 
     # The default value of the textarea.

@@ -3,7 +3,9 @@
 from collections import defaultdict
 from typing import Dict, Set
 
-ImportDict = Dict[str, Set[str]]
+from pynecone.var import ImportVar
+
+ImportDict = Dict[str, Set[ImportVar]]
 
 
 def merge_imports(*imports) -> ImportDict:

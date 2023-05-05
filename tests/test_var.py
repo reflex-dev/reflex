@@ -4,7 +4,7 @@ import cloudpickle
 import pytest
 
 from pynecone.base import Base
-from pynecone.var import BaseVar, PCDict, PCList, Var
+from pynecone.var import BaseVar, ImportVar, PCDict, PCList, Var
 
 test_vars = [
     BaseVar(name="prop1", type_=int),
@@ -13,6 +13,8 @@ test_vars = [
     BaseVar(name="local", type_=str, state="state", is_local=True),
     BaseVar(name="local2", type_=str, is_local=True),
 ]
+
+test_import_vars = [ImportVar(tag="DataGrid"), ImportVar(tag="DataGrid", alias="Grid")]
 
 
 @pytest.fixture
@@ -245,3 +247,23 @@ def test_pickleable_pc_dict():
 
     pickled_dict = cloudpickle.dumps(pc_dict)
     assert cloudpickle.loads(pickled_dict) == pc_dict
+
+
+@pytest.mark.parametrize(
+    "import_var,expected",
+    zip(
+        test_import_vars,
+        [
+            "DataGrid",
+            "DataGrid as Grid",
+        ],
+    ),
+)
+def test_import_var(import_var, expected):
+    """Test that the import var name is computed correctly.
+
+    Args:
+        import_var: The import var.
+        expected: expected name
+    """
+    assert import_var.name == expected

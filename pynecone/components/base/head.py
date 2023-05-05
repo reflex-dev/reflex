@@ -13,3 +13,5 @@ class Head(NextHeadLib):
     """Head Component."""
 
     tag = "NextHead"
+
+    is_default = True

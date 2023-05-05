@@ -5,7 +5,7 @@ from typing import List, Union
 
 from pynecone.components.component import Component
 from pynecone.utils import types
-from pynecone.var import BaseVar, Var
+from pynecone.var import BaseVar, ImportVar, Var
 
 
 class Markdown(Component):
@@ -14,6 +14,8 @@ class Markdown(Component):
     library = "react-markdown"
 
     tag = "ReactMarkdown"
+
+    is_default = True
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -39,20 +41,20 @@ class Markdown(Component):
     def _get_imports(self):
         imports = super()._get_imports()
         imports["@chakra-ui/react"] = {
-            "Heading",
-            "Code",
-            "Text",
-            "Link",
-            "UnorderedList",
-            "OrderedList",
-            "ListItem",
+            ImportVar(tag="Heading"),
+            ImportVar(tag="Code"),
+            ImportVar(tag="Text"),
+            ImportVar(tag="Link"),
+            ImportVar(tag="UnorderedList"),
+            ImportVar(tag="OrderedList"),
+            ImportVar(tag="ListItem"),
         }
-        imports["react-syntax-highlighter"] = {"Prism"}
-        imports["remark-math"] = {"remarkMath"}
-        imports["remark-gfm"] = {"remarkGfm"}
-        imports["rehype-katex"] = {"rehypeKatex"}
-        imports["rehype-raw"] = {"rehypeRaw"}
-        imports[""] = {"katex/dist/katex.min.css"}
+        imports["react-syntax-highlighter"] = {ImportVar(tag="Prism", is_default=True)}
+        imports["remark-math"] = {ImportVar(tag="remarkMath", is_default=True)}
+        imports["remark-gfm"] = {ImportVar(tag="remarkGfm", is_default=True)}
+        imports["rehype-katex"] = {ImportVar(tag="rehypeKatex", is_default=True)}
+        imports["rehype-raw"] = {ImportVar(tag="rehypeRaw", is_default=True)}
+        imports[""] = {ImportVar(tag="katex/dist/katex.min.css")}
         return imports
 
     def _render(self):

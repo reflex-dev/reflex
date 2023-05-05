@@ -18,6 +18,8 @@ class Upload(Component):
 
     tag = "ReactDropzone"
 
+    is_default = True
+
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.
     # supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
