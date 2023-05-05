@@ -21,7 +21,7 @@ from pynecone.config import get_config
 from pynecone.utils import console, path_ops
 
 
-def check_node_version(min_version):
+def check_node_version(min_version=constants.MIN_NODE_VERSION):
     """Check the version of Node.js.
 
     Args:
@@ -35,10 +35,10 @@ def check_node_version(min_version):
         result = subprocess.run(
             ["node", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        # The output will be in the form "vX.Y.Z", so we can split it on the "v" character and take the second part
-        version = result.stdout.decode().strip().split("v")[1]
+        # The output will be in the form "vX.Y.Z", but version.parse() can handle it
+        current_version = version.parse(result.stdout.decode())
         # Compare the version numbers
-        return version.split(".") >= min_version.split(".")
+        return current_version >= version.parse(min_version)
     except Exception:
         return False
 
@@ -73,7 +73,7 @@ def get_package_manager() -> str:
     config = get_config()
 
     # Check that the node version is valid.
-    if not check_node_version(constants.MIN_NODE_VERSION):
+    if not check_node_version():
         console.print(
             f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Pynecone."
         )
