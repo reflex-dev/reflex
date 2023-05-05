@@ -90,7 +90,7 @@ class EventSpec(Base):
     local_args: Tuple[Var, ...] = ()
 
     # The arguments to pass to the function.
-    args: Tuple[Tuple[Var, Var], ...] = ()
+    args: Optional[Tuple[Tuple[Var, Var], ...]] = ()
 
     # Whether to upload files.
     upload: bool = False
@@ -318,7 +318,9 @@ def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
     return events
 
 
-def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], ...]:
+def get_handler_args(
+    event_spec: EventSpec, arg: Var
+) -> Optional[Tuple[Tuple[Var, Var], ...]]:
     """Get the handler args for the given event spec.
 
     Args:
@@ -332,11 +334,12 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], 
         ValueError: If the event handler has an invalid signature.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
-    if len(args) < 2:
-        raise ValueError(
-            f"Event handler has an invalid signature, needed a method with a parameter, got {event_spec.handler}."
-        )
-    return event_spec.args if len(args) > 2 else ((Var.create_safe(args[1]), arg),)
+
+    return (
+        event_spec.args
+        if len(args) > 2
+        else (((Var.create_safe(args[1]), arg),) if len(args) == 2 else None)
+    )
 
 
 def fix_events(
