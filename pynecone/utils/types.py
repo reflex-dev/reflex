@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import typing
 from typing import Any, Callable, Tuple, Type, Union, _GenericAlias  # type: ignore
 
 from pynecone.base import Base
@@ -135,6 +136,8 @@ def is_dataframe(value: Type) -> bool:
     Returns:
         Whether the value is a dataframe.
     """
+    if is_generic_alias(value) or value == typing.Any:
+        return False
     return value.__name__ == "DataFrame"
 
 
