@@ -329,7 +329,7 @@ def format_full_control_event(event_chain: EventChain) -> str:
     from pynecone.compiler import templates
 
     event_spec = event_chain.events[0]
-    arg = event_spec.args[0][1]
+    arg = event_spec.args[0][1] if event_spec.args else None
     state_name = event_chain.state_name
     chain = ",".join([format_event(event) for event in event_chain.events])
     event = templates.FULL_CONTROL(state_name=state_name, arg=arg, chain=chain)
