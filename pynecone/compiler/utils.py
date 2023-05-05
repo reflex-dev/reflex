@@ -29,11 +29,10 @@ from pynecone.var import ImportVar
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(lib: str, fields: Set[ImportVar]) -> Tuple[str, Set[str]]:
+def compile_import_statement(fields: Set[ImportVar]) -> Tuple[str, Set[str]]:
     """Compile an import statement.
 
     Args:
-        lib: The library to import from.
         fields: The set of fields to import from the library.
 
     Returns:
@@ -63,7 +62,7 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
     """
     import_dicts = []
     for lib, fields in imports.items():
-        default, rest = compile_import_statement(lib, fields)
+        default, rest = compile_import_statement(fields)
         if not lib:
             assert not default, "No default field allowed for empty library."
             assert rest is not None and len(rest) > 0, "No fields to import."

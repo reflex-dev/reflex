@@ -8,22 +8,19 @@ from pynecone.var import ImportVar
 
 
 @pytest.mark.parametrize(
-    "lib,fields,test_default,test_rest",
+    "fields,test_default,test_rest",
     [
         (
-            "axios",
             {ImportVar(tag="axios", is_default=True)},
             "axios",
             set(),
         ),
         (
-            "axios",
             {ImportVar(tag="foo"), ImportVar(tag="bar")},
             "",
             {"foo", "bar"},
         ),
         (
-            "axios",
             {
                 ImportVar(tag="axios", is_default=True),
                 ImportVar(tag="foo"),
@@ -35,17 +32,16 @@ from pynecone.var import ImportVar
     ],
 )
 def test_compile_import_statement(
-    lib: str, fields: Set[ImportVar], test_default: str, test_rest: str
+    fields: Set[ImportVar], test_default: str, test_rest: str
 ):
     """Test the compile_import_statement function.
 
     Args:
-        lib: The library name.
         fields: The fields to import.
         test_default: The expected output of default library.
         test_rest: The expected output rest libraries.
     """
-    default, rest = utils.compile_import_statement(lib, fields)
+    default, rest = utils.compile_import_statement(fields)
     assert default == test_default
     assert rest == test_rest
 
