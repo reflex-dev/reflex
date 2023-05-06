@@ -487,7 +487,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # link dynamically created ComputedVar to this state class for dep determination
             func.__objclass__ = cls
             func.fget.__name__ = param
-            cls.computed_vars[param] = func.set_state(cls)  # type: ignore
+            cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
     def __getattribute__(self, name: str) -> Any:
