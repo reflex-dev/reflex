@@ -391,13 +391,10 @@ def test_invalid_event_handler_args(component2, test_state):
     # Controlled event handlers should take args.
     # This is okay.
     component2.create(on_open=test_state.do_something_arg)
-    # This is not okay.
-    with pytest.raises(ValueError):
-        component2.create(on_open=test_state.do_something)
-    with pytest.raises(ValueError):
-        component2.create(
-            on_open=[test_state.do_something_arg, test_state.do_something]
-        )
+
+    # do_something is allowed and will simply run while ignoring the arg
+    component2.create(on_open=test_state.do_something)
+    component2.create(on_open=[test_state.do_something_arg, test_state.do_something])
 
 
 def test_get_hooks_nested(component1, component2, component3):
