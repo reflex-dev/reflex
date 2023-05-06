@@ -273,26 +273,32 @@ class Var(ABC):
             The var attribute.
 
         Raises:
-            Exception: If the attribute is not found.
+            AttributeError: If the var is wrongly annotated or can't find attribute.
+            TypeError: If an annotation to the var isn't provided.
         """
         try:
             return super().__getattribute__(name)
         except Exception as e:
             # Check if the attribute is one of the class fields.
-            if (
-                not name.startswith("_")
-                and hasattr(self.type_, "__fields__")
-                and name in self.type_.__fields__
-            ):
-                type_ = self.type_.__fields__[name].outer_type_
-                if isinstance(type_, ModelField):
-                    type_ = type_.type_
-                return BaseVar(
-                    name=f"{self.name}.{name}",
-                    type_=type_,
-                    state=self.state,
-                )
-            raise e
+            if not name.startswith("_"):
+                if self.type_ == Any:
+                    raise TypeError(
+                        f"You must provide an annotation for the state var `{self.full_name}`. Annotation cannot be `{self.type_}`"
+                    ) from None
+                if hasattr(self.type_, "__fields__") and name in self.type_.__fields__:
+                    type_ = self.type_.__fields__[name].outer_type_
+                    if isinstance(type_, ModelField):
+                        type_ = type_.type_
+                    return BaseVar(
+                        name=f"{self.name}.{name}",
+                        type_=type_,
+                        state=self.state,
+                    )
+            raise AttributeError(
+                f"The State var `{self.full_name}` has no attribute '{name}' or may have been annotated "
+                f"wrongly.\n"
+                f"original message: {e.args[0]}"
+            ) from e
 
     def operation(
         self,
@@ -792,7 +798,7 @@ class BaseVar(Var, Base):
         return setter
 
 
-class ComputedVar(property, Var):
+class ComputedVar(Var, property):
     """A field with computed getters."""
 
     @property
