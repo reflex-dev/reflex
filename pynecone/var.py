@@ -857,6 +857,10 @@ class ComputedVar(Var, property):
 
         Returns:
             A set of variable names accessed by the given obj.
+
+        Raises:
+            RuntimeError: if this ComputedVar does not have a reference to the class
+                it is attached to. (Assign var.__objclass__ manually to workaround.)
         """
         d = set()
         if obj is None:
@@ -876,6 +880,10 @@ class ComputedVar(Var, property):
             if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
                 d.add(instruction.argval)
             elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
+                if not hasattr(self, "__objclass__"):
+                    raise RuntimeError(
+                        f"ComputedVar {self.name!r} is not bound to a State subclass.",
+                    )
                 d.update(self.deps(obj=getattr(self.__objclass__, instruction.argval)))
             self_is_top_of_stack = False
         return d

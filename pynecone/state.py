@@ -484,7 +484,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            cls.computed_vars[param] = func.set_state(cls)  # type: ignore
+            # link dynamically created ComputedVar to this state class for dep determination
+            func.__objclass__ = cls
+            func.fget.__name__ = param
+            cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
     def __getattribute__(self, name: str) -> Any:
@@ -537,7 +540,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
-        if name in self.vars:
+        if name in self.vars or name in self.computed_var_dependencies:
             self.dirty_vars.add(name)
             self.mark_dirty()
 
