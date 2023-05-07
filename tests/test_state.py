@@ -821,6 +821,26 @@ def test_dirty_computed_var_from_backend_var(interdependent_state):
     }
 
 
+def test_per_state_backend_var(interdependent_state):
+    """Set backend var on one instance, expect no affect in other instances.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    s2 = InterdependentState()
+    assert s2._v2 == interdependent_state._v2
+    interdependent_state._v2 = 2
+    assert s2._v2 != interdependent_state._v2
+    s3 = InterdependentState()
+    assert s3._v2 != interdependent_state._v2
+    # both s2 and s3 should still have the default value
+    assert s2._v2 == s3._v2
+    # changing s2._v2 should not affect others
+    s2._v2 = 4
+    assert s2._v2 != interdependent_state._v2
+    assert s2._v2 != s3._v2
+
+
 def test_child_state():
     """Test that the child state computed vars can reference parent state vars."""
 

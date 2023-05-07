@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import functools
 import traceback
 from abc import ABC
@@ -74,6 +75,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # Mapping of var name to set of computed variables that depend on it
     computed_var_dependencies: Dict[str, Set[str]] = {}
 
+    # Per-instance copy of backend variable values
+    _backend_vars: Dict[str, Any] = {}
+
     def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
         """Initialize the state.
 
@@ -105,6 +109,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Initialize the mutable fields.
         self._init_mutable_fields()
+
+        # Create a fresh copy of the backend variables for this instance
+        self._backend_vars = copy.deepcopy(self.backend_vars)
 
     def _init_mutable_fields(self):
         """Initialize mutable fields.
@@ -219,6 +226,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             "dirty_substates",
             "router_data",
             "computed_var_dependencies",
+            "_backend_vars",
         }
 
     @classmethod
@@ -511,8 +519,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         }
         if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
-        elif name in super().__getattribute__("backend_vars"):
-            return super().__getattribute__("backend_vars").__getitem__(name)
+        elif name in super().__getattribute__("_backend_vars"):
+            return super().__getattribute__("_backend_vars").__getitem__(name)
         return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any):
@@ -530,8 +538,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if types.is_backend_variable(name):
-            self.backend_vars.__setitem__(name, value)
+        if types.is_backend_variable(name) and name != "_backend_vars":
+            self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self.mark_dirty()
             return
