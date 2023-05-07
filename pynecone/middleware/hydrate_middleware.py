@@ -50,6 +50,8 @@ class HydrateMiddleware(Middleware):
             delta = format.format_state({state.get_name(): state.dict()})
             if delta:
                 updates.append(StateUpdate(delta=delta))
+            # since a full dict was captured, clean any dirtiness
+            state.clean()
 
             # then apply changes from on_load event handlers on top of that
             if load_event:
