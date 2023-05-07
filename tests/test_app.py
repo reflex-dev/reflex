@@ -5,6 +5,7 @@ from typing import List, Tuple, Type
 import pytest
 from fastapi import UploadFile
 
+from pynecone import constants
 from pynecone.app import App, DefaultState, process, upload
 from pynecone.components import Box
 from pynecone.event import Event, get_hydrate_event
@@ -123,9 +124,9 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
     assert app.state.computed_vars["dynamic"].deps(objclass=DefaultState) == {
-        "router_data"
+        constants.ROUTER_DATA
     }
-    assert "router_data" in app.state().computed_var_dependencies
+    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -611,8 +612,10 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
     assert arg_name in app.state.vars
     assert arg_name in app.state.computed_vars
-    assert app.state.computed_vars[arg_name].deps(objclass=DynamicState) == {"router_data"}
-    assert "router_data" in app.state().computed_var_dependencies
+    assert app.state.computed_vars[arg_name].deps(objclass=DynamicState) == {
+        constants.ROUTER_DATA
+    }
+    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
 
     token = "mock_token"
     sid = "mock_sid"
