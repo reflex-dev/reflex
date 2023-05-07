@@ -858,7 +858,11 @@ def test_conditional_computed_vars():
     assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
-    assert ms.computed_vars["rendered_var"].deps() == {"flag", "t1", "t2"}
+    assert ms.computed_vars["rendered_var"].deps(objclass=MainState) == {
+        "flag",
+        "t1",
+        "t2",
+    }
 
 
 def test_event_handlers_convert_to_fns(test_state, child_state):
