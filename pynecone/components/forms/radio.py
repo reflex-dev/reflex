@@ -20,6 +20,9 @@ class RadioGroup(ChakraComponent):
     # State var to bind the the input.
     value: Var[Any]
 
+    # The default value.
+    default_value: Var[Any]
+
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
