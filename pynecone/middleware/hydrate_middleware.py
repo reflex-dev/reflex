@@ -38,6 +38,8 @@ class HydrateMiddleware(Middleware):
 
         # Get the initial state.
         delta = format.format_state({state.get_name(): state.dict()})
+        # since a full dict was captured, clean any dirtiness
+        state.clean()
 
         # Get the route for on_load events.
         route = event.router_data.get(constants.RouteVar.PATH, "")
