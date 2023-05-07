@@ -542,6 +542,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             self.dirty_vars.add(name)
             self.mark_dirty()
 
+        # For now, handle router_data updates as a special case
+        if name == constants.ROUTER_DATA:
+            self.dirty_vars.add(name)
+            self.mark_dirty()
+            # propagate router_data updates down the state tree
+            for substate in self.substates.values():
+                setattr(substate, name, value)
+
     def reset(self):
         """Reset all the base vars to their default values."""
         # Reset the base vars.

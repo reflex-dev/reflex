@@ -175,6 +175,7 @@ PROCESSING = constants.PROCESSING
 SOCKET = constants.SOCKET
 STATE = constants.STATE
 EVENTS = constants.EVENTS
+HYDRATE = constants.HYDRATE
 SET_RESULT = format_state_setter(RESULT)
 READY = f"const {{ isReady }} = {ROUTER};"
 USE_EFFECT = path_ops.join(
@@ -202,6 +203,13 @@ USE_EFFECT = path_ops.join(
         "  }}",
         "  update()",
         "}})",
+        "useEffect(() => {{",
+        f"  const change_complete = () => Event([E('{{state}}.{HYDRATE}', {{{{}}}})])",
+        f"  {ROUTER}.events.on('routeChangeComplete', change_complete)",
+        "  return () => {{",
+        f"    {ROUTER}.events.off('routeChangeComplete', change_complete)",
+        "  }}",
+        f"}}}}, [{ROUTER}])",
     ]
 ).format
 
