@@ -105,6 +105,25 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     assert set(app.pages.keys()) == {"test"}
 
 
+def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool):
+    """Test adding a page with dynamic route variable to an app.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+    """
+    route = "/test/[dynamic]"
+    if windows_platform:
+        route.lstrip("/").replace("/", "\\")
+    assert app.pages == {}
+    app.add_page(index_page, route=route)
+    assert set(app.pages.keys()) == {"test/[dynamic]"}
+    assert "dynamic" in app.state.computed_vars
+    assert app.state.computed_vars["dynamic"].deps() == {"router_data"}
+    assert "router_data" in app.state().computed_var_dependencies
+
+
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
     """Test adding a page to an app.
 

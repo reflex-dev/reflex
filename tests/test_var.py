@@ -1,10 +1,12 @@
+import typing
 from typing import Dict, List
 
 import cloudpickle
 import pytest
 
 from pynecone.base import Base
-from pynecone.var import BaseVar, ImportVar, PCDict, PCList, Var
+from pynecone.state import State
+from pynecone.var import BaseVar, ComputedVar, ImportVar, PCDict, PCList, Var
 
 test_vars = [
     BaseVar(name="prop1", type_=int),
@@ -24,6 +26,69 @@ def TestObj():
         bar: str
 
     return TestObj
+
+
+@pytest.fixture
+def ParentState(TestObj):
+    class ParentState(State):
+        foo: int
+        bar: int
+
+        @ComputedVar
+        def var_without_annotation(self):
+            return TestObj
+
+    return ParentState
+
+
+@pytest.fixture
+def ChildState(ParentState, TestObj):
+    class ChildState(ParentState):
+        @ComputedVar
+        def var_without_annotation(self):
+            return TestObj
+
+    return ChildState
+
+
+@pytest.fixture
+def GrandChildState(ChildState, TestObj):
+    class GrandChildState(ChildState):
+        @ComputedVar
+        def var_without_annotation(self):
+            return TestObj
+
+    return GrandChildState
+
+
+@pytest.fixture
+def StateWithAnyVar(TestObj):
+    class StateWithAnyVar(State):
+        @ComputedVar
+        def var_without_annotation(self) -> typing.Any:
+            return TestObj
+
+    return StateWithAnyVar
+
+
+@pytest.fixture
+def StateWithCorrectVarAnnotation():
+    class StateWithCorrectVarAnnotation(State):
+        @ComputedVar
+        def var_with_annotation(self) -> str:
+            return "Correct annotation"
+
+    return StateWithCorrectVarAnnotation
+
+
+@pytest.fixture
+def StateWithWrongVarAnnotation(TestObj):
+    class StateWithWrongVarAnnotation(State):
+        @ComputedVar
+        def var_with_annotation(self) -> str:
+            return TestObj
+
+    return StateWithWrongVarAnnotation
 
 
 @pytest.mark.parametrize(
@@ -227,6 +292,68 @@ def test_dict_indexing():
     # Check correct indexing.
     assert str(dct["a"]) == '{dct["a"]}'
     assert str(dct["asdf"]) == '{dct["asdf"]}'
+
+
+@pytest.mark.parametrize(
+    "fixture,full_name",
+    [
+        ("ParentState", "parent_state.var_without_annotation"),
+        ("ChildState", "parent_state.child_state.var_without_annotation"),
+        (
+            "GrandChildState",
+            "parent_state.child_state.grand_child_state.var_without_annotation",
+        ),
+        ("StateWithAnyVar", "state_with_any_var.var_without_annotation"),
+    ],
+)
+def test_computed_var_without_annotation_error(request, fixture, full_name):
+    """Test that a type error is thrown when an attribute of a computed var is
+    accessed without annotating the computed var.
+
+    Args:
+        request: Fixture Request.
+        fixture: The state fixture.
+        full_name: The full name of the state var.
+    """
+    with pytest.raises(TypeError) as err:
+        state = request.getfixturevalue(fixture)
+        state.var_without_annotation.foo
+    assert (
+        err.value.args[0]
+        == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
+    )
+
+
+@pytest.mark.parametrize(
+    "fixture,full_name",
+    [
+        (
+            "StateWithCorrectVarAnnotation",
+            "state_with_correct_var_annotation.var_with_annotation",
+        ),
+        (
+            "StateWithWrongVarAnnotation",
+            "state_with_wrong_var_annotation.var_with_annotation",
+        ),
+    ],
+)
+def test_computed_var_with_annotation_error(request, fixture, full_name):
+    """Test that an Attribute error is thrown when a non-existent attribute of an annotated computed var is
+    accessed or when the wrong annotation is provided to a computed var.
+
+    Args:
+        request: Fixture Request.
+        fixture: The state fixture.
+        full_name: The full name of the state var.
+    """
+    with pytest.raises(AttributeError) as err:
+        state = request.getfixturevalue(fixture)
+        state.var_with_annotation.foo
+    assert (
+        err.value.args[0]
+        == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly.\n"
+        f"original message: 'ComputedVar' object has no attribute 'foo'"
+    )
 
 
 def test_pickleable_pc_list():
