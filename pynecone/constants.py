@@ -106,6 +106,8 @@ STATE = "state"
 EVENTS = "events"
 # The name of the initial hydrate event.
 HYDRATE = "hydrate"
+# The name of the is_hydrated variable.
+IS_HYDRATED = "is_hydrated"
 # The name of the index page.
 INDEX_ROUTE = "index"
 # The name of the document root page.

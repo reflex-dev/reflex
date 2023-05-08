@@ -23,7 +23,7 @@ class Event(Base):
     router_data: Dict[str, Any] = {}
 
     # The event payload.
-    payload: Dict[Any, Any] = {}
+    payload: Dict[str, Any] = {}
 
 
 class EventHandler(Base):
@@ -90,7 +90,7 @@ class EventSpec(Base):
     local_args: Tuple[Var, ...] = ()
 
     # The arguments to pass to the function.
-    args: Optional[Tuple[Tuple[Var, Var], ...]] = ()
+    args: Tuple[Tuple[Var, Var], ...] = ()
 
     # Whether to upload files.
     upload: bool = False
@@ -318,9 +318,7 @@ def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
     return events
 
 
-def get_handler_args(
-    event_spec: EventSpec, arg: Var
-) -> Optional[Tuple[Tuple[Var, Var], ...]]:
+def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], ...]:
     """Get the handler args for the given event spec.
 
     Args:
@@ -335,7 +333,7 @@ def get_handler_args(
     return (
         event_spec.args
         if len(args) > 2
-        else (((Var.create_safe(args[1]), arg),) if len(args) == 2 else None)
+        else (((Var.create_safe(args[1]), arg),) if len(args) == 2 else tuple())
     )
 
 
@@ -369,7 +367,7 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        payload = {k.name: v.name for k, v in e.args} if e.args else {}
+        payload = {k.name: v.name for k, v in e.args}
 
         # Create an event and append it to the list.
         out.append(

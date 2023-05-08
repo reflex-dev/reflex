@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from pynecone.base import Base
 from pynecone.event import Event
-from pynecone.state import Delta, State, StateUpdate
+from pynecone.state import State, StateUpdate
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -17,7 +17,7 @@ class Middleware(Base, ABC):
 
     async def preprocess(
         self, app: App, state: State, event: Event
-    ) -> Optional[Union[StateUpdate, List[StateUpdate]]]:
+    ) -> Optional[StateUpdate]:
         """Preprocess the event.
 
         Args:
@@ -26,22 +26,22 @@ class Middleware(Base, ABC):
             event: The event to preprocess.
 
         Returns:
-            An optional state to return.
+            An optional state update to return.
         """
         return None
 
     async def postprocess(
-        self, app: App, state: State, event: Event, delta
-    ) -> Optional[Delta]:
+        self, app: App, state: State, event: Event, update: StateUpdate
+    ) -> StateUpdate:
         """Postprocess the event.
 
         Args:
             app: The app.
             state: The client state.
             event: The event to postprocess.
-            delta: The delta to postprocess.
+            update: The current state update.
 
         Returns:
             An optional state to return.
         """
-        return None
+        return update
