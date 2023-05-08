@@ -458,14 +458,14 @@ async def process(
 
     # Preprocess the event.
     update = await app.preprocess(state, event)
-    if update is not None:
-        return update
 
-    # Apply the event to the state.
-    update = await state._process(event)
+    # Only process the event if there is no update.
+    if update is None:
+        # Apply the event to the state.
+        update = await state._process(event)
 
-    # Postprocess the event.
-    update = await app.postprocess(state, event, update)
+        # Postprocess the event.
+        update = await app.postprocess(state, event, update)
 
     # Update the state.
     app.state_manager.set_state(event.token, state)

@@ -288,7 +288,9 @@ def format_event(event_spec: EventSpec) -> str:
     """
     args = ",".join(
         [
-            ":".join((name.name, json.dumps(val.name) if val.is_string else val.full_name))
+            ":".join(
+                (name.name, json.dumps(val.name) if val.is_string else val.full_name)
+            )
             for name, val in event_spec.args
         ]
     )
