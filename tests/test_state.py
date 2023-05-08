@@ -4,9 +4,8 @@ import pytest
 from plotly.graph_objects import Figure
 
 from pynecone.base import Base
-from pynecone.constants import RouteVar
+from pynecone.constants import IS_HYDRATED, RouteVar
 from pynecone.event import Event, EventHandler
-from pynecone.middleware.hydrate_middleware import IS_HYDRATED
 from pynecone.state import State
 from pynecone.utils import format
 from pynecone.var import BaseVar, ComputedVar

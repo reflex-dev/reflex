@@ -3,7 +3,8 @@ from typing import Any, Dict
 import pytest
 
 from pynecone.app import App
-from pynecone.middleware.hydrate_middleware import IS_HYDRATED, HydrateMiddleware
+from pynecone.constants import IS_HYDRATED
+from pynecone.middleware.hydrate_middleware import HydrateMiddleware
 from pynecone.state import State, StateUpdate
 
 
@@ -102,12 +103,16 @@ async def test_preprocess(State, hydrate_middleware, request, event_fixture, exp
     )
     assert isinstance(update, StateUpdate)
     assert update.delta == {state.get_name(): state.dict()}
-    assert len(update.events) == 1
+    events = update.events
+    assert len(events) == 2
 
-    # Apply the event.
-    update = await state._process(update.events[0])
+    # Apply the on_load event.
+    update = await state._process(events[0])
     assert update.delta == expected
-    # assert result[2].delta == exp_is_hydrated(state())
+
+    # Apply the hydrate event.
+    update = await state._process(events[1])
+    assert update.delta == exp_is_hydrated(state)
 
 
 @pytest.mark.asyncio
@@ -127,16 +132,18 @@ async def test_preprocess_multiple_load_events(hydrate_middleware, event1):
     update = await hydrate_middleware.preprocess(app=app, event=event1, state=state)
     assert isinstance(update, StateUpdate)
     assert update.delta == {"test_state": state.dict()}
-    assert len(update.events) == 2
+    assert len(update.events) == 3
 
     # Apply the events.
-    e1, e2 = update.events
-    update = await state._process(e1)
+    events = update.events
+    update = await state._process(events[0])
     assert update.delta == {"test_state": {"num": 1}}
 
-    update = await state._process(e2)
+    update = await state._process(events[1])
     assert update.delta == {"test_state": {"num": 2}}
-    # assert result[3].delta == exp_is_hydrated(TestState())
+
+    update = await state._process(events[2])
+    assert update.delta == exp_is_hydrated(state)
 
 
 @pytest.mark.asyncio
@@ -147,11 +154,16 @@ async def test_preprocess_no_events(hydrate_middleware, event1):
         hydrate_middleware: instance of HydrateMiddleware
         event1: an Event.
     """
+    state = TestState()
     update = await hydrate_middleware.preprocess(
         app=App(state=TestState),
         event=event1,
-        state=TestState(),
+        state=state,
     )
     assert isinstance(update, StateUpdate)
-    assert update.delta == {"test_state": TestState().dict()}
-    # assert result[1].delta == exp_is_hydrated(TestState())
+    assert update.delta == {"test_state": state.dict()}
+    assert len(update.events) == 1
+    assert isinstance(update, StateUpdate)
+
+    update = await state._process(update.events[0])
+    assert update.delta == exp_is_hydrated(state)

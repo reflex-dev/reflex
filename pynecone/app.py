@@ -459,7 +459,6 @@ async def process(
     # Preprocess the event.
     update = await app.preprocess(state, event)
     if update is not None:
-        print("preprocess", update)
         return update
 
     # Apply the event to the state.

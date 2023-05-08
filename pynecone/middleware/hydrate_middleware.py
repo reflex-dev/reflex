@@ -35,10 +35,20 @@ class HydrateMiddleware(Middleware):
         Returns:
             An optional delta or list of state updates to return.
         """
+        # If this is not the hydrate event, return None
         if event.name != get_hydrate_event(state):
             return None
+
+        # Get the initial state.
+        delta = format.format_state({state.get_name(): state.dict()})
+
+        # Get the route for on_load events.
         route = event.router_data.get(constants.RouteVar.PATH, "")
-        return StateUpdate(
-            delta=format.format_state({state.get_name(): state.dict()}),
-            events=fix_events(app.get_load_events(route), event.token),  # type: ignore
-        )
+
+        # Add the on_load events and set is_hydrated to True.
+        events = [*app.get_load_events(route), type(state).set_is_hydrated(True)]  # type: ignore
+        events = fix_events(events, event.token)
+        # breakpoint()
+
+        # Return the state update.
+        return StateUpdate(delta=delta, events=events)
