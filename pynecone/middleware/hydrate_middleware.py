@@ -13,10 +13,7 @@ if TYPE_CHECKING:
     from pynecone.app import App
 
 
-IS_HYDRATED = "is_hydrated"
-
-
-State.add_var(IS_HYDRATED, type_=bool, default_value=False)
+State.add_var(constants.IS_HYDRATED, type_=bool, default_value=False)
 
 
 class HydrateMiddleware(Middleware):

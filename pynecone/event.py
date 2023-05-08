@@ -23,7 +23,7 @@ class Event(Base):
     router_data: Dict[str, Any] = {}
 
     # The event payload.
-    payload: Dict[Any, Any] = {}
+    payload: Dict[str, Any] = {}
 
 
 class EventHandler(Base):
@@ -367,7 +367,7 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        payload = {k.name: v for k, v in e.args}
+        payload = {k.name: v.name for k, v in e.args}
 
         # Create an event and append it to the list.
         out.append(
