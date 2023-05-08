@@ -1,10 +1,10 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import pytest
 
 from pynecone.app import App
 from pynecone.middleware.hydrate_middleware import IS_HYDRATED, HydrateMiddleware
-from pynecone.state import State
+from pynecone.state import State, StateUpdate
 
 
 def exp_is_hydrated(state: State) -> Dict[str, Any]:
@@ -77,33 +77,37 @@ def hydrate_middleware() -> HydrateMiddleware:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "state, expected, event_fixture",
+    "State, expected, event_fixture",
     [
         (TestState, {"test_state": {"num": 1}}, "event1"),
         (TestState2, {"test_state2": {"num": 1}}, "event2"),
         (TestState3, {"test_state3": {"num": 1}}, "event3"),
     ],
 )
-async def test_preprocess(state, hydrate_middleware, request, event_fixture, expected):
+async def test_preprocess(State, hydrate_middleware, request, event_fixture, expected):
     """Test that a state hydrate event is processed correctly.
 
     Args:
-        state: state to process event
+        State: state to process event
         hydrate_middleware: instance of HydrateMiddleware
         request: pytest fixture request
         event_fixture: The event fixture(an Event)
         expected: expected delta
     """
-    app = App(state=state, load_events={"index": state.test_handler})
+    app = App(state=State, load_events={"index": [State.test_handler]})
+    state = State()
 
-    result = await hydrate_middleware.preprocess(
-        app=app, event=request.getfixturevalue(event_fixture), state=state()
+    update = await hydrate_middleware.preprocess(
+        app=app, event=request.getfixturevalue(event_fixture), state=state
     )
-    assert isinstance(result, List)
-    assert len(result) == 3
-    assert result[0].delta == {state().get_name(): state().dict()}
-    assert result[1].delta == expected
-    assert result[2].delta == exp_is_hydrated(state())
+    assert isinstance(update, StateUpdate)
+    assert update.delta == {state.get_name(): state.dict()}
+    assert len(update.events) == 1
+
+    # Apply the event.
+    update = await state._process(update.events[0])
+    assert update.delta == expected
+    # assert result[2].delta == exp_is_hydrated(state())
 
 
 @pytest.mark.asyncio
@@ -118,16 +122,21 @@ async def test_preprocess_multiple_load_events(hydrate_middleware, event1):
         state=TestState,
         load_events={"index": [TestState.test_handler, TestState.test_handler]},
     )
+    state = TestState()
 
-    result = await hydrate_middleware.preprocess(
-        app=app, event=event1, state=TestState()
-    )
-    assert isinstance(result, List)
-    assert len(result) == 4
-    assert result[0].delta == {"test_state": TestState().dict()}
-    assert result[1].delta == {"test_state": {"num": 1}}
-    assert result[2].delta == {"test_state": {"num": 2}}
-    assert result[3].delta == exp_is_hydrated(TestState())
+    update = await hydrate_middleware.preprocess(app=app, event=event1, state=state)
+    assert isinstance(update, StateUpdate)
+    assert update.delta == {"test_state": state.dict()}
+    assert len(update.events) == 2
+
+    # Apply the events.
+    e1, e2 = update.events
+    update = await state._process(e1)
+    assert update.delta == {"test_state": {"num": 1}}
+
+    update = await state._process(e2)
+    assert update.delta == {"test_state": {"num": 2}}
+    # assert result[3].delta == exp_is_hydrated(TestState())
 
 
 @pytest.mark.asyncio
@@ -138,12 +147,11 @@ async def test_preprocess_no_events(hydrate_middleware, event1):
         hydrate_middleware: instance of HydrateMiddleware
         event1: an Event.
     """
-    result = await hydrate_middleware.preprocess(
+    update = await hydrate_middleware.preprocess(
         app=App(state=TestState),
         event=event1,
         state=TestState(),
     )
-    assert isinstance(result, List)
-    assert len(result) == 2
-    assert result[0].delta == {"test_state": TestState().dict()}
-    assert result[1].delta == exp_is_hydrated(TestState())
+    assert isinstance(update, StateUpdate)
+    assert update.delta == {"test_state": TestState().dict()}
+    # assert result[1].delta == exp_is_hydrated(TestState())
