@@ -104,7 +104,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         self.computed_var_dependencies = defaultdict(set)
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
-            for var in cvar.deps():
+            for var in cvar.deps(objclass=type(self)):
                 self.computed_var_dependencies[var].add(cvar_name)
 
         # Initialize the mutable fields.
@@ -492,9 +492,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            # link dynamically created ComputedVar to this state class for dep determination
-            func.__objclass__ = cls
-            func.fget.__name__ = param
+            func.fget.__name__ = param  # to allow passing as a prop
             cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
             setattr(cls, param, func)
 

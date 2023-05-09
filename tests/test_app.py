@@ -120,7 +120,9 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"].deps() == {"router_data"}
+    assert app.state.computed_vars["dynamic"].deps(objclass=DefaultState) == {
+        "router_data"
+    }
     assert "router_data" in app.state().computed_var_dependencies
 
 
