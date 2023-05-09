@@ -660,15 +660,20 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
-        dirty_vars = self.dirty_vars
-        while dirty_vars:
-            calc_vars, dirty_vars = dirty_vars, set()
-            for cvar in self._dirty_computed_vars(from_vars=calc_vars):
-                self.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
-                actual_var = self.computed_vars.get(cvar)
-                if actual_var:
-                    actual_var.mark_dirty(instance=self)
+        # Mark all ComputedVars as dirty.
+        for cvar in self.computed_vars.values():
+            cvar.mark_dirty(instance=self)
+
+        # TODO: Uncomment the actual implementation below.
+        # dirty_vars = self.dirty_vars
+        # while dirty_vars:
+        #     calc_vars, dirty_vars = dirty_vars, set()
+        #     for cvar in self._dirty_computed_vars(from_vars=calc_vars):
+        #         self.dirty_vars.add(cvar)
+        #         dirty_vars.add(cvar)
+        #         actual_var = self.computed_vars.get(cvar)
+        #         if actual_var:
+        #             actual_var.mark_dirty(instance=self)
 
     def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
@@ -679,11 +684,13 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
-            cvar
-            for dirty_var in from_vars or self.dirty_vars
-            for cvar in self.computed_var_dependencies[dirty_var]
-        )
+        return set(self.computed_vars)
+        # TODO: Uncomment the actual implementation below.
+        # return set(
+        #     cvar
+        #     for dirty_var in from_vars or self.dirty_vars
+        #     for cvar in self.computed_var_dependencies[dirty_var]
+        # )
 
     def get_delta(self) -> Delta:
         """Get the delta for the state.
@@ -699,6 +706,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             delta.update(substates[substate].get_delta())
 
         # Return the dirty vars and dependent computed vars
+        self._mark_dirty_computed_vars()
         delta_vars = self.dirty_vars.intersection(self.base_vars).union(
             self._dirty_computed_vars()
         )
