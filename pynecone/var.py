@@ -5,6 +5,7 @@ import contextlib
 import dis
 import json
 import random
+import re
 import string
 from abc import ABC
 from types import FunctionType
@@ -179,8 +180,14 @@ class Var(ABC):
             The wrapped var, i.e. {state.var}.
         """
         out = self.full_name if self.is_local else format.wrap(self.full_name, "{")
+
+        # Python to JS strings interpolation
+        if self.state != "" and types._issubclass(self.type_, str):
+            out = out.replace("{", "${")
+
         if self.is_string:
             out = format.format_string(out)
+
         return out
 
     def __getitem__(self, i: Any) -> Var:

@@ -167,6 +167,7 @@ def format_string(string: str) -> str:
     Returns:
         The formatted string.
     """
+
     # Escape backticks.
     string = string.replace(r"\`", "`")
     string = string.replace("`", r"\`")
