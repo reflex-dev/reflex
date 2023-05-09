@@ -37,6 +37,7 @@ class PyneconeJinjaEnvironment(Environment):
             "color_mode": constants.COLOR_MODE,
             "toggle_color_mode": constants.TOGGLE_COLOR_MODE,
             "use_color_mode": constants.USE_COLOR_MODE,
+            "hydrate": constants.HYDRATE,
         }
 
 
