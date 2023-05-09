@@ -7,7 +7,7 @@ from pynecone.components.component import Component
 from pynecone.components.layout.fragment import Fragment
 from pynecone.components.tags import CondTag, Tag
 from pynecone.utils import format
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class Cond(Component):
@@ -93,7 +93,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         ValueError: If the arguments are invalid.
     """
     # Import here to avoid circular imports.
-    from pynecone.var import BaseVar, Var
+    from pynecone.vars import BaseVar, Var
 
     # Convert the condition to a Var.
     cond_var = Var.create(condition)

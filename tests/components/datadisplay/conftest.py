@@ -36,7 +36,7 @@ def data_table_state2():
     class DataTableState(pc.State):
         _data = pd.DataFrame()
 
-        @pc.var  # type: ignore
+        @pc.vars  # type: ignore
         def data(self):
             return self._data
 
@@ -55,11 +55,11 @@ def data_table_state3():
         _data: List = []
         _columns: List = ["col1", "col2"]
 
-        @pc.var  # type: ignore
+        @pc.vars  # type: ignore
         def data(self) -> List:
             return self._data
 
-        @pc.var  # type: ignore
+        @pc.vars  # type: ignore
         def columns(self):
             return self._columns
 
@@ -78,11 +78,11 @@ def data_table_state4():
         _data: List = []
         _columns: List = ["col1", "col2"]
 
-        @pc.var  # type: ignore
+        @pc.vars  # type: ignore
         def data(self):
             return self._data
 
-        @pc.var  # type: ignore
+        @pc.vars  # type: ignore
         def columns(self) -> List:
             return self._columns
 

@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 from pynecone import constants
 from pynecone.base import Base
 from pynecone.utils import format
-from pynecone.var import BaseVar, Var
+from pynecone.vars import BaseVar, Var
 
 
 class Event(Base):

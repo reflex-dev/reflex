@@ -8,7 +8,7 @@ from pynecone.constants import IS_HYDRATED, RouteVar
 from pynecone.event import Event, EventHandler
 from pynecone.state import State
 from pynecone.utils import format
-from pynecone.var import BaseVar, ComputedVar
+from pynecone.vars import BaseVar, ComputedVar
 
 
 class Object(Base):

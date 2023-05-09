@@ -4,7 +4,7 @@ import pytest
 
 from pynecone.compiler import utils
 from pynecone.utils import imports
-from pynecone.var import ImportVar
+from pynecone.vars import ImportVar
 
 
 @pytest.mark.parametrize(

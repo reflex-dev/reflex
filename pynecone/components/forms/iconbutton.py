@@ -1,7 +1,7 @@
 """An icon button component."""
 
 from pynecone.components.typography.text import Text
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class IconButton(Text):

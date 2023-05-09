@@ -1,7 +1,7 @@
 """A AspectRatio component."""
 
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class AspectRatio(ChakraComponent):

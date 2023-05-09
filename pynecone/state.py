@@ -28,7 +28,7 @@ from pynecone import constants
 from pynecone.base import Base
 from pynecone.event import Event, EventHandler, fix_events, window_alert
 from pynecone.utils import format, prerequisites, types
-from pynecone.var import BaseVar, ComputedVar, PCDict, PCList, Var
+from pynecone.vars import BaseVar, ComputedVar, PCDict, PCList, Var
 
 Delta = Dict[str, Any]
 

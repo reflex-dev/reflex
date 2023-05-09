@@ -5,7 +5,7 @@ from typing import Any, Callable, List
 
 from pynecone.components.component import Component
 from pynecone.components.tags import IterTag
-from pynecone.var import BaseVar, Var, get_unique_variable_name
+from pynecone.vars import BaseVar, Var, get_unique_variable_name
 
 
 class Foreach(Component):

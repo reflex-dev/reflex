@@ -7,7 +7,7 @@ import pynecone as pc
 from pynecone.components.layout.cond import Cond, cond
 from pynecone.components.layout.fragment import Fragment
 from pynecone.components.typography.text import Text
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 @pytest.fixture

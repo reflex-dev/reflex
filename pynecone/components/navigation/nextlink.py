@@ -1,7 +1,7 @@
 """A link component."""
 
 from pynecone.components.component import Component
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class NextLink(Component):

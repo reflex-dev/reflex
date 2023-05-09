@@ -4,7 +4,7 @@ from typing import Any, List, Union
 import pytest
 
 from pynecone.utils import build, format, imports, prerequisites, types
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 @pytest.mark.parametrize(

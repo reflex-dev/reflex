@@ -6,7 +6,7 @@ from pynecone.components.component import EVENT_ARG, Component
 from pynecone.components.forms.input import Input
 from pynecone.components.layout.box import Box
 from pynecone.event import EventChain
-from pynecone.var import BaseVar, Var
+from pynecone.vars import BaseVar, Var
 
 upload_file = BaseVar(name="e => File(e)", type_=EventChain)
 

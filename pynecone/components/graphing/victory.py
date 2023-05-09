@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pynecone.components.component import Component
 from pynecone.style import Style
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 def format_xy(x: List, y: List) -> List:

@@ -4,7 +4,7 @@ import pytest
 
 from pynecone.components.tags import CondTag, Tag
 from pynecone.event import EVENT_ARG, EventChain, EventHandler, EventSpec
-from pynecone.var import BaseVar, Var
+from pynecone.vars import BaseVar, Var
 
 
 def mock_event(arg):

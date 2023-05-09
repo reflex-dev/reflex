@@ -5,7 +5,7 @@ from typing import List, Union
 
 from pynecone.components.component import Component
 from pynecone.utils import types
-from pynecone.var import BaseVar, ImportVar, Var
+from pynecone.vars import BaseVar, ImportVar, Var
 
 
 class Markdown(Component):

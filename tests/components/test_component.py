@@ -9,7 +9,7 @@ from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
 from pynecone.style import Style
 from pynecone.utils import imports
-from pynecone.var import ImportVar, Var
+from pynecone.vars import ImportVar, Var
 
 
 @pytest.fixture

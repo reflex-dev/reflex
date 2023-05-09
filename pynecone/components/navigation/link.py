@@ -3,7 +3,7 @@
 from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.navigation.nextlink import NextLink
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class Link(ChakraComponent):
