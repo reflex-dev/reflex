@@ -24,7 +24,7 @@ from pynecone.route import (
     get_route_args,
     verify_route_validity,
 )
-from pynecone.state import DefaultState, Delta, State, StateManager, StateUpdate
+from pynecone.state import DefaultState, State, StateManager, StateUpdate
 from pynecone.utils import format, types
 
 # Define custom types.
@@ -62,8 +62,8 @@ class App(Base):
     # Middleware to add to the app.
     middleware: List[Middleware] = []
 
-    # Event handlers to trigger when a page loads.
-    load_events: Dict[str, Union[EventHandler, List[EventHandler]]] = {}
+    # List of event handlers to trigger when a page loads.
+    load_events: Dict[str, List[EventHandler]] = {}
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -149,16 +149,14 @@ class App(Base):
             allow_origins=["*"],
         )
 
-    async def preprocess(
-        self, state: State, event: Event
-    ) -> Optional[Union[StateUpdate, List[StateUpdate]]]:
+    async def preprocess(self, state: State, event: Event) -> Optional[StateUpdate]:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
         Each middleware is called in the order it was added to the app.
 
-        If a middleware returns a delta, the event is not processed and the
-        delta is returned.
+        If a middleware returns an update, the event is not processed and the
+        update is returned.
 
         Args:
             state: The state to preprocess.
@@ -176,35 +174,33 @@ class App(Base):
                 return out  # type: ignore
 
     async def postprocess(
-        self, state: State, event: Event, delta: Delta
-    ) -> Optional[Delta]:
+        self, state: State, event: Event, update: StateUpdate
+    ) -> StateUpdate:
         """Postprocess the event.
 
         This is where middleware can modify the delta after it is processed.
         Each middleware is called in the order it was added to the app.
 
-        If a middleware returns a delta, the delta is not processed and the
-        delta is returned.
-
         Args:
             state: The state to postprocess.
             event: The event to postprocess.
-            delta: The delta to postprocess.
+            update: The current state update.
 
         Returns:
-            An optional state to return.
+            The state update to return.
         """
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
-                    app=self, state=state, event=event, delta=delta
+                    app=self, state=state, event=event, update=update
                 )
             else:
                 out = middleware.postprocess(
-                    app=self, state=state, event=event, delta=delta
+                    app=self, state=state, event=event, update=update
                 )
             if out is not None:
                 return out  # type: ignore
+        return update
 
     def add_middleware(self, middleware: Middleware, index: Optional[int] = None):
         """Add middleware to the app.
@@ -289,8 +285,25 @@ class App(Base):
         self._check_routes_conflict(route)
         self.pages[route] = component
 
+        # Add the load events.
         if on_load:
+            if not isinstance(on_load, list):
+                on_load = [on_load]
             self.load_events[route] = on_load
+
+    def get_load_events(self, route: str) -> List[EventHandler]:
+        """Get the load events for a route.
+
+        Args:
+            route: The route to get the load events for.
+
+        Returns:
+            The load events for the route.
+        """
+        route = route.lstrip("/")
+        if route == "":
+            route = constants.INDEX_ROUTE
+        return self.load_events.get(route, [])
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
@@ -411,7 +424,7 @@ class App(Base):
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
-) -> List[StateUpdate]:
+) -> StateUpdate:
     """Process an event.
 
     Args:
@@ -444,27 +457,21 @@ async def process(
         substate.router_data = state.router_data
 
     # Preprocess the event.
-    pre = await app.preprocess(state, event)
-    if isinstance(pre, StateUpdate):
-        return [pre]
-    updates = pre
+    update = await app.preprocess(state, event)
 
-    # Apply the event to the state.
-    if updates is None:
-        updates = [await state._process(event)]
-        app.state_manager.set_state(event.token, state)
+    # Only process the event if there is no update.
+    if update is None:
+        # Apply the event to the state.
+        update = await state._process(event)
 
-    # Postprocess the event.
-    post_list = []
-    for update in updates:
-        post = await app.postprocess(state, event, update.delta)  # type: ignore
-        post_list.append(post) if post else None
+        # Postprocess the event.
+        update = await app.postprocess(state, event, update)
 
-    if len(post_list) > 0:
-        return [StateUpdate(delta=post) for post in post_list]
+    # Update the state.
+    app.state_manager.set_state(event.token, state)
 
-    # Return the updates.
-    return updates
+    # Return the update.
+    return update
 
 
 async def ping() -> str:
@@ -598,11 +605,10 @@ class EventNamespace(AsyncNamespace):
         client_ip = environ["REMOTE_ADDR"]
 
         # Process the events.
-        updates = await process(self.app, event, sid, headers, client_ip)
+        update = await process(self.app, event, sid, headers, client_ip)
 
         # Emit the event.
-        for update in updates:
-            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
+        await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.

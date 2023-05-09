@@ -15,7 +15,7 @@ PACKAGE_NAME = "pynecone"
 # The current version of Pynecone.
 VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
-MIN_NODE_VERSION = "12.22.0"
+MIN_NODE_VERSION = "16.6.0"
 
 # Valid bun versions.
 MIN_BUN_VERSION = "0.5.8"
@@ -33,6 +33,8 @@ TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, ".templates")
 WEB_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "web")
 # The assets subdirectory of the template directory.
 ASSETS_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, APP_ASSETS_DIR)
+# The jinja template directory.
+JINJA_TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, "templates")
 
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.
@@ -71,7 +73,7 @@ API_URL = "http://localhost:8000"
 # The default path where bun is installed.
 BUN_PATH = "$HOME/.bun/bin/bun"
 # Command to install bun.
-INSTALL_BUN = "curl -fsSL https://bun.sh/install | bash -s -- bun-v0.5.9"
+INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
 # Default host in dev mode.
 BACKEND_HOST = "0.0.0.0"
 # The default timeout when launching the gunicorn server.
@@ -106,6 +108,8 @@ STATE = "state"
 EVENTS = "events"
 # The name of the initial hydrate event.
 HYDRATE = "hydrate"
+# The name of the is_hydrated variable.
+IS_HYDRATED = "is_hydrated"
 # The name of the index page.
 INDEX_ROUTE = "index"
 # The name of the document root page.

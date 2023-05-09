@@ -15,7 +15,7 @@ class Select(ChakraComponent):
 
     tag = "Select"
 
-    # State var to bind the the select.
+    # State var to bind the select.
     value: Var[str]
 
     # The default value of the select.

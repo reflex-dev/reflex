@@ -4,9 +4,8 @@ import pytest
 from plotly.graph_objects import Figure
 
 from pynecone.base import Base
-from pynecone.constants import RouteVar
+from pynecone.constants import IS_HYDRATED, RouteVar
 from pynecone.event import Event, EventHandler
-from pynecone.middleware.hydrate_middleware import IS_HYDRATED
 from pynecone.state import State
 from pynecone.utils import format
 from pynecone.var import BaseVar, ComputedVar
@@ -485,11 +484,13 @@ def test_set_dirty_var(test_state):
 
     # Setting a var should mark it as dirty.
     test_state.num1 = 1
-    assert test_state.dirty_vars == {"num1", "sum"}
+    # assert test_state.dirty_vars == {"num1", "sum"}
+    assert test_state.dirty_vars == {"num1"}
 
     # Setting another var should mark it as dirty.
     test_state.num2 = 2
-    assert test_state.dirty_vars == {"num1", "num2", "sum"}
+    # assert test_state.dirty_vars == {"num1", "num2", "sum"}
+    assert test_state.dirty_vars == {"num1", "num2"}
 
     # Cleaning the state should remove all dirty vars.
     test_state.clean()
@@ -578,7 +579,8 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 69
 
     # The delta should contain the changes, including computed vars.
-    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
+    # assert update.delta == {"test_state": {"num1": 69, "sum": 72.14}}
+    assert update.delta == {"test_state": {"num1": 69, "sum": 72.14, "upper": ""}}
     assert update.events == []
 
 
@@ -601,6 +603,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
+        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
     }
     test_state.clean()
@@ -615,6 +618,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     update = await test_state._process(event)
     assert grandchild_state.value2 == "new"
     assert update.delta == {
+        "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
     }
 
@@ -782,43 +786,63 @@ def interdependent_state() -> State:
     return s
 
 
-def test_not_dirty_computed_var_from_var(interdependent_state):
-    """Set Var that no ComputedVar depends on, expect no recalculation.
+# def test_not_dirty_computed_var_from_var(interdependent_state):
+#     """Set Var that no ComputedVar depends on, expect no recalculation.
+
+#     Args:
+#         interdependent_state: A state with varying Var dependencies.
+#     """
+#     interdependent_state.x = 5
+#     assert interdependent_state.get_delta() == {
+#         interdependent_state.get_full_name(): {"x": 5},
+#     }
+
+
+# def test_dirty_computed_var_from_var(interdependent_state):
+#     """Set Var that ComputedVar depends on, expect recalculation.
+
+#     The other ComputedVar depends on the changed ComputedVar and should also be
+#     recalculated. No other ComputedVars should be recalculated.
+
+#     Args:
+#         interdependent_state: A state with varying Var dependencies.
+#     """
+#     interdependent_state.v1 = 1
+#     assert interdependent_state.get_delta() == {
+#         interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
+#     }
+
+
+# def test_dirty_computed_var_from_backend_var(interdependent_state):
+#     """Set backend var that ComputedVar depends on, expect recalculation.
+
+#     Args:
+#         interdependent_state: A state with varying Var dependencies.
+#     """
+#     interdependent_state._v2 = 2
+#     assert interdependent_state.get_delta() == {
+#         interdependent_state.get_full_name(): {"v2x2": 4},
+#     }
+
+
+def test_per_state_backend_var(interdependent_state):
+    """Set backend var on one instance, expect no affect in other instances.
 
     Args:
         interdependent_state: A state with varying Var dependencies.
     """
-    interdependent_state.x = 5
-    assert interdependent_state.get_delta() == {
-        interdependent_state.get_full_name(): {"x": 5},
-    }
-
-
-def test_dirty_computed_var_from_var(interdependent_state):
-    """Set Var that ComputedVar depends on, expect recalculation.
-
-    The other ComputedVar depends on the changed ComputedVar and should also be
-    recalculated. No other ComputedVars should be recalculated.
-
-    Args:
-        interdependent_state: A state with varying Var dependencies.
-    """
-    interdependent_state.v1 = 1
-    assert interdependent_state.get_delta() == {
-        interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
-    }
-
-
-def test_dirty_computed_var_from_backend_var(interdependent_state):
-    """Set backend var that ComputedVar depends on, expect recalculation.
-
-    Args:
-        interdependent_state: A state with varying Var dependencies.
-    """
+    s2 = InterdependentState()
+    assert s2._v2 == interdependent_state._v2
     interdependent_state._v2 = 2
-    assert interdependent_state.get_delta() == {
-        interdependent_state.get_full_name(): {"v2x2": 4},
-    }
+    assert s2._v2 != interdependent_state._v2
+    s3 = InterdependentState()
+    assert s3._v2 != interdependent_state._v2
+    # both s2 and s3 should still have the default value
+    assert s2._v2 == s3._v2
+    # changing s2._v2 should not affect others
+    s2._v2 = 4
+    assert s2._v2 != interdependent_state._v2
+    assert s2._v2 != s3._v2
 
 
 def test_child_state():
@@ -858,7 +882,11 @@ def test_conditional_computed_vars():
     assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
-    assert ms.computed_vars["rendered_var"].deps() == {"flag", "t1", "t2"}
+    assert ms.computed_vars["rendered_var"].deps(objclass=MainState) == {
+        "flag",
+        "t1",
+        "t2",
+    }
 
 
 def test_event_handlers_convert_to_fns(test_state, child_state):

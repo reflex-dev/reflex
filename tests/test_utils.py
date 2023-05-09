@@ -1,3 +1,4 @@
+import typing
 from typing import Any, List, Union
 
 import pytest
@@ -334,7 +335,7 @@ def test_create_config(app_name, expected_config_name, mocker):
     mocker.patch("builtins.open")
     tmpl_mock = mocker.patch("pynecone.compiler.templates.PCCONFIG")
     prerequisites.create_config(app_name)
-    tmpl_mock.format.assert_called_with(
+    tmpl_mock.render.assert_called_with(
         app_name=app_name, config_name=expected_config_name
     )
 
@@ -357,3 +358,30 @@ def test_format_ref(name, expected):
         expected: The expected formatted name.
     """
     assert format.format_ref(name) == expected
+
+
+class DataFrame:
+    """A Fake pandas DataFrame class."""
+
+    pass
+
+
+@pytest.mark.parametrize(
+    "class_type,expected",
+    [
+        (list, False),
+        (int, False),
+        (dict, False),
+        (DataFrame, True),
+        (typing.Any, False),
+        (typing.List, False),
+    ],
+)
+def test_is_dataframe(class_type, expected):
+    """Test that a type name is DataFrame.
+
+    Args:
+        class_type: the class type.
+        expected: whether type name is DataFrame
+    """
+    assert types.is_dataframe(class_type) == expected

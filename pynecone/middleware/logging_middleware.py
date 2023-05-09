@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pynecone.event import Event
 from pynecone.middleware.middleware import Middleware
-from pynecone.state import Delta, State
+from pynecone.state import State, StateUpdate
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -24,13 +24,15 @@ class LoggingMiddleware(Middleware):
         """
         print(f"Event {event}")
 
-    async def postprocess(self, app: App, state: State, event: Event, delta: Delta):
+    async def postprocess(
+        self, app: App, state: State, event: Event, update: StateUpdate
+    ):
         """Postprocess the event.
 
         Args:
             app: The app to apply the middleware to.
             state: The client state.
             event: The event to postprocess.
-            delta: The delta to postprocess.
+            update: The current state update.
         """
-        print(f"Delta {delta}")
+        print(f"Update {update}")

@@ -21,8 +21,8 @@ from pynecone.event import (
     get_handler_args,
 )
 from pynecone.style import Style
-from pynecone.utils import format, imports, path_ops, types
-from pynecone.var import BaseVar, Var
+from pynecone.utils import format, imports, types
+from pynecone.var import BaseVar, ImportVar, Var
 
 
 class Component(Base, ABC):
@@ -42,6 +42,12 @@ class Component(Base, ABC):
 
     # The tag to use when rendering the component.
     tag: Optional[str] = None
+
+    # The alias for the tag.
+    alias: Optional[str] = None
+
+    # Whether the import is default or named.
+    is_default: Optional[bool] = False
 
     # A unique key for the component.
     key: Any = None
@@ -214,7 +220,9 @@ class Component(Base, ABC):
                     event = call_event_handler(v, arg)
 
                     # Check that the event handler takes no args if it's uncontrolled.
-                    if not is_controlled_event and len(event.args) > 0:
+                    if not is_controlled_event and (
+                        event.args is not None and len(event.args) > 0
+                    ):
                         raise ValueError(
                             f"Event handler: {v.fn} for uncontrolled event {event_trigger} should not take any args."
                         )
@@ -275,22 +283,13 @@ class Component(Base, ABC):
         """
         return {}
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias for the component.
-
-        Returns:
-            The alias.
-        """
-        return None
-
     def __repr__(self) -> str:
         """Represent the component in React.
 
         Returns:
             The code to render the component.
         """
-        return self.render()
+        return format.json_dumps(self.render())
 
     def __str__(self) -> str:
         """Represent the component in React.
@@ -298,7 +297,7 @@ class Component(Base, ABC):
         Returns:
             The code to render the component.
         """
-        return self.render()
+        return format.json_dumps(self.render())
 
     def _render(self) -> Tag:
         """Define how to render the component in React.
@@ -307,9 +306,10 @@ class Component(Base, ABC):
             The tag to render.
         """
         # Create the base tag.
-        alias = self.get_alias()
-        name = alias if alias is not None else self.tag
-        tag = Tag(name=name, special_props=self.special_props)
+        tag = Tag(
+            name=self.tag if not self.alias else self.alias,
+            special_props=self.special_props,
+        )
 
         # Add component props to the tag.
         props = {attr: getattr(self, attr) for attr in self.get_props()}
@@ -393,14 +393,14 @@ class Component(Base, ABC):
             child.add_style(style)
         return self
 
-    def render(self) -> str:
+    def render(self) -> Dict:
         """Render the component.
 
         Returns:
-            The code to render the component.
+            The dictionary for template of component.
         """
         tag = self._render()
-        return str(
+        return dict(
             tag.add_props(
                 **self.event_triggers,
                 key=self.key,
@@ -408,10 +408,10 @@ class Component(Base, ABC):
                 id=self.id,
                 class_name=self.class_name,
             ).set(
-                contents=path_ops.join(
-                    [str(tag.contents)] + [child.render() for child in self.children]
-                ).strip(),
-            )
+                children=[child.render() for child in self.children],
+                contents=str(tag.contents),
+                props=tag.format_props(),
+            ),
         )
 
     def _get_custom_code(self) -> Optional[str]:
@@ -445,9 +445,7 @@ class Component(Base, ABC):
 
     def _get_imports(self) -> imports.ImportDict:
         if self.library is not None and self.tag is not None:
-            alias = self.get_alias()
-            tag = self.tag if alias is None else " as ".join([self.tag, alias])
-            return {self.library: {tag}}
+            return {self.library: {self.import_var}}
         return {}
 
     def get_imports(self) -> imports.ImportDict:
@@ -520,6 +518,15 @@ class Component(Base, ABC):
         for child in self.children:
             custom_components |= child.get_custom_components(seen=seen)
         return custom_components
+
+    @property
+    def import_var(self):
+        """The tag to import.
+
+        Returns:
+            An import var.
+        """
+        return ImportVar(tag=self.tag, is_default=self.is_default, alias=self.alias)
 
     def is_full_control(self, kwargs: dict) -> bool:
         """Return if the component is fully controlled input.

@@ -6,7 +6,7 @@ from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.style import Style
 from pynecone.utils import imports
-from pynecone.var import Var
+from pynecone.var import ImportVar, Var
 
 # Path to the prism styles.
 PRISM_STYLES_PATH = "/styles/code/prism"
@@ -44,7 +44,7 @@ class CodeBlock(Component):
         merged_imports = super()._get_imports()
         if self.theme is not None:
             merged_imports = imports.merge_imports(
-                merged_imports, {PRISM_STYLES_PATH: {self.theme.name}}
+                merged_imports, {PRISM_STYLES_PATH: {ImportVar(tag=self.theme.name)}}
             )
         return merged_imports
 

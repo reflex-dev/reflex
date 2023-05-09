@@ -288,7 +288,9 @@ def format_event(event_spec: EventSpec) -> str:
     """
     args = ",".join(
         [
-            ":".join((name.name, json.dumps(val.name) if val.is_string else val.name))
+            ":".join(
+                (name.name, json.dumps(val.name) if val.is_string else val.full_name)
+            )
             for name, val in event_spec.args
         ]
     )
@@ -304,11 +306,9 @@ def format_upload_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    from pynecone.compiler import templates
-
     state, name = get_event_handler_parts(event_spec.handler)
     parent_state = state.split(".")[0]
-    return f'uploadFiles({parent_state}, {templates.RESULT}, {templates.SET_RESULT}, {parent_state}.files, "{state}.{name}",UPLOAD)'
+    return f'uploadFiles({parent_state}, {constants.RESULT}, set{constants.RESULT.capitalize()}, {parent_state}.files, "{state}.{name}",UPLOAD)'
 
 
 def format_full_control_event(event_chain: EventChain) -> str:
@@ -323,7 +323,7 @@ def format_full_control_event(event_chain: EventChain) -> str:
     from pynecone.compiler import templates
 
     event_spec = event_chain.events[0]
-    arg = event_spec.args[0][1]
+    arg = event_spec.args[0][1] if event_spec.args else None
     state_name = event_chain.state_name
     chain = ",".join([format_event(event) for event in event_chain.events])
     event = templates.FULL_CONTROL(state_name=state_name, arg=arg, chain=chain)

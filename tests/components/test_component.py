@@ -9,7 +9,7 @@ from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from pynecone.state import State
 from pynecone.style import Style
 from pynecone.utils import imports
-from pynecone.var import Var
+from pynecone.var import ImportVar, Var
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def component1() -> Type[Component]:
         number: Var[int]
 
         def _get_imports(self) -> imports.ImportDict:
-            return {"react": {"Component"}}
+            return {"react": {ImportVar(tag="Component")}}
 
         def _get_custom_code(self) -> str:
             return "console.log('component1')"
@@ -75,7 +75,7 @@ def component2() -> Type[Component]:
             }
 
         def _get_imports(self) -> imports.ImportDict:
-            return {"react-redux": {"connect"}}
+            return {"react-redux": {ImportVar(tag="connect")}}
 
         def _get_custom_code(self) -> str:
             return "console.log('component2')"
@@ -206,8 +206,11 @@ def test_get_imports(component1, component2):
     """
     c1 = component1.create()
     c2 = component2.create(c1)
-    assert c1.get_imports() == {"react": {"Component"}}
-    assert c2.get_imports() == {"react-redux": {"connect"}, "react": {"Component"}}
+    assert c1.get_imports() == {"react": {ImportVar(tag="Component")}}
+    assert c2.get_imports() == {
+        "react-redux": {ImportVar(tag="connect")},
+        "react": {ImportVar(tag="Component")},
+    }
 
 
 def test_get_custom_code(component1, component2):
@@ -388,13 +391,10 @@ def test_invalid_event_handler_args(component2, test_state):
     # Controlled event handlers should take args.
     # This is okay.
     component2.create(on_open=test_state.do_something_arg)
-    # This is not okay.
-    with pytest.raises(ValueError):
-        component2.create(on_open=test_state.do_something)
-    with pytest.raises(ValueError):
-        component2.create(
-            on_open=[test_state.do_something_arg, test_state.do_something]
-        )
+
+    # do_something is allowed and will simply run while ignoring the arg
+    component2.create(on_open=test_state.do_something)
+    component2.create(on_open=[test_state.do_something_arg, test_state.do_something])
 
 
 def test_get_hooks_nested(component1, component2, component3):

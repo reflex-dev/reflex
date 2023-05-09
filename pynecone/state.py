@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import functools
 import traceback
 from abc import ABC
@@ -77,6 +78,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # Mapping of var name to set of substates that depend on it
     substate_var_dependencies: Dict[str, Set[str]] = {}
 
+    # Per-instance copy of backend variable values
+    _backend_vars: Dict[str, Any] = {}
+
     def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
         """Initialize the state.
 
@@ -109,7 +113,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
-            for var in cvar.deps():
+            for var in cvar.deps(objclass=type(self)):
                 self.computed_var_dependencies[var].add(cvar_name)
                 if var in inherited_vars:
                     # track that this substate depends on its parent for this var
@@ -124,6 +128,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Initialize the mutable fields.
         self._init_mutable_fields()
+
+        # Create a fresh copy of the backend variables for this instance
+        self._backend_vars = copy.deepcopy(self.backend_vars)
 
     def _init_mutable_fields(self):
         """Initialize mutable fields.
@@ -239,6 +246,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             "router_data",
             "computed_var_dependencies",
             "substate_var_dependencies",
+            "_backend_vars",
         }
 
     @classmethod
@@ -508,7 +516,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            cls.computed_vars[param] = func.set_state(cls)  # type: ignore
+            func.fget.__name__ = param  # to allow passing as a prop
+            cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
     def __getattribute__(self, name: str) -> Any:
@@ -532,8 +541,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         }
         if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
-        elif name in super().__getattribute__("backend_vars"):
-            return super().__getattribute__("backend_vars").__getitem__(name)
+        elif name in super().__getattribute__("_backend_vars"):
+            return super().__getattribute__("_backend_vars").__getitem__(name)
         return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any):
@@ -551,8 +560,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if types.is_backend_variable(name):
-            self.backend_vars.__setitem__(name, value)
+        if types.is_backend_variable(name) and name != "_backend_vars":
+            self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self.mark_dirty()
             return
@@ -561,7 +570,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
-        if name in self.vars:
+        if name in self.vars or name in self.computed_var_dependencies:
             self.dirty_vars.add(name)
             self.mark_dirty()
 
@@ -673,15 +682,20 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
-        dirty_vars = self.dirty_vars
-        while dirty_vars:
-            calc_vars, dirty_vars = dirty_vars, set()
-            for cvar in self._dirty_computed_vars(from_vars=calc_vars):
-                self.dirty_vars.add(cvar)
-                dirty_vars.add(cvar)
-                actual_var = self.computed_vars.get(cvar)
-                if actual_var:
-                    actual_var.mark_dirty(instance=self)
+        # Mark all ComputedVars as dirty.
+        for cvar in self.computed_vars.values():
+            cvar.mark_dirty(instance=self)
+
+        # TODO: Uncomment the actual implementation below.
+        # dirty_vars = self.dirty_vars
+        # while dirty_vars:
+        #     calc_vars, dirty_vars = dirty_vars, set()
+        #     for cvar in self._dirty_computed_vars(from_vars=calc_vars):
+        #         self.dirty_vars.add(cvar)
+        #         dirty_vars.add(cvar)
+        #         actual_var = self.computed_vars.get(cvar)
+        #         if actual_var:
+        #             actual_var.mark_dirty(instance=self)
 
     def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
@@ -692,11 +706,13 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(
-            cvar
-            for dirty_var in from_vars or self.dirty_vars
-            for cvar in self.computed_var_dependencies[dirty_var]
-        )
+        return set(self.computed_vars)
+        # TODO: Uncomment the actual implementation below.
+        # return set(
+        #     cvar
+        #     for dirty_var in from_vars or self.dirty_vars
+        #     for cvar in self.computed_var_dependencies[dirty_var]
+        # )
 
     def get_delta(self) -> Delta:
         """Get the delta for the state.
@@ -707,6 +723,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         delta = {}
 
         # Return the dirty vars and dependent computed vars
+        self._mark_dirty_computed_vars()
         delta_vars = self.dirty_vars.intersection(self.base_vars).union(
             self._dirty_computed_vars()
         )

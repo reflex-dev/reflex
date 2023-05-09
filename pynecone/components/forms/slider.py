@@ -13,7 +13,7 @@ class Slider(ChakraComponent):
 
     tag = "Slider"
 
-    # State var to bind the the input.
+    # State var to bind the input.
     value: Var[int]
 
     # The color scheme.
