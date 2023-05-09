@@ -220,7 +220,9 @@ class Component(Base, ABC):
                     event = call_event_handler(v, arg)
 
                     # Check that the event handler takes no args if it's uncontrolled.
-                    if not is_controlled_event and len(event.args) > 0:
+                    if not is_controlled_event and (
+                        event.args is not None and len(event.args) > 0
+                    ):
                         raise ValueError(
                             f"Event handler: {v.fn} for uncontrolled event {event_trigger} should not take any args."
                         )

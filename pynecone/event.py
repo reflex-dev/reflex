@@ -23,7 +23,7 @@ class Event(Base):
     router_data: Dict[str, Any] = {}
 
     # The event payload.
-    payload: Dict[Any, Any] = {}
+    payload: Dict[str, Any] = {}
 
 
 class EventHandler(Base):
@@ -327,16 +327,14 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], 
 
     Returns:
         The handler args.
-
-    Raises:
-        ValueError: If the event handler has an invalid signature.
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
-    if len(args) < 2:
-        raise ValueError(
-            f"Event handler has an invalid signature, needed a method with a parameter, got {event_spec.handler}."
-        )
-    return event_spec.args if len(args) > 2 else ((Var.create_safe(args[1]), arg),)
+
+    return (
+        event_spec.args
+        if len(args) > 2
+        else (((Var.create_safe(args[1]), arg),) if len(args) == 2 else tuple())
+    )
 
 
 def fix_events(

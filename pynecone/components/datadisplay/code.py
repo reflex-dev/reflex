@@ -19,8 +19,6 @@ class CodeBlock(Component):
 
     tag = "Prism"
 
-    is_default = True
-
     # The theme to use ("light" or "dark").
     theme: Var[str]
 
