@@ -306,11 +306,9 @@ def format_upload_event(event_spec: EventSpec) -> str:
     Returns:
         The compiled event.
     """
-    from pynecone.compiler import templates
-
     state, name = get_event_handler_parts(event_spec.handler)
     parent_state = state.split(".")[0]
-    return f'uploadFiles({parent_state}, {templates.RESULT}, {templates.SET_RESULT}, {parent_state}.files, "{state}.{name}",UPLOAD)'
+    return f'uploadFiles({parent_state}, {constants.RESULT}, set{constants.RESULT.capitalize()}, {parent_state}.files, "{state}.{name}",UPLOAD)'
 
 
 def format_full_control_event(event_chain: EventChain) -> str:

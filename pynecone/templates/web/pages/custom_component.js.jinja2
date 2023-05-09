@@ -1,0 +1,10 @@
+{% extends "web/pages/base_page.js.jinja2" %}
+
+{% block export %}
+{% for component in components %}
+
+export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => (
+  {{utils.render(component.render)}}
+))
+{% endfor %}
+{% endblock %}

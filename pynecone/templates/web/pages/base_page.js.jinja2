@@ -1,0 +1,13 @@
+{% import 'web/pages/utils.js.jinja2' as utils %}
+
+{%- block imports_libs %}
+{% for module in imports%}
+  {{- utils.get_import(module) }}
+{% endfor %}
+{% endblock %}
+
+{% block declaration %}
+{% endblock %}
+
+{% block export %}
+{% endblock %}

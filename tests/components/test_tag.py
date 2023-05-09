@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 
@@ -71,25 +71,24 @@ def test_format_prop(prop: Var, formatted: str):
 
 
 @pytest.mark.parametrize(
-    "props,formatted",
+    "props,test_props",
     [
-        ({}, ""),
-        ({"key": 1}, "key={1}"),
-        ({"key": "value"}, 'key="value"'),
-        ({"key": True, "key2": "value2"}, 'key={true}\nkey2="value2"'),
+        ({}, []),
+        ({"key": 1}, ["key={1}"]),
+        ({"key": "value"}, ['key="value"']),
+        ({"key": True, "key2": "value2"}, ["key={true}", 'key2="value2"']),
     ],
 )
-def test_format_props(props: Dict[str, Var], formatted: str, windows_platform: bool):
+def test_format_props(props: Dict[str, Var], test_props: List):
     """Test that the formatted props are correct.
 
     Args:
         props: The props to test.
-        formatted: The expected formatted props.
-        windows_platform: Whether the system is windows.
+        test_props: The expected props.
     """
-    assert Tag(props=props).format_props() == (
-        formatted.replace("\n", "\r\n") if windows_platform else formatted
-    )
+    tag_props = Tag(props=props).format_props()
+    for i, tag_prop in enumerate(tag_props):
+        assert tag_prop == test_props[i]
 
 
 @pytest.mark.parametrize(
@@ -126,13 +125,20 @@ def test_add_props():
 @pytest.mark.parametrize(
     "tag,expected",
     [
-        (Tag(), "</>"),
-        (Tag(name="br"), "<br/>"),
-        (Tag(contents="hello"), "<>hello</>"),
-        (Tag(name="h1", contents="hello"), "<h1>hello</h1>"),
+        (Tag(), {"name": "", "contents": "", "props": {}}),
+        (Tag(name="br"), {"name": "br", "contents": "", "props": {}}),
+        (Tag(contents="hello"), {"name": "", "contents": "hello", "props": {}}),
+        (
+            Tag(name="h1", contents="hello"),
+            {"name": "h1", "contents": "hello", "props": {}},
+        ),
         (
             Tag(name="box", props={"color": "red", "textAlign": "center"}),
-            '<box color="red"\ntextAlign="center"/>',
+            {
+                "name": "box",
+                "contents": "",
+                "props": {"color": "red", "textAlign": "center"},
+            },
         ),
         (
             Tag(
@@ -140,30 +146,44 @@ def test_add_props():
                 props={"color": "red", "textAlign": "center"},
                 contents="text",
             ),
-            '<box color="red"\ntextAlign="center">text</box>',
+            {
+                "name": "box",
+                "contents": "text",
+                "props": {"color": "red", "textAlign": "center"},
+            },
         ),
     ],
 )
-def test_format_tag(tag: Tag, expected: str, windows_platform: bool):
-    """Test that the formatted tag is correct.
+def test_format_tag(tag: Tag, expected: Dict):
+    """Test that the tag dict is correct.
 
     Args:
         tag: The tag to test.
-        expected: The expected formatted tag.
-        windows_platform: Whether the system is windows.
+        expected: The expected tag dictionary.
     """
-    expected = expected.replace("\n", "\r\n") if windows_platform else expected
-    assert str(tag) == expected
+    tag_dict = dict(tag)
+    assert tag_dict["name"] == expected["name"]
+    assert tag_dict["contents"] == expected["contents"]
+    assert tag_dict["props"] == expected["props"]
 
 
 def test_format_cond_tag():
-    """Test that the formatted cond tag is correct."""
+    """Test that the cond tag dict is correct."""
     tag = CondTag(
-        true_value=str(Tag(name="h1", contents="True content")),
-        false_value=str(Tag(name="h2", contents="False content")),
+        true_value=dict(Tag(name="h1", contents="True content")),
+        false_value=dict(Tag(name="h2", contents="False content")),
         cond=BaseVar(name="logged_in", type_=bool),
     )
-    assert (
-        str(tag)
-        == "{isTrue(logged_in) ? <h1>True content</h1> : <h2>False content</h2>}"
+    tag_dict = dict(tag)
+    cond, true_value, false_value = (
+        tag_dict["cond"],
+        tag_dict["true_value"],
+        tag_dict["false_value"],
     )
+    assert cond == "logged_in"
+
+    assert true_value["name"] == "h1"
+    assert true_value["contents"] == "True content"
+
+    assert false_value["name"] == "h2"
+    assert false_value["contents"] == "False content"

@@ -825,9 +825,6 @@ class ComputedVar(Var, property):
 
         If the value is already cached on the instance, return the cached value.
 
-        If this ComputedVar doesn't know what type of object it is attached to, then save
-        a reference as self.__objclass__.
-
         Args:
             instance: the instance of the class accessing this computed var.
             owner: the class that this descriptor is attached to.
@@ -835,9 +832,6 @@ class ComputedVar(Var, property):
         Returns:
             The value of the var for the given instance.
         """
-        if not hasattr(self, "__objclass__"):
-            self.__objclass__ = owner
-
         if instance is None:
             return super().__get__(instance, owner)
 
@@ -846,21 +840,22 @@ class ComputedVar(Var, property):
             setattr(instance, self.cache_attr, super().__get__(instance, owner))
         return getattr(instance, self.cache_attr)
 
-    def deps(self, obj: Optional[FunctionType] = None) -> Set[str]:
+    def deps(
+        self,
+        objclass: Type,
+        obj: Optional[FunctionType] = None,
+    ) -> Set[str]:
         """Determine var dependencies of this ComputedVar.
 
         Save references to attributes accessed on "self".  Recursively called
         when the function makes a method call on "self".
 
         Args:
+            objclass: the class obj this ComputedVar is attached to.
             obj: the object to disassemble (defaults to the fget function).
 
         Returns:
             A set of variable names accessed by the given obj.
-
-        Raises:
-            RuntimeError: if this ComputedVar does not have a reference to the class
-                it is attached to. (Assign var.__objclass__ manually to workaround.)
         """
         d = set()
         if obj is None:
@@ -880,11 +875,12 @@ class ComputedVar(Var, property):
             if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
                 d.add(instruction.argval)
             elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
-                if not hasattr(self, "__objclass__"):
-                    raise RuntimeError(
-                        f"ComputedVar {self.name!r} is not bound to a State subclass.",
+                d.update(
+                    self.deps(
+                        objclass=objclass,
+                        obj=getattr(objclass, instruction.argval),
                     )
-                d.update(self.deps(obj=getattr(self.__objclass__, instruction.argval)))
+                )
             self_is_top_of_stack = False
         return d
 
