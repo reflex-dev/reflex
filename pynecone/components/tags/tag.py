@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import json
-import os
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
 from plotly.graph_objects import Figure
 from plotly.io import to_json
@@ -36,6 +35,9 @@ class Tag(Base):
 
     # Special props that aren't key value pairs.
     special_props: Set[Var] = set()
+
+    # The children components.
+    children: List[Any] = []
 
     def __init__(self, *args, **kwargs):
         """Initialize the tag.
@@ -117,55 +119,22 @@ class Tag(Base):
         assert isinstance(prop, str), "The prop must be a string."
         return format.wrap(prop, "{", check_first=False)
 
-    def format_props(self) -> str:
+    def format_props(self) -> List:
         """Format the tag's props.
 
         Returns:
-            The formatted props.
+            The formatted props list.
         """
         # If there are no props, return an empty string.
         if len(self.props) == 0:
-            return ""
+            return []
 
         # Format all the props.
-        return os.linesep.join(
+        return [
             f"{name}={self.format_prop(prop)}"
             for name, prop in sorted(self.props.items())
             if prop is not None
-        )
-
-    def __str__(self) -> str:
-        """Render the tag as a React string.
-
-        Returns:
-            The React code to render the tag.
-        """
-        # Get the tag props.
-        props_str = self.format_props()
-
-        # Add the special props.
-        props_str += " ".join([str(prop) for prop in self.special_props])
-
-        # Add a space if there are props.
-        if len(props_str) > 0:
-            props_str = " " + props_str
-
-        if len(self.contents) == 0:
-            # If there is no inner content, we don't need a closing tag.
-            tag_str = format.wrap(f"{self.name}{props_str}/", "<")
-        else:
-            if self.args is not None:
-                # If there are args, wrap the tag in a function call.
-                args_str = ", ".join(self.args)
-                contents = f"{{({{{args_str}}}) => ({self.contents})}}"
-            else:
-                contents = self.contents
-            # Otherwise wrap it in opening and closing tags.
-            open = format.wrap(f"{self.name}{props_str}", "<")
-            close = format.wrap(f"/{self.name}", "<")
-            tag_str = format.wrap(contents, open, close)
-
-        return tag_str
+        ] + [str(prop) for prop in self.special_props]
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
         """Add props to the tag.

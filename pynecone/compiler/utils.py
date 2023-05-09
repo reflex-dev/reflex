@@ -1,11 +1,9 @@
 """Common utility functions used in the compiler."""
 
-import json
 import os
 from typing import Dict, List, Optional, Set, Tuple, Type
 
 from pynecone import constants
-from pynecone.compiler import templates
 from pynecone.components.base import (
     Body,
     ColorModeScript,
@@ -31,15 +29,16 @@ from pynecone.var import ImportVar
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(lib: str, fields: Set[ImportVar]) -> str:
+def compile_import_statement(fields: Set[ImportVar]) -> Tuple[str, Set[str]]:
     """Compile an import statement.
 
     Args:
-        lib: The library to import from.
         fields: The set of fields to import from the library.
 
     Returns:
-        The compiled import statement.
+        The libraries for default and rest.
+        default: default library. When install "import def from library".
+        rest: rest of libraries. When install "import {rest1, rest2} from library"
     """
     # Check for default imports.
     defaults = {field for field in fields if field.is_default}
@@ -48,58 +47,59 @@ def compile_import_statement(lib: str, fields: Set[ImportVar]) -> str:
     # Get the default import, and the specific imports.
     default = next(iter({field.name for field in defaults}), "")
     rest = {field.name for field in fields - defaults}
-    return templates.format_import(lib=lib, default=default, rest=rest)
+
+    return default, rest
 
 
-def compile_imports(imports: imports.ImportDict) -> str:
+def compile_imports(imports: imports.ImportDict) -> List[dict]:
     """Compile an import dict.
 
     Args:
         imports: The import dict to compile.
 
     Returns:
-        The compiled import dict.
+        The list of import dict.
     """
-    return path_ops.join(
-        [compile_import_statement(lib, fields) for lib, fields in imports.items()]
-    )
+    import_dicts = []
+    for lib, fields in imports.items():
+        default, rest = compile_import_statement(fields)
+        if not lib:
+            assert not default, "No default field allowed for empty library."
+            assert rest is not None and len(rest) > 0, "No fields to import."
+            for module in sorted(rest):
+                import_dicts.append(get_import_dict(module))
+            continue
+
+        import_dicts.append(get_import_dict(lib, default, rest))
+    return import_dicts
 
 
-def compile_constant_declaration(name: str, value: str) -> str:
-    """Compile a constant declaration.
+def get_import_dict(lib: str, default: str = "", rest: Optional[Set] = None) -> Dict:
+    """Get dictionary for import template.
 
     Args:
-        name: The name of the constant.
-        value: The value of the constant.
+        lib: The importing react library.
+        default: The default module to import.
+        rest: The rest module to import.
 
     Returns:
-        The compiled constant declaration.
+        A dictionary for import template.
     """
-    return templates.CONST(name=name, value=json.dumps(value))
+    return {
+        "lib": lib,
+        "default": default,
+        "rest": rest if rest else set(),
+    }
 
 
-def compile_constants() -> str:
-    """Compile all the necessary constants.
-
-    Returns:
-        A string of all the compiled constants.
-    """
-    return path_ops.join(
-        [
-            compile_constant_declaration(name=endpoint.name, value=endpoint.get_url())
-            for endpoint in constants.Endpoint
-        ]
-    )
-
-
-def compile_state(state: Type[State]) -> str:
+def compile_state(state: Type[State]) -> Dict:
     """Compile the state of the app.
 
     Args:
         state: The app state object.
 
     Returns:
-        A string of the compiled state.
+        A dictionary of the compiled state.
     """
     initial_state = state().dict()
     initial_state.update(
@@ -108,77 +108,12 @@ def compile_state(state: Type[State]) -> str:
             "files": [],
         }
     )
-    initial_state = format.format_state(initial_state)
-    synced_state = templates.format_state(
-        state=state.get_name(), initial_state=json.dumps(initial_state)
-    )
-    initial_result = {
-        constants.STATE: None,
-        constants.EVENTS: [],
-        constants.PROCESSING: False,
-    }
-    result = templates.format_state(
-        state="result",
-        initial_state=json.dumps(initial_result),
-    )
-    router = templates.ROUTER
-    socket = templates.SOCKET
-    ready = templates.READY
-    color_toggle = templates.COLORTOGGLE
-    return path_ops.join([synced_state, result, router, socket, ready, color_toggle])
-
-
-def compile_events(state: Type[State]) -> str:
-    """Compile all the events for a given component.
-
-    Args:
-        state: The state class for the component.
-
-    Returns:
-        A string of the compiled events for the component.
-    """
-    state_name = state.get_name()
-    state_setter = templates.format_state_setter(state_name)
-    return path_ops.join(
-        [
-            templates.EVENT_FN(state=state_name, set_state=state_setter),
-            templates.UPLOAD_FN(state=state_name, set_state=state_setter),
-        ]
-    )
-
-
-def compile_effects(state: Type[State]) -> str:
-    """Compile all the effects for a given component.
-
-    Args:
-        state: The state class for the component.
-
-    Returns:
-        A string of the compiled effects for the component.
-    """
-    state_name = state.get_name()
-    set_state = templates.format_state_setter(state_name)
-    transports = constants.Transports.POLLING_WEBSOCKET.get_transports()
-    return templates.USE_EFFECT(
-        state=state_name, set_state=set_state, transports=transports
-    )
-
-
-def compile_render(component: Component) -> str:
-    """Compile the component's render method.
-
-    Args:
-        component: The component to compile the render method for.
-
-    Returns:
-        A string of the compiled render method.
-    """
-    return component.render()
+    return format.format_state(initial_state)
 
 
 def compile_custom_component(
     component: CustomComponent,
-) -> Tuple[str, imports.ImportDict]:
+) -> Tuple[dict, imports.ImportDict]:
     """Compile a custom component.
 
     Args:
@@ -198,15 +133,15 @@ def compile_custom_component(
     }
 
     # Concatenate the props.
-    props = ", ".join([prop.name for prop in component.get_prop_vars()])
+    props = [prop.name for prop in component.get_prop_vars()]
 
     # Compile the component.
     return (
-        templates.COMPONENT(
-            name=component.tag,
-            props=props,
-            render=render,
-        ),
+        {
+            "name": component.tag,
+            "props": props,
+            "render": render.render(),
+        },
         imports,
     )
 

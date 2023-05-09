@@ -1,7 +1,6 @@
 """Compiler for the pynecone apps."""
 from __future__ import annotations
 
-import json
 from functools import wraps
 from typing import Callable, List, Set, Tuple, Type
 
@@ -10,7 +9,7 @@ from pynecone.compiler import templates, utils
 from pynecone.components.component import Component, CustomComponent
 from pynecone.state import State
 from pynecone.style import Style
-from pynecone.utils import imports, path_ops
+from pynecone.utils import imports
 from pynecone.var import ImportVar
 
 # Imports to be included in every Pynecone app.
@@ -42,7 +41,7 @@ def _compile_document_root(root: Component) -> str:
     Returns:
         The compiled document root.
     """
-    return templates.DOCUMENT_ROOT(
+    return templates.DOCUMENT_ROOT.render(
         imports=utils.compile_imports(root.get_imports()),
         document=root.render(),
     )
@@ -57,7 +56,7 @@ def _compile_theme(theme: dict) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME(theme=json.dumps(theme))
+    return templates.THEME.render(theme=theme)
 
 
 def _compile_page(component: Component, state: Type[State]) -> str:
@@ -72,17 +71,20 @@ def _compile_page(component: Component, state: Type[State]) -> str:
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    return templates.PAGE(
-        imports=utils.compile_imports(imports),
-        custom_code=path_ops.join(component.get_custom_code()),
-        constants=utils.compile_constants(),
-        state=utils.compile_state(state),
-        events=utils.compile_events(state),
-        effects=utils.compile_effects(state),
-        hooks=path_ops.join(component.get_hooks()),
+    return templates.PAGE.render(
+        imports=imports,
+        custom_codes=component.get_custom_code(),
+        endpoints={
+            constant.name: constant.get_url() for constant in constants.Endpoint
+        },
+        initial_state=utils.compile_state(state),
+        state_name=state.get_name(),
+        hooks=component.get_hooks(),
         render=component.render(),
+        transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
     )
 
 
@@ -99,18 +101,18 @@ def _compile_components(components: Set[CustomComponent]) -> str:
         "react": {ImportVar(tag="memo")},
         f"/{constants.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
     }
-    component_defs = []
+    component_renders = []
 
     # Compile each component.
     for component in components:
-        component_def, component_imports = utils.compile_custom_component(component)
-        component_defs.append(component_def)
+        component_render, component_imports = utils.compile_custom_component(component)
+        component_renders.append(component_render)
         imports = utils.merge_imports(imports, component_imports)
 
     # Compile the components page.
-    return templates.COMPONENTS(
+    return templates.COMPONENTS.render(
         imports=utils.compile_imports(imports),
-        components=path_ops.join(component_defs),
+        components=component_renders,
     )
 
 

@@ -21,7 +21,7 @@ from pynecone.event import (
     get_handler_args,
 )
 from pynecone.style import Style
-from pynecone.utils import format, imports, path_ops, types
+from pynecone.utils import format, imports, types
 from pynecone.var import BaseVar, ImportVar, Var
 
 
@@ -289,7 +289,7 @@ class Component(Base, ABC):
         Returns:
             The code to render the component.
         """
-        return self.render()
+        return format.json_dumps(self.render())
 
     def __str__(self) -> str:
         """Represent the component in React.
@@ -297,7 +297,7 @@ class Component(Base, ABC):
         Returns:
             The code to render the component.
         """
-        return self.render()
+        return format.json_dumps(self.render())
 
     def _render(self) -> Tag:
         """Define how to render the component in React.
@@ -393,14 +393,14 @@ class Component(Base, ABC):
             child.add_style(style)
         return self
 
-    def render(self) -> str:
+    def render(self) -> Dict:
         """Render the component.
 
         Returns:
-            The code to render the component.
+            The dictionary for template of component.
         """
         tag = self._render()
-        return str(
+        return dict(
             tag.add_props(
                 **self.event_triggers,
                 key=self.key,
@@ -408,10 +408,10 @@ class Component(Base, ABC):
                 id=self.id,
                 class_name=self.class_name,
             ).set(
-                contents=path_ops.join(
-                    [str(tag.contents)] + [child.render() for child in self.children]
-                ).strip(),
-            )
+                children=[child.render() for child in self.children],
+                contents=str(tag.contents),
+                props=tag.format_props(),
+            ),
         )
 
     def _get_custom_code(self) -> Optional[str]:
