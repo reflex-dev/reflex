@@ -3,7 +3,7 @@ from typing import Dict
 
 from pynecone.components.component import EVENT_ARG
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.vars import Var
+from pynecone.var import Var
 
 
 class Switch(ChakraComponent):
