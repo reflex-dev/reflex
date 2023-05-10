@@ -801,6 +801,9 @@ class BaseVar(Var, Base):
 class ComputedVar(Var, property):
     """A field with computed getters."""
 
+    # Whether to track dependencies and cache computed values
+    cache: bool = False
+
     @property
     def name(self) -> str:
         """Get the name of the var.
@@ -832,7 +835,7 @@ class ComputedVar(Var, property):
         Returns:
             The value of the var for the given instance.
         """
-        if instance is None:
+        if instance is None or not self.cache:
             return super().__get__(instance, owner)
 
         # handle caching
@@ -904,6 +907,23 @@ class ComputedVar(Var, property):
         if "return" in hints:
             return hints["return"]
         return Any
+
+
+def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
+    """A field with computed getter that tracks other state dependencies.
+
+    The cached_var will only be recalculated when other state vars that it
+    depends on are modified.
+
+    Args:
+        fget: the function that calculates the variable value.
+
+    Returns:
+        ComputedVar that is recomputed when dependencies change.
+    """
+    cvar = ComputedVar(fget=fget)
+    cvar.cache = True
+    return cvar
 
 
 class PCList(list):
