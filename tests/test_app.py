@@ -5,12 +5,15 @@ from typing import List, Tuple, Type
 import pytest
 from fastapi import UploadFile
 
-from pynecone.app import App, DefaultState, upload
+from pynecone import constants
+from pynecone.app import App, DefaultState, process, upload
 from pynecone.components import Box
-from pynecone.event import Event
+from pynecone.event import Event, get_hydrate_event
 from pynecone.middleware import HydrateMiddleware
 from pynecone.state import State, StateUpdate
 from pynecone.style import Style
+from pynecone.utils import format
+from pynecone.var import ComputedVar
 
 
 @pytest.fixture
@@ -121,9 +124,9 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
     assert app.state.computed_vars["dynamic"].deps(objclass=DefaultState) == {
-        "router_data"
+        constants.ROUTER_DATA
     }
-    assert "router_data" in app.state().computed_var_dependencies
+    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -547,3 +550,188 @@ async def test_upload_file_without_annotation(fixture, request):
         err.value.args[0]
         == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[pc.UploadFile]"
     )
+
+
+class DynamicState(State):
+    """State class for testing dynamic route var.
+
+    This is defined at module level because event handlers cannot be addressed
+    correctly when the class is defined as a local.
+
+    There are several counters:
+      * loaded: counts how many times `on_load` was triggered by the hydrate middleware
+      * counter: counts how many times `on_counter` was triggered by a non-naviagational event
+          -> these events should NOT trigger reload or recalculation of router_data dependent vars
+      * side_effect_counter: counts how many times a computed var was
+        recalculated when the dynamic route var was dirty
+    """
+
+    loaded: int = 0
+    counter: int = 0
+    # side_effect_counter: int = 0
+
+    def on_load(self):
+        """Event handler for page on_load, should trigger for all navigation events."""
+        self.loaded = self.loaded + 1
+
+    def on_counter(self):
+        """Increment the counter var."""
+        self.counter = self.counter + 1
+
+    @ComputedVar
+    def comp_dynamic(self) -> str:
+        """A computed var that depends on the dynamic var.
+
+        Returns:
+            same as self.dynamic
+        """
+        # self.side_effect_counter = self.side_effect_counter + 1
+        return self.dynamic
+
+
+@pytest.mark.asyncio
+async def test_dynamic_route_var_route_change_completed_on_load(
+    index_page,
+    windows_platform: bool,
+):
+    """Create app with dynamic route var, and simulate navigation.
+
+    on_load should fire, allowing any additional vars to be updated before the
+    initial page hydrate.
+
+    Args:
+        index_page: The index page.
+        windows_platform: Whether the system is windows.
+    """
+    arg_name = "dynamic"
+    route = f"/test/[{arg_name}]"
+    if windows_platform:
+        route.lstrip("/").replace("/", "\\")
+    app = App(state=DynamicState)
+    assert arg_name not in app.state.vars
+    app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
+    assert arg_name in app.state.vars
+    assert arg_name in app.state.computed_vars
+    assert app.state.computed_vars[arg_name].deps(objclass=DynamicState) == {
+        constants.ROUTER_DATA
+    }
+    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
+
+    token = "mock_token"
+    sid = "mock_sid"
+    client_ip = "127.0.0.1"
+    state = app.state_manager.get_state(token)
+    assert state.dynamic == ""
+    exp_vals = ["foo", "foobar", "baz"]
+
+    def _event(name, val, **kwargs):
+        return Event(
+            token=kwargs.pop("token", token),
+            name=name,
+            router_data=kwargs.pop(
+                "router_data", {"pathname": route, "query": {arg_name: val}}
+            ),
+            payload=kwargs.pop("payload", {}),
+            **kwargs,
+        )
+
+    def _dynamic_state_event(name, val, **kwargs):
+        return _event(
+            name=format.format_event_handler(getattr(DynamicState, name)),  # type: ignore
+            val=val,
+            **kwargs,
+        )
+
+    for exp_index, exp_val in enumerate(exp_vals):
+        update = await process(
+            app,
+            event=_event(name=get_hydrate_event(state), val=exp_val),
+            sid=sid,
+            headers={},
+            client_ip=client_ip,
+        )
+        # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
+        assert update == StateUpdate(
+            delta={
+                state.get_name(): {
+                    arg_name: exp_val,
+                    f"comp_{arg_name}": exp_val,
+                    constants.IS_HYDRATED: False,
+                    "loaded": exp_index,
+                    "counter": exp_index,
+                    # "side_effect_counter": exp_index,
+                }
+            },
+            events=[
+                _dynamic_state_event(name="on_load", val=exp_val, router_data={}),
+                _dynamic_state_event(
+                    name="set_is_hydrated",
+                    payload={"value": "true"},
+                    val=exp_val,
+                    router_data={},
+                ),
+            ],
+        )
+        assert state.dynamic == exp_val
+        on_load_update = await process(
+            app,
+            event=_dynamic_state_event(name="on_load", val=exp_val),
+            sid=sid,
+            headers={},
+            client_ip=client_ip,
+        )
+        assert on_load_update == StateUpdate(
+            delta={
+                state.get_name(): {
+                    # These computed vars _shouldn't_ be here, because they didn't change
+                    arg_name: exp_val,
+                    f"comp_{arg_name}": exp_val,
+                    "loaded": exp_index + 1,
+                },
+            },
+            events=[],
+        )
+        on_set_is_hydrated_update = await process(
+            app,
+            event=_dynamic_state_event(
+                name="set_is_hydrated", payload={"value": True}, val=exp_val
+            ),
+            sid=sid,
+            headers={},
+            client_ip=client_ip,
+        )
+        assert on_set_is_hydrated_update == StateUpdate(
+            delta={
+                state.get_name(): {
+                    # These computed vars _shouldn't_ be here, because they didn't change
+                    arg_name: exp_val,
+                    f"comp_{arg_name}": exp_val,
+                    "is_hydrated": True,
+                },
+            },
+            events=[],
+        )
+
+        # a simple state update event should NOT trigger on_load or route var side effects
+        update = await process(
+            app,
+            event=_dynamic_state_event(name="on_counter", val=exp_val),
+            sid=sid,
+            headers={},
+            client_ip=client_ip,
+        )
+        assert update == StateUpdate(
+            delta={
+                state.get_name(): {
+                    # These computed vars _shouldn't_ be here, because they didn't change
+                    f"comp_{arg_name}": exp_val,
+                    arg_name: exp_val,
+                    "counter": exp_index + 1,
+                }
+            },
+            events=[],
+        )
+    assert state.loaded == len(exp_vals)
+    assert state.counter == len(exp_vals)
+    # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
+    # assert state.side_effect_counter == len(exp_vals)
