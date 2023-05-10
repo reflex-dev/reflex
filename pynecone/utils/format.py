@@ -216,7 +216,7 @@ def format_cond(
         The formatted conditional expression.
     """
     # Import here to avoid circular imports.
-    from pynecone.var import Var
+    from pynecone.vars import Var
 
     # Use Python truthiness.
     cond = f"isTrue({cond})"

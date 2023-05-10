@@ -30,4 +30,4 @@ from .route import route as route
 from .state import ComputedVar as var
 from .state import State as State
 from .style import toggle_color_mode as toggle_color_mode
-from .var import Var as Var
+from .vars import Var as Var

@@ -7,7 +7,7 @@ from pynecone.components.layout.foreach import Foreach
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.typography.text import Text
 from pynecone.utils import types
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class Select(ChakraComponent):

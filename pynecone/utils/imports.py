@@ -3,7 +3,7 @@
 from collections import defaultdict
 from typing import Dict, Set
 
-from pynecone.var import ImportVar
+from pynecone.vars import ImportVar
 
 ImportDict = Dict[str, Set[ImportVar]]
 

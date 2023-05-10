@@ -2,7 +2,7 @@
 from typing import Union
 
 from pynecone.el.element import Element
-from pynecone.var import Var as PCVar
+from pynecone.vars import Var as PCVar
 
 
 class A(Element):  # noqa: E742

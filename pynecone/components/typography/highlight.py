@@ -3,7 +3,7 @@
 from typing import List
 
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class Highlight(ChakraComponent):

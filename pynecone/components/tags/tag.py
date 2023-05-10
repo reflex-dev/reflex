@@ -12,7 +12,7 @@ from plotly.io import to_json
 from pynecone.base import Base
 from pynecone.event import EventChain
 from pynecone.utils import format, types
-from pynecone.var import Var
+from pynecone.vars import Var
 
 if TYPE_CHECKING:
     from pynecone.components.component import ComponentStyle

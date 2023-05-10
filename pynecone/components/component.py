@@ -22,7 +22,7 @@ from pynecone.event import (
 )
 from pynecone.style import Style
 from pynecone.utils import format, imports, types
-from pynecone.var import BaseVar, ImportVar, Var
+from pynecone.vars import BaseVar, ImportVar, Var
 
 
 class Component(Base, ABC):

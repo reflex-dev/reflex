@@ -6,7 +6,7 @@ from typing import Any
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
 from pynecone.components.tags.tagless import Tagless
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class Bare(Component):

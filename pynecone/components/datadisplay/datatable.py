@@ -5,7 +5,7 @@ from typing import Any, List
 from pynecone.components.component import Component
 from pynecone.components.tags import Tag
 from pynecone.utils import format, imports, types
-from pynecone.var import BaseVar, ComputedVar, ImportVar, Var
+from pynecone.vars import BaseVar, ComputedVar, ImportVar, Var
 
 
 class Gridjs(Component):

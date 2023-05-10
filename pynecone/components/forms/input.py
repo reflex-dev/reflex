@@ -5,7 +5,7 @@ from typing import Dict
 from pynecone.components.component import EVENT_ARG
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.utils import imports
-from pynecone.var import ImportVar, Var
+from pynecone.vars import ImportVar, Var
 
 
 class Input(ChakraComponent):

@@ -6,7 +6,7 @@ import pytest
 
 from pynecone.base import Base
 from pynecone.state import State
-from pynecone.var import BaseVar, ComputedVar, ImportVar, PCDict, PCList, Var
+from pynecone.vars import BaseVar, ComputedVar, ImportVar, PCDict, PCList, Var
 
 test_vars = [
     BaseVar(name="prop1", type_=int),

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class Text(ChakraComponent):

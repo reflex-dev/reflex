@@ -5,7 +5,7 @@ import inspect
 from typing import TYPE_CHECKING, Callable, List
 
 from pynecone.components.tags.tag import Tag
-from pynecone.var import Var
+from pynecone.vars import Var
 
 if TYPE_CHECKING:
     from pynecone.components.component import Component

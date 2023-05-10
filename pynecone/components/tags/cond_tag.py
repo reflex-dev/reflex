@@ -3,7 +3,7 @@
 from typing import Any, Dict, Optional
 
 from pynecone.components.tags.tag import Tag
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class CondTag(Tag):

@@ -10,7 +10,7 @@ from pynecone.components.component import Component, CustomComponent
 from pynecone.state import State
 from pynecone.style import Style
 from pynecone.utils import imports
-from pynecone.var import ImportVar
+from pynecone.vars import ImportVar
 
 # Imports to be included in every Pynecone app.
 DEFAULT_IMPORTS: imports.ImportDict = {

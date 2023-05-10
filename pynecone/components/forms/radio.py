@@ -9,7 +9,7 @@ from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.typography.text import Text
 from pynecone.event import EVENT_ARG
 from pynecone.utils import types
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class RadioGroup(ChakraComponent):

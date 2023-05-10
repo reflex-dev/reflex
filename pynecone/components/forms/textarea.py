@@ -4,7 +4,7 @@ from typing import Dict
 
 from pynecone.components.component import EVENT_ARG
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.var import Var
+from pynecone.vars import Var
 
 
 class TextArea(ChakraComponent):
