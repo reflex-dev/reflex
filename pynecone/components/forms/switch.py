@@ -3,7 +3,7 @@ from typing import Dict
 
 from pynecone.components.component import EVENT_ARG
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.vars import Var
+from pynecone.var import Var
 
 
 class Switch(ChakraComponent):
@@ -37,6 +37,34 @@ class Switch(ChakraComponent):
 
     # The placeholder text.
     placeholder: Var[str]
+
+    # The color scheme for the switch
+    color_scheme: Var[str]
+
+    def __init__(self, **kwargs):
+        """
+        Initialize the component with the provided kwargs.
+
+        Args:
+            **kwargs: Optional keyword arguments.
+                color_scheme (str): The color scheme to use for the component.
+
+        Returns:
+            None
+        """
+        super().__init__(**kwargs)
+        self.color_scheme = kwargs.get("color_scheme", "blue")
+
+    def get_style_props(self) -> Dict:
+        """
+        Get the style properties for the component.
+
+        Returns:
+            A dictionary of style properties.
+        """
+        style_props = super().get_style_props()
+        style_props["colorScheme"] = self.color_scheme
+        return style_props
 
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
