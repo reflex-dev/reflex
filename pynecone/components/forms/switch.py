@@ -54,5 +54,6 @@ class Switch(ChakraComponent):
         
     def get_style_props(self) -> Dict:
         style_props = super().get_style_props()
-        style_props["colorScheme"] = self.color_scheme
+        if self.color_scheme:
+            style_props["colorScheme"] = self.color_scheme
         return style_props
