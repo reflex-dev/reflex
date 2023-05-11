@@ -948,3 +948,84 @@ def test_computed_var_cached():
     assert comp_v_calls == 1
     assert cs.comp_v == 1
     assert comp_v_calls == 2
+
+
+def test_computed_var_cached_depends_on_non_cached():
+    """Test that a cached_var is recalculated if it depends on non-cached ComputedVar."""
+
+    class ComputedState(State):
+        v: int = 0
+
+        @pc.var
+        def no_cache_v(self) -> int:
+            return self.v
+
+        @pc.cached_var
+        def dep_v(self) -> int:
+            return self.no_cache_v
+
+        @pc.cached_var
+        def comp_v(self) -> int:
+            return self.v
+
+    cs = ComputedState()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+    cs.v = 1
+    assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
+    assert cs.get_delta() == {
+        cs.get_name(): {"v": 1, "no_cache_v": 1, "dep_v": 1, "comp_v": 1}
+    }
+    cs.clean()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+
+
+def test_computed_var_depends_on_parent_non_cached():
+    """Child state cached_var that depends on parent state un cached var is always recalculated."""
+    counter = 0
+
+    class ParentState(State):
+        @pc.var
+        def no_cache_v(self) -> int:
+            nonlocal counter
+            counter += 1
+            return counter
+
+    class ChildState(ParentState):
+        @pc.cached_var
+        def dep_v(self) -> int:
+            return self.no_cache_v
+
+    ps = ParentState()
+    cs = ps.substates[ChildState.get_name()]
+
+    assert ps.dirty_vars == set()
+    assert cs.dirty_vars == set()
+
+    assert ps.dict() == {
+        cs.get_name(): {"dep_v": 2},
+        "no_cache_v": 1,
+        IS_HYDRATED: False,
+    }
+    assert ps.dict() == {
+        cs.get_name(): {"dep_v": 4},
+        "no_cache_v": 3,
+        IS_HYDRATED: False,
+    }
+    assert ps.dict() == {
+        cs.get_name(): {"dep_v": 6},
+        "no_cache_v": 5,
+        IS_HYDRATED: False,
+    }
+    assert counter == 6

@@ -809,6 +809,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The object as a dictionary.
         """
+        if include_computed:
+            # Apply dirty variables down into substates to allow never-cached ComputedVar to
+            # trigger recalculation of dependent vars
+            self.dirty_vars.update(self._always_dirty_computed_vars())
+            self.mark_dirty()
+
         base_vars = {
             prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
