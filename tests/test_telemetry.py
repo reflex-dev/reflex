@@ -1,6 +1,6 @@
 import json
 
-from pynecone import telemetry
+from pynecone.utils import telemetry
 
 
 def versiontuple(v):

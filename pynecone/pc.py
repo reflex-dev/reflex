@@ -9,8 +9,7 @@ import typer
 
 from pynecone import constants
 from pynecone.config import get_config
-from pynecone.telemetry import pynecone_telemetry
-from pynecone.utils import build, console, exec, prerequisites, processes
+from pynecone.utils import build, console, exec, prerequisites, processes, telemetry
 
 # Create the app.
 cli = typer.Typer()
@@ -49,10 +48,10 @@ def init(
             prerequisites.create_config(app_name)
             prerequisites.initialize_app_directory(app_name, template)
             build.set_pynecone_project_hash()
-            pynecone_telemetry("init", get_config().telemetry_enabled)
+            telemetry.send("init", get_config().telemetry_enabled)
         else:
             build.set_pynecone_project_hash()
-            pynecone_telemetry("reinit", get_config().telemetry_enabled)
+            telemetry.send("reinit", get_config().telemetry_enabled)
 
         # Initialize the .gitignore.
         prerequisites.initialize_gitignore()
@@ -123,7 +122,7 @@ def run(
     assert frontend_cmd and backend_cmd, "Invalid env"
 
     # Post a telemetry event.
-    pynecone_telemetry(f"run-{env.value}", get_config().telemetry_enabled)
+    telemetry.send(f"run-{env.value}", get_config().telemetry_enabled)
 
     # Run the frontend and backend.
     try:
@@ -210,7 +209,7 @@ def export(
     )
 
     # Post a telemetry event.
-    pynecone_telemetry("export", get_config().telemetry_enabled)
+    telemetry.send("export", get_config().telemetry_enabled)
 
     if zipping:
         console.rule(
