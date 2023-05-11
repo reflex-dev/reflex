@@ -49,6 +49,7 @@ pyright = "^1.1.229"
 darglint = "^1.8.1"
 toml = "^0.10.2"
 pytest-asyncio = "^0.20.1"
+pytest-cov = "^4.0.0"
 black = "^22.10.0"
 ruff = "^0.0.244"
 pandas = [
