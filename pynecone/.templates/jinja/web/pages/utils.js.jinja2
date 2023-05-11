@@ -1,4 +1,4 @@
-{# Renderting components recursively. #}
+{# Rendering components recursively. #}
 {# Args: #}
 {#     component: component dictionary #}
 {#     indent_width: indent width #}
@@ -18,7 +18,7 @@
 {% endfilter %}
 {% endmacro %}
 
-{# Renderting self close tag. #}
+{# Rendering self close tag. #}
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_self_close_tag(component) %}
@@ -29,7 +29,7 @@
 {%- endif %}
 {% endmacro %}
 
-{# Renderting close tag with args and props. #}
+{# Rendering close tag with args and props. #}
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_tag(component) %}
@@ -46,7 +46,7 @@
 {%- endmacro %}
 
 
-{# Renderting condition component. #}
+{# Rendering condition component. #}
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_condition_tag(component) %}
@@ -58,7 +58,7 @@
 {%- endmacro %}
 
 
-{# Renderting iterable component. #}
+{# Rendering iterable component. #}
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_iterable_tag(component) %}
@@ -70,7 +70,7 @@
 {%- endmacro %}
 
 
-{# Renderting props of a component. #}
+{# Rendering props of a component. #}
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_props(props) %}
@@ -78,7 +78,7 @@
 {% endmacro %}
 
 
-{# Renderting content with args. #}
+{# Rendering content with args. #}
 {# Args: #}
 {#     component: component dictionary #}
 {% macro render_arg_content(component) %}
