@@ -2,9 +2,15 @@ import typing
 from typing import Any, List, Union
 
 import pytest
+from packaging import version
 
 from pynecone.utils import build, format, imports, prerequisites, types
 from pynecone.vars import Var
+
+V055 = version.parse("0.5.5")
+V059 = version.parse("0.5.9")
+V056 = version.parse("0.5.6")
+V0510 = version.parse("0.5.10")
 
 
 @pytest.mark.parametrize(
@@ -229,6 +235,78 @@ def test_format_route(route: str, expected: bool):
         expected: The expected formatted route.
     """
     assert format.format_route(route) == expected
+
+
+@pytest.mark.parametrize(
+    "bun_version,is_valid, prompt_input",
+    [
+        (V055, False, "yes"),
+        (V059, True, None),
+        (V0510, False, "yes"),
+    ],
+)
+def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
+    """Test that the bun version on host system is validated properly. Also test that
+    the required bun version is installed should the user opt for it.
+
+    Args:
+        mocker: Pytest mocker object.
+        bun_version: The bun version.
+        is_valid: Whether bun version is valid for running pynecone.
+        prompt_input: The input from user on whether to install bun.
+    """
+    mocker.patch(
+        "pynecone.utils.prerequisites.get_bun_version", return_value=bun_version
+    )
+    mocker.patch("pynecone.utils.prerequisites.console.ask", return_value=prompt_input)
+
+    bun_install = mocker.patch("pynecone.utils.prerequisites.install_bun")
+    remove_existing_bun_installation = mocker.patch(
+        "pynecone.utils.prerequisites.remove_existing_bun_installation"
+    )
+
+    prerequisites.validate_and_install_bun()
+    if not is_valid:
+        remove_existing_bun_installation.assert_called_once()
+    bun_install.assert_called_once()
+
+
+def test_bun_validation_exception(mocker):
+    """Test that an exception is thrown and program exists when user selects no when asked
+    whether to install bun or not.
+
+    Args:
+        mocker: Pytest mocker.
+    """
+    mocker.patch("pynecone.utils.prerequisites.get_bun_version", return_value=V056)
+    mocker.patch("pynecone.utils.prerequisites.console.ask", return_value="no")
+
+    with pytest.raises(RuntimeError):
+        prerequisites.validate_and_install_bun()
+
+
+def test_remove_existing_bun_installation(mocker, tmp_path):
+    """Test that existing bun installation is removed.
+
+    Args:
+        mocker: Pytest mocker.
+        tmp_path: test path.
+    """
+    bun_location = tmp_path / ".bun"
+    bun_location.mkdir()
+
+    mocker.patch(
+        "pynecone.utils.prerequisites.get_package_manager",
+        return_value=str(bun_location),
+    )
+    mocker.patch(
+        "pynecone.utils.prerequisites.os.path.expandvars",
+        return_value=str(bun_location),
+    )
+
+    prerequisites.remove_existing_bun_installation()
+
+    assert not bun_location.exists()
 
 
 def test_setup_frontend(tmp_path, mocker):

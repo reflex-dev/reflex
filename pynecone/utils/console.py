@@ -48,18 +48,21 @@ def rule(title: str) -> None:
     _console.rule(title)
 
 
-def ask(question: str, choices: Optional[List[str]] = None) -> str:
+def ask(
+    question: str, choices: Optional[List[str]] = None, default: Optional[str] = None
+) -> str:
     """Takes a prompt question and optionally a list of choices
      and returns the user input.
 
     Args:
         question (str): The question to ask the user.
-        choices (Optional[List[str]]): A list of choices to select from
+        choices (Optional[List[str]]): A list of choices to select from.
+        default(Optional[str]): The default option selected.
 
     Returns:
         A string
     """
-    return Prompt.ask(question, choices=choices)
+    return Prompt.ask(question, choices=choices, default=default)  # type: ignore
 
 
 def status(msg: str) -> Status:

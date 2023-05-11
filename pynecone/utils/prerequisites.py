@@ -52,7 +52,9 @@ def get_bun_version() -> Optional[version.Version]:
     try:
         # Run the bun -v command and capture the output
         result = subprocess.run(
-            ["bun", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            [os.path.expandvars(get_config().bun_path), "-v"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         return version.parse(result.stdout.decode().strip())
     except Exception:
@@ -213,12 +215,16 @@ def initialize_web_directory():
         json.dump(pynecone_json, f, ensure_ascii=False)
 
 
-def install_bun():
-    """Install bun onto the user's system.
+def validate_and_install_bun(initialize=True):
+    """Check that bun version requirements are met. If they are not,
+    ask user whether to install required version.
+
+    Args:
+        initialize: whether this function is called on `pc init` or `pc run`.
 
     Raises:
-        FileNotFoundError: If the required packages are not installed.
         Exit: If the bun version is not supported.
+
     """
     bun_version = get_bun_version()
     if bun_version is not None and (
@@ -229,11 +235,37 @@ def install_bun():
         console.print(
             f"""[red]Bun version {bun_version} is not supported by Pynecone. Please change your to bun version to be between {constants.MIN_BUN_VERSION} and {constants.MAX_BUN_VERSION}."""
         )
-        console.print(
-            f"""[red]Upgrade by running the following command:[/red]\n\n{constants.INSTALL_BUN}"""
+        action = console.ask(
+            "Enter 'yes' to install the latest supported bun version or 'no' to exit.",
+            choices=["yes", "no"],
+            default="no",
         )
-        raise typer.Exit()
 
+        if action == "yes":
+            remove_existing_bun_installation()
+            install_bun()
+            return
+        else:
+            raise typer.Exit()
+
+    if initialize:
+        install_bun()
+
+
+def remove_existing_bun_installation():
+    """Remove existing bun installation."""
+    package_manager = get_package_manager()
+    if os.path.exists(package_manager):
+        console.log("Removing bun...")
+        path_ops.rm(os.path.expandvars(constants.BUN_ROOT_PATH))
+
+
+def install_bun():
+    """Install bun onto the user's system.
+
+    Raises:
+        FileNotFoundError: if unzip or curl packages are not found.
+    """
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
         console.log("Skipping bun installation on Windows.")

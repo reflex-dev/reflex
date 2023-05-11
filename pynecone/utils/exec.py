@@ -38,6 +38,9 @@ def run_frontend(app: App, root: Path, port: str):
         root: root path of the project.
         port: port of the app.
     """
+    # validate bun version
+    prerequisites.validate_and_install_bun(initialize=False)
+
     # Set up the frontend.
     setup_frontend(root)
 
