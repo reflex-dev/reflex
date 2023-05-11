@@ -22,7 +22,7 @@ Pynecone requires the following to get started:
 -   [Node.js 16.6.0+](https://nodejs.org/en/) (Don't worry, you won’t have to write any JavaScript!)
 
 ```
-$ pip install pynecone
+pip install pynecone
 ```
 
 ## 🥳 2. Create your first app
@@ -32,9 +32,9 @@ Installing Pynecone also installs the `pc` command line tool. Test that the inst
 Replace my_app_name with your project name:
 
 ```
-$ mkdir my_app_name
-$ cd my_app_name
-$ pc init
+mkdir my_app_name
+cd my_app_name
+pc init
 ```
 
 When you run this command for the first time, we will download and install [bun](https://bun.sh/) automatically.
@@ -46,7 +46,7 @@ This command initializes a template app in your new directory.
 You can run this app in development mode:
 
 ```
-$ pc run
+pc run
 ```
 
 You should see your app running at http://localhost:3000.

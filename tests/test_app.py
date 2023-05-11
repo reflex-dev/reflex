@@ -13,7 +13,7 @@ from pynecone.middleware import HydrateMiddleware
 from pynecone.state import State, StateUpdate
 from pynecone.style import Style
 from pynecone.utils import format
-from pynecone.var import ComputedVar
+from pynecone.vars import ComputedVar
 
 
 @pytest.fixture

@@ -67,7 +67,7 @@ class Telemetry(Base):
     python_version: str = get_python_version()
 
 
-def pynecone_telemetry(event: str, telemetry_enabled: bool) -> None:
+def send(event: str, telemetry_enabled: bool) -> None:
     """Send anonymous telemetry for Pynecone.
 
     Args:

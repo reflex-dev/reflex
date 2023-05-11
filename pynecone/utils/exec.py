@@ -14,7 +14,7 @@ from pynecone import constants
 from pynecone.config import get_config
 from pynecone.utils import console, prerequisites, processes
 from pynecone.utils.build import export_app, setup_backend, setup_frontend
-from pynecone.watch import AssetFolderWatch
+from pynecone.utils.watch import AssetFolderWatch
 
 if TYPE_CHECKING:
     from pynecone.app import App
