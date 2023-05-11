@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "add_coverage" ]
   pull_request:
     branches: [ "main" ]
 
