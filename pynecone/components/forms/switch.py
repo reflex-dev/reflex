@@ -52,8 +52,30 @@ class Switch(ChakraComponent):
             "on_change": EVENT_ARG.target.checked,
         }
         
-    def get_style_props(self) -> Dict:
-        style_props = super().get_style_props()
-        if self.color_scheme:
-            style_props["colorScheme"] = self.color_scheme
-        return style_props
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a Switch component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props to pass to the component.
+
+        Returns:
+            The Switch component.
+
+        Raises:
+            ValueError: If children are not provided or more than one child is provided.
+        """
+        # If children are not provided, throw an error.
+        if len(children) != 1:
+            raise ValueError("Must provide children to the Switch component.")
+        
+        # Add the color scheme prop to the props dictionary
+        if 'color_scheme' in cls._var_registry:
+            props['colorScheme'] = cls._var_registry['color_scheme'].get_prop_value()
+        
+        # Add the children to the props dictionary
+        props["children"] = children[0]
+
+        # Create the component.
+        return super().create(**props)
