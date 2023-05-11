@@ -61,7 +61,10 @@ class EventHandler(Base):
         for arg in args:
             # Special case for file uploads.
             if isinstance(arg, FileUpload):
-                return EventSpec(handler=self, upload=True)
+                return EventSpec(
+                    handler=self,
+                    client_handler_name="uploadFiles",
+                )
 
             # Otherwise, convert to JSON.
             try:
@@ -86,14 +89,14 @@ class EventSpec(Base):
     # The event handler.
     handler: EventHandler
 
+    # The handler on the client to process event.
+    client_handler_name: str = ""
+
     # The local arguments on the frontend.
     local_args: Tuple[Var, ...] = ()
 
     # The arguments to pass to the function.
     args: Tuple[Tuple[Var, Var], ...] = ()
-
-    # Whether to upload files.
-    upload: bool = False
 
     class Config:
         """The Pydantic config."""

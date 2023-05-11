@@ -47,7 +47,7 @@ def test_call_event_handler():
     assert event_spec.handler == handler
     assert event_spec.local_args == ()
     assert event_spec.args == ()
-    assert format.format_event(event_spec) == 'E("test_fn", {})'
+    assert format.format_event(event_spec) == 'E("test_fn", {}, )'
 
     handler = EventHandler(fn=test_fn_with_args)
     event_spec = handler(make_var("first"), make_var("second"))
@@ -58,14 +58,14 @@ def test_call_event_handler():
     assert event_spec.args == (("arg1", "first"), ("arg2", "second"))
     assert (
         format.format_event(event_spec)
-        == 'E("test_fn_with_args", {arg1:first,arg2:second})'
+        == 'E("test_fn_with_args", {arg1:first,arg2:second}, )'
     )
 
     # Passing args as strings should format differently.
     event_spec = handler("first", "second")  # type: ignore
     assert (
         format.format_event(event_spec)
-        == 'E("test_fn_with_args", {arg1:"first",arg2:"second"})'
+        == 'E("test_fn_with_args", {arg1:"first",arg2:"second"}, )'
     )
 
     first, second = 123, "456"
@@ -73,7 +73,7 @@ def test_call_event_handler():
     event_spec = handler(first, second)  # type: ignore
     assert (
         format.format_event(event_spec)
-        == 'E("test_fn_with_args", {arg1:123,arg2:"456"})'
+        == 'E("test_fn_with_args", {arg1:123,arg2:"456"}, )'
     )
 
     assert event_spec.handler == handler
@@ -94,9 +94,9 @@ def test_event_redirect():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
     assert spec.args == (("path", "/path"),)
-    assert format.format_event(spec) == 'E("_redirect", {path:"/path"})'
+    assert format.format_event(spec) == 'E("_redirect", {path:"/path"}, )'
     spec = event.redirect(Var.create_safe("path"))
-    assert format.format_event(spec) == 'E("_redirect", {path:path})'
+    assert format.format_event(spec) == 'E("_redirect", {path:path}, )'
 
 
 def test_event_console_log():
@@ -105,9 +105,9 @@ def test_event_console_log():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_console"
     assert spec.args == (("message", "message"),)
-    assert format.format_event(spec) == 'E("_console", {message:"message"})'
+    assert format.format_event(spec) == 'E("_console", {message:"message"}, )'
     spec = event.console_log(Var.create_safe("message"))
-    assert format.format_event(spec) == 'E("_console", {message:message})'
+    assert format.format_event(spec) == 'E("_console", {message:message}, )'
 
 
 def test_event_window_alert():
@@ -116,9 +116,9 @@ def test_event_window_alert():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_alert"
     assert spec.args == (("message", "message"),)
-    assert format.format_event(spec) == 'E("_alert", {message:"message"})'
+    assert format.format_event(spec) == 'E("_alert", {message:"message"}, )'
     spec = event.window_alert(Var.create_safe("message"))
-    assert format.format_event(spec) == 'E("_alert", {message:message})'
+    assert format.format_event(spec) == 'E("_alert", {message:message}, )'
 
 
 def test_set_value():
@@ -130,8 +130,8 @@ def test_set_value():
         ("ref", Var.create_safe("ref_input1")),
         ("value", ""),
     )
-    assert format.format_event(spec) == 'E("_set_value", {ref:ref_input1,value:""})'
+    assert format.format_event(spec) == 'E("_set_value", {ref:ref_input1,value:""}, )'
     spec = event.set_value("input1", Var.create_safe("message"))
     assert (
-        format.format_event(spec) == 'E("_set_value", {ref:ref_input1,value:message})'
+        format.format_event(spec) == 'E("_set_value", {ref:ref_input1,value:message}, )'
     )

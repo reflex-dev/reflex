@@ -20,13 +20,33 @@ if TYPE_CHECKING:
     from pynecone.app import App
 
 
+def update_json_file(file_path, key, value):
+    """Update the contents of a json file.
+
+    Args:
+        file_path: the path to the JSON file.
+        key: object key to update.
+        value: value of key.
+    """
+    with open(file_path) as f:  # type: ignore
+        json_object = json.load(f)
+        json_object[key] = value
+    with open(file_path, "w") as f:
+        json.dump(json_object, f, ensure_ascii=False)
+
+
 def set_pynecone_project_hash():
     """Write the hash of the Pynecone project to a PCVERSION_APP_FILE."""
-    with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
-        pynecone_json = json.load(f)
-        pynecone_json["project_hash"] = random.getrandbits(128)
-    with open(constants.PCVERSION_APP_FILE, "w") as f:
-        json.dump(pynecone_json, f, ensure_ascii=False)
+    update_json_file(
+        constants.PCVERSION_APP_FILE, "project_hash", random.getrandbits(128)
+    )
+
+
+def set_pynecone_upload_endpoint():
+    """Write the upload url to a PCVERSION_APP_FILE."""
+    update_json_file(
+        constants.PCVERSION_APP_FILE, "uploadUrl", constants.Endpoint.UPLOAD.get_url()
+    )
 
 
 def generate_sitemap(deploy_url: str):
