@@ -2,7 +2,7 @@
 {# Args: #}
 {#     component: component dictionary #}
 {#     indent_width: indent width #}
-{% macro render(component, indent_width=2) %}
+{% macro render(component, indent_width=0) %}
 {% filter indent(width=indent_width) %}
   {%- if component is not mapping %}
     {{- component }}
