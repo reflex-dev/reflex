@@ -239,6 +239,7 @@ def upload_state(tmp_path):
                     file_object.write(upload_data)
 
                 # Update the img var.
+                assert file.filename is not None
                 self.img_list.append(file.filename)
 
     return FileUploadState
@@ -298,6 +299,7 @@ def upload_sub_state(tmp_path):
                     file_object.write(upload_data)
 
                 # Update the img var.
+                assert file.filename is not None
                 self.img_list.append(file.filename)
 
     return FileUploadState
@@ -345,6 +347,7 @@ def upload_grand_sub_state(tmp_path):
                     file_object.write(upload_data)
 
                 # Update the img var.
+                assert file.filename is not None
                 self.img_list.append(file.filename)
 
         async def multi_handle_upload(self, files: List[pc.UploadFile]):
@@ -362,6 +365,7 @@ def upload_grand_sub_state(tmp_path):
                     file_object.write(upload_data)
 
                 # Update the img var.
+                assert file.filename is not None
                 self.img_list.append(file.filename)
 
     return FileUploadState
