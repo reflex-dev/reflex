@@ -82,8 +82,9 @@ Once you solve a current issue or improvement to Pynecone, you can make a pr, an
 Before submitting, a pull request, ensure the following steps are taken and test passing.
 
 In your `pynecone` directory run make sure all the unit tests are still passing using the following command.
+This will fail if code coverage is below 80%.
 ``` bash
-poetry run pytest tests
+poetry run pytest tests --cov --no-cov-on-fail --cov-report= 
 ```
 Next make sure all the following tests pass. This ensures that every new change has proper documentation and type checking.
 ``` bash

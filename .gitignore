@@ -4,3 +4,4 @@ dist/*
 examples/
 .idea
 .vscode
+.coverage
