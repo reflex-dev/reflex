@@ -129,14 +129,23 @@ def setup_frontend(root: Path):
     # Initialize the web directory if it doesn't exist.
     web_dir = prerequisites.create_web_directory(root)
 
-    # Install frontend packages
+    # Install frontend packages.
     prerequisites.install_frontend_packages(web_dir)
 
-    # copy asset files to public folder
+    # Copy asset files to public folder.
     path_ops.mkdir(str(root / constants.WEB_ASSETS_DIR))
     path_ops.cp(
         src=str(root / constants.APP_ASSETS_DIR),
         dest=str(root / constants.WEB_ASSETS_DIR),
+    )
+
+    # Disable the Next telemetry.
+    subprocess.Popen(
+        [prerequisites.get_package_manager(), "run", "next", "telemetry", "disable"],
+        cwd=constants.WEB_DIR,
+        env=os.environ,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
 
 
