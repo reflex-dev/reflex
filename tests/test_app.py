@@ -501,12 +501,10 @@ async def test_upload_file(fixture, request, expected):
     file1 = UploadFile(
         filename="token:file_upload_state.multi_handle_upload:True:image1.jpg",
         file=bio,
-        content_type="image/jpeg",
     )
     file2 = UploadFile(
         filename="token:file_upload_state.multi_handle_upload:True:image2.jpg",
         file=bio,
-        content_type="image/jpeg",
     )
     fn = upload(app)
     result = await fn([file1, file2])  # type: ignore
@@ -536,12 +534,10 @@ async def test_upload_file_without_annotation(fixture, request):
     file1 = UploadFile(
         filename="token:file_upload_state.handle_upload2:True:image1.jpg",
         file=bio,
-        content_type="image/jpeg",
     )
     file2 = UploadFile(
         filename="token:file_upload_state.handle_upload2:True:image2.jpg",
         file=bio,
-        content_type="image/jpeg",
     )
     fn = upload(app)
     with pytest.raises(ValueError) as err:
