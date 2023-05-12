@@ -249,7 +249,7 @@ def test_setup_frontend(tmp_path, mocker):
 
     mocker.patch("pynecone.utils.prerequisites.install_frontend_packages")
 
-    build.setup_frontend(tmp_path)
+    build.setup_frontend(tmp_path, disable_telemetry=False)
     assert web_folder.exists()
     assert web_public_folder.exists()
     assert (web_public_folder / "favicon.ico").exists()
