@@ -30,6 +30,7 @@ class Element(Component):
             ).set(
                 contents=str(tag.contents),
                 children=[child.render() for child in self.children],
+                props=tag.format_props(),
             )
         )
 
