@@ -46,6 +46,21 @@ class Slider(ChakraComponent):
     # The minimum distance between slider thumbs. Useful for preventing the thumbs from being too close together.
     min_steps_between_thumbs: Var[int]
 
+    # Oreintation of the slider vertical | horizontal.
+    orientation: Var[str]
+
+    # Minimum height of the slider.
+    min_h: Var[str]
+
+    # Minimum width of the slider.
+    min_w: Var[str]
+
+    # Maximum height of the slider.
+    max_h: Var[str]
+
+    # Maximum width of the slider.
+    max_w: Var[str]
+
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
@@ -98,6 +113,9 @@ class SliderThumb(ChakraComponent):
     """The handle that's used to change the slider value."""
 
     tag = "SliderThumb"
+
+    # The size of the thumb.
+    box_size: Var[str]
 
 
 class SliderMark(ChakraComponent):
