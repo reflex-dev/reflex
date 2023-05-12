@@ -3,6 +3,7 @@ from typing import Dict, List
 import pytest
 from plotly.graph_objects import Figure
 
+import pynecone as pc
 from pynecone.base import Base
 from pynecone.constants import IS_HYDRATED, RouteVar
 from pynecone.event import Event, EventHandler
@@ -484,13 +485,11 @@ def test_set_dirty_var(test_state):
 
     # Setting a var should mark it as dirty.
     test_state.num1 = 1
-    # assert test_state.dirty_vars == {"num1", "sum"}
-    assert test_state.dirty_vars == {"num1"}
+    assert test_state.dirty_vars == {"num1", "sum"}
 
     # Setting another var should mark it as dirty.
     test_state.num2 = 2
-    # assert test_state.dirty_vars == {"num1", "num2", "sum"}
-    assert test_state.dirty_vars == {"num1", "num2"}
+    assert test_state.dirty_vars == {"num1", "num2", "sum"}
 
     # Cleaning the state should remove all dirty vars.
     test_state.clean()
@@ -746,7 +745,7 @@ class InterdependentState(State):
     v1: int = 0
     _v2: int = 1
 
-    @ComputedVar
+    @pc.cached_var
     def v1x2(self) -> int:
         """Depends on var v1.
 
@@ -755,7 +754,7 @@ class InterdependentState(State):
         """
         return self.v1 * 2
 
-    @ComputedVar
+    @pc.cached_var
     def v2x2(self) -> int:
         """Depends on backend var _v2.
 
@@ -764,7 +763,7 @@ class InterdependentState(State):
         """
         return self._v2 * 2
 
-    @ComputedVar
+    @pc.cached_var
     def v1x2x2(self) -> int:
         """Depends on ComputedVar v1x2.
 
@@ -786,43 +785,43 @@ def interdependent_state() -> State:
     return s
 
 
-# def test_not_dirty_computed_var_from_var(interdependent_state):
-#     """Set Var that no ComputedVar depends on, expect no recalculation.
+def test_not_dirty_computed_var_from_var(interdependent_state):
+    """Set Var that no ComputedVar depends on, expect no recalculation.
 
-#     Args:
-#         interdependent_state: A state with varying Var dependencies.
-#     """
-#     interdependent_state.x = 5
-#     assert interdependent_state.get_delta() == {
-#         interdependent_state.get_full_name(): {"x": 5},
-#     }
-
-
-# def test_dirty_computed_var_from_var(interdependent_state):
-#     """Set Var that ComputedVar depends on, expect recalculation.
-
-#     The other ComputedVar depends on the changed ComputedVar and should also be
-#     recalculated. No other ComputedVars should be recalculated.
-
-#     Args:
-#         interdependent_state: A state with varying Var dependencies.
-#     """
-#     interdependent_state.v1 = 1
-#     assert interdependent_state.get_delta() == {
-#         interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
-#     }
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.x = 5
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"x": 5},
+    }
 
 
-# def test_dirty_computed_var_from_backend_var(interdependent_state):
-#     """Set backend var that ComputedVar depends on, expect recalculation.
+def test_dirty_computed_var_from_var(interdependent_state):
+    """Set Var that ComputedVar depends on, expect recalculation.
 
-#     Args:
-#         interdependent_state: A state with varying Var dependencies.
-#     """
-#     interdependent_state._v2 = 2
-#     assert interdependent_state.get_delta() == {
-#         interdependent_state.get_full_name(): {"v2x2": 4},
-#     }
+    The other ComputedVar depends on the changed ComputedVar and should also be
+    recalculated. No other ComputedVars should be recalculated.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state.v1 = 1
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"v1": 1, "v1x2": 2, "v1x2x2": 4},
+    }
+
+
+def test_dirty_computed_var_from_backend_var(interdependent_state):
+    """Set backend var that ComputedVar depends on, expect recalculation.
+
+    Args:
+        interdependent_state: A state with varying Var dependencies.
+    """
+    interdependent_state._v2 = 2
+    assert interdependent_state.get_delta() == {
+        interdependent_state.get_full_name(): {"v2x2": 4},
+    }
 
 
 def test_per_state_backend_var(interdependent_state):
@@ -932,7 +931,7 @@ def test_computed_var_cached():
     class ComputedState(State):
         v: int = 0
 
-        @ComputedVar
+        @pc.cached_var
         def comp_v(self) -> int:
             nonlocal comp_v_calls
             comp_v_calls += 1
@@ -949,3 +948,84 @@ def test_computed_var_cached():
     assert comp_v_calls == 1
     assert cs.comp_v == 1
     assert comp_v_calls == 2
+
+
+def test_computed_var_cached_depends_on_non_cached():
+    """Test that a cached_var is recalculated if it depends on non-cached ComputedVar."""
+
+    class ComputedState(State):
+        v: int = 0
+
+        @pc.var
+        def no_cache_v(self) -> int:
+            return self.v
+
+        @pc.cached_var
+        def dep_v(self) -> int:
+            return self.no_cache_v
+
+        @pc.cached_var
+        def comp_v(self) -> int:
+            return self.v
+
+    cs = ComputedState()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+    cs.v = 1
+    assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
+    assert cs.get_delta() == {
+        cs.get_name(): {"v": 1, "no_cache_v": 1, "dep_v": 1, "comp_v": 1}
+    }
+    cs.clean()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+    assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
+    cs.clean()
+    assert cs.dirty_vars == set()
+
+
+def test_computed_var_depends_on_parent_non_cached():
+    """Child state cached_var that depends on parent state un cached var is always recalculated."""
+    counter = 0
+
+    class ParentState(State):
+        @pc.var
+        def no_cache_v(self) -> int:
+            nonlocal counter
+            counter += 1
+            return counter
+
+    class ChildState(ParentState):
+        @pc.cached_var
+        def dep_v(self) -> int:
+            return self.no_cache_v
+
+    ps = ParentState()
+    cs = ps.substates[ChildState.get_name()]
+
+    assert ps.dirty_vars == set()
+    assert cs.dirty_vars == set()
+
+    assert ps.dict() == {
+        cs.get_name(): {"dep_v": 2},
+        "no_cache_v": 1,
+        IS_HYDRATED: False,
+    }
+    assert ps.dict() == {
+        cs.get_name(): {"dep_v": 4},
+        "no_cache_v": 3,
+        IS_HYDRATED: False,
+    }
+    assert ps.dict() == {
+        cs.get_name(): {"dep_v": 6},
+        "no_cache_v": 5,
+        IS_HYDRATED: False,
+    }
+    assert counter == 6

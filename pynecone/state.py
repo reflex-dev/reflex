@@ -688,22 +688,29 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Return the state update.
         return StateUpdate(delta=delta, events=events)
 
+    def _always_dirty_computed_vars(self) -> Set[str]:
+        """The set of ComputedVars that always need to be recalculated.
+
+        Returns:
+            Set of all ComputedVar in this state where cache=False
+        """
+        return set(
+            cvar_name
+            for cvar_name, cvar in self.computed_vars.items()
+            if not cvar.cache
+        )
+
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
-        # Mark all ComputedVars as dirty.
-        for cvar in self.computed_vars.values():
-            cvar.mark_dirty(instance=self)
-
-        # TODO: Uncomment the actual implementation below.
-        # dirty_vars = self.dirty_vars
-        # while dirty_vars:
-        #     calc_vars, dirty_vars = dirty_vars, set()
-        #     for cvar in self._dirty_computed_vars(from_vars=calc_vars):
-        #         self.dirty_vars.add(cvar)
-        #         dirty_vars.add(cvar)
-        #         actual_var = self.computed_vars.get(cvar)
-        #         if actual_var:
-        #             actual_var.mark_dirty(instance=self)
+        dirty_vars = self.dirty_vars
+        while dirty_vars:
+            calc_vars, dirty_vars = dirty_vars, set()
+            for cvar in self._dirty_computed_vars(from_vars=calc_vars):
+                self.dirty_vars.add(cvar)
+                dirty_vars.add(cvar)
+                actual_var = self.computed_vars.get(cvar)
+                if actual_var:
+                    actual_var.mark_dirty(instance=self)
 
     def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
@@ -714,13 +721,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             Set of computed vars to include in the delta.
         """
-        return set(self.computed_vars)
-        # TODO: Uncomment the actual implementation below.
-        # return set(
-        #     cvar
-        #     for dirty_var in from_vars or self.dirty_vars
-        #     for cvar in self.computed_var_dependencies[dirty_var]
-        # )
+        return set(
+            cvar
+            for dirty_var in from_vars or self.dirty_vars
+            for cvar in self.computed_var_dependencies[dirty_var]
+        )
 
     def get_delta(self) -> Delta:
         """Get the delta for the state.
@@ -730,11 +735,18 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         delta = {}
 
-        # Return the dirty vars and dependent computed vars
-        self._mark_dirty_computed_vars()
-        delta_vars = self.dirty_vars.intersection(self.base_vars).union(
-            self._dirty_computed_vars()
+        # Apply dirty variables down into substates
+        self.dirty_vars.update(self._always_dirty_computed_vars())
+        self.mark_dirty()
+
+        # Return the dirty vars for this instance, any cached/dependent computed vars,
+        # and always dirty computed vars (cache=False)
+        delta_vars = (
+            self.dirty_vars.intersection(self.base_vars)
+            .union(self._dirty_computed_vars())
+            .union(self._always_dirty_computed_vars())
         )
+
         subdelta = {
             prop: getattr(self, prop)
             for prop in delta_vars
@@ -797,6 +809,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The object as a dictionary.
         """
+        if include_computed:
+            # Apply dirty variables down into substates to allow never-cached ComputedVar to
+            # trigger recalculation of dependent vars
+            self.dirty_vars.update(self._always_dirty_computed_vars())
+            self.mark_dirty()
+
         base_vars = {
             prop_name: self.get_value(getattr(self, prop_name))
             for prop_name in self.base_vars
