@@ -506,8 +506,10 @@ def upload(app: App):
         Raises:
             ValueError: if there are no args with supported annotation.
         """
+        assert files[0].filename is not None
         token, handler = files[0].filename.split(":")[:2]
         for file in files:
+            assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
 
         # Get the state for the session.
