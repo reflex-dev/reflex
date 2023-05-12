@@ -120,11 +120,12 @@ def posix_export(backend: bool = True, frontend: bool = True):
         os.system(cmd)
 
 
-def setup_frontend(root: Path):
+def setup_frontend(root: Path, disable_telemetry: bool = True):
     """Set up the frontend.
 
     Args:
         root: root path of the project.
+        disable_telemetry: Whether to disable the Next telemetry.
     """
     # Initialize the web directory if it doesn't exist.
     web_dir = prerequisites.create_web_directory(root)
@@ -140,13 +141,20 @@ def setup_frontend(root: Path):
     )
 
     # Disable the Next telemetry.
-    subprocess.Popen(
-        [prerequisites.get_package_manager(), "run", "next", "telemetry", "disable"],
-        cwd=constants.WEB_DIR,
-        env=os.environ,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
-    )
+    if disable_telemetry:
+        subprocess.Popen(
+            [
+                prerequisites.get_package_manager(),
+                "run",
+                "next",
+                "telemetry",
+                "disable",
+            ],
+            cwd=constants.WEB_DIR,
+            env=os.environ,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
+        )
 
 
 def setup_backend():
