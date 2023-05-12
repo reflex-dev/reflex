@@ -77,10 +77,7 @@ class Tag(Base):
         elif isinstance(prop, EventChain):
             local_args = ",".join(([str(a) for a in prop.events[0].local_args]))
 
-            if len(prop.events) == 1 and prop.events[0].upload:
-                # Special case for upload events.
-                event = format.format_upload_event(prop.events[0])
-            elif prop.full_control:
+            if prop.full_control:
                 # Full control component events.
                 event = format.format_full_control_event(prop)
             else:

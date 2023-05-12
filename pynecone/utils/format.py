@@ -294,21 +294,8 @@ def format_event(event_spec: EventSpec) -> str:
             for name, val in event_spec.args
         ]
     )
-    return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')})"
-
-
-def format_upload_event(event_spec: EventSpec) -> str:
-    """Format an upload event.
-
-    Args:
-        event_spec: The event to format.
-
-    Returns:
-        The compiled event.
-    """
-    state, name = get_event_handler_parts(event_spec.handler)
-    parent_state = state.split(".")[0]
-    return f'uploadFiles({parent_state}, {constants.RESULT}, set{constants.RESULT.capitalize()}, {parent_state}.files, "{state}.{name}",UPLOAD)'
+    quote = '"'
+    return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')}, {wrap(event_spec.client_handler_name, quote) if event_spec.client_handler_name else ''})"
 
 
 def format_full_control_event(event_chain: EventChain) -> str:

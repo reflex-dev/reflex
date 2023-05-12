@@ -366,33 +366,6 @@ def test_issubclass(cls: type, cls_check: type, expected: bool):
     assert types._issubclass(cls, cls_check) == expected
 
 
-def test_format_sub_state_event(upload_sub_state_event_spec):
-    """Test formatting an upload event spec of substate.
-
-    Args:
-        upload_sub_state_event_spec: The event spec fixture.
-    """
-    assert (
-        format.format_upload_event(upload_sub_state_event_spec)
-        == "uploadFiles(base_state, result, setResult, base_state.files, "
-        '"base_state.sub_upload_state.handle_upload",UPLOAD)'
-    )
-
-
-def test_format_upload_event(upload_event_spec):
-    """Test formatting an upload event spec.
-
-    Args:
-        upload_event_spec: The event spec fixture.
-    """
-    assert (
-        format.format_upload_event(upload_event_spec)
-        == "uploadFiles(upload_state, result, setResult, "
-        'upload_state.files, "upload_state.handle_upload1",'
-        "UPLOAD)"
-    )
-
-
 @pytest.mark.parametrize(
     "app_name,expected_config_name",
     [
