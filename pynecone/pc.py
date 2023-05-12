@@ -38,25 +38,25 @@ def init(
         )
         raise typer.Exit()
 
-    with console.status(f"[bold]Initializing {app_name}"):
-        # Set up the web directory.
-        prerequisites.install_bun()
-        prerequisites.initialize_web_directory()
+    console.rule(f"[bold]Initializing {app_name}")
+    # Set up the web directory.
+    prerequisites.validate_and_install_bun()
+    prerequisites.initialize_web_directory()
 
-        # Set up the app directory, only if the config doesn't exist.
-        if not os.path.exists(constants.CONFIG_FILE):
-            prerequisites.create_config(app_name)
-            prerequisites.initialize_app_directory(app_name, template)
-            build.set_pynecone_project_hash()
-            telemetry.send("init", get_config().telemetry_enabled)
-        else:
-            build.set_pynecone_project_hash()
-            telemetry.send("reinit", get_config().telemetry_enabled)
+    # Set up the app directory, only if the config doesn't exist.
+    if not os.path.exists(constants.CONFIG_FILE):
+        prerequisites.create_config(app_name)
+        prerequisites.initialize_app_directory(app_name, template)
+        build.set_pynecone_project_hash()
+        telemetry.send("init", get_config().telemetry_enabled)
+    else:
+        build.set_pynecone_project_hash()
+        telemetry.send("reinit", get_config().telemetry_enabled)
 
-        # Initialize the .gitignore.
-        prerequisites.initialize_gitignore()
-        # Finish initializing the app.
-        console.log(f"[bold green]Finished Initializing: {app_name}")
+    # Initialize the .gitignore.
+    prerequisites.initialize_gitignore()
+    # Finish initializing the app.
+    console.log(f"[bold green]Finished Initializing: {app_name}")
 
 
 @cli.command()

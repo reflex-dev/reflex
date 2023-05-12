@@ -18,7 +18,7 @@ VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
 MIN_NODE_VERSION = "16.6.0"
 
 # Valid bun versions.
-MIN_BUN_VERSION = "0.5.8"
+MIN_BUN_VERSION = "0.5.9"
 MAX_BUN_VERSION = "0.5.9"
 INVALID_BUN_VERSIONS = ["0.5.5", "0.5.6", "0.5.7"]
 
@@ -70,8 +70,10 @@ FRONTEND_PORT = "3000"
 BACKEND_PORT = "8000"
 # The backend api url.
 API_URL = "http://localhost:8000"
+# bun root location
+BUN_ROOT_PATH = "$HOME/.bun"
 # The default path where bun is installed.
-BUN_PATH = "$HOME/.bun/bin/bun"
+BUN_PATH = f"{BUN_ROOT_PATH}/bin/bun"
 # Command to install bun.
 INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
 # Default host in dev mode.
