@@ -37,10 +37,9 @@ class Switch(ChakraComponent):
 
     # The placeholder text.
     placeholder: Var[str]
-    
+
     # The color scheme of the switch (e.g. "blue", "green", "red", etc.)
     color_scheme: Var[str]
-
 
     @classmethod
     def get_controlled_triggers(cls) -> Dict[str, Var]:
