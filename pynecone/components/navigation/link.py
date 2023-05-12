@@ -20,6 +20,9 @@ class Link(ChakraComponent):
     # The text to display.
     text: Var[str]
 
+    # What the link renders too.
+    as_: Var[str] = "span"  # type: ignore
+
     # If true, the link will open in new tab.
     is_external: Var[bool]
 
