@@ -142,11 +142,12 @@ class FileUpload(Base):
 
 
 # Special server-side events.
-def server_side(name: str, **kwargs) -> EventSpec:
+def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     """A server-side event.
 
     Args:
         name: The name of the event.
+        sig: The function signature of the event.
         **kwargs: The arguments to pass to the event.
 
     Returns:
@@ -157,6 +158,7 @@ def server_side(name: str, **kwargs) -> EventSpec:
         return None
 
     fn.__qualname__ = name
+    fn.__signature__ = sig
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
@@ -175,7 +177,7 @@ def redirect(path: Union[str, Var[str]]) -> EventSpec:
     Returns:
         An event to redirect to the path.
     """
-    return server_side("_redirect", path=path)
+    return server_side("_redirect", get_fn_signature(redirect), path=path)
 
 
 def console_log(message: Union[str, Var[str]]) -> EventSpec:
@@ -187,7 +189,7 @@ def console_log(message: Union[str, Var[str]]) -> EventSpec:
     Returns:
         An event to log the message.
     """
-    return server_side("_console", message=message)
+    return server_side("_console", get_fn_signature(console_log), message=message)
 
 
 def window_alert(message: Union[str, Var[str]]) -> EventSpec:
@@ -199,7 +201,7 @@ def window_alert(message: Union[str, Var[str]]) -> EventSpec:
     Returns:
         An event to alert the message.
     """
-    return server_side("_alert", message=message)
+    return server_side("_alert", get_fn_signature(window_alert), message=message)
 
 
 def set_value(ref: str, value: Any) -> EventSpec:
@@ -213,7 +215,10 @@ def set_value(ref: str, value: Any) -> EventSpec:
         An event to set the ref.
     """
     return server_side(
-        "_set_value", ref=Var.create_safe(format.format_ref(ref)), value=value
+        "_set_value",
+        get_fn_signature(set_value),
+        ref=Var.create_safe(format.format_ref(ref)),
+        value=value,
     )
 
 
@@ -333,11 +338,7 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], 
     """
     args = inspect.getfullargspec(event_spec.handler.fn).args
 
-    return (
-        event_spec.args
-        if len(args) > 2
-        else (((Var.create_safe(args[1]), arg),) if len(args) == 2 else tuple())
-    )
+    return event_spec.args if len(args) > 1 else tuple()
 
 
 def fix_events(
@@ -382,6 +383,22 @@ def fix_events(
         )
 
     return out
+
+
+def get_fn_signature(fn: Callable) -> inspect.Signature:
+    """Get the signature of a function.
+
+    Args:
+        fn: The function.
+
+    Returns:
+        The signature of the function.
+    """
+    signature = inspect.signature(fn)
+    new_param = inspect.Parameter(
+        "state", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
+    )
+    return signature.replace(parameters=(new_param, *signature.parameters.values()))
 
 
 # A set of common event triggers.
