@@ -70,13 +70,6 @@ class Input(ChakraComponent):
             "on_key_up": EVENT_ARG.key,
         }
 
-    def _render(self):
-        out = super()._render()
-        ref = self.get_ref()
-        if ref is not None:
-            out.add_props(ref=Var.create(ref, is_local=False))
-        return out
-
 
 class InputGroup(ChakraComponent):
     """The InputGroup component is a component that is used to group a set of inputs."""
