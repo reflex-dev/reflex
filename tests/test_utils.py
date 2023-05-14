@@ -1,9 +1,13 @@
+import os
 import typing
+from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
 from packaging import version
 
+from pynecone import Env
+from pynecone.constants import CONFIG_FILE, DB_URL
 from pynecone.utils import build, format, imports, prerequisites, types
 from pynecone.vars import Var
 
@@ -389,6 +393,43 @@ def test_create_config(app_name, expected_config_name, mocker):
     tmpl_mock.render.assert_called_with(
         app_name=app_name, config_name=expected_config_name
     )
+
+
+@pytest.fixture
+def tmp_working_dir(tmp_path):
+    """Create a temporary directory and chdir to it.
+
+    After the test executes, chdir back to the original working directory.
+
+    Args:
+        tmp_path: pytest tmp_path fixture creates per-test temp dir
+
+    Yields:
+        subdirectory of tmp_path which is now the current working directory.
+    """
+    old_pwd = Path(".").resolve()
+    working_dir = tmp_path / "working_dir"
+    working_dir.mkdir()
+    os.chdir(working_dir)
+    yield working_dir
+    os.chdir(old_pwd)
+
+
+def test_create_config_e2e(tmp_working_dir):
+    """Create a new config file, exec it, and make assertions about the config.
+
+    Args:
+        tmp_working_dir: a new directory that is the current working directory
+            for the duration of the test.
+    """
+    app_name = "e2e"
+    prerequisites.create_config(app_name)
+    eval_globals = {}
+    exec((tmp_working_dir / CONFIG_FILE).read_text(), eval_globals)
+    config = eval_globals["config"]
+    assert config.app_name == app_name
+    assert config.db_url == DB_URL
+    assert config.env == Env.DEV
 
 
 @pytest.mark.parametrize(
