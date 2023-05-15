@@ -25,7 +25,7 @@ def mock_event(arg):
         ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
         (
             EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
-            '{(_e) => {_e.preventDefault(); Event([E("mock_event", {})])}}',
+            '{(_e) => {_e.preventDefault(); Event([E("mock_event")])}}',
         ),
         (
             EventChain(

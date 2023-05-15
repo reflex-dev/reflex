@@ -311,13 +311,9 @@ class Component(Base, ABC):
         )
 
         # Add component props to the tag.
-        props = {attr: getattr(self, attr) for attr in self.get_props()}
-
-        # Special case for props named `type_`.
-        if hasattr(self, "type_"):
-            props["type"] = self.type_  # type: ignore
-        if hasattr(self, "as_"):
-            props["as"] = self.as_  # type: ignore
+        props = {
+            attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
+        }
 
         # Add ref to element if `id` is not None.
         ref = self.get_ref()
