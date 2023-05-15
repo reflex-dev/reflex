@@ -5,6 +5,6 @@ class {{ config_name }}(pc.Config):
 
 config = {{ config_name }}(
     app_name="{{ app_name }}",
-    db_url="{{ db_url }}",
+    db_url="{{ const.db_url }}",
     env=pc.Env.DEV,
 )
