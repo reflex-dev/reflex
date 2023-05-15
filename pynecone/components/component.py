@@ -320,6 +320,11 @@ class Component(Base, ABC):
         if hasattr(self, "as_"):
             props["as"] = self.as_  # type: ignore
 
+        # Add ref to element if `id` is not None.
+        ref = self.get_ref()
+        if ref is not None:
+            props["ref"] = Var.create(ref, is_local=False)
+
         return tag.add_props(**props)
 
     @classmethod
