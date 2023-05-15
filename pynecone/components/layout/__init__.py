@@ -2,6 +2,7 @@
 
 from .aspect_ratio import AspectRatio
 from .box import Box
+from .card import Card, Cbody, Cfoot, Chead
 from .center import Center, Circle, Square
 from .cond import Cond, cond
 from .container import Container
