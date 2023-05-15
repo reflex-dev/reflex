@@ -7,19 +7,19 @@ from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.vars import Var
 
 
-class Chead(ChakraComponent):
+class CardHeader(ChakraComponent):
     """The wrapper that contains a card's header."""
 
     tag = "CardHeader"
 
 
-class Cbody(ChakraComponent):
+class CardBody(ChakraComponent):
     """The wrapper that houses the card's main content."""
 
     tag = "CardBody"
 
 
-class Cfoot(ChakraComponent):
+class CardFooter(ChakraComponent):
     """The footer that houses the card actions."""
 
     tag = "CardFooter"
@@ -80,7 +80,11 @@ class Card(ChakraComponent):
             The `create()` method returns a Card object.
         """
         children = []
-        param_to_component_class = ((header, Chead), (body, Cbody), (footer, Cfoot))
+        param_to_component_class = (
+            (header, CardHeader),
+            (body, CardBody),
+            (footer, CardFooter),
+        )
 
         for param, component_class in param_to_component_class:
             if isinstance(param, component_class):
