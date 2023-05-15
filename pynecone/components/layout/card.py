@@ -66,15 +66,27 @@ class Card(ChakraComponent):
         **props
     ) -> Component:
         """Creates a Chakra Card with a body and optionally header and/or footer, and returns it.
+        If header, body or footer are not already instances of Chead, Cbody or Cfoot respectively,
+        they will be wrapped as such for layout purposes. If you want to modify their props,
+        e.g. padding_left, you should wrap them yourself.
 
         Args:
             body (Component): The main content of the Card that will be created.
-            header (Optional[Component]): Should be a pc.Chead instance.
-            footer (Optional[Component]): Should be a pc.Cfoot instance.
+            header (Optional[Component]): The header of the Card.
+            footer (Optional[Component]): The footer of the Card.
             props: The properties to be passed to the component.
 
         Returns:
             The `create()` method returns a Card object.
         """
-        children = [x for x in (header, body, footer) if x is not None]
+        children = []
+        param_to_component_class = ((header, Chead), (body, Cbody), (footer, Cfoot))
+
+        for tup in param_to_component_class:
+            param, component_class = tup
+            if isinstance(param, component_class):
+                children.append(param)
+            elif param is not None:
+                children.append(component_class.create(param))
+
         return super().create(*children, **props)
