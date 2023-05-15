@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pynecone"
-version = "0.1.29"
+version = "0.1.30"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [

@@ -93,6 +93,7 @@ export const applyEvent = async (event, router, socket) => {
   }
 
   if (event.name == "_set_value") {
+    event.payload.ref.current.blur();
     event.payload.ref.current.value = event.payload.value;
     return false;
   }

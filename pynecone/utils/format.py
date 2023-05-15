@@ -294,8 +294,15 @@ def format_event(event_spec: EventSpec) -> str:
             for name, val in event_spec.args
         ]
     )
-    quote = '"'
-    return f"E(\"{format_event_handler(event_spec.handler)}\", {wrap(args, '{')}, {wrap(event_spec.client_handler_name, quote) if event_spec.client_handler_name else ''})"
+    event_args = [
+        wrap(format_event_handler(event_spec.handler), '"'),
+    ]
+    if len(args) > 0:
+        event_args.append(wrap(args, "{"))
+
+    if event_spec.client_handler_name:
+        event_args.append(wrap(event_spec.client_handler_name, '"'))
+    return f"E({', '.join(event_args)})"
 
 
 def format_full_control_event(event_chain: EventChain) -> str:

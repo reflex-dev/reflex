@@ -83,9 +83,6 @@ def run(
     frontend_port = get_config().port if port is None else port
     backend_port = get_config().backend_port if backend_port is None else backend_port
 
-    # set the upload url in pynecone.json file
-    build.set_pynecone_upload_endpoint()
-
     # If --no-frontend-only and no --backend-only, then turn on frontend and backend both
     if not frontend and not backend:
         frontend = True
