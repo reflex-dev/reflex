@@ -82,8 +82,7 @@ class Card(ChakraComponent):
         children = []
         param_to_component_class = ((header, Chead), (body, Cbody), (footer, Cfoot))
 
-        for tup in param_to_component_class:
-            param, component_class = tup
+        for param, component_class in param_to_component_class:
             if isinstance(param, component_class):
                 children.append(param)
             elif param is not None:
