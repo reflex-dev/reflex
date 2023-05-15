@@ -64,6 +64,9 @@ class Tag(Base):
 
         Returns:
             The formatted prop to display within a tag.
+
+        Raises:
+            TypeError: If the prop is not a valid type.
         """
         # Handle var props.
         if isinstance(prop, Var):
@@ -81,8 +84,8 @@ class Tag(Base):
             else:
                 # All other events.
                 chain = ",".join([format.format_event(event) for event in prop.events])
-                event = f"{{{EVENT_ARG}.preventDefault(); Event([{chain}])}}"
-            prop = f"({EVENT_ARG}) => {event}"
+                event = f"Event([{chain}], {EVENT_ARG})"
+            prop = f"{EVENT_ARG} => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -103,7 +106,12 @@ class Tag(Base):
                 }
 
             # Dump the prop as JSON.
-            prop = format.json_dumps(prop)
+            try:
+                prop = format.json_dumps(prop)
+            except TypeError as e:
+                raise TypeError(
+                    f"Could not format prop: {prop} of type {type(prop)}"
+                ) from e
 
             # This substitution is necessary to unwrap var values.
             prop = re.sub('"{', "", prop)

@@ -19,10 +19,15 @@ export default function Component() {
   const { isReady } = {{const.router}}
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
 
-  const Event = events => {{state_name|react_setter}}({
-    ...{{state_name}},
-    events: [...{{state_name}}.events, ...events],
-  })
+  const Event = (events, _e) => {
+      if (_e) {
+        _e.preventDefault();
+      }
+      {{state_name|react_setter}}({
+        ...{{state_name}},
+        events: [...{{state_name}}.events, ...events],
+      })
+  }
 
   const File = files => {{state_name|react_setter}}({
     ...{{state_name}},
@@ -51,8 +56,8 @@ export default function Component() {
       }
 
       await updateState({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
-      }
-      update()
+    }
+    update()
   })
   useEffect(() => {
     const change_complete = () => Event([E('{{state_name}}.{{const.hydrate}}', {})])

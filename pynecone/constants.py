@@ -8,19 +8,16 @@ from types import SimpleNamespace
 import pkg_resources
 
 # App names and versions.
-# The name of the Pynecone module.
+# The name of the Pynecone package.
 MODULE_NAME = "pynecone"
-# The name of the pip install package.
-PACKAGE_NAME = "pynecone"
 # The current version of Pynecone.
-VERSION = pkg_resources.get_distribution(PACKAGE_NAME).version
+VERSION = pkg_resources.get_distribution(MODULE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
 MIN_NODE_VERSION = "16.6.0"
 
 # Valid bun versions.
 MIN_BUN_VERSION = "0.5.9"
 MAX_BUN_VERSION = "0.5.9"
-INVALID_BUN_VERSIONS = ["0.5.5", "0.5.6", "0.5.7"]
 
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
