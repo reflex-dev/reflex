@@ -26,6 +26,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="E"),
         ImportVar(tag="isTrue"),
+        ImportVar(tag="refs"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {ImportVar(tag=constants.USE_COLOR_MODE)},

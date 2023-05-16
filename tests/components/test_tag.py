@@ -25,7 +25,7 @@ def mock_event(arg):
         ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
         (
             EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
-            '{(_e) => {_e.preventDefault(); Event([E("mock_event")])}}',
+            '{_e => Event([E("mock_event")], _e)}',
         ),
         (
             EventChain(
@@ -36,7 +36,7 @@ def mock_event(arg):
                     )
                 ]
             ),
-            '{(_e) => {_e.preventDefault(); Event([E("mock_event", {arg:_e.target.value})])}}',
+            '{_e => Event([E("mock_event", {arg:_e.target.value})], _e)}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(name="var", type_="int"), "{var}"),

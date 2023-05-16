@@ -230,7 +230,6 @@ def validate_and_install_bun(initialize=True):
     if bun_version is not None and (
         bun_version < version.parse(constants.MIN_BUN_VERSION)
         or bun_version > version.parse(constants.MAX_BUN_VERSION)
-        or str(bun_version) in constants.INVALID_BUN_VERSIONS
     ):
         console.print(
             f"""[red]Bun version {bun_version} is not supported by Pynecone. Please change your to bun version to be between {constants.MIN_BUN_VERSION} and {constants.MAX_BUN_VERSION}."""

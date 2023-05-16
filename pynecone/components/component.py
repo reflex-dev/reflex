@@ -469,7 +469,7 @@ class Component(Base, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null);"
+            return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
         return None
 
     def get_hooks(self) -> Set[str]:
