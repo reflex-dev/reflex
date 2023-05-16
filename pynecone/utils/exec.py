@@ -15,6 +15,8 @@ from pynecone.config import get_config
 from pynecone.utils import console, prerequisites, processes
 from pynecone.utils.build import export_app, setup_backend, setup_frontend
 from pynecone.utils.watch import AssetFolderWatch
+import typer
+from rich import print
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -28,6 +30,30 @@ def start_watching_assets_folder(root):
     """
     asset_watch = AssetFolderWatch(root)
     asset_watch.start()
+
+
+def run_process_and_launch_url(run_command: list[str], root: Path):
+    process = subprocess.Popen(
+        run_command,
+        cwd=constants.WEB_DIR,
+        env=os.environ,
+        stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    )
+
+    message_found = False
+    for line in process.stdout:
+        if "ready started server on" in line:
+            url = line.split("url: ")[-1].strip()
+            print(f"App running at: [bold green]{url}")
+            typer.launch(url)
+            message_found = True
+            break
+
+    if not message_found:
+        for line in process.stdout:
+            print(line, end="")
 
 
 def run_frontend(app: App, root: Path, port: str):
@@ -53,12 +79,8 @@ def run_frontend(app: App, root: Path, port: str):
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().port if port is None else port
-
-    # Run the frontend in development mode.
-    subprocess.Popen(
-        [prerequisites.get_package_manager(), "run", "dev"],
-        cwd=constants.WEB_DIR,
-        env=os.environ,
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "dev"], root
     )
 
 
@@ -80,10 +102,9 @@ def run_frontend_prod(app: App, root: Path, port: str):
     os.environ["PORT"] = get_config().port if port is None else port
 
     # Run the frontend in production mode.
-    subprocess.Popen(
-        [prerequisites.get_package_manager(), "run", "prod"],
-        cwd=constants.WEB_DIR,
-        env=os.environ,
+    console.rule("[bold green]App Running")
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "prod"], root
     )
 
 

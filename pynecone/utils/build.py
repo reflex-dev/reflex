@@ -14,7 +14,9 @@ from typing import (
 
 from pynecone import constants
 from pynecone.config import get_config
-from pynecone.utils import path_ops, prerequisites
+from pynecone.utils import console, path_ops, prerequisites
+from rich.progress import Progress
+
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -95,10 +97,37 @@ def export_app(
     if deploy_url is not None:
         generate_sitemap(deploy_url)
 
-    # Export the Next app.
-    subprocess.run(
-        [prerequisites.get_package_manager(), "run", "export"], cwd=constants.WEB_DIR
-    )
+    # Create a progress object
+    progress = Progress()
+
+    # Add a single task to the progress object
+    task = progress.add_task("Building app... ", total=500)
+
+    # Start the progress bar
+    with progress:
+        # Run the subprocess command
+        process = subprocess.Popen(
+            [prerequisites.get_package_manager(), "run", "export"],
+            cwd=constants.WEB_DIR,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,  # Redirect stdout to a pipe
+            universal_newlines=True,  # Set universal_newlines to True for text mode
+        )
+
+        # Read the output of the subprocess line by line
+        for line in iter(process.stdout.readline, ""):
+            # Update the progress bar based on the output
+            if "Linting and checking " in line:
+                progress.update(task, advance=100)
+            elif "Compiled successfully" in line:
+                progress.update(task, advance=100)
+            elif "Route (pages)" in line:
+                progress.update(task, advance=100)
+            elif "automatically rendered as static HTML" in line:
+                progress.update(task, advance=100)
+            elif "Export successful" in line:
+                progress.update(task, completed=500)
+                break  # Exit the loop if the completion message is found
 
     # Zip up the app.
     if zip:
