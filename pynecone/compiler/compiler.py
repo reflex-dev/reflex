@@ -26,6 +26,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="E"),
         ImportVar(tag="isTrue"),
+        ImportVar(tag="preventDefault"),
         ImportVar(tag="refs"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
