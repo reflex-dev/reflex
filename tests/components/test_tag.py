@@ -187,8 +187,9 @@ def test_format_cond_tag():
     assert false_value["name"] == "h2"
     assert false_value["contents"] == "False content"
 
+
 def test_tagless_string_representation():
-    """Test the string representation of the Tagless class."""
+    """Test that the string representation of a tagless is correct."""
     tag = tagless.Tagless(contents="Hello world")
     expected_output = "Hello world"
     assert str(tag) == expected_output
