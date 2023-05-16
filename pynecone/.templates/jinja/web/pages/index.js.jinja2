@@ -20,9 +20,7 @@ export default function Component() {
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
 
   const Event = (events, _e) => {
-      if (_e) {
-        _e.preventDefault();
-      }
+      preventDefault(_e);
       {{state_name|react_setter}}({
         ...{{state_name}},
         events: [...{{state_name}}.events, ...events],
