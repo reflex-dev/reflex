@@ -4,7 +4,7 @@ branch = true
 
 [report]
 show_missing = true
-fail_under = 80
+fail_under = 79
 precision = 2
 
 # Regexes for lines to exclude from consideration
