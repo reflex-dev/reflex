@@ -17,10 +17,10 @@ class Cond(Component):
     cond: Var[Any]
 
     # The component to render if the cond is true.
-    comp1: Component
+    comp1: Component = Fragment.create()
 
     # The component to render if the cond is false.
-    comp2: Component
+    comp2: Component = Fragment.create()
 
     @classmethod
     def create(

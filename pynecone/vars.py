@@ -101,6 +101,9 @@ class Var(ABC):
             value = json.loads(to_json(value))["data"]  # type: ignore
             type_ = Figure
 
+        if isinstance(value, dict):
+            value = format.format_dict(value)
+
         try:
             name = value if isinstance(value, str) else json.dumps(value)
         except TypeError as e:

@@ -62,8 +62,7 @@ class Tooltip(ChakraComponent):
     # If true, the tooltip will wrap its children in a `<span/>` with `tabIndex=0`
     should_wrap_children: Var[bool]
 
-    @classmethod
-    def get_triggers(cls) -> Set[str]:
+    def get_triggers(self) -> Set[str]:
         """Get the event triggers for the component.
 
         Returns:

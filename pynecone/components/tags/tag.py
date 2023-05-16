@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
 from plotly.graph_objects import Figure
@@ -97,14 +96,10 @@ class Tag(Base):
             prop = json.loads(to_json(prop))["data"]  # type: ignore
 
         # For dictionaries, convert any properties to strings.
-        else:
-            if isinstance(prop, dict):
-                # Convert any var keys to strings.
-                prop = {
-                    key: str(val) if isinstance(val, Var) else val
-                    for key, val in prop.items()
-                }
+        elif isinstance(prop, dict):
+            prop = format.format_dict(prop)
 
+        else:
             # Dump the prop as JSON.
             try:
                 prop = format.json_dumps(prop)
@@ -112,11 +107,6 @@ class Tag(Base):
                 raise TypeError(
                     f"Could not format prop: {prop} of type {type(prop)}"
                 ) from e
-
-            # This substitution is necessary to unwrap var values.
-            prop = re.sub('"{', "", prop)
-            prop = re.sub('}"', "", prop)
-            prop = re.sub('\\\\"', '"', prop)
 
         # Wrap the variable in braces.
         assert isinstance(prop, str), "The prop must be a string."
