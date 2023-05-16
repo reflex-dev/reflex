@@ -425,14 +425,7 @@ def format_dict(prop: ComponentStyle) -> str:
     from pynecone.vars import Var
 
     # Convert any var keys to strings.
-    prop = {
-        key: str(val)
-        if isinstance(val, Var)
-        else format_dict(val)
-        if isinstance(val, dict)
-        else val
-        for key, val in prop.items()
-    }
+    prop = {key: str(val) if isinstance(val, Var) else val for key, val in prop.items()}
 
     # Dump the dict to a string.
     fprop = json_dumps(prop)
