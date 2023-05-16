@@ -11,6 +11,9 @@ let token;
 // Key for the token in the session storage.
 const TOKEN_KEY = "token";
 
+// Dictionary holding component references.
+export const refs = {};
+
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -93,8 +96,8 @@ export const applyEvent = async (event, router, socket) => {
   }
 
   if (event.name == "_set_value") {
-    event.payload.ref.current.blur();
-    event.payload.ref.current.value = event.payload.value;
+    const ref = event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    ref.current.value = event.payload.value;
     return false;
   }
 
