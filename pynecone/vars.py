@@ -102,10 +102,7 @@ class Var(ABC):
             type_ = Figure
 
         if isinstance(value, dict):
-            value = {
-                key: str(val) if isinstance(val, Var) else val
-                for key, val in value.items()
-            }
+            value = format.format_dict(value)
 
         try:
             name = value if isinstance(value, str) else json.dumps(value)
@@ -113,13 +110,6 @@ class Var(ABC):
             raise TypeError(
                 f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
             ) from e
-
-        import re
-
-        # This substitution is necessary to unwrap var values.
-        name = re.sub('"{', "", name)
-        name = re.sub('}"', "", name)
-        name = re.sub('\\\\"', '"', name)
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
 

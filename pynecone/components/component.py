@@ -84,21 +84,22 @@ class Component(Base, ABC):
                 field.required = False
                 field.default = Var.create(field.default)
 
-    def __init__(self, *args, is_special: bool = False, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialize the component.
 
         Args:
             *args: Args to initialize the component.
-            is_special: Whether this component is special (i.e. cond or foreach).
             **kwargs: Kwargs to initialize the component.
 
         Raises:
             TypeError: If an invalid prop is passed.
         """
-        # For special components, return default constructor.
-        if is_special:
-            super().__init__(*args, **kwargs)
-            return
+        # Set the id and children initially.
+        initial_kwargs = {
+            "id": kwargs.get("id"),
+            "children": kwargs.get("children", []),
+        }
+        super().__init__(**initial_kwargs)
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
@@ -583,7 +584,7 @@ class CustomComponent(Component):
     library = f"/{constants.COMPONENTS_PATH}"
 
     # The function that creates the component.
-    component_fn: Callable[..., Component]
+    component_fn: Callable[..., Component] = Component.create
 
     # The props of the component.
     props: Dict[str, Any] = {}

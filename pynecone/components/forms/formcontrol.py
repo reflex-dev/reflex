@@ -20,6 +20,7 @@ class Form(ChakraComponent):
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
+        # Send all the input refs to the handler.
         return {
             "on_submit": {
                 ref[4:]: Var.create(f"{ref}.current.value", is_local=False)

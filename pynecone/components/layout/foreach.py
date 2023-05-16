@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Callable, List
 
 from pynecone.components.component import Component
+from pynecone.components.layout.fragment import Fragment
 from pynecone.components.tags import IterTag
 from pynecone.vars import BaseVar, Var, get_unique_variable_name
 
@@ -15,7 +16,7 @@ class Foreach(Component):
     iterable: Var[List]
 
     # A function from the render args to the component.
-    render_fn: Callable
+    render_fn: Callable = Fragment.create
 
     @classmethod
     def create(cls, iterable: Var[List], render_fn: Callable, **props) -> Foreach:
