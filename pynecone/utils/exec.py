@@ -8,15 +8,15 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import typer
 import uvicorn
+from rich import print
 
 from pynecone import constants
 from pynecone.config import get_config
 from pynecone.utils import console, prerequisites, processes
 from pynecone.utils.build import export_app, setup_backend, setup_frontend
 from pynecone.utils.watch import AssetFolderWatch
-import typer
-from rich import print
 
 if TYPE_CHECKING:
     from pynecone.app import App
@@ -33,6 +33,12 @@ def start_watching_assets_folder(root):
 
 
 def run_process_and_launch_url(run_command: list[str], root: Path):
+    """Run the process and launch the URL.
+
+    Args:
+        run_command: The command to run.
+        root: root path of the project.
+    """
     process = subprocess.Popen(
         run_command,
         cwd=constants.WEB_DIR,
@@ -43,15 +49,16 @@ def run_process_and_launch_url(run_command: list[str], root: Path):
     )
 
     message_found = False
-    for line in process.stdout:
-        if "ready started server on" in line:
-            url = line.split("url: ")[-1].strip()
-            print(f"App running at: [bold green]{url}")
-            typer.launch(url)
-            message_found = True
-            break
+    if process.stdout:
+        for line in process.stdout:
+            if "ready started server on" in line:
+                url = line.split("url: ")[-1].strip()
+                print(f"App running at: [bold green]{url}")
+                typer.launch(url)
+                message_found = True
+                break
 
-    if not message_found:
+    if not message_found and process.stdout:
         for line in process.stdout:
             print(line, end="")
 
