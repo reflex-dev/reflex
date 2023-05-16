@@ -84,16 +84,22 @@ class Component(Base, ABC):
                 field.required = False
                 field.default = Var.create(field.default)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, is_special: bool = False, **kwargs):
         """Initialize the component.
 
         Args:
             *args: Args to initialize the component.
+            is_special: Whether this component is special (i.e. cond or foreach).
             **kwargs: Kwargs to initialize the component.
 
         Raises:
             TypeError: If an invalid prop is passed.
         """
+        # For special components, return default constructor.
+        if is_special:
+            super().__init__(*args, **kwargs)
+            return
+
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
         triggers = self.get_triggers()
@@ -264,17 +270,15 @@ class Component(Base, ABC):
             events=events, state_name=state_name, full_control=full_control
         )
 
-    @classmethod
-    def get_triggers(cls) -> Set[str]:
+    def get_triggers(self) -> Set[str]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return EVENT_TRIGGERS | set(cls.get_controlled_triggers())
+        return EVENT_TRIGGERS | set(self.get_controlled_triggers())
 
-    @classmethod
-    def get_controlled_triggers(cls) -> Dict[str, Var]:
+    def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -488,7 +492,7 @@ class Component(Base, ABC):
 
         # Add the hook code for the children.
         for child in self.children:
-            code.update(child.get_hooks())
+            code |= child.get_hooks()
 
         return code
 
@@ -501,6 +505,20 @@ class Component(Base, ABC):
         if self.id is None:
             return None
         return format.format_ref(self.id)
+
+    def get_refs(self) -> Set[str]:
+        """Get the refs for the children of the component.
+
+        Returns:
+            The refs for the children.
+        """
+        refs = set()
+        ref = self.get_ref()
+        if ref is not None:
+            refs.add(ref)
+        for child in self.children:
+            refs |= child.get_refs()
+        return refs
 
     def get_custom_components(
         self, seen: Optional[Set[str]] = None

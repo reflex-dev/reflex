@@ -62,8 +62,7 @@ def component2() -> Type[Component]:
         # A test list prop.
         arr: Var[List[str]]
 
-        @classmethod
-        def get_controlled_triggers(cls) -> Dict[str, Var]:
+        def get_controlled_triggers(self) -> Dict[str, Var]:
             """Test controlled triggers.
 
             Returns:
@@ -307,8 +306,8 @@ def test_get_controlled_triggers(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1.get_controlled_triggers() == dict()
-    assert set(component2.get_controlled_triggers()) == {"on_open", "on_close"}
+    assert component1().get_controlled_triggers() == dict()
+    assert set(component2().get_controlled_triggers()) == {"on_open", "on_close"}
 
 
 def test_get_triggers(component1, component2):
@@ -318,8 +317,8 @@ def test_get_triggers(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1.get_triggers() == EVENT_TRIGGERS
-    assert component2.get_triggers() == {"on_open", "on_close"} | EVENT_TRIGGERS
+    assert component1().get_triggers() == EVENT_TRIGGERS
+    assert component2().get_triggers() == {"on_open", "on_close"} | EVENT_TRIGGERS
 
 
 def test_create_custom_component(my_component):

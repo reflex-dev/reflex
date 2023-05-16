@@ -43,8 +43,7 @@ class Image(ChakraComponent):
     # The image srcset attribute.
     src_set: Var[str]
 
-    @classmethod
-    def get_triggers(cls) -> Set[str]:
+    def get_triggers(self) -> Set[str]:
         """Get the event triggers for the component.
 
         Returns:
