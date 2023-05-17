@@ -1,5 +1,6 @@
 """Convenience functions to define core components."""
 
+from .advanced_select import AdvancedOption, AdvancedSelect
 from .button import Button, ButtonGroup
 from .checkbox import Checkbox, CheckboxGroup
 from .copytoclipboard import CopyToClipboard
