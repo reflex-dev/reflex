@@ -14,7 +14,7 @@ from pynecone.vars import Var
 V055 = version.parse("0.5.5")
 V059 = version.parse("0.5.9")
 V056 = version.parse("0.5.6")
-V0510 = version.parse("0.5.10")
+V062 = version.parse("0.6.2")
 
 
 @pytest.mark.parametrize(
@@ -246,7 +246,7 @@ def test_format_route(route: str, expected: bool):
     [
         (V055, False, "yes"),
         (V059, True, None),
-        (V0510, False, "yes"),
+        (V062, False, "yes"),
     ],
 )
 def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
