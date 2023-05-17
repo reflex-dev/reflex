@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 import pytest
 
@@ -27,6 +27,7 @@ class ForEachState(State):
         "primary": {"red": [{"shade": "dark"}]}
     }
     color_g: Tuple[str] = ("red", "yellow")
+    color_h: Set[str] = {"red", "green"}
 
 
 def display_a(color):
@@ -63,6 +64,10 @@ def display_f1(color):
 
 
 def display_g(color):
+    return box(text(color))
+
+
+def display_h(color):
     return box(text(color))
 
 
@@ -130,6 +135,24 @@ def display_g(color):
                 "iterable_state": "for_each_state.color_f",
                 "arg_index": "i",
                 "iterable_type": "dict",
+            },
+        ),
+        (
+            ForEachState.color_g,
+            display_g,
+            {
+                "iterable_state": "for_each_state.color_g",
+                "arg_index": "i",
+                "iterable_type": "tuple",
+            },
+        ),
+        (
+            ForEachState.color_h,
+            display_h,
+            {
+                "iterable_state": "for_each_state.color_h",
+                "arg_index": "i",
+                "iterable_type": "set",
             },
         ),
     ],

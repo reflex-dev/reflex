@@ -32,7 +32,7 @@ class Base(pydantic.BaseModel):
         Returns:
             The object as a json string.
         """
-        return self.__config__.json_dumps(self.dict())
+        return self.__config__.json_dumps(self.dict(), default=list)
 
     def set(self: PcType, **kwargs) -> PcType:
         """Set multiple fields and return the object.
