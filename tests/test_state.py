@@ -28,6 +28,7 @@ class TestState(State):
     num1: int
     num2: float = 3.14
     key: str
+    map_key: str = "a"
     array: List[float] = [1, 2, 3.14]
     mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
@@ -190,6 +191,7 @@ def test_class_vars(test_state):
         "num1",
         "num2",
         "key",
+        "map_key",
         "array",
         "mapping",
         "obj",
@@ -280,6 +282,9 @@ def test_class_indexing_with_vars():
 
     prop = TestState.mapping["a"][TestState.num1]
     assert str(prop) == '{test_state.mapping["a"].at(test_state.num1)}'
+
+    prop = TestState.mapping[TestState.map_key]
+    assert str(prop) == "{test_state.mapping[test_state.map_key]}"
 
 
 def test_class_attributes():

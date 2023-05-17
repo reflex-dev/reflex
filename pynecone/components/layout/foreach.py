@@ -1,7 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List, Set, Tuple, Union
 
 from pynecone.components.component import Component
 from pynecone.components.layout.fragment import Fragment
@@ -13,13 +13,15 @@ class Foreach(Component):
     """A component that takes in an iterable and a render function and renders a list of components."""
 
     # The iterable to create components from.
-    iterable: Var[List]
+    iterable: Var[Union[List, Dict, Tuple, Set]]
 
     # A function from the render args to the component.
     render_fn: Callable = Fragment.create
 
     @classmethod
-    def create(cls, iterable: Var[List], render_fn: Callable, **props) -> Foreach:
+    def create(
+        cls, iterable: Var[Union[List, Dict, Tuple, Set]], render_fn: Callable, **props
+    ) -> Foreach:
         """Create a foreach component.
 
         Args:
@@ -34,7 +36,11 @@ class Foreach(Component):
             TypeError: If the iterable is of type Any.
         """
         try:
-            type_ = iterable.type_.__args__[0]
+            type_ = (
+                iterable.type_
+                if iterable.type_.mro()[0] == dict
+                else iterable.type_.__args__[0]
+            )
         except Exception:
             type_ = Any
         iterable = Var.create(iterable)  # type: ignore
@@ -61,7 +67,11 @@ class Foreach(Component):
         """
         tag = self._render()
         try:
-            type_ = self.iterable.type_.__args__[0]
+            type_ = (
+                self.iterable.type_
+                if self.iterable.type_.mro()[0] == dict
+                else self.iterable.type_.__args__[0]
+            )
         except Exception:
             type_ = Any
         arg = BaseVar(
@@ -84,4 +94,5 @@ class Foreach(Component):
             iterable_state=tag.iterable.full_name,
             arg_name=arg.name,
             arg_index=index_arg,
+            iterable_type=tag.iterable.type_.mro()[0].__name__,
         )
