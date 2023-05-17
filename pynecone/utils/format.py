@@ -298,8 +298,7 @@ def format_event(event_spec: EventSpec) -> str:
     event_args = [
         wrap(format_event_handler(event_spec.handler), '"'),
     ]
-    if len(args) > 0:
-        event_args.append(wrap(args, "{"))
+    event_args.append(wrap(args, "{"))
 
     if event_spec.client_handler_name:
         event_args.append(wrap(event_spec.client_handler_name, '"'))
