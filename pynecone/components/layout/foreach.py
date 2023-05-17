@@ -1,7 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union, Tuple
 
 from pynecone.components.component import Component
 from pynecone.components.tags import IterTag
@@ -12,14 +12,14 @@ class Foreach(Component):
     """A component that takes in an iterable and a render function and renders a list of components."""
 
     # The iterable to create components from.
-    iterable: Var[Union[List, Dict]]
+    iterable: Var[Union[List, Dict, Tuple]]
 
     # A function from the render args to the component.
     render_fn: Callable
 
     @classmethod
     def create(
-        cls, iterable: Var[Union[List, Dict]], render_fn: Callable, **props
+        cls, iterable: Var[Union[List, Dict, Tuple]], render_fn: Callable, **props
     ) -> Foreach:
         """Create a foreach component.
 

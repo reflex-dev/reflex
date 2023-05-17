@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import pytest
 
@@ -26,6 +26,7 @@ class ForEachState(State):
     color_f: Dict[str, Dict[str, List[Dict[str, str]]]] = {
         "primary": {"red": [{"shade": "dark"}]}
     }
+    color_g: Tuple[str] = ("red", "yellow")
 
 
 def display_a(color):
@@ -57,8 +58,12 @@ def show_item(item):
     return text(item[1][0]["shade"])
 
 
-def display_g(color):
+def display_f1(color):
     return box(text(foreach(color[1], show_item)))
+
+
+def display_g(color):
+    return box(text(color))
 
 
 @pytest.mark.parametrize(
@@ -120,7 +125,7 @@ def display_g(color):
         ),
         (
             ForEachState.color_f,
-            display_g,
+            display_f1,
             {
                 "iterable_state": "for_each_state.color_f",
                 "arg_index": "i",
