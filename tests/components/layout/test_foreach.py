@@ -26,7 +26,10 @@ class ForEachState(State):
     color_f: Dict[str, Dict[str, List[Dict[str, str]]]] = {
         "primary": {"red": [{"shade": "dark"}]}
     }
-    color_g: Tuple[str] = ("red", "yellow")
+    color_g: Tuple[str, str] = (
+        "red",
+        "yellow",
+    )
     color_h: Set[str] = {"red", "green"}
 
 
