@@ -135,11 +135,6 @@ def run(
         threading.Thread(
             target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port)
         ).start()
-    # finally:
-    #     if frontend:
-    #         processes.kill_process_on_port(frontend_port)
-    #     if backend:
-    #         processes.kill_process_on_port(backend_port)
 
 
 @cli.command()

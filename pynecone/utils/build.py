@@ -87,6 +87,7 @@ def export_app(
         frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
         deploy_url: The URL of the deployed app.
+        loglevel: The log level to use.
     """
     # Force compile the app.
     app.compile(force_compile=True)
@@ -111,29 +112,27 @@ def export_app(
             [prerequisites.get_package_manager(), "run", "export"],
             cwd=constants.WEB_DIR,
             env=os.environ,
-            stderr=subprocess.STDOUT,
+            # stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE,  # Redirect stdout to a pipe
             universal_newlines=True,  # Set universal_newlines to True for text mode
         )
 
-        # Read the output of the subprocess line by line
-        # if export_process.stdout:
-        #     for line in iter(export_process.stdout.readline, ""):
-        #         print("line", line)
-        #         if "Linting and checking " in line:
-        #             progress.update(task, advance=100)
-        #         elif "Compiled successfully" in line:
-        #             progress.update(task, advance=100)
-        #         elif "Route (pages)" in line:
-        #             progress.update(task, advance=100)
-        #         elif "automatically rendered as static HTML" in line:
-        #             progress.update(task, advance=100)
-        #         elif "Export successful" in line:
-        #             print("DOOE")
-        #             progress.update(task, completed=500)
-        #             break  # Exit the loop if the completion message is found
-        #         elif loglevel == constants.LogLevel.DEBUG:
-        #             print(line, end="")
+        if export_process.stdout:
+            for line in iter(export_process.stdout.readline, ""):
+                if "Linting and checking " in line:
+                    progress.update(task, advance=100)
+                elif "Compiled successfully" in line:
+                    progress.update(task, advance=100)
+                elif "Route (pages)" in line:
+                    progress.update(task, advance=100)
+                elif "automatically rendered as static HTML" in line:
+                    progress.update(task, advance=100)
+                elif "Export successful" in line:
+                    print("DOOE")
+                    progress.update(task, completed=500)
+                    break  # Exit the loop if the completion message is found
+                elif loglevel == constants.LogLevel.DEBUG:
+                    print(line, end="")
 
         # Wait for the subprocess to complete
         export_process.wait()

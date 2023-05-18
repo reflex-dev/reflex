@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import typer
 from rich import print
 
 from pynecone import constants
@@ -59,7 +58,6 @@ def run_process_and_launch_url(
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
                 print(f"App running at: [bold green]{url}")
-                typer.launch(url)
             if (
                 "Fast Refresh" in line
                 and (datetime.now() - current_time).total_seconds() > 1
@@ -124,7 +122,7 @@ def run_frontend_prod(
     setup_frontend(root)
 
     # Export the app.
-    export_app(app, loglevel)
+    export_app(app, loglevel=loglevel)
 
     # Set the port.
     os.environ["PORT"] = get_config().port if port is None else port
