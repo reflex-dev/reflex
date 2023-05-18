@@ -2,29 +2,26 @@
 
 from typing import Any, Dict, List, Optional
 
+from pynecone.base import Base
 from pynecone.components.component import Component
 from pynecone.event import EVENT_ARG
 from pynecone.vars import Var
 
 
-class AdvancedOption(Component):
+class AdvancedOption(Base):
     """An option component for the chakra-react-select Select."""
 
-    library = "chakra-react-select"
-
-    tag = "Option"
-
     # What is displayed to the user
-    label: Var[str]
+    label: str
 
     # The value of the option, must be serializable
-    value: Var[Any]
+    value: Any = None
 
     # the variant of the option tag
-    variant: Var[str]
+    variant: Optional[str] = None
 
     # Whether the option is disabled
-    is_disabled: Var[bool]
+    is_disabled: Optional[bool] = None
 
     # The visual color appearance of the component
     # options: "whiteAlpha" | "blackAlpha" | "gray" | "red" |
@@ -32,35 +29,10 @@ class AdvancedOption(Component):
     #  "purple" | "pink" | "linkedin" | "facebook" | "messenger" |
     #  "whatsapp" | "twitter" | "telegram"
     # default: "gray"
-    color_scheme: Var[str]
+    color_scheme: Optional[str] = None
 
     # The icon of the option tag
-    icon: Var[str]
-
-    @classmethod
-    def create(cls, label: str, **props) -> Component:
-        """Creates an Option with a label and optional properties, setting the value
-        property to the label if not provided. Children not allowed.
-
-        Args:
-            label (str): A string that represents the label of the component being created.
-
-        Returns:
-            The Option component
-        """
-        if "value" not in props:
-            props["value"] = label
-        props["label"] = label
-        return super().create(*[], **props)
-
-    @classmethod
-    def get_alias(cls) -> str:
-        """Avoids conflict with normal Select option.
-
-        Returns:
-            The alias name.
-        """
-        return "AdvancedOption"
+    icon: Optional[str] = None
 
 
 class AdvancedSelect(Component):
@@ -240,7 +212,7 @@ class AdvancedSelect(Component):
     open_menu_on_click: Var[bool]
 
     # Array of options that populate the select menu
-    options: Var[list[AdvancedOption]]
+    options: Var[list[Dict]]
 
     # Number of options to jump in menu when page{up|down} keys are used
     page_size: Var[int]
@@ -349,17 +321,14 @@ class AdvancedSelect(Component):
         properties. No children allowed.
 
         Args:
-            options (List[Component | str | int | float | bool]): A list of values that can be of type
-        Component(AdvancedOption), str, int, float or bool.
+            options (List[Component | str | int | float | bool]): A list of values.
+            **props: Additional properties to be passed to the Select component.
 
         Returns:
             The `create` method is returning an instance of the `AdvancedSelect` class.
         """
         checked_options = []
         for option in options:
-            if not isinstance(option, AdvancedOption):
-                checked_options.append(AdvancedOption.create(label=str(option)))
-            else:
-                checked_options.append(option)
-        props["options"] = checked_options
+            checked_options.append(AdvancedOption(label=str(option)))
+        props["options"] = [o.dict() for o in checked_options]
         return super().create(*[], **props)

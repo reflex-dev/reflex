@@ -206,5 +206,5 @@ text = Text.create
 script = ScriptTag.create
 aspect_ratio = AspectRatio.create
 kbd = KeyboardKey.create
-aoption = AdvancedOption.create
+# aoption = AdvancedOption.create
 aselect = AdvancedSelect.create
