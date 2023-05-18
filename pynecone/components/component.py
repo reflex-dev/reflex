@@ -61,6 +61,9 @@ class Component(Base, ABC):
     # Special component props.
     special_props: Set[Var] = set()
 
+    # Whether the component should take the focus once the page is loaded
+    autofocus: bool = False
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -420,6 +423,7 @@ class Component(Base, ABC):
                 contents=str(tag.contents),
                 props=tag.format_props(),
             ),
+            autofocus=self.autofocus,
         )
 
     def _get_custom_code(self) -> Optional[str]:

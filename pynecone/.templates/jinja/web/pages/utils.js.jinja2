@@ -23,7 +23,7 @@
 {#     component: component dictionary #}
 {% macro render_self_close_tag(component) %}
 {%- if component.name|length %}
-<{{ component.name }} {{- render_props(component.props) }}/>
+<{{ component.name }} {{- render_props(component.props) }}{% if component.autofocus %} ref={focusRef} {% endif %}/>
 {%- else %}
   {{- component.contents }}
 {%- endif %}
