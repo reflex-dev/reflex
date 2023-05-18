@@ -5,9 +5,6 @@
 {{custom_code}}
 {% endfor %}
 
-{% for name, url in endpoints.items() %}
-const {{name}} = {{url|json_dumps}}
-{% endfor %}
 {% endblock %}
 
 {% block export %}
@@ -37,7 +34,7 @@ export default function Component() {
       return;
     }
     if (!{{const.socket}}.current) {
-      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.event_endpoint}}, {{transports}})
+      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{transports}})
     }
     const update = async () => {
       if ({{const.result}}.{{const.state}} != null){

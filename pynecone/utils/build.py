@@ -7,10 +7,7 @@ import os
 import random
 import subprocess
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Optional,
-)
+from typing import TYPE_CHECKING, Optional, Union
 
 from rich.progress import Progress
 
@@ -22,32 +19,42 @@ if TYPE_CHECKING:
     from pynecone.app import App
 
 
-def update_json_file(file_path, key, value):
+def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
     """Update the contents of a json file.
 
     Args:
         file_path: the path to the JSON file.
-        key: object key to update.
-        value: value of key.
+        update_dict: object to update json.
     """
-    with open(file_path) as f:  # type: ignore
-        json_object = json.load(f)
-        json_object[key] = value
-    with open(file_path, "w") as f:
+    fp = Path(file_path)
+    # create file if it doesn't exist
+    fp.touch(exist_ok=True)
+    # create an empty json object if file is empty
+    fp.write_text("{}") if fp.stat().st_size == 0 else None
+
+    with open(fp) as f:  # type: ignore
+        json_object: dict = json.load(f)
+        json_object.update(update_dict)
+    with open(fp, "w") as f:
         json.dump(json_object, f, ensure_ascii=False)
 
 
 def set_pynecone_project_hash():
     """Write the hash of the Pynecone project to a PCVERSION_APP_FILE."""
     update_json_file(
-        constants.PCVERSION_APP_FILE, "project_hash", random.getrandbits(128)
+        constants.PCVERSION_APP_FILE, {"project_hash": random.getrandbits(128)}
     )
 
 
-def set_pynecone_upload_endpoint():
+def set_environment_variables():
     """Write the upload url to a PCVERSION_APP_FILE."""
     update_json_file(
-        constants.PCVERSION_APP_FILE, "uploadUrl", constants.Endpoint.UPLOAD.get_url()
+        constants.ENV_JSON,
+        {
+            "uploadUrl": constants.Endpoint.UPLOAD.get_url(),
+            "eventUrl": constants.Endpoint.EVENT.get_url(),
+            "pingUrl": constants.Endpoint.PING.get_url(),
+        },
     )
 
 
@@ -190,8 +197,8 @@ def setup_frontend(root: Path, disable_telemetry: bool = True):
         dest=str(root / constants.WEB_ASSETS_DIR),
     )
 
-    # set the upload url in pynecone.json file
-    set_pynecone_upload_endpoint()
+    # set the environment variables in client(env.json)
+    set_environment_variables()
 
     # Disable the Next telemetry.
     if disable_telemetry:
