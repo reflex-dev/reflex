@@ -89,9 +89,6 @@ def export_app(
         deploy_url: The URL of the deployed app.
         loglevel: The log level to use.
     """
-    # Force compile the app.
-    app.compile()
-
     # Remove the static folder.
     path_ops.rm(constants.WEB_STATIC_DIR)
 
