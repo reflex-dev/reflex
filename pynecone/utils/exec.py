@@ -68,6 +68,8 @@ def run_process_and_launch_url(
                     f"[yellow][Updating App][/yellow] Applying changes and refreshing. Time: {current_time}"
                 )
                 current_time = datetime.now()
+            elif loglevel == constants.LogLevel.DEBUG:
+                print(line, end="")
 
 
 def run_frontend(
