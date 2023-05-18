@@ -83,7 +83,7 @@ def run(
     frontend_port = get_config().port if port is None else port
     backend_port = get_config().backend_port if backend_port is None else backend_port
 
-    # If --no-frontend-only and no --backend-only, then turn on frontend and backend both
+    # If no --frontend-only and no --backend-only, then turn on frontend and backend both
     if not frontend and not backend:
         frontend = True
         backend = True
