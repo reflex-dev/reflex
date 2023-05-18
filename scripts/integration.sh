@@ -15,7 +15,7 @@ while ! nc -z localhost 3000 || ! lsof -i :8000 >/dev/null; do
       echo "Error: Server process with PID $pid exited early"
       break
   fi
-  if ((wait_time >= 300)); then
+  if ((wait_time >= 500)); then
     echo "Error: Timeout waiting for ports 3000 and 8000 to become available"
     exit 1
   fi

@@ -378,23 +378,13 @@ class App(Base):
         ):
             self.pages[froute(constants.SLUG_404)] = component
 
-    def compile(self, force_compile: bool = False):
-        """Compile the app and output it to the pages folder.
-
-        If the config environment is set to production, the app will
-        not be compiled.
-
-        Args:
-            force_compile: Whether to force the app to compile.
-        """
+    def compile(self):
+        """Compile the app and output it to the pages folder."""
         for render, kwargs in DECORATED_ROUTES:
             self.add_page(render, **kwargs)
 
         # Get the env mode.
         config = get_config()
-        if config.env != constants.Env.DEV and not force_compile:
-            print("Skipping compilation in non-dev mode.")
-            return
 
         # Update models during hot reload.
         if config.db_url is not None:

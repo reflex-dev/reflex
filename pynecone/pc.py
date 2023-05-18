@@ -2,6 +2,7 @@
 
 import os
 import platform
+import threading
 from pathlib import Path
 
 import httpx
@@ -125,16 +126,15 @@ def run(
     telemetry.send(f"run-{env.value}", get_config().telemetry_enabled)
 
     # Run the frontend and backend.
-    try:
-        if frontend:
-            frontend_cmd(app.app, Path.cwd(), frontend_port)
-        if backend:
-            backend_cmd(app.__name__, port=int(backend_port), loglevel=loglevel)
-    finally:
-        if frontend:
-            processes.kill_process_on_port(frontend_port)
-        if backend:
-            processes.kill_process_on_port(backend_port)
+    # try:
+    if backend:
+        threading.Thread(
+            target=backend_cmd, args=(app.__name__, backend_port, loglevel)
+        ).start()
+    if frontend:
+        threading.Thread(
+            target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port)
+        ).start()
 
 
 @cli.command()

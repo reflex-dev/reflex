@@ -77,6 +77,7 @@ def export_app(
     frontend: bool = True,
     zip: bool = False,
     deploy_url: Optional[str] = None,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
     """Zip up the app for deployment.
 
@@ -86,10 +87,8 @@ def export_app(
         frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
         deploy_url: The URL of the deployed app.
+        loglevel: The log level to use.
     """
-    # Force compile the app.
-    app.compile(force_compile=True)
-
     # Remove the static folder.
     path_ops.rm(constants.WEB_STATIC_DIR)
 
@@ -106,18 +105,17 @@ def export_app(
     # Start the progress bar
     with progress:
         # Run the subprocess command
-        process = subprocess.Popen(
+        export_process = subprocess.Popen(
             [prerequisites.get_package_manager(), "run", "export"],
             cwd=constants.WEB_DIR,
-            stderr=subprocess.DEVNULL,
+            env=os.environ,
+            stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE,  # Redirect stdout to a pipe
             universal_newlines=True,  # Set universal_newlines to True for text mode
         )
 
-        # Read the output of the subprocess line by line
-        if process.stdout:
-            for line in iter(process.stdout.readline, ""):
-                # Update the progress bar based on the output
+        if export_process.stdout:
+            for line in iter(export_process.stdout.readline, ""):
                 if "Linting and checking " in line:
                     progress.update(task, advance=100)
                 elif "Compiled successfully" in line:
@@ -127,8 +125,15 @@ def export_app(
                 elif "automatically rendered as static HTML" in line:
                     progress.update(task, advance=100)
                 elif "Export successful" in line:
+                    print("DOOE")
                     progress.update(task, completed=500)
                     break  # Exit the loop if the completion message is found
+                elif loglevel == constants.LogLevel.DEBUG:
+                    print(line, end="")
+
+        # Wait for the subprocess to complete
+        export_process.wait()
+        print("Export process completed.")
 
     # Zip up the app.
     if zip:
