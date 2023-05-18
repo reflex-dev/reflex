@@ -77,7 +77,7 @@ def export_app(
     frontend: bool = True,
     zip: bool = False,
     deploy_url: Optional[str] = None,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
     """Zip up the app for deployment.
 
@@ -117,22 +117,23 @@ def export_app(
         )
 
         # Read the output of the subprocess line by line
-        if export_process.stdout:
-            for line in iter(export_process.stdout.readline, ""):
-                if "Linting and checking " in line:
-                    progress.update(task, advance=100)
-                elif "Compiled successfully" in line:
-                    progress.update(task, advance=100)
-                elif "Route (pages)" in line:
-                    progress.update(task, advance=100)
-                elif "automatically rendered as static HTML" in line:
-                    progress.update(task, advance=100)
-                elif "Export successful" in line:
-                    print("DOOE")
-                    progress.update(task, completed=500)
-                    break  # Exit the loop if the completion message is found
-                elif loglevel == constants.LogLevel.DEBUG:
-                    print(line, end="")
+        # if export_process.stdout:
+        #     for line in iter(export_process.stdout.readline, ""):
+        #         print("line", line)
+        #         if "Linting and checking " in line:
+        #             progress.update(task, advance=100)
+        #         elif "Compiled successfully" in line:
+        #             progress.update(task, advance=100)
+        #         elif "Route (pages)" in line:
+        #             progress.update(task, advance=100)
+        #         elif "automatically rendered as static HTML" in line:
+        #             progress.update(task, advance=100)
+        #         elif "Export successful" in line:
+        #             print("DOOE")
+        #             progress.update(task, completed=500)
+        #             break  # Exit the loop if the completion message is found
+        #         elif loglevel == constants.LogLevel.DEBUG:
+        #             print(line, end="")
 
         # Wait for the subprocess to complete
         export_process.wait()

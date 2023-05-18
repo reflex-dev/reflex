@@ -126,20 +126,20 @@ def run(
     telemetry.send(f"run-{env.value}", get_config().telemetry_enabled)
 
     # Run the frontend and backend.
-    try:
-        if frontend:
-            threading.Thread(
-                target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port)
-            ).start()
-        if backend:
-            threading.Thread(
-                target=backend_cmd, args=(app.__name__, backend_port, loglevel)
-            ).start()
-    finally:
-        if frontend:
-            processes.kill_process_on_port(frontend_port)
-        if backend:
-            processes.kill_process_on_port(backend_port)
+    # try:
+    if backend:
+        threading.Thread(
+            target=backend_cmd, args=(app.__name__, backend_port, loglevel)
+        ).start()
+    if frontend:
+        threading.Thread(
+            target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port)
+        ).start()
+    # finally:
+    #     if frontend:
+    #         processes.kill_process_on_port(frontend_port)
+    #     if backend:
+    #         processes.kill_process_on_port(backend_port)
 
 
 @cli.command()
