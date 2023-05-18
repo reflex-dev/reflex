@@ -5,11 +5,11 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import typer
-import uvicorn
 from rich import print
 
 from pynecone import constants
@@ -32,44 +32,57 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
-def run_process_and_launch_url(run_command: list[str], root: Path):
+def run_process_and_launch_url(
+    run_command: list[str],
+    root: Path,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+):
     """Run the process and launch the URL.
 
     Args:
         run_command: The command to run.
         root: root path of the project.
+        loglevel: The log level to use.
     """
     process = subprocess.Popen(
         run_command,
         cwd=constants.WEB_DIR,
         env=os.environ,
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
         universal_newlines=True,
     )
 
-    message_found = False
+    current_time = datetime.now()
     if process.stdout:
         for line in process.stdout:
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
                 print(f"App running at: [bold green]{url}")
                 typer.launch(url)
-                message_found = True
-                break
+            if (
+                "Fast Refresh" in line
+                and (datetime.now() - current_time).total_seconds() > 1
+            ):
+                print(
+                    f"[yellow][Updating App][/yellow] Applying changes and refreshing. Time: {current_time}"
+                )
+                current_time = datetime.now()
 
-    if not message_found and process.stdout:
-        for line in process.stdout:
-            print(line, end="")
 
-
-def run_frontend(app: App, root: Path, port: str):
+def run_frontend(
+    app: App,
+    root: Path,
+    port: str,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
         port: port of the app.
+        loglevel: The log level to use.
     """
     # validate bun version
     prerequisites.validate_and_install_bun(initialize=False)
@@ -87,17 +100,23 @@ def run_frontend(app: App, root: Path, port: str):
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().port if port is None else port
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"], root
+        [prerequisites.get_package_manager(), "run", "dev"], root, loglevel
     )
 
 
-def run_frontend_prod(app: App, root: Path, port: str):
+def run_frontend_prod(
+    app: App,
+    root: Path,
+    port: str,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
         port: port of the app.
+        loglevel: The log level to use.
     """
     # Set up the frontend.
     setup_frontend(root)
@@ -111,7 +130,7 @@ def run_frontend_prod(app: App, root: Path, port: str):
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"], root
+        [prerequisites.get_package_manager(), "run", "prod"], root, loglevel
     )
 
 
@@ -127,13 +146,23 @@ def run_backend(
     """
     setup_backend()
 
-    uvicorn.run(
+    cmd = [
+        "uvicorn",
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
-        host=constants.BACKEND_HOST,
-        port=port,
-        log_level=loglevel,
-        reload=True,
-    )
+        "--host",
+        constants.BACKEND_HOST,
+        "--port",
+        str(port),
+        "--log-level",
+        loglevel,
+        "--reload",
+    ]
+    process = subprocess.Popen(cmd)
+
+    try:
+        process.wait()
+    except KeyboardInterrupt:
+        process.terminate()
 
 
 def run_backend_prod(
