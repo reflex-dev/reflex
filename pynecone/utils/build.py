@@ -84,11 +84,7 @@ def export_app(
     frontend: bool = True,
     zip: bool = False,
     deploy_url: Optional[str] = None,
-<<<<<<< HEAD
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
-=======
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR
->>>>>>> 19e888f (Log level prod.)
 ):
     """Zip up the app for deployment.
 
