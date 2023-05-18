@@ -124,7 +124,7 @@ def run_frontend_prod(
     setup_frontend(root)
 
     # Export the app.
-    export_app(app)
+    export_app(app, loglevel)
 
     # Set the port.
     os.environ["PORT"] = get_config().port if port is None else port
