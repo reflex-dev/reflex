@@ -112,7 +112,7 @@ def export_app(
             [prerequisites.get_package_manager(), "run", "export"],
             cwd=constants.WEB_DIR,
             env=os.environ,
-            # stderr=subprocess.STDOUT,
+            stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE,  # Redirect stdout to a pipe
             universal_newlines=True,  # Set universal_newlines to True for text mode
         )
