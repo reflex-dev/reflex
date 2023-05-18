@@ -90,11 +90,8 @@ def run_frontend(
     # Set up the frontend.
     setup_frontend(root)
 
-    # start watching asset folder
+    # Start watching asset folder.
     start_watching_assets_folder(root)
-
-    # Compile the frontend.
-    app.compile(force_compile=True)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")

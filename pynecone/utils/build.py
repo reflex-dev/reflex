@@ -90,7 +90,7 @@ def export_app(
         loglevel: The log level to use.
     """
     # Force compile the app.
-    app.compile(force_compile=True)
+    app.compile()
 
     # Remove the static folder.
     path_ops.rm(constants.WEB_STATIC_DIR)
