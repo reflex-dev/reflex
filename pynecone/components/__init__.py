@@ -210,3 +210,6 @@ text = Text.create
 script = ScriptTag.create
 aspect_ratio = AspectRatio.create
 kbd = KeyboardKey.create
+editor = Editor.create
+editor_options = EditorOptions
+editor_button_list = EditorButtonList

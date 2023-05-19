@@ -4,6 +4,7 @@ from .button import Button, ButtonGroup
 from .checkbox import Checkbox, CheckboxGroup
 from .copytoclipboard import CopyToClipboard
 from .editable import Editable, EditableInput, EditablePreview, EditableTextarea
+from .editor import Editor, EditorButtonList, EditorOptions
 from .formcontrol import Form, FormControl, FormErrorMessage, FormHelperText, FormLabel
 from .iconbutton import IconButton
 from .input import Input, InputGroup, InputLeftAddon, InputRightAddon
