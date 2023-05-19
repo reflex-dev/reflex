@@ -1,3 +1,4 @@
+"""Chakra Transitions Component."""
 from typing import Optional
 
 from pynecone.components.component import Component
@@ -65,6 +66,7 @@ class Transitions(ChakraComponent):
         **props
     ) -> Component:
         """Creates a Chakra Transitions component with content and optional transitions, and returns it.
+
         Args:
             content (Component): The main content of the Transitions component that will be created.
             fade (Optional[Component]): Should be a Fade instance.
@@ -73,6 +75,7 @@ class Transitions(ChakraComponent):
             slide_fade (Optional[Component]): Should be a SlideFade instance.
             collapse (Optional[Component]): Should be a Collapse instance.
             props: The properties to be passed to the component.
+
         Returns:
             The `create()` method returns a Transitions object.
         """
