@@ -1,4 +1,4 @@
-"""Chakra Tag Component"""
+"""Chakra Tag Component."""
 from typing import Optional
 
 from pynecone.components.component import Component
