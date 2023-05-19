@@ -5,34 +5,34 @@ from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.vars import Var
 
 
-class Fade(ChakraComponent):
+class TransitionsFade(ChakraComponent):
     """Wrapper component for Fade transition."""
 
-    tag = "Fade"
+    tag = "TransitionsFade"
 
 
-class ScaleFade(ChakraComponent):
+class TransitionsScaleFade(ChakraComponent):
     """Wrapper component for ScaleFade transition."""
 
-    tag = "ScaleFade"
+    tag = "TransitionsScaleFade"
 
 
-class Slide(ChakraComponent):
+class TransitionsSlide(ChakraComponent):
     """Wrapper component for Slide transition."""
 
-    tag = "Slide"
+    tag = "TransitionsSlide"
 
 
-class SlideFade(ChakraComponent):
+class TransitionsSlideFade(ChakraComponent):
     """Wrapper component for SlideFade transition."""
 
-    tag = "SlideFade"
+    tag = "TransitionsSlideFade"
 
 
-class Collapse(ChakraComponent):
+class TransitionsCollapse(ChakraComponent):
     """Wrapper component for Collapse transition."""
 
-    tag = "Collapse"
+    tag = "TransitionsCollapse"
 
 
 class Transitions(ChakraComponent):
@@ -78,4 +78,3 @@ class Transitions(ChakraComponent):
         """
         children = [x for x in (content, fade, scale_fade, slide, slide_fade, collapse) if x is not None]
         return super().create(*children, **props)
-
