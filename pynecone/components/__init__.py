@@ -13,6 +13,7 @@ from .media import *
 from .navigation import *
 from .overlay import *
 from .typography import *
+from .others import *
 
 # Add the convenience methods for all the components.
 # locals().update(
@@ -55,6 +56,12 @@ accordion_button = AccordionButton.create
 accordion_icon = AccordionIcon.create
 accordion_item = AccordionItem.create
 accordion_panel = AccordionPanel.create
+transitions = Transitions.create
+transitions_fade = TransitionsFade.create
+transitions_scale_fade = TransitionsScaleFade.create
+transitions_slide = TransitionsSlide.create
+transitions_slide_fade = TransitionsSlideFade.create
+transitions_collapse = TransitionsCollapse.create
 tab = Tab.create
 tab_list = TabList.create
 tab_panel = TabPanel.create
