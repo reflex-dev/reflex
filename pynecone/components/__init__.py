@@ -11,9 +11,9 @@ from .graphing import *
 from .layout import *
 from .media import *
 from .navigation import *
+from .others import *
 from .overlay import *
 from .typography import *
-from .others import *
 
 # Add the convenience methods for all the components.
 # locals().update(
