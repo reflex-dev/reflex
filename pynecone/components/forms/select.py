@@ -313,6 +313,7 @@ class Select(Component):
         """Takes a list of options and additional properties, checks if each option is an
         instance of Option, and returns a Select component with the given options and
         properties. No children allowed.
+
         Args:
             options (List[Option | str | int | float | bool]): A list of values.
             **props: Additional properties to be passed to the Select component.
