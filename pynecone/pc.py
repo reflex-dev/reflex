@@ -118,7 +118,7 @@ def run(
     frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
         frontend_cmd, backend_cmd = exec.run_frontend, exec.run_backend
-    if env == constants.Env.PROD:
+    if env == constants.Env.PROD or env == constants.Env.PREVIEW:
         frontend_cmd, backend_cmd = exec.run_frontend_prod, exec.run_backend_prod
     assert frontend_cmd and backend_cmd, "Invalid env"
 
@@ -132,10 +132,15 @@ def run(
             target=backend_cmd, args=(app.__name__, backend_port, loglevel)
         ).start()
     if frontend:
-        threading.Thread(
-            target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port)
-        ).start()
-
+        if env == constants.Env.DEV:
+            threading.Thread(
+                target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port, loglevel)
+            ).start()
+        else:
+            threading.Thread(
+                target=frontend_cmd,
+                args=(app.app, Path.cwd(), frontend_port, loglevel, env),
+            ).start()
 
 @cli.command()
 def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
