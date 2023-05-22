@@ -285,7 +285,7 @@ export const isTrue = (val) => {
  * @param event
  */
 export const preventDefault = (event) => {
-  if (event && event.hasOwnProperty("preventDefault")) {
+  if (event && event.preventDefault) {
     event.preventDefault();
   }
 };
