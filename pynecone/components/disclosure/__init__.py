@@ -8,6 +8,7 @@ from .accordion import (
     AccordionPanel,
 )
 from .tabs import Tab, TabList, TabPanel, TabPanels, Tabs
+from .transition import Collapse, Fade, ScaleFade, Slide, SlideFade
 from .visuallyhidden import VisuallyHidden
 
 __all__ = [f for f in dir() if f[0].isupper()]  # type: ignore
