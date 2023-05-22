@@ -186,8 +186,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Get the parent vars.
         parent_state = cls.get_parent_state()
         if parent_state is not None:
-            cls.inherited_vars = parent_state.vars
-            cls.inherited_backend_vars = parent_state.backend_vars
+            cls.inherited_vars = parent_state.vars.copy()
+            cls.inherited_backend_vars = parent_state.backend_vars.copy()
 
         cls.new_backend_vars = {
             name: value
@@ -229,6 +229,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             and not isinstance(fn, EventHandler)
         }
         for name, fn in events.items():
+            # fix events from dynamically generated state classes
+            if "<locals>" in fn.__qualname__.split("."):
+                fn.__qualname__ = cls.get_full_name() + f".{fn.__name__}"
             handler = EventHandler(fn=fn)
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
@@ -268,7 +271,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
 
     @classmethod
-    @functools.lru_cache()
     def get_substates(cls) -> Set[Type[State]]:
         """Get the substates of the state.
 
@@ -367,6 +369,30 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         cls._set_default_value(prop)
 
     @classmethod
+    def _propagate_var(cls, name: str, var: Var):
+        """Propagate a variable into bookkeeping dictionaries.
+
+        Recursively assign the var into substate "inherited_vars" dict.
+
+        Args:
+            name: the name of the attribute
+            var: the Var object to track and pass to substates
+        """
+        cls.vars[name] = var
+        if isinstance(var, ComputedVar):
+            cls.computed_vars[name] = var
+
+        # let substates know about the new variable
+        def update_inherited_vars(state: Type[State]):
+            for s in state.get_substates():
+                if getattr(s, "parent_state", None) is None:
+                    continue  # no inherited vars for root state
+                s.inherited_vars[name] = var
+                update_inherited_vars(s)
+
+        update_inherited_vars(cls)
+
+    @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
         """Add dynamically a variable to the State.
 
@@ -394,14 +420,58 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         cls.add_field(var, default_value)
 
         cls._init_var(var)
+        cls._propagate_var(name=name, var=var)
 
-        # update the internal dicts so the new variable is correctly handled
-        cls.base_vars.update({name: var})
-        cls.vars.update({name: var})
+    @classmethod
+    def add_computed_var(cls):
+        """Add a pc.var to the given state.
 
-        # let substates know about the new variable
-        for substate_class in cls.__subclasses__():
-            substate_class.vars.setdefault(name, var)
+        Returns:
+            a decorator that adds the ComputedVar to the state
+
+            @app.state.add_computed_var()
+            @pc.cached_var
+            def new_cvar(self) -> str:
+                return self.persistent_token
+        """
+
+        def dec(cvar):
+            if not isinstance(cvar, ComputedVar):
+                raise TypeError(
+                    f"{cvar!r} must be a ComputedVar, not {cvar.__class__.__name__!r}",
+                )
+            if cvar.fget is None:
+                raise ValueError(
+                    f"{cvar!r} must be bound to a getter function.",
+                )
+            param = cvar.fget.__name__
+            cvar.set_state(cls)  # type: ignore
+            setattr(cls, param, cvar)
+            cls._propagate_var(name=param, var=cvar)
+            return cvar
+
+        return dec
+
+    @classmethod
+    def add_event_handler(cls) -> Callable[[Callable], Callable]:
+        """Add a func to the given state as an EventHandler.
+
+        Returns:
+            a decorator that adds the function as an EventHandler
+
+            @app.state.add_event_handler()
+            def new_event(self, foo: str):
+                self.foo = foo.upper()
+        """
+
+        def dec(func: Callable) -> Callable:
+            handler_name = func.__name__
+            func.__qualname__ = cls.get_full_name() + f".{handler_name}"
+            handler = cls.event_handlers[handler_name] = EventHandler(fn=func)
+            setattr(cls, handler_name, handler)
+            return func
+
+        return dec
 
     @classmethod
     def _set_var(cls, prop: BaseVar):
@@ -410,6 +480,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var instance to set.
         """
+        cls.base_vars[prop.name] = prop
         setattr(cls, prop.name, prop)
 
     @classmethod
@@ -519,8 +590,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             else:
                 continue
             func.fget.__name__ = param  # to allow passing as a prop
-            cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
-            setattr(cls, param, func)
+            func.cache = True  # don't recompute unless router_data changes
+            cls.add_computed_var()(func)
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
