@@ -1,6 +1,6 @@
 import pytest
 
-from pynecone.utils import tunnel
+from pynecone.utils.tunnel import remove_file_extensions
 
 
 @pytest.mark.parametrize(
@@ -8,5 +8,5 @@ from pynecone.utils import tunnel
     [("example.tar.gz", "example"), ("file.zip", "file")],
 )
 def test_remove_file_extensions(input_string, expected_output):
-    output = tunnel.remove_file_extensions(input_string)
+    output = remove_file_extensions(input_string)
     assert output == expected_output
