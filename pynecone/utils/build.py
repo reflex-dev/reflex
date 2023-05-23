@@ -125,6 +125,7 @@ def export_app(
                 elif "automatically rendered as static HTML" in line:
                     progress.update(task, advance=100)
                 elif "Export successful" in line:
+                    print("DOOE")
                     progress.update(task, completed=500)
                     break  # Exit the loop if the completion message is found
                 elif loglevel == constants.LogLevel.DEBUG:
