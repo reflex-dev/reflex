@@ -4,8 +4,16 @@ from typing import Any
 import pytest
 
 import pynecone as pc
+from pynecone.components.layout.box import Box
 from pynecone.components.layout.cond import Cond, cond
 from pynecone.components.layout.fragment import Fragment
+from pynecone.components.layout.responsive import (
+    desktop_only,
+    mobile_and_tablet,
+    mobile_only,
+    tablet_and_desktop,
+    tablet_only,
+)
 from pynecone.components.typography.text import Text
 from pynecone.vars import Var
 
@@ -103,3 +111,33 @@ def test_cond_no_else():
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
         cond(True, "hello")
+
+
+def test_mobile_only():
+    """Test the mobile_only responsive component."""
+    component = mobile_only("Content")
+    assert isinstance(component, Box)
+
+
+def test_tablet_only():
+    """Test the tablet_only responsive component."""
+    component = tablet_only("Content")
+    assert isinstance(component, Box)
+
+
+def test_desktop_only():
+    """Test the desktop_only responsive component."""
+    component = desktop_only("Content")
+    assert isinstance(component, Box)
+
+
+def test_tablet_and_desktop():
+    """Test the tablet_and_desktop responsive component."""
+    component = tablet_and_desktop("Content")
+    assert isinstance(component, Box)
+
+
+def test_mobile_and_tablet():
+    """Test the mobile_and_tablet responsive component."""
+    component = mobile_and_tablet("Content")
+    assert isinstance(component, Box)

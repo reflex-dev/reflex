@@ -13,11 +13,11 @@ MODULE_NAME = "pynecone"
 # The current version of Pynecone.
 VERSION = pkg_resources.get_distribution(MODULE_NAME).version
 # Minimum version of Node.js required to run Pynecone.
-MIN_NODE_VERSION = "16.6.0"
+MIN_NODE_VERSION = "16.8.0"
 
 # Valid bun versions.
 MIN_BUN_VERSION = "0.5.9"
-MAX_BUN_VERSION = "0.5.9"
+MAX_BUN_VERSION = "0.6.1"
 
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
@@ -58,7 +58,7 @@ NODE_MODULES = "node_modules"
 PACKAGE_LOCK = "package-lock.json"
 # The pcversion app file.
 PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pynecone.json")
-
+ENV_JSON = os.path.join(WEB_DIR, "env.json")
 
 # Commands to run the app.
 # The frontend default port.

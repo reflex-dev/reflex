@@ -2,9 +2,11 @@
 import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
-import config from "../pynecone.json"
+import env from "env.json";
 
-const UPLOAD = config.uploadUrl;
+const PINGURL = env.pingUrl
+const EVENTURL = env.eventUrl
+const UPLOADURL = env.uploadUrl
 // Global variable to hold the token.
 let token;
 
@@ -96,7 +98,8 @@ export const applyEvent = async (event, router, socket) => {
   }
 
   if (event.name == "_set_value") {
-    const ref = event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    const ref =
+      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
     ref.current.value = event.payload.value;
     return false;
   }
@@ -118,17 +121,11 @@ export const applyEvent = async (event, router, socket) => {
  * @param state The state with the event queue.
  * @param setResult The function to set the result.
  */
-export const applyRestEvent = async (
-  queue_event,
-  state,
-  setResult,
-) => {
+export const applyRestEvent = async (queue_event, state, setResult) => {
   if (queue_event.handler == "uploadFiles") {
-    await uploadFiles(state, setResult, queue_event.name, UPLOAD)
+    await uploadFiles(state, setResult, queue_event.name);
   }
-
-}
-
+};
 
 /**
  * Process an event off the event queue.
@@ -162,22 +159,15 @@ export const updateState = async (
 
   // Process events with handlers via REST and all others via websockets.
   if (queue_event.handler) {
-
-    await applyRestEvent(queue_event, state, setResult)
-
-
-  }
-  else {
+    await applyRestEvent(queue_event, state, setResult);
+  } else {
     const eventSent = await applyEvent(queue_event, router, socket);
     if (!eventSent) {
       // If no event was sent, set processing to false and return.
       setResult({ ...state, processing: false });
     }
   }
-
-
 };
-
 
 /**
  * Connect to a websocket and set the handlers.
@@ -196,13 +186,12 @@ export const connect = async (
   result,
   setResult,
   router,
-  endpoint,
   transports
 ) => {
   // Get backend URL object from the endpoint
-  const endpoint_url = new URL(endpoint);
+  const endpoint_url = new URL(EVENTURL);
   // Create the socket.
-  socket.current = io(endpoint, {
+  socket.current = io(EVENTURL, {
     path: endpoint_url["pathname"],
     transports: transports,
     autoUnref: false,
@@ -233,17 +222,12 @@ export const connect = async (
  * @param handler The handler to use.
  * @param endpoint The endpoint to upload to.
  */
-export const uploadFiles = async (
-  state,
-  setResult,
-  handler,
-  endpoint
-) => {
-  const files = state.files
+export const uploadFiles = async (state, setResult, handler) => {
+  const files = state.files;
 
   // return if there's no file to upload
   if (files.length == 0) {
-    return
+    return;
   }
 
   const headers = {
@@ -253,11 +237,15 @@ export const uploadFiles = async (
 
   // Add the token and handler to the file name.
   for (let i = 0; i < files.length; i++) {
-    formdata.append("files", files[i], getToken() + ":" + handler + ":" + files[i].name);
+    formdata.append(
+      "files",
+      files[i],
+      getToken() + ":" + handler + ":" + files[i].name
+    );
   }
 
   // Send the file to the server.
-  await axios.post(endpoint, formdata, headers).then((response) => {
+  await axios.post(UPLOADURL, formdata, headers).then((response) => {
     // Apply the delta and set the result.
     const update = response.data;
     applyDelta(state, update.delta);
@@ -283,12 +271,21 @@ export const E = (name, payload = {}, handler = null) => {
   return { name, payload, handler };
 };
 
-
 /***
  * Check if a value is truthy in python.
  * @param val The value to check.
  * @returns True if the value is truthy, false otherwise.
  */
 export const isTrue = (val) => {
-  return Array.isArray(val) ? val.length > 0 : !!val
-}
+  return Array.isArray(val) ? val.length > 0 : !!val;
+};
+
+/**
+ * Prevent the default event.
+ * @param event
+ */
+export const preventDefault = (event) => {
+  if (event && event.preventDefault) {
+    event.preventDefault();
+  }
+};

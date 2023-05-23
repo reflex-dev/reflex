@@ -14,7 +14,7 @@ from pynecone.vars import Var
 V055 = version.parse("0.5.5")
 V059 = version.parse("0.5.9")
 V056 = version.parse("0.5.6")
-V0510 = version.parse("0.5.10")
+V062 = version.parse("0.6.2")
 
 
 @pytest.mark.parametrize(
@@ -246,7 +246,7 @@ def test_format_route(route: str, expected: bool):
     [
         (V055, False, "yes"),
         (V059, True, None),
-        (V0510, False, "yes"),
+        (V062, False, "yes"),
     ],
 )
 def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
@@ -330,7 +330,7 @@ def test_setup_frontend(tmp_path, mocker):
     assert str(web_folder) == prerequisites.create_web_directory(tmp_path)
 
     mocker.patch("pynecone.utils.prerequisites.install_frontend_packages")
-    mocker.patch("pynecone.utils.build.set_pynecone_upload_endpoint")
+    mocker.patch("pynecone.utils.build.set_environment_variables")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
     assert web_folder.exists()

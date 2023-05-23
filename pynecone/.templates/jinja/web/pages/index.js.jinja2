@@ -5,9 +5,6 @@
 {{custom_code}}
 {% endfor %}
 
-{% for name, url in endpoints.items() %}
-const {{name}} = {{url|json_dumps}}
-{% endfor %}
 {% endblock %}
 
 {% block export %}
@@ -18,11 +15,10 @@ export default function Component() {
   const {{const.socket}} = useRef(null)
   const { isReady } = {{const.router}}
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
-
+  const focusRef = useRef();
+  
   const Event = (events, _e) => {
-      if (_e) {
-        _e.preventDefault();
-      }
+      preventDefault(_e);
       {{state_name|react_setter}}({
         ...{{state_name}},
         events: [...{{state_name}}.events, ...events],
@@ -39,7 +35,7 @@ export default function Component() {
       return;
     }
     if (!{{const.socket}}.current) {
-      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.event_endpoint}}, {{transports}})
+      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{transports}})
     }
     const update = async () => {
       if ({{const.result}}.{{const.state}} != null){
@@ -57,6 +53,8 @@ export default function Component() {
 
       await updateState({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
     }
+    if (focusRef.current)
+      focusRef.current.focus();
     update()
   })
   useEffect(() => {

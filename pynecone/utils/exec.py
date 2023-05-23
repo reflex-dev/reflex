@@ -5,10 +5,11 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import uvicorn
+from rich import print
 
 from pynecone import constants
 from pynecone.config import get_config
@@ -30,13 +31,58 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
-def run_frontend(app: App, root: Path, port: str):
+def run_process_and_launch_url(
+    run_command: list[str],
+    root: Path,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+):
+    """Run the process and launch the URL.
+
+    Args:
+        run_command: The command to run.
+        root: root path of the project.
+        loglevel: The log level to use.
+    """
+    process = subprocess.Popen(
+        run_command,
+        cwd=constants.WEB_DIR,
+        env=os.environ,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    )
+
+    current_time = datetime.now()
+    if process.stdout:
+        for line in process.stdout:
+            if "ready started server on" in line:
+                url = line.split("url: ")[-1].strip()
+                print(f"App running at: [bold green]{url}")
+            if (
+                "Fast Refresh" in line
+                and (datetime.now() - current_time).total_seconds() > 1
+            ):
+                print(
+                    f"[yellow][Updating App][/yellow] Applying changes and refreshing. Time: {current_time}"
+                )
+                current_time = datetime.now()
+            elif loglevel == constants.LogLevel.DEBUG:
+                print(line, end="")
+
+
+def run_frontend(
+    app: App,
+    root: Path,
+    port: str,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
         port: port of the app.
+        loglevel: The log level to use.
     """
     # validate bun version
     prerequisites.validate_and_install_bun(initialize=False)
@@ -44,46 +90,44 @@ def run_frontend(app: App, root: Path, port: str):
     # Set up the frontend.
     setup_frontend(root)
 
-    # start watching asset folder
+    # Start watching asset folder.
     start_watching_assets_folder(root)
-
-    # Compile the frontend.
-    app.compile(force_compile=True)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().port if port is None else port
-
-    # Run the frontend in development mode.
-    subprocess.Popen(
-        [prerequisites.get_package_manager(), "run", "dev"],
-        cwd=constants.WEB_DIR,
-        env=os.environ,
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "dev"], root, loglevel
     )
 
 
-def run_frontend_prod(app: App, root: Path, port: str):
+def run_frontend_prod(
+    app: App,
+    root: Path,
+    port: str,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+):
     """Run the frontend.
 
     Args:
         app: The app.
         root: root path of the project.
         port: port of the app.
+        loglevel: The log level to use.
     """
     # Set up the frontend.
     setup_frontend(root)
 
     # Export the app.
-    export_app(app)
+    export_app(app, loglevel=loglevel)
 
     # Set the port.
     os.environ["PORT"] = get_config().port if port is None else port
 
     # Run the frontend in production mode.
-    subprocess.Popen(
-        [prerequisites.get_package_manager(), "run", "prod"],
-        cwd=constants.WEB_DIR,
-        env=os.environ,
+    console.rule("[bold green]App Running")
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "prod"], root, loglevel
     )
 
 
@@ -99,13 +143,23 @@ def run_backend(
     """
     setup_backend()
 
-    uvicorn.run(
+    cmd = [
+        "uvicorn",
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
-        host=constants.BACKEND_HOST,
-        port=port,
-        log_level=loglevel,
-        reload=True,
-    )
+        "--host",
+        constants.BACKEND_HOST,
+        "--port",
+        str(port),
+        "--log-level",
+        loglevel,
+        "--reload",
+    ]
+    process = subprocess.Popen(cmd)
+
+    try:
+        process.wait()
+    except KeyboardInterrupt:
+        process.terminate()
 
 
 def run_backend_prod(

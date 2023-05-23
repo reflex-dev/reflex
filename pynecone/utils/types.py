@@ -12,7 +12,7 @@ from pynecone.base import Base
 GenericType = Union[Type, _GenericAlias]
 
 # Valid state var types.
-PrimitiveType = Union[int, float, bool, str, list, dict, tuple]
+PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 
 

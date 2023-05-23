@@ -7,10 +7,9 @@ import os
 import random
 import subprocess
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Optional,
-)
+from typing import TYPE_CHECKING, Optional, Union
+
+from rich.progress import Progress
 
 from pynecone import constants
 from pynecone.config import get_config
@@ -20,32 +19,42 @@ if TYPE_CHECKING:
     from pynecone.app import App
 
 
-def update_json_file(file_path, key, value):
+def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
     """Update the contents of a json file.
 
     Args:
         file_path: the path to the JSON file.
-        key: object key to update.
-        value: value of key.
+        update_dict: object to update json.
     """
-    with open(file_path) as f:  # type: ignore
-        json_object = json.load(f)
-        json_object[key] = value
-    with open(file_path, "w") as f:
+    fp = Path(file_path)
+    # create file if it doesn't exist
+    fp.touch(exist_ok=True)
+    # create an empty json object if file is empty
+    fp.write_text("{}") if fp.stat().st_size == 0 else None
+
+    with open(fp) as f:  # type: ignore
+        json_object: dict = json.load(f)
+        json_object.update(update_dict)
+    with open(fp, "w") as f:
         json.dump(json_object, f, ensure_ascii=False)
 
 
 def set_pynecone_project_hash():
     """Write the hash of the Pynecone project to a PCVERSION_APP_FILE."""
     update_json_file(
-        constants.PCVERSION_APP_FILE, "project_hash", random.getrandbits(128)
+        constants.PCVERSION_APP_FILE, {"project_hash": random.getrandbits(128)}
     )
 
 
-def set_pynecone_upload_endpoint():
+def set_environment_variables():
     """Write the upload url to a PCVERSION_APP_FILE."""
     update_json_file(
-        constants.PCVERSION_APP_FILE, "uploadUrl", constants.Endpoint.UPLOAD.get_url()
+        constants.ENV_JSON,
+        {
+            "uploadUrl": constants.Endpoint.UPLOAD.get_url(),
+            "eventUrl": constants.Endpoint.EVENT.get_url(),
+            "pingUrl": constants.Endpoint.PING.get_url(),
+        },
     )
 
 
@@ -75,6 +84,7 @@ def export_app(
     frontend: bool = True,
     zip: bool = False,
     deploy_url: Optional[str] = None,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
     """Zip up the app for deployment.
 
@@ -84,10 +94,8 @@ def export_app(
         frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
         deploy_url: The URL of the deployed app.
+        loglevel: The log level to use.
     """
-    # Force compile the app.
-    app.compile(force_compile=True)
-
     # Remove the static folder.
     path_ops.rm(constants.WEB_STATIC_DIR)
 
@@ -95,10 +103,44 @@ def export_app(
     if deploy_url is not None:
         generate_sitemap(deploy_url)
 
-    # Export the Next app.
-    subprocess.run(
-        [prerequisites.get_package_manager(), "run", "export"], cwd=constants.WEB_DIR
-    )
+    # Create a progress object
+    progress = Progress()
+
+    # Add a single task to the progress object
+    task = progress.add_task("Building app... ", total=500)
+
+    # Start the progress bar
+    with progress:
+        # Run the subprocess command
+        export_process = subprocess.Popen(
+            [prerequisites.get_package_manager(), "run", "export"],
+            cwd=constants.WEB_DIR,
+            env=os.environ,
+            stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE,  # Redirect stdout to a pipe
+            universal_newlines=True,  # Set universal_newlines to True for text mode
+        )
+
+        if export_process.stdout:
+            for line in iter(export_process.stdout.readline, ""):
+                if "Linting and checking " in line:
+                    progress.update(task, advance=100)
+                elif "Compiled successfully" in line:
+                    progress.update(task, advance=100)
+                elif "Route (pages)" in line:
+                    progress.update(task, advance=100)
+                elif "automatically rendered as static HTML" in line:
+                    progress.update(task, advance=100)
+                elif "Export successful" in line:
+                    print("DOOE")
+                    progress.update(task, completed=500)
+                    break  # Exit the loop if the completion message is found
+                elif loglevel == constants.LogLevel.DEBUG:
+                    print(line, end="")
+
+        # Wait for the subprocess to complete
+        export_process.wait()
+        print("Export process completed.")
 
     # Zip up the app.
     if zip:
@@ -160,8 +202,8 @@ def setup_frontend(root: Path, disable_telemetry: bool = True):
         dest=str(root / constants.WEB_ASSETS_DIR),
     )
 
-    # set the upload url in pynecone.json file
-    set_pynecone_upload_endpoint()
+    # set the environment variables in client(env.json)
+    set_environment_variables()
 
     # Disable the Next telemetry.
     if disable_telemetry:

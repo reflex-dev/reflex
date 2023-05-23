@@ -46,7 +46,7 @@ def test_call_event_handler():
 
     assert event_spec.handler == handler
     assert event_spec.args == ()
-    assert format.format_event(event_spec) == 'E("test_fn")'
+    assert format.format_event(event_spec) == 'E("test_fn", {})'
 
     handler = EventHandler(fn=test_fn_with_args)
     event_spec = handler(make_var("first"), make_var("second"))

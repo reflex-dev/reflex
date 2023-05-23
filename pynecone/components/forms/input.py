@@ -55,8 +55,7 @@ class Input(ChakraComponent):
             {"/utils/state": {ImportVar(tag="set_val")}},
         )
 
-    @classmethod
-    def get_controlled_triggers(cls) -> Dict[str, Var]:
+    def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

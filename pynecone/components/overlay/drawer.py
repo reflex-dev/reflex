@@ -58,8 +58,7 @@ class Drawer(ChakraComponent):
     # Variant of drawer
     variant: Var[str]
 
-    @classmethod
-    def get_triggers(cls) -> Set[str]:
+    def get_triggers(self) -> Set[str]:
         """Get the event triggers for the component.
 
         Returns:

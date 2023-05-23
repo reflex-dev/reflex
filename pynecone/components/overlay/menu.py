@@ -60,8 +60,7 @@ class Menu(ChakraComponent):
     # The CSS positioning strategy to use. ("fixed" | "absolute")
     strategy: Var[str]
 
-    @classmethod
-    def get_triggers(cls) -> Set[str]:
+    def get_triggers(self) -> Set[str]:
         """Get the event triggers for the component.
 
         Returns:
