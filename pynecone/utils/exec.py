@@ -13,7 +13,7 @@ from rich import print
 
 from pynecone import constants
 from pynecone.config import get_config
-from pynecone.utils import console, prerequisites, processes
+from pynecone.utils import console, prerequisites, processes, tunnel
 from pynecone.utils.build import export_app, setup_backend, setup_frontend
 from pynecone.utils.watch import AssetFolderWatch
 
@@ -30,11 +30,11 @@ def start_watching_assets_folder(root):
     asset_watch = AssetFolderWatch(root)
     asset_watch.start()
 
-
 def run_process_and_launch_url(
     run_command: list[str],
     root: Path,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    env: constants.Env = constants.Env.DEV,
 ):
     """Run the process and launch the URL.
 
@@ -42,6 +42,7 @@ def run_process_and_launch_url(
         run_command: The command to run.
         root: root path of the project.
         loglevel: The log level to use.
+        env: The environment mode.
     """
     process = subprocess.Popen(
         run_command,
@@ -57,7 +58,13 @@ def run_process_and_launch_url(
         for line in process.stdout:
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
-                print(f"App running at: [bold green]{url}")
+                if env == constants.Env.PREVIEW:
+                    t = tunnel.Tunnel(backend_local_port=8000, frontend_local_port=3000)
+                    t.download_and_uncompress_frp()
+                    t.generate_frpc_ini()
+                    t.run_frpc_with_ini()
+                else:
+                    print(f"App running at: [bold green]{url}")
             if (
                 "Fast Refresh" in line
                 and (datetime.now() - current_time).total_seconds() > 1
@@ -106,6 +113,7 @@ def run_frontend_prod(
     root: Path,
     port: str,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    env: constants.Env = constants.Env.PROD,
 ):
     """Run the frontend.
 
@@ -114,6 +122,7 @@ def run_frontend_prod(
         root: root path of the project.
         port: port of the app.
         loglevel: The log level to use.
+        env: The environment mode.
     """
     # Set up the frontend.
     setup_frontend(root)
@@ -127,9 +136,8 @@ def run_frontend_prod(
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"], root, loglevel
+        [prerequisites.get_package_manager(), "run", "prod"], root=root, loglevel=loglevel, env=env
     )
-
 
 def run_backend(
     app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR
