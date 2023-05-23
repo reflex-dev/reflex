@@ -30,12 +30,13 @@ def start_watching_assets_folder(root):
     asset_watch = AssetFolderWatch(root)
     asset_watch.start()
 
+
 def run_process_and_launch_url(
     run_command: list[str],
     root: Path,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     env: constants.Env = constants.Env.DEV,
-    t: tunnel.Tunnel = None,
+    t: tunnel.Tunnel = tunnel.Tunnel(backend_local_port=8000, frontend_local_port=3000),
 ):
     """Run the process and launch the URL.
 
@@ -44,6 +45,7 @@ def run_process_and_launch_url(
         root: root path of the project.
         loglevel: The log level to use.
         env: The environment mode.
+        t: The tunnel object.
     """
     process = subprocess.Popen(
         run_command,
@@ -122,15 +124,13 @@ def run_frontend_prod(
         loglevel: The log level to use.
         env: The environment mode.
     """
+    t = tunnel.Tunnel(backend_local_port=8000, frontend_local_port=3000)
     # Set up the frontend.
     if env == constants.Env.PREVIEW:
-        t = tunnel.Tunnel(backend_local_port=8000, frontend_local_port=3000)
         t.download_and_uncompress_frp()
         t.generate_frpc_ini()
         config = get_config()
         config.api_url = t.get_backend_url()
-    else:
-        t = None
 
     setup_frontend(root)
 
@@ -143,8 +143,13 @@ def run_frontend_prod(
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"], root=root, loglevel=loglevel, env=env, t=t
+        [prerequisites.get_package_manager(), "run", "prod"],
+        root=root,
+        loglevel=loglevel,
+        env=env,
+        t=t,
     )
+
 
 def run_backend(
     app_name: str, port: int, loglevel: constants.LogLevel = constants.LogLevel.ERROR

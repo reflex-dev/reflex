@@ -128,18 +128,19 @@ def run(
     # Run the frontend and backend.
     if backend:
         threading.Thread(
-             target=backend_cmd, args=(app.__name__, backend_port, loglevel)
-         ).start()
-    if frontend:
-         if env == constants.Env.DEV:
-             threading.Thread(
-                 target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port, loglevel)
-             ).start()
-         else:
-             threading.Thread(
-                 target=frontend_cmd,
-                 args=(app.app, Path.cwd(), frontend_port, loglevel, env),
+            target=backend_cmd, args=(app.__name__, backend_port, loglevel)
         ).start()
+    if frontend:
+        if env == constants.Env.DEV:
+            threading.Thread(
+                target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port, loglevel)
+            ).start()
+        else:
+            threading.Thread(
+                target=frontend_cmd,
+                args=(app.app, Path.cwd(), frontend_port, loglevel, env),
+            ).start()
+
 
 @cli.command()
 def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):

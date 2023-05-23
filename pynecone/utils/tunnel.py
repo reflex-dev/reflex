@@ -34,10 +34,10 @@ file_list = {
 
 def remove_file_extensions(input_string: str) -> str:
     """Remove file extensions from a string.
-    
+
 
     Args:
-        input_string: The string to remove file extensions from. 
+        input_string: The string to remove file extensions from.
 
     Returns:
         The string with file extensions removed.
@@ -45,15 +45,19 @@ def remove_file_extensions(input_string: str) -> str:
     pattern = r"(\.tar\.gz|\.zip)"
     return re.sub(pattern, "", input_string)
 
-def is_port_in_use(ip, port: int) -> bool:
+
+def is_port_in_use(ip: str, port: int) -> bool:
     """Check if a port is in use.
 
     Args:
+        ip: The IP address to check.
         port: The port to check.
 
     Returns:
         True if the port is in use, False otherwise.
     """
+    sock = None  # Initialize sock variable
+
     try:
         # Create a socket object
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,8 +68,10 @@ def is_port_in_use(ip, port: int) -> bool:
         print(f"Error occurred while checking port: {e}")
         return False
     finally:
-        # Close the socket
-        sock.close()
+        # Close the socket if it has been initialized
+        if sock:
+            sock.close()
+
 
 def find_unused_ports(ip_address, start_port, end_port, num_ports) -> list[int]:
     """Find unused ports in a range.
@@ -75,7 +81,7 @@ def find_unused_ports(ip_address, start_port, end_port, num_ports) -> list[int]:
         start_port: The start of the port range.
         end_port: The end of the port range.
         num_ports: The number of unused ports to find.
-    
+
 
     Returns:
         A list of unused ports.
@@ -88,7 +94,7 @@ def find_unused_ports(ip_address, start_port, end_port, num_ports) -> list[int]:
             if len(unused_ports) == num_ports:
                 # Stop iterating once the desired number of unused ports is found
                 break
-    
+
     return unused_ports
 
 
@@ -104,10 +110,9 @@ class Tunnel(BaseModel):
     frontend_local_port: int = 3000
     timeout: int = 3000
 
-
     def get_backend_url(self) -> str:
         """Get the backend URL.
-        
+
 
         Returns:
             The backend URL.
@@ -116,9 +121,9 @@ class Tunnel(BaseModel):
 
     def download_and_uncompress_frp(self):
         """Download and uncompress frp.
-        
 
-        Raises: 
+
+        Raises:
             ValueError: If the OS or architecture is not supported.
             ValueError: If the file format is not supported.
         """
@@ -131,10 +136,13 @@ class Tunnel(BaseModel):
         if arch == "AMD64":
             arch = "x86_64"
 
-        self.file_name = file_list.get((os_name, arch))
-
-        if not self.file_name:
-            raise ValueError(f"Unsupported OS or architecture: {os_name} {arch}")
+        value = file_list.get((os_name, arch))  # type: ignore
+        if value is not None:
+            self.file_name = value
+        else:
+            raise ValueError(
+                f"Unsupported OS or architecture for preview: {os_name} {arch}"
+            )
 
         file_url = base_url + f"frp_{self.frp_version}_{self.file_name}"
         response = requests.get(file_url)
@@ -182,7 +190,7 @@ remote_port = {self.frontend_remote_port}
 
     def run_frpc_with_ini(self):
         """Run frpc with frpc.ini.
-        
+
 
         Raises:
             ValueError: If the frpc executable or frpc.ini file is not found.
