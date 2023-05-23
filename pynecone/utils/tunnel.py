@@ -8,7 +8,7 @@ import tarfile
 import time
 import zipfile
 
-import requests
+import httpx
 from pydantic import BaseModel
 from rich import print
 
@@ -145,7 +145,7 @@ class Tunnel(BaseModel):
             )
 
         file_url = base_url + f"frp_{self.frp_version}_{self.file_name}"
-        response = requests.get(file_url)
+        response = httpx.get(file_url)
 
         if response.status_code == 200:
             with open(self.file_name, "wb") as f:
