@@ -7,6 +7,7 @@ import subprocess
 import tarfile
 import time
 import zipfile
+from typing import List
 
 import httpx
 from pydantic import BaseModel
@@ -73,7 +74,7 @@ def is_port_in_use(ip: str, port: int) -> bool:
             sock.close()
 
 
-def find_unused_ports(ip_address, start_port, end_port, num_ports) -> list[int]:
+def find_unused_ports(ip_address, start_port, end_port, num_ports) -> List[int]:
     """Find unused ports in a range.
 
     Args:
