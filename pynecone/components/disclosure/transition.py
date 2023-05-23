@@ -9,9 +9,11 @@ from pynecone.vars import ImportVar, Var
 class Transition(ChakraComponent):
     """Base componemt of all transitions."""
 
+    # Show the component; triggers when enter or exit states
     in_: Var[bool]
 
-    unmount_on_exit: Var[bool] = False  # type: ignore
+    # If true, the element will unmount when `in={false}` and animation is done
+    unmount_on_exit: Var[bool]
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
@@ -31,11 +33,11 @@ class ScaleFade(Transition):
 
     tag = "ScaleFade"
 
-    unmount_on_exit: Var[bool] = False  # type: ignore
+    # The initial scale of the element
+    initial_scale: Var[float]
 
-    initial_scale: Var[float] = 0.95  # type: ignore
-
-    reverse: Var[bool] = True  # type: ignore
+    # If true, the element will transition back to exit state
+    reverse: Var[bool]
 
 
 class Slide(Transition):
@@ -43,7 +45,8 @@ class Slide(Transition):
 
     tag = "Slide"
 
-    direction: Var[str] = "right"  # type: ignore
+    # The direction to slide from
+    direction: Var[str]
 
 
 class SlideFade(Transition):
@@ -51,11 +54,14 @@ class SlideFade(Transition):
 
     tag = "SlideFade"
 
-    offsetX: Var[Union[str, int]] = 0  # type: ignore
+    # The offset on the horizontal or x axis
+    offsetX: Var[Union[str, int]]
 
-    offsetY: Var[Union[str, int]] = 8  # type: ignore
+    # The offset on the vertical or y axis
+    offsetY: Var[Union[str, int]]
 
-    reverse: Var[bool] = True  # type: ignore
+    # If true, the element will be transitioned back to the offset when it leaves. Otherwise, it'll only fade out
+    reverse: Var[bool]
 
 
 class Collapse(Transition):
@@ -63,8 +69,11 @@ class Collapse(Transition):
 
     tag = "Collapse"
 
-    animateOpacity: Var[bool] = True  # type: ignore
+    # If true, the opacity of the content will be animated
+    animateOpacity: Var[bool]
 
-    endingHeight: Var[str] = "auto"  # type: ignore
+    # The height you want the content in its expanded state.
+    endingHeight: Var[str]
 
-    startingHeight: Var[Union[str, int]] = 0  # type: ignore
+    # The height you want the content in its collapsed state.
+    startingHeight: Var[Union[str, int]]
