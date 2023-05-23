@@ -139,7 +139,7 @@ def run(
              threading.Thread(
                  target=frontend_cmd,
                  args=(app.app, Path.cwd(), frontend_port, loglevel, env),
-            ).start()
+        ).start()
 
 @cli.command()
 def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):

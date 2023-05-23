@@ -35,6 +35,7 @@ def run_process_and_launch_url(
     root: Path,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     env: constants.Env = constants.Env.DEV,
+    t: tunnel.Tunnel = None,
 ):
     """Run the process and launch the URL.
 
@@ -59,9 +60,6 @@ def run_process_and_launch_url(
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
                 if env == constants.Env.PREVIEW:
-                    t = tunnel.Tunnel(backend_local_port=8000, frontend_local_port=3000)
-                    t.download_and_uncompress_frp()
-                    t.generate_frpc_ini()
                     t.run_frpc_with_ini()
                 else:
                     print(f"App running at: [bold green]{url}")
@@ -125,6 +123,15 @@ def run_frontend_prod(
         env: The environment mode.
     """
     # Set up the frontend.
+    if env == constants.Env.PREVIEW:
+        t = tunnel.Tunnel(backend_local_port=8000, frontend_local_port=3000)
+        t.download_and_uncompress_frp()
+        t.generate_frpc_ini()
+        config = get_config()
+        config.api_url = t.get_backend_url()
+    else:
+        t = None
+
     setup_frontend(root)
 
     # Export the app.
@@ -136,7 +143,7 @@ def run_frontend_prod(
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"], root=root, loglevel=loglevel, env=env
+        [prerequisites.get_package_manager(), "run", "prod"], root=root, loglevel=loglevel, env=env, t=t
     )
 
 def run_backend(

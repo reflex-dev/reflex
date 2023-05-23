@@ -104,6 +104,16 @@ class Tunnel(BaseModel):
     frontend_local_port: int = 3000
     timeout: int = 3000
 
+
+    def get_backend_url(self) -> str:
+        """Get the backend URL.
+        
+
+        Returns:
+            The backend URL.
+        """
+        return f"http://{self.ip}:{self.backend_remote_port}"
+
     def download_and_uncompress_frp(self):
         """Download and uncompress frp.
         
