@@ -16,4 +16,4 @@ def test_is_port_in_use_socket_error():
     ip = "127.0.0.1"
     port = 8000
 
-    assert tunnel.is_port_in_use(ip, port) is False
+    assert tunnel.is_port_in_use(ip, port) == False
