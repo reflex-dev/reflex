@@ -2,8 +2,7 @@
 from typing import Union
 
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.utils import imports
-from pynecone.vars import ImportVar, Var
+from pynecone.vars import Var
 
 
 class Transition(ChakraComponent):
@@ -14,12 +13,6 @@ class Transition(ChakraComponent):
 
     # If true, the element will unmount when `in={false}` and animation is done
     unmount_on_exit: Var[bool]
-
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {"@chakra-ui/react": {ImportVar(tag="useDisclosure")}},
-        )
 
 
 class Fade(Transition):
