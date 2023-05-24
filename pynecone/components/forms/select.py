@@ -295,6 +295,9 @@ class Select(Component):
     # default: "outline"
     variant: Var[str]
 
+    # How the options should be displayed in the menu.
+    menu_position: Var[str] = "fixed"  # type: ignore
+
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -302,7 +305,7 @@ class Select(Component):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            "on_change": EVENT_ARG.target.value,
+            "on_change": EVENT_ARG.value,
         }
 
     @classmethod
