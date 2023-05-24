@@ -126,6 +126,7 @@ class FrontendEvent(Base):
 
     target: Target = Target()
     key: str = ""
+    value: Any = None
 
 
 # The default event argument.
