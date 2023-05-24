@@ -1,6 +1,6 @@
 """Provides a feature-rich Select and some (not all) related components."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pynecone.base import Base
 from pynecone.components.component import Component
@@ -121,7 +121,7 @@ class Select(Component):
     # pass in an object with the appropriate namespace.
     # If you only wish to restyle a component,
     # we recommend using the styles prop instead.
-    components: Var[dict[str, Component]]
+    components: Var[Dict[str, Component]]
 
     # Whether the value of the select, e.g. SingleValue,
     # should be displayed in the control.
@@ -215,7 +215,7 @@ class Select(Component):
     open_menu_on_click: Var[bool]
 
     # Array of options that populate the select menu
-    options: Var[list[Dict]]
+    options: Var[List[Dict]]
 
     # Number of options to jump in menu when page{up|down} keys are used
     page_size: Var[int]
@@ -307,7 +307,7 @@ class Select(Component):
 
     @classmethod
     def create(
-        cls, options: List[Option | str | int | float | bool], **props
+        cls, options: List[Union[Option, str, int, float, bool]], **props
     ) -> Component:
         """Takes a list of options and additional properties, checks if each option is an
         instance of Option, and returns a Select component with the given options and
