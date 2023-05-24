@@ -23,7 +23,7 @@ class Form(ChakraComponent):
         # Send all the input refs to the handler.
         return {
             "on_submit": {
-                ref[4:]: Var.create(f"{ref}.current.value", is_local=False)
+                ref[4:]: Var.create(f"getRefValue({ref})", is_local=False)
                 for ref in self.get_refs()
             }
         }
