@@ -1,4 +1,5 @@
 """Tunnel utilities."""
+import json
 import os
 import platform
 import re
@@ -12,6 +13,8 @@ from typing import List
 import httpx
 from pydantic import BaseModel
 from rich import print
+
+from pynecone import constants
 
 file_list = {
     ("Darwin", "x86_64"): "darwin_amd64.tar.gz",
@@ -168,18 +171,21 @@ class Tunnel(BaseModel):
         ports = find_unused_ports(self.ip, 8001, 8100, 2)
         self.backend_remote_port = ports[0]
         self.frontend_remote_port = ports[1]
+        with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
+            pynecone_json = json.load(f)
+            distinct_id = pynecone_json["project_hash"]
 
         frpc_ini_content = f"""[common]
 server_addr = {self.ip}
 server_port = 8000
 
-[web_app_backend]
+[{distinct_id}_backend]
 type = tcp
 local_ip = 127.0.0.1
 local_port = {self.backend_local_port}
 remote_port = {self.backend_remote_port}
 
-[web_app_frontend]
+[{distinct_id}_frontend]
 type = tcp
 local_ip = 127.0.0.1
 local_port = {self.frontend_local_port}
