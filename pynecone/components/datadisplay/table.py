@@ -1,4 +1,5 @@
 """Table components."""
+from typing import List
 
 from pynecone.components.component import Component
 from pynecone.components.layout.foreach import Foreach
@@ -62,6 +63,9 @@ class Thead(ChakraComponent):
 
     tag = "Thead"
 
+    # invalid children components
+    invalid_children: List[str] = ["Tbody", "Thead", "Tfoot"]
+
     @classmethod
     def create(cls, *children, headers=None, **props) -> Component:
         """Create a table header component.
@@ -83,6 +87,9 @@ class Tbody(ChakraComponent):
     """A table body component."""
 
     tag = "Tbody"
+
+    # invalid children components
+    invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Td", "Th"]
 
     @classmethod
     def create(cls, *children, rows=None, **props) -> Component:
@@ -106,6 +113,9 @@ class Tfoot(ChakraComponent):
 
     tag = "Tfoot"
 
+    # invalid children components
+    invalid_children: List[str] = ["Tbody", "Thead", "Td", "Th", "Tfoot"]
+
     @classmethod
     def create(cls, *children, footers=None, **props) -> Component:
         """Create a table footer component.
@@ -127,6 +137,9 @@ class Tr(ChakraComponent):
     """A table row component."""
 
     tag = "Tr"
+
+    # invalid children components
+    invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Tr"]
 
     @classmethod
     def create(cls, *children, cell_type: str = "", cells=None, **props) -> Component:
@@ -156,6 +169,9 @@ class Th(ChakraComponent):
 
     tag = "Th"
 
+    # invalid children components
+    invalid_children: List[str] = ["Tbody", "Thead", "Tr", "Td", "Th"]
+
     # Aligns the cell content to the right.
     is_numeric: Var[bool]
 
@@ -164,6 +180,9 @@ class Td(ChakraComponent):
     """A table data cell component."""
 
     tag = "Td"
+
+    # invalid children components
+    invalid_children: List[str] = ["Tbody", "Thead"]
 
     # Aligns the cell content to the right.
     is_numeric: Var[bool]
