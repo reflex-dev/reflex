@@ -64,6 +64,9 @@ class Component(Base, ABC):
     # Whether the component should take the focus once the page is loaded
     autofocus: bool = False
 
+    # components that cannot be children
+    invalid_children: List[str] = []
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -411,7 +414,8 @@ class Component(Base, ABC):
             The dictionary for template of component.
         """
         tag = self._render()
-        return dict(
+
+        rendered_dict = dict(
             tag.add_props(
                 **self.event_triggers,
                 key=self.key,
@@ -425,6 +429,29 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
+        self._validate_component_children(
+            rendered_dict["name"], rendered_dict["children"]
+        )
+        return rendered_dict
+
+    def _validate_component_children(self, comp_name: str, children: List[Dict]):
+        """Validate the children components.
+
+        Args:
+            comp_name: name of the component.
+            children: list of children components.
+
+        Raises:
+            ValueError: when an unsupported component is matched.
+        """
+        if not self.invalid_children:
+            return
+        for child in children:
+            name = child["name"]
+            if name in self.invalid_children:
+                raise ValueError(
+                    f"The component `{comp_name.lower()}` cannot have `{name.lower()}` as a child component"
+                )
 
     def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.
