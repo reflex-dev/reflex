@@ -289,3 +289,16 @@ export const preventDefault = (event) => {
     event.preventDefault();
   }
 };
+
+/**
+ * Get the value from a ref.
+ * @param ref The ref to get the value from.
+ * @returns The value.
+ */
+export const getRefValue = (ref) => {
+  if (ref.current.type == "checkbox") {
+    return ref.current.checked;
+  } else {
+    return ref.current.value;
+  }
+}
