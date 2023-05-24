@@ -134,6 +134,9 @@ class Config(Base):
     # The frontend port.
     backend_port: str = constants.BACKEND_PORT
 
+    # The backend host.
+    backend_host: str = constants.BACKEND_HOST
+
     # The backend API url.
     api_url: str = constants.API_URL
 
