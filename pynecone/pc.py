@@ -74,6 +74,7 @@ def run(
     ),
     port: str = typer.Option(None, help="Specify a different frontend port."),
     backend_port: str = typer.Option(None, help="Specify a different backend port."),
+    backend_host: str = typer.Option(None, help="Specify the backend host."),
 ):
     """Run the app in the current directory."""
     if platform.system() == "Windows":
@@ -83,6 +84,7 @@ def run(
 
     frontend_port = get_config().port if port is None else port
     backend_port = get_config().backend_port if backend_port is None else backend_port
+    backend_host = get_config().backend_host if backend_host is None else backend_host
 
     # If no --frontend-only and no --backend-only, then turn on frontend and backend both
     if not frontend and not backend:
@@ -126,10 +128,10 @@ def run(
     telemetry.send(f"run-{env.value}", get_config().telemetry_enabled)
 
     # Run the frontend and backend.
-    # try:
     if backend:
         threading.Thread(
-            target=backend_cmd, args=(app.__name__, backend_port, loglevel)
+            target=backend_cmd,
+            args=(app.__name__, backend_host, backend_port, loglevel),
         ).start()
     if frontend:
         threading.Thread(
