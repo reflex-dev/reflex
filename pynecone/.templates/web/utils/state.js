@@ -2,9 +2,11 @@
 import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
-import config from "../pynecone.json";
+import env from "env.json";
 
-const UPLOAD = config.uploadUrl;
+const PINGURL = env.pingUrl
+const EVENTURL = env.eventUrl
+const UPLOADURL = env.uploadUrl
 // Global variable to hold the token.
 let token;
 
@@ -121,7 +123,7 @@ export const applyEvent = async (event, router, socket) => {
  */
 export const applyRestEvent = async (queue_event, state, setResult) => {
   if (queue_event.handler == "uploadFiles") {
-    await uploadFiles(state, setResult, queue_event.name, UPLOAD);
+    await uploadFiles(state, setResult, queue_event.name);
   }
 };
 
@@ -184,13 +186,12 @@ export const connect = async (
   result,
   setResult,
   router,
-  endpoint,
   transports
 ) => {
   // Get backend URL object from the endpoint
-  const endpoint_url = new URL(endpoint);
+  const endpoint_url = new URL(EVENTURL);
   // Create the socket.
-  socket.current = io(endpoint, {
+  socket.current = io(EVENTURL, {
     path: endpoint_url["pathname"],
     transports: transports,
     autoUnref: false,
@@ -221,7 +222,7 @@ export const connect = async (
  * @param handler The handler to use.
  * @param endpoint The endpoint to upload to.
  */
-export const uploadFiles = async (state, setResult, handler, endpoint) => {
+export const uploadFiles = async (state, setResult, handler) => {
   const files = state.files;
 
   // return if there's no file to upload
@@ -244,7 +245,7 @@ export const uploadFiles = async (state, setResult, handler, endpoint) => {
   }
 
   // Send the file to the server.
-  await axios.post(endpoint, formdata, headers).then((response) => {
+  await axios.post(UPLOADURL, formdata, headers).then((response) => {
     // Apply the delta and set the result.
     const update = response.data;
     applyDelta(state, update.delta);
@@ -284,7 +285,20 @@ export const isTrue = (val) => {
  * @param event
  */
 export const preventDefault = (event) => {
-  if (event && event.hasOwnProperty("preventDefault")) {
+  if (event && event.preventDefault) {
     event.preventDefault();
   }
 };
+
+/**
+ * Get the value from a ref.
+ * @param ref The ref to get the value from.
+ * @returns The value.
+ */
+export const getRefValue = (ref) => {
+  if (ref.current.type == "checkbox") {
+    return ref.current.checked;
+  } else {
+    return ref.current.value;
+  }
+}

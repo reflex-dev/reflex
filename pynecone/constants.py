@@ -58,7 +58,7 @@ NODE_MODULES = "node_modules"
 PACKAGE_LOCK = "package-lock.json"
 # The pcversion app file.
 PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pynecone.json")
-
+ENV_JSON = os.path.join(WEB_DIR, "env.json")
 
 # Commands to run the app.
 # The frontend default port.

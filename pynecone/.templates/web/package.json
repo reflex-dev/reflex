@@ -12,6 +12,7 @@
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "axios": "^1.4.0",
+    "chakra-react-select": "^4.6.0",
     "focus-visible": "^5.2.0",
     "framer-motion": "^10.12.4",
     "gridjs": "^6.0.6",

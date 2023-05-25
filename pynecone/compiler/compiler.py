@@ -28,6 +28,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="isTrue"),
         ImportVar(tag="preventDefault"),
         ImportVar(tag="refs"),
+        ImportVar(tag="getRefValue"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {ImportVar(tag=constants.USE_COLOR_MODE)},
@@ -79,9 +80,6 @@ def _compile_page(component: Component, state: Type[State]) -> str:
     return templates.PAGE.render(
         imports=imports,
         custom_codes=component.get_custom_code(),
-        endpoints={
-            constant.name: constant.get_url() for constant in constants.Endpoint
-        },
         initial_state=utils.compile_state(state),
         state_name=state.get_name(),
         hooks=component.get_hooks(),

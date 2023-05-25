@@ -113,6 +113,22 @@ def component4() -> Type[Component]:
 
 
 @pytest.fixture
+def component5() -> Type[Component]:
+    """A test component.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent5(Component):
+        tag = "Tag"
+
+        invalid_children: List[str] = ["Text"]
+
+    return TestComponent5
+
+
+@pytest.fixture
 def on_click1() -> EventHandler:
     """A sample on click function.
 
@@ -432,4 +448,19 @@ def test_get_hooks_nested2(component3, component4):
             component3.create(),
         ).get_hooks()
         == exp_hooks
+    )
+
+
+def test_unsupported_child_components(component5):
+    """Test that a value error is raised when an unsupported component is provided as a child.
+
+    Args:
+        component5: the test component
+    """
+    with pytest.raises(ValueError) as err:
+        comp = component5.create(pc.text("testing component"))
+        comp.render()
+    assert (
+        err.value.args[0]
+        == f"The component `tag` cannot have `text` as a child component"
     )
