@@ -104,6 +104,11 @@ class Component(Base, ABC):
         initial_kwargs = {
             "id": kwargs.get("id"),
             "children": kwargs.get("children", []),
+            **{
+                prop: Var.create(kwargs[prop])
+                for prop in self.get_initial_props()
+                if prop in kwargs
+            },
         }
         super().__init__(**initial_kwargs)
 
@@ -342,6 +347,15 @@ class Component(Base, ABC):
             The unique fields.
         """
         return set(cls.get_fields()) - set(Component.get_fields())
+
+    @classmethod
+    def get_initial_props(cls) -> Set[str]:
+        """Get the initial props to set for the component.
+
+        Returns:
+            The initial props to set.
+        """
+        return set()
 
     @classmethod
     def create(cls, *children, **props) -> Component:

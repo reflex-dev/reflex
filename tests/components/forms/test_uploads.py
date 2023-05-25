@@ -47,18 +47,18 @@ def test_upload_component_render(upload_component):
     Args:
         upload_component: component fixture
     """
-    uplaod = upload_component.render()
+    upload = upload_component.render()
 
     # upload
-    assert uplaod["name"] == "ReactDropzone"
-    assert uplaod["props"] == [
+    assert upload["name"] == "ReactDropzone"
+    assert upload["props"] == [
         "multiple={true}",
         "onDrop={e => File(e)}",
     ]
-    assert uplaod["args"] == ("getRootProps", "getInputProps")
+    assert upload["args"] == ("getRootProps", "getInputProps")
 
     # box inside of upload
-    [box] = uplaod["children"]
+    [box] = upload["children"]
     assert box["name"] == "Box"
     assert box["props"] == [
         'sx={{"border": "1px dotted black"}}',
@@ -86,9 +86,9 @@ def test_upload_component_with_props_render(upload_component_with_props):
     Args:
         upload_component_with_props: component fixture
     """
-    uplaod = upload_component_with_props.render()
+    upload = upload_component_with_props.render()
 
-    assert uplaod["props"] == [
+    assert upload["props"] == [
         "maxFiles={2}",
         "multiple={true}",
         "noDrag={true}",

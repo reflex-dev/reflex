@@ -1,6 +1,6 @@
 """Provides a feature-rich Select and some (not all) related components."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from pynecone.base import Base
 from pynecone.components.component import Component
@@ -304,9 +304,22 @@ class Select(Component):
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {
-            "on_change": EVENT_ARG.value,
-        }
+        # A normal select returns the value.
+        value = EVENT_ARG.value
+
+        # Multi-select returns a list of values.
+        if self.is_multi:
+            value = Var.create_safe(f"{EVENT_ARG}.map(e => e.value)", is_local=True)
+        return {"on_change": value}
+
+    @classmethod
+    def get_initial_props(cls) -> Set[str]:
+        """Get the initial props to set for the component.
+
+        Returns:
+            The initial props to set.
+        """
+        return super().get_initial_props() | {"is_multi"}
 
     @classmethod
     def create(
