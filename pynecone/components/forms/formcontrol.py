@@ -12,6 +12,7 @@ class Form(ChakraComponent):
 
     tag = "Box"
 
+    # What the link renders to.
     as_: Var[str] = "form"  # type: ignore
 
     def get_controlled_triggers(self) -> Dict[str, Dict]:
