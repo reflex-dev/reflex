@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import importlib
 import os
 import sys
 import urllib.parse
 from typing import List, Optional
+
+from dotenv import load_dotenv
 
 from pynecone import constants
 from pynecone.base import Base
@@ -129,9 +132,9 @@ class Config(Base):
     username: Optional[str] = None
 
     # The frontend port.
-    port: str = constants.FRONTEND_PORT
+    frontend_port: str = constants.FRONTEND_PORT
 
-    # The frontend port.
+    # The backend port.
     backend_port: str = constants.BACKEND_PORT
 
     # The backend host.
@@ -141,7 +144,7 @@ class Config(Base):
     api_url: str = constants.API_URL
 
     # The deploy url.
-    deploy_url: Optional[str] = None
+    deploy_url: Optional[str] = constants.DEPLOY_URL
 
     # The database url.
     db_url: Optional[str] = constants.DB_URL
@@ -150,7 +153,7 @@ class Config(Base):
     db_config: Optional[DBConfig] = None
 
     # The redis url.
-    redis_url: Optional[str] = None
+    redis_url: Optional[str] = constants.REDIS_URL
 
     # Telemetry opt-in.
     telemetry_enabled: bool = True
@@ -176,13 +179,19 @@ class Config(Base):
     ] = constants.Transports.WEBSOCKET_POLLING
 
     # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: Optional[list] = [constants.CORS_ALLOWED_ORIGINS]
+    cors_allowed_origins: Optional[list] = constants.CORS_ALLOWED_ORIGINS
 
     # Whether credentials (cookies, authentication) are allowed in requests to the backend API.
     cors_credentials: Optional[bool] = True
 
     # The maximum size of a message when using the polling backend transport.
     polling_max_http_buffer_size: Optional[int] = constants.POLLING_MAX_HTTP_BUFFER_SIZE
+
+    # Dotenv file path
+    env_path: Optional[str] = constants.DOT_ENV_FILE
+
+    # Whether to override OS environment variables
+    override_os_envs: Optional[bool] = True
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -198,6 +207,36 @@ class Config(Base):
 
         super().__init__(*args, **kwargs)
 
+        # set overriden class attribute values as os env variables to avoid losing them
+        for key, value in dict(self).items():
+            key = key.upper()
+            if (
+                key.startswith("_")
+                or key in os.environ
+                or (value is None and key != "DB_URL")
+            ):
+                continue
+            os.environ[key] = str(value)
+
+        # Load env variables from env file
+        load_dotenv(self.env_path, override=self.override_os_envs)  # type: ignore
+        # Recompute constants after loading env variables
+        importlib.reload(constants)
+        # Recompute instance attributes
+        self.recompute_field_values()
+
+    def recompute_field_values(self):
+        """Recompute instance field values to reflect new values after reloading
+        constant values.
+        """
+        for field in self.get_fields():
+            try:
+                if field.startswith("_"):
+                    continue
+                setattr(self, field, getattr(constants, f"{field.upper()}"))
+            except AttributeError:
+                pass
+
 
 def get_config() -> Config:
     """Get the app config.
@@ -210,5 +249,6 @@ def get_config() -> Config:
     sys.path.append(os.getcwd())
     try:
         return __import__(constants.CONFIG_MODULE).config
+
     except ImportError:
         return Config(app_name="")  # type: ignore
