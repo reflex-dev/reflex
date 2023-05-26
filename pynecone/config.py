@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import importlib
 import os
 import sys
 import urllib.parse
 from typing import List, Optional
+
+from dotenv import load_dotenv
 
 from pynecone import constants
 from pynecone.base import Base
@@ -128,29 +131,43 @@ class Config(Base):
     # The username.
     username: Optional[str] = None
 
-    # The frontend port.
-    port: str = constants.FRONTEND_PORT
+    @property
+    def port(self) -> Optional[str]:
+        """The frontend port."""
+        return constants.FRONTEND_PORT
 
-    # The frontend port.
-    backend_port: str = constants.BACKEND_PORT
+    @property
+    def backend_host(self) -> str:
+        """The backend host."""
+        return constants.BACKEND_HOST
 
-    # The backend host.
-    backend_host: str = constants.BACKEND_HOST
+    @property
+    def backend_port(self) -> Optional[str]:
+        """The backend port."""
+        return constants.BACKEND_PORT
 
-    # The backend API url.
-    api_url: str = constants.API_URL
+    @property
+    def api_url(self) -> Optional[str]:
+        """The backend API url."""
+        return constants.API_URL
 
-    # The deploy url.
-    deploy_url: Optional[str] = None
+    @property
+    def deploy_url(self) -> Optional[str]:
+        """The deploy url."""
+        return constants.DEPLOY_URL
 
-    # The database url.
-    db_url: Optional[str] = constants.DB_URL
+    @property
+    def db_url(self) -> Optional[str]:
+        """the database url."""
+        return constants.DB_URL
 
     # The database config.
     db_config: Optional[DBConfig] = None
 
-    # The redis url.
-    redis_url: Optional[str] = None
+    @property
+    def redis_url(self) -> Optional[str]:
+        """The redis url."""
+        return constants.REDIS_URL
 
     # Telemetry opt-in.
     telemetry_enabled: bool = True
@@ -184,6 +201,12 @@ class Config(Base):
     # The maximum size of a message when using the polling backend transport.
     polling_max_http_buffer_size: Optional[int] = constants.POLLING_MAX_HTTP_BUFFER_SIZE
 
+    # dotenv file path
+    env_path: Optional[str] = constants.DOT_ENV_FILE
+
+    # Whether to override OS environment variables
+    override_os_envs: Optional[bool] = True
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -195,8 +218,13 @@ class Config(Base):
         """
         if "db_url" not in kwargs and "db_config" in kwargs:
             kwargs["db_url"] = kwargs["db_config"].get_url()
-
         super().__init__(*args, **kwargs)
+
+        # load env variables from env file
+        load_dotenv(self.env_path, override=self.override_os_envs)
+
+        # recompute constants after load env variables
+        importlib.reload(constants)
 
 
 def get_config() -> Config:
@@ -209,6 +237,8 @@ def get_config() -> Config:
 
     sys.path.append(os.getcwd())
     try:
-        return __import__(constants.CONFIG_MODULE).config
+        const_imports = __import__(constants.CONFIG_MODULE).config
+
+        return const_imports
     except ImportError:
         return Config(app_name="")  # type: ignore

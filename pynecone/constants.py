@@ -61,12 +61,15 @@ PCVERSION_APP_FILE = os.path.join(WEB_DIR, "pynecone.json")
 ENV_JSON = os.path.join(WEB_DIR, "env.json")
 
 # Commands to run the app.
+DOT_ENV_FILE = ".env"
 # The frontend default port.
-FRONTEND_PORT = "3000"
+FRONTEND_PORT = os.getenv("FRONTEND_PORT", "3000")
 # The backend default port.
-BACKEND_PORT = "8000"
+BACKEND_PORT = os.getenv("BACKEND_PORT", "8000")
 # The backend api url.
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("API_URL", "http://localhost:8000")
+# The deploy url
+DEPLOY_URL = os.getenv("DEPLOY_URL")
 # bun root location
 BUN_ROOT_PATH = "$HOME/.bun"
 # The default path where bun is installed.
@@ -74,7 +77,7 @@ BUN_PATH = f"{BUN_ROOT_PATH}/bin/bun"
 # Command to install bun.
 INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
 # Default host in dev mode.
-BACKEND_HOST = "0.0.0.0"
+BACKEND_HOST = os.getenv("BACKEND_HOST", "0.0.0.0")
 # The default timeout when launching the gunicorn server.
 TIMEOUT = 120
 # The command to run the backend in production mode.
@@ -122,9 +125,11 @@ FRONTEND_ZIP = "frontend.zip"
 # The name of the backend zip during deployment.
 BACKEND_ZIP = "backend.zip"
 # The name of the sqlite database.
-DB_NAME = "pynecone.db"
+DB_NAME = os.getenv("DB_NAME", "pynecone.db")
 # The sqlite url.
-DB_URL = f"sqlite:///{DB_NAME}"
+DB_URL = os.getenv("DB_URL", f"sqlite:///{DB_NAME}")
+# The redis url
+REDIS_URL = os.getenv("REDIS_URL")
 # The default title to show for Pynecone apps.
 DEFAULT_TITLE = "Pynecone App"
 # The default description to show for Pynecone apps.
