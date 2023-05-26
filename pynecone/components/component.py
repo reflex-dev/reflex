@@ -66,6 +66,8 @@ class Component(Base, ABC):
 
     # components that cannot be children
     invalid_children: List[str] = []
+    # custom attribute
+    custom_attrs: Dict[str, str] = {}
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -176,6 +178,8 @@ class Component(Base, ABC):
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
         )
+        if "custom_attrs" not in kwargs:
+            kwargs["custom_attrs"] = {}
 
         # Convert class_name to str if it's list
         class_name = kwargs.get("class_name", "")
@@ -422,6 +426,7 @@ class Component(Base, ABC):
                 sx=self.style,
                 id=self.id,
                 class_name=self.class_name,
+                **self.custom_attrs,
             ).set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),

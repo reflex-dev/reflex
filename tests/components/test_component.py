@@ -181,6 +181,16 @@ def test_set_style_attrs(component1):
     assert component.style["textAlign"] == "center"
 
 
+def test_custom_attrs(component1):
+    """Test that custom attributes are set in the dict.
+
+    Args:
+        component1: A test component.
+    """
+    component = component1(custom_attrs={"attr1": "1", "attr2": "attr2"})
+    assert component.custom_attrs == {"attr1": "1", "attr2": "attr2"}
+
+
 def test_create_component(component1):
     """Test that the component is created correctly.
 
