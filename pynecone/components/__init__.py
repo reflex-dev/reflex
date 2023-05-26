@@ -214,6 +214,7 @@ popover_header = PopoverHeader.create
 popover_trigger = PopoverTrigger.create
 tooltip = Tooltip.create
 heading = Heading.create
+highlight = Highlight.create
 markdown = Markdown.create
 span = Span.create
 text = Text.create
