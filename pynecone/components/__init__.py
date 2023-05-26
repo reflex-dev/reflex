@@ -112,6 +112,7 @@ number_input_field = NumberInputField.create
 number_input_stepper = NumberInputStepper.create
 option = Option
 password = Password.create
+email = Email.create
 pin_input = PinInput.create
 pin_input_field = PinInputField.create
 radio = Radio.create
