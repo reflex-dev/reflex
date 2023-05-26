@@ -222,6 +222,21 @@ def get_components_path() -> str:
     return os.path.join(constants.WEB_UTILS_DIR, "components" + constants.JS_EXT)
 
 
+def get_asset_path(filename: Optional[str] = None) -> str:
+    """Get the path for an asset.
+
+    Args:
+        filename: Optional, if given, is added to the root path of assets dir.
+
+    Returns:
+        The path of the asset.
+    """
+    if filename is None:
+        return constants.WEB_ASSETS_DIR
+    else:
+        return os.path.join(constants.WEB_ASSETS_DIR, filename)
+
+
 def add_meta(
     page: Component, title: str, image: str, description: str, meta: List[Dict]
 ) -> Component:
