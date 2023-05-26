@@ -201,16 +201,22 @@ def window_alert(message: Union[str, Var[str]]) -> EventSpec:
     """
     return server_side("_alert", get_fn_signature(window_alert), message=message)
 
+
 def set_focus(ref: str) -> EventSpec:
     """Set focus to specified ref.
-    
+
     Args:
         ref: The ref.
-    
+
     Returns:
         An event to set focus on the ref
     """
-    return server_side("_set_focus", get_fn_signature(set_focus),ref=Var.create_safe(format.format_ref(ref)))
+    return server_side(
+        "_set_focus",
+        get_fn_signature(set_focus),
+        ref=Var.create_safe(format.format_ref(ref)),
+    )
+
 
 def set_value(ref: str, value: Any) -> EventSpec:
     """Set the value of a ref.
