@@ -118,6 +118,20 @@ def test_event_window_alert():
     assert format.format_event(spec) == 'E("_alert", {message:message})'
 
 
+def test_set_focus():
+    """Test the event set focus function."""
+    spec = event.set_focus("input1")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_set_focus"
+    assert spec.args == (
+        ("ref", Var.create_safe("ref_input1")),
+    )
+    assert format.format_event(spec) == 'E("_set_focus", {ref:ref_input1})'
+    spec = event.set_focus("input1", Var.create_safe("message"))
+    assert (
+        format.format_event(spec) == 'E("_set_focus", {ref:ref_input1})'
+    )
+
 def test_set_value():
     """Test the event window alert function."""
     spec = event.set_value("input1", "")
