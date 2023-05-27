@@ -167,6 +167,7 @@ avatar_badge = AvatarBadge.create
 avatar_group = AvatarGroup.create
 icon = Icon.create
 image = Image.create
+video = Video.create
 breadcrumb = Breadcrumb.create
 breadcrumb_item = BreadcrumbItem.create
 breadcrumb_link = BreadcrumbLink.create
