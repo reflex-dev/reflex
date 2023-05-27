@@ -1,5 +1,6 @@
 """Media components."""
 
+from .audio import Audio
 from .avatar import Avatar, AvatarBadge, AvatarGroup
 from .icon import Icon
 from .image import Image

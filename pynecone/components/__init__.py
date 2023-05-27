@@ -168,6 +168,7 @@ avatar_group = AvatarGroup.create
 icon = Icon.create
 image = Image.create
 video = Video.create
+audio = Audio.create
 breadcrumb = Breadcrumb.create
 breadcrumb_item = BreadcrumbItem.create
 breadcrumb_link = BreadcrumbLink.create
