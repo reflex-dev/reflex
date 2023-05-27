@@ -28,6 +28,11 @@ def init(
     template: constants.Template = typer.Option(
         constants.Template.DEFAULT, help="Template to use for the app."
     ),
+    psog: bool = typer.Option(
+        False,
+        "--psog",
+        help="Set the .gitignore has the pure source code on git without compiled byte code.",
+    ),
 ):
     """Initialize a new Pynecone app in the current directory."""
     app_name = prerequisites.get_default_app_name() if name is None else name
@@ -55,7 +60,7 @@ def init(
         telemetry.send("reinit", get_config().telemetry_enabled)
 
     # Initialize the .gitignore.
-    prerequisites.initialize_gitignore()
+    prerequisites.initialize_gitignore(psog)
     # Finish initializing the app.
     console.log(f"[bold green]Finished Initializing: {app_name}")
 

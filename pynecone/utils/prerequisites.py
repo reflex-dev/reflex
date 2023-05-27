@@ -171,10 +171,19 @@ def create_web_directory(root: Path) -> str:
     return web_dir
 
 
-def initialize_gitignore():
-    """Initialize the template .gitignore file."""
+def initialize_gitignore(psog: bool):
+    """Initialize the template .gitignore file.
+
+    Args:
+        psog (bool): Pure source code on git
+    """
     # The files to add to the .gitignore file.
     files = constants.DEFAULT_GITIGNORE
+
+    # psog: ensure to have the pure source on git
+    if psog:
+        files.add("__pycache__/")
+        files.add("*.py[cod]")
 
     # Subtract current ignored files.
     if os.path.exists(constants.GITIGNORE_FILE):
