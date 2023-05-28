@@ -1,12 +1,15 @@
 """An image component."""
 from __future__ import annotations
 
-from typing import Optional, Set
+from typing import Optional, Set, Any, List
 
 from pynecone.components.component import Component
+from pynecone.components.tags import Tag
+from pynecone.utils import format, imports, types
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.vars import Var
+from pynecone.vars import BaseVar, ComputedVar, ImportVar, Var
 
+import base64
 
 class Image(ChakraComponent):
     """Display an image."""
@@ -38,7 +41,7 @@ class Image(ChakraComponent):
     loading: Var[str]
 
     # The image src attribute.
-    src: Var[str]
+    src: Any
 
     # The image srcset attribute.
     src_set: Var[str]
@@ -50,3 +53,11 @@ class Image(ChakraComponent):
             The event triggers.
         """
         return super().get_triggers() | {"on_error", "on_load"}
+
+    def _render(self) -> Tag:
+        # If given a pandas df break up the data and columns
+        if types.is_image(type(self.src)):
+            self.src = Var.create(format.formant_image_data(self.src))  # type: ignore
+        
+        # Render the table.
+        return super()._render()

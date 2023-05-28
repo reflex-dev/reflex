@@ -8,6 +8,9 @@ import re
 import sys
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
+import io
+import base64
+
 import plotly.graph_objects as go
 from plotly.io import to_json
 
@@ -358,6 +361,14 @@ def format_dataframe_values(value: Type) -> List[Any]:
 
     return format_data
 
+def formant_image_data(value: Type) -> str:
+    buff = io.BytesIO()
+    value.save(buff, format="PNG")
+    image_bytes = buff.getvalue()
+    base64_image = base64.b64encode(image_bytes).decode('utf-8')
+    return f"data:image/png;base64,{base64_image}"
+
+
 
 def format_state(value: Any) -> Dict:
     """Recursively format values in the given state.
@@ -389,6 +400,10 @@ def format_state(value: Any) -> Dict:
             "columns": value.columns.tolist(),
             "data": format_dataframe_values(value),
         }
+
+    # Convert Image objects to base64.
+    if types.is_image(type(value)):
+        return formant_image_data(value)
 
     raise TypeError(
         "State vars must be primitive Python types, "
