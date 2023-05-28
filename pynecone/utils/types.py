@@ -140,6 +140,7 @@ def is_dataframe(value: Type) -> bool:
         return False
     return value.__name__ == "DataFrame"
 
+
 def is_image(value: Type) -> bool:
     """Check if the given value is a pillow image. By checking if the value subclasses PIL.
 
@@ -175,7 +176,12 @@ def is_valid_var_type(var: Type) -> bool:
     Returns:
         Whether the value is a valid prop type.
     """
-    return _issubclass(var, StateVar) or is_dataframe(var) or is_figure(var) or is_image(var)
+    return (
+        _issubclass(var, StateVar)
+        or is_dataframe(var)
+        or is_figure(var)
+        or is_image(var)
+    )
 
 
 def is_backend_variable(name: str) -> bool:

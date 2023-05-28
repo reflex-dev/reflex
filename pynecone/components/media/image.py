@@ -1,15 +1,14 @@
 """An image component."""
 from __future__ import annotations
 
-from typing import Optional, Set, Any, List
+from typing import Any, Optional, Set
 
 from pynecone.components.component import Component
-from pynecone.components.tags import Tag
-from pynecone.utils import format, imports, types
 from pynecone.components.libs.chakra import ChakraComponent
-from pynecone.vars import BaseVar, ComputedVar, ImportVar, Var
+from pynecone.components.tags import Tag
+from pynecone.utils import format, types
+from pynecone.vars import Var
 
-import base64
 
 class Image(ChakraComponent):
     """Display an image."""
@@ -58,6 +57,6 @@ class Image(ChakraComponent):
         # If given a pandas df break up the data and columns
         if types.is_image(type(self.src)):
             self.src = Var.create(format.formant_image_data(self.src))  # type: ignore
-        
+
         # Render the table.
         return super()._render()
