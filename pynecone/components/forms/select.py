@@ -6,6 +6,7 @@ from pynecone.base import Base
 from pynecone.components.component import Component
 from pynecone.event import EVENT_ARG
 from pynecone.vars import Var
+from pynecone.style import Style
 
 
 class Option(Base):
@@ -284,10 +285,10 @@ class Select(Component):
     # and the button for clearing the selected options.
     # However, as this button only appears when isMulti is passed,
     # using this style could make more sense for a single select.
-    # default: False
-    use_basic_style: Var[bool]
+    # default: True 
+    use_basic_styles: Var[bool] = True
 
-    # [chakra]
+    # [chakra] 
     # The variant of the Select. If no variant is passed,
     # it will default to defaultProps.variant from the theme for Chakra's Input component.
     # If your component theme for Input is not modified, it will be outline.
@@ -295,8 +296,8 @@ class Select(Component):
     # default: "outline"
     variant: Var[str]
 
-    # How the options should be displayed in the menu.
-    menu_position: Var[str] = "fixed"  # type: ignore
+    # Custom style for the component
+    chakra_styles: Var[Dict[str, str]]
 
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
@@ -336,6 +337,14 @@ class Select(Component):
         Returns:
             The `create` method is returning an instance of the `Select` class.
         """
+        # This component handles style in a special prop.
+        chakra_styles = props.pop("chakra_styles", {})
+
+        # Transfer style props to the custom style prop.
+        for key, value in props.items():
+            if key not in cls.get_fields():
+                chakra_styles[key] = value
+
         converted_options: List[Option] = []
         for option in options:
             if not isinstance(option, Option):
@@ -343,4 +352,4 @@ class Select(Component):
             else:
                 converted_options.append(option)
         props["options"] = [o.dict() for o in converted_options]
-        return super().create(*[], **props)
+        return super().create(*[], **props, chakra_styles=Style(chakra_styles),)
