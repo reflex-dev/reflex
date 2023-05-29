@@ -6,6 +6,7 @@ from pynecone.base import Base
 from pynecone.components.component import Component
 from pynecone.event import EVENT_ARG
 from pynecone.vars import Var
+from pynecone.style import Style
 
 
 class Option(Base):
@@ -284,19 +285,16 @@ class Select(Component):
     # and the button for clearing the selected options.
     # However, as this button only appears when isMulti is passed,
     # using this style could make more sense for a single select.
-    # default: False
-    use_basic_style: Var[bool]
+    # default: True 
+    use_basic_styles: Var[bool] = True
 
-    # [chakra]
+    # [chakra] 
     # The variant of the Select. If no variant is passed,
     # it will default to defaultProps.variant from the theme for Chakra's Input component.
     # If your component theme for Input is not modified, it will be outline.
     # options: "outline" | "filled" | "flushed" | "unstyled"
     # default: "outline"
     variant: Var[str]
-
-    # How the options should be displayed in the menu.
-    menu_position: Var[str] = "fixed"  # type: ignore
 
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
