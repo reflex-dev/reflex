@@ -170,6 +170,9 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
+    # The Admin Dash
+    enable_admin: bool = False
+
     # Backend transport methods.
     backend_transports: Optional[
         constants.Transports
