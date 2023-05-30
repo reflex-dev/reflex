@@ -281,11 +281,11 @@ export const isTrue = (val) => {
 };
 
 /**
- * Prevent the default event.
+ * Prevent the default event for form submission.
  * @param event
  */
 export const preventDefault = (event) => {
-  if (event && event.preventDefault) {
+  if (event && event.type == "submit") {
     event.preventDefault();
   }
 };
