@@ -127,7 +127,7 @@ def test_set_focus():
         ("ref", Var.create_safe("ref_input1")),
     )
     assert format.format_event(spec) == 'E("_set_focus", {ref:ref_input1})'
-    spec = event.set_focus("input1", Var.create_safe("message"))
+    spec = event.set_focus("input1")
     assert (
         format.format_event(spec) == 'E("_set_focus", {ref:ref_input1})'
     )
