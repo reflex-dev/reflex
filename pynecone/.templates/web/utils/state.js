@@ -97,6 +97,13 @@ export const applyEvent = async (event, router, socket) => {
     return false;
   }
 
+  if (event.name == "_set_focus") {
+    const ref =
+      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    ref.current.focus();
+    return false;
+  }
+
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
