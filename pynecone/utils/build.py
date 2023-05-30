@@ -58,6 +58,18 @@ def set_environment_variables():
     )
 
 
+def set_os_env(**kwargs):
+    """Set os environment variables.
+
+    Args:
+        kwargs: env key word args.
+    """
+    for key, value in kwargs.items():
+        if not value:
+            continue
+        os.environ[key.upper()] = value
+
+
 def generate_sitemap(deploy_url: str):
     """Generate the sitemap config file.
 

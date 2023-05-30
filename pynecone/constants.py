@@ -4,8 +4,34 @@ import os
 import re
 from enum import Enum
 from types import SimpleNamespace
+from typing import Any, Type
 
 import pkg_resources
+
+
+def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
+    """Get the value for the constant.
+    Obtain os env value and cast non-string types into
+    their original types.
+
+    Args:
+        key: constant name.
+        default: default value if key doesn't exist.
+        type_: the type of the constant.
+
+    Returns:
+        the value of the constant in its designated type
+    """
+    value = os.getenv(key, default)
+    try:
+        if value and type_ != str:
+            value = eval(value)
+    except Exception:
+        pass
+        # Special case for db_url expects None to be a valid input when
+        # user explicitly overrides db_url as None
+    return value if value != "None" else None
+
 
 # App names and versions.
 # The name of the Pynecone package.
@@ -63,13 +89,13 @@ ENV_JSON = os.path.join(WEB_DIR, "env.json")
 # Commands to run the app.
 DOT_ENV_FILE = ".env"
 # The frontend default port.
-FRONTEND_PORT = os.getenv("FRONTEND_PORT", "3000")
+FRONTEND_PORT = get_value("FRONTEND_PORT", "3000")
 # The backend default port.
-BACKEND_PORT = os.getenv("BACKEND_PORT", "8000")
+BACKEND_PORT = get_value("BACKEND_PORT", "8000")
 # The backend api url.
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = get_value("API_URL", "http://localhost:8000")
 # The deploy url
-DEPLOY_URL = os.getenv("DEPLOY_URL")
+DEPLOY_URL = get_value("DEPLOY_URL")
 # bun root location
 BUN_ROOT_PATH = "$HOME/.bun"
 # The default path where bun is installed.
@@ -77,7 +103,7 @@ BUN_PATH = f"{BUN_ROOT_PATH}/bin/bun"
 # Command to install bun.
 INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
 # Default host in dev mode.
-BACKEND_HOST = os.getenv("BACKEND_HOST", "0.0.0.0")
+BACKEND_HOST = get_value("BACKEND_HOST", "0.0.0.0")
 # The default timeout when launching the gunicorn server.
 TIMEOUT = 120
 # The command to run the backend in production mode.
@@ -127,9 +153,9 @@ BACKEND_ZIP = "backend.zip"
 # The name of the sqlite database.
 DB_NAME = os.getenv("DB_NAME", "pynecone.db")
 # The sqlite url.
-DB_URL = os.getenv("DB_URL", f"sqlite:///{DB_NAME}")
+DB_URL = get_value("DB_URL", f"sqlite:///{DB_NAME}")
 # The redis url
-REDIS_URL = os.getenv("REDIS_URL")
+REDIS_URL = get_value("REDIS_URL")
 # The default title to show for Pynecone apps.
 DEFAULT_TITLE = "Pynecone App"
 # The default description to show for Pynecone apps.
@@ -138,7 +164,6 @@ DEFAULT_DESCRIPTION = "A Pynecone app."
 DEFAULT_IMAGE = "favicon.ico"
 # The default meta list to show for Pynecone apps.
 DEFAULT_META_LIST = []
-
 
 # The gitignore file.
 GITIGNORE_FILE = ".gitignore"
@@ -311,5 +336,5 @@ COLOR_MODE = "colorMode"
 TOGGLE_COLOR_MODE = "toggleColorMode"
 
 # Server socket configuration variables
-CORS_ALLOWED_ORIGINS = "*"
+CORS_ALLOWED_ORIGINS = get_value("CORS_ALLOWED_ORIGINS", ["*"], list)
 POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000
