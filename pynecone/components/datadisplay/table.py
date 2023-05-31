@@ -40,6 +40,9 @@ class Table(ChakraComponent):
 
         Returns:
             The table component.
+
+        Raises:
+            ValueError: if child length is not zero.
         """
         if len(children) == 0:
             children = []
@@ -55,6 +58,10 @@ class Table(ChakraComponent):
 
             if footers:
                 children.append(Tfoot.create(footers=footers))
+        else:
+            raise ValueError(
+                f"The length of children must be zero but get length {len(children)}"
+            )
         return super().create(*children, **props)
 
 
@@ -77,9 +84,16 @@ class Thead(ChakraComponent):
 
         Returns:
             The table header component.
+
+        Raises:
+            ValueError: if child length is not zero.
         """
         if len(children) == 0:
             children = [Tr.create(cell_type="header", cells=headers)]
+        else:
+            raise ValueError(
+                f"The length of children must be zero but get length {len(children)}"
+            )
         return super().create(*children, **props)
 
 
@@ -102,9 +116,22 @@ class Tbody(ChakraComponent):
 
         Returns:
             Component: _description_
+
+        Raises:
+            ValueError: if child length is not zero.
         """
         if len(children) == 0:
-            children = [Tr.create(cell_type="data", cells=row) for row in rows or []]
+            if isinstance(rows, Var):
+                children = [Foreach.create(rows, Tr.create)]
+            else:
+                children = [
+                    Tr.create(cell_type="data", cells=row) for row in rows or []
+                ]
+        else:
+            raise ValueError(
+                f"The length of children must be zero but get length {len(children)}"
+            )
+
         return super().create(*children, **props)
 
 
@@ -127,9 +154,16 @@ class Tfoot(ChakraComponent):
 
         Returns:
             The table footer component.
+
+        Raises:
+            ValueError: if child length is not zero.
         """
         if len(children) == 0:
             children = [Tr.create(cell_type="header", cells=footers)]
+        else:
+            raise ValueError(
+                f"The length of children must be zero but get length {len(children)}"
+            )
         return super().create(*children, **props)
 
 
@@ -153,14 +187,24 @@ class Tr(ChakraComponent):
 
         Returns:
             The table row component
+
+        Raises:
+            ValueError: if child length is not zero or one.
         """
         types = {"header": Th, "data": Td}
         cell_cls = types.get(cell_type)
+        # Caller is Thead or TFooter
         if len(children) == 0 and cell_cls:
             if isinstance(cells, Var):
                 children = [Foreach.create(cells, cell_cls.create)]
             else:
                 children = [cell_cls.create(cell) for cell in cells or []]
+        elif len(children) == 1:  # Caller is Tbody
+            children = [Foreach.create(children[0], Td.create)]
+        else:
+            raise ValueError(
+                f"The length of children must be zero or one but get length {len(children)}"
+            )
         return super().create(*children, **props)
 
 
