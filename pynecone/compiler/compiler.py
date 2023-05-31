@@ -15,6 +15,7 @@ from pynecone.vars import ImportVar
 # Imports to be included in every Pynecone app.
 DEFAULT_IMPORTS: imports.ImportDict = {
     "react": {
+        ImportVar(tag="Fragment"),
         ImportVar(tag="useEffect"),
         ImportVar(tag="useRef"),
         ImportVar(tag="useState"),
@@ -31,7 +32,11 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getRefValue"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
-    "@chakra-ui/react": {ImportVar(tag=constants.USE_COLOR_MODE), ImportVar(tag="Box")},
+    "@chakra-ui/react": {
+        ImportVar(tag=constants.USE_COLOR_MODE),
+        ImportVar(tag="Box"),
+        ImportVar(tag="Text"),
+    },
 }
 
 

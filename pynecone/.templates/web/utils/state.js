@@ -213,7 +213,6 @@ export const connect = async (
   });
 
   socket.current.on('connect_error', (error) => {
-    console.log('Failed to connect to WebSocket', error);
     setNotConnected(true)
   });
 
