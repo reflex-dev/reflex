@@ -56,7 +56,7 @@ class Image(ChakraComponent):
     def _render(self) -> Tag:
         # If the src is an image, convert it to a base64 string.
         if types.is_image(type(self.src)):
-            self.src = Var.create(format.format_image_data(self.src))
+            self.src = Var.create(format.format_image_data(self.src))  # type: ignore
 
         # Render the table.
         return super()._render()
