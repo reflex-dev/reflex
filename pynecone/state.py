@@ -4,11 +4,13 @@ from __future__ import annotations
 import asyncio
 import copy
 import functools
+import inspect
 import traceback
 from abc import ABC
 from collections import defaultdict
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     ClassVar,
     Dict,
@@ -26,7 +28,7 @@ from redis import Redis
 
 from pynecone import constants
 from pynecone.base import Base
-from pynecone.event import Event, EventHandler, fix_events, window_alert
+from pynecone.event import Event, EventHandler, EventSpec, fix_events, window_alert
 from pynecone.utils import format, prerequisites, types
 from pynecone.vars import BaseVar, ComputedVar, PCDict, PCList, Var
 
@@ -218,7 +220,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for prop in cls.base_vars.values():
             cls._init_var(prop)
 
-        # Set up the event handlers.
+        # Set up the event .
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
@@ -618,18 +620,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             raise ValueError(f"Invalid path: {path}")
         return self.substates[path[0]].get_substate(path[1:])
 
-    async def _process(self, event: Event) -> StateUpdate:
+    async def _process(self, event: Event) -> AsyncIterator[StateUpdate]:
         """Obtain event info and process event.
 
         Args:
             event: The event to process.
 
-        Returns:
+        Yields:
             The state update after processing the event.
 
         Raises:
             ValueError: If the state value is None.
         """
+        print("state._process")
         # Get the event handler.
         path = event.name.split(".")
         path, name = path[:-1], path[-1]
@@ -641,25 +644,34 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 "The value of state cannot be None when processing an event."
             )
 
-        return await self._process_event(
+        events = self._process_event(
             handler=handler,
             state=substate,
             payload=event.payload,
-            token=event.token,
         )
 
+        async for event_c in events:
+            event_c = fix_events(event_c, event.token)  # type: ignore
+            delta = self.get_delta()
+            yield StateUpdate(delta=delta, events=event_c)
+            self.clean()
+
+        # TODO: clean this up with the above code.
+        delta = self.get_delta()
+        yield StateUpdate(delta=delta, events=[])
+        self.clean()
+
     async def _process_event(
-        self, handler: EventHandler, state: State, payload: Dict, token: str
-    ) -> StateUpdate:
+        self, handler: EventHandler, state: State, payload: Dict
+    ) -> AsyncIterator[Optional[List[EventSpec]]]:
         """Process event.
 
         Args:
             handler: Eventhandler to process.
             state: State to process the handler.
             payload: The event payload.
-            token: Client token.
 
-        Returns:
+        Yields:
             The state update after processing the event.
         """
         fn = functools.partial(handler.fn, state)
@@ -668,25 +680,18 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 events = await fn(**payload)
             else:
                 events = fn(**payload)
+            if inspect.isasyncgen(events):
+                async for event in events:
+                    yield event
+            elif inspect.isgenerator(events):
+                for event in events:
+                    yield event
+            return
         except Exception:
             error = traceback.format_exc()
             print(error)
-            events = fix_events(
-                [window_alert("An error occurred. See logs for details.")], token
-            )
-            return StateUpdate(events=events)
-
-        # Fix the returned events.
-        events = fix_events(events, token)
-
-        # Get the delta after processing the event.
-        delta = self.get_delta()
-
-        # Reset the dirty vars.
-        self.clean()
-
-        # Return the state update.
-        return StateUpdate(delta=delta, events=events)
+            events = [window_alert("An error occurred. See logs for details.")]
+            yield events
 
     def _always_dirty_computed_vars(self) -> Set[str]:
         """The set of ComputedVars that always need to be recalculated.

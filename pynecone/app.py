@@ -2,7 +2,18 @@
 
 import asyncio
 import inspect
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Coroutine,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
@@ -411,7 +422,7 @@ class App(Base):
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
-) -> StateUpdate:
+) -> AsyncIterator[StateUpdate]:
     """Process an event.
 
     Args:
@@ -421,7 +432,7 @@ async def process(
         headers: The client headers.
         client_ip: The client_ip.
 
-    Returns:
+    Yields:
         The state updates after processing the event.
     """
     # Get the state for the session.
@@ -450,16 +461,13 @@ async def process(
     # Only process the event if there is no update.
     if update is None:
         # Apply the event to the state.
-        update = await state._process(event)
+        async for u in state._process(event):
+            u = await app.postprocess(state, event, u)
+            app.state_manager.set_state(event.token, state)
+            yield u
 
-        # Postprocess the event.
-        update = await app.postprocess(state, event, update)
-
-    # Update the state.
-    app.state_manager.set_state(event.token, state)
-
-    # Return the update.
-    return update
+    else:
+        yield update
 
 
 async def ping() -> str:
@@ -531,7 +539,8 @@ def upload(app: App):
             name=handler,
             payload={handler_upload_param[0]: files},
         )
-        update = await state._process(event)
+        # TODO: refactor this to handle yields.
+        update = await anext(state._process(event))
         return update
 
     return upload_file
@@ -595,10 +604,10 @@ class EventNamespace(AsyncNamespace):
         client_ip = environ["REMOTE_ADDR"]
 
         # Process the events.
-        update = await process(self.app, event, sid, headers, client_ip)
-
-        # Emit the event.
-        await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
+        # updates = process(self.app, event, sid, headers, client_ip)
+        async for update in process(self.app, event, sid, headers, client_ip):
+            # Emit the event.
+            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.

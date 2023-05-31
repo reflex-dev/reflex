@@ -317,12 +317,14 @@ async def test_list_mutation_detection__plain_list(
         list_mutation_state: A state with list mutation features.
     """
     for event_name, expected_delta in event_tuples:
-        result = await list_mutation_state._process(
-            Event(
-                token="fake-token",
-                name=event_name,
-                router_data={"pathname": "/", "query": {}},
-                payload={},
+        result = await anext(
+            list_mutation_state._process(
+                Event(
+                    token="fake-token",
+                    name=event_name,
+                    router_data={"pathname": "/", "query": {}},
+                    payload={},
+                )
             )
         )
 
@@ -444,12 +446,14 @@ async def test_dict_mutation_detection__plain_list(
         dict_mutation_state: A state with dict mutation features.
     """
     for event_name, expected_delta in event_tuples:
-        result = await dict_mutation_state._process(
-            Event(
-                token="fake-token",
-                name=event_name,
-                router_data={"pathname": "/", "query": {}},
-                payload={},
+        result = await anext(
+            dict_mutation_state._process(
+                Event(
+                    token="fake-token",
+                    name=event_name,
+                    router_data={"pathname": "/", "query": {}},
+                    payload={},
+                )
             )
         )
 
@@ -639,12 +643,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
 
     for exp_index, exp_val in enumerate(exp_vals):
-        update = await process(
-            app,
-            event=_event(name=get_hydrate_event(state), val=exp_val),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
+        update = await anext(
+            process(
+                app,
+                event=_event(name=get_hydrate_event(state), val=exp_val),
+                sid=sid,
+                headers={},
+                client_ip=client_ip,
+            )
         )
         # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
@@ -669,12 +675,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             ],
         )
         assert state.dynamic == exp_val
-        on_load_update = await process(
-            app,
-            event=_dynamic_state_event(name="on_load", val=exp_val),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
+        on_load_update = await anext(
+            process(
+                app,
+                event=_dynamic_state_event(name="on_load", val=exp_val),
+                sid=sid,
+                headers={},
+                client_ip=client_ip,
+            )
         )
         assert on_load_update == StateUpdate(
             delta={
@@ -687,14 +695,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             },
             events=[],
         )
-        on_set_is_hydrated_update = await process(
-            app,
-            event=_dynamic_state_event(
-                name="set_is_hydrated", payload={"value": True}, val=exp_val
-            ),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
+        on_set_is_hydrated_update = await anext(
+            process(
+                app,
+                event=_dynamic_state_event(
+                    name="set_is_hydrated", payload={"value": True}, val=exp_val
+                ),
+                sid=sid,
+                headers={},
+                client_ip=client_ip,
+            )
         )
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
@@ -709,12 +719,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
 
         # a simple state update event should NOT trigger on_load or route var side effects
-        update = await process(
-            app,
-            event=_dynamic_state_event(name="on_counter", val=exp_val),
-            sid=sid,
-            headers={},
-            client_ip=client_ip,
+        update = await anext(
+            process(
+                app,
+                event=_dynamic_state_event(name="on_counter", val=exp_val),
+                sid=sid,
+                headers={},
+                client_ip=client_ip,
+            )
         )
         assert update == StateUpdate(
             delta={
