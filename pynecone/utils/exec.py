@@ -85,7 +85,6 @@ def run_frontend(
         port: port of the app.
         loglevel: The log level to use.
     """
-    # breakpoint()
     # validate bun version
     prerequisites.validate_and_install_bun(initialize=False)
 
