@@ -1,4 +1,4 @@
-"""The Pynceone Admin Dashboard."""
+"""The Pynecone Admin Dashboard."""
 from dataclasses import dataclass, field
 from typing import Union
 
