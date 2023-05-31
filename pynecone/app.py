@@ -6,7 +6,6 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple, Type, 
 
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
-from rich import print
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 
 from pynecone import constants
@@ -120,26 +119,24 @@ class App(Base):
         # Mount the socket app with the API.
         self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
-        if config.enable_admin and self.admin_dash:
-            print(
-                f"[yellow][Building App][/yellow] Admin enabled, building admin dashboard."
-            )
+        if config.enable_admin and config.admin_dash:
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
 
-            # Build the admin dashboard
-            admin = (
-                self.admin_dash.admin
-                if self.admin_dash.admin
-                else Admin(
-                    engine=Model.get_db_engine(),
-                    title="Pynecone Admin Dashboard",
-                    logo_url="https://pynecone.io/logo.png",
+            if config.admin_dash.models:
+                # Build the admin dashboard
+                admin = (
+                    config.admin_dash.admin
+                    if config.admin_dash.admin
+                    else Admin(
+                        engine=Model.get_db_engine(),
+                        title="Pynecone Admin Dashboard",
+                        logo_url="https://pynecone.io/logo.png",
+                    )
                 )
-            )
-            for model in self.admin_dash.models:
-                admin.add_view(ModelView(model))
-            admin.mount_to(self.api)
+                for model in config.admin_dash.models:
+                    admin.add_view(ModelView(model))
+                admin.mount_to(self.api)
 
     def __repr__(self) -> str:
         """Get the string representation of the app.

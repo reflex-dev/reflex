@@ -3,6 +3,7 @@
 import os
 import platform
 import threading
+from datetime import datetime
 from pathlib import Path
 
 import httpx
@@ -85,6 +86,8 @@ def run(
     frontend_port = get_config().port if port is None else port
     backend_port = get_config().backend_port if backend_port is None else backend_port
     backend_host = get_config().backend_host if backend_host is None else backend_host
+    admin_enabled = get_config().enable_admin
+    admin_dash = get_config().admin_dash
 
     # If no --frontend-only and no --backend-only, then turn on frontend and backend both
     if not frontend and not backend:
@@ -115,6 +118,27 @@ def run(
     # Get the app module.
     console.rule("[bold]Starting Pynecone App")
     app = prerequisites.get_app()
+    current_time = datetime.now()
+    if admin_enabled and admin_dash:
+        if not admin_dash.models:
+            console.print(
+                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
+            )
+        else:
+            console.print(
+                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard. Time: {current_time}"
+            )
+            console.print(
+                "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
+            )
+    elif admin_enabled:
+        console.print(
+            f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin enabled, but no admin dashboard defined in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
+        )
+    elif admin_dash:
+        console.print(
+            f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard defined, but admin is not enabled in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
+        )
 
     # Get the frontend and backend commands, based on the environment.
     frontend_cmd = backend_cmd = None
