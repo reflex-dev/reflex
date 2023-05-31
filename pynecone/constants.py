@@ -28,9 +28,10 @@ def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
             value = eval(value)
     except Exception:
         pass
+    finally:
         # Special case for db_url expects None to be a valid input when
         # user explicitly overrides db_url as None
-    return value if value != "None" else None
+        return value if value != "None" else None  # noqa B012
 
 
 # App names and versions.
