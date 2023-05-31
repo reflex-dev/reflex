@@ -540,7 +540,7 @@ def upload(app: App):
             payload={handler_upload_param[0]: files},
         )
         # TODO: refactor this to handle yields.
-        update = await anext(state._process(event))
+        update = await state._process(event).__anext__()
         return update
 
     return upload_file

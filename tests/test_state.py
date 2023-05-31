@@ -577,7 +577,7 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 0
 
     event = Event(token="t", name="set_num1", payload={"value": 69})
-    update = await test_state._process(event)
+    update = await test_state._process(event).__anext__()
 
     # The event should update the value.
     assert test_state.num1 == 69
@@ -603,7 +603,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     event = Event(
         token="t", name="child_state.change_both", payload={"value": "hi", "count": 12}
     )
-    update = await test_state._process(event)
+    update = await test_state._process(event).__anext__()
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
@@ -619,7 +619,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         name="child_state.grandchild_state.set_value2",
         payload={"value": "new"},
     )
-    update = await test_state._process(event)
+    update = await test_state._process(event).__anext__()
     assert grandchild_state.value2 == "new"
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},

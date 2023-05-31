@@ -632,7 +632,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             ValueError: If the state value is None.
         """
-        print("state._process")
         # Get the event handler.
         path = event.name.split(".")
         path, name = path[:-1], path[-1]
@@ -658,8 +657,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # TODO: clean this up with the above code.
         delta = self.get_delta()
-        yield StateUpdate(delta=delta, events=[])
         self.clean()
+        yield StateUpdate(delta=delta, events=[])
 
     async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict
@@ -686,7 +685,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             elif inspect.isgenerator(events):
                 for event in events:
                     yield event
-            return
         except Exception:
             error = traceback.format_exc()
             print(error)
