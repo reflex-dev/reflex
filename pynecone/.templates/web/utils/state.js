@@ -193,9 +193,11 @@ export const connect = async (
   result,
   setResult,
   router,
-  transports
+  transports,
+  setNotConnected
 ) => {
   // Get backend URL object from the endpoint
+  console.log("event url", EVENTURL);
   const endpoint_url = new URL(EVENTURL);
   // Create the socket.
   socket.current = io(EVENTURL, {
@@ -207,6 +209,12 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     updateState(state, setState, result, setResult, router, socket.current);
+    setNotConnected(false)
+  });
+
+  socket.current.on('connect_error', (error) => {
+    console.log('Failed to connect to WebSocket', error);
+    setNotConnected(true)
   });
 
   // On each received message, apply the delta and set the result.

@@ -11,6 +11,7 @@
 export default function Component() {
   const [{{state_name}}, {{state_name|react_setter}}] = useState({{initial_state|json_dumps}})
   const [{{const.result}}, {{const.result|react_setter}}] = useState({{const.initial_result|json_dumps}})
+  const [notConnected, setNotConnected] = useState(false)
   const {{const.router}} = useRouter()
   const {{const.socket}} = useRef(null)
   const { isReady } = {{const.router}}
@@ -35,7 +36,7 @@ export default function Component() {
       return;
     }
     if (!{{const.socket}}.current) {
-      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{transports}})
+      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{transports}}, setNotConnected)
     }
     const update = async () => {
       if ({{const.result}}.{{const.state}} != null){
@@ -70,7 +71,21 @@ export default function Component() {
   {% endfor %}
 
   return (
+  <Fragment>
+      <Fragment>
+        {notConnected ? (
+          <Box sx={% raw %}{{"text-align": "center"}}{% endraw %}>
+            <Text sx={% raw %}{{ "bg": "red", "color": "white"}}{% endraw %}>
+              {`cannot connect to server. check if server is reachable.`}
+              </Text>
+          </Box>
+        ) : (
+          <Fragment>
+          </Fragment>
+        )}
+      </Fragment>
     {{utils.render(render, indent_width=0)}}
+    </Fragment>
   )
 }
 {% endblock %}
