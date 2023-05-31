@@ -152,7 +152,7 @@ Pynecone 擁有 [60+ built-in components](https://pynecone.io/docs/library) 來�
 
 ### **狀態**
 
-Pynecone represents your UI as a function of your state.
+Pynecone 用 State 來渲染你的 UI。
 
 ```python
 class State(pc.State):
