@@ -40,7 +40,7 @@ class Image(ChakraComponent):
     loading: Var[str]
 
     # The image src attribute.
-    src: Any
+    src: Var[Any]
 
     # The image srcset attribute.
     src_set: Var[str]
@@ -54,9 +54,9 @@ class Image(ChakraComponent):
         return super().get_triggers() | {"on_error", "on_load"}
 
     def _render(self) -> Tag:
-        # If given a pandas df break up the data and columns
+        # If the src is an image, convert it to a base64 string.
         if types.is_image(type(self.src)):
-            self.src = Var.create(format.formant_image_data(self.src))  # type: ignore
+            self.src = Var.create(format.format_image_data(self.src))
 
         # Render the table.
         return super()._render()

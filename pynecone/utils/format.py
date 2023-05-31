@@ -361,12 +361,11 @@ def format_dataframe_values(value: Type) -> List[Any]:
     return format_data
 
 
-def formant_image_data(value: Type) -> str:
+def format_image_data(value: Type) -> str:
     """Format image data.
 
     Args:
         value: The value to format.
-
 
     Returns:
         Format data
@@ -411,7 +410,7 @@ def format_state(value: Any) -> Dict:
 
     # Convert Image objects to base64.
     if types.is_image(type(value)):
-        return formant_image_data(value)  # type: ignore
+        return format_image_data(value)  # type: ignore
 
     raise TypeError(
         "State vars must be primitive Python types, "
