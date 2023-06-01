@@ -14,6 +14,14 @@
 
 </div>
 
+### README on different language
+
+---
+
+[English](../../README.md) | [繁體中文](README.md)
+
+---
+
 ## 📦 1. 安裝
 
 Pynecone 需要以下最低要求:
