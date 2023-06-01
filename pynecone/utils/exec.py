@@ -96,7 +96,7 @@ def run_frontend(
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    os.environ["PORT"] = get_config().port if port is None else port
+    os.environ["PORT"] = get_config().frontend_port if port is None else port
     run_process_and_launch_url(
         [prerequisites.get_package_manager(), "run", "dev"], root, loglevel
     )
@@ -123,7 +123,7 @@ def run_frontend_prod(
     export_app(app, loglevel=loglevel)
 
     # Set the port.
-    os.environ["PORT"] = get_config().port if port is None else port
+    os.environ["PORT"] = get_config().frontend_port if port is None else port
 
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
