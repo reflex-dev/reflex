@@ -8,6 +8,7 @@ import platform
 import re
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
@@ -334,3 +335,30 @@ def is_latest_template() -> bool:
     with open(constants.PCVERSION_APP_FILE) as f:  # type: ignore
         app_version = json.load(f)["version"]
     return app_version == constants.VERSION
+
+
+def check_admin_settings():
+    """Check if admin settings are set and valid for logging in cli app."""
+    admin_enabled = get_config().enable_admin
+    admin_dash = get_config().admin_dash
+    current_time = datetime.now()
+    if admin_enabled and admin_dash:
+        if not admin_dash.models:
+            console.print(
+                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
+            )
+        else:
+            console.print(
+                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard. Time: {current_time}"
+            )
+            console.print(
+                "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
+            )
+    elif admin_enabled:
+        console.print(
+            f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin enabled, but no admin dashboard defined in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
+        )
+    elif admin_dash:
+        console.print(
+            f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard defined, but admin is not enabled in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
+        )
