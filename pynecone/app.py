@@ -458,18 +458,19 @@ async def process(
     # Preprocess the event.
     update = await app.preprocess(state, event)
 
-    # If there was an update, return it.
+    # If there was an update, yield it.
     if update is not None:
         yield update
-        return
 
-    # Process the event.
-    async for update in state._process(event):
-        yield update
+    # Only process the event if there is no update.
+    else:
+        # Process the event.
+        async for update in state._process(event):
+            yield update
 
-    # Postprocess the event.
-    assert update is not None, "Process did not return an update."
-    update = await app.postprocess(state, event, update)
+        # Postprocess the event.
+        assert update is not None, "Process did not return an update."
+        update = await app.postprocess(state, event, update)
 
     # Set the state for the session.
     app.state_manager.set_state(event.token, state)
