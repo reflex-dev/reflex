@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 import pytest
@@ -21,18 +22,19 @@ def config_no_db_url_values(base_config_values) -> Dict:
     return base_config_values
 
 
-@pytest.fixture
-def config_empty_db_url_values(base_config_values) -> Dict:
+@pytest.fixture(autouse=True)
+def config_empty_db_url_values(base_config_values):
     """Create config values with empty db_url.
 
     Args:
         base_config_values: Base config values fixture.
 
-    Returns:
+    Yields:
         Config values
     """
     base_config_values["db_url"] = None
-    return base_config_values
+    yield base_config_values
+    os.environ.pop("DB_URL")
 
 
 def test_config_db_url(base_config_values):
@@ -41,6 +43,7 @@ def test_config_db_url(base_config_values):
     Args:
         base_config_values: base_config_values fixture.
     """
+    os.environ.pop("DB_URL")
     config = pc.Config(**base_config_values)
     assert config.db_url == base_config_values["db_url"]
 

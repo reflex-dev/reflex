@@ -24,6 +24,7 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
     "react-markdown": "^8.0.7",
+    "react-player": "^2.12.0",
     "react-plotly.js": "^2.6.0",
     "react-syntax-highlighter": "^15.5.0",
     "rehype-katex": "^6.0.3",

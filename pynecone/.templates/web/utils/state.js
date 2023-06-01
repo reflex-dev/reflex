@@ -97,6 +97,13 @@ export const applyEvent = async (event, router, socket) => {
     return false;
   }
 
+  if (event.name == "_set_focus") {
+    const ref =
+      event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
+    ref.current.focus();
+    return false;
+  }
+
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
@@ -281,11 +288,11 @@ export const isTrue = (val) => {
 };
 
 /**
- * Prevent the default event.
+ * Prevent the default event for form submission.
  * @param event
  */
 export const preventDefault = (event) => {
-  if (event && event.preventDefault) {
+  if (event && event.type == "submit") {
     event.preventDefault();
   }
 };
