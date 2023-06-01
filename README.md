@@ -14,7 +14,7 @@
 
 </div>
 
-### README on different language
+### README in different language
 
 ---
 
