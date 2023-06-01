@@ -193,7 +193,7 @@ State 定義了應用程式中所有可以更改的變數及變更他們的 func
 
 在 State 中我們定義了事件處理程序來更改狀態變數，事件處理程序是我們在 Pynecone 中修改狀態的方法，可以使用它們來回應使用者操作，像是點擊按鈕或在文字框輸入這些動作都是一種事件。
 
-我們的 DALL·E. 應用程式有兩個事件處理程序 `process_image` 表示正在生成圖片和 `get_image` 呼叫 OpenAI API.
+我們的 DALL·E. 應用程式有兩個事件處理程序 `process_image` 表示正在生成圖片和 `get_image` 呼叫 OpenAI API。
 
 ### **路由**
 
@@ -223,7 +223,7 @@ Pynecone 於 2022 年 12 月推出。
 -   **Public Hosting Beta**: _Optionally_, 部屬跟託管你的 Pynecone!
 -   **Public**: 這版本的 Pynecone 是可用於軟體產品的。
 
-Pynecone 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊.
+Pynecone 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊。
 
 ## 貢獻
 
