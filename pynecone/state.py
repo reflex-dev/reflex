@@ -220,7 +220,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for prop in cls.base_vars.values():
             cls._init_var(prop)
 
-        # Set up the event .
+        # Set up the event handlers.
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
@@ -643,22 +643,29 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 "The value of state cannot be None when processing an event."
             )
 
-        events = self._process_event(
+        # Get the event generator.
+        event_iter = self._process_event(
             handler=handler,
             state=substate,
             payload=event.payload,
         )
 
-        async for event_c in events:
-            event_c = fix_events(event_c, event.token)  # type: ignore
-            delta = self.get_delta()
-            yield StateUpdate(delta=delta, events=event_c)
-            self.clean()
-
-        # TODO: clean this up with the above code.
-        delta = self.get_delta()
+        # Clean the state before processing the event.
         self.clean()
-        yield StateUpdate(delta=delta, events=[])
+
+        # Run the event generator and return state updates.
+        async for events in event_iter:
+            # Fix the returned events.
+            events = fix_events(events, event.token)  # type: ignore
+
+            # Get the delta after processing the event.
+            delta = self.get_delta()
+
+            # Yield the state update.
+            yield StateUpdate(delta=delta, events=events)
+
+            # Clean the state to prepare for the next event.
+            self.clean()
 
     async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict
@@ -673,23 +680,38 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Yields:
             The state update after processing the event.
         """
+        # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
+
+        # Wrap the function in a try/except block.
         try:
+            # Handle async functions.
             if asyncio.iscoroutinefunction(fn.func):
                 events = await fn(**payload)
+
+            # Handle regular functions.
             else:
                 events = fn(**payload)
+
+            # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
                     yield event
+
+            # Handle regular generators.
             elif inspect.isgenerator(events):
                 for event in events:
                     yield event
+
+            # Handle regular event chains.
+            else:
+                yield events
+
+        # If an error occurs, throw a window alert.
         except Exception:
             error = traceback.format_exc()
             print(error)
-            events = [window_alert("An error occurred. See logs for details.")]
-            yield events
+            yield [window_alert("An error occurred. See logs for details.")]
 
     def _always_dirty_computed_vars(self) -> Set[str]:
         """The set of ComputedVars that always need to be recalculated.

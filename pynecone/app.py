@@ -458,16 +458,21 @@ async def process(
     # Preprocess the event.
     update = await app.preprocess(state, event)
 
-    # Only process the event if there is no update.
-    if update is None:
-        # Apply the event to the state.
-        async for u in state._process(event):
-            u = await app.postprocess(state, event, u)
-            app.state_manager.set_state(event.token, state)
-            yield u
-
-    else:
+    # If there was an update, return it.
+    if update is not None:
         yield update
+        return
+
+    # Process the event.
+    async for update in state._process(event):
+        yield update
+
+    # Postprocess the event.
+    assert update is not None, "Process did not return an update."
+    update = await app.postprocess(state, event, update)
+
+    # Set the state for the session.
+    app.state_manager.set_state(event.token, state)
 
 
 async def ping() -> str:
@@ -604,7 +609,6 @@ class EventNamespace(AsyncNamespace):
         client_ip = environ["REMOTE_ADDR"]
 
         # Process the events.
-        # updates = process(self.app, event, sid, headers, client_ip)
         async for update in process(self.app, event, sid, headers, client_ip):
             # Emit the event.
             await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
