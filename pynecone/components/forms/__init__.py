@@ -8,6 +8,8 @@ from .email import Email
 from .form import Form, FormControl, FormErrorMessage, FormHelperText, FormLabel
 from .iconbutton import IconButton
 from .input import Input, InputGroup, InputLeftAddon, InputRightAddon
+from .multiselect import Option as MultiSelectOption
+from .multiselect import Select as MultiSelect
 from .numberinput import (
     NumberDecrementStepper,
     NumberIncrementStepper,
