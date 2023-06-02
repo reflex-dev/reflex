@@ -80,7 +80,6 @@ def _compile_page(
     Returns:
         The compiled component.
     """
-    # breakpoint()
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
     imports = utils.compile_imports(imports)

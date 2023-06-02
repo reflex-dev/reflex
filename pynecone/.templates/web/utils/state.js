@@ -197,7 +197,6 @@ export const connect = async (
   setNotConnected
 ) => {
   // Get backend URL object from the endpoint
-  console.log("event url", EVENTURL);
   const endpoint_url = new URL(EVENTURL);
   // Create the socket.
   socket.current = io(EVENTURL, {
