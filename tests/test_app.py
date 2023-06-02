@@ -207,7 +207,7 @@ async def test_dynamic_var_event(test_state):
             router_data={"pathname": "/", "query": {}},
             payload={"value": 50},
         )
-    )
+    ).__anext__()
     assert result.delta == {"test_state": {"int_val": 50}}
 
 
@@ -324,7 +324,7 @@ async def test_list_mutation_detection__plain_list(
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
-        )
+        ).__anext__()
 
         assert result.delta == expected_delta
 
@@ -451,7 +451,7 @@ async def test_dict_mutation_detection__plain_list(
                 router_data={"pathname": "/", "query": {}},
                 payload={},
             )
-        )
+        ).__anext__()
 
         assert result.delta == expected_delta
 
@@ -645,7 +645,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        )
+        ).__anext__()
+
         # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
             delta={
@@ -675,7 +676,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        )
+        ).__anext__()
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -695,7 +696,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        )
+        ).__anext__()
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -715,7 +716,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        )
+        ).__anext__()
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
