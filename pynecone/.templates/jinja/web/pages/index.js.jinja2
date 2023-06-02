@@ -72,18 +72,9 @@ export default function Component() {
 
   return (
   <Fragment>
-      <Fragment>
-        {notConnected ? (
-          <Box sx={% raw %}{{"textAlign": "center"}}{% endraw %}>
-            <Text sx={% raw %}{{ "bg": "red", "color": "white"}}{% endraw %}>
-              {`cannot connect to server. check if server is reachable.`}
-              </Text>
-          </Box>
-        ) : (
-          <Fragment>
-          </Fragment>
-        )}
-      </Fragment>
+      {%- if err_comp -%}
+            {{ utils.render(err_comp, indent_width=1) }}
+       {%- endif -%}
     {{utils.render(render, indent_width=0)}}
     </Fragment>
   )

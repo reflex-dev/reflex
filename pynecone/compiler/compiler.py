@@ -67,16 +67,20 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_page(component: Component, state: Type[State]) -> str:
+def _compile_page(
+    component: Component, state: Type[State], connect_error_component
+) -> str:
     """Compile the component given the app state.
 
     Args:
         component: The component to compile.
         state: The app state.
+        connect_error_component: The component to render on sever connection error.
 
     Returns:
         The compiled component.
     """
+    # breakpoint()
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
     imports = utils.compile_imports(imports)
@@ -90,6 +94,7 @@ def _compile_page(component: Component, state: Type[State]) -> str:
         hooks=component.get_hooks(),
         render=component.render(),
         transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
+        err_comp=connect_error_component.render() if connect_error_component else None,
     )
 
 
@@ -193,7 +198,10 @@ def compile_theme(style: Style) -> Tuple[str, str]:
 
 @write_output
 def compile_page(
-    path: str, component: Component, state: Type[State]
+    path: str,
+    component: Component,
+    state: Type[State],
+    connect_error_component: Component,
 ) -> Tuple[str, str]:
     """Compile a single page.
 
@@ -201,6 +209,7 @@ def compile_page(
         path: The path to compile the page to.
         component: The component to compile.
         state: The app state.
+        connect_error_component: The component to render on sever connection error.
 
     Returns:
         The path and code of the compiled page.
@@ -209,7 +218,7 @@ def compile_page(
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(component, state)
+    code = _compile_page(component, state, connect_error_component)
     return output_path, code
 
 

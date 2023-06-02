@@ -13,6 +13,7 @@ from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
+from pynecone.components.overlay.banner import ConnectionBanner
 from pynecone.config import get_config
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
@@ -64,6 +65,12 @@ class App(Base):
 
     # List of event handlers to trigger when a page loads.
     load_events: Dict[str, List[EventHandler]] = {}
+
+    # The component to render if there is a connection error to the server.
+    connect_error_component: Optional[Component] = None
+
+    # Whether to render component if server cant be reached.
+    check_connection: Optional[bool] = True
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -403,7 +410,14 @@ class App(Base):
         custom_components = set()
         for route, component in self.pages.items():
             component.add_style(self.style)
-            compiler.compile_page(route, component, self.state)
+            if not self.connect_error_component:
+                self.connect_error_component = ConnectionBanner.create()
+            compiler.compile_page(
+                route,
+                component,
+                self.state,
+                self.connect_error_component if self.check_connection else None,
+            )
 
             # Add the custom components from the page to the set.
             custom_components |= component.get_custom_components()
