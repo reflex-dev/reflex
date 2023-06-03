@@ -66,6 +66,8 @@ class Markdown(Component):
                     "h1": "{({node, ...props}) => <Heading size='2xl' {...props} />}",
                     "h2": "{({node, ...props}) => <Heading size='xl' {...props} />}",
                     "h3": "{({node, ...props}) => <Heading size='lg' {...props} />}",
+                    "h4": "{({node, ...props}) => <Heading size='sm' {...props} />}",
+                    "h5": "{({node, ...props}) => <Heading size='xs' {...props} />}",
                     "ul": "{UnorderedList}",
                     "ol": "{OrderedList}",
                     "li": "{ListItem}",

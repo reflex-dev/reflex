@@ -107,11 +107,11 @@ async def test_preprocess(State, hydrate_middleware, request, event_fixture, exp
     assert len(events) == 2
 
     # Apply the on_load event.
-    update = await state._process(events[0])
+    update = await state._process(events[0]).__anext__()
     assert update.delta == expected
 
     # Apply the hydrate event.
-    update = await state._process(events[1])
+    update = await state._process(events[1]).__anext__()
     assert update.delta == exp_is_hydrated(state)
 
 
@@ -136,13 +136,13 @@ async def test_preprocess_multiple_load_events(hydrate_middleware, event1):
 
     # Apply the events.
     events = update.events
-    update = await state._process(events[0])
+    update = await state._process(events[0]).__anext__()
     assert update.delta == {"test_state": {"num": 1}}
 
-    update = await state._process(events[1])
+    update = await state._process(events[1]).__anext__()
     assert update.delta == {"test_state": {"num": 2}}
 
-    update = await state._process(events[2])
+    update = await state._process(events[2]).__anext__()
     assert update.delta == exp_is_hydrated(state)
 
 
@@ -165,5 +165,5 @@ async def test_preprocess_no_events(hydrate_middleware, event1):
     assert len(update.events) == 1
     assert isinstance(update, StateUpdate)
 
-    update = await state._process(update.events[0])
+    update = await state._process(update.events[0]).__anext__()
     assert update.delta == exp_is_hydrated(state)

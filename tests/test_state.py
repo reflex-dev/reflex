@@ -91,6 +91,25 @@ class GrandchildState(ChildState):
         pass
 
 
+class GenState(State):
+    """A state with event handlers that generate multiple updates."""
+
+    value: int
+
+    def go(self, c: int):
+        """Increment the value c times and update each time.
+
+        Args:
+            c: The number of times to increment.
+
+        Yields:
+            After each increment.
+        """
+        for _ in range(c):
+            self.value += 1
+            yield
+
+
 @pytest.fixture
 def test_state() -> TestState:
     """A state.
@@ -144,6 +163,16 @@ def grandchild_state(child_state) -> GrandchildState:
     grandchild_state = child_state.get_substate(["grandchild_state"])
     assert grandchild_state is not None
     return grandchild_state
+
+
+@pytest.fixture
+def gen_state() -> GenState:
+    """A state.
+
+    Returns:
+        A test state.
+    """
+    return GenState()  # type: ignore
 
 
 def test_base_class_vars(test_state):
@@ -577,7 +606,7 @@ async def test_process_event_simple(test_state):
     assert test_state.num1 == 0
 
     event = Event(token="t", name="set_num1", payload={"value": 69})
-    update = await test_state._process(event)
+    update = await test_state._process(event).__anext__()
 
     # The event should update the value.
     assert test_state.num1 == 69
@@ -603,7 +632,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
     event = Event(
         token="t", name="child_state.change_both", payload={"value": "hi", "count": 12}
     )
-    update = await test_state._process(event)
+    update = await test_state._process(event).__anext__()
     assert child_state.value == "HI"
     assert child_state.count == 24
     assert update.delta == {
@@ -619,12 +648,37 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         name="child_state.grandchild_state.set_value2",
         payload={"value": "new"},
     )
-    update = await test_state._process(event)
+    update = await test_state._process(event).__anext__()
     assert grandchild_state.value2 == "new"
     assert update.delta == {
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state.grandchild_state": {"value2": "new"},
     }
+
+
+@pytest.mark.asyncio
+async def test_process_event_generator(gen_state):
+    """Test event handlers that generate multiple updates.
+
+    Args:
+        gen_state: A state.
+    """
+    event = Event(
+        token="t",
+        name="go",
+        payload={"c": 5},
+    )
+    gen = gen_state._process(event)
+
+    count = 0
+    async for update in gen:
+        count += 1
+        assert gen_state.value == count
+        assert update.delta == {
+            "gen_state": {"value": count},
+        }
+
+    assert count == 5
 
 
 def test_format_event_handler():

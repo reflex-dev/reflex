@@ -30,7 +30,7 @@ class EventHandler(Base):
     """An event handler responds to an event to update the state."""
 
     # The function to call in response to the event.
-    fn: Callable
+    fn: Any
 
     class Config:
         """The Pydantic config."""
