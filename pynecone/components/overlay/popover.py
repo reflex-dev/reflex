@@ -87,7 +87,6 @@ class Popover(ChakraComponent):
     def create(
         cls,
         *children,
-        trigger=None,
         header=None,
         body=None,
         footer=None,
@@ -111,7 +110,7 @@ class Popover(ChakraComponent):
         if len(children) == 0:
             contents = []
 
-            trigger = PopoverTrigger.create(trigger)
+            trigger = PopoverTrigger.create("click")
 
             # add header if present in props
             if header:
