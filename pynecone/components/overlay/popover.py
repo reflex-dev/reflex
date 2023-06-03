@@ -108,8 +108,8 @@ class Popover(ChakraComponent):
         Returns:
             The popover component.
         """
-        if trigger == 'click' or trigger =='hover':
-            props.update({'trigger': trigger})
+#         if trigger == 'click' or trigger =='hover':
+#             props.update({'trigger': trigger})
             
         if len(children) == 0:
             contents = []
