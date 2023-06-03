@@ -108,8 +108,13 @@ class Popover(ChakraComponent):
         Returns:
             The popover component.
         """
+        if trigger == 'click' or trigger =='hover':
+            props.update({'trigger': trigger})
+            
         if len(children) == 0:
             contents = []
+
+            trigger = PopoverTrigger.create(trigger)
 
             # add header if present in props
             if header:
@@ -124,11 +129,8 @@ class Popover(ChakraComponent):
             if use_close_button:
                 contents.append(PopoverCloseButton.create())
 
-            children = [PopoverTrigger.create(trigger), PopoverContent.create(*contents)]
-        if trigger == None :
-            props.update({'trigger': 'click'})
-        else:
-            props.update({'trigger': trigger})
+            children = [trigger, PopoverContent.create(*contents)]
+
         return super().create(*children, **props)
 
 
