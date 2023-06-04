@@ -1123,16 +1123,21 @@ def _compile_accessor(
     ("add_var_first"),
     [True, False],
 )
-def test_add_var_with_substates(add_var_first: bool):
+@pytest.mark.parametrize(
+    ("is_backend_var"),
+    [True, False],
+)
+def test_add_var_with_substates(add_var_first: bool, is_backend_var: bool):
+    n_children = 5
+    var_prefix = "_" if is_backend_var else ""
+
     class RootState(State):
         pass
 
-    n_children = 5
-
     if add_var_first:
-        RootState.add_var("x", type_=int, default_value=0)
+        RootState.add_var(f"{var_prefix}x", type_=int, default_value=0)
         for n in range(n_children):
-            RootState.add_var(f"x{n}", int, default_value=0)
+            RootState.add_var(f"{var_prefix}x{n}", int, default_value=0)
 
     states = [RootState]
     for n in range(n_children):
@@ -1140,35 +1145,38 @@ def test_add_var_with_substates(add_var_first: bool):
 
     for n, ChildState in enumerate(states[1:]):
         ChildState.add_computed_var()(
-            _compile_accessor(func_name=f"c{n}_x", var_name=f"x")
+            _compile_accessor(func_name=f"c{n}_x", var_name=f"{var_prefix}x")
         )
         ChildState.add_computed_var()(
-            _compile_accessor(func_name=f"c{n}_x{n}", var_name=f"x{n}")
+            _compile_accessor(func_name=f"c{n}_x{n}", var_name=f"{var_prefix}x{n}")
         )
 
     if not add_var_first:
-        RootState.add_var("x", type_=int, default_value=0)
+        RootState.add_var(f"{var_prefix}x", type_=int, default_value=0)
         for n in range(n_children):
-            RootState.add_var(f"x{n}", int, default_value=0)
+            RootState.add_var(f"{var_prefix}x{n}", int, default_value=0)
 
     rs = RootState()
-    rs.x3 = 2
-    rs.x4 = 1
+    setattr(rs, f"{var_prefix}x3", 2)
+    setattr(rs, f"{var_prefix}x4", 1)
     delta = rs.get_delta()
-    assert delta == {
-        rs.get_full_name(): {"x3": 2, "x4": 1},
+    exp_delta = {
         states[4].get_full_name(): {"c3_x3": 2},
         states[5].get_full_name(): {"c4_x4": 1},
     }
+    if not is_backend_var:
+        exp_delta[rs.get_full_name()] = {"x3": 2, "x4": 1}
+    assert delta == exp_delta
 
-    rs.reset()
-    rs.x = 5
+    rs.clean()
+    setattr(rs, f"{var_prefix}x", 5)
     delta = rs.get_delta()
-    assert delta == {
-        rs.get_full_name(): {"x": 5},
-        states[1].get_full_name(): {"c0_x": 5},
-        states[2].get_full_name(): {"c1_x": 5},
-        states[3].get_full_name(): {"c2_x": 5},
-        states[4].get_full_name(): {"c3_x": 5},
-        states[5].get_full_name(): {"c4_x": 5},
+    exp_delta = {
+        states[ix + 1].get_full_name(): {f"c{ix}_x": 5} for ix in range(n_children)
     }
+    if not is_backend_var:
+        exp_delta[rs.get_full_name()] = {"x": 5}
+    assert delta == exp_delta
+
+    if is_backend_var:
+        assert rs._backend_vars == {"_x": 5, "_x3": 2, "_x4": 1}
