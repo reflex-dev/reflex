@@ -13,7 +13,7 @@ from pynecone.middleware import HydrateMiddleware
 from pynecone.state import State, StateUpdate
 from pynecone.style import Style
 from pynecone.utils import format
-from pynecone.vars import ComputedVar
+from pynecone.vars import cached_var
 
 
 @pytest.fixture
@@ -564,7 +564,7 @@ class DynamicState(State):
 
     loaded: int = 0
     counter: int = 0
-    # side_effect_counter: int = 0
+    side_effect_counter: int = 0
 
     def on_load(self):
         """Event handler for page on_load, should trigger for all navigation events."""
@@ -574,14 +574,14 @@ class DynamicState(State):
         """Increment the counter var."""
         self.counter = self.counter + 1
 
-    @ComputedVar
+    @cached_var
     def comp_dynamic(self) -> str:
         """A computed var that depends on the dynamic var.
 
         Returns:
             same as self.dynamic
         """
-        # self.side_effect_counter = self.side_effect_counter + 1
+        self.side_effect_counter = self.side_effect_counter + 1
         return self.dynamic
 
 
@@ -656,7 +656,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     constants.IS_HYDRATED: False,
                     "loaded": exp_index,
                     "counter": exp_index,
-                    # "side_effect_counter": exp_index,
+                    "side_effect_counter": exp_index,
                 }
             },
             events=[
@@ -680,9 +680,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
                     "loaded": exp_index + 1,
                 },
             },
@@ -700,9 +697,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    arg_name: exp_val,
-                    f"comp_{arg_name}": exp_val,
                     "is_hydrated": True,
                 },
             },
@@ -720,9 +714,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
-                    # These computed vars _shouldn't_ be here, because they didn't change
-                    f"comp_{arg_name}": exp_val,
-                    arg_name: exp_val,
                     "counter": exp_index + 1,
                 }
             },
@@ -730,5 +721,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
-    # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
-    # assert state.side_effect_counter == len(exp_vals)
+    print(
+        f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}"
+    )
+    assert state.side_effect_counter == len(exp_vals)
