@@ -390,7 +390,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # let substates know about the new variable
         def update_inherited_vars(state: Type[State]):
             for s in state.get_substates():
-                if getattr(s, "parent_state", None) is None:
+                if s.get_parent_state() is None:
                     continue  # no inherited vars for root state
                 s.inherited_vars[name] = var
                 update_inherited_vars(s)
