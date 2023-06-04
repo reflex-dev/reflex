@@ -1,3 +1,4 @@
+from textwrap import dedent
 from typing import Dict, List
 
 import pytest
@@ -1093,6 +1094,81 @@ def test_computed_var_depends_on_parent_non_cached():
     }
     assert counter == 6
 
-# Add var, then create substates
-#
-# Create substates, then add var
+
+def _compile_accessor(
+    func_name: str, var_name: str, type_name: str = "int"
+) -> pc.state.ComputedVar:
+    """Create a ComputedVar.
+
+    Args:
+        var_name: the variable to access from `self`.
+
+    Returns:
+        ComputedVar that returns the value like `getattr(self, parent_var)`, except compiled
+        using eval to avoid the `getattr` dynamic access.
+    """
+    ns = {}
+    exec(
+        dedent(
+            f"""
+            def {func_name}(self) -> {type_name}:
+                return self.{var_name}"""
+        ),
+        ns,
+    )
+    return pc.cached_var(ns[f"{func_name}"])  # type: ignore
+
+
+@pytest.mark.parametrize(
+    ("add_var_first"),
+    [True, False],
+)
+def test_add_var_with_substates(add_var_first: bool):
+    class RootState(State):
+        pass
+
+    n_children = 5
+
+    if add_var_first:
+        RootState.add_var("x", type_=int, default_value=0)
+        for n in range(n_children):
+            RootState.add_var(f"x{n}", int, default_value=0)
+
+    states = [RootState]
+    for n in range(n_children):
+        states.append(type(f"ChildState{n}", (states[-1],), {}))
+
+    for n, ChildState in enumerate(states[1:]):
+        ChildState.add_computed_var()(
+            _compile_accessor(func_name=f"c{n}_x", var_name=f"x")
+        )
+        ChildState.add_computed_var()(
+            _compile_accessor(func_name=f"c{n}_x{n}", var_name=f"x{n}")
+        )
+
+    if not add_var_first:
+        RootState.add_var("x", type_=int, default_value=0)
+        for n in range(n_children):
+            RootState.add_var(f"x{n}", int, default_value=0)
+
+    rs = RootState()
+    rs.x3 = 2
+    rs.x4 = 1
+    delta = rs.get_delta()
+    assert delta == {
+        rs.get_full_name(): {"x3": 2, "x4": 1},
+        states[4].get_full_name(): {"c3_x3": 2},
+        states[5].get_full_name(): {"c4_x4": 1},
+    }
+
+    rs.reset()
+    rs.x = 5
+    delta = rs.get_delta()
+    assert delta == {
+        rs.get_full_name(): {"x": 5},
+        states[1].get_full_name(): {"c0_x": 5},
+        states[2].get_full_name(): {"c1_x": 5},
+        states[3].get_full_name(): {"c2_x": 5},
+        states[4].get_full_name(): {"c3_x": 5},
+        states[5].get_full_name(): {"c4_x": 5},
+    }
