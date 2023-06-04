@@ -403,15 +403,19 @@ def test_get_class_var():
         )
 
 
+class TestSetVarState(State):
+    pass
+
+
 def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
-        TestState.num3  # type: ignore
-    TestState._set_var(BaseVar(name="num3", type_=int).set_state(TestState))
-    var = TestState.num3  # type: ignore
+        TestSetVarState.num3  # type: ignore
+    TestSetVarState._set_var(BaseVar(name="num3", type_=int).set_state(TestSetVarState))
+    var = TestSetVarState.num3  # type: ignore
     assert var.name == "num3"
     assert var.type_ == int
-    assert var.state == TestState.get_full_name()
+    assert var.state == TestSetVarState.get_full_name()
 
 
 def test_set_parent_and_substates(test_state, child_state, grandchild_state):
@@ -1088,3 +1092,7 @@ def test_computed_var_depends_on_parent_non_cached():
         IS_HYDRATED: False,
     }
     assert counter == 6
+
+# Add var, then create substates
+#
+# Create substates, then add var
