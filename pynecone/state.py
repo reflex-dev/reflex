@@ -121,7 +121,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                     # track that this substate depends on its parent for this var
                     state_name = self.get_name()
                     parent_state = self.parent_state
-                    while parent_state is not None and var in parent_state.vars:
+                    while parent_state is not None and (
+                        var in parent_state.vars or var in parent_state.inherited_vars
+                    ):
                         parent_state.substate_var_dependencies[var].add(state_name)
                         state_name, parent_state = (
                             parent_state.get_name(),
@@ -186,8 +188,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Get the parent vars.
         parent_state = cls.get_parent_state()
         if parent_state is not None:
-            cls.inherited_vars = parent_state.vars.copy()
-            cls.inherited_backend_vars = parent_state.backend_vars.copy()
+            cls.inherited_vars = {**parent_state.inherited_vars, **parent_state.vars}
+            cls.inherited_backend_vars = {
+                **parent_state.inherited_backend_vars,
+                **parent_state.backend_vars,
+            }
 
         cls.new_backend_vars = {
             name: value
