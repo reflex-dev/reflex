@@ -226,3 +226,6 @@ text = Text.create
 script = ScriptTag.create
 aspect_ratio = AspectRatio.create
 kbd = KeyboardKey.create
+color_mode_button = ColorModeButton.create
+color_mode_icon = ColorModeIcon.create
+color_mode_switch = ColorModeSwitch.create

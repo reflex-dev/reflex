@@ -31,6 +31,7 @@ from .model import session as session
 from .route import route as route
 from .state import ComputedVar as var
 from .state import State as State
+from .style import color_mode as color_mode
 from .style import toggle_color_mode as toggle_color_mode
 from .vars import Var as Var
 from .vars import cached_var as cached_var
