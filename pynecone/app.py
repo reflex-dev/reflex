@@ -67,10 +67,7 @@ class App(Base):
     load_events: Dict[str, List[EventHandler]] = {}
 
     # The component to render if there is a connection error to the server.
-    connect_error_component: Optional[Component] = None
-
-    # Whether to render component if server cant be reached.
-    check_connection: Optional[bool] = True
+    connect_error_component: Optional[Component] = ConnectionBanner.create()
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -410,13 +407,11 @@ class App(Base):
         custom_components = set()
         for route, component in self.pages.items():
             component.add_style(self.style)
-            if not self.connect_error_component:
-                self.connect_error_component = ConnectionBanner.create()
             compiler.compile_page(
                 route,
                 component,
                 self.state,
-                self.connect_error_component if self.check_connection else None,
+                self.connect_error_component,
             )
 
             # Add the custom components from the page to the set.
