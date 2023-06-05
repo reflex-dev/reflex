@@ -24,7 +24,6 @@ from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
-from pynecone.components.overlay.banner import ConnectionBanner
 from pynecone.config import get_config
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
@@ -78,7 +77,7 @@ class App(Base):
     load_events: Dict[str, List[EventHandler]] = {}
 
     # The component to render if there is a connection error to the server.
-    connect_error_component: Optional[Component] = ConnectionBanner.create()
+    connect_error_component: Optional[Component] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
