@@ -466,11 +466,11 @@ async def process(
     else:
         # Process the event.
         async for update in state._process(event):
-            yield update
+            # Postprocess the event.
+            update = await app.postprocess(state, event, update)
 
-        # Postprocess the event.
-        assert update is not None, "Process did not return an update."
-        update = await app.postprocess(state, event, update)
+            # Yield the update.
+            yield update
 
     # Set the state for the session.
     app.state_manager.set_state(event.token, state)

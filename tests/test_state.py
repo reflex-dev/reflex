@@ -673,12 +673,15 @@ async def test_process_event_generator(gen_state):
     count = 0
     async for update in gen:
         count += 1
-        assert gen_state.value == count
-        assert update.delta == {
-            "gen_state": {"value": count},
-        }
+        if count == 6:
+            assert update.delta == {}
+        else:
+            assert gen_state.value == count
+            assert update.delta == {
+                "gen_state": {"value": count},
+            }
 
-    assert count == 5
+    assert count == 6
 
 
 def test_format_event_handler():
