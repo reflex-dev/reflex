@@ -193,7 +193,8 @@ export const connect = async (
   result,
   setResult,
   router,
-  transports
+  transports,
+  setNotConnected
 ) => {
   // Get backend URL object from the endpoint
   const endpoint_url = new URL(EVENTURL);
@@ -207,6 +208,11 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     updateState(state, setState, result, setResult, router, socket.current);
+    setNotConnected(false)
+  });
+
+  socket.current.on('connect_error', (error) => {
+    setNotConnected(true)
   });
 
   // On each received message, apply the delta and set the result.
