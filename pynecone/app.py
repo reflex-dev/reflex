@@ -87,6 +87,9 @@ class App(Base):
     # The component to render if there is a connection error to the server.
     connect_error_component: Optional[Component] = None
 
+    # Check backend router:
+    backend_router = set()
+
     def __init__(self, *args, **kwargs):
         """Initialize the app.
 
@@ -345,9 +348,16 @@ class App(Base):
 
         Returns:
             Respone a file from server.
-        """
 
-        @self.api.get(f"/download{download_url}")
+        Raises:
+            ValueError: download_url already is used.
+        """
+        if download_url in self.backend_router:
+            raise ValueError(f"{download_url} already is used.")
+
+        self.backend_router.add(download_url)
+
+        @self.api.get(f"{download_url}")
         async def response():
             return FileResponse(
                 path=file_path,
