@@ -78,7 +78,7 @@ class App(Base):
     load_events: Dict[str, List[EventHandler]] = {}
 
     # The component to render if there is a connection error to the server.
-    connect_error_component: Optional[Component] = ConnectionBanner.create()
+    connect_error_component: Optional[Component] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
