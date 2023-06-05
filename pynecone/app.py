@@ -17,6 +17,7 @@ from typing import (
 
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
+from fastapi.responses import FileResponse
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -334,6 +335,27 @@ class App(Base):
         if route == "":
             route = constants.INDEX_ROUTE
         return self.load_events.get(route, [])
+
+    def add_download_file(self, download_url: str, file_path: str):
+        """Download file from host by downloa_durl.
+
+        Args:
+            download_url: The route to get the file.
+            file_path: The file from host.
+
+        Returns:
+            Respone a file from server.
+        """
+
+        @self.api.get(f"/download{download_url}")
+        async def response():
+            return FileResponse(
+                path=file_path,
+                filename=os.path.split(file_path)[1],
+                media_type="text/mp4",
+            )
+
+        return
 
     def _check_routes_conflict(self, new_route: str):
         """Verify if there is any conflict between the new route and any existing route.
