@@ -100,7 +100,7 @@ DEPLOY_URL = get_value("DEPLOY_URL")
 # bun root location
 BUN_ROOT_PATH = "$HOME/.bun"
 # The default path where bun is installed.
-BUN_PATH = f"{BUN_ROOT_PATH}/bin/bun"
+BUN_PATH = get_value("BUN_PATH", f"{BUN_ROOT_PATH}/bin/bun")
 # Command to install bun.
 INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
 # Default host in dev mode.
