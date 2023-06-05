@@ -11,16 +11,6 @@ class Step(ChakraComponent):
 
     tag = "Step"
 
-    @classmethod
-    def create(cls, *children, items=None, **props) -> Component:
-        # if len(children) == 0:
-        #     children = []
-        #     for indicator, layout in items or []:
-        #         children.append(
-        #             Step.create(StepIndicator.create(), layout)
-        #         )
-        return super().create(*children, **props)
-
 
 class StepDescription(ChakraComponent):
     """The description text for a step component."""
@@ -39,10 +29,6 @@ class StepIndicator(ChakraComponent):
 
     tag="StepIndicator"
 
-    @classmethod
-    def create(cls, *children, items=None, icon_pos="right", **props) -> Component:
-        return super().create(*children, **props)
-
 
 class StepNumber(ChakraComponent):
     """The number of a step displayed in a step indicator component."""
@@ -59,11 +45,15 @@ class StepSeparator(ChakraComponent):
 class StepStatus(ChakraComponent):
     """A component that displays a number or icon based on the status of a step."""
 
-    active: Var[Union[StepNumber, StepIcon]]
+    # [not working yet]
+    # active, complete, and incomplete should also be able to accept StepIcon or StepNumber components 
+    # currently, these props only support strings 
 
-    complete: Var[Union[StepNumber, StepIcon]]
+    active: Var[str]
 
-    incomplete: Var[Union[StepNumber, StepIcon]]
+    complete: Var[str]
+
+    incomplete: Var[str]
 
     tag="StepStatus"
 
@@ -82,6 +72,9 @@ class Stepper(ChakraComponent):
     # The color scheme to use for the stepper; default is blue
     colorScheme: Var[str]
 
+    # chakra provides a useSteps hook to control the stepper
+    # instead, use an integer state value to set progress in the stepper
+
     # The index of the current step
     index: Var[int]
 
@@ -90,4 +83,15 @@ class Stepper(ChakraComponent):
 
     @classmethod
     def create(cls, *children, items=None, icon_pos="right", **props) -> Component:
+        # implement items shorthand for steps
+        if len(children) == 0:
+            children = []
+            for indicator, layout, separator in items:
+                 children.append(
+                    Step.create(
+                        StepIndicator.create(indicator),
+                        layout,
+                        StepSeparator.create(separator)
+                    )
+                 )
         return super().create(*children, **props)
