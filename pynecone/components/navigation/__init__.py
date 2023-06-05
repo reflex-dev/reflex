@@ -10,10 +10,10 @@ from .stepper import (
     StepIcon,
     StepIndicator,
     StepNumber,
+    Stepper,
     StepSeparator,
     StepStatus,
     StepTitle,
-    Stepper,
 )
 
 __all__ = [f for f in dir() if f[0].isupper()]  # type: ignore
