@@ -18,6 +18,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     Union,
 )
@@ -654,7 +655,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         self.clean()
 
         # Run the event generator and return state updates.
-        async for events in event_iter:
+        async for events, processing in event_iter:
             # Fix the returned events.
             events = fix_events(events, event.token)  # type: ignore
 
@@ -662,14 +663,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             delta = self.get_delta()
 
             # Yield the state update.
-            yield StateUpdate(delta=delta, events=events)
+            yield StateUpdate(delta=delta, events=events, processing=processing)
 
             # Clean the state to prepare for the next event.
             self.clean()
 
     async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict
-    ) -> AsyncIterator[Optional[List[EventSpec]]]:
+    ) -> AsyncIterator[Tuple[Optional[List[EventSpec]], bool]]:
         """Process event.
 
         Args:
@@ -678,7 +679,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             payload: The event payload.
 
         Yields:
-            The state update after processing the event.
+            Tuple containing:
+                0: The state update after processing the event.
+                1: Whether the event is being processed.
         """
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
@@ -696,22 +699,24 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
-                    yield event
+                    yield event, True
+                yield None, False
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
                 for event in events:
-                    yield event
+                    yield event, True
+                yield None, False
 
             # Handle regular event chains.
             else:
-                yield events
+                yield events, False
 
         # If an error occurs, throw a window alert.
         except Exception:
             error = traceback.format_exc()
             print(error)
-            yield [window_alert("An error occurred. See logs for details.")]
+            yield [window_alert("An error occurred. See logs for details.")], False
 
     def _always_dirty_computed_vars(self) -> Set[str]:
         """The set of ComputedVars that always need to be recalculated.
@@ -875,6 +880,9 @@ class StateUpdate(Base):
 
     # Events to be added to the event queue.
     events: List[Event] = []
+
+    # Whether the event is still processing.
+    processing: bool = False
 
 
 class StateManager(Base):

@@ -214,7 +214,7 @@ export const connect = async (
     update = JSON5.parse(update);
     applyDelta(state, update.delta);
     setResult({
-      processing: true,
+      processing: update.processing,
       state: state,
       events: update.events,
     });
