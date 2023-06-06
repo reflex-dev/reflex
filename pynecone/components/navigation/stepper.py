@@ -1,10 +1,11 @@
 """A component to indicate progress through a multi-step process."""
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.vars import Var
+
 
 class Stepper(ChakraComponent):
     """The parent container for a stepper."""
@@ -24,7 +25,7 @@ class Stepper(ChakraComponent):
     size: Var[str]
 
     @classmethod
-    def create(cls, *children, items:List[Tuple[Var[ChakraComponent],Var[Component],Var[ChakraComponent]]]=None, **props) -> Component:
+    def create(cls, *children, items:Optional[List[Tuple[Var[ChakraComponent],Var[Component],Var[ChakraComponent]]]]=None, **props) -> Component:
         """Create a Stepper component.
 
         If the kw-args `items` is provided and is a list, they will be added as children.
