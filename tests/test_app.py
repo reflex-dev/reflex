@@ -3,13 +3,17 @@ import os.path
 from typing import List, Tuple, Type
 
 import pytest
+import sqlmodel
 from fastapi import UploadFile
+from starlette_admin.auth import AuthProvider
+from starlette_admin.contrib.sqla.admin import Admin
 
-from pynecone import constants
+from pynecone import AdminDash, constants
 from pynecone.app import App, DefaultState, process, upload
 from pynecone.components import Box
 from pynecone.event import Event, get_hydrate_event
 from pynecone.middleware import HydrateMiddleware
+from pynecone.model import Model
 from pynecone.state import State, StateUpdate
 from pynecone.style import Style
 from pynecone.utils import format
@@ -68,6 +72,85 @@ def test_state() -> Type[State]:
     return TestState
 
 
+@pytest.fixture()
+def test_model() -> Type[Model]:
+    """A default model.
+
+    Returns:
+        A default model.
+    """
+
+    class TestModel(Model):
+        pass
+
+    return TestModel
+
+
+@pytest.fixture()
+def test_model_auth() -> Type[Model]:
+    """A default model.
+
+    Returns:
+        A default model.
+    """
+
+    class TestModelAuth(Model):
+        """A test model with auth."""
+
+        pass
+
+    return TestModelAuth
+
+
+@pytest.fixture()
+def test_get_engine():
+    """A default database engine.
+
+    Returns:
+        A default database engine.
+    """
+    enable_admin = True
+    url = "sqlite:///test.db"
+    return sqlmodel.create_engine(
+        url,
+        echo=False,
+        connect_args={"check_same_thread": False} if enable_admin else {},
+    )
+
+
+@pytest.fixture()
+def test_custom_auth_admin() -> Type[AuthProvider]:
+    """A default auth provider.
+
+    Returns:
+        A default default auth provider.
+    """
+
+    class TestAuthProvider(AuthProvider):
+        """A test auth provider."""
+
+        login_path: str = "/login"
+        logout_path: str = "/logout"
+
+        def login(self):
+            """Login."""
+            pass
+
+        def is_authenticated(self):
+            """Is authenticated."""
+            pass
+
+        def get_admin_user(self):
+            """Get admin user."""
+            pass
+
+        def logout(self):
+            """Logout."""
+            pass
+
+    return TestAuthProvider
+
+
 def test_default_app(app: App):
     """Test creating an app with no args.
 
@@ -77,6 +160,7 @@ def test_default_app(app: App):
     assert app.state() == DefaultState()
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
+    assert app.admin_dash is None
 
 
 def test_add_page_default_route(app: App, index_page, about_page):
@@ -141,6 +225,39 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     assert app.pages == {}
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {route.strip(os.path.sep)}
+
+
+def test_initialize_with_admin_dashboard(test_model):
+    """Test setting the admin dashboard of an app.
+
+    Args:
+        test_model: The default model.
+    """
+    app = App(admin_dash=AdminDash(models=[test_model]))
+    assert app.admin_dash is not None
+    assert len(app.admin_dash.models) > 0
+    assert app.admin_dash.models[0] == test_model
+
+
+def test_initialize_with_custom_admin_dashboard(
+    test_get_engine,
+    test_custom_auth_admin,
+    test_model_auth,
+):
+    """Test setting the custom admin dashboard of an app.
+
+    Args:
+        test_get_engine: The default database engine.
+        test_model_auth: The default model for an auth admin dashboard.
+        test_custom_auth_admin: The custom auth provider.
+    """
+    custom_admin = Admin(engine=test_get_engine, auth_provider=test_custom_auth_admin)
+    app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
+    assert app.admin_dash is not None
+    assert app.admin_dash.admin is not None
+    assert len(app.admin_dash.models) > 0
+    assert app.admin_dash.models[0] == test_model_auth
+    assert app.admin_dash.admin.auth_provider == test_custom_auth_admin
 
 
 def test_initialize_with_state(test_state):

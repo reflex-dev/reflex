@@ -11,6 +11,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 
 from pynecone import constants
+from pynecone.admin import AdminDash
 from pynecone.base import Base
 
 
@@ -172,6 +173,12 @@ class Config(Base):
 
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
+
+    # Enable the admin dash.
+    enable_admin: bool = False
+
+    # The Admin Dash
+    admin_dash: Optional[AdminDash] = None
 
     # Backend transport methods.
     backend_transports: Optional[

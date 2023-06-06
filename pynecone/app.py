@@ -18,8 +18,11 @@ from typing import (
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
+from starlette_admin.contrib.sqla.admin import Admin
+from starlette_admin.contrib.sqla.view import ModelView
 
 from pynecone import constants
+from pynecone.admin import AdminDash
 from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
@@ -76,6 +79,9 @@ class App(Base):
     # List of event handlers to trigger when a page loads.
     load_events: Dict[str, List[EventHandler]] = {}
 
+    # Admin dashboard
+    admin_dash: Optional[AdminDash] = None
+
     # The component to render if there is a connection error to the server.
     connect_error_component: Optional[Component] = None
 
@@ -125,6 +131,9 @@ class App(Base):
 
         # Mount the socket app with the API.
         self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
+
+        # Set up the admin dash.
+        self.setup_admin_dash()
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
@@ -388,6 +397,25 @@ class App(Base):
             page.startswith("[...") or page.startswith("[[...") for page in self.pages
         ):
             self.pages[froute(constants.SLUG_404)] = component
+
+    def setup_admin_dash(self):
+        """Setup the admin dash."""
+        # Get the config.
+        config = get_config()
+        if config.enable_admin and config.admin_dash and config.admin_dash.models:
+            # Build the admin dashboard
+            admin = (
+                config.admin_dash.admin
+                if config.admin_dash.admin
+                else Admin(
+                    engine=Model.get_db_engine(),
+                    title="Pynecone Admin Dashboard",
+                    logo_url="https://pynecone.io/logo.png",
+                )
+            )
+            for model in config.admin_dash.models:
+                admin.add_view(ModelView(model))
+            admin.mount_to(self.api)
 
     def compile(self):
         """Compile the app and output it to the pages folder."""

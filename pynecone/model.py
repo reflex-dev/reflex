@@ -18,9 +18,14 @@ def get_engine():
         ValueError: If the database url is None.
     """
     url = get_config().db_url
+    enable_admin = get_config().enable_admin
     if not url:
         raise ValueError("No database url in config")
-    return sqlmodel.create_engine(url, echo=False)
+    return sqlmodel.create_engine(
+        url,
+        echo=False,
+        connect_args={"check_same_thread": False} if enable_admin else {},
+    )
 
 
 class Model(Base, sqlmodel.SQLModel):
@@ -58,6 +63,15 @@ class Model(Base, sqlmodel.SQLModel):
         engine = get_engine()
         sqlmodel.SQLModel.metadata.create_all(engine)
 
+    @staticmethod
+    def get_db_engine():
+        """Get the database engine.
+
+        Returns:
+            The database engine.
+        """
+        return get_engine()
+
     @classmethod
     @property
     def select(cls):
@@ -78,7 +92,13 @@ def session(url=None):
     Returns:
         A database session.
     """
+    enable_admin = get_config().enable_admin
     if url is not None:
-        return sqlmodel.Session(sqlmodel.create_engine(url))
+        return sqlmodel.Session(
+            sqlmodel.create_engine(
+                url,
+                connect_args={"check_same_thread": False} if enable_admin else {},
+            ),
+        )
     engine = get_engine()
     return sqlmodel.Session(engine)
