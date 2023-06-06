@@ -210,6 +210,10 @@ def export(
 
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
+
+    if frontend:
+        build.setup_frontend(Path.cwd())
+
     app = prerequisites.get_app().app
     build.export_app(
         app,
