@@ -732,3 +732,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert state.counter == len(exp_vals)
     # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
     # assert state.side_effect_counter == len(exp_vals)
+
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
+@pytest.mark.asyncio
+async def test_process_events(gen_state, mocker):
+    mocked_method = AsyncMock(return_value="Mocked response")
+    app = App(state=gen_state)
+    app.postprocess = MagicMock()
+    mocker.patch.object(app, "postprocess")
+    event = Event(token="token", name="gen_state.go", payload={})
+
+    update = await process(app, event,"mock_sid", {}, "127.0.0.1").__anext__()
+    assert app.postprocess.assert_any_call(6)
