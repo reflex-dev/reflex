@@ -39,6 +39,18 @@ files = [
 typing-extensions = {version = ">=3.6.5", markers = "python_version < \"3.8\""}
 
 [[package]]
+name = "asynctest"
+version = "0.13.0"
+description = "Enhance the standard unittest package with features for testing asyncio libraries"
+category = "dev"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "asynctest-0.13.0-py3-none-any.whl", hash = "sha256:5da6118a7e6d6b54d83a8f7197769d046922a44d2a99c21382f0a6e4fadae676"},
+    {file = "asynctest-0.13.0.tar.gz", hash = "sha256:c27862842d15d83e6a34eb0b2866c323880eb3a75e4485b079ea11748fd77fac"},
+]
+
+[[package]]
 name = "bidict"
 version = "0.22.1"
 description = "The bidirectional mapping library for Python."
@@ -1835,4 +1847,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "8d9847174be44200843831d75f0f58e35a47619a11384606df14a7d64cee003f"
+content-hash = "9875d81be51d7b3c6686cc56c4b6d58069cb4d5df965742811b874a18e522106"

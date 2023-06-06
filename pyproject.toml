@@ -58,6 +58,7 @@ pandas = [
     {version = "^1.5.3", python = ">=3.8,<4.0"},
     {version = "^1.1", python = ">=3.7, <3.8"}
 ]
+asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 
 [tool.poetry.scripts]
