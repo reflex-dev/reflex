@@ -27,6 +27,7 @@ class Element(Component):
                 id=self.id,
                 style=self.style,
                 class_name=self.class_name,
+                **self.custom_attrs,
             ).set(
                 contents=str(tag.contents),
                 children=[child.render() for child in self.children],

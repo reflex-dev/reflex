@@ -1,9 +1,9 @@
 """A link component."""
 
-from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.navigation.nextlink import NextLink
-from pynecone.vars import Var
+from pynecone.utils import imports
+from pynecone.vars import BaseVar, Var
 
 
 class Link(ChakraComponent):
@@ -21,21 +21,10 @@ class Link(ChakraComponent):
     text: Var[str]
 
     # What the link renders to.
-    as_: Var[str] = "span"  # type: ignore
+    as_: Var[str] = BaseVar.create("{NextLink}", is_local=False)  # type: ignore
 
     # If true, the link will open in new tab.
     is_external: Var[bool]
 
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create a NextJS link component, wrapping a Chakra link component.
-
-        Args:
-            *children: The children to pass to the component.
-            **props: The attributes to pass to the component.
-
-        Returns:
-            The component.
-        """
-        kwargs = {"href": props.pop("href") if "href" in props else "#"}
-        return NextLink.create(super().create(*children, **props), **kwargs)
+    def _get_imports(self) -> imports.ImportDict:
+        return {**super()._get_imports(), **NextLink(href=self.href)._get_imports()}

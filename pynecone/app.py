@@ -82,6 +82,9 @@ class App(Base):
     # Admin dashboard
     admin_dash: Optional[AdminDash] = None
 
+    # The component to render if there is a connection error to the server.
+    connect_error_component: Optional[Component] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the app.
 
@@ -439,7 +442,12 @@ class App(Base):
         custom_components = set()
         for route, component in self.pages.items():
             component.add_style(self.style)
-            compiler.compile_page(route, component, self.state)
+            compiler.compile_page(
+                route,
+                component,
+                self.state,
+                self.connect_error_component,
+            )
 
             # Add the custom components from the page to the set.
             custom_components |= component.get_custom_components()
@@ -494,11 +502,11 @@ async def process(
     else:
         # Process the event.
         async for update in state._process(event):
-            yield update
+            # Postprocess the event.
+            update = await app.postprocess(state, event, update)
 
-        # Postprocess the event.
-        assert update is not None, "Process did not return an update."
-        update = await app.postprocess(state, event, update)
+            # Yield the update.
+            yield update
 
     # Set the state for the session.
     app.state_manager.set_state(event.token, state)

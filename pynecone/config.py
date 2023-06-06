@@ -225,12 +225,13 @@ class Config(Base):
                 continue
             os.environ[key] = str(value)
 
-        # Load env variables from env file
-        load_dotenv(self.env_path, override=self.override_os_envs)  # type: ignore
-        # Recompute constants after loading env variables
-        importlib.reload(constants)
-        # Recompute instance attributes
-        self.recompute_field_values()
+        # Avoid overriding if env_path is not provided or does not exist
+        if self.env_path is not None and os.path.isfile(self.env_path):
+            load_dotenv(self.env_path, override=self.override_os_envs)  # type: ignore
+            # Recompute constants after loading env variables
+            importlib.reload(constants)
+            # Recompute instance attributes
+            self.recompute_field_values()
 
     def recompute_field_values(self):
         """Recompute instance field values to reflect new values after reloading
