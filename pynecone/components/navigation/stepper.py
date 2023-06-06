@@ -25,7 +25,7 @@ class Stepper(ChakraComponent):
     size: Var[str]
 
     @classmethod
-    def create(cls, *children, items:Optional[List[Tuple[Var[ChakraComponent],Var[Component],Var[ChakraComponent]]]]=None, **props) -> Component:
+    def create(cls, *children, items:Optional[List[Tuple]]=None, **props) -> Component:
         """Create a Stepper component.
 
         If the kw-args `items` is provided and is a list, they will be added as children.
