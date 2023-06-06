@@ -1,36 +1,37 @@
 """A component to indicate progress through a multi-step process."""
 
+from typing import List, Tuple
+
 from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.vars import Var
-
 
 class Stepper(ChakraComponent):
     """The parent container for a stepper."""
 
     tag = "Stepper"
 
-    # The color scheme to use for the stepper; default is blue
+    # The color scheme to use for the stepper; default is blue.
     colorScheme: Var[str]
 
-    # chakra provides a useSteps hook to control the stepper
-    # instead, use an integer state value to set progress in the stepper
+    # Chakra provides a useSteps hook to control the stepper.
+    # Instead, use an integer state value to set progress in the stepper.
 
-    # The index of the current step
+    # The index of the current step.
     index: Var[int]
 
-    # The size of the steps in the stepper
+    # The size of the steps in the stepper.
     size: Var[str]
 
     @classmethod
-    def create(cls, *children, items=None, **props) -> Component:
+    def create(cls, *children, items:List[Tuple[Var[ChakraComponent],Var[Component],Var[ChakraComponent]]]=None, **props) -> Component:
         """Create a Stepper component.
 
         If the kw-args `items` is provided and is a list, they will be added as children.
 
         Args:
             children: The children of the component.
-            items (list): The items of each step: (indicator, layout, separator)
+            items (list): The child components for each step.
             props: The properties of the component.
 
         Returns:
