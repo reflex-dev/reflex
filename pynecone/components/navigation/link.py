@@ -27,4 +27,4 @@ class Link(ChakraComponent):
     is_external: Var[bool]
 
     def _get_imports(self) -> imports.ImportDict:
-        return {**super()._get_imports(), **NextLink(href=self.href)._get_imports()}
+        return {**super()._get_imports(), **NextLink.create()._get_imports()}
