@@ -48,8 +48,8 @@ def run_process_and_launch_url(
         cwd=constants.WEB_DIR,
         env=os.environ,
         stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
+        stdout=None if platform.system() == "Windows" else subprocess.PIPE,
+        universal_newlines=None if platform.system() == "Windows" else True,
     )
 
     current_time = datetime.now()
