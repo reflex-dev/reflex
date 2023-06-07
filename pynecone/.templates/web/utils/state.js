@@ -223,7 +223,7 @@ export const connect = async (
   });
 
   // On each received message, apply the delta and set the result.
-  socket.current.on("event", function (update) {
+  socket.current.on("event", update => {
     update = JSON5.parse(update);
     applyDelta(state, update.delta);
     setResult({
