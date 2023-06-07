@@ -11,7 +11,7 @@ class NextLink(Component):
 
     tag = "NextLink"
 
-    is_default = True
+    is_default = False
 
     # The page to link to.
     href: Var[str]
