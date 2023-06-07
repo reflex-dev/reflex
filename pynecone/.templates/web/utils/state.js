@@ -4,9 +4,11 @@ import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "env.json";
 
+// Endpoint URLs.
 const PINGURL = env.pingUrl
 const EVENTURL = env.eventUrl
 const UPLOADURL = env.uploadUrl
+
 // Global variable to hold the token.
 let token;
 
@@ -124,13 +126,18 @@ export const applyEvent = async (event, router, socket) => {
 
 /**
  * Process an event off the event queue.
- * @param queue_event The current event
+ * @param event The current event
  * @param state The state with the event queue.
  * @param setResult The function to set the result.
  */
-export const applyRestEvent = async (queue_event, state, setResult) => {
-  if (queue_event.handler == "uploadFiles") {
-    await uploadFiles(state, setResult, queue_event.name);
+export const applyRestEvent = async (event, state, setResult) => {
+  let eventSent = false;
+  if (event.handler == "uploadFiles") {
+    eventSent = await uploadFiles(state, setResult, event.name);
+  }
+  if (!eventSent) {
+    // If no event was sent, set processing to false and return.
+    setResult({ ...state, processing: false });
   }
 };
 
@@ -160,15 +167,15 @@ export const updateState = async (
   setResult({ ...result, processing: true });
 
   // Pop the next event off the queue and apply it.
-  const queue_event = state.events.shift();
+  const event = state.events.shift();
   // Set new events to avoid reprocessing the same event.
   setState({ ...state, events: state.events });
 
   // Process events with handlers via REST and all others via websockets.
-  if (queue_event.handler) {
-    await applyRestEvent(queue_event, state, setResult);
+  if (event.handler) {
+    await applyRestEvent(event, state, setResult);
   } else {
-    const eventSent = await applyEvent(queue_event, router, socket);
+    const eventSent = await applyEvent(event, router, socket);
     if (!eventSent) {
       // If no event was sent, set processing to false and return.
       setResult({ ...state, processing: false });
@@ -197,10 +204,10 @@ export const connect = async (
   setNotConnected
 ) => {
   // Get backend URL object from the endpoint
-  const endpoint_url = new URL(EVENTURL);
+  const endpoint = new URL(EVENTURL);
   // Create the socket.
   socket.current = io(EVENTURL, {
-    path: endpoint_url["pathname"],
+    path: endpoint["pathname"],
     transports: transports,
     autoUnref: false,
   });
@@ -240,7 +247,7 @@ export const uploadFiles = async (state, setResult, handler) => {
 
   // return if there's no file to upload
   if (files.length == 0) {
-    return;
+    return false;
   }
 
   const headers = {
@@ -270,6 +277,8 @@ export const uploadFiles = async (state, setResult, handler) => {
       events: update.events,
     });
   });
+
+  return true;
 };
 
 /**
