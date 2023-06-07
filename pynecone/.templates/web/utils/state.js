@@ -137,7 +137,7 @@ export const applyRestEvent = async (event, state, setResult) => {
   }
   if (!eventSent) {
     // If no event was sent, set processing to false and return.
-    setResult({ ...state, processing: false });
+    setResult({ ...state, final: true, processing: false });
   }
 };
 
@@ -178,7 +178,7 @@ export const updateState = async (
     const eventSent = await applyEvent(event, router, socket);
     if (!eventSent) {
       // If no event was sent, set processing to false and return.
-      setResult({ ...state, processing: false });
+      setResult({ ...state, final: true, processing: false });
     }
   }
 };
@@ -227,9 +227,10 @@ export const connect = async (
     update = JSON5.parse(update);
     applyDelta(state, update.delta);
     setResult({
-      processing: update.processing,
       state: state,
       events: update.events,
+      final: update.final,
+      processing: true,
     });
   });
 };
@@ -272,9 +273,10 @@ export const uploadFiles = async (state, setResult, handler) => {
 
     // Set processing to false and return.
     setResult({
-      processing: false,
       state: state,
       events: update.events,
+      final: true,
+      processing: false,
     });
   });
 

@@ -129,6 +129,8 @@ ROUTER = "router"
 SOCKET = "socket"
 # The name of the variable to hold API results.
 RESULT = "result"
+# The name of the final variable.
+FINAL = "final"
 # The name of the process variable.
 PROCESSING = "processing"
 # The name of the state variable.
