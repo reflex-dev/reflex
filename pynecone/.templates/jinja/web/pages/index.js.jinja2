@@ -48,7 +48,7 @@ export default function Component() {
         {{const.result|react_setter}}({
           {{const.state}}: null,
           {{const.events}}: [],
-          {{const.processing}}: {{const.result}}.{{const.processing}},
+          {{const.processing}}: !{{const.result}}.{{const.final}},
         })
       }
 
