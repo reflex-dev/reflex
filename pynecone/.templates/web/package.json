@@ -33,5 +33,10 @@
     "remark-math": "^5.1.1",
     "socket.io-client": "^4.6.1",
     "victory": "^36.6.8"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.3.2"
   }
 }
