@@ -647,14 +647,14 @@ async def test_process_event_generator(gen_state):
         count += 1
         if count == 6:
             assert update.delta == {}
-            assert not update.processing
+            assert update.final
         else:
 
             assert gen_state.value == count
             assert update.delta == {
                 "gen_state": {"value": count},
             }
-            assert update.processing
+            assert not update.final
 
     assert count == 6
 
