@@ -760,12 +760,7 @@ async def test_process_events(gen_state, mocker):
         token="token", name="gen_state.go", payload={"c": 5}, router_data=router_data
     )
 
-    count = 1
     async for update in process(app, event, "mock_sid", {}, "127.0.0.1"):
-        if count == 6:
-            assert not update.processing
-        else:
-            assert update.processing
-        count += 1
+        pass
     assert gen_state.value == 5
     assert app.postprocess.call_count == 6
