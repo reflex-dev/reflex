@@ -1,6 +1,7 @@
 import io
 import os.path
 from typing import List, Tuple, Type
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import UploadFile
@@ -564,6 +565,7 @@ class DynamicState(State):
 
     loaded: int = 0
     counter: int = 0
+
     # side_effect_counter: int = 0
 
     def on_load(self):
@@ -733,15 +735,37 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
     # assert state.side_effect_counter == len(exp_vals)
 
-from unittest.mock import AsyncMock
-from unittest.mock import MagicMock
+
 @pytest.mark.asyncio
 async def test_process_events(gen_state, mocker):
-    mocked_method = AsyncMock(return_value="Mocked response")
-    app = App(state=gen_state)
-    app.postprocess = MagicMock()
-    mocker.patch.object(app, "postprocess")
-    event = Event(token="token", name="gen_state.go", payload={})
+    """Test that an event is processed properly and that it is postprocessed
+    n+1 times. Also check that the processing flag of the last stateupdate is set to
+    False.
 
-    update = await process(app, event,"mock_sid", {}, "127.0.0.1").__anext__()
-    assert app.postprocess.assert_any_call(6)
+    Args:
+        gen_state: The state.
+        mocker: mocker object.
+    """
+    router_data = {
+        "pathname": "/",
+        "query": {},
+        "token": "mock_token",
+        "sid": "mock_sid",
+        "headers": {},
+        "ip": "127.0.0.1",
+    }
+    app = App(state=gen_state)
+    mocker.patch.object(app, "postprocess", AsyncMock())
+    event = Event(
+        token="token", name="gen_state.go", payload={"c": 5}, router_data=router_data
+    )
+
+    count = 1
+    async for update in process(app, event, "mock_sid", {}, "127.0.0.1"):
+        if count == 6:
+            assert not update.processing
+        else:
+            assert update.processing
+        count += 1
+    assert gen_state.value == 5
+    assert app.postprocess.call_count == 6

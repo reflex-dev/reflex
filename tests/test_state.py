@@ -1,4 +1,3 @@
-import asyncio
 from typing import Dict, List
 
 import pytest
@@ -92,22 +91,6 @@ class GrandchildState(ChildState):
         pass
 
 
-class GenState2(State):
-    value: int = 0
-
-    def handler1(self):
-        self.value += 1
-        yield GenState2.handler2()
-
-    def handler2(self):
-        self.value += 1
-        yield GenState2.handler3()
-
-    async def handler3(self):
-        # await asyncio.sleep(0.5)
-        self.value += 1
-
-
 @pytest.fixture
 def test_state() -> TestState:
     """A state.
@@ -161,16 +144,6 @@ def grandchild_state(child_state) -> GrandchildState:
     grandchild_state = child_state.get_substate(["grandchild_state"])
     assert grandchild_state is not None
     return grandchild_state
-
-
-@pytest.fixture
-def gen_state2() -> GenState2:
-    """A state.
-
-    Returns:
-        A test state.
-    """
-    return GenState2()  # type: ignore
 
 
 def test_base_class_vars(test_state):
@@ -286,8 +259,8 @@ def test_dict(test_state):
     substates = {"child_state", "child_state2"}
     assert set(test_state.dict().keys()) == set(test_state.vars.keys()) | substates
     assert (
-            set(test_state.dict(include_computed=False).keys())
-            == set(test_state.base_vars) | substates
+        set(test_state.dict(include_computed=False).keys())
+        == set(test_state.base_vars) | substates
     )
 
 
@@ -361,8 +334,8 @@ def test_get_class_substate():
     assert TestState.get_class_substate(("child_state2",)) == ChildState2
     assert ChildState.get_class_substate(("grandchild_state",)) == GrandchildState
     assert (
-            TestState.get_class_substate(("child_state", "grandchild_state"))
-            == GrandchildState
+        TestState.get_class_substate(("child_state", "grandchild_state"))
+        == GrandchildState
     )
     with pytest.raises(ValueError):
         TestState.get_class_substate(("invalid_child",))
@@ -383,12 +356,12 @@ def test_get_class_var():
     assert GrandchildState.get_class_var(("value2",)) == GrandchildState.value2
     assert TestState.get_class_var(("child_state", "value")) == ChildState.value
     assert (
-            TestState.get_class_var(("child_state", "grandchild_state", "value2"))
-            == GrandchildState.value2
+        TestState.get_class_var(("child_state", "grandchild_state", "value2"))
+        == GrandchildState.value2
     )
     assert (
-            ChildState.get_class_var(("grandchild_state", "value2"))
-            == GrandchildState.value2
+        ChildState.get_class_var(("grandchild_state", "value2"))
+        == GrandchildState.value2
     )
     with pytest.raises(ValueError):
         TestState.get_class_var(("invalid_var",))
@@ -495,7 +468,7 @@ def test_get_substate(test_state, child_state, child_state2, grandchild_state):
     assert test_state.get_substate(("child_state",)) == child_state
     assert test_state.get_substate(("child_state2",)) == child_state2
     assert (
-            test_state.get_substate(("child_state", "grandchild_state")) == grandchild_state
+        test_state.get_substate(("child_state", "grandchild_state")) == grandchild_state
     )
     assert child_state.get_substate(("grandchild_state",)) == grandchild_state
     with pytest.raises(ValueError):
@@ -673,7 +646,6 @@ async def test_process_event_generator(gen_state):
     async for update in gen:
         count += 1
         if count == 6:
-            # breakpoint()
             assert update.delta == {}
             assert not update.processing
         else:
@@ -690,15 +662,15 @@ async def test_process_event_generator(gen_state):
 def test_format_event_handler():
     """Test formatting an event handler."""
     assert (
-            format.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
+        format.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
     )
     assert (
-            format.format_event_handler(ChildState.change_both)  # type: ignore
-            == "test_state.child_state.change_both"
+        format.format_event_handler(ChildState.change_both)  # type: ignore
+        == "test_state.child_state.change_both"
     )
     assert (
-            format.format_event_handler(GrandchildState.do_nothing)  # type: ignore
-            == "test_state.child_state.grandchild_state.do_nothing"
+        format.format_event_handler(GrandchildState.do_nothing)  # type: ignore
+        == "test_state.child_state.grandchild_state.do_nothing"
     )
 
 
