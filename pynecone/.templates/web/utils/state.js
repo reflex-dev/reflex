@@ -150,7 +150,7 @@ export const applyRestEvent = async (event, state, setResult) => {
  * @param router The router object.
  * @param socket The socket object to send the event on.
  */
-export const updateState = async (
+export const processEvent = async (
   state,
   setState,
   result,
@@ -214,7 +214,7 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    updateState(state, setState, result, setResult, router, socket.current);
+    processEvent(state, setState, result, setResult, router, socket.current);
     setNotConnected(false)
   });
 
