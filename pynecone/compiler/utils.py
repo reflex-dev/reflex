@@ -12,9 +12,9 @@ from pynecone.components.base import (
     Head,
     Html,
     Image,
-    Link,
     Main,
     Meta,
+    RawLink,
     Script,
     Title,
 )
@@ -155,7 +155,7 @@ def create_document_root(stylesheets: List[str]) -> Component:
     Returns:
         The document root.
     """
-    sheets = [Link.create(rel="stylesheet", href=href) for href in stylesheets]
+    sheets = [RawLink.create(rel="stylesheet", href=href) for href in stylesheets]
     return Html.create(
         DocumentHead.create(*sheets),
         Body.create(
