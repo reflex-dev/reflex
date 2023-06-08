@@ -87,11 +87,11 @@ class Popover(ChakraComponent):
     def create(
         cls,
         *children,
-        trigger=None,
-        header=None,
-        body=None,
-        footer=None,
-        use_close_button=False,
+        trigger_comp=None,
+        header_comp=None,
+        body_comp=None,
+        footer_comp=None,
+        use_close_button_comp=False,
         **props
     ) -> Component:
         """Create a popover component.
@@ -108,9 +108,6 @@ class Popover(ChakraComponent):
         Returns:
             The popover component.
         """
-        if props.get("trigger_comp") == "click" or props.get("trigger_comp") == "hover":
-            props.update({"trigger": props.get("trigger_comp")})
-
         if len(children) == 0:
             contents = []
 
