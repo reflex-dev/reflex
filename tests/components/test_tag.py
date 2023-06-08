@@ -20,9 +20,9 @@ def mock_event(arg):
         (False, "{false}"),
         (123, "{123}"),
         (3.14, "{3.14}"),
-        ([1, 2, 3], "{[1, 2, 3]}"),
-        (["a", "b", "c"], '{["a", "b", "c"]}'),
-        ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
+        ([1, 2, 3], "{[1,2,3]}"),
+        (["a", "b", "c"], '{["a","b","c"]}'),
+        ({"a": 1, "b": 2, "c": 3}, '{{"a":1,"b":2,"c":3}}'),
         (
             EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
             '{_e => Event([E("mock_event", {})], _e)}',
@@ -38,7 +38,7 @@ def mock_event(arg):
             ),
             '{_e => Event([E("mock_event", {arg:_e.target.value})], _e)}',
         ),
-        ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
+        ({"a": "red", "b": "blue"}, '{{"a":"red","b":"blue"}}'),
         (BaseVar(name="var", type_="int"), "{var}"),
         (
             BaseVar(
@@ -51,11 +51,11 @@ def mock_event(arg):
             "{_}",
         ),
         (BaseVar(name='state.colors["a"]', type_="str"), '{state.colors["a"]}'),
-        ({"a": BaseVar(name="val", type_="str")}, '{{"a": val}}'),
-        ({"a": BaseVar(name='"val"', type_="str")}, '{{"a": "val"}}'),
+        ({"a": BaseVar(name="val", type_="str")}, '{{"a":val}}'),
+        ({"a": BaseVar(name='"val"', type_="str")}, '{{"a":"val"}}'),
         (
             {"a": BaseVar(name='state.colors["val"]', type_="str")},
-            '{{"a": state.colors["val"]}}',
+            '{{"a":state.colors["val"]}}',
         ),
     ],
 )

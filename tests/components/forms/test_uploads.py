@@ -61,7 +61,7 @@ def test_upload_component_render(upload_component):
     [box] = upload["children"]
     assert box["name"] == "Box"
     assert box["props"] == [
-        'sx={{"border": "1px dotted black"}}',
+        'sx={{"border":"1px dotted black"}}',
         "{...getRootProps()}",
     ]
 

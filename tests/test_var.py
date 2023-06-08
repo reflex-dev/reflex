@@ -184,10 +184,10 @@ def test_get_setter(prop, expected):
         (1, BaseVar(name="1", type_=int, is_local=True)),
         ("key", BaseVar(name="key", type_=str, is_local=True)),
         (3.14, BaseVar(name="3.14", type_=float, is_local=True)),
-        ([1, 2, 3], BaseVar(name="[1, 2, 3]", type_=list, is_local=True)),
+        ([1, 2, 3], BaseVar(name="[1,2,3]", type_=list, is_local=True)),
         (
             {"a": 1, "b": 2},
-            BaseVar(name='{"a": 1, "b": 2}', type_=dict, is_local=True),
+            BaseVar(name='{"a":1,"b":2}', type_=dict, is_local=True),
         ),
     ],
 )
@@ -249,13 +249,13 @@ def test_basic_operations(TestObj):
     assert str(v(1) ** v(2)) == "{Math.pow(1 , 2)}"
     assert str(v(1) & v(2)) == "{(1 && 2)}"
     assert str(v(1) | v(2)) == "{(1 || 2)}"
-    assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
-    assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
+    assert str(v([1, 2, 3])[v(0)]) == "{[1,2,3].at(0)}"
+    assert str(v({"a": 1, "b": 2})["a"]) == '{{"a":1,"b":2}["a"]}'
     assert (
         str(BaseVar(name="foo", state="state", type_=TestObj).bar) == "{state.foo.bar}"
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
-    assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
+    assert str(v([1, 2, 3]).length()) == "{[1,2,3].length}"
 
 
 def test_var_indexing_lists():

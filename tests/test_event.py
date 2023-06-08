@@ -91,7 +91,7 @@ def test_event_redirect():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
     assert spec.args == (("path", "/path"),)
-    assert format.format_event(spec) == 'E("_redirect", {path:"/path"})'
+    assert format.format_event(spec) == 'E("_redirect", {path:"\\/path"})'
     spec = event.redirect(Var.create_safe("path"))
     assert format.format_event(spec) == 'E("_redirect", {path:path})'
 
