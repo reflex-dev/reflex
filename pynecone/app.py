@@ -2,6 +2,7 @@
 
 import asyncio
 import inspect
+from pathlib import Path
 from typing import (
     Any,
     AsyncIterator,
@@ -29,8 +30,7 @@ from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.components.layout.fragment import Fragment
-from pynecone.config import get_config
-from pynecone.event import Event, EventHandler, EventSpec
+from pynecone.event import Event, EventHandler, EventSpec, redirect
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.route import (
@@ -339,12 +339,15 @@ class App(Base):
             route = constants.INDEX_ROUTE
         return self.load_events.get(route, [])
 
-    def add_download_file(self, download_url: str, file_path: str):
+    def add_download_file(
+        self, download_url: str, file_path: str, media_type: str = "text/mp4"
+    ):
         """Download file from host by downloa_durl.
 
         Args:
             download_url: The route to get the file.
             file_path: The file from host.
+            media_type: The media type.
 
         Returns:
             Respone a file from server.
@@ -355,14 +358,18 @@ class App(Base):
         if download_url in self.backend_router:
             raise ValueError(f"{download_url} already is used.")
 
+        config = get_config()
         self.backend_router.add(download_url)
+        self.add_page(
+            Fragment(),
+            route=f"{download_url}",
+            on_load=redirect(config.api_url + "/" + f"{download_url}"),
+        )
 
         @self.api.get(f"{download_url}")
         async def response():
             return FileResponse(
-                path=file_path,
-                filename=os.path.split(file_path)[1],
-                media_type="text/mp4",
+                path=file_path, filename=Path(file_path).name, media_type=media_type
             )
 
         return
