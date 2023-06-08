@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import base64
 import io
-import json
 import os
 import re
 import sys
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 import plotly.graph_objects as go
+import ujson as json
 from plotly.io import to_json
 
 from pynecone import constants

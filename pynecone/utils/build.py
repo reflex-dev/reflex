@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import os
 import random
 import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
+import ujson as json
 from rich.progress import Progress
 
 from pynecone import constants

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import contextlib
 import dis
-import json
 import random
 import string
 from abc import ABC
@@ -23,6 +22,7 @@ from typing import (
     get_type_hints,
 )
 
+import ujson as json
 from plotly.graph_objects import Figure
 from plotly.io import to_json
 from pydantic.fields import ModelField

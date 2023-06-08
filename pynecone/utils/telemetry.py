@@ -1,12 +1,12 @@
 """Anonymous telemetry for Pynecone."""
 
-import json
 import multiprocessing
 import platform
 from datetime import datetime
 
 import httpx
 import psutil
+import ujson as json
 
 from pynecone import constants
 from pynecone.base import Base

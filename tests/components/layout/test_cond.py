@@ -1,7 +1,7 @@
-import json
 from typing import Any
 
 import pytest
+import ujson as json
 
 import pynecone as pc
 from pynecone.components.layout.box import Box

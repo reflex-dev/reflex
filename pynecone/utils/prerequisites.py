@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import platform
 import re
@@ -14,6 +13,7 @@ from types import ModuleType
 from typing import Optional
 
 import typer
+import ujson as json
 from packaging import version
 from redis import Redis
 

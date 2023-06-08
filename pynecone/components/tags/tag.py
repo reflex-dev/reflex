@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
+import ujson as json
 from plotly.graph_objects import Figure
 from plotly.io import to_json
 

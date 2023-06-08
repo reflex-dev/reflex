@@ -1,4 +1,4 @@
-import json
+import ujson as json
 
 from pynecone.utils import telemetry
 
