@@ -17,7 +17,7 @@ class Switch(ChakraComponent):
     # If true, the switch will be disabled
     is_disabled: Var[bool]
 
-    # If true and is_disabled is passed, the switch will remain tabbable but not interactive
+    # If true and is_disabled prop is set, the switch will remain tabbable but not interactive.
     is_focusable: Var[bool]
 
     # If true, the switch is marked as invalid. Changes style of unchecked state.
