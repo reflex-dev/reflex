@@ -53,7 +53,10 @@ class Link(ChakraComponent):
         """
         if href and not len(children):
             raise ValueError("Link without a child will not display")
-        if href is None and len(children):
+        elif href is None and len(children):
             raise ValueError("Link without 'href' props will not work.")
-        props.update({"rel": rel, "href": href})
+        else:
+            props.update({"href": href})
+        if rel:
+            props.update({"rel": rel})
         return super().create(*children, **props)
