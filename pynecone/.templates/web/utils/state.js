@@ -129,16 +129,15 @@ export const applyEvent = async (event, router, socket) => {
  * @param event The current event
  * @param state The state with the event queue.
  * @param setResult The function to set the result.
+ *
+ * @returns Whether the event was sent.
  */
 export const applyRestEvent = async (event, state, setResult) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
     eventSent = await uploadFiles(state, setResult, event.name);
   }
-  if (!eventSent) {
-    // If no event was sent, set processing to false and return.
-    setResult({ ...state, final: true, processing: false });
-  }
+  return eventSent;
 };
 
 /**
@@ -166,20 +165,23 @@ export const processEvent = async (
   // Set processing to true to block other events from being processed.
   setResult({ ...result, processing: true });
 
-  // Pop the next event off the queue and apply it.
-  const event = state.events.shift();
+  // Apply the next event in the queue.
+  const event = state.events[0];
+
   // Set new events to avoid reprocessing the same event.
-  setState({ ...state, events: state.events });
+  setState(state => ({ ...state, events: state.events.slice(0) }));
 
   // Process events with handlers via REST and all others via websockets.
+  let eventSent = false;
   if (event.handler) {
-    await applyRestEvent(event, state, setResult);
+    eventSent = await applyRestEvent(event, state, setResult);
   } else {
-    const eventSent = await applyEvent(event, router, socket);
-    if (!eventSent) {
-      // If no event was sent, set processing to false and return.
-      setResult({ ...state, final: true, processing: false });
-    }
+    eventSent = await applyEvent(event, router, socket);
+  }
+
+  // If no event was sent, set processing to false.
+  if (!eventSent) {
+    setResult({ ...state, final: true, processing: false });
   }
 };
 
@@ -242,6 +244,8 @@ export const connect = async (
  * @param setResult The function to set the result.
  * @param handler The handler to use.
  * @param endpoint The endpoint to upload to.
+ *
+ * @returns Whether the files were uploaded.
  */
 export const uploadFiles = async (state, setResult, handler) => {
   const files = state.files;

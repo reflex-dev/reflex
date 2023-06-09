@@ -20,17 +20,17 @@ export default function Component() {
   // Function to add new events to the event queue.
   const Event = (events, _e) => {
       preventDefault(_e);
-      {{state_name|react_setter}}({
-        ...{{state_name}},
-        events: [...{{state_name}}.events, ...events],
-      })
+      {{state_name|react_setter}}(state => ({
+        ...state,
+        events: [...state.events, ...events],
+      }))
   }
 
   // Function to add new files to be uploaded.
-  const File = files => {{state_name|react_setter}}({
-    ...{{state_name}},
+  const File = files => {{state_name|react_setter}}(state => ({
+    ...state,
     files,
-  })
+  }))
 
   // Main event loop.
   useEffect(()=> {
@@ -52,17 +52,18 @@ export default function Component() {
     // If there is a new result, update the state.
     if ({{const.result}}.{{const.state}} != null) {
       // Apply the new result to the state and the new events to the queue.
-      {{state_name|react_setter}}({
+      {{state_name|react_setter}}(state => ({
         ...{{const.result}}.{{const.state}},
-        events: [...{{state_name}}.{{const.events}}, ...{{const.result}}.{{const.events}}],
-      })
+        events: [...state.{{const.events}}, ...{{const.result}}.{{const.events}}],
+      }))
 
       // Reset the result.
-      {{const.result|react_setter}}({
+      {{const.result|react_setter}}(result => ({
         {{const.state}}: null,
         {{const.events}}: [],
+        {{const.final}}: true,
         {{const.processing}}: !{{const.result}}.{{const.final}},
-      })
+      }))
 
       // Process the next event.
       processEvent({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
