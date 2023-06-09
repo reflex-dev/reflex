@@ -174,9 +174,6 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
-    # Enable the admin dash.
-    enable_admin: bool = False
-
     # The Admin Dash
     admin_dash: Optional[AdminDash] = None
 

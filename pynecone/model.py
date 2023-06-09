@@ -8,8 +8,11 @@ from pynecone.base import Base
 from pynecone.config import get_config
 
 
-def get_engine():
+def get_engine(url: Optional[str] = None):
     """Get the database engine.
+
+    Args:
+        url: the DB url to use.
 
     Returns:
         The database engine.
@@ -17,14 +20,14 @@ def get_engine():
     Raises:
         ValueError: If the database url is None.
     """
-    url = get_config().db_url
-    enable_admin = get_config().enable_admin
-    if not url:
-        raise ValueError("No database url in config")
+    conf = get_config()
+    url = url or conf.db_url
+    if url is None:
+        raise ValueError("No database url configured")
     return sqlmodel.create_engine(
         url,
         echo=False,
-        connect_args={"check_same_thread": False} if enable_admin else {},
+        connect_args={"check_same_thread": False} if conf.admin_dash else {},
     )
 
 
@@ -83,7 +86,7 @@ class Model(Base, sqlmodel.SQLModel):
         return sqlmodel.select(cls)
 
 
-def session(url=None):
+def session(url: Optional[str] = None) -> sqlmodel.Session:
     """Get a session to interact with the database.
 
     Args:
@@ -92,13 +95,4 @@ def session(url=None):
     Returns:
         A database session.
     """
-    enable_admin = get_config().enable_admin
-    if url is not None:
-        return sqlmodel.Session(
-            sqlmodel.create_engine(
-                url,
-                connect_args={"check_same_thread": False} if enable_admin else {},
-            ),
-        )
-    engine = get_engine()
-    return sqlmodel.Session(engine)
+    return sqlmodel.Session(get_engine(url))

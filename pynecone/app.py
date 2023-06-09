@@ -297,7 +297,11 @@ class App(Base):
 
         # Add meta information to the component.
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description, meta=meta
+            component,
+            title=title,
+            image=image,
+            description=description,
+            meta=meta,
         )
 
         # Add script tags if given
@@ -391,7 +395,11 @@ class App(Base):
         component = component if isinstance(component, Component) else component()
 
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description, meta=meta
+            component,
+            title=title,
+            image=image,
+            description=description,
+            meta=meta,
         )
 
         froute = format.format_route
@@ -408,7 +416,7 @@ class App(Base):
         """Setup the admin dash."""
         # Get the config.
         config = get_config()
-        if config.enable_admin and config.admin_dash and config.admin_dash.models:
+        if config.admin_dash and config.admin_dash.models:
             # Build the admin dashboard
             admin = (
                 config.admin_dash.admin
