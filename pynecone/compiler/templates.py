@@ -28,10 +28,12 @@ class PyneconeJinjaEnvironment(Environment):
             "event_endpoint": constants.Endpoint.EVENT.name,
             "events": constants.EVENTS,
             "state": constants.STATE,
+            "final": constants.FINAL,
             "processing": constants.PROCESSING,
             "initial_result": {
                 constants.STATE: None,
                 constants.EVENTS: [],
+                constants.FINAL: True,
                 constants.PROCESSING: False,
             },
             "color_mode": constants.COLOR_MODE,
