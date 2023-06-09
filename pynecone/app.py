@@ -27,6 +27,7 @@ from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
+from pynecone.components.layout.fragment import Fragment
 from pynecone.config import get_config
 from pynecone.event import Event, EventHandler
 from pynecone.middleware import HydrateMiddleware, Middleware
@@ -288,6 +289,9 @@ class App(Base):
                     "See the var operation docs here: https://pynecone.io/docs/state/vars "
                 ) from e
             raise e
+
+        # Wrap the component in a fragment.
+        component = Fragment.create(component)
 
         # Add meta information to the component.
         compiler_utils.add_meta(
