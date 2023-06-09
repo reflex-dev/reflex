@@ -28,7 +28,7 @@ from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.config import get_config
-from pynecone.event import Event, EventHandler
+from pynecone.event import Event, EventHandler, EventSpec
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.route import (
@@ -77,7 +77,7 @@ class App(Base):
     middleware: List[Middleware] = []
 
     # List of event handlers to trigger when a page loads.
-    load_events: Dict[str, List[EventHandler]] = {}
+    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
 
     # Admin dashboard
     admin_dash: Optional[AdminDash] = None
@@ -241,7 +241,9 @@ class App(Base):
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
-        on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
+        on_load: Optional[
+            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
+        ] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
         script_tags: Optional[List[Component]] = None,
     ):
@@ -311,7 +313,7 @@ class App(Base):
                 on_load = [on_load]
             self.load_events[route] = on_load
 
-    def get_load_events(self, route: str) -> List[EventHandler]:
+    def get_load_events(self, route: str) -> List[Union[EventHandler, EventSpec]]:
         """Get the load events for a route.
 
         Args:
