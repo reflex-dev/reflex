@@ -11,13 +11,13 @@ class Switch(ChakraComponent):
 
     tag = "Switch"
 
-    # If true, the switch will be checked. You'll need to pass onChange to update its value (since it is now controlled)
+    # If true, the switch will be checked. You'll need to set an on_change event handler to update its value (since it is now controlled)
     is_checked: Var[bool]
 
     # If true, the switch will be disabled
     is_disabled: Var[bool]
 
-    # If true and isDisabled is passed, the switch will remain tabbable but not interactive
+    # If true and is_disabled prop is set, the switch will remain tabbable but not interactive.
     is_focusable: Var[bool]
 
     # If true, the switch is marked as invalid. Changes style of unchecked state.

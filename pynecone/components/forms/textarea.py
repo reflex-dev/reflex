@@ -33,7 +33,7 @@ class TextArea(ChakraComponent):
     # If true, the form control will be invalid.
     is_invalid: Var[bool]
 
-    # If true, the form control will be readonly.
+    # If true, the form control will be read-only.
     is_read_only: Var[bool]
 
     # If true, the form control will be required.
