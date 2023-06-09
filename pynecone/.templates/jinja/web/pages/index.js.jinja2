@@ -45,7 +45,7 @@ export default function Component() {
     }
 
     // If we are not processing an event, process the next event.
-    if (!{{const.result}}.{{const.processing}} != null) {
+    if (!{{const.result}}.{{const.processing}}) {
       processEvent({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
     }
 

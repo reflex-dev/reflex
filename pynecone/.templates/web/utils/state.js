@@ -169,7 +169,7 @@ export const processEvent = async (
   const event = state.events[0];
 
   // Set new events to avoid reprocessing the same event.
-  setState(state => ({ ...state, events: state.events.slice(0) }));
+  setState(state => ({ ...state, events: state.events.slice(1) }));
 
   // Process events with handlers via REST and all others via websockets.
   let eventSent = false;
