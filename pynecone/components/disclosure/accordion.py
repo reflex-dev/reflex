@@ -16,7 +16,7 @@ class Accordion(ChakraComponent):
     allow_multiple: Var[bool]
 
     # If true, any expanded accordion item can be collapsed again.
-    allow_toggle: Var[bool] = True  # type: ignore
+    allow_toggle: Var[bool]
 
     # The initial index(es) of the expanded accordion item(s).
     default_index: Var[Optional[List[int]]]
@@ -28,13 +28,23 @@ class Accordion(ChakraComponent):
     reduce_motion: Var[bool]
 
     @classmethod
-    def create(cls, *children, items=None, icon_pos="right", **props) -> Component:
+    def create(
+        cls,
+        *children,
+        items=None,
+        icon_pos="right",
+        allow_multiple: Optional[Var[bool]] = None,
+        allow_toggle: Optional[Var[bool]] = None,
+        **props
+    ) -> Component:
         """Create an accordion component.
 
         Args:
             children: The children of the component.
             items: The items of the accordion component: list of tuples (label,panel)
             icon_pos: The position of the arrow icon of the accordion. "right", "left" or None
+            allow_multiple: The allow_multiple property of the accordion. (True or False)
+            allow_toggle: The allow_toggle property of the accordion. (True or False)
             props: The properties of the component.
 
         Returns:
@@ -58,6 +68,12 @@ class Accordion(ChakraComponent):
                         AccordionPanel.create(panel),
                     )
                 )
+
+        # if allow_multiple is True, allow_toggle is implicitely used and does not need to be defined
+        if allow_multiple:
+            props.update({"allow_multiple": allow_multiple})
+        elif allow_toggle:
+            props.update({"allow_toggle": allow_toggle})
         return super().create(*children, **props)
 
 
