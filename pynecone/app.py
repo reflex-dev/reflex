@@ -30,6 +30,7 @@ from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
 from pynecone.components.layout.fragment import Fragment
+from pynecone.config import get_config
 from pynecone.event import Event, EventHandler, EventSpec, redirect
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
