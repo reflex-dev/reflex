@@ -33,20 +33,16 @@ class Link(ChakraComponent):
         return {**super()._get_imports(), **NextLink.create()._get_imports()}
 
     @classmethod
-    def create(
-        cls, *children, href: Optional[Var] = None, rel: Optional[Var] = None, **props
-    ) -> Component:
+    def create(cls, *children, href: Optional[Var] = None, **props) -> Component:
         """Create a Link component.
 
         Args:
             *children: The children of the component.
-            href (Var): The href attribute of the link. Defaults to None.
-            rel (Var): The rel attribute of the link. Defaults to None.
+            href: The href attribute of the link.
             **props: The props of the component.
 
         Raises:
             ValueError: in case of missing children
-            ValueError: in case of missing href
 
         Returns:
             Component: The link component
@@ -54,9 +50,8 @@ class Link(ChakraComponent):
         if href and not len(children):
             raise ValueError("Link without a child will not display")
         elif href is None and len(children):
-            raise ValueError("Link without 'href' props will not work.")
-        else:
-            props.update({"href": href})
-        if rel:
-            props.update({"rel": rel})
+            # Don't use a NextLink if there is no href.
+            props["as_"] = "Link"
+        if href:
+            props["href"] = href
         return super().create(*children, **props)
