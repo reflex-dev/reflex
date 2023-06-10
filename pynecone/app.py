@@ -340,7 +340,7 @@ class App(Base):
         return self.load_events.get(route, [])
 
     def add_download_file(
-        self, download_url: str, file_path: str, media_type: str = "text/mp4"
+        self, download_url: str, file_path: str, media_type: Optional[str] = None
     ):
         """Download file from host by downloa_durl.
 
