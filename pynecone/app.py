@@ -457,12 +457,15 @@ class App(Base):
         custom_components = set()
         for route, component in self.pages.items():
             component.add_style(self.style)
-            threading.Thread(target=compiler.compile_page, args=(
-                route,
-                component,
-                self.state,
-                self.connect_error_component,
-            )).start()
+            threading.Thread(
+                target=compiler.compile_page,
+                args=(
+                    route,
+                    component,
+                    self.state,
+                    self.connect_error_component,
+                ),
+            ).start()
             # Add the custom components from the page to the set.
             custom_components |= component.get_custom_components()
 
