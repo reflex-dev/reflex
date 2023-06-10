@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="../images/cones.png">
+<img src="../../images/cones.png">
 <hr>
 
 **✨ 使用 Python 建立高效且可自訂的網頁應用程式，並在一秒內部署。**
