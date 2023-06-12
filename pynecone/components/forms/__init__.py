@@ -2,6 +2,12 @@
 
 from .button import Button, ButtonGroup
 from .checkbox import Checkbox, CheckboxGroup
+from .colormodeswitch import (
+    ColorModeButton,
+    ColorModeIcon,
+    ColorModeSwitch,
+    color_mode_cond,
+)
 from .copytoclipboard import CopyToClipboard
 from .date_picker import DatePicker
 from .date_time_picker import DateTimePicker
@@ -34,4 +40,8 @@ from .switch import Switch
 from .textarea import TextArea
 from .upload import Upload
 
-__all__ = [f for f in dir() if f[0].isupper()]  # type: ignore
+helpers = [
+    "color_mode_cond",
+]
+
+__all__ = [f for f in dir() if f[0].isupper()] + helpers  # type: ignore
