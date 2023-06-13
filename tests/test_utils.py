@@ -6,8 +6,7 @@ from typing import Any, List, Union
 import pytest
 from packaging import version
 
-from pynecone import Env
-from pynecone.constants import CONFIG_FILE, DB_URL
+from pynecone import Env, constants
 from pynecone.utils import build, format, imports, prerequisites, types
 from pynecone.vars import Var
 
@@ -426,10 +425,10 @@ def test_create_config_e2e(tmp_working_dir):
     app_name = "e2e"
     prerequisites.create_config(app_name)
     eval_globals = {}
-    exec((tmp_working_dir / CONFIG_FILE).read_text(), eval_globals)
+    exec((tmp_working_dir / constants.CONFIG_FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
-    assert config.db_url == DB_URL
+    assert config.db_url == constants.DB_URL
     assert config.env == Env.DEV
 
 
@@ -478,3 +477,38 @@ def test_is_dataframe(class_type, expected):
         expected: whether type name is DataFrame
     """
     assert types.is_dataframe(class_type) == expected
+
+
+@pytest.mark.parametrize("gitignore_exists", [True, False])
+def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
+    """Test that the generated .gitignore_file file on pc init contains the correct file
+    names with correct formatting.
+
+    Args:
+        tmp_path: The root test path.
+        mocker: The mock object.
+        gitignore_exists: Whether a gitignore file exists in the root dir.
+    """
+    sep = os.sep
+    expected = constants.DEFAULT_GITIGNORE.copy()
+
+    mocker.patch("pynecone.constants.GITIGNORE_FILE", tmp_path / ".gitignore")
+
+    gitignore_file = tmp_path / ".gitignore"
+
+    if gitignore_exists:
+        gitignore_file.touch()
+        gitignore_file.write_text(
+            """
+        pynecone.db
+        __pycache__/
+        """
+        )
+
+    prerequisites.initialize_gitignore()
+
+    assert gitignore_file.exists()
+    file_content = gitignore_file.open().read()
+    file_content.replace(f"{sep}{sep}", sep)
+
+    assert set(file_content.split()) == expected
