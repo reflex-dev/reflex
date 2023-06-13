@@ -184,7 +184,7 @@ def initialize_gitignore():
 
     # Add the new files to the .gitignore file.
     with open(constants.GITIGNORE_FILE, "a") as f:
-        f.write(path_ops.join(files))
+        f.write(f"\n{path_ops.join(files)}")
 
 
 def initialize_app_directory(app_name: str, template: constants.Template):
