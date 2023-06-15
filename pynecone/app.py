@@ -102,7 +102,10 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the state manager.
-        self.state_manager.setup(state=self.state)
+
+        self.state_manager.setup(
+            state=self.state, redis_client=kwargs.get("redis_client", None)
+        )
 
         # Set up the API.
         self.api = FastAPI()

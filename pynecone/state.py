@@ -900,14 +900,17 @@ class StateManager(Base):
     # The redis client to use.
     redis: Optional[Redis] = None
 
-    def setup(self, state: Type[State]):
+    def setup(self, state: Type[State], redis_client: Optional[Redis] = None):
         """Set up the state manager.
 
         Args:
             state: The state class to use.
+            redis_client: optional redis client to use for state storage
         """
         self.state = state
-        self.redis = prerequisites.get_redis()
+        self.redis = (
+            redis_client if redis_client is not None else prerequisites.get_redis()
+        )
 
     def get_state(self, token: str) -> State:
         """Get the state for a token.
