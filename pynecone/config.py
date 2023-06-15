@@ -174,7 +174,7 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
-    # The Admin Dash
+    # The Admin Dash.
     admin_dash: Optional[AdminDash] = None
 
     # Backend transport methods.
@@ -191,11 +191,14 @@ class Config(Base):
     # The maximum size of a message when using the polling backend transport.
     polling_max_http_buffer_size: Optional[int] = constants.POLLING_MAX_HTTP_BUFFER_SIZE
 
-    # Dotenv file path
+    # Dotenv file path.
     env_path: Optional[str] = constants.DOT_ENV_FILE
 
-    # Whether to override OS environment variables
+    # Whether to override OS environment variables.
     override_os_envs: Optional[bool] = True
+
+    # Timeout when launching the gunicorn server.
+    timeout: int = constants.TIMEOUT
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
