@@ -85,7 +85,7 @@ def test_empty_db_url(config_empty_db_url_values):
 
 
 def test_none_db_url(config_none_db_url_values):
-    """Test that db_url is not automatically assigned if an empty value is defined.
+    """Test that db_url is set 'None' (string) assigned if an 'None' (string) value is defined.
 
     Args:
         config_none_db_url_values: Config values with None (string) db_url.
