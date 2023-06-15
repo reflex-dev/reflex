@@ -8,7 +8,7 @@ To navigate our codebase with confidence, see [Pynecone Docs](https://pynecone.i
 
 - Have a question? Want to discuss a feature? [Start a discussion](https://github.com/pynecone-io/pynecone/discussions)
 
-    We welcome and discussions and questions. We want to make sure that Pynecone is the best it can be, and we can't do that without your help.
+    We welcome any discussions and questions. We want to make sure that Pynecone is the best it can be, and we can't do that without your help.
 
 ### Issues
 
