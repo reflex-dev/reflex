@@ -154,7 +154,6 @@ def test_set_cookie():
         ("key", "testkey"),
         ("value", "testvalue"),
     )
-    print(format.format_event)
     assert (
         format.format_event(spec)
         == 'E("_set_cookie", {key:"testkey",value:"testvalue"})'
@@ -170,7 +169,6 @@ def test_set_local_storage():
         ("key", "testkey"),
         ("value", "testvalue"),
     )
-    print(format.format_event)
     assert (
         format.format_event(spec)
         == 'E("_set_local_storage", {key:"testkey",value:"testvalue"})'
