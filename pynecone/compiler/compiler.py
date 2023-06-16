@@ -126,13 +126,11 @@ def _compile_components(components: Set[CustomComponent]) -> str:
 
 
 def _compile_tailwind(
-    content: List[str],
-    theme: Dict,
-    plugins: List[str],
+    config: dict,
 ) -> str:
     """Compile the Tailwind config."""
     return templates.TAILWIND_CONFIG.render(
-        content=content, theme=theme, plugins=plugins
+        **config,
     )
 
 
@@ -252,22 +250,14 @@ def compile_components(components: Set[CustomComponent]):
 
 @write_output
 def compile_tailwind(
-    content: List[str],
-    theme: Dict,
-    plugins: List[str],
+    config: dict,
 ):
     """Compile the Tailwind config."""
     # Get the path for the output file.
     output_path = constants.TAILWIND_CONFIG
 
-    # Create the theme and plugins if they are not provided.
-    if theme is None:
-        theme = {}
-    if plugins is None:
-        plugins = []
-
     # Compile the config.
-    code = _compile_tailwind(content, theme, plugins)
+    code = _compile_tailwind(config)
     return output_path, code
 
 
