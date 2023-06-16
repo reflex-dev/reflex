@@ -1,0 +1,10 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+	content: {{content|json_dumps}},
+	theme: {{theme|json_dumps}},
+	plugins: [
+	{% for plugin in plugins %}
+		require({{plugin|json_dumps}}),
+	{% endfor %}
+	],
+};

@@ -438,6 +438,13 @@ class App(Base):
         # Compile the theme.
         compiler.compile_theme(self.style)
 
+        # Compile the Tailwind config.
+        compiler.compile_tailwind(
+            constants.TAILWIND_CONTENT_DEFAULT if config.tailwind is not None else [],
+            theme=config.tailwind.get("theme", {}),
+            plugins=config.tailwind.get("plugins", []),
+        )
+
         # Compile the pages.
         custom_components = set()
         for route, component in self.pages.items():

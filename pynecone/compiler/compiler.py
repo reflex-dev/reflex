@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Callable, List, Set, Tuple, Type
+from typing import Callable, Dict, List, Set, Tuple, Type
 
 from pynecone import constants
 from pynecone.compiler import templates, utils
@@ -125,6 +125,17 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     )
 
 
+def _compile_tailwind(
+    content: List[str],
+    theme: Dict,
+    plugins: List[str],
+) -> str:
+    """Compile the Tailwind config."""
+    return templates.TAILWIND_CONFIG.render(
+        content=content, theme=theme, plugins=plugins
+    )
+
+
 def write_output(fn: Callable[..., Tuple[str, str]]):
     """Write the output of the function to a file.
 
@@ -236,6 +247,27 @@ def compile_components(components: Set[CustomComponent]):
 
     # Compile the components.
     code = _compile_components(components)
+    return output_path, code
+
+
+@write_output
+def compile_tailwind(
+    content: List[str],
+    theme: Dict,
+    plugins: List[str],
+):
+    """Compile the Tailwind config."""
+    # Get the path for the output file.
+    output_path = constants.TAILWIND_CONFIG
+
+    # Create the theme and plugins if they are not provided.
+    if theme is None:
+        theme = {}
+    if plugins is None:
+        plugins = []
+
+    # Compile the config.
+    code = _compile_tailwind(content, theme, plugins)
     return output_path, code
 
 
