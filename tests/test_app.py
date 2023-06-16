@@ -1,7 +1,13 @@
 import io
 import os.path
+import sys
 from typing import List, Tuple, Type
 
+if sys.version_info.major >= 3 and sys.version_info.minor > 7:
+    from unittest.mock import AsyncMock  # type: ignore
+else:
+    # python 3.7 doesn't ship with unittest.mock
+    from asynctest import CoroutineMock as AsyncMock
 import pytest
 import sqlmodel
 from fastapi import UploadFile
@@ -681,6 +687,7 @@ class DynamicState(State):
 
     loaded: int = 0
     counter: int = 0
+
     # side_effect_counter: int = 0
 
     def on_load(self):
@@ -849,3 +856,33 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert state.counter == len(exp_vals)
     # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
     # assert state.side_effect_counter == len(exp_vals)
+
+
+@pytest.mark.asyncio
+async def test_process_events(gen_state, mocker):
+    """Test that an event is processed properly and that it is postprocessed
+    n+1 times. Also check that the processing flag of the last stateupdate is set to
+    False.
+
+    Args:
+        gen_state: The state.
+        mocker: mocker object.
+    """
+    router_data = {
+        "pathname": "/",
+        "query": {},
+        "token": "mock_token",
+        "sid": "mock_sid",
+        "headers": {},
+        "ip": "127.0.0.1",
+    }
+    app = App(state=gen_state)
+    mocker.patch.object(app, "postprocess", AsyncMock())
+    event = Event(
+        token="token", name="gen_state.go", payload={"c": 5}, router_data=router_data
+    )
+
+    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
+        pass
+    assert gen_state.value == 5
+    assert app.postprocess.call_count == 6

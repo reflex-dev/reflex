@@ -14,7 +14,8 @@ class State(pc.State):
 
 
 def index() -> pc.Component:
-    return pc.center(
+    return pc.fragment(
+        pc.color_mode_button(pc.color_mode_icon(), float="right"),
         pc.vstack(
             pc.heading("Welcome to Pynecone!", font_size="2em"),
             pc.box("Get started by editing ", pc.code(filename, font_size="1em")),
@@ -25,13 +26,16 @@ def index() -> pc.Component:
                 padding="0.5em",
                 border_radius="0.5em",
                 _hover={
-                    "color": "rgb(107,99,246)",
+                    "color": pc.color_mode_cond(
+                        light="rgb(107,99,246)",
+                        dark="rgb(179, 175, 255)",
+                    )
                 },
             ),
             spacing="1.5em",
             font_size="2em",
+            padding_top="10%",
         ),
-        padding_top="10%",
     )
 
 

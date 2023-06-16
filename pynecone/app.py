@@ -27,8 +27,9 @@ from pynecone.base import Base
 from pynecone.compiler import compiler
 from pynecone.compiler import utils as compiler_utils
 from pynecone.components.component import Component, ComponentStyle
+from pynecone.components.layout.fragment import Fragment
 from pynecone.config import get_config
-from pynecone.event import Event, EventHandler
+from pynecone.event import Event, EventHandler, EventSpec
 from pynecone.middleware import HydrateMiddleware, Middleware
 from pynecone.model import Model
 from pynecone.route import (
@@ -77,7 +78,7 @@ class App(Base):
     middleware: List[Middleware] = []
 
     # List of event handlers to trigger when a page loads.
-    load_events: Dict[str, List[EventHandler]] = {}
+    load_events: Dict[str, List[Union[EventHandler, EventSpec]]] = {}
 
     # Admin dashboard
     admin_dash: Optional[AdminDash] = None
@@ -241,7 +242,9 @@ class App(Base):
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
-        on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
+        on_load: Optional[
+            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
+        ] = None,
         meta: List[Dict] = constants.DEFAULT_META_LIST,
         script_tags: Optional[List[Component]] = None,
     ):
@@ -289,9 +292,16 @@ class App(Base):
                 ) from e
             raise e
 
+        # Wrap the component in a fragment.
+        component = Fragment.create(component)
+
         # Add meta information to the component.
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description, meta=meta
+            component,
+            title=title,
+            image=image,
+            description=description,
+            meta=meta,
         )
 
         # Add script tags if given
@@ -311,7 +321,7 @@ class App(Base):
                 on_load = [on_load]
             self.load_events[route] = on_load
 
-    def get_load_events(self, route: str) -> List[EventHandler]:
+    def get_load_events(self, route: str) -> List[Union[EventHandler, EventSpec]]:
         """Get the load events for a route.
 
         Args:
@@ -385,7 +395,11 @@ class App(Base):
         component = component if isinstance(component, Component) else component()
 
         compiler_utils.add_meta(
-            component, title=title, image=image, description=description, meta=meta
+            component,
+            title=title,
+            image=image,
+            description=description,
+            meta=meta,
         )
 
         froute = format.format_route
@@ -402,7 +416,7 @@ class App(Base):
         """Setup the admin dash."""
         # Get the config.
         config = get_config()
-        if config.enable_admin and config.admin_dash and config.admin_dash.models:
+        if config.admin_dash and config.admin_dash.models:
             # Build the admin dashboard
             admin = (
                 config.admin_dash.admin
@@ -656,7 +670,9 @@ class EventNamespace(AsyncNamespace):
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):
             # Emit the event.
-            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
+            await asyncio.create_task(
+                self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            )
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.

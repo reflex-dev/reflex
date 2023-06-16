@@ -208,7 +208,6 @@ def setup_frontend(root: Path, disable_telemetry: bool = True):
     prerequisites.install_frontend_packages(web_dir)
 
     # Copy asset files to public folder.
-    path_ops.mkdir(str(root / constants.WEB_ASSETS_DIR))
     path_ops.cp(
         src=str(root / constants.APP_ASSETS_DIR),
         dest=str(root / constants.WEB_ASSETS_DIR),

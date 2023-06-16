@@ -5,7 +5,7 @@ from pynecone.components.component import Component
 from pynecone.vars import Var
 
 
-class Link(Component):
+class RawLink(Component):
     """A component that displays the title of the current page."""
 
     tag = "link"

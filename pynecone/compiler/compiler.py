@@ -23,7 +23,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
         ImportVar(tag="connect"),
-        ImportVar(tag="updateState"),
+        ImportVar(tag="processEvent"),
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="E"),
         ImportVar(tag="isTrue"),

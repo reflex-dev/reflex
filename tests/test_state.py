@@ -91,25 +91,6 @@ class GrandchildState(ChildState):
         pass
 
 
-class GenState(State):
-    """A state with event handlers that generate multiple updates."""
-
-    value: int
-
-    def go(self, c: int):
-        """Increment the value c times and update each time.
-
-        Args:
-            c: The number of times to increment.
-
-        Yields:
-            After each increment.
-        """
-        for _ in range(c):
-            self.value += 1
-            yield
-
-
 @pytest.fixture
 def test_state() -> TestState:
     """A state.
@@ -163,16 +144,6 @@ def grandchild_state(child_state) -> GrandchildState:
     grandchild_state = child_state.get_substate(["grandchild_state"])
     assert grandchild_state is not None
     return grandchild_state
-
-
-@pytest.fixture
-def gen_state() -> GenState:
-    """A state.
-
-    Returns:
-        A test state.
-    """
-    return GenState()  # type: ignore
 
 
 def test_base_class_vars(test_state):
@@ -663,6 +634,7 @@ async def test_process_event_generator(gen_state):
     Args:
         gen_state: A state.
     """
+    gen_state = gen_state()
     event = Event(
         token="t",
         name="go",
@@ -675,11 +647,14 @@ async def test_process_event_generator(gen_state):
         count += 1
         if count == 6:
             assert update.delta == {}
+            assert update.final
         else:
+
             assert gen_state.value == count
             assert update.delta == {
                 "gen_state": {"value": count},
             }
+            assert not update.final
 
     assert count == 6
 

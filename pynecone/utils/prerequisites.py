@@ -180,11 +180,11 @@ def initialize_gitignore():
     # Subtract current ignored files.
     if os.path.exists(constants.GITIGNORE_FILE):
         with open(constants.GITIGNORE_FILE, "r") as f:
-            files -= set(f.read().splitlines())
+            files -= set(f.read().replace(" ", "").strip().splitlines())
 
     # Add the new files to the .gitignore file.
     with open(constants.GITIGNORE_FILE, "a") as f:
-        f.write(path_ops.join(files))
+        f.write(f"\n{path_ops.join(files)}")
 
 
 def initialize_app_directory(app_name: str, template: constants.Template):
@@ -209,6 +209,7 @@ def initialize_web_directory():
     path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
     path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
     path_ops.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
+    path_ops.mkdir(constants.WEB_ASSETS_DIR)
 
     # Write the current version of distributed pynecone package to a PCVERSION_APP_FILE."""
     with open(constants.PCVERSION_APP_FILE, "w") as f:
@@ -339,10 +340,9 @@ def is_latest_template() -> bool:
 
 def check_admin_settings():
     """Check if admin settings are set and valid for logging in cli app."""
-    admin_enabled = get_config().enable_admin
     admin_dash = get_config().admin_dash
     current_time = datetime.now()
-    if admin_enabled and admin_dash:
+    if admin_dash:
         if not admin_dash.models:
             console.print(
                 f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
@@ -354,11 +354,3 @@ def check_admin_settings():
             console.print(
                 "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
             )
-    elif admin_enabled:
-        console.print(
-            f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin enabled, but no admin dashboard defined in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
-        )
-    elif admin_dash:
-        console.print(
-            f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard defined, but admin is not enabled in [bold magenta]pcconfig.py[/bold magenta]. Time: {current_time}"
-        )

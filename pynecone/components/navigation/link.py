@@ -1,5 +1,8 @@
 """A link component."""
 
+from typing import Optional
+
+from pynecone.components.component import Component
 from pynecone.components.libs.chakra import ChakraComponent
 from pynecone.components.navigation.nextlink import NextLink
 from pynecone.utils import imports
@@ -28,3 +31,27 @@ class Link(ChakraComponent):
 
     def _get_imports(self) -> imports.ImportDict:
         return {**super()._get_imports(), **NextLink.create()._get_imports()}
+
+    @classmethod
+    def create(cls, *children, href: Optional[Var] = None, **props) -> Component:
+        """Create a Link component.
+
+        Args:
+            *children: The children of the component.
+            href: The href attribute of the link.
+            **props: The props of the component.
+
+        Raises:
+            ValueError: in case of missing children
+
+        Returns:
+            Component: The link component
+        """
+        if href and not len(children):
+            raise ValueError("Link without a child will not display")
+        elif href is None and len(children):
+            # Don't use a NextLink if there is no href.
+            props["as_"] = "Link"
+        if href:
+            props["href"] = href
+        return super().create(*children, **props)

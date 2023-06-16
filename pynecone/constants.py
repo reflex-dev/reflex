@@ -110,7 +110,7 @@ INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VER
 # Default host in dev mode.
 BACKEND_HOST = get_value("BACKEND_HOST", "0.0.0.0")
 # The default timeout when launching the gunicorn server.
-TIMEOUT = 120
+TIMEOUT = get_value("TIMEOUT", 120, type_=int)
 # The command to run the backend in production mode.
 RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {TIMEOUT} --log-level critical".split()
 RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {TIMEOUT}".split()
@@ -133,6 +133,8 @@ ROUTER = "router"
 SOCKET = "socket"
 # The name of the variable to hold API results.
 RESULT = "result"
+# The name of the final variable.
+FINAL = "final"
 # The name of the process variable.
 PROCESSING = "processing"
 # The name of the state variable.

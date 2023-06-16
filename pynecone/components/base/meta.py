@@ -41,6 +41,9 @@ class Meta(Component):
     # The type of metadata value.
     property: Optional[str] = None
 
+    # The type of metadata value.
+    http_equiv: Optional[str] = None
+
 
 class Description(Meta):
     """A component that displays the title of the current page."""

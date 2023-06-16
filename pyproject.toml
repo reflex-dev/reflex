@@ -25,7 +25,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.7"
 cloudpickle = "^2.2.1"
-fastapi = "^0.92.0"
+fastapi = "^0.96.0"
 gunicorn = "^20.1.0"
 httpx = "^0.23.0"
 jinja2 = "^3.1.2"
@@ -58,13 +58,14 @@ pandas = [
     {version = "^1.5.3", python = ">=3.8,<4.0"},
     {version = "^1.1", python = ">=3.7, <3.8"}
 ]
+asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 
 [tool.poetry.scripts]
 pc = "pynecone.pc:main"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.5.1"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
