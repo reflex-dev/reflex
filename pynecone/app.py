@@ -662,7 +662,9 @@ class EventNamespace(AsyncNamespace):
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):
             # Emit the event.
-            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
+            await asyncio.create_task(
+                self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            )
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.
