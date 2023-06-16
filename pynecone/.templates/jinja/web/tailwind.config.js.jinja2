@@ -7,4 +7,9 @@ module.exports = {
 		require({{plugin|json_dumps}}),
 	{% endfor %}
 	],
+	presets: [
+	{% for preset in presets %}
+		require({{preset|json_dumps}})
+	{% endfor %}
+	]
 };
