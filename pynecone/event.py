@@ -236,6 +236,42 @@ def set_value(ref: str, value: Any) -> EventSpec:
     )
 
 
+def set_cookie(key: str, value: str) -> EventSpec:
+    """Set a cookie on the frontend.
+
+    Args:
+        key (str): The key identifying the cookie.
+        value (str): The value contained in the cookie.
+
+    Returns:
+        EventSpec: An event to set a cookie.
+    """
+    return server_side(
+        "_set_cookie",
+        get_fn_signature(set_cookie),
+        key=key,
+        value=value,
+    )
+
+
+def set_local_storage(key: str, value: str) -> EventSpec:
+    """Set a value in the local storage on the frontend.
+
+    Args:
+        key (str): The key identifying the variable in the local storage.
+        value (str): The value contained in the local storage.
+
+    Returns:
+        EventSpec: An event to set a key-value in local storage.
+    """
+    return server_side(
+        "_set_local_storage",
+        get_fn_signature(set_local_storage),
+        key=key,
+        value=value,
+    )
+
+
 def get_event(state, event):
     """Get the event from the given state.
 

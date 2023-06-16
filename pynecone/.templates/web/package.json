@@ -16,6 +16,7 @@
     "focus-visible": "^5.2.0",
     "framer-motion": "^10.12.4",
     "gridjs": "^6.0.6",
+    "universal-cookie": "^4.0.4",
     "gridjs-react": "^6.0.1",
     "json5": "^2.2.3",
     "next": "^13.3.1",

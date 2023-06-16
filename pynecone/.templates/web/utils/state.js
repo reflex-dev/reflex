@@ -3,6 +3,8 @@ import axios from "axios";
 import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "env.json";
+import Cookies from "universal-cookie";
+
 
 // Endpoint URLs.
 const PINGURL = env.pingUrl
@@ -91,6 +93,18 @@ export const applyEvent = async (event, router, socket) => {
 
   if (event.name == "_console") {
     console.log(event.payload.message);
+    return false;
+  }
+
+  if (event.name == "_set_cookie") {
+    const cookies = new Cookies();
+    cookies.set(event.payload.key, event.payload.value);
+    localStorage.setItem(event.payload.key, event.payload.value);
+    return false;
+  }
+
+  if (event.name == "_set_local_storage") {
+    localStorage.setItem(event.payload.key, event.payload.value);
     return false;
   }
 

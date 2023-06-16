@@ -23,7 +23,9 @@ from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
 from .event import console_log as console_log
 from .event import redirect as redirect
+from .event import set_cookie as set_cookie
 from .event import set_focus as set_focus
+from .event import set_local_storage as set_local_storage
 from .event import set_value as set_value
 from .event import window_alert as window_alert
 from .middleware import Middleware as Middleware
