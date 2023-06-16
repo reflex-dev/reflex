@@ -200,6 +200,9 @@ class Config(Base):
     # Whether to override OS environment variables
     override_os_envs: Optional[bool] = True
 
+    # Tailwind config.
+    tailwind: Optional[dict] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
