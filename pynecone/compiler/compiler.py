@@ -128,7 +128,14 @@ def _compile_components(components: Set[CustomComponent]) -> str:
 def _compile_tailwind(
     config: dict,
 ) -> str:
-    """Compile the Tailwind config."""
+    """Compile the Tailwind config.
+
+    Args:
+        config: The Tailwind config.
+
+    Returns:
+        The compiled Tailwind config.
+    """
     return templates.TAILWIND_CONFIG.render(
         **config,
     )
@@ -252,7 +259,14 @@ def compile_components(components: Set[CustomComponent]):
 def compile_tailwind(
     config: dict,
 ):
-    """Compile the Tailwind config."""
+    """Compile the Tailwind config.
+
+    Args:
+        config: The Tailwind config.
+
+    Returns:
+        The compiled Tailwind config.
+    """
     # Get the path for the output file.
     output_path = constants.TAILWIND_CONFIG
 

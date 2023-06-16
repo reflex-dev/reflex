@@ -453,10 +453,9 @@ class App(Base):
         compiler.compile_theme(self.style)
 
         # Compile the Tailwind config.
-        TAILWIND_ENABLED = config.tailwind is not None
         compiler.compile_tailwind(
             dict(**config.tailwind, content=constants.TAILWIND_CONTENT)
-            if TAILWIND_ENABLED
+            if config.tailwind is not None
             else {}
         )
 
