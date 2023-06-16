@@ -166,10 +166,10 @@ export const processEvent = async (
   setResult({ ...result, processing: true });
 
   // Apply the next event in the queue.
-  const event = state.events[0];
+  const event = state.events.shift();
 
   // Set new events to avoid reprocessing the same event.
-  setState(state => ({ ...state, events: state.events.slice(1) }));
+  setState(state => ({ ...state, events: state.events }));
 
   // Process events with handlers via REST and all others via websockets.
   let eventSent = false;
