@@ -45,6 +45,7 @@ class Image(ChakraComponent):
     # Provide multiple sources for an image, allowing the browser
     # to select the most appropriate source based on factors like
     # screen resolution and device capabilities.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)_
     src_set: Var[str]
 
     def get_triggers(self) -> Set[str]:
