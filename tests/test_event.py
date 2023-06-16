@@ -143,3 +143,35 @@ def test_set_value():
     assert (
         format.format_event(spec) == 'E("_set_value", {ref:ref_input1,value:message})'
     )
+
+
+def test_set_cookie():
+    """Test the event set_cookie."""
+    spec = event.set_cookie("testkey", "testvalue")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_set_cookie"
+    assert spec.args == (
+        ("key", "testkey"),
+        ("value", "testvalue"),
+    )
+    print(format.format_event)
+    assert (
+        format.format_event(spec)
+        == 'E("_set_cookie", {key:"testkey",value:"testvalue"})'
+    )
+
+
+def test_set_local_storage():
+    """Test the event set_local_storage."""
+    spec = event.set_local_storage("testkey", "testvalue")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_set_local_storage"
+    assert spec.args == (
+        ("key", "testkey"),
+        ("value", "testvalue"),
+    )
+    print(format.format_event)
+    assert (
+        format.format_event(spec)
+        == 'E("_set_local_storage", {key:"testkey",value:"testvalue"})'
+    )
