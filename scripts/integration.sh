@@ -1,5 +1,18 @@
 #!/bin/bash
 
+kill_descendant_processes() {
+    local pid="$1"
+    local and_self="${2:-false}"
+    if children="$(pgrep -P "$pid")"; then
+        for child in $children; do
+            kill_descendant_processes "$child" true
+        done
+    fi
+    if [[ "$and_self" == true ]]; then
+        kill -9 "$pid"
+    fi
+}
+
 # Change directory to the first argument passed to the script
 cd "$1" || exit 1
 echo "Changed directory to $1"
@@ -27,7 +40,7 @@ done
 # Check if the server is still running
 if kill -0 "$pid" >/dev/null 2>&1; then
   echo "Integration test passed"
-  kill -TERM $(pgrep -P "$pid")
+  kill_descendant_processes $$
   exit 0
 else
   echo "Integration test failed"
