@@ -7,9 +7,11 @@ module.exports = {
 		require({{plugin|json_dumps}}),
 	{% endfor %}
 	],
+	{% if presets is defined %}
 	presets: [
 	{% for preset in presets %}
 		require({{preset|json_dumps}})
 	{% endfor %}
 	]
+	{% endif %}
 };
