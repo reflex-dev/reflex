@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="../images/cones.png">
+<img src="../../images/cones.png">
 <hr>
 
 **✨ 使用 Python 建立高效且可自訂的網頁應用程式，並在一秒內部署。**
@@ -13,6 +13,14 @@
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
+
+### 不同語言的 README
+
+---
+
+[English](../../../README.md) | [繁體中文](README.md)
+
+---
 
 ## 📦 1. 安裝
 
@@ -183,9 +191,9 @@ State 定義了應用程式中所有可以更改的變數及變更他們的 func
         self.image_made = True
 ```
 
-在 State 中我們定義了事件處理程序來更改狀態變數，事件處理程序是我們在 Pynecone 中修改狀態的方法，可以使用它們來回應使用者操做，像是點擊按鈕或在文字框輸入這些動作都是一種事件。
+在 State 中我們定義了事件處理程序來更改狀態變數，事件處理程序是我們在 Pynecone 中修改狀態的方法，可以使用它們來回應使用者操作，像是點擊按鈕或在文字框輸入這些動作都是一種事件。
 
-我們的 DALL·E. 應用程式有兩個事件處理程序, `process_image` 表示正在生成圖片和 `get_image`, 呼叫 OpenAI API.
+我們的 DALL·E. 應用程式有兩個事件處理程序 `process_image` 表示正在生成圖片和 `get_image` 呼叫 OpenAI API。
 
 ### **路由**
 
@@ -195,7 +203,7 @@ State 定義了應用程式中所有可以更改的變數及變更他們的 func
 app = pc.App(state=State)
 ```
 
-添加從應用程式根目錄到 index 元件的路由。 我們也添加了一個標題將會顯示在 預覽/瀏覽 分頁.
+添加從應用程式根目錄到 index 元件的路由。 我們也添加了一個標題將會顯示在 預覽/瀏覽 分頁。
 
 ```python
 app.add_page(index, title="Pynecone:DALL-E")
@@ -213,13 +221,13 @@ Pynecone 於 2022 年 12 月推出。
 -   :white_check_mark: **Public Alpha**: 任何人都可以安裝與使用 Pynecone，或許包含問題， 但我們正在積極的解決他們。
 -   :large_orange_diamond: **Public Beta**: 對於非軟體產品來說足夠穩定。
 -   **Public Hosting Beta**: _Optionally_, 部屬跟託管你的 Pynecone!
--   **Public**: Pynecone 是可用於軟體產品的.
+-   **Public**: 這版本的 Pynecone 是可用於軟體產品的。
 
-Pynecone 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊.
+Pynecone 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊。
 
 ## 貢獻
 
-我們歡迎任何大小的貢獻，以下是幾個好的方法來加入 Pynecone 社群.
+我們歡迎任何大小的貢獻，以下是幾個好的方法來加入 Pynecone 社群。
 
 -   **加入我們的 Discord**: 我們的 [Discord](https://discord.gg/T5WSbC2YtQ) 是幫助你加入 Pynecone 專案和討論或貢獻最棒的地方。
 -   **GitHub Discussions**: 一個來討論你想要添加的功能或是需要澄清的事情的好地方。

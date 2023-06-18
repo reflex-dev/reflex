@@ -14,6 +14,14 @@
 
 </div>
 
+### README in different language
+
+---
+
+[English](README.md) | [繁體中文](/docs/zh/zh_tw/README.md)
+
+---
+
 ## 📦 1. Install
 
 Pynecone requires the following to get started:
