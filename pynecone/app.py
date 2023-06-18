@@ -453,6 +453,13 @@ class App(Base):
         # Compile the theme.
         compiler.compile_theme(self.style)
 
+        # Compile the Tailwind config.
+        compiler.compile_tailwind(
+            dict(**config.tailwind, content=constants.TAILWIND_CONTENT)
+            if config.tailwind is not None
+            else {}
+        )
+
         # Compile the pages.
         custom_components = set()
         thread_pool = ThreadPool()

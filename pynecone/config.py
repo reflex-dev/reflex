@@ -6,7 +6,7 @@ import importlib
 import os
 import sys
 import urllib.parse
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 
@@ -196,6 +196,9 @@ class Config(Base):
 
     # Whether to override OS environment variables.
     override_os_envs: Optional[bool] = True
+
+    # Tailwind config.
+    tailwind: Optional[Dict[str, Any]] = None
 
     # Timeout when launching the gunicorn server.
     timeout: int = constants.TIMEOUT

@@ -125,6 +125,22 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     )
 
 
+def _compile_tailwind(
+    config: dict,
+) -> str:
+    """Compile the Tailwind config.
+
+    Args:
+        config: The Tailwind config.
+
+    Returns:
+        The compiled Tailwind config.
+    """
+    return templates.TAILWIND_CONFIG.render(
+        **config,
+    )
+
+
 def write_output(fn: Callable[..., Tuple[str, str]]):
     """Write the output of the function to a file.
 
@@ -236,6 +252,26 @@ def compile_components(components: Set[CustomComponent]):
 
     # Compile the components.
     code = _compile_components(components)
+    return output_path, code
+
+
+@write_output
+def compile_tailwind(
+    config: dict,
+):
+    """Compile the Tailwind config.
+
+    Args:
+        config: The Tailwind config.
+
+    Returns:
+        The compiled Tailwind config.
+    """
+    # Get the path for the output file.
+    output_path = constants.TAILWIND_CONFIG
+
+    # Compile the config.
+    code = _compile_tailwind(config)
     return output_path, code
 
 

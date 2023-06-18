@@ -77,6 +77,10 @@ WEB_STATIC_DIR = os.path.join(WEB_DIR, "_static")
 WEB_UTILS_DIR = os.path.join(WEB_DIR, UTILS_DIR)
 # The directory where the assets are located.
 WEB_ASSETS_DIR = os.path.join(WEB_DIR, "public")
+# The Tailwind config.
+TAILWIND_CONFIG = os.path.join(WEB_DIR, "tailwind.config.js")
+# Default Tailwind content paths
+TAILWIND_CONTENT = ["./pages/**/*.{js,ts,jsx,tsx}"]
 # The sitemap config file.
 SITEMAP_CONFIG_FILE = os.path.join(WEB_DIR, "next-sitemap.config.js")
 # The node modules directory.
