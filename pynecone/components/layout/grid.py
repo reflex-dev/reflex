@@ -11,25 +11,33 @@ class Grid(ChakraComponent):
 
     tag = "Grid"
 
-    # Shorthand prop for gridAutoColumns
+    # Shorthand prop for gridAutoColumns to provide automatic column sizing based on content.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns)_
     auto_columns: Var[str]
 
-    # Shorthand prop for gridAutoFlow
+    # Shorthand prop for gridAutoFlow to specify exactly how
+    # auto-placed items get flowed into the grid.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-flow)_
     auto_flow: Var[str]
 
-    # Shorthand prop for gridAutoRows
+    # Shorthand prop for gridAutoRows.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-rows)_
     auto_rows: Var[str]
 
-    # Shorthand prop for gridColumn
+    # Shorthand prop for gridColumn.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column)_
     column: Var[str]
 
-    # Shorthand prop for gridRow
+    # Shorthand prop for gridRow.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row)_
     row: Var[str]
 
-    # Shorthand prop for gridTemplateColumns
+    # Shorthand prop for gridTemplateColumns.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-columns)_
     template_columns: Var[str]
 
-    # Shorthand prop for gridTemplateRows
+    # Shorthand prop for gridTemplateRows.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-rows)_
     template_rows: Var[str]
 
 
@@ -39,9 +47,11 @@ class GridItem(ChakraComponent):
     tag = "GridItem"
 
     # Shorthand prop for gridArea
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-area)_
     area: Var[str]
 
     # Shorthand prop for gridColumnEnd
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column-end)_
     col_end: Var[str]
 
     # The column number the grid item should start.
@@ -51,6 +61,7 @@ class GridItem(ChakraComponent):
     col_span: Var[int]
 
     # Shorthand prop for gridRowEnd
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row-end)_
     row_end: Var[str]
 
     # The row number the grid item should start.
@@ -65,19 +76,25 @@ class ResponsiveGrid(ChakraComponent):
 
     tag = "SimpleGrid"
 
-    # Shorthand prop for gridAutoColumns
+    # Shorthand prop for gridAutoColumns to provide automatic column sizing based on content.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-columns)_
     auto_columns: Var[str]
 
-    # Shorthand prop for gridAutoFlow
+    # Shorthand prop for gridAutoFlow to specify exactly how
+    # auto-placed items get flowed into the grid.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-flow)_
     auto_flow: Var[str]
 
-    # Shorthand prop for gridAutoRows
+    # Shorthand prop for gridAutoRows.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-auto-rows)_
     auto_rows: Var[str]
 
-    # Shorthand prop for gridColumn
+    # Shorthand prop for gridColumn.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-column)_
     column: Var[str]
 
-    # Shorthand prop for gridRow
+    # Shorthand prop for gridRow.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-row)_
     row: Var[str]
 
     # A list that defines the number of columns for each breakpoint.
@@ -96,10 +113,13 @@ class ResponsiveGrid(ChakraComponent):
     spacing_y: Var[str]
 
     # Shorthand prop for gridTemplateAreas
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-areas)_
     template_areas: Var[str]
 
-    # Shorthand prop for gridTemplateColumns
+    # Shorthand prop for gridTemplateColumns.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-columns)_
     template_columns: Var[str]
 
-    # Shorthand prop for gridTemplateRows
+    # Shorthand prop for gridTemplateRows.
+    # Learn more _[here](https://developer.mozilla.org/en-US/docs/Web/CSS/grid-template-rows)_
     template_rows: Var[str]
