@@ -10,10 +10,23 @@ from pynecone import Env, constants
 from pynecone.utils import build, format, imports, prerequisites, types
 from pynecone.vars import Var
 
+
+def get_above_max_version():
+    """Get the 1 version above the max required bun version.
+
+    Returns:
+        max bun version plus one.
+
+    """
+    semantic_version_list = constants.MAX_BUN_VERSION.split(".")
+    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
+    return ".".join(semantic_version_list)
+
+
 V055 = version.parse("0.5.5")
 V059 = version.parse("0.5.9")
 V056 = version.parse("0.5.6")
-V062 = version.parse("0.6.2")
+VMAXPLUS1 = version.parse(get_above_max_version())
 
 
 @pytest.mark.parametrize(
@@ -245,7 +258,7 @@ def test_format_route(route: str, expected: bool):
     [
         (V055, False, "yes"),
         (V059, True, None),
-        (V062, False, "yes"),
+        (VMAXPLUS1, False, "yes"),
     ],
 )
 def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
