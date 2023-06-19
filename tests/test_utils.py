@@ -19,7 +19,7 @@ def get_above_max_version():
 
     """
     semantic_version_list = constants.MAX_BUN_VERSION.split(".")
-    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1) # type: ignore
+    semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
     return ".".join(semantic_version_list)
 
 
