@@ -44,7 +44,7 @@ MIN_NODE_VERSION = "16.8.0"
 
 # Valid bun versions.
 MIN_BUN_VERSION = "0.5.9"
-MAX_BUN_VERSION = "0.6.1"
+MAX_BUN_VERSION = "0.6.9"
 
 # Files and directories used to init a new project.
 # The root directory of the pynecone library.
