@@ -129,25 +129,35 @@ def run(
     prerequisites.check_admin_settings()
 
     # Get the frontend and backend commands, based on the environment.
-    frontend_cmd = backend_cmd = None
+    setup_frontend = frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
-        frontend_cmd, backend_cmd = exec.run_frontend, exec.run_backend
+        setup_frontend, frontend_cmd, backend_cmd = (
+            build.setup_frontend,
+            exec.run_frontend,
+            exec.run_backend,
+        )
     if env == constants.Env.PROD:
-        frontend_cmd, backend_cmd = exec.run_frontend_prod, exec.run_backend_prod
-    assert frontend_cmd and backend_cmd, "Invalid env"
+        setup_frontend, frontend_cmd, backend_cmd = (
+            build.setup_frontend_prod,
+            exec.run_frontend_prod,
+            exec.run_backend_prod,
+        )
+    assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
 
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}", get_config().telemetry_enabled)
 
     # Run the frontend and backend.
+    if frontend:
+        setup_frontend(Path.cwd(), loglevel)
+        threading.Thread(
+            target=frontend_cmd, args=(Path.cwd(), frontend_port, loglevel)
+        ).start()
     if backend:
+        build.setup_backend()
         threading.Thread(
             target=backend_cmd,
             args=(app.__name__, backend_host, backend_port, loglevel),
-        ).start()
-    if frontend:
-        threading.Thread(
-            target=frontend_cmd, args=(app.app, Path.cwd(), frontend_port)
         ).start()
 
 
@@ -217,9 +227,7 @@ def export(
     if frontend:
         build.setup_frontend(Path.cwd())
 
-    app = prerequisites.get_app().app
     build.export_app(
-        app,
         backend=backend,
         frontend=frontend,
         zip=zipping,

@@ -7,16 +7,13 @@ import os
 import random
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
 from rich.progress import Progress
 
 from pynecone import constants
 from pynecone.config import get_config
 from pynecone.utils import path_ops, prerequisites
-
-if TYPE_CHECKING:
-    from pynecone.app import App
 
 
 def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
@@ -91,7 +88,6 @@ def generate_sitemap(deploy_url: str):
 
 
 def export_app(
-    app: App,
     backend: bool = True,
     frontend: bool = True,
     zip: bool = False,
@@ -101,7 +97,6 @@ def export_app(
     """Zip up the app for deployment.
 
     Args:
-        app: The app.
         backend: Whether to zip up the backend app.
         frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
@@ -121,37 +116,34 @@ def export_app(
     # Add a single task to the progress object
     task = progress.add_task("Building app... ", total=500)
 
-    # Start the progress bar
-    with progress:
-        # Run the subprocess command
-        export_process = subprocess.Popen(
-            [prerequisites.get_package_manager(), "run", "export"],
-            cwd=constants.WEB_DIR,
-            env=os.environ,
-            stderr=subprocess.STDOUT,
-            stdout=subprocess.PIPE,  # Redirect stdout to a pipe
-            universal_newlines=True,  # Set universal_newlines to True for text mode
-        )
+    # Start the subprocess with the progress bar.
+    with progress, subprocess.Popen(
+        [prerequisites.get_package_manager(), "run", "export"],
+        cwd=constants.WEB_DIR,
+        env=os.environ,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,  # Redirect stdout to a pipe
+        universal_newlines=True,  # Set universal_newlines to True for text mode
+    ) as export_process:
+        assert export_process.stdout is not None, "No stdout for export process."
+        for line in export_process.stdout:
+            # Print the line in debug mode.
+            if loglevel == constants.LogLevel.DEBUG:
+                print(line, end="")
 
-        if export_process.stdout:
-            for line in iter(export_process.stdout.readline, ""):
-                if "Linting and checking " in line:
-                    progress.update(task, advance=100)
-                elif "Compiled successfully" in line:
-                    progress.update(task, advance=100)
-                elif "Route (pages)" in line:
-                    progress.update(task, advance=100)
-                elif "automatically rendered as static HTML" in line:
-                    progress.update(task, advance=100)
-                elif "Export successful" in line:
-                    print("DOOE")
-                    progress.update(task, completed=500)
-                    break  # Exit the loop if the completion message is found
-                elif loglevel == constants.LogLevel.DEBUG:
-                    print(line, end="")
+            # Check for special strings and update the progress bar.
+            if "Linting and checking " in line:
+                progress.update(task, advance=100)
+            elif "Compiled successfully" in line:
+                progress.update(task, advance=100)
+            elif "Route (pages)" in line:
+                progress.update(task, advance=100)
+            elif "automatically rendered as static HTML" in line:
+                progress.update(task, advance=100)
+            elif "Export successful" in line:
+                progress.update(task, completed=500)
+                break  # Exit the loop if the completion message is found
 
-        # Wait for the subprocess to complete
-        export_process.wait()
         print("Export process completed.")
 
     # Zip up the app.
@@ -194,13 +186,21 @@ def posix_export(backend: bool = True, frontend: bool = True):
         os.system(cmd)
 
 
-def setup_frontend(root: Path, disable_telemetry: bool = True):
+def setup_frontend(
+    root: Path,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    disable_telemetry: bool = True,
+):
     """Set up the frontend.
 
     Args:
-        root: root path of the project.
+        root: The root path of the project.
+        loglevel: The log level to use.
         disable_telemetry: Whether to disable the Next telemetry.
     """
+    # Validate bun version.
+    prerequisites.validate_and_install_bun(initialize=False)
+
     # Initialize the web directory if it doesn't exist.
     web_dir = prerequisites.create_web_directory(root)
 
@@ -231,6 +231,22 @@ def setup_frontend(root: Path, disable_telemetry: bool = True):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
         )
+
+
+def setup_frontend_prod(
+    root: Path,
+    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    disable_telemetry: bool = True,
+):
+    """Set up the frontend for prod mode.
+
+    Args:
+        root: The root path of the project.
+        loglevel: The log level to use.
+        disable_telemetry: Whether to disable the Next telemetry.
+    """
+    setup_frontend(root, loglevel, disable_telemetry)
+    export_app(loglevel=loglevel)
 
 
 def setup_backend():
