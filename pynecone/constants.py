@@ -316,6 +316,7 @@ class RouteVar(SimpleNamespace):
     PATH = "pathname"
     SESSION_ID = "sid"
     QUERY = "query"
+    COOKIE = "cookie"
 
 
 class RouteRegex(SimpleNamespace):

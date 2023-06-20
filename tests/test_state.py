@@ -674,55 +674,70 @@ def test_format_event_handler():
     )
 
 
-def test_get_token(test_state):
-    assert test_state.get_token() == ""
+def test_get_token(test_state, mocker, router_data):
+    """Test that the token obtained from the router_data is correct.
 
-    token = "b181904c-3953-4a79-dc18-ae9518c22f05"
-    test_state.router_data = {RouteVar.CLIENT_TOKEN: token}
+    Args:
+        test_state: The test state.
+        mocker: Pytest Mocker object.
+        router_data: The router data fixture.
+    """
+    mocker.patch.object(test_state, "router_data", router_data)
 
-    assert test_state.get_token() == token
+    assert test_state.get_token() == "b181904c-3953-4a79-dc18-ae9518c22f05"
 
 
-def test_get_sid(test_state):
+def test_get_sid(test_state, mocker, router_data):
     """Test getting session id.
 
     Args:
         test_state: A state.
+        mocker: Pytest Mocker object.
+        router_data: The router data fixture.
     """
-    assert test_state.get_sid() == ""
+    mocker.patch.object(test_state, "router_data", router_data)
 
-    sid = "9fpxSzPb9aFMb4wFAAAH"
-    test_state.router_data = {RouteVar.SESSION_ID: sid}
-
-    assert test_state.get_sid() == sid
+    assert test_state.get_sid() == "9fpxSzPb9aFMb4wFAAAH"
 
 
-def test_get_headers(test_state):
+def test_get_headers(test_state, mocker, router_data, router_data_headers):
     """Test getting client headers.
 
     Args:
         test_state: A state.
+        mocker: Pytest Mocker object.
+        router_data: The router data fixture.
+        router_data_headers: The expected headers.
     """
-    assert test_state.get_headers() == {}
+    mocker.patch.object(test_state, "router_data", router_data)
 
-    headers = {"host": "localhost:8000", "connection": "keep-alive"}
-    test_state.router_data = {RouteVar.HEADERS: headers}
-
-    assert test_state.get_headers() == headers
+    assert test_state.get_headers() == router_data_headers
 
 
-def test_get_client_ip(test_state):
+def test_get_client_ip(test_state, mocker, router_data):
     """Test getting client IP.
 
     Args:
         test_state: A state.
+        mocker: Pytest Mocker object.
+        router_data: The router data fixture.
     """
-    assert test_state.get_client_ip() == ""
+    mocker.patch.object(test_state, "router_data", router_data)
 
-    client_ip = "127.0.0.1"
-    test_state.router_data = {RouteVar.CLIENT_IP: client_ip}
+    assert test_state.get_client_ip() == "127.0.0.1"
 
-    assert test_state.get_client_ip() == client_ip
+
+def test_get_cookies(test_state, mocker, router_data):
+    """Test getting client cookies.
+
+    Args:
+        test_state: A state.
+        mocker: Pytest Mocker object.
+        router_data: The router data fixture.
+    """
+    mocker.patch.object(test_state, "router_data", router_data)
+
+    assert test_state.get_cookies() == {"csrftoken": "mocktoken", "name": "reflex"}
 
 
 def test_get_current_page(test_state):

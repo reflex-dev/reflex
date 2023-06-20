@@ -490,6 +490,22 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         return self.router_data.get(constants.RouteVar.QUERY, {})
 
+    def get_cookies(self) -> Dict[str, str]:
+        """Obtain the cookies of the client stored in the browser.
+
+        Returns:
+                The dict of cookies.
+        """
+        headers = self.get_headers().get(constants.RouteVar.COOKIE)
+        return (
+            {
+                pair[0].strip(): pair[1].strip()
+                for pair in (item.split("=") for item in headers.split(";"))
+            }
+            if headers
+            else {}
+        )
+
     @classmethod
     def setup_dynamic_args(cls, args: dict[str, str]):
         """Set up args for easy access in renderer.

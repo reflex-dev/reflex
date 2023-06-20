@@ -432,3 +432,47 @@ def gen_state() -> GenState:
         A test state.
     """
     return GenState  # type: ignore
+
+
+@pytest.fixture
+def router_data_headers() -> Dict[str, str]:
+    """Router data headers.
+
+    Returns:
+        client headers
+    """
+    return {
+        "host": "localhost:8000",
+        "connection": "Upgrade",
+        "pragma": "no-cache",
+        "cache-control": "no-cache",
+        "user-agent": "Mock Agent",
+        "upgrade": "websocket",
+        "origin": "http://localhost:3000",
+        "sec-websocket-version": "13",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-US,en;q=0.9",
+        "cookie": "csrftoken=mocktoken; name=reflex",
+        "sec-websocket-key": "mock-websocket-key",
+        "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+    }
+
+
+@pytest.fixture
+def router_data(router_data_headers) -> Dict[str, str]:
+    """Router data.
+
+    Args:
+        router_data_headers: Headers fixture.
+
+    Returns:
+        Dict of router data.
+    """
+    return {    # type: ignore
+        "pathname": "/",
+        "query": {},
+        "token": "b181904c-3953-4a79-dc18-ae9518c22f05",
+        "sid": "9fpxSzPb9aFMb4wFAAAH",
+        "headers": router_data_headers,
+        "ip": "127.0.0.1",
+    }
