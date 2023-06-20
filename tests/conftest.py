@@ -468,7 +468,7 @@ def router_data(router_data_headers) -> Dict[str, str]:
     Returns:
         Dict of router data.
     """
-    return {    # type: ignore
+    return {  # type: ignore
         "pathname": "/",
         "query": {},
         "token": "b181904c-3953-4a79-dc18-ae9518c22f05",
