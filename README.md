@@ -187,7 +187,7 @@ def get_image(self):
 
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Pynecone. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
 
-Our DALL·E. app has an event handler, `get_image` to which get this image from the openai api. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
+Our DALL·E. app has an event handler, `get_image` to which get this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
 
 ### **Routing**
 
