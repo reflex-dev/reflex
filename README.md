@@ -120,7 +120,7 @@ def index():
                     )
             ),
             padding="2em",
-            shadow="rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;",
+            shadow="lg",
             border_radius="lg",
         ),
         width="100%",
