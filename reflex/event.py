@@ -240,8 +240,8 @@ def set_cookie(key: str, value: str) -> EventSpec:
     """Set a cookie on the frontend.
 
     Args:
-        key (str): The key identifying the cookie.
-        value (str): The value contained in the cookie.
+        key: The key identifying the cookie.
+        value: The value contained in the cookie.
 
     Returns:
         EventSpec: An event to set a cookie.
@@ -254,12 +254,30 @@ def set_cookie(key: str, value: str) -> EventSpec:
     )
 
 
+def remove_cookie(key: str, options: Dict[str, Any] = {}) -> EventSpec:  # noqa: B006
+    """Remove a cookie on the frontend.
+
+    Args:
+        key: The key identifying the cookie to be removed.
+        options: Support all the cookie options from RFC 6265
+
+    Returns:
+        EventSpec: An event to remove a cookie.
+    """
+    return server_side(
+        "_remove_cookie",
+        get_fn_signature(remove_cookie),
+        key=key,
+        options=options,
+    )
+
+
 def set_local_storage(key: str, value: str) -> EventSpec:
     """Set a value in the local storage on the frontend.
 
     Args:
-        key (str): The key identifying the variable in the local storage.
-        value (str): The value contained in the local storage.
+        key: The key identifying the variable in the local storage.
+        value: The value contained in the local storage.
 
     Returns:
         EventSpec: An event to set a key-value in local storage.

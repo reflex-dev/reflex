@@ -452,7 +452,10 @@ def router_data_headers() -> Dict[str, str]:
         "sec-websocket-version": "13",
         "accept-encoding": "gzip, deflate, br",
         "accept-language": "en-US,en;q=0.9",
-        "cookie": "csrftoken=mocktoken; name=reflex",
+        "cookie": "csrftoken=mocktoken; "
+        "name=reflex;"
+        " list_cookies=%5B%22some%22%2C%20%22random%22%2C%20%22cookies%22%5D;"
+        " dict_cookies=%7B%22name%22%3A%20%22reflex%22%7D",
         "sec-websocket-key": "mock-websocket-key",
         "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
     }

@@ -737,7 +737,12 @@ def test_get_cookies(test_state, mocker, router_data):
     """
     mocker.patch.object(test_state, "router_data", router_data)
 
-    assert test_state.get_cookies() == {"csrftoken": "mocktoken", "name": "reflex"}
+    assert test_state.get_cookies() == {
+        "csrftoken": "mocktoken",
+        "name": "reflex",
+        "list_cookies": ["some", "random", "cookies"],
+        "dict_cookies": {"name": "reflex"},
+    }
 
 
 def test_get_current_page(test_state):
