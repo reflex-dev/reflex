@@ -85,52 +85,46 @@ class State(pc.State):
     """The app state."""
     prompt = ""
     image_url = ""
-    image_processing = False
-    image_made = False
-
-    def process_image(self):
-        """Set the image processing flag to true and indicate image is not made yet."""
-        self.image_processing = True
-        self.image_made = False
+    processing = False
+    complete = False
 
     def get_image(self):
         """Get the image from the prompt."""
+        if self.prompt == "":
+            return pc.window_alert("Prompt Empty")
+
+        self.processing, self.complete = True, False
+        yield
         response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
         self.image_url = response["data"][0]["url"]
-        self.image_processing = False
-        self.image_made = True
+        self.processing, self.complete = False, True
+        
 
 def index():
     return pc.center(
         pc.vstack(
-            pc.heading("DALL·E", font_size="1.5em"),
-            pc.input(placeholder="Enter a prompt..", on_blur=State.set_prompt),
+            pc.heading("DALL·E"),
+            pc.input(placeholder="Enter a prompt", on_blur=State.set_prompt),
             pc.button(
                 "Generate Image",
-                on_click=[State.process_image, State.get_image],
+                on_click=State.get_image,
+                is_loading=State.processing,
                 width="100%",
             ),
-            pc.divider(),
             pc.cond(
-                State.image_processing,
-                pc.circular_progress(is_indeterminate=True),
-                pc.cond(
-                     State.image_made,
+                State.complete,
                      pc.image(
                          src=State.image_url,
                          height="25em",
                          width="25em",
                     )
-                )
             ),
-            bg="white",
             padding="2em",
             shadow="lg",
             border_radius="lg",
         ),
         width="100%",
         height="100vh",
-        bg="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%)",
     )
 
 # Add state and page to the app.
@@ -168,33 +162,32 @@ class State(pc.State):
     """The app state."""
     prompt = ""
     image_url = ""
-    image_processing = False
-    image_made = False
+    processing = False
+    complete = False
 ```
 
 The state defines all the variables (called vars) in an app that can change and the functions that change them.
 
-Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `image_processing` and `image_made` to indicate when to show the circular progress and image.
+Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to show the circular progress and image.
 
 ### **Event Handlers**
 
 ```python
-    def process_image(self):
-        """Set the image processing flag to true and indicate image is not made yet."""
-        self.image_processing = True
-        self.image_made = False
+def get_image(self):
+    """Get the image from the prompt."""
+    if self.prompt == "":
+        return pc.window_alert("Prompt Empty")
 
-    def get_image(self):
-        """Get the image from the prompt."""
-        response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-        self.image_url = response["data"][0]["url"]
-        self.image_processing = False
-        self.image_made = True
+    self.processing, self.complete = True, False
+    yield
+    response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
+    self.image_url = response["data"][0]["url"]
+    self.processing, self.complete = False, True
 ```
 
 Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Pynecone. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
 
-Our DALL·E. app has two event handlers, `process_image` to indicate that the image is being generated, and `get_image`, which calls the OpenAI API.
+Our DALL·E. app has an event handler, `get_image` to which get this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
 
 ### **Routing**
 
@@ -217,7 +210,7 @@ You can create a multi-page app by adding more routes.
 
 Pynecone launched in December 2022.
 
-As of March 2023, we are in the **Public Beta** stage.
+As of June 2023, we are in the **Public Beta** stage.
 
 -   :white_check_mark: **Public Alpha**: Anyone can install and use Pynecone. There may be issues, but we are working to resolve them actively.
 -   :large_orange_diamond: **Public Beta**: Stable enough for non-enterprise use-cases.
