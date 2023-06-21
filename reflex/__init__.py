@@ -21,10 +21,12 @@ from .constants import Transports as Transports
 from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
+from .event import clear_local_storage as clear_local_storage
 from .event import console_log as console_log
 from .event import redirect as redirect
 from .event import remove_cookie as remove_cookie
 from .event import set_clipboard as set_clipboard
+from .event import remove_local_storage as remove_local_storage
 from .event import set_cookie as set_cookie
 from .event import set_focus as set_focus
 from .event import set_local_storage as set_local_storage
