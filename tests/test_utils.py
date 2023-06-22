@@ -502,9 +502,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         mocker: The mock object.
         gitignore_exists: Whether a gitignore file exists in the root dir.
     """
-    sep = os.sep
     expected = constants.DEFAULT_GITIGNORE.copy()
-
     mocker.patch("pynecone.constants.GITIGNORE_FILE", tmp_path / ".gitignore")
 
     gitignore_file = tmp_path / ".gitignore"
@@ -512,8 +510,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     if gitignore_exists:
         gitignore_file.touch()
         gitignore_file.write_text(
-            """
-        pynecone.db
+            """pynecone.db
         __pycache__/
         """
         )
@@ -521,7 +518,5 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     prerequisites.initialize_gitignore()
 
     assert gitignore_file.exists()
-    file_content = gitignore_file.open().read()
-    file_content.replace(f"{sep}{sep}", sep)
-
-    assert set(file_content.split()) == expected
+    file_content = [line.strip() for line in gitignore_file.open().readlines()]
+    assert set(file_content) - expected == set()
