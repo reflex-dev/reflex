@@ -272,6 +272,22 @@ def set_local_storage(key: str, value: str) -> EventSpec:
     )
 
 
+def set_clipboard(content: str) -> EventSpec:
+    """Set the text in content in the clipboard.
+
+    Args:
+        content (str): The text to add to clipoard
+
+    Returns:
+        EventSpec: An event to set some content in the clipboard.
+    """
+    return server_side(
+        "_set_clipboard",
+        get_fn_signature(set_clipboard),
+        content=content,
+    )
+
+
 def get_event(state, event):
     """Get the event from the given state.
 
