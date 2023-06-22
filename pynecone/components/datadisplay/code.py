@@ -3,7 +3,11 @@
 from typing import Dict
 
 from pynecone.components.component import Component
+from pynecone.components.forms import Button
+from pynecone.components.layout import Box
 from pynecone.components.libs.chakra import ChakraComponent
+from pynecone.components.media import Icon
+from pynecone.event import set_clipboard
 from pynecone.style import Style
 from pynecone.utils import imports
 from pynecone.vars import ImportVar, Var
@@ -62,17 +66,33 @@ class CodeBlock(Component):
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
 
+        if props.pop("can_copy", False):
+            code = children[0]
+            copy_button = Button.create(
+                Icon.create(tag="copy"),
+                on_click=set_clipboard(code),
+                style={"position": "absolute", "top": "0.5em", "right": "0"},
+            )
+            custom_style |= {"padding": "1em 3.2em 1em 1em"}
+        else:
+            copy_button = None
+
         # Transfer style props to the custom style prop.
         for key, value in props.items():
             if key not in cls.get_fields():
                 custom_style[key] = value
 
         # Create the component.
-        return super().create(
+        code_block = super().create(
             *children,
             **props,
             custom_style=Style(custom_style),
         )
+
+        if copy_button:
+            return Box.create(code_block, copy_button, position="relative")
+        else:
+            return code_block
 
     def _add_style(self, style):
         self.custom_style = self.custom_style or {}
