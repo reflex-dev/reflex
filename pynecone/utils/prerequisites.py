@@ -180,11 +180,10 @@ def initialize_gitignore():
     # Subtract current ignored files.
     if os.path.exists(constants.GITIGNORE_FILE):
         with open(constants.GITIGNORE_FILE, "r") as f:
-            files -= set(f.read().replace(" ", "").strip().splitlines())
-
-    # Add the new files to the .gitignore file.
-    with open(constants.GITIGNORE_FILE, "a") as f:
-        f.write(f"\n{path_ops.join(files)}")
+            files |= set([line.strip() for line in f.readlines()])
+    # Write files to the .gitignore file.
+    with open(constants.GITIGNORE_FILE, "w") as f:
+        f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
 
 def initialize_app_directory(app_name: str, template: constants.Template):
