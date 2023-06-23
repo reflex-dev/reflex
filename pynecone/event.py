@@ -276,7 +276,7 @@ def set_clipboard(content: str) -> EventSpec:
     """Set the text in content in the clipboard.
 
     Args:
-        content (str): The text to add to clipoard
+        content: The text to add to clipboard.
 
     Returns:
         EventSpec: An event to set some content in the clipboard.

@@ -109,7 +109,7 @@ export const applyEvent = async (event, router, socket) => {
   }
 
   if (event.name == "_set_clipboard") {
-    var content = event.payload.content;
+    const content = event.payload.content;
     navigator.clipboard.writeText(content);
     return false;
   }

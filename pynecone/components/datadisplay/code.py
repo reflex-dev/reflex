@@ -53,11 +53,13 @@ class CodeBlock(Component):
         return merged_imports
 
     @classmethod
-    def create(cls, *children, **props):
+    def create(cls, *children, can_copy=False, copy_button=None, **props):
         """Create a text component.
 
         Args:
             *children: The children of the component.
+            can_copy: Whether a copy button should appears.
+            copy_button: A custom copy button to override the default one.
             **props: The props to pass to the component.
 
         Returns:
@@ -66,12 +68,16 @@ class CodeBlock(Component):
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
 
-        if props.pop("can_copy", False):
+        if can_copy:
             code = children[0]
-            copy_button = Button.create(
-                Icon.create(tag="copy"),
-                on_click=set_clipboard(code),
-                style={"position": "absolute", "top": "0.5em", "right": "0"},
+            copy_button = (
+                copy_button
+                if copy_button is not None
+                else Button.create(
+                    Icon.create(tag="copy"),
+                    on_click=set_clipboard(code),
+                    style={"position": "absolute", "top": "0.5em", "right": "0"},
+                )
             )
             custom_style.update({"padding": "1em 3.2em 1em 1em"})
         else:
