@@ -139,6 +139,25 @@ class FileUpload(Base):
     pass
 
 
+def get_local_storage(key: Optional[Union[Var, str]] = None) -> BaseVar:
+    """Provide the method or function to get local storage item(s).
+    Args:
+        key: Key to obtain value in the local storage.
+
+    Returns:
+        A BaseVar of the local storage method/function to call.
+    """
+    if key:
+        if not (isinstance(key, Var) and key.type_ == str) and not isinstance(key, str):
+            type_ = type(key) if not isinstance(key, Var) else key.type_
+            raise TypeError(
+                f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
+            )
+        key = key.full_name if isinstance(key, Var) else format.wrap(key, "'")
+        return BaseVar(name=f"localStorage.getItem({key})", type_=str)
+    return BaseVar(name="getAllLocalStorageItems()", type_=Dict)
+
+
 # Special server-side events.
 def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     """A server-side event.

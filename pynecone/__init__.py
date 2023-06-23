@@ -22,6 +22,7 @@ from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
 from .event import console_log as console_log
+from .event import get_local_storage as get_local_storage
 from .event import redirect as redirect
 from .event import set_cookie as set_cookie
 from .event import set_focus as set_focus
