@@ -610,6 +610,9 @@ def upload(app: App):
         )
         # TODO: refactor this to handle yields.
         update = await state._process(event).__anext__()
+
+        # Set the state for the session.
+        app.state_manager.set_state(event.token, state)
         return update
 
     return upload_file
