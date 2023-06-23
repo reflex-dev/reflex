@@ -1,17 +1,10 @@
-from typing import Dict, List
 
 import pytest
 
-from pynecone import State, event
+from pynecone import event
 from pynecone.event import Event, EventHandler, EventSpec
 from pynecone.utils import format
-from pynecone.vars import BaseVar, Var
-
-
-class BaseState(State):
-    """A Test State."""
-
-    val: str = "key"
+from pynecone.vars import Var
 
 
 def make_var(value) -> Var:
@@ -180,57 +173,4 @@ def test_set_local_storage():
     assert (
         format.format_event(spec)
         == 'E("_set_local_storage", {key:"testkey",value:"testvalue"})'
-    )
-
-
-@pytest.mark.parametrize(
-    "key, expected",
-    [
-        ("test_key", BaseVar(name="localStorage.getItem('test_key')", type_=str)),
-        (
-            BaseVar(name="key_var", type_=str),
-            BaseVar(name="localStorage.getItem(key_var)", type_=str),
-        ),
-        (
-            BaseState.val,
-            BaseVar(name="localStorage.getItem(base_state.val)", type_=str),
-        ),
-        (None, BaseVar(name="getAllLocalStorageItems()", type_=Dict)),
-    ],
-)
-def test_get_local_storage(key, expected):
-    """Test that the right BaseVar is return when get_local_storage is called.
-
-    Args:
-        key: Local storage key.
-        expected: expected BaseVar.
-
-    """
-    local_storage = event.get_local_storage(key)
-    assert local_storage.name == expected.name
-    assert local_storage.type_ == expected.type_
-
-
-@pytest.mark.parametrize(
-    "key",
-    [
-        ["list", "values"],
-        {"name": "dict"},
-        10,
-        BaseVar(name="key_var", type_=List),
-        BaseVar(name="key_var", type_=Dict[str, str]),
-    ],
-)
-def test_get_local_storage_raise_error(key):
-    """Test that a type error is thrown when the wrong key type is provided.
-
-    Args:
-        key: Local storage key.
-    """
-    with pytest.raises(TypeError) as err:
-        event.get_local_storage(key)
-    type_ = type(key) if not isinstance(key, Var) else key.type_
-    assert (
-        err.value.args[0]
-        == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
     )
