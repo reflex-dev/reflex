@@ -125,6 +125,12 @@ export const applyEvent = async (event, router, socket) => {
     return false;
   }
 
+  if (event.name == "_set_clipboard") {
+    const content = event.payload.content;
+    navigator.clipboard.writeText(content);
+    return false;
+  }
+
   if (event.name == "_alert") {
     alert(event.payload.message);
     return false;
