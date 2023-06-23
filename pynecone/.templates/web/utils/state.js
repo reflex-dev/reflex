@@ -76,6 +76,23 @@ export const applyDelta = (state, delta) => {
   }
 };
 
+
+/**
+ * Get all local storage items in a key-value object.
+ * @returns object of items in local storage.
+ */
+export const getAllLocalStorageItems = () => {
+  var localStorageItems = {};
+
+  for (var i = 0, len = localStorage.length; i < len; i++) {
+    var key = localStorage.key(i);
+    localStorageItems[key] = localStorage.getItem(key);
+  }
+
+  return localStorageItems;
+}
+
+
 /**
  * Send an event to the server.
  * @param event The event to send.

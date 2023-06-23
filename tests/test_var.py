@@ -6,7 +6,15 @@ import pytest
 
 from pynecone.base import Base
 from pynecone.state import State
-from pynecone.vars import BaseVar, ComputedVar, ImportVar, PCDict, PCList, Var
+from pynecone.vars import (
+    BaseVar,
+    ComputedVar,
+    ImportVar,
+    PCDict,
+    PCList,
+    Var,
+    get_local_storage,
+)
 
 test_vars = [
     BaseVar(name="prop1", type_=int),
@@ -17,6 +25,12 @@ test_vars = [
 ]
 
 test_import_vars = [ImportVar(tag="DataGrid"), ImportVar(tag="DataGrid", alias="Grid")]
+
+
+class BaseState(State):
+    """A Test State."""
+
+    val: str = "key"
 
 
 @pytest.fixture
@@ -394,3 +408,56 @@ def test_import_var(import_var, expected):
         expected: expected name
     """
     assert import_var.name == expected
+
+
+@pytest.mark.parametrize(
+    "key, expected",
+    [
+        ("test_key", BaseVar(name="localStorage.getItem('test_key')", type_=str)),
+        (
+            BaseVar(name="key_var", type_=str),
+            BaseVar(name="localStorage.getItem(key_var)", type_=str),
+        ),
+        (
+            BaseState.val,
+            BaseVar(name="localStorage.getItem(base_state.val)", type_=str),
+        ),
+        (None, BaseVar(name="getAllLocalStorageItems()", type_=Dict)),
+    ],
+)
+def test_get_local_storage(key, expected):
+    """Test that the right BaseVar is return when get_local_storage is called.
+
+    Args:
+        key: Local storage key.
+        expected: expected BaseVar.
+
+    """
+    local_storage = get_local_storage(key)
+    assert local_storage.name == expected.name
+    assert local_storage.type_ == expected.type_
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        ["list", "values"],
+        {"name": "dict"},
+        10,
+        BaseVar(name="key_var", type_=List),
+        BaseVar(name="key_var", type_=Dict[str, str]),
+    ],
+)
+def test_get_local_storage_raise_error(key):
+    """Test that a type error is thrown when the wrong key type is provided.
+
+    Args:
+        key: Local storage key.
+    """
+    with pytest.raises(TypeError) as err:
+        get_local_storage(key)
+    type_ = type(key) if not isinstance(key, Var) else key.type_
+    assert (
+        err.value.args[0]
+        == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
+    )

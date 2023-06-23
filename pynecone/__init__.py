@@ -38,3 +38,4 @@ from .style import color_mode as color_mode
 from .style import toggle_color_mode as toggle_color_mode
 from .vars import Var as Var
 from .vars import cached_var as cached_var
+from .vars import get_local_storage as get_local_storage
