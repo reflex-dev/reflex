@@ -141,11 +141,15 @@ class FileUpload(Base):
 
 def get_local_storage(key: Optional[Union[Var, str]] = None) -> BaseVar:
     """Provide the method or function to get local storage item(s).
+
     Args:
         key: Key to obtain value in the local storage.
 
     Returns:
         A BaseVar of the local storage method/function to call.
+
+    Raises:
+        TypeError:  if the wrong key type is provided.
     """
     if key:
         if not (isinstance(key, Var) and key.type_ == str) and not isinstance(key, str):
