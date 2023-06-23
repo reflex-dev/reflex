@@ -1,9 +1,9 @@
 import pytest
 
-from pynecone import event
-from pynecone.event import Event, EventHandler, EventSpec
-from pynecone.utils import format
-from pynecone.vars import Var
+from reflex import event
+from reflex.event import Event, EventHandler, EventSpec
+from reflex.utils import format
+from reflex.vars import Var
 
 
 def make_var(value) -> Var:

@@ -4,9 +4,9 @@ from typing import Dict, Generator, List
 
 import pytest
 
-import pynecone as pc
-from pynecone import constants
-from pynecone.event import EventSpec
+import reflex as rx
+from reflex import constants
+from reflex.event import EventSpec
 
 
 @pytest.fixture(scope="function")
@@ -27,7 +27,7 @@ def list_mutation_state():
         A state with list mutation features.
     """
 
-    class TestState(pc.State):
+    class TestState(rx.State):
         """The test state."""
 
         # plain list
@@ -90,7 +90,7 @@ def dict_mutation_state():
         A state with dict mutation features.
     """
 
-    class TestState(pc.State):
+    class TestState(rx.State):
         """The test state."""
 
         # plain dict
@@ -138,10 +138,10 @@ def dict_mutation_state():
     return TestState()
 
 
-class UploadState(pc.State):
+class UploadState(rx.State):
     """The base state for uploading a file."""
 
-    async def handle_upload1(self, files: List[pc.UploadFile]):
+    async def handle_upload1(self, files: List[rx.UploadFile]):
         """Handle the upload of a file.
 
         Args:
@@ -150,7 +150,7 @@ class UploadState(pc.State):
         pass
 
 
-class BaseState(pc.State):
+class BaseState(rx.State):
     """The test base state."""
 
     pass
@@ -161,7 +161,7 @@ class SubUploadState(BaseState):
 
     img: str
 
-    async def handle_upload(self, files: List[pc.UploadFile]):
+    async def handle_upload(self, files: List[rx.UploadFile]):
         """Handle the upload of a file.
 
         Args:
@@ -202,7 +202,7 @@ def upload_state(tmp_path):
 
     """
 
-    class FileUploadState(pc.State):
+    class FileUploadState(rx.State):
         """The base state for uploading a file."""
 
         img_list: List[str]
@@ -224,7 +224,7 @@ def upload_state(tmp_path):
                 # Update the img var.
                 self.img_list.append(file.filename)
 
-        async def multi_handle_upload(self, files: List[pc.UploadFile]):
+        async def multi_handle_upload(self, files: List[rx.UploadFile]):
             """Handle the upload of a file.
 
             Args:
@@ -257,7 +257,7 @@ def upload_sub_state(tmp_path):
 
     """
 
-    class FileState(pc.State):
+    class FileState(rx.State):
         """The base state."""
 
         pass
@@ -284,7 +284,7 @@ def upload_sub_state(tmp_path):
                 # Update the img var.
                 self.img_list.append(file.filename)
 
-        async def multi_handle_upload(self, files: List[pc.UploadFile]):
+        async def multi_handle_upload(self, files: List[rx.UploadFile]):
             """Handle the upload of a file.
 
             Args:
@@ -317,7 +317,7 @@ def upload_grand_sub_state(tmp_path):
 
     """
 
-    class BaseFileState(pc.State):
+    class BaseFileState(rx.State):
         """The base state."""
 
         pass
@@ -350,7 +350,7 @@ def upload_grand_sub_state(tmp_path):
                 assert file.filename is not None
                 self.img_list.append(file.filename)
 
-        async def multi_handle_upload(self, files: List[pc.UploadFile]):
+        async def multi_handle_upload(self, files: List[rx.UploadFile]):
             """Handle the upload of a file.
 
             Args:
@@ -378,7 +378,7 @@ def base_config_values() -> Dict:
     Returns:
         Dictionary of base config values
     """
-    return {"app_name": "app", "db_url": constants.DB_URL, "env": pc.Env.DEV}
+    return {"app_name": "app", "db_url": constants.DB_URL, "env": rx.Env.DEV}
 
 
 @pytest.fixture
@@ -405,7 +405,7 @@ def sqlite_db_config_values(base_db_config_values) -> Dict:
     return base_db_config_values
 
 
-class GenState(pc.State):
+class GenState(rx.State):
     """A state with event handlers that generate multiple updates."""
 
     value: int

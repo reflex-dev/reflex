@@ -1,9 +1,9 @@
 import pandas as pd
 import pytest
 
-import pynecone as pc
-from pynecone.components import data_table
-from pynecone.utils import types
+import reflex as rx
+from reflex.components import data_table
+from reflex.utils import types
 
 
 @pytest.mark.parametrize(
@@ -22,7 +22,7 @@ from pynecone.utils import types
     ],
     indirect=["data_table_state"],
 )
-def test_validate_data_table(data_table_state: pc.Var, expected):
+def test_validate_data_table(data_table_state: rx.Var, expected):
     """Test the str/render function.
 
     Args:

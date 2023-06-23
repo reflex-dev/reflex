@@ -2,7 +2,7 @@ import urllib.parse
 
 import pytest
 
-from pynecone.config import DBConfig
+from reflex.config import DBConfig
 
 
 @pytest.mark.parametrize(

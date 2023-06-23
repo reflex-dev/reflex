@@ -6,9 +6,9 @@ from typing import Any, List, Union
 import pytest
 from packaging import version
 
-from pynecone import Env, constants
-from pynecone.utils import build, format, imports, prerequisites, types
-from pynecone.vars import Var
+from reflex import Env, constants
+from reflex.utils import build, format, imports, prerequisites, types
+from reflex.vars import Var
 
 
 def get_above_max_version():
@@ -268,17 +268,15 @@ def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
     Args:
         mocker: Pytest mocker object.
         bun_version: The bun version.
-        is_valid: Whether bun version is valid for running pynecone.
+        is_valid: Whether bun version is valid for running reflex.
         prompt_input: The input from user on whether to install bun.
     """
-    mocker.patch(
-        "pynecone.utils.prerequisites.get_bun_version", return_value=bun_version
-    )
-    mocker.patch("pynecone.utils.prerequisites.console.ask", return_value=prompt_input)
+    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=bun_version)
+    mocker.patch("reflex.utils.prerequisites.console.ask", return_value=prompt_input)
 
-    bun_install = mocker.patch("pynecone.utils.prerequisites.install_bun")
+    bun_install = mocker.patch("reflex.utils.prerequisites.install_bun")
     remove_existing_bun_installation = mocker.patch(
-        "pynecone.utils.prerequisites.remove_existing_bun_installation"
+        "reflex.utils.prerequisites.remove_existing_bun_installation"
     )
 
     prerequisites.validate_and_install_bun()
@@ -294,8 +292,8 @@ def test_bun_validation_exception(mocker):
     Args:
         mocker: Pytest mocker.
     """
-    mocker.patch("pynecone.utils.prerequisites.get_bun_version", return_value=V056)
-    mocker.patch("pynecone.utils.prerequisites.console.ask", return_value="no")
+    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=V056)
+    mocker.patch("reflex.utils.prerequisites.console.ask", return_value="no")
 
     with pytest.raises(RuntimeError):
         prerequisites.validate_and_install_bun()
@@ -312,11 +310,11 @@ def test_remove_existing_bun_installation(mocker, tmp_path):
     bun_location.mkdir()
 
     mocker.patch(
-        "pynecone.utils.prerequisites.get_package_manager",
+        "reflex.utils.prerequisites.get_package_manager",
         return_value=str(bun_location),
     )
     mocker.patch(
-        "pynecone.utils.prerequisites.os.path.expandvars",
+        "reflex.utils.prerequisites.os.path.expandvars",
         return_value=str(bun_location),
     )
 
@@ -341,8 +339,8 @@ def test_setup_frontend(tmp_path, mocker):
 
     assert str(web_folder) == prerequisites.create_web_directory(tmp_path)
 
-    mocker.patch("pynecone.utils.prerequisites.install_frontend_packages")
-    mocker.patch("pynecone.utils.build.set_environment_variables")
+    mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
+    mocker.patch("reflex.utils.build.set_environment_variables")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
     assert web_folder.exists()
@@ -393,7 +391,7 @@ def test_issubclass(cls: type, cls_check: type, expected: bool):
     ],
 )
 def test_create_config(app_name, expected_config_name, mocker):
-    """Test templates.PCCONFIG is formatted with correct app name and config class name.
+    """Test templates.RXCONFIG is formatted with correct app name and config class name.
 
     Args:
         app_name: App name.
@@ -401,7 +399,7 @@ def test_create_config(app_name, expected_config_name, mocker):
         mocker: Mocker object.
     """
     mocker.patch("builtins.open")
-    tmpl_mock = mocker.patch("pynecone.compiler.templates.PCCONFIG")
+    tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
     prerequisites.create_config(app_name)
     tmpl_mock.render.assert_called_with(
         app_name=app_name, config_name=expected_config_name
@@ -494,7 +492,7 @@ def test_is_dataframe(class_type, expected):
 
 @pytest.mark.parametrize("gitignore_exists", [True, False])
 def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
-    """Test that the generated .gitignore_file file on pc init contains the correct file
+    """Test that the generated .gitignore_file file on reflex init contains the correct file
     names with correct formatting.
 
     Args:
@@ -503,14 +501,14 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         gitignore_exists: Whether a gitignore file exists in the root dir.
     """
     expected = constants.DEFAULT_GITIGNORE.copy()
-    mocker.patch("pynecone.constants.GITIGNORE_FILE", tmp_path / ".gitignore")
+    mocker.patch("reflex.constants.GITIGNORE_FILE", tmp_path / ".gitignore")
 
     gitignore_file = tmp_path / ".gitignore"
 
     if gitignore_exists:
         gitignore_file.touch()
         gitignore_file.write_text(
-            """pynecone.db
+            """reflex.db
         __pycache__/
         """
         )

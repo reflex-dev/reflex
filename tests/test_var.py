@@ -4,14 +4,14 @@ from typing import Dict, List
 import cloudpickle
 import pytest
 
-from pynecone.base import Base
-from pynecone.state import State
-from pynecone.vars import (
+from reflex.base import Base
+from reflex.state import State
+from reflex.vars import (
     BaseVar,
     ComputedVar,
     ImportVar,
-    PCDict,
-    PCList,
+    ReflexDict,
+    ReflexList,
     Var,
     get_local_storage,
 )
@@ -370,24 +370,24 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
     )
 
 
-def test_pickleable_pc_list():
-    """Test that PCList is pickleable."""
-    pc_list = PCList(
+def test_pickleable_rx_list():
+    """Test that ReflexList is pickleable."""
+    rx_list = ReflexList(
         original_list=[1, 2, 3], reassign_field=lambda x: x, field_name="random"
     )
 
-    pickled_list = cloudpickle.dumps(pc_list)
-    assert cloudpickle.loads(pickled_list) == pc_list
+    pickled_list = cloudpickle.dumps(rx_list)
+    assert cloudpickle.loads(pickled_list) == rx_list
 
 
-def test_pickleable_pc_dict():
-    """Test that PCDict is pickleable."""
-    pc_dict = PCDict(
+def test_pickleable_rx_dict():
+    """Test that ReflexDict is pickleable."""
+    rx_dict = ReflexDict(
         original_dict={1: 2, 3: 4}, reassign_field=lambda x: x, field_name="random"
     )
 
-    pickled_dict = cloudpickle.dumps(pc_dict)
-    assert cloudpickle.loads(pickled_dict) == pc_dict
+    pickled_dict = cloudpickle.dumps(rx_dict)
+    assert cloudpickle.loads(pickled_dict) == rx_dict
 
 
 @pytest.mark.parametrize(

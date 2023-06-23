@@ -2,9 +2,9 @@ from typing import Dict, List, Set, Tuple
 
 import pytest
 
-from pynecone.components import box, foreach, text
-from pynecone.components.layout import Foreach
-from pynecone.state import State
+from reflex.components import box, foreach, text
+from reflex.components.layout import Foreach
+from reflex.state import State
 
 
 class ForEachState(State):

@@ -3,10 +3,10 @@ cd ..
 
 echo "start darglint"
 
-echo "pynecone folder"
-for /R pynecone %%f in (*.py) do (
+echo "reflex folder"
+for /R reflex %%f in (*.py) do (
     echo %%f
-    echo %%f|findstr /r "^.*pynecone\\pc\.py$"
+    echo %%f|findstr /r "^.*reflex\\rx\.py$"
     if errorlevel 1 (
         poetry run darglint %%f
     )

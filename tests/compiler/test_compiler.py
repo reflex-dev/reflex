@@ -2,9 +2,9 @@ from typing import List, Set
 
 import pytest
 
-from pynecone.compiler import utils
-from pynecone.utils import imports
-from pynecone.vars import ImportVar
+from reflex.compiler import utils
+from reflex.utils import imports
+from reflex.vars import ImportVar
 
 
 @pytest.mark.parametrize(

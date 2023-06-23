@@ -2,10 +2,10 @@ from typing import Any, Dict
 
 import pytest
 
-from pynecone.app import App
-from pynecone.constants import IS_HYDRATED
-from pynecone.middleware.hydrate_middleware import HydrateMiddleware
-from pynecone.state import State, StateUpdate
+from reflex.app import App
+from reflex.constants import IS_HYDRATED
+from reflex.middleware.hydrate_middleware import HydrateMiddleware
+from reflex.state import State, StateUpdate
 
 
 def exp_is_hydrated(state: State) -> Dict[str, Any]:

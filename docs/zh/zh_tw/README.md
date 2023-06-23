@@ -5,11 +5,11 @@
 
 **✨ 使用 Python 建立高效且可自訂的網頁應用程式，並在一秒內部署。**
 
-📑 [Docs](https://pynecone.io/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://pynecone.io/docs/library) &nbsp; 🖼️ [Gallery](https://pynecone.io/docs/gallery) &nbsp; 🛸 [Deployment](https://pynecone.io/docs/hosting/deploy)
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)
 
-[![PyPI version](https://badge.fury.io/py/pynecone.svg)](https://badge.fury.io/py/pynecone)
+[![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
-![versions](https://img.shields.io/pypi/pyversions/pynecone-io.svg)
+![versions](https://img.shields.io/pypi/pyversions/reflex-dev.svg)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
@@ -24,25 +24,25 @@
 
 ## 📦 1. 安裝
 
-Pynecone 需要以下最低要求:
+Reflex 需要以下最低要求:
 
 -   Python 3.7+
 -   [Node.js 16.8.0+](https://nodejs.org/en/) (不用擔心，你不需要寫任何 JavaScript!)
 
 ```
-pip install pynecone
+pip install reflex
 ```
 
 ## 🥳 2. 建立你的第一個應用程式
 
-安裝 Pynecone 的同時也會安裝 `pc` 命令行工具. 通過創建一個新專案來測試是否安裝成功。
+安裝 Reflex 的同時也會安裝 `rx` 命令行工具. 通過創建一個新專案來測試是否安裝成功。
 
 把 my_app_name 替代為你的專案名字:
 
 ```
 mkdir my_app_name
 cd my_app_name
-pc init
+reflex init
 ```
 
 當你第一次運行這個命令，將會自動下載與安裝 [bun](https://bun.sh/)。
@@ -54,12 +54,12 @@ pc init
 你可以在開發者模式運行這個應用程式:
 
 ```
-pc run
+reflex run
 ```
 
 你可以看到你的應用程式運行在 http://localhost:3000。
 
-現在在以下位置修改原始碼 `my_app_name/my_app_name.py`，Pynecone 擁有快速重整所以你可以在保存程式碼後馬上看到更改。
+現在在以下位置修改原始碼 `my_app_name/my_app_name.py`，Reflex 擁有快速重整所以你可以在保存程式碼後馬上看到更改。
 
 ## 🫧 範例
 
@@ -76,12 +76,12 @@ pc run
 這是上述範例的完整程式碼，只需要一個 Python 檔案就可以完成!
 
 ```python
-import pynecone as pc
+import reflex as rx
 import openai
 
 openai.api_key = "YOUR_API_KEY"
 
-class State(pc.State):
+class State(rx.State):
     """應用程式狀態"""
     prompt = ""
     image_url = ""
@@ -101,22 +101,22 @@ class State(pc.State):
         self.image_made = True
 
 def index():
-    return pc.center(
-        pc.vstack(
-            pc.heading("DALL·E", font_size="1.5em"),
-            pc.input(placeholder="Enter a prompt..", on_blur=State.set_prompt),
-            pc.button(
+    return rx.center(
+        rx.vstack(
+            rx.heading("DALL·E", font_size="1.5em"),
+            rx.input(placeholder="Enter a prompt..", on_blur=State.set_prompt),
+            rx.button(
                 "產生圖片",
                 on_click=[State.process_image, State.get_image],
                 width="100%",
             ),
-            pc.divider(),
-            pc.cond(
+            rx.divider(),
+            rx.cond(
                 State.image_processing,
-                pc.circular_progress(is_indeterminate=True),
-                pc.cond(
+                rx.circular_progress(is_indeterminate=True),
+                rx.cond(
                      State.image_made,
-                     pc.image(
+                     rx.image(
                          src=State.image_url,
                          height="25em",
                          width="25em",
@@ -134,18 +134,18 @@ def index():
     )
 
 # 把狀態跟頁面添加到應用程式。
-app = pc.App(state=State)
-app.add_page(index, title="Pynecone:DALL·E")
+app = rx.App(state=State)
+app.add_page(index, title="Reflex:DALL·E")
 app.compile()
 ```
 
-### **Pynecone 中的圖形使用者介面**
+### **Reflex 中的圖形使用者介面**
 
 讓我們分解以上步驟。
 
 ```python
 def index():
-    return pc.center(
+    return rx.center(
         ...
     )
 ```
@@ -155,15 +155,15 @@ def index():
 我們用不同的元件像是 `center`, `vstack`, `input`, 和 `button` 來建立前端， 元件之間可以相互嵌入，來建立複雜的佈局。
 並且你可以使用關鍵字參數來使用 CSS 的全部功能。
 
-Pynecone 擁有 [60+ built-in components](https://pynecone.io/docs/library) 來幫助你開始建立應用程式。
-我們正在積極添加元件， 但是你也可以簡單的自己創建一些元件 [create your own components](https://pynecone.io/docs/advanced-guide/wrapping-react)。
+Reflex 擁有 [60+ built-in components](https://reflex.dev/docs/library) 來幫助你開始建立應用程式。
+我們正在積極添加元件， 但是你也可以簡單的自己創建一些元件 [create your own components](https://reflex.dev/docs/advanced-guide/wrapping-react)。
 
 ### **狀態**
 
-Pynecone 用 State 來渲染你的 UI。
+Reflex 用 State 來渲染你的 UI。
 
 ```python
-class State(pc.State):
+class State(rx.State):
     """應用程式狀態"""
     prompt = ""
     image_url = ""
@@ -191,7 +191,7 @@ State 定義了應用程式中所有可以更改的變數及變更他們的 func
         self.image_made = True
 ```
 
-在 State 中我們定義了事件處理程序來更改狀態變數，事件處理程序是我們在 Pynecone 中修改狀態的方法，可以使用它們來回應使用者操作，像是點擊按鈕或在文字框輸入這些動作都是一種事件。
+在 State 中我們定義了事件處理程序來更改狀態變數，事件處理程序是我們在 Reflex 中修改狀態的方法，可以使用它們來回應使用者操作，像是點擊按鈕或在文字框輸入這些動作都是一種事件。
 
 我們的 DALL·E. 應用程式有兩個事件處理程序 `process_image` 表示正在生成圖片和 `get_image` 呼叫 OpenAI API。
 
@@ -200,36 +200,36 @@ State 定義了應用程式中所有可以更改的變數及變更他們的 func
 最後定義我們的應用程式並傳送狀態給它。
 
 ```python
-app = pc.App(state=State)
+app = rx.App(state=State)
 ```
 
 添加從應用程式根目錄到 index 元件的路由。 我們也添加了一個標題將會顯示在 預覽/瀏覽 分頁。
 
 ```python
-app.add_page(index, title="Pynecone:DALL-E")
+app.add_page(index, title="Reflex:DALL-E")
 app.compile()
 ```
 
 你可以藉由通過添加路由來增加更多頁面。
 
-## Pynecone 狀態
+## Reflex 狀態
 
-Pynecone 於 2022 年 12 月推出。
+Reflex 於 2022 年 12 月推出。
 
 截至 2023 年 3 月，我們處於 **Public Beta** 階段。
 
--   :white_check_mark: **Public Alpha**: 任何人都可以安裝與使用 Pynecone，或許包含問題， 但我們正在積極的解決他們。
+-   :white_check_mark: **Public Alpha**: 任何人都可以安裝與使用 Reflex，或許包含問題， 但我們正在積極的解決他們。
 -   :large_orange_diamond: **Public Beta**: 對於非軟體產品來說足夠穩定。
--   **Public Hosting Beta**: _Optionally_, 部屬跟託管你的 Pynecone!
--   **Public**: 這版本的 Pynecone 是可用於軟體產品的。
+-   **Public Hosting Beta**: _Optionally_, 部屬跟託管你的 Reflex!
+-   **Public**: 這版本的 Reflex 是可用於軟體產品的。
 
-Pynecone 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊。
+Reflex 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊。
 
 ## 貢獻
 
-我們歡迎任何大小的貢獻，以下是幾個好的方法來加入 Pynecone 社群。
+我們歡迎任何大小的貢獻，以下是幾個好的方法來加入 Reflex 社群。
 
--   **加入我們的 Discord**: 我們的 [Discord](https://discord.gg/T5WSbC2YtQ) 是幫助你加入 Pynecone 專案和討論或貢獻最棒的地方。
+-   **加入我們的 Discord**: 我們的 [Discord](https://discord.gg/T5WSbC2YtQ) 是幫助你加入 Reflex 專案和討論或貢獻最棒的地方。
 -   **GitHub Discussions**: 一個來討論你想要添加的功能或是需要澄清的事情的好地方。
 -   **GitHub Issues**: 報告錯誤的絕佳地方，另外你可以試著解決一些 issue 和送出 PR。
 
@@ -237,4 +237,4 @@ Pynecone 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :ey
 
 ## 授權
 
-Pynecone 是一個開源專案且使用 [Apache License 2.0](LICENSE) 授權。
+Reflex 是一個開源專案且使用 [Apache License 2.0](LICENSE) 授權。

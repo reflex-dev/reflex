@@ -1,7 +1,7 @@
 import pytest
 import sqlmodel
 
-from pynecone.model import Model
+from reflex.model import Model
 
 
 @pytest.fixture

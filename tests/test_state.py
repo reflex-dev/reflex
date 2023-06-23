@@ -3,13 +3,13 @@ from typing import Dict, List
 import pytest
 from plotly.graph_objects import Figure
 
-import pynecone as pc
-from pynecone.base import Base
-from pynecone.constants import IS_HYDRATED, RouteVar
-from pynecone.event import Event, EventHandler
-from pynecone.state import State
-from pynecone.utils import format
-from pynecone.vars import BaseVar, ComputedVar
+import reflex as rx
+from reflex.base import Base
+from reflex.constants import IS_HYDRATED, RouteVar
+from reflex.event import Event, EventHandler
+from reflex.state import State
+from reflex.utils import format
+from reflex.vars import BaseVar, ComputedVar
 
 
 class Object(Base):
@@ -797,7 +797,7 @@ class InterdependentState(State):
     v1: int = 0
     _v2: int = 1
 
-    @pc.cached_var
+    @rx.cached_var
     def v1x2(self) -> int:
         """Depends on var v1.
 
@@ -806,7 +806,7 @@ class InterdependentState(State):
         """
         return self.v1 * 2
 
-    @pc.cached_var
+    @rx.cached_var
     def v2x2(self) -> int:
         """Depends on backend var _v2.
 
@@ -815,7 +815,7 @@ class InterdependentState(State):
         """
         return self._v2 * 2
 
-    @pc.cached_var
+    @rx.cached_var
     def v1x2x2(self) -> int:
         """Depends on ComputedVar v1x2.
 
@@ -983,7 +983,7 @@ def test_computed_var_cached():
     class ComputedState(State):
         v: int = 0
 
-        @pc.cached_var
+        @rx.cached_var
         def comp_v(self) -> int:
             nonlocal comp_v_calls
             comp_v_calls += 1
@@ -1008,15 +1008,15 @@ def test_computed_var_cached_depends_on_non_cached():
     class ComputedState(State):
         v: int = 0
 
-        @pc.var
+        @rx.var
         def no_cache_v(self) -> int:
             return self.v
 
-        @pc.cached_var
+        @rx.cached_var
         def dep_v(self) -> int:
             return self.no_cache_v
 
-        @pc.cached_var
+        @rx.cached_var
         def comp_v(self) -> int:
             return self.v
 
@@ -1048,14 +1048,14 @@ def test_computed_var_depends_on_parent_non_cached():
     counter = 0
 
     class ParentState(State):
-        @pc.var
+        @rx.var
         def no_cache_v(self) -> int:
             nonlocal counter
             counter += 1
             return counter
 
     class ChildState(ParentState):
-        @pc.cached_var
+        @rx.cached_var
         def dep_v(self) -> int:
             return self.no_cache_v
 

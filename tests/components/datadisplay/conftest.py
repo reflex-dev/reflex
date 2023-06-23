@@ -4,7 +4,7 @@ from typing import List
 import pandas as pd
 import pytest
 
-import pynecone as pc
+import reflex as rx
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def data_table_state(request):
         The data table state class.
     """
 
-    class DataTableState(pc.State):
+    class DataTableState(rx.State):
         data = request.param["data"]
         columns = ["column1", "column2"]
 
@@ -33,10 +33,10 @@ def data_table_state2():
         The data table state class.
     """
 
-    class DataTableState(pc.State):
+    class DataTableState(rx.State):
         _data = pd.DataFrame()
 
-        @pc.var
+        @rx.var
         def data(self):
             return self._data
 
@@ -51,15 +51,15 @@ def data_table_state3():
         The data table state class.
     """
 
-    class DataTableState(pc.State):
+    class DataTableState(rx.State):
         _data: List = []
         _columns: List = ["col1", "col2"]
 
-        @pc.var
+        @rx.var
         def data(self) -> List:
             return self._data
 
-        @pc.var
+        @rx.var
         def columns(self):
             return self._columns
 
@@ -74,15 +74,15 @@ def data_table_state4():
         The data table state class.
     """
 
-    class DataTableState(pc.State):
+    class DataTableState(rx.State):
         _data: List = []
         _columns: List = ["col1", "col2"]
 
-        @pc.var
+        @rx.var
         def data(self):
             return self._data
 
-        @pc.var
+        @rx.var
         def columns(self) -> List:
             return self._columns
 

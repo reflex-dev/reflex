@@ -2,14 +2,14 @@ from typing import Dict, List, Type
 
 import pytest
 
-import pynecone as pc
-from pynecone.components.component import Component, CustomComponent, custom_component
-from pynecone.components.layout.box import Box
-from pynecone.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
-from pynecone.state import State
-from pynecone.style import Style
-from pynecone.utils import imports
-from pynecone.vars import ImportVar, Var
+import reflex as rx
+from reflex.components.component import Component, CustomComponent, custom_component
+from reflex.components.layout.box import Box
+from reflex.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
+from reflex.state import State
+from reflex.style import Style
+from reflex.utils import imports
+from reflex.vars import ImportVar, Var
 
 
 @pytest.fixture
@@ -375,17 +375,17 @@ def test_custom_component_wrapper():
 
     @custom_component
     def my_component(width: Var[int], color: Var[str]):
-        return pc.box(
+        return rx.box(
             width=width,
             color=color,
         )
 
     ccomponent = my_component(
-        pc.text("child"), width=Var.create(1), color=Var.create("red")
+        rx.text("child"), width=Var.create(1), color=Var.create("red")
     )
     assert isinstance(ccomponent, CustomComponent)
     assert len(ccomponent.children) == 1
-    assert isinstance(ccomponent.children[0], pc.Text)
+    assert isinstance(ccomponent.children[0], rx.Text)
 
     component = ccomponent.get_component()
     assert isinstance(component, Box)
@@ -468,7 +468,7 @@ def test_unsupported_child_components(component5):
         component5: the test component
     """
     with pytest.raises(ValueError) as err:
-        comp = component5.create(pc.text("testing component"))
+        comp = component5.create(rx.text("testing component"))
         comp.render()
     assert (
         err.value.args[0]

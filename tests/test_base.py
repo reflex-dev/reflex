@@ -1,6 +1,6 @@
 import pytest
 
-from pynecone.base import Base
+from reflex.base import Base
 
 
 @pytest.fixture
