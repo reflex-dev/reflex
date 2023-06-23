@@ -187,7 +187,10 @@ def test_set_local_storage():
     "key, expected",
     [
         ("test_key", BaseVar(name="localStorage.getItem('test_key')", type_=str)),
-        (BaseVar(name="key_var", type_=str), BaseVar(name="key_var", type_=str)),
+        (
+            BaseVar(name="key_var", type_=str),
+            BaseVar(name="localStorage.getItem(key_var)", type_=str),
+        ),
         (
             BaseState.val,
             BaseVar(name="localStorage.getItem(base_state.val)", type_=str),
