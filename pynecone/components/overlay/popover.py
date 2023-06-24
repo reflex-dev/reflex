@@ -87,11 +87,11 @@ class Popover(ChakraComponent):
     def create(
         cls,
         *children,
-        trigger=None,
-        header=None,
-        body=None,
-        footer=None,
-        use_close_button=False,
+        trigger_comp=None,
+        header_comp=None,
+        body_comp=None,
+        footer_comp=None,
+        use_close_button_comp=False,
         **props
     ) -> Component:
         """Create a popover component.
@@ -111,19 +111,19 @@ class Popover(ChakraComponent):
         if len(children) == 0:
             contents = []
 
-            trigger = PopoverTrigger.create(trigger)
+            trigger = PopoverTrigger.create(trigger_comp)
 
             # add header if present in props
-            if header:
-                contents.append(PopoverHeader.create(header))
+            if header_comp:
+                contents.append(PopoverHeader.create(header_comp))
 
-            if body:
-                contents.append(PopoverBody.create(body))
+            if body_comp:
+                contents.append(PopoverBody.create(body_comp))
 
-            if footer:
-                contents.append(PopoverFooter.create(footer))
+            if footer_comp:
+                contents.append(PopoverFooter.create(footer_comp))
 
-            if use_close_button:
+            if use_close_button_comp:
                 contents.append(PopoverCloseButton.create())
 
             children = [trigger, PopoverContent.create(*contents)]
