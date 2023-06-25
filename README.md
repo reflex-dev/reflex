@@ -4,7 +4,7 @@
 The new name aligns with our goal of allowing you to build apps easily, while also being flexible and powerful enough to handle all your use cases.
 
 Major Changes:
-+ Our domain will switch from https://pynecone.io/ -> https://pynecone.io/
++ Our domain will switch from https://pynecone.io/ -> https://reflex.dev/
 + Our pip install will switch from pip install pynecone -> pip install reflex
 + Our Github repo will switch from https://github.com/pynecone-io/pynecone -> https://github.com/reflex-dev/reflex
 + Our library will change from import pynecone as pc to import reflex as rx
