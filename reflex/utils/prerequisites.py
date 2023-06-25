@@ -358,6 +358,7 @@ def check_admin_settings():
 
 
 def migrate_to_reflex():
+    """Migration from Pynecone to Reflex."""
     # Check if the old config file exists.
     if not os.path.exists(constants.OLD_CONFIG_FILE):
         return
