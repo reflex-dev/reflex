@@ -44,6 +44,9 @@ def init(
     prerequisites.validate_and_install_bun()
     prerequisites.initialize_web_directory()
 
+    # Migrate Pynecone projects to Reflex.
+    prerequisites.migrate_to_reflex()
+
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.CONFIG_FILE):
         prerequisites.create_config(app_name)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import glob
 import json
 import os
 import platform
@@ -9,6 +10,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime
+from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
@@ -353,3 +355,44 @@ def check_admin_settings():
             console.print(
                 "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
             )
+
+
+def migrate_to_reflex():
+    # Check if the old config file exists.
+    if not os.path.exists(constants.OLD_CONFIG_FILE):
+        return
+
+    # Ask the user if they want to migrate.
+    action = console.ask(
+        "Pynecone project detected. Automatically upgrade to Reflex?",
+        choices=["y", "n"],
+    )
+    if action == "n":
+        return
+
+    # Rename pcconfig to rxconfig.
+    console.print(
+        f"[bold]Renaming {constants.OLD_CONFIG_FILE} to {constants.CONFIG_FILE}"
+    )
+    os.rename(constants.OLD_CONFIG_FILE, constants.CONFIG_FILE)
+
+    # Find all python files in the app directory.
+    file_pattern = os.path.join(get_config().app_name, "**/*.py")
+    file_list = glob.glob(file_pattern, recursive=True)
+
+    # Add the config file to the list of files to be migrated.
+    file_list.append(constants.CONFIG_FILE)
+
+    # Migrate all files.
+    updates = {
+        "Pynecone": "Reflex",
+        "pynecone as pc": "reflex as rx",
+        "pynecone": "reflex",
+        "pc.": "rx.",
+    }
+    for file_path in file_list:
+        with FileInput(file_path, inplace=True) as file:
+            for line in file:
+                for old, new in updates.items():
+                    line = line.replace(old, new)
+                print(line, end="")

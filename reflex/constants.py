@@ -181,6 +181,8 @@ DEFAULT_GITIGNORE = {WEB_DIR, DB_NAME, "__pycache__/", "*.py[cod]"}
 CONFIG_MODULE = "rxconfig"
 # The python config file.
 CONFIG_FILE = f"{CONFIG_MODULE}{PY_EXT}"
+# The previous config file.
+OLD_CONFIG_FILE = f"pcconfig{PY_EXT}"
 # The deployment URL.
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.reflex.app"
 # Token expiration time in seconds.
