@@ -289,7 +289,7 @@ class App(Base):
                 raise TypeError(
                     "You may be trying to use an invalid Python function on a state var. "
                     "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/state/vars "
+                    "See the var operation docs here: https://pynecone.io/docs/state/vars "
                 ) from e
             raise e
 
@@ -425,7 +425,7 @@ class App(Base):
                 else Admin(
                     engine=Model.get_db_engine(),
                     title="Reflex Admin Dashboard",
-                    logo_url="https://reflex.dev/logo.png",
+                    logo_url="https://pynecone.io/logo.png",
                 )
             )
             for model in config.admin_dash.models:

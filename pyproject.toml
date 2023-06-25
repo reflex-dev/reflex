@@ -8,9 +8,9 @@ authors = [
     "Alek Petuskey <alek@reflex.dev>",
 ]
 readme = "README.md"
-homepage = "https://reflex.dev"
+homepage = "https://pynecone.io"
 repository = "https://github.com/pynecone-io/pynecone"
-documentation = "https://reflex.dev/docs/getting-started/introduction"
+documentation = "https://pynecone.io/docs/getting-started/introduction"
 keywords = [
     "web",
     "framework",
