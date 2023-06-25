@@ -1,7 +1,7 @@
 import pytest
 
-from pynecone import style
-from pynecone.vars import Var
+from reflex import style
+from reflex.vars import Var
 
 test_style = [
     ({"a": 1}, {"a": 1}),

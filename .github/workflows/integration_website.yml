@@ -31,8 +31,8 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-      # Clone Pynecone Website Repo For integration tests
-    - name: Clone Pynecone Website Repo
+      # Clone Reflex Website Repo For integration tests
+    - name: Clone Reflex Website Repo
       uses: actions/checkout@v3
       with:
         repository: pynecone-io/pcweb
@@ -65,7 +65,7 @@ jobs:
       run: poetry run pip install -r requirements.txt && poetry run pip install googletrans
     - name: Init Website
       working-directory: ./pcweb
-      run: poetry run pc init
+      run: poetry run reflex init
     - name: Run Website and Check for errors
       run: |
         chmod +x ./scripts/integration.sh

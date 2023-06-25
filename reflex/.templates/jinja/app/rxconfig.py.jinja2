@@ -1,0 +1,10 @@
+import reflex as rx
+
+class {{ config_name }}(rx.Config):
+    pass
+
+config = {{ config_name }}(
+    app_name="{{ app_name }}",
+    db_url="{{ const.db_url }}",
+    env=rx.Env.DEV,
+)

@@ -18,7 +18,7 @@ cd "$1" || exit 1
 echo "Changed directory to $1"
 
 # Start the server in the background
-poetry run pc run --env "$2" & pid=$!
+poetry run reflex run --env "$2" & pid=$!
 echo "Started server with PID $pid"
 
 # Wait for ports 3000 and 8000 to become available

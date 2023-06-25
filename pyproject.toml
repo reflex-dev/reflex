@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "pynecone"
+name = "reflex"
 version = "0.1.34"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
@@ -19,7 +19,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
 ]
 packages = [
-    {include = "pynecone"}
+    {include = "reflex"}
 ]
 
 [tool.poetry.dependencies]
@@ -62,7 +62,7 @@ asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 
 [tool.poetry.scripts]
-pc = "pynecone.pc:main"
+reflex = "reflex.reflex:main"
 
 [build-system]
 requires = ["poetry-core>=1.5.1"]
@@ -82,4 +82,4 @@ target-version = "py37"
 
 "__init__.py" = ["F401"]
 "tests/*.py" = ["D100", "D103", "D104"]
-"pynecone/.templates/*.py" = ["D100", "D103", "D104"]
+"reflex/.templates/*.py" = ["D100", "D103", "D104"]

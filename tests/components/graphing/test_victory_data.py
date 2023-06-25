@@ -1,4 +1,4 @@
-from pynecone import data
+from reflex import data
 
 # Test data.
 x_num = [1, 2, 3, 4, 5]

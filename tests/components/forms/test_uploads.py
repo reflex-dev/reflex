@@ -1,6 +1,6 @@
 import pytest
 
-import pynecone as pc
+import reflex as rx
 
 
 @pytest.fixture
@@ -12,9 +12,9 @@ def upload_component():
     """
 
     def upload_component():
-        return pc.upload(
-            pc.button("select file"),
-            pc.text("Drag and drop files here or click to select files"),
+        return rx.upload(
+            rx.button("select file"),
+            rx.text("Drag and drop files here or click to select files"),
             border="1px dotted black",
         )
 
@@ -30,9 +30,9 @@ def upload_component_with_props():
     """
 
     def upload_component_with_props():
-        return pc.upload(
-            pc.button("select file"),
-            pc.text("Drag and drop files here or click to select files"),
+        return rx.upload(
+            rx.button("select file"),
+            rx.text("Drag and drop files here or click to select files"),
             border="1px dotted black",
             no_drag=True,
             max_files=2,

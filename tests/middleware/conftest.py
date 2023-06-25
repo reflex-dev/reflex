@@ -1,6 +1,6 @@
 import pytest
 
-from pynecone.event import Event
+from reflex.event import Event
 
 
 def create_event(name):

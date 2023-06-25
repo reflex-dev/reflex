@@ -3,10 +3,10 @@ from typing import Dict
 
 import pytest
 
-import pynecone as pc
-from pynecone import constants
-from pynecone.config import DBConfig
-from pynecone.constants import get_value
+import reflex as rx
+from reflex import constants
+from reflex.config import DBConfig
+from reflex.constants import get_value
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def test_config_db_url(base_config_values):
         base_config_values: base_config_values fixture.
     """
     os.environ.pop("DB_URL")
-    config = pc.Config(**base_config_values)
+    config = rx.Config(**base_config_values)
     assert config.db_url == base_config_values["db_url"]
 
 
@@ -70,7 +70,7 @@ def test_default_db_url(config_no_db_url_values):
     Args:
         config_no_db_url_values: Config values with no db_url defined.
     """
-    config = pc.Config(**config_no_db_url_values)
+    config = rx.Config(**config_no_db_url_values)
     assert config.db_url == constants.DB_URL
 
 
@@ -80,7 +80,7 @@ def test_empty_db_url(config_empty_db_url_values):
     Args:
         config_empty_db_url_values: Config values with empty db_url.
     """
-    config = pc.Config(**config_empty_db_url_values)
+    config = rx.Config(**config_empty_db_url_values)
     assert config.db_url is None
 
 
@@ -90,7 +90,7 @@ def test_none_db_url(config_none_db_url_values):
     Args:
         config_none_db_url_values: Config values with None (string) db_url.
     """
-    config = pc.Config(**config_none_db_url_values)
+    config = rx.Config(**config_none_db_url_values)
     assert config.db_url == "None"
 
 
@@ -103,7 +103,7 @@ def test_db_url_precedence(base_config_values, sqlite_db_config_values):
     """
     db_config = DBConfig(**sqlite_db_config_values)
     base_config_values["db_config"] = db_config
-    config = pc.Config(**base_config_values)
+    config = rx.Config(**base_config_values)
     assert config.db_url == base_config_values["db_url"]
 
 
@@ -116,7 +116,7 @@ def test_db_url_from_db_config(config_no_db_url_values, sqlite_db_config_values)
     """
     db_config = DBConfig(**sqlite_db_config_values)
     config_no_db_url_values["db_config"] = db_config
-    config = pc.Config(**config_no_db_url_values)
+    config = rx.Config(**config_no_db_url_values)
     assert config.db_url == db_config.get_url()
 
 

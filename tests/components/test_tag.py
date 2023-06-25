@@ -2,9 +2,9 @@ from typing import Any, Dict, List
 
 import pytest
 
-from pynecone.components.tags import CondTag, Tag, tagless
-from pynecone.event import EVENT_ARG, EventChain, EventHandler, EventSpec
-from pynecone.vars import BaseVar, Var
+from reflex.components.tags import CondTag, Tag, tagless
+from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.vars import BaseVar, Var
 
 
 def mock_event(arg):

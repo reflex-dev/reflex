@@ -3,24 +3,24 @@ from typing import Any
 
 import pytest
 
-import pynecone as pc
-from pynecone.components.layout.box import Box
-from pynecone.components.layout.cond import Cond, cond
-from pynecone.components.layout.fragment import Fragment
-from pynecone.components.layout.responsive import (
+import reflex as rx
+from reflex.components.layout.box import Box
+from reflex.components.layout.cond import Cond, cond
+from reflex.components.layout.fragment import Fragment
+from reflex.components.layout.responsive import (
     desktop_only,
     mobile_and_tablet,
     mobile_only,
     tablet_and_desktop,
     tablet_only,
 )
-from pynecone.components.typography.text import Text
-from pynecone.vars import Var
+from reflex.components.typography.text import Text
+from reflex.vars import Var
 
 
 @pytest.fixture
 def cond_state(request):
-    class CondState(pc.State):
+    class CondState(rx.State):
         value: request.param["value_type"] = request.param["value"]  # noqa
 
     return CondState
@@ -35,8 +35,8 @@ def cond_state(request):
     ],
     indirect=True,
 )
-def test_validate_cond(cond_state: pc.Var):
-    """Test if cond can be a pc.Var with any values.
+def test_validate_cond(cond_state: rx.Var):
+    """Test if cond can be a rx.Var with any values.
 
     Args:
         cond_state: A fixture.

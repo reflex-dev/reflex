@@ -1,7 +1,7 @@
 import pytest
 
-from pynecone.components.media.icon import ICON_LIST, Icon
-from pynecone.utils import format
+from reflex.components.media.icon import ICON_LIST, Icon
+from reflex.utils import format
 
 
 def test_no_tag_errors():

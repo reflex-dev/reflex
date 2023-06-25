@@ -14,16 +14,16 @@ from fastapi import UploadFile
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 
-from pynecone import AdminDash, constants
-from pynecone.app import App, DefaultState, process, upload
-from pynecone.components import Box
-from pynecone.event import Event, get_hydrate_event
-from pynecone.middleware import HydrateMiddleware
-from pynecone.model import Model
-from pynecone.state import State, StateUpdate
-from pynecone.style import Style
-from pynecone.utils import format
-from pynecone.vars import ComputedVar
+from reflex import AdminDash, constants
+from reflex.app import App, DefaultState, process, upload
+from reflex.components import Box
+from reflex.event import Event, get_hydrate_event
+from reflex.middleware import HydrateMiddleware
+from reflex.model import Model
+from reflex.state import State, StateUpdate
+from reflex.style import Style
+from reflex.utils import format
+from reflex.vars import ComputedVar
 
 
 @pytest.fixture
@@ -640,7 +640,7 @@ async def test_upload_file(fixture, request, expected):
     "fixture", ["upload_state", "upload_sub_state", "upload_grand_sub_state"]
 )
 async def test_upload_file_without_annotation(fixture, request):
-    """Test that an error is thrown when there's no param annotated with pc.UploadFile or List[UploadFile].
+    """Test that an error is thrown when there's no param annotated with rx.UploadFile or List[UploadFile].
 
     Args:
         fixture: The state.
@@ -667,7 +667,7 @@ async def test_upload_file_without_annotation(fixture, request):
         await fn([file1, file2])
     assert (
         err.value.args[0]
-        == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[pc.UploadFile]"
+        == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
 

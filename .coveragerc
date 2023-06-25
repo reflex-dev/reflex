@@ -1,5 +1,5 @@
 [run]
-source = pynecone
+source = reflex
 branch = true
 
 [report]

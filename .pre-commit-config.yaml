@@ -8,17 +8,17 @@ repos:
     rev: v1.1.313
     hooks:
     - id: pyright
-      args: [pynecone, tests]
+      args: [reflex, tests]
       language: system
 
   - repo: https://github.com/terrencepreilly/darglint
     rev: v1.8.1
     hooks:
     - id: darglint
-      exclude: '^pynecone/pc.py'
+      exclude: '^reflex/reflex.py'
 
   - repo: https://github.com/psf/black
     rev: 22.10.0
     hooks:
     - id: black
-      args: [pynecone, tests]
+      args: [reflex, tests]

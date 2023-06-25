@@ -1,6 +1,6 @@
 import pytest
 
-from pynecone.components.base.bare import Bare
+from reflex.components.base.bare import Bare
 
 
 @pytest.mark.parametrize(
