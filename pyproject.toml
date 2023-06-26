@@ -29,12 +29,10 @@ fastapi = "^0.96.0"
 gunicorn = "^20.1.0"
 httpx = "^0.23.0"
 jinja2 = "^3.1.2"
-plotly = "^5.13.0"
 psutil = "^5.9.4"
 pydantic = "^1.10.2"
 python-multipart = "^0.0.5"
 python-socketio = "^5.7.0"
-redis = "^4.3.5"
 rich = "^13.0.0"
 sqlmodel = "^0.0.8"
 typer = "0.4.2"
@@ -60,6 +58,8 @@ pandas = [
 ]
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
+plotly = "^5.15.0"
+redis = "^4.6.0"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:main"
