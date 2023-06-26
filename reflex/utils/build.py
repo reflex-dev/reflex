@@ -14,6 +14,7 @@ from rich.progress import Progress
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import path_ops, prerequisites
+from reflex.utils.processes import new_process
 
 
 def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
@@ -115,13 +116,9 @@ def export_app(
     task = progress.add_task("Building app... ", total=500)
 
     # Start the subprocess with the progress bar.
-    with progress, subprocess.Popen(
+    with progress, new_process(
         [prerequisites.get_package_manager(), "run", "export"],
         cwd=constants.WEB_DIR,
-        env=os.environ,
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,  # Redirect stdout to a pipe
-        universal_newlines=True,  # Set universal_newlines to True for text mode
     ) as export_process:
         assert export_process.stdout is not None, "No stdout for export process."
         for line in export_process.stdout:
@@ -216,7 +213,7 @@ def setup_frontend(
 
     # Disable the Next telemetry.
     if disable_telemetry:
-        subprocess.Popen(
+        new_process(
             [
                 prerequisites.get_package_manager(),
                 "run",
@@ -225,9 +222,7 @@ def setup_frontend(
                 "disable",
             ],
             cwd=constants.WEB_DIR,
-            env=os.environ,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.STDOUT,
         )
 
 
