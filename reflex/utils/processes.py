@@ -133,14 +133,15 @@ def new_process(args, **kwargs):
     Returns:
         Execute a child program in a new process.
     """
-    default_kwargs = {
+    kwargs = {
         "env": os.environ,
         "stderr": subprocess.STDOUT,
         "stdout": subprocess.PIPE,  # Redirect stdout to a pipe
         "universal_newlines": True,  # Set universal_newlines to True for text mode
         "encoding": "UTF-8",
+        **kwargs,
     }
     return subprocess.Popen(
         args,
-        **default_kwargs | kwargs,
+        **kwargs,
     )
