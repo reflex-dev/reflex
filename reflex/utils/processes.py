@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import os
 import signal
+import subprocess
 import sys
 from typing import Optional
 from urllib.parse import urlparse
@@ -120,3 +121,27 @@ def change_or_terminate_port(port, _type) -> str:
     else:
         console.print("Exiting...")
         sys.exit()
+
+
+def new_process(args, **kwargs):
+    """Wrapper over subprocess.Popen to unify the launch of child processes.
+
+    Args:
+        args: A string, or a sequence of program arguments.
+        **kwargs: Kwargs to override default wrap values to pass to subprocess.Popen as arguments.
+
+    Returns:
+        Execute a child program in a new process.
+    """
+    kwargs = {
+        "env": os.environ,
+        "stderr": subprocess.STDOUT,
+        "stdout": subprocess.PIPE,  # Redirect stdout to a pipe
+        "universal_newlines": True,  # Set universal_newlines to True for text mode
+        "encoding": "UTF-8",
+        **kwargs,
+    }
+    return subprocess.Popen(
+        args,
+        **kwargs,
+    )

@@ -13,6 +13,7 @@ from rich import print
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, prerequisites, processes
+from reflex.utils.processes import new_process
 from reflex.utils.watch import AssetFolderWatch
 
 
@@ -36,13 +37,9 @@ def run_process_and_launch_url(
         run_command: The command to run.
         loglevel: The log level to use.
     """
-    process = subprocess.Popen(
+    process = new_process(
         run_command,
         cwd=constants.WEB_DIR,
-        env=os.environ,
-        stderr=subprocess.STDOUT,
-        stdout=None if platform.system() == "Windows" else subprocess.PIPE,
-        universal_newlines=None if platform.system() == "Windows" else True,
     )
 
     current_time = datetime.now()
@@ -134,7 +131,7 @@ def run_backend(
         loglevel,
         "--reload",
     ]
-    process = subprocess.Popen(cmd)
+    process = new_process(cmd)
 
     try:
         process.wait()
