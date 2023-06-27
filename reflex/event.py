@@ -306,7 +306,7 @@ def remove_local_storage(key: str) -> EventSpec:
     """Set a value in the local storage on the frontend.
 
     Args:
-        key (str): The key identifying the variable in the local storage to remove.
+        key: The key identifying the variable in the local storage to remove.
 
     Returns:
         EventSpec: An event to remove an item based on the provided key in local storage.
