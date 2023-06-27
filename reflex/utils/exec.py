@@ -130,6 +130,8 @@ def run_backend(
         "--log-level",
         loglevel,
         "--reload",
+        "--reload-exclude",
+        f"'{constants.WEB_DIR}/*'",
     ]
     process = new_process(cmd)
 
