@@ -742,6 +742,7 @@ def test_get_cookies(test_state, mocker, router_data):
         "name": "reflex",
         "list_cookies": ["some", "random", "cookies"],
         "dict_cookies": {"name": "reflex"},
+        "val": True,
     }
 
 

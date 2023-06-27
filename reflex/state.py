@@ -5,6 +5,7 @@ import asyncio
 import copy
 import functools
 import inspect
+import json
 import traceback
 import urllib.parse
 from abc import ABC
@@ -505,9 +506,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for pair in cookie_pairs:
             key, value = pair[0].strip(), urllib.parse.unquote(pair[1].strip())
             try:
-                # convert non-string data types to the actual types.
-                value = eval(value)
-            except Exception:
+                # cast non-string values to the actual types.
+                value = json.loads(value)
+            except json.JSONDecodeError:
                 pass
             finally:
                 cookie_dict[key] = value

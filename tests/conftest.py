@@ -455,7 +455,7 @@ def router_data_headers() -> Dict[str, str]:
         "cookie": "csrftoken=mocktoken; "
         "name=reflex;"
         " list_cookies=%5B%22some%22%2C%20%22random%22%2C%20%22cookies%22%5D;"
-        " dict_cookies=%7B%22name%22%3A%20%22reflex%22%7D",
+        " dict_cookies=%7B%22name%22%3A%20%22reflex%22%7D; val=true",
         "sec-websocket-key": "mock-websocket-key",
         "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
     }
