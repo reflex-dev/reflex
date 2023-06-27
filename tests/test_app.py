@@ -13,6 +13,7 @@ import sqlmodel
 from fastapi import UploadFile
 from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
+from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import AdminDash, constants
 from reflex.app import App, DefaultState, process, upload
@@ -264,6 +265,26 @@ def test_initialize_with_custom_admin_dashboard(
     assert len(app.admin_dash.models) > 0
     assert app.admin_dash.models[0] == test_model_auth
     assert app.admin_dash.admin.auth_provider == test_custom_auth_admin
+
+
+def test_initialize_admin_dashboard_with_view_overrides(test_model):
+    """Test setting the admin dashboard of an app with view class overriden.
+
+    Args:
+        test_model: The default model.
+    """
+
+    class TestModelView(ModelView):
+        pass
+
+    app = App(
+        admin_dash=AdminDash(
+            models=[test_model], view_overrides={test_model: TestModelView}
+        )
+    )
+    assert app.admin_dash is not None
+    assert app.admin_dash.models == [test_model]
+    assert app.admin_dash.view_overrides[test_model] == TestModelView
 
 
 def test_initialize_with_state(test_state):

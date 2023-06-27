@@ -428,8 +428,11 @@ class App(Base):
                     logo_url="https://pynecone.io/logo.png",
                 )
             )
+
             for model in config.admin_dash.models:
-                admin.add_view(ModelView(model))
+                view = config.admin_dash.view_overrides.get(model, ModelView)
+                admin.add_view(view(model))
+
             admin.mount_to(self.api)
 
     def compile(self):
