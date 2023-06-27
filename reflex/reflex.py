@@ -211,16 +211,16 @@ def export(
     backend: bool = typer.Option(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
-    for_rx_deploy: bool = typer.Option(
+    for_reflex_deploy: bool = typer.Option(
         False,
-        "--for-rx-deploy",
+        "--for-reflex-deploy",
         help="Whether export the app for Reflex Deploy Service.",
     ),
 ):
     """Export the app to a zip file."""
     config = get_config()
 
-    if for_rx_deploy:
+    if for_reflex_deploy:
         # Get the app config and modify the api_url base on username and app_name.
         config.api_url = prerequisites.get_production_backend_url()
 
