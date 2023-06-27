@@ -10,4 +10,5 @@ class AdminDash:
     """Data used to build the admin dashboard."""
 
     models: list = field(default_factory=list)
+    view_overrides: dict = field(default_factory=dict)
     admin: Optional[Admin] = None
