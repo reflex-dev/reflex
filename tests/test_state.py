@@ -1087,3 +1087,18 @@ def test_computed_var_depends_on_parent_non_cached():
         IS_HYDRATED: False,
     }
     assert counter == 6
+
+
+def test_backend_method():
+    """A method with leading underscore should be callable from event handler."""
+
+    class BackendMethodState(State):
+        def _be_method(self):
+            return True
+
+        def handler(self):
+            assert self._be_method()
+
+    bms = BackendMethodState()
+    bms.handler()
+    assert bms._be_method()
