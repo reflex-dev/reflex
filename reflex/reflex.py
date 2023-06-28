@@ -229,6 +229,7 @@ def export(
 
     if frontend:
         build.setup_frontend(Path.cwd())
+        prerequisites.get_app()
 
     build.export_app(
         backend=backend,
