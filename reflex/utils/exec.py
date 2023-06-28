@@ -133,7 +133,7 @@ def run_backend(
         "--reload-exclude",
         f"'{constants.WEB_DIR}/*'",
     ]
-    process = new_process(cmd)
+    process = subprocess.Popen(cmd)
 
     try:
         process.wait()
