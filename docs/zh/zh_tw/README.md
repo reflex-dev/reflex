@@ -3,7 +3,7 @@
 <img src="../../images/cones.png">
 <hr>
 
-**✨ 使用 Python 建立高效且可自訂的網頁應用程式，並在一秒內部署。**
+**✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。**
 
 📑 [Docs](https://pynecone.io/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://pynecone.io/docs/library) &nbsp; 🖼️ [Gallery](https://pynecone.io/docs/gallery) &nbsp; 🛸 [Deployment](https://pynecone.io/docs/hosting/deploy)
 
