@@ -131,7 +131,7 @@ def run_backend(
         loglevel,
         "--reload",
     ]
-    process = new_process(cmd)
+    process = subprocess.Popen(cmd)
 
     try:
         process.wait()
