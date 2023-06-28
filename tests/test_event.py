@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from reflex import event
@@ -157,6 +159,35 @@ def test_set_cookie():
     assert (
         format.format_event(spec)
         == 'E("_set_cookie", {key:"testkey",value:"testvalue"})'
+    )
+
+
+def test_remove_cookie():
+    """Test the event remove_cookie."""
+    spec = event.remove_cookie("testkey")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_remove_cookie"
+    assert spec.args == (("key", "testkey"), ("options", {}))
+    assert (
+        format.format_event(spec) == 'E("_remove_cookie", {key:"testkey",options:{}})'
+    )
+
+
+def test_remove_cookie_with_options():
+    """Test the event remove_cookie with options."""
+    options = {
+        "path": "/",
+        "domain": "example.com",
+        "secure": True,
+        "sameSite": "strict",
+    }
+    spec = event.remove_cookie("testkey", options)
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_remove_cookie"
+    assert spec.args == (("key", "testkey"), ("options", options))
+    assert (
+        format.format_event(spec)
+        == f'E("_remove_cookie", {{key:"testkey",options:{json.dumps(options)}}})'
     )
 
 
