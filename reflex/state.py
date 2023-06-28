@@ -10,6 +10,7 @@ import traceback
 import urllib.parse
 from abc import ABC
 from collections import defaultdict
+from types import FunctionType
 from typing import (
     Any,
     AsyncIterator,
@@ -197,6 +198,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             for name, value in cls.__dict__.items()
             if types.is_backend_variable(name)
             and name not in cls.inherited_backend_vars
+            and not isinstance(value, FunctionType)
         }
 
         cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
