@@ -131,6 +131,16 @@ export const applyEvent = async (event, router, socket) => {
     return false;
   }
 
+  if (event.name == "_clear_local_storage") {
+    localStorage.clear();
+    return false;
+  }
+
+  if (event.name == "_remove_local_storage") {
+    localStorage.removeItem(event.payload.key);
+    return false;
+  }
+
   if (event.name == "_set_clipboard") {
     const content = event.payload.content;
     navigator.clipboard.writeText(content);

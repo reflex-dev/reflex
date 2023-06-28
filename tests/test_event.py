@@ -204,3 +204,21 @@ def test_set_local_storage():
         format.format_event(spec)
         == 'E("_set_local_storage", {key:"testkey",value:"testvalue"})'
     )
+
+
+def test_clear_local_storage():
+    """Test the event clear_local_storage."""
+    spec = event.clear_local_storage()
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_clear_local_storage"
+    assert not spec.args
+    assert format.format_event(spec) == 'E("_clear_local_storage", {})'
+
+
+def test_remove_local_storage():
+    """Test the event remove_local_storage."""
+    spec = event.remove_local_storage("testkey")
+    assert isinstance(spec, EventSpec)
+    assert spec.handler.fn.__qualname__ == "_remove_local_storage"
+    assert spec.args == (("key", "testkey"),)
+    assert format.format_event(spec) == 'E("_remove_local_storage", {key:"testkey"})'
