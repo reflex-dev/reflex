@@ -390,6 +390,7 @@ def migrate_to_reflex():
         "pynecone as pc": "reflex as rx",
         "pynecone": "reflex",
         "pc.": "rx.",
+        "pcconfig": "rxconfig",
     }
     for file_path in file_list:
         with FileInput(file_path, inplace=True) as file:
