@@ -388,6 +388,7 @@ def migrate_to_reflex():
     updates = {
         "Pynecone": "Reflex",
         "pynecone as pc": "reflex as rx",
+        "pynecone.io": "reflex.dev",
         "pynecone": "reflex",
         "pc.": "rx.",
         "pcconfig": "rxconfig",
