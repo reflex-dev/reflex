@@ -63,15 +63,15 @@ class Markdown(Component):
             ._render()
             .add_props(
                 components={
-                    "h1": "{({node, ...props}) => <Heading size='2xl' {...props} />}",
-                    "h2": "{({node, ...props}) => <Heading size='xl' {...props} />}",
-                    "h3": "{({node, ...props}) => <Heading size='lg' {...props} />}",
-                    "h4": "{({node, ...props}) => <Heading size='sm' {...props} />}",
-                    "h5": "{({node, ...props}) => <Heading size='xs' {...props} />}",
+                    "h1": "{({node, ...props}) => <Heading size='2xl' paddingY='0.5em' {...props} />}",
+                    "h2": "{({node, ...props}) => <Heading size='xl' paddingY='0.5em' {...props} />}",
+                    "h3": "{({node, ...props}) => <Heading size='lg' paddingY='0.5em' {...props} />}",
+                    "h4": "{({node, ...props}) => <Heading size='sm' paddingY='0.5em' {...props} />}",
+                    "h5": "{({node, ...props}) => <Heading size='xs' paddingY='0.5em' {...props} />}",
                     "ul": "{UnorderedList}",
                     "ol": "{OrderedList}",
                     "li": "{ListItem}",
-                    "p": "{Text}",
+                    "p": "{({node, ...props}) => <Text paddingY='0.5em' {...props} />}",
                     "a": "{Link}",
                     "code": """{({node, inline, className, children, ...props}) =>
                     {
