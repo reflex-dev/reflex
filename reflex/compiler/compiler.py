@@ -78,6 +78,9 @@ def _compile_page(
         state: The app state.
         connect_error_component: The component to render on sever connection error.
 
+    Raises:
+        ValueError: if a conflict on "tag/alias" is detected for an import. 
+
     Returns:
         The compiled component.
     """
