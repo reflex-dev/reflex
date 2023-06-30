@@ -91,7 +91,7 @@ def _compile_page(
     for lib,imps in imports.items():
         for iv in imps:
             i_name = f"{iv.tag}/{iv.alias}" if iv.alias else iv.tag
-            if i_name in used_tags.keys():
+            if i_name in used_tags:
                 raise ValueError(
                     f"Can not compile, the tag {i_name} is used multiple time from {lib} and {used_tags[i_name]}"
                 )
