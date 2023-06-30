@@ -79,7 +79,7 @@ def _compile_page(
         connect_error_component: The component to render on sever connection error.
 
     Raises:
-        ValueError: if a conflict on "tag/alias" is detected for an import. 
+        ValueError: if a conflict on "tag/alias" is detected for an import.
 
     Returns:
         The compiled component.
@@ -88,7 +88,7 @@ def _compile_page(
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
     # Make sure that the same Tag is not used in multiple import.
     used_tags = {}
-    for lib,imps in imports.items():
+    for lib, imps in imports.items():
         for iv in imps:
             i_name = f"{iv.tag}/{iv.alias}" if iv.alias else iv.tag
             if i_name in used_tags:
