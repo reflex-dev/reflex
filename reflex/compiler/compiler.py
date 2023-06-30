@@ -83,6 +83,14 @@ def _compile_page(
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    used_tags = []
+    for imp in imports.values():
+        for iv in imp:
+            if iv.tag in used_tags:
+                raise ValueError(
+                    f"Can not compile, the tag {iv.tag} is used multiple time"
+                )
+            used_tags.append(iv.tag)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
