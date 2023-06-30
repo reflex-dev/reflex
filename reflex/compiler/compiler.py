@@ -78,11 +78,13 @@ def _compile_page(
         state: The app state.
         connect_error_component: The component to render on sever connection error.
 
+
     Returns:
         The compiled component.
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    utils.validate_imports(imports)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
