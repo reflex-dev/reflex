@@ -84,14 +84,15 @@ def _compile_page(
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
     # Make sure that the same Tag is not used in multiple import.
-    used_tags = []
-    for imp in imports.values():
-        for iv in imp:
-            if iv.tag in used_tags:
+    used_tags = {}
+    for lib,imps in imports.items():
+        for iv in imps:
+            i_name = f"{iv.tag}/{iv.alias}" if iv.alias else iv.tag
+            if i_name in used_tags.keys():
                 raise ValueError(
-                    f"Can not compile, the tag {iv.tag} is used multiple time"
+                    f"Can not compile, the tag {i_name} is used multiple time from {lib} and {used_tags[i_name]}"
                 )
-            used_tags.append(iv.tag)
+            used_tags[i_name] = lib
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
