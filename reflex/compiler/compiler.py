@@ -83,6 +83,7 @@ def _compile_page(
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    # Make sure that the same Tag is not used in multiple import.
     used_tags = []
     for imp in imports.values():
         for iv in imp:
