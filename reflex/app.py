@@ -466,10 +466,10 @@ class App(Base):
         # Compile the pages.
         custom_components = set()
         thread_pool = ThreadPool()
-        compil_results = []
+        compile_results = []
         for route, component in self.pages.items():
             component.add_style(self.style)
-            compil_results.append(
+            compile_results.append(
                 thread_pool.apply_async(
                     compiler.compile_page,
                     args=(
@@ -484,7 +484,9 @@ class App(Base):
             custom_components |= component.get_custom_components()
         thread_pool.close()
         thread_pool.join()
-        for r in compil_results:
+
+        # check the results of all the threads in case an exception was raised.
+        for r in compile_results:
             r.get()
 
         # Compile the custom components.

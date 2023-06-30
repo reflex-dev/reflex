@@ -78,24 +78,13 @@ def _compile_page(
         state: The app state.
         connect_error_component: The component to render on sever connection error.
 
-    Raises:
-        ValueError: if a conflict on "tag/alias" is detected for an import.
 
     Returns:
         The compiled component.
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
-    # Make sure that the same Tag is not used in multiple import.
-    used_tags = {}
-    for lib, imps in imports.items():
-        for iv in imps:
-            i_name = f"{iv.tag}/{iv.alias}" if iv.alias else iv.tag
-            if i_name in used_tags:
-                raise ValueError(
-                    f"Can not compile, the tag {i_name} is used multiple time from {lib} and {used_tags[i_name]}"
-                )
-            used_tags[i_name] = lib
+    utils.validate_imports(imports)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.

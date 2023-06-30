@@ -51,6 +51,28 @@ def compile_import_statement(fields: Set[ImportVar]) -> Tuple[str, Set[str]]:
     return default, rest
 
 
+def validate_imports(imports: imports.ImportDict):
+    """Verify that the same Tag is not used in multiple import.
+
+    Args:
+        imports: The dict of imports to validate
+
+    Raises:
+        ValueError: if a conflict on "tag/alias" is detected for an import.
+    """
+    used_tags = {}
+    for lib, _imports in imports.items():
+        for _import in _imports:
+            import_name = (
+                f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
+            )
+            if import_name in used_tags:
+                raise ValueError(
+                    f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
+                )
+            used_tags[import_name] = lib
+
+
 def compile_imports(imports: imports.ImportDict) -> List[dict]:
     """Compile an import dict.
 
