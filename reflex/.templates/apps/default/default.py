@@ -3,7 +3,7 @@ from rxconfig import config
 
 import reflex as rx
 
-docs_url = "https://pynecone.io/docs/getting-started/introduction"
+docs_url = "https://reflex.dev/docs/getting-started/introduction"
 filename = f"{config.app_name}/{config.app_name}.py"
 
 
