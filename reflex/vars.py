@@ -23,8 +23,6 @@ from typing import (
     get_type_hints,
 )
 
-from plotly.graph_objects import Figure
-from plotly.io import to_json
 from pydantic.fields import ModelField
 
 from reflex import constants
@@ -97,6 +95,15 @@ class Var(ABC):
         type_ = type(value)
 
         # Special case for plotly figures.
+        try:
+            from plotly.graph_objects import Figure
+            from plotly.io import to_json
+        except ImportError as e:
+            # alert user to install plotly
+            raise ImportError(
+                "plotly is not installed" "install it using 'poetry install -E plotly'"
+            ) from e
+
         if isinstance(value, Figure):
             value = json.loads(to_json(value))["data"]  # type: ignore
             type_ = Figure

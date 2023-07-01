@@ -10,9 +10,6 @@ import re
 import sys
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
-import plotly.graph_objects as go
-from plotly.io import to_json
-
 from reflex import constants
 from reflex.utils import types
 
@@ -398,6 +395,15 @@ def format_state(value: Any) -> Dict:
         return value
 
     # Convert plotly figures to JSON.
+    try:
+        import plotly.graph_objects as go
+        from plotly.io import to_json
+    except ImportError as e:
+        # alert user to install plotly
+        raise ImportError(
+            "plotly is not installed\n" "install it using 'poetry install -E plotly'"
+        ) from e
+
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]  # type: ignore
 

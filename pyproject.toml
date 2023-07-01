@@ -29,12 +29,10 @@ fastapi = "^0.96.0"
 gunicorn = "^20.1.0"
 httpx = "^0.23.0"
 jinja2 = "^3.1.2"
-plotly = "^5.13.0"
 psutil = "^5.9.4"
 pydantic = "^1.10.2"
 python-multipart = "^0.0.5"
 python-socketio = "^5.7.0"
-redis = "^4.3.5"
 rich = "^13.0.0"
 sqlmodel = "^0.0.8"
 typer = "0.4.2"
@@ -44,6 +42,8 @@ watchfiles = "^0.19.0"
 websockets = "^10.4"
 starlette-admin = "^0.9.0"
 python-dotenv = "^0.13.0"
+plotly = {version = "^5.15.0", optional = true}
+redis = {version = "^4.6.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -61,6 +61,10 @@ pandas = [
 ]
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
+
+[tool.poetry.extras]
+redis = ["redis"]
+plotly = ["plotly"]
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:main"

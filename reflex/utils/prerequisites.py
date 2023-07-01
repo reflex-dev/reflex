@@ -17,11 +17,19 @@ from typing import Optional
 
 import typer
 from packaging import version
-from redis import Redis
 
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops
+
+# check if redis is installed
+try:
+    from redis import Redis
+except ImportError as e:
+    # alert user to install redis
+    raise ImportError(
+        "redis is not installed\n" "install it using 'poetry install -E redis'"
+    ) from e
 
 
 def check_node_version(min_version=constants.MIN_NODE_VERSION):

@@ -5,9 +5,6 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 
-from plotly.graph_objects import Figure
-from plotly.io import to_json
-
 from reflex.base import Base
 from reflex.event import EVENT_ARG, EventChain
 from reflex.utils import format, types
@@ -67,6 +64,17 @@ class Tag(Base):
         Raises:
             TypeError: If the prop is not a valid type.
         """
+        # check if plotly is installed
+        try:
+            from plotly.graph_objects import Figure
+            from plotly.io import to_json
+        except ImportError as e:
+            # alert user to install plotly
+            raise ImportError(
+                "plotly is not installed\n"
+                "install it using 'poetry install -E plotly'"
+            ) from e
+
         # Handle var props.
         if isinstance(prop, Var):
             if not prop.is_local or prop.is_string:

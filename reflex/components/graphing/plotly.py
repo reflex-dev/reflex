@@ -2,8 +2,6 @@
 
 from typing import Dict
 
-from plotly.graph_objects import Figure
-
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.vars import Var
@@ -21,6 +19,15 @@ class Plotly(PlotlyLib):
     tag = "Plot"
 
     # The figure to display. This can be a plotly figure or a plotly data json.
+    try:
+        from plotly.graph_objects import Figure
+        from plotly.io import to_json
+    except ImportError as e:
+        # alert user to install plotly
+        raise ImportError(
+            "plotly is not installed" "install it using 'poetry install -E plotly'"
+        ) from e
+
     data: Var[Figure]
 
     # The layout of the graph.
@@ -44,6 +51,15 @@ const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 """
 
     def _render(self) -> Tag:
+        try:
+            from plotly.graph_objects import Figure
+        except ImportError as e:
+            # alert user to install plotly
+            raise ImportError(
+                "plotly is not installed\n"
+                "install it using 'poetry install -E plotly'"
+            ) from e
+
         if (
             isinstance(self.data, Figure)
             and self.layout is None

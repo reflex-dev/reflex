@@ -1,7 +1,6 @@
 from typing import Dict, List
 
 import pytest
-from plotly.graph_objects import Figure
 
 import reflex as rx
 from reflex.base import Base
@@ -33,6 +32,16 @@ class TestState(State):
     mapping: Dict[str, List[int]] = {"a": [1, 2, 3], "b": [4, 5, 6]}
     obj: Object = Object()
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
+
+    # check if plotly is installed
+    try:
+        from plotly.graph_objects import Figure
+    except ImportError as e:
+        # alert user to install plotly
+        raise ImportError(
+            "plotly is not installed\n" "install it using 'poetry install -E plotly'"
+        ) from e
+
     fig: Figure = Figure()
 
     @ComputedVar

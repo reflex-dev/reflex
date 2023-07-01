@@ -28,7 +28,6 @@ from typing import (
 
 import cloudpickle
 import pydantic
-from redis import Redis
 
 from reflex import constants
 from reflex.base import Base
@@ -922,6 +921,15 @@ class StateManager(Base):
 
     # The token expiration time (s).
     token_expiration: int = constants.TOKEN_EXPIRATION
+
+    # check if redis is installed
+    try:
+        from redis import Redis
+    except ImportError as e:
+        # alert user to install redis
+        raise ImportError(
+            "redis is not installed\n" "install it using 'poetry install -E redis'"
+        ) from e
 
     # The redis client to use.
     redis: Optional[Redis] = None
