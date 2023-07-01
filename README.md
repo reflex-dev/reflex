@@ -29,7 +29,7 @@
 
 ## 📦 1. Install
 
-reflex requires the following to get started:
+Reflex requires the following to get started:
 
 -   Python 3.7+
 -   [Node.js 16.8.0+](https://nodejs.org/en/) (Don't worry, you won’t have to write any JavaScript!)
