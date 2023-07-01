@@ -1,5 +1,5 @@
 ```diff
-+ Searching for Pynecone? You are in the right repo. Pynecone has been renamed Reflex. +
++ Searching for Pynecone? You are in the right repo. Pynecone has been renamed to Reflex. +
 ```
 
 <div align="center">
@@ -7,14 +7,14 @@
 <img src="docs/images/reflex.png">
 <hr>
 
-# Reflex 
+# **Reflex** 
 **✨ Performant, customizable web apps in pure Python. Deploy in seconds.**
 
 📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)
 
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
-![versions](https://img.shields.io/pypi/pyversions/reflex-io.svg)
+![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
 
 </div>
