@@ -6,7 +6,11 @@ from enum import Enum
 from types import SimpleNamespace
 from typing import Any, Type
 
-import pkg_resources
+# importlib is only available for Python 3.8+ so we need the backport for Python 3.7
+try:
+    from importlib import metadata
+except ImportError:
+    import importlib_metadata as metadata  # pyright: ignore[reportMissingImports]
 
 
 def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
@@ -38,7 +42,7 @@ def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
 # The name of the Reflex package.
 MODULE_NAME = "reflex"
 # The current version of Reflex.
-VERSION = pkg_resources.get_distribution(MODULE_NAME).version
+VERSION = metadata.version(MODULE_NAME)
 # Minimum version of Node.js required to run Reflex.
 MIN_NODE_VERSION = "16.8.0"
 
