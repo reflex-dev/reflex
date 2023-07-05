@@ -869,10 +869,18 @@ class ComputedVar(Var, property):
                 obj = cast(FunctionType, self.fget)
             else:
                 return set()
-        if not obj.__code__.co_varnames:
+        with contextlib.suppress(AttributeError):
+            # unbox functools.partial
+            obj = cast(FunctionType, obj.func)  # type: ignore
+        with contextlib.suppress(AttributeError):
+            # unbox EventHandler
+            obj = cast(FunctionType, obj.fn)  # type: ignore
+
+        try:
+            self_name = obj.__code__.co_varnames[0]
+        except (AttributeError, IndexError):
             # cannot reference self if method takes no args
             return set()
-        self_name = obj.__code__.co_varnames[0]
         self_is_top_of_stack = False
         for instruction in dis.get_instructions(obj):
             if instruction.opname == "LOAD_FAST" and instruction.argval == self_name:

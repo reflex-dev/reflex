@@ -1,3 +1,4 @@
+import functools
 from typing import Dict, List
 
 import pytest
@@ -1087,6 +1088,43 @@ def test_computed_var_depends_on_parent_non_cached():
         IS_HYDRATED: False,
     }
     assert counter == 6
+
+
+@pytest.mark.parametrize("use_partial", [True, False])
+def test_cached_var_depends_on_event_handler(use_partial: bool):
+    """A cached_var that calls an event handler calculates deps correctly.
+
+    Args:
+        use_partial: if true, replace the EventHandler with functools.partial
+    """
+    counter = 0
+
+    class HandlerState(State):
+        x: int = 42
+
+        def handler(self):
+            self.x = self.x + 1
+
+        @rx.cached_var
+        def cached_x_side_effect(self) -> int:
+            self.handler()
+            nonlocal counter
+            counter += 1
+            return counter
+
+    if use_partial:
+        HandlerState.handler = functools.partial(HandlerState.handler.fn)
+        assert isinstance(HandlerState.handler, functools.partial)
+    else:
+        assert isinstance(HandlerState.handler, EventHandler)
+
+    s = HandlerState()
+    assert "cached_x_side_effect" in s.computed_var_dependencies["x"]
+    assert s.cached_x_side_effect == 1
+    assert s.x == 43
+    s.handler()
+    assert s.cached_x_side_effect == 2
+    assert s.x == 45
 
 
 def test_backend_method():
