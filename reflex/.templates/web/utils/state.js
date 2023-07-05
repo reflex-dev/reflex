@@ -101,10 +101,11 @@ export const getAllLocalStorageItems = () => {
  * @param event The event to send.
  * @param router The router object.
  * @param socket The socket object to send the event on.
+ * @param state The state with the event queue.
  *
  * @returns True if the event was sent, false if it was handled locally.
  */
-export const applyEvent = async (event, router, socket) => {
+export const applyEvent = async (event, router, socket, state) => {
   // Handle special events
   if (event.name == "_redirect") {
     router.push(event.payload.path);
@@ -169,6 +170,12 @@ export const applyEvent = async (event, router, socket) => {
   // Send the event to the server.
   event.token = getToken();
   event.router_data = (({ pathname, query }) => ({ pathname, query }))(router);
+
+  // handle file uploads.
+  if(event.handler){
+    return await uploadFiles(state, event, socket, router);
+  }
+
   if (socket) {
     socket.emit("event", JSON.stringify(event));
     return true;
@@ -177,21 +184,6 @@ export const applyEvent = async (event, router, socket) => {
   return false;
 };
 
-/**
- * Process an event off the event queue.
- * @param event The current event
- * @param state The state with the event queue.
- * @param setResult The function to set the result.
- *
- * @returns Whether the event was sent.
- */
-export const applyRestEvent = async (event, state, setResult) => {
-  let eventSent = false;
-  if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(state, setResult, event.name);
-  }
-  return eventSent;
-};
 
 /**
  * Process an event off the event queue.
@@ -226,12 +218,8 @@ export const processEvent = async (
 
   // Process events with handlers via REST and all others via websockets.
   let eventSent = false;
-  if (event.handler) {
-    eventSent = await applyRestEvent(event, state, setResult);
-  } else {
-    eventSent = await applyEvent(event, router, socket);
-  }
 
+  eventSent = await applyEvent(event, router, socket, state);
   // If no event was sent, set processing to false.
   if (!eventSent) {
     setResult({ ...state, final: true, processing: false });
@@ -300,45 +288,61 @@ export const connect = async (
  *
  * @returns Whether the files were uploaded.
  */
-export const uploadFiles = async (state, setResult, handler) => {
+export const uploadFiles = async (state, event, socket, router) => {
   const files = state.files;
+  const fileUploadName = "fileUpload"
 
-  // return if there's no file to upload
-  if (files.length == 0) {
+  // Return if there are no files to upload
+  if (files.length === 0) {
     return false;
   }
 
-  const headers = {
-    "Content-Type": files[0].type,
+  const event_handler_arg = Object.entries(event.payload)
+    .filter(([key, value]) => value === fileUploadName)
+    .map(([key, value]) => key)[0];
+
+  const payloadExtraArgs = Object.fromEntries(
+    Object.entries(event.payload).filter(([key, value]) => value !== fileUploadName)
+  );
+
+  const requestPayload = {
+    token: getToken(),
+    name: event.name,
+    type_: fileUploadName,
+    payload: { [event_handler_arg]: [] },
+    router_data: (({ pathname, query }) => ({ pathname, query }))(router)
   };
-  const formdata = new FormData();
 
-  // Add the token and handler to the file name.
-  for (let i = 0; i < files.length; i++) {
-    formdata.append(
-      "files",
-      files[i],
-      getToken() + ":" + handler + ":" + files[i].name
-    );
-  }
+  const filesToUpload = await Promise.all(
+    files.map(
+      async (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
 
-  // Send the file to the server.
-  await axios.post(UPLOADURL, formdata, headers).then((response) => {
-    // Apply the delta and set the result.
-    const update = response.data;
-    applyDelta(state, update.delta);
+          reader.onload = () => {
+            const fileData = reader.result; // Binary data
 
-    // Set processing to false and return.
-    setResult({
-      state: state,
-      events: update.events,
-      final: true,
-      processing: false,
-    });
-  });
+            // Convert binary data to Base64
+            const base64Data = btoa(fileData);
+            resolve({
+              filename: file.name,
+              data: base64Data
+            });
+          };
 
+          reader.readAsBinaryString(file);
+        })
+    )
+  );
+
+  requestPayload.payload[event_handler_arg] = filesToUpload;
+  Object.assign(requestPayload.payload, payloadExtraArgs);
+
+  // Send the payload object through the WebSocket connection
+  socket.emit("event", JSON.stringify(requestPayload));
   return true;
 };
+
 
 /**
  * Create an event object.

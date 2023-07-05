@@ -1,6 +1,7 @@
 """The main Reflex app."""
 
 import asyncio
+import base64
 import inspect
 from multiprocessing.pool import ThreadPool
 from typing import (
@@ -159,7 +160,7 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To upload files.
-        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+        # self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -558,74 +559,74 @@ async def ping() -> str:
     return "pong"
 
 
-def upload(app: App):
-    """Upload a file.
-
-    Args:
-        app: The app to upload the file for.
-
-    Returns:
-        The upload function.
-    """
-
-    async def upload_file(files: List[UploadFile]):
-        """Upload a file.
-
-        Args:
-            files: The file(s) to upload.
-
-        Returns:
-            The state update after processing the event.
-
-        Raises:
-            ValueError: if there are no args with supported annotation.
-        """
-        assert files[0].filename is not None
-        token, handler = files[0].filename.split(":")[:2]
-        for file in files:
-            assert file.filename is not None
-            file.filename = file.filename.split(":")[-1]
-
-        # Get the state for the session.
-        state = app.state_manager.get_state(token)
-
-        # get the current state(parent state/substate)
-        path = handler.split(".")[:-1]
-        current_state = state.get_substate(path)
-        handler_upload_param: Tuple = ()
-
-        # get handler function
-        func = getattr(current_state, handler.split(".")[-1])
-
-        # check if there exists any handler args with annotation, List[UploadFile]
-        for k, v in inspect.getfullargspec(
-            func.fn if isinstance(func, EventHandler) else func
-        ).annotations.items():
-            if types.is_generic_alias(v) and types._issubclass(
-                v.__args__[0], UploadFile
-            ):
-                handler_upload_param = (k, v)
-                break
-
-        if not handler_upload_param:
-            raise ValueError(
-                f"`{handler}` handler should have a parameter annotated as List["
-                f"rx.UploadFile]"
-            )
-
-        event = Event(
-            token=token,
-            name=handler,
-            payload={handler_upload_param[0]: files},
-        )
-        # TODO: refactor this to handle yields.
-        update = await state._process(event).__anext__()
-
-        # Set the state for the session.
-        app.state_manager.set_state(event.token, state)
-        return update
-
-    return upload_file
+# def upload(app: App):
+#     """Upload a file.
+#
+#     Args:
+#         app: The app to upload the file for.
+#
+#     Returns:
+#         The upload function.
+#     """
+#
+#     async def upload_file(files: List[UploadFile]):
+#         """Upload a file.
+#
+#         Args:
+#             files: The file(s) to upload.
+#
+#         Returns:
+#             The state update after processing the event.
+#
+#         Raises:
+#             ValueError: if there are no args with supported annotation.
+#         """
+#         assert files[0].filename is not None
+#         token, handler = files[0].filename.split(":")[:2]
+#         for file in files:
+#             assert file.filename is not None
+#             file.filename = file.filename.split(":")[-1]
+#
+#         # Get the state for the session.
+#         state = app.state_manager.get_state(token)
+#
+#         # get the current state(parent state/substate)
+#         path = handler.split(".")[:-1]
+#         current_state = state.get_substate(path)
+#         handler_upload_param: Tuple = ()
+#
+#         # get handler function
+#         func = getattr(current_state, handler.split(".")[-1])
+#
+#         # check if there exists any handler args with annotation, List[UploadFile]
+#         for k, v in inspect.getfullargspec(
+#             func.fn if isinstance(func, EventHandler) else func
+#         ).annotations.items():
+#             if types.is_generic_alias(v) and types._issubclass(
+#                 v.__args__[0], UploadFile
+#             ):
+#                 handler_upload_param = (k, v)
+#                 break
+#
+#         if not handler_upload_param:
+#             raise ValueError(
+#                 f"`{handler}` handler should have a parameter annotated as List["
+#                 f"rx.UploadFile]"
+#             )
+#
+#         event = Event(
+#             token=token,
+#             name=handler,
+#             payload={handler_upload_param[0]: files},
+#         )
+#         # TODO: refactor this to handle yields.
+#         update = await state._process(event).__anext__()
+#
+#         # Set the state for the session.
+#         app.state_manager.set_state(event.token, state)
+#         return update
+#
+#     return upload_file
 
 
 class EventNamespace(AsyncNamespace):
@@ -670,6 +671,11 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+
+        # special case to decode base64 encoded files in an event
+        # payload and convert them to fastapi files
+        if event.type_ == "fileUpload":
+            event.payload = format.decode_and_convert(event.payload)
 
         # Get the event environment.
         assert self.app.sio is not None

@@ -1156,3 +1156,13 @@ def get_local_storage(key: Optional[Union[Var, str]] = None) -> BaseVar:
         key = key.full_name if isinstance(key, Var) else format.wrap(key, "'")
         return BaseVar(name=f"localStorage.getItem({key})", type_=str)
     return BaseVar(name="getAllLocalStorageItems()", type_=Dict)
+
+
+def upload_files() -> BaseVar:
+    """BaseVar for upload payloads.
+
+    Returns: an upload BaseVar to be sent to the client.
+    """
+    from reflex.event import FileUpload
+
+    return BaseVar(name=format.wrap("fileUpload", "'"), type_=FileUpload)

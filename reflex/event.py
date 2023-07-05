@@ -25,6 +25,8 @@ class Event(Base):
     # The event payload.
     payload: Dict[str, Any] = {}
 
+    type_: Optional[str] = None
+
 
 class EventHandler(Base):
     """An event handler responds to an event to update the state."""
@@ -58,15 +60,13 @@ class EventHandler(Base):
 
         # Construct the payload.
         values = []
+        params = {"handler": self}
         for arg in args:
             # Special case for file uploads.
-            if isinstance(arg, FileUpload):
-                return EventSpec(
-                    handler=self,
-                    client_handler_name="uploadFiles",
-                )
+            if isinstance(arg, BaseVar) and arg.type_ == FileUpload:
+                params["client_handler_name"] = "uploadFiles"
 
-            # Otherwise, convert to JSON.
+            # convert to JSON.
             try:
                 values.append(Var.create(arg, is_string=type(arg) is str))
             except TypeError as e:
@@ -74,9 +74,8 @@ class EventHandler(Base):
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
                 ) from e
         payload = tuple(zip(fn_args, values))
-
-        # Return the event spec.
-        return EventSpec(handler=self, args=payload)
+        params["args"] = payload
+        return EventSpec(**params)
 
 
 class EventSpec(Base):

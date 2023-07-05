@@ -20,7 +20,8 @@ from .constants import Env as Env
 from .constants import Transports as Transports
 from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
-from .event import FileUpload as upload_files
+
+# from .event import FileUpload as upload_files
 from .event import clear_local_storage as clear_local_storage
 from .event import console_log as console_log
 from .event import redirect as redirect
@@ -43,3 +44,4 @@ from .style import toggle_color_mode as toggle_color_mode
 from .vars import Var as Var
 from .vars import cached_var as cached_var
 from .vars import get_local_storage as get_local_storage
+from .vars import upload_files as upload_files

@@ -10,6 +10,7 @@ import re
 import sys
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
+from fastapi import UploadFile
 import plotly.graph_objects as go
 from plotly.io import to_json
 
@@ -470,3 +471,28 @@ def json_dumps(obj: Any) -> str:
         A string
     """
     return json.dumps(obj, ensure_ascii=False, default=list)
+
+
+def decode_and_convert(payload: Dict[str, str]) -> Dict[str, Any]:
+    """Decode all base64 encoded files and convert them to FastApi UploadFile.
+
+    Args:
+        payload: Payload from client.
+
+    Returns: dict of payload in the right format.
+
+    """
+    return {
+        key: [
+            UploadFile(
+                filename=item["filename"],
+                file=io.BytesIO(base64.b64decode(item["data"])),
+            )
+            if isinstance(item, dict) and "filename" in item and "data" in item
+            else item
+            for item in value
+        ]
+        if isinstance(value, list)
+        else value
+        for key, value in payload.items()
+    }
