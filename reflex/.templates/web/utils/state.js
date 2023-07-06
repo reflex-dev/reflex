@@ -234,7 +234,7 @@ export const processEvent = async (
 
   // If no event was sent, set processing to false.
   if (!eventSent) {
-    setResult({ ...state, final: true, processing: false });
+    setResult({ ...result, final: true, processing: false });
   }
 };
 
@@ -281,12 +281,12 @@ export const connect = async (
   socket.current.on("event", update => {
     update = JSON5.parse(update);
     applyDelta(state, update.delta);
-    setResult({
+    setResult(result => ({
       state: state,
-      events: update.events,
+      events: [...result.events, ...update.events],
       final: update.final,
       processing: true,
-    });
+    }));
   });
 };
 
