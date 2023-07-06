@@ -553,7 +553,8 @@ class Component(Base, ABC):
         Returns:
             The ref name.
         """
-        if self.id is None:
+        # do not create a ref if the id is dynamic or unspecified
+        if self.id is None or isinstance(self.id, BaseVar):
             return None
         return format.format_ref(self.id)
 
