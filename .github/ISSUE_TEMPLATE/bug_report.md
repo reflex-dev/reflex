@@ -20,7 +20,7 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-** Specifics (please complete the following information):**
+**Specifics (please complete the following information):**
  - Python Version:
  - Reflex Version:
  - OS: 
