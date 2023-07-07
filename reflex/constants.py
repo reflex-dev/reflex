@@ -81,6 +81,8 @@ WEB_ASSETS_DIR = os.path.join(WEB_DIR, "public")
 TAILWIND_CONFIG = os.path.join(WEB_DIR, "tailwind.config.js")
 # Default Tailwind content paths
 TAILWIND_CONTENT = ["./pages/**/*.{js,ts,jsx,tsx}"]
+# The NextJS config file
+NEXT_CONFIG_FILE = "next.config.js"
 # The sitemap config file.
 SITEMAP_CONFIG_FILE = os.path.join(WEB_DIR, "next-sitemap.config.js")
 # The node modules directory.

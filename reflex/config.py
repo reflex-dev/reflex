@@ -203,6 +203,9 @@ class Config(Base):
     # Timeout when launching the gunicorn server.
     timeout: int = constants.TIMEOUT
 
+    # Whether to enable or disable nextJS gzip compression.
+    next_compression: bool = True
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
