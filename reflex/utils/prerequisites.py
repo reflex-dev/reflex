@@ -223,7 +223,6 @@ def initialize_web_directory():
                 lines[i] = new_line
 
     with open(next_config_file, "w") as file:
-        console.log(lines)
         file.writelines(lines)
 
     # Write the current version of distributed reflex package to a REFLEX_JSON."""
