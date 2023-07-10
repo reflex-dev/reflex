@@ -94,6 +94,18 @@ class Model(Base, sqlmodel.SQLModel):
         return get_engine()
 
     @staticmethod
+    def _alembic_config():
+        """Get the alembic configuration and script_directory.
+
+        Returns:
+            tuple of (config, script_directory)
+        """
+        config = Config(constants.ALEMBIC_CONFIG)
+        return config, alembic.script.ScriptDirectory(
+            config.get_main_option("script_location", default="version"),
+        )
+
+    @staticmethod
     def _alembic_render_item(
         type_: str,
         obj: Any,
@@ -129,11 +141,8 @@ class Model(Base, sqlmodel.SQLModel):
         Returns:
             True when changes have been detected.
         """
-        config = Config(constants.ALEMBIC_CONFIG)
-        script_directory = alembic.script.ScriptDirectory(
-            config.get_main_option("script_location"),
-        )
-        revision_context = alembic.autogenerate.RevisionContext(
+        config, script_directory = cls._alembic_config()
+        revision_context = alembic.autogenerate.api.RevisionContext(
             config=config,
             script_directory=script_directory,
             command_args=defaultdict(
@@ -167,12 +176,14 @@ class Model(Base, sqlmodel.SQLModel):
                 connection=connection,
                 target_metadata=sqlmodel.SQLModel.metadata,
                 render_item=cls._alembic_render_item,
-                process_revision_directives=writer,
+                process_revision_directives=writer,  # type: ignore
             )
             env.run_migrations()
-        changes_detected = bool(
-            revision_context.generated_revisions[-1].upgrade_ops.ops
-        )
+        changes_detected = False
+        if revision_context.generated_revisions:
+            upgrade_ops = revision_context.generated_revisions[-1].upgrade_ops
+            if upgrade_ops is not None:
+                changes_detected = bool(upgrade_ops.ops)
         if changes_detected:
             for _script in revision_context.generate_scripts():
                 pass  # must iterate to actually generate the scripts
@@ -190,10 +201,7 @@ class Model(Base, sqlmodel.SQLModel):
             connection: sqlalchemy connection to use when performing upgrade
             to_rev: revision to migrate towards
         """
-        config = Config(constants.ALEMBIC_CONFIG)
-        script_directory = alembic.script.ScriptDirectory(
-            config.get_main_option("script_location"),
-        )
+        config, script_directory = cls._alembic_config()
 
         def run_upgrade(rev, context):
             return script_directory._upgrade_revs(to_rev, rev)
