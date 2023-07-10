@@ -62,6 +62,7 @@ pandas = [
 ]
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
+alembic = "^1.11.1"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:main"
