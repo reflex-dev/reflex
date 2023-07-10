@@ -104,7 +104,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     assert len(list(versions.glob("*.py"))) == 2
 
     with reflex.model.session() as session:
-        result = session.exec(AlembicThing.select).all()
+        result = session.exec(sqlmodel.select(AlembicThing)).all()
         assert len(result) == 1
         assert result[0].t2 == "bar"
 
@@ -118,7 +118,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     assert len(list(versions.glob("*.py"))) == 3
 
     with reflex.model.session() as session:
-        result = session.exec(AlembicThing.select).all()
+        result = session.exec(sqlmodel.select(AlembicThing)).all()
         assert len(result) == 1
         assert result[0].t2 == "bar"
 
@@ -133,7 +133,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     with reflex.model.session() as session:
         session.add(AlembicSecond(id=None))
         session.commit()
-        result = session.exec(AlembicSecond.select).all()
+        result = session.exec(sqlmodel.select(AlembicSecond)).all()
         assert len(result) == 1
         assert result[0].a == 42
         assert result[0].b == 4.2
@@ -153,10 +153,10 @@ def test_automigration(tmp_working_dir, monkeypatch):
 
     with reflex.model.session() as session:
         with pytest.raises(sqlalchemy.exc.OperationalError) as errctx:  # type: ignore
-            session.exec(AlembicSecond.select).all()
+            session.exec(sqlmodel.select(AlembicSecond)).all()
         assert errctx.match(r"no such table: alembicsecond")
         # first table should still exist
-        result = session.exec(AlembicThing.select).all()
+        result = session.exec(sqlmodel.select(AlembicThing)).all()
         assert len(result) == 1
         assert result[0].t2 == "bar"
 
