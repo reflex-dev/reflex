@@ -17,6 +17,7 @@ from typing import (
     Optional,
     Set,
     Type,
+    Tuple,
     Union,
     _GenericAlias,  # type: ignore
     cast,
@@ -200,7 +201,7 @@ class Var(ABC):
         """
         # Indexing is only supported for lists, dicts, and dataframes.
         if not (
-            types._issubclass(self.type_, Union[List, Dict])
+            types._issubclass(self.type_, Union[List, Dict, Tuple])
             or types.is_dataframe(self.type_)
         ):
             if self.type_ == Any:
@@ -219,7 +220,7 @@ class Var(ABC):
             i = BaseVar(name=i.name, type_=i.type_, state=i.state, is_local=True)
 
         # Handle list indexing.
-        if types._issubclass(self.type_, List):
+        if types._issubclass(self.type_, Union[List, Tuple]):
             # List indices must be ints, slices, or vars.
             if not isinstance(i, types.get_args(Union[int, slice, Var])):
                 raise TypeError("Index must be an integer.")
