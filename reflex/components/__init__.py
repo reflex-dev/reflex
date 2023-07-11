@@ -94,6 +94,7 @@ checkbox_group = CheckboxGroup.create
 copy_to_clipboard = CopyToClipboard.create
 date_picker = DatePicker.create
 date_time_picker = DateTimePicker.create
+debounce_input = DebounceInput.create
 editable = Editable.create
 editable_input = EditableInput.create
 editable_preview = EditablePreview.create
