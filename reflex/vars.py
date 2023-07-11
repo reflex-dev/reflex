@@ -199,7 +199,7 @@ class Var(ABC):
         Raises:
             TypeError: If the var is not indexable.
         """
-        # Indexing is only supported for lists, dicts, and dataframes.
+        # Indexing is only supported for lists, tuples, dicts, and dataframes.
         if not (
             types._issubclass(self.type_, Union[List, Dict, Tuple])
             or types.is_dataframe(self.type_)
@@ -219,9 +219,9 @@ class Var(ABC):
         if isinstance(i, Var):
             i = BaseVar(name=i.name, type_=i.type_, state=i.state, is_local=True)
 
-        # Handle list indexing.
+        # Handle list/tuple indexing.
         if types._issubclass(self.type_, Union[List, Tuple]):
-            # List indices must be ints, slices, or vars.
+            # List/Tuple indices must be ints, slices, or vars.
             if not isinstance(i, types.get_args(Union[int, slice, Var])):
                 raise TypeError("Index must be an integer.")
 
