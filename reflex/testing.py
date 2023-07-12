@@ -6,10 +6,10 @@ import dataclasses
 import inspect
 import os
 import pathlib
+import platform
 import re
 import signal
 import subprocess
-import sys
 import textwrap
 import threading
 import time
@@ -46,8 +46,8 @@ POLL_INTERVAL = 0.25
 FRONTEND_LISTENING_MESSAGE = re.compile(r"ready started server on.*, url: (.*:[0-9]+)$")
 FRONTEND_POPEN_ARGS = {}
 
-if sys.platform == "win32":
-    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+if platform.system == "Windows":
+    FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
@@ -202,7 +202,7 @@ class AppHarness:
         if self.backend is not None:
             self.backend.should_exit = True
         if self.frontend_process is not None:
-            if sys.platform == "win32":
+            if platform.system() == "Windows":
                 self.frontend_process.terminate()
             else:
                 pgrp = os.getpgid(self.frontend_process.pid)
