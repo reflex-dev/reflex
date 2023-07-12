@@ -86,3 +86,14 @@ class InputRightAddon(ChakraComponent):
     """The InputRightAddon component is a component that is used to add an addon to the right of an input."""
 
     tag = "InputRightAddon"
+
+class InputLeftElement(ChakraComponent):
+     """The InputLeftElement component is a component that is used to add an element to the left of an input."""
+
+     tag = "InputLeftElement"
+
+
+class InputRightElement(ChakraComponent):
+    """The InputRightElement component is a component that is used to add an element to the right of an input."""
+
+    tag = "InputRightElement"

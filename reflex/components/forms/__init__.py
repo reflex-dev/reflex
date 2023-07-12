@@ -15,7 +15,7 @@ from .editable import Editable, EditableInput, EditablePreview, EditableTextarea
 from .email import Email
 from .form import Form, FormControl, FormErrorMessage, FormHelperText, FormLabel
 from .iconbutton import IconButton
-from .input import Input, InputGroup, InputLeftAddon, InputRightAddon
+from .input import Input, InputGroup, InputLeftAddon, InputRightAddon, InputRightElement, InputLeftElement
 from .multiselect import Option as MultiSelectOption
 from .multiselect import Select as MultiSelect
 from .numberinput import (
