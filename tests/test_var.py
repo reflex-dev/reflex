@@ -1,5 +1,5 @@
 import typing
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import cloudpickle
 import pytest
@@ -272,31 +272,51 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
 
 
-def test_var_indexing_lists():
-    """Test that we can index into list vars."""
-    lst = BaseVar(name="lst", type_=List[int])
+@pytest.mark.parametrize(
+    "var",
+    [
+        BaseVar(name="list", type_=List[int]),
+        BaseVar(name="tuple", type_=Tuple[int, int]),
+        BaseVar(name="str", type_=str),
+    ],
+)
+def test_var_indexing_lists(var):
+    """Test that we can index into str, list or tuple vars.
 
+    Args:
+        var : The str, list or tuple base var.
+    """
     # Test basic indexing.
-    assert str(lst[0]) == "{lst.at(0)}"
-    assert str(lst[1]) == "{lst.at(1)}"
+    assert str(var[0]) == f"{{{var.name}.at(0)}}"
+    assert str(var[1]) == f"{{{var.name}.at(1)}}"
 
     # Test negative indexing.
-    assert str(lst[-1]) == "{lst.at(-1)}"
+    assert str(var[-1]) == f"{{{var.name}.at(-1)}}"
 
     # Test non-integer indexing raises an error.
     with pytest.raises(TypeError):
-        lst["a"]
+        var["a"]
     with pytest.raises(TypeError):
-        lst[1.5]
+        var[1.5]
 
 
-def test_var_list_slicing():
-    """Test that we can slice into list vars."""
-    lst = BaseVar(name="lst", type_=List[int])
+@pytest.mark.parametrize(
+    "var",
+    [
+        BaseVar(name="lst", type_=List[int]),
+        BaseVar(name="tuple", type_=Tuple[int, int]),
+        BaseVar(name="str", type_=str),
+    ],
+)
+def test_var_list_slicing(var):
+    """Test that we can slice into str, list or tuple vars.
 
-    assert str(lst[:1]) == "{lst.slice(0, 1)}"
-    assert str(lst[:1]) == "{lst.slice(0, 1)}"
-    assert str(lst[:]) == "{lst.slice(0, undefined)}"
+    Args:
+        var : The str, list or tuple base var.
+    """
+    assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
+    assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
+    assert str(var[:]) == f"{{{var.name}.slice(0, undefined)}}"
 
 
 def test_dict_indexing():
