@@ -16,8 +16,8 @@ from typing import (
     List,
     Optional,
     Set,
-    Type,
     Tuple,
+    Type,
     Union,
     _GenericAlias,  # type: ignore
     cast,
