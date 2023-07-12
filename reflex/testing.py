@@ -126,15 +126,7 @@ class AppHarness:
             app_module_path=root / app_name / app_name / f"{app_name}.py",
         )
 
-    def start(self) -> "AppHarness":
-        """Start the backend in a new thread and dev frontend as a separate process.
-
-        Returns:
-            self
-
-        Raises:
-            RuntimeError: when the frontend does not start.
-        """
+    def _initialize_app(self):
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             # get the source from a function or module object
@@ -150,6 +142,10 @@ class AppHarness:
         with chdir(self.app_path):
             self.app_module = reflex.utils.prerequisites.get_app()
         self.app_instance = self.app_module.app
+
+    def _start_backend(self):
+        if self.app_instance is None:
+            raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_instance.api,
@@ -159,6 +155,8 @@ class AppHarness:
         )
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
+
+    def _start_frontend(self):
         with chdir(self.app_path):
             config = reflex.config.get_config()
             config.api_url = "http://{0}:{1}".format(
@@ -175,6 +173,8 @@ class AppHarness:
             env=frontend_env,
             **FRONTEND_POPEN_ARGS,
         )
+
+    def _wait_frontend(self):
         while self.frontend_url is None:
             line = (
                 self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
@@ -188,6 +188,17 @@ class AppHarness:
                 break
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
+
+    def start(self) -> "AppHarness":
+        """Start the backend in a new thread and dev frontend as a separate process.
+
+        Returns:
+            self
+        """
+        self._initialize_app()
+        self._start_backend()
+        self._start_frontend()
+        self._wait_frontend()
         return self
 
     def __enter__(self) -> "AppHarness":
