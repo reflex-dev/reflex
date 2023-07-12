@@ -9,12 +9,23 @@ import pathlib
 import platform
 import re
 import signal
+import socket
 import subprocess
 import textwrap
 import threading
 import time
 import types
-from typing import TYPE_CHECKING, Any, Coroutine, Optional, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Coroutine,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import psutil
 import uvicorn
@@ -46,6 +57,8 @@ DEFAULT_TIMEOUT = 10
 POLL_INTERVAL = 0.25
 FRONTEND_LISTENING_MESSAGE = re.compile(r"ready started server on.*, url: (.*:[0-9]+)$")
 FRONTEND_POPEN_ARGS = {}
+T = TypeVar("T")
+TimeoutType = Optional[Union[int, float]]
 
 if platform.system == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore
@@ -244,7 +257,35 @@ class AppHarness:
         """
         self.stop()
 
-    def _poll_for_servers(self, timeout=None):
+    @staticmethod
+    def _poll_for(
+        target: Callable[[], T],
+        timeout: TimeoutType = None,
+        step: TimeoutType = None,
+    ) -> T | bool:
+        """Generic polling logic.
+
+        Args:
+            target: callable that returns truthy if polling condition is met.
+            timeout: max polling time
+            step: interval between checking target()
+
+        Returns:
+            return value of target() if truthy within timeout
+            False if timeout elapses
+        """
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUT
+        if step is None:
+            step = POLL_INTERVAL
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            success = target()
+            if success:
+                return success
+        return False
+
+    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
         """Poll backend server for listening sockets.
 
         Args:
@@ -255,17 +296,24 @@ class AppHarness:
 
         Raises:
             RuntimeError: when the backend hasn't started running
+            TimeoutError: when server or sockets are not ready
         """
         if self.backend is None:
             raise RuntimeError("Backend is not running.")
-        deadline = time.time() + (timeout or DEFAULT_TIMEOUT)
-        while time.time() < deadline and not getattr(self.backend, "servers", []):
-            time.sleep(POLL_INTERVAL)
-        while time.time() < deadline and not getattr(
-            self.backend.servers[0], "sockets", []
+        backend = self.backend
+        # check for servers to be initialized
+        if not self._poll_for(
+            target=lambda: getattr(backend, "servers", False),
+            timeout=timeout,
         ):
-            time.sleep(POLL_INTERVAL)
-        return self.backend.servers[0].sockets[0]
+            raise TimeoutError("Backend servers are not initialized.")
+        # check for sockets to be listening
+        if not self._poll_for(
+            target=lambda: getattr(backend.servers[0], "sockets", False),
+            timeout=timeout,
+        ):
+            raise TimeoutError("Backend is not listening.")
+        return backend.servers[0].sockets[0]
 
     def frontend(self, driver_clz: Optional[Type["WebDriver"]] = None) -> "WebDriver":
         """Get a selenium webdriver instance pointed at the app.
@@ -326,10 +374,10 @@ class AppHarness:
             responses.append(await request)
         return responses
 
-    @staticmethod
     def poll_for_content(
+        self,
         element: "WebElement",
-        timeout: Optional[int | float] = None,
+        timeout: TimeoutType = None,
         exp_not_equal: str = "",
     ) -> str:
         """Poll element.text for change.
@@ -345,19 +393,19 @@ class AppHarness:
         Raises:
             TimeoutError: when the timeout expires before text changes
         """
-        deadline = time.time() + (timeout or DEFAULT_TIMEOUT)
-        while time.time() < deadline and element.text == exp_not_equal:
-            time.sleep(POLL_INTERVAL)
-        if element.text == exp_not_equal:
+        if not self._poll_for(
+            target=lambda: element.text != exp_not_equal,
+            timeout=timeout,
+        ):
             raise TimeoutError(
                 f"{element} content remains {exp_not_equal!r} while polling.",
             )
         return element.text
 
-    @staticmethod
     def poll_for_value(
+        self,
         element: "WebElement",
-        timeout: Optional[int | float] = None,
+        timeout: TimeoutType = None,
         exp_not_equal: str = "",
     ) -> Optional[str]:
         """Poll element.get_attribute("value") for change.
@@ -373,18 +421,16 @@ class AppHarness:
         Raises:
             TimeoutError: when the timeout expires before value changes
         """
-        deadline = time.time() + (timeout or DEFAULT_TIMEOUT)
-        value = element.get_attribute("value")
-        while time.time() < deadline and value == exp_not_equal:
-            time.sleep(POLL_INTERVAL)
-            value = element.get_attribute("value")
-        if value == exp_not_equal:
+        if not self._poll_for(
+            target=lambda: element.get_attribute("value") != exp_not_equal,
+            timeout=timeout,
+        ):
             raise TimeoutError(
                 f"{element} content remains {exp_not_equal!r} while polling.",
             )
-        return value
+        return element.get_attribute("value")
 
-    def poll_for_clients(self, timeout=None) -> dict[str, reflex.State]:
+    def poll_for_clients(self, timeout: TimeoutType = None) -> dict[str, reflex.State]:
         """Poll app state_manager for any connected clients.
 
         Args:
@@ -400,9 +446,9 @@ class AppHarness:
         if self.app_instance is None:
             raise RuntimeError("App is not running.")
         state_manager = self.app_instance.state_manager
-        deadline = time.time() + (timeout or DEFAULT_TIMEOUT)
-        while time.time() < deadline and not state_manager.states:
-            time.sleep(POLL_INTERVAL)
-        if not state_manager.states:
+        if not self._poll_for(
+            target=lambda: state_manager.states,
+            timeout=timeout,
+        ):
             raise TimeoutError("No states were observed while polling.")
         return state_manager.states
