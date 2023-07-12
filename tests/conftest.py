@@ -1,5 +1,8 @@
 """Test fixtures."""
+import contextlib
+import os
 import platform
+from pathlib import Path
 from typing import Dict, Generator, List
 
 import pytest
@@ -479,3 +482,48 @@ def router_data(router_data_headers) -> Dict[str, str]:
         "headers": router_data_headers,
         "ip": "127.0.0.1",
     }
+
+
+# borrowed from py3.11
+class chdir(contextlib.AbstractContextManager):
+    """Non thread-safe context manager to change the current working directory."""
+
+    def __init__(self, path):
+        """Prepare contextmanager.
+
+        Args:
+            path: the path to change to
+        """
+        self.path = path
+        self._old_cwd = []
+
+    def __enter__(self):
+        """Save current directory and perform chdir."""
+        self._old_cwd.append(Path(".").resolve())
+        os.chdir(self.path)
+
+    def __exit__(self, *excinfo):
+        """Change back to previous directory on stack.
+
+        Args:
+            excinfo: sys.exc_info captured in the context block
+        """
+        os.chdir(self._old_cwd.pop())
+
+
+@pytest.fixture
+def tmp_working_dir(tmp_path):
+    """Create a temporary directory and chdir to it.
+
+    After the test executes, chdir back to the original working directory.
+
+    Args:
+        tmp_path: pytest tmp_path fixture creates per-test temp dir
+
+    Yields:
+        subdirectory of tmp_path which is now the current working directory.
+    """
+    working_dir = tmp_path / "working_dir"
+    working_dir.mkdir()
+    with chdir(working_dir):
+        yield working_dir

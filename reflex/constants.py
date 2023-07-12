@@ -353,3 +353,6 @@ TOGGLE_COLOR_MODE = "toggleColorMode"
 # Server socket configuration variables
 CORS_ALLOWED_ORIGINS = get_value("CORS_ALLOWED_ORIGINS", ["*"], list)
 POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000
+
+# Alembic migrations
+ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
