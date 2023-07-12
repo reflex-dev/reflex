@@ -13,7 +13,7 @@ def test_app_harness(tmp_path):
         import reflex as rx
 
         app = rx.App()
-        app.add_page(lambda: rx.text("Basic App"))
+        app.add_page(lambda: rx.text("Basic App"), route="/", title="index")
         app.compile()
 
     with AppHarness.create(
