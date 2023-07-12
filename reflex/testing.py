@@ -16,6 +16,7 @@ import time
 import types
 from typing import TYPE_CHECKING, Any, Coroutine, Optional, Type, cast
 
+import psutil
 import uvicorn
 
 import reflex
@@ -202,11 +203,22 @@ class AppHarness:
         if self.backend is not None:
             self.backend.should_exit = True
         if self.frontend_process is not None:
+            # https://stackoverflow.com/a/70565806
+            frontend_children = psutil.Process(self.frontend_process.pid).children(
+                recursive=True,
+            )
             if platform.system() == "Windows":
                 self.frontend_process.terminate()
             else:
                 pgrp = os.getpgid(self.frontend_process.pid)
                 os.killpg(pgrp, signal.SIGTERM)
+            # kill any remaining child processes
+            for child in frontend_children:
+                child.terminate()
+            _, still_alive = psutil.wait_procs(frontend_children, timeout=3)
+            for child in still_alive:
+                child.kill()
+            # wait for main process to exit
             self.frontend_process.communicate()
         if self.backend_thread is not None:
             self.backend_thread.join()
