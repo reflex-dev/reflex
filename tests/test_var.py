@@ -1,5 +1,5 @@
 import typing
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 import cloudpickle
 import pytest
@@ -293,11 +293,47 @@ def test_var_indexing_lists(var):
     # Test negative indexing.
     assert str(var[-1]) == f"{{{var.name}.at(-1)}}"
 
-    # Test non-integer indexing raises an error.
+
+@pytest.mark.parametrize(
+    "var, index",
+    [
+        (BaseVar(name="lst", type_=List[int]), [1, 2]),
+        (BaseVar(name="lst", type_=List[int]), {"name": "dict"}),
+        (BaseVar(name="lst", type_=List[int]), {"set"}),
+        (
+            BaseVar(name="lst", type_=List[int]),
+            (
+                1,
+                2,
+            ),
+        ),
+        (BaseVar(name="lst", type_=List[int]), 1.5),
+        (BaseVar(name="lst", type_=List[int]), "str"),
+        (BaseVar(name="lst", type_=List[int]), BaseVar(name="string_var", type_=str)),
+        (BaseVar(name="lst", type_=List[int]), BaseVar(name="float_var", type_=float)),
+        (
+            BaseVar(name="lst", type_=List[int]),
+            BaseVar(name="list_var", type_=List[int]),
+        ),
+        (BaseVar(name="lst", type_=List[int]), BaseVar(name="set_var", type_=Set[str])),
+        (
+            BaseVar(name="lst", type_=List[int]),
+            BaseVar(name="dict_var", type_=Dict[str, str]),
+        ),
+    ],
+)
+def test_var_unsupported_indexing_lists(var, index):
+    """Test unsupported indexing throws a type error.
+
+    Args:
+        var: The base var.
+        index: The base var index.
+
+    Raises:
+        TypeError: if the index type is unsupported
+    """
     with pytest.raises(TypeError):
-        var["a"]
-    with pytest.raises(TypeError):
-        var[1.5]
+        var[index]
 
 
 @pytest.mark.parametrize(
@@ -326,6 +362,56 @@ def test_dict_indexing():
     # Check correct indexing.
     assert str(dct["a"]) == '{dct["a"]}'
     assert str(dct["asdf"]) == '{dct["asdf"]}'
+
+
+@pytest.mark.parametrize(
+    "var, index",
+    [
+        (
+            BaseVar(name="dict", type_=Dict[str, str]),
+            [1, 2],
+        ),
+        (
+            BaseVar(name="dict", type_=Dict[str, str]),
+            {"name": "dict"},
+        ),
+        (
+            BaseVar(name="dict", type_=Dict[str, str]),
+            {"set"},
+        ),
+        (
+            BaseVar(name="dict", type_=Dict[str, str]),
+            (
+                1,
+                2,
+            ),
+        ),
+        (
+            BaseVar(name="lst", type_=Dict[str, str]),
+            BaseVar(name="list_var", type_=List[int]),
+        ),
+        (
+            BaseVar(name="lst", type_=Dict[str, str]),
+            BaseVar(name="set_var", type_=Set[str]),
+        ),
+        (
+            BaseVar(name="lst", type_=Dict[str, str]),
+            BaseVar(name="dict_var", type_=Dict[str, str]),
+        ),
+    ],
+)
+def test_var_unsupported_indexing_dicts(var, index):
+    """Test unsupported indexing throws a type error.
+
+    Args:
+        var: The base var.
+        index: The base var index.
+
+    Raises:
+        TypeError: if the index type is unsupported
+    """
+    with pytest.raises(TypeError):
+        var[index]
 
 
 @pytest.mark.parametrize(
