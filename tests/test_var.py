@@ -280,7 +280,11 @@ def test_basic_operations(TestObj):
     ],
 )
 def test_var_indexing_lists(var):
-    """Test that we can index into list or tuple vars."""
+    """Test that we can index into list or tuple vars.
+
+    Args:
+        var : The list or tuple base var.
+    """
     # Test basic indexing.
     assert str(var[0]) == f"{{{var.name}.at(0)}}"
     assert str(var[1]) == f"{{{var.name}.at(1)}}"
@@ -303,7 +307,11 @@ def test_var_indexing_lists(var):
     ],
 )
 def test_var_list_slicing(var):
-    """Test that we can slice into list or tuple vars."""
+    """Test that we can slice into list or tuple vars.
+
+    Args:
+        var : The list or tuple base var.
+    """
     assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
     assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
     assert str(var[:]) == f"{{{var.name}.slice(0, undefined)}}"
