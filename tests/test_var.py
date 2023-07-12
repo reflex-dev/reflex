@@ -275,15 +275,16 @@ def test_basic_operations(TestObj):
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(name="lst", type_=List[int]),
+        BaseVar(name="list", type_=List[int]),
         BaseVar(name="tuple", type_=Tuple[int, int]),
+        BaseVar(name="str", type_=str),
     ],
 )
 def test_var_indexing_lists(var):
-    """Test that we can index into list or tuple vars.
+    """Test that we can index into str, list or tuple vars.
 
     Args:
-        var : The list or tuple base var.
+        var : The str, list or tuple base var.
     """
     # Test basic indexing.
     assert str(var[0]) == f"{{{var.name}.at(0)}}"
@@ -304,13 +305,14 @@ def test_var_indexing_lists(var):
     [
         BaseVar(name="lst", type_=List[int]),
         BaseVar(name="tuple", type_=Tuple[int, int]),
+        BaseVar(name="str", type_=str),
     ],
 )
 def test_var_list_slicing(var):
-    """Test that we can slice into list or tuple vars.
+    """Test that we can slice into str, list or tuple vars.
 
     Args:
-        var : The list or tuple base var.
+        var : The str, list or tuple base var.
     """
     assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
     assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
