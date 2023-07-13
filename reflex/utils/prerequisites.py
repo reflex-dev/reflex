@@ -19,7 +19,7 @@ import typer
 from packaging import version
 from redis import Redis
 
-from reflex import constants
+from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
 
@@ -368,6 +368,36 @@ def check_admin_settings():
             console.print(
                 "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
             )
+
+
+def check_schema_up_to_date():
+    """Check if the sqlmodel metadata matches the current database schema.
+
+    Raises:
+        CommandError: if alembic cannot generate migrations to check if it is up to date.
+    """
+    if get_config().db_url is None:
+        return
+    with model.Model.get_db_engine().connect() as connection:
+        try:
+            from alembic.util.exc import CommandError
+        except ImportError:
+            CommandError = Exception
+        try:
+            if model.Model.alembic_autogenerate(
+                connection=connection, write_migration_scripts=False
+            ):
+                console.print(
+                    "[red]Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
+                    "to generate migration scripts.",
+                )
+        except CommandError as command_error:
+            if "Target database is not up to date." in str(command_error):
+                console.print(
+                    f"[red]{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                )
+            else:
+                raise
 
 
 def migrate_to_reflex():
