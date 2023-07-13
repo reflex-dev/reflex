@@ -339,9 +339,6 @@ def test_var_unsupported_indexing_lists(var, index):
     Args:
         var: The base var.
         index: The base var index.
-
-    Raises:
-        TypeError: if the index type is unsupported
     """
     with pytest.raises(TypeError):
         var[index]
@@ -448,9 +445,6 @@ def test_var_unsupported_indexing_dicts(var, index):
     Args:
         var: The base var.
         index: The base var index.
-
-    Raises:
-        TypeError: if the index type is unsupported
     """
     with pytest.raises(TypeError):
         var[index]
