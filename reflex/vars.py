@@ -262,7 +262,10 @@ class Var(ABC):
         if (
             (types._issubclass(self.type_, Dict) or types.is_dataframe(self.type_))
             and not isinstance(i, types.get_args(Union[int, str, float, Var]))
-        ) or (isinstance(i, Var) and not isinstance(i.type_, (int, str, float))):
+        ) or (
+            isinstance(i, Var)
+            and not types._issubclass(i.type_, types.get_args(Union[int, str, float]))
+        ):
             raise TypeError(
                 "Index must be one of the following types: int, str, int or str Var"
             )
