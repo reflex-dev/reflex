@@ -86,7 +86,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     class AlembicThing(Model, table=True):  # type: ignore
         t1: str
 
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 1
 
     with reflex.model.session() as session:
@@ -100,7 +100,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
         t1: str
         t2: str = "bar"
 
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 2
 
     with reflex.model.session() as session:
@@ -114,7 +114,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     class AlembicThing(Model, table=True):  # type: ignore
         t2: str = "bar"
 
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 3
 
     with reflex.model.session() as session:
@@ -127,7 +127,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
         a: int = 42
         b: float = 4.2
 
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 4
 
     with reflex.model.session() as session:
@@ -139,7 +139,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
         assert result[0].b == 4.2
 
     # No-op
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 4
 
     # drop table (AlembicSecond)
@@ -148,7 +148,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     class AlembicThing(Model, table=True):  # type: ignore
         t2: str = "bar"
 
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
     with reflex.model.session() as session:
@@ -166,12 +166,12 @@ def test_automigration(tmp_working_dir, monkeypatch):
         # changing column type not supported by default
         t2: int = 42
 
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
     # clear all metadata to avoid influencing subsequent tests
     sqlmodel.SQLModel.metadata.clear()
 
     # drop remaining tables
-    Model.automigrate()
+    Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 6
