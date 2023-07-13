@@ -66,7 +66,7 @@ def init(
 @cli.command()
 def run(
     env: constants.Env = typer.Option(
-        constants.Env.DEV, help="The environment to run the app in."
+        get_config().env, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
         False, "--frontend-only", help="Execute only frontend."
