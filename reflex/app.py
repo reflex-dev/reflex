@@ -646,10 +646,11 @@ def upload(app: App):
         async for update in state._process(event):
             # Postprocess the event.
             update = await app.postprocess(state, event, update)
-
             # Send update to client
-            await app.event_namespace.emit(
-                str(constants.SocketEvent.EVENT), update.json(), to=sid
+            await asyncio.create_task(
+                app.event_namespace.emit(
+                    str(constants.SocketEvent.EVENT), update.json(), to=sid
+                )
             )
 
         # Set the state for the session.
