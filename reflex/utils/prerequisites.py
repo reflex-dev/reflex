@@ -207,10 +207,23 @@ def initialize_app_directory(app_name: str, template: constants.Template):
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
-    path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.NODE_MODULES))
-    path_ops.rm(os.path.join(constants.WEB_TEMPLATE_DIR, constants.PACKAGE_LOCK))
     path_ops.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
     path_ops.mkdir(constants.WEB_ASSETS_DIR)
+
+    # update nextJS config based on rxConfig
+    next_config_file = os.path.join(constants.WEB_DIR, constants.NEXT_CONFIG_FILE)
+
+    with open(next_config_file, "r") as file:
+        lines = file.readlines()
+        for i, line in enumerate(lines):
+            if "compress:" in line:
+                new_line = line.replace(
+                    "true", "true" if get_config().next_compression else "false"
+                )
+                lines[i] = new_line
+
+    with open(next_config_file, "w") as file:
+        file.writelines(lines)
 
     # Write the current version of distributed reflex package to a REFLEX_JSON."""
     with open(constants.REFLEX_JSON, "w") as f:
