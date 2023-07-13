@@ -323,20 +323,7 @@ export const uploadFiles = async (state, setResult, handler) => {
   }
 
   // Send the file to the server.
-  await axios.post(UPLOADURL, formdata, headers).then((response) => {
-    // Apply the delta and set the result.
-    const update = response.data;
-    applyDelta(state, update.delta);
-
-    // Set processing to false and return.
-    setResult({
-      state: state,
-      events: update.events,
-      final: true,
-      processing: false,
-    });
-  });
-
+  await axios.post(UPLOADURL, formdata, headers);
   return true;
 };
 
