@@ -88,6 +88,11 @@ class App(Base):
     # The component to render if there is a connection error to the server.
     connect_error_component: Optional[Component] = None
 
+    # SID - Event token mapping
+    session_map: Dict[str, str] = {}
+
+    event_namespace: Optional[AsyncNamespace] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the app.
 
@@ -127,11 +132,10 @@ class App(Base):
         self.socket_app = ASGIApp(self.sio, socketio_path="")
 
         # Create the event namespace and attach the main app. Not related to any paths.
-        event_namespace = EventNamespace("/event", self)
+        self.event_namespace = EventNamespace("/event", self)
 
         # Register the event namespace with the socket.
-        self.sio.register_namespace(event_namespace)
-
+        self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
         self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
@@ -604,6 +608,8 @@ def upload(app: App):
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
 
+        # get the current session ID
+        sid = app.session_map[token]
         # Get the state for the session.
         state = app.state_manager.get_state(token)
 
@@ -636,12 +642,18 @@ def upload(app: App):
             name=handler,
             payload={handler_upload_param[0]: files},
         )
-        # TODO: refactor this to handle yields.
-        update = await state._process(event).__anext__()
+
+        async for update in state._process(event):
+            # Postprocess the event.
+            update = await app.postprocess(state, event, update)
+
+            # Send update to client
+            await app.event_namespace.emit(
+                str(constants.SocketEvent.EVENT), update.json(), to=sid
+            )
 
         # Set the state for the session.
         app.state_manager.set_state(event.token, state)
-        return update
 
     return upload_file
 
@@ -677,7 +689,10 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        pass
+        # remove disconnected clients from mapping
+        for key, value in self.app.session_map.items():
+            if value == sid:
+                self.app.session_map.pop(key)
 
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
@@ -688,6 +703,8 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
+        # add client to mapping
+        self.app.session_map[event.token] = sid
 
         # Get the event environment.
         assert self.app.sio is not None
