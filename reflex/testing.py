@@ -135,8 +135,8 @@ class AppHarness:
         return cls(
             app_name=app_name,
             app_source=app_source,
-            app_path=root / app_name,
-            app_module_path=root / app_name / app_name / f"{app_name}.py",
+            app_path=root,
+            app_module_path=root / app_name / f"{app_name}.py",
         )
 
     def _initialize_app(self):
