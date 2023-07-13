@@ -44,8 +44,6 @@ class CodeBlock(Component):
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
 
-    is_default = True
-
     def _get_imports(self) -> imports.ImportDict:
         merged_imports = super()._get_imports()
         if self.theme is not None:
