@@ -3,6 +3,7 @@ from typing import Dict, List, Set, Tuple
 
 import cloudpickle
 import pytest
+from pandas import DataFrame
 
 from reflex.base import Base
 from reflex.state import State
@@ -320,6 +321,16 @@ def test_var_indexing_lists(var):
             BaseVar(name="lst", type_=List[int]),
             BaseVar(name="dict_var", type_=Dict[str, str]),
         ),
+        (BaseVar(name="str", type_=str), [1, 2]),
+        (BaseVar(name="lst", type_=str), {"name": "dict"}),
+        (BaseVar(name="lst", type_=str), {"set"}),
+        (BaseVar(name="lst", type_=str), BaseVar(name="string_var", type_=str)),
+        (BaseVar(name="lst", type_=str), BaseVar(name="float_var", type_=float)),
+        (BaseVar(name="str", type_=Tuple[str]), [1, 2]),
+        (BaseVar(name="lst", type_=Tuple[str]), {"name": "dict"}),
+        (BaseVar(name="lst", type_=Tuple[str]), {"set"}),
+        (BaseVar(name="lst", type_=Tuple[str]), BaseVar(name="string_var", type_=str)),
+        (BaseVar(name="lst", type_=Tuple[str]), BaseVar(name="float_var", type_=float)),
     ],
 )
 def test_var_unsupported_indexing_lists(var, index):
@@ -396,6 +407,37 @@ def test_dict_indexing():
         ),
         (
             BaseVar(name="lst", type_=Dict[str, str]),
+            BaseVar(name="dict_var", type_=Dict[str, str]),
+        ),
+        (
+            BaseVar(name="df", type_=DataFrame),
+            [1, 2],
+        ),
+        (
+            BaseVar(name="df", type_=DataFrame),
+            {"name": "dict"},
+        ),
+        (
+            BaseVar(name="df", type_=DataFrame),
+            {"set"},
+        ),
+        (
+            BaseVar(name="df", type_=DataFrame),
+            (
+                1,
+                2,
+            ),
+        ),
+        (
+            BaseVar(name="df", type_=DataFrame),
+            BaseVar(name="list_var", type_=List[int]),
+        ),
+        (
+            BaseVar(name="df", type_=DataFrame),
+            BaseVar(name="set_var", type_=Set[str]),
+        ),
+        (
+            BaseVar(name="df", type_=DataFrame),
             BaseVar(name="dict_var", type_=Dict[str, str]),
         ),
     ],
