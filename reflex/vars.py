@@ -206,7 +206,8 @@ class Var(ABC):
         ):
             if self.type_ == Any:
                 raise TypeError(
-                    f"Could not index into var of type Any. (If you are trying to index into a state var, add the correct type annotation to the var.)"
+                    f"Could not index into var of type Any. (If you are trying to index into a state var, "
+                    f"add the correct type annotation to the var.)"
                 )
             raise TypeError(
                 f"Var {self.name} of type {self.type_} does not support indexing."
@@ -222,8 +223,12 @@ class Var(ABC):
         # Handle list/tuple/str indexing.
         if types._issubclass(self.type_, Union[List, Tuple, str]):
             # List/Tuple/String indices must be ints, slices, or vars.
-            if not isinstance(i, types.get_args(Union[int, slice, Var])):
-                raise TypeError("Index must be an integer.")
+            if (
+                not isinstance(i, types.get_args(Union[int, slice, Var]))
+                or isinstance(i, Var)
+                and not i.type_ == int
+            ):
+                raise TypeError("Index must be an integer or an integer var.")
 
             # Handle slices first.
             if isinstance(i, slice):
@@ -253,6 +258,17 @@ class Var(ABC):
             )
 
         # Dictionary / dataframe indexing.
+        # Tuples are currently not supported as indexes.
+        if (
+            (types._issubclass(self.type_, Dict) or types.is_dataframe(self.type_))
+            and not isinstance(i, types.get_args(Union[int, str, float, Var]))
+        ) or (
+            isinstance(i, Var)
+            and not types._issubclass(i.type_, types.get_args(Union[int, str, float]))
+        ):
+            raise TypeError(
+                "Index must be one of the following types: int, str, int or str Var"
+            )
         # Get the type of the indexed var.
         if isinstance(i, str):
             i = format.wrap(i, '"')
