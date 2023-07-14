@@ -4,26 +4,20 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
 
+import alembic.autogenerate
+import alembic.command
+import alembic.config
+import alembic.operations.ops
+import alembic.runtime.environment
+import alembic.script
+import alembic.util
 import sqlalchemy
 import sqlmodel
 
+from reflex import constants
 from reflex.base import Base
 from reflex.config import get_config
-
-from . import constants
-
-try:
-    import alembic.autogenerate  # pyright: ignore [reportMissingImports]
-    import alembic.command  # pyright: ignore [reportMissingImports]
-    import alembic.config  # pyright: ignore [reportMissingImports]
-    import alembic.operations.ops  # pyright: ignore [reportMissingImports]
-    import alembic.runtime.environment  # pyright: ignore [reportMissingImports]
-    import alembic.script  # pyright: ignore [reportMissingImports]
-    import alembic.util  # pyright: ignore [reportMissingImports]
-
-    has_alembic = True
-except ImportError:
-    has_alembic = False
+from reflex.utils import console
 
 
 def get_engine(url: Optional[str] = None):
@@ -42,6 +36,10 @@ def get_engine(url: Optional[str] = None):
     url = url or conf.db_url
     if url is None:
         raise ValueError("No database url configured")
+    if not Path(constants.ALEMBIC_CONFIG).exists():
+        console.print(
+            "[red]Database is not initialized, run [bold]reflex db init[/bold] first."
+        )
     return sqlmodel.create_engine(
         url,
         echo=False,
@@ -132,6 +130,14 @@ class Model(Base, sqlmodel.SQLModel):
         return False
 
     @classmethod
+    def alembic_init(cls):
+        """Initialize alembic for the project."""
+        alembic.command.init(
+            config=alembic.config.Config(constants.ALEMBIC_CONFIG),
+            directory=str(Path(constants.ALEMBIC_CONFIG).parent / "alembic"),
+        )
+
+    @classmethod
     def alembic_autogenerate(
         cls,
         connection: sqlalchemy.engine.Connection,
@@ -146,7 +152,7 @@ class Model(Base, sqlmodel.SQLModel):
         Returns:
             True when changes have been detected.
         """
-        if not has_alembic or not Path(constants.ALEMBIC_CONFIG).exists():
+        if not Path(constants.ALEMBIC_CONFIG).exists():
             return False
 
         config, script_directory = cls._alembic_config()
@@ -245,15 +251,12 @@ class Model(Base, sqlmodel.SQLModel):
             True - indicating the process was successful
             None - indicating the process was skipped
         """
-        if not has_alembic or not Path(constants.ALEMBIC_CONFIG).exists():
+        if not Path(constants.ALEMBIC_CONFIG).exists():
             return
-
-        _, script_directory = cls._alembic_config()
 
         with cls.get_db_engine().connect() as connection:
             cls._alembic_upgrade(connection=connection)
-            # seed the schema if there are no migrations already
-            if not script_directory.get_heads() or autogenerate:
+            if autogenerate:
                 changes_detected = cls.alembic_autogenerate(connection=connection)
                 if changes_detected:
                     cls._alembic_upgrade(connection=connection)

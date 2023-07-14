@@ -12,7 +12,6 @@ from typing import Optional, Union
 from rich.progress import Progress
 
 from reflex import constants
-from reflex.config import get_config
 from reflex.utils import path_ops, prerequisites
 from reflex.utils.processes import new_process
 
@@ -240,16 +239,3 @@ def setup_frontend_prod(
     """
     setup_frontend(root, loglevel, disable_telemetry)
     export_app(loglevel=loglevel)
-
-
-def setup_backend():
-    """Set up backend.
-
-    Specifically ensures backend database is updated when running --no-frontend.
-    """
-    # Import here to avoid circular imports.
-    from reflex.model import Model
-
-    config = get_config()
-    if config.db_url is not None:
-        Model.create_all()

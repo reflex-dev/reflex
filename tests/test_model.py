@@ -1,5 +1,3 @@
-import subprocess
-import sys
 from unittest import mock
 
 import pytest
@@ -68,19 +66,17 @@ def test_automigration(tmp_working_dir, monkeypatch):
         tmp_working_dir: directory where database and migrations are stored
         monkeypatch: pytest fixture to overwrite attributes
     """
-    subprocess.run(
-        [sys.executable, "-m", "alembic", "init", "alembic"],
-        cwd=tmp_working_dir,
-    )
     alembic_ini = tmp_working_dir / "alembic.ini"
     versions = tmp_working_dir / "alembic" / "versions"
-    assert alembic_ini.exists()
-    assert versions.exists()
+    monkeypatch.setattr(reflex.constants, "ALEMBIC_CONFIG", str(alembic_ini))
 
     config_mock = mock.Mock()
     config_mock.db_url = f"sqlite:///{tmp_working_dir}/reflex.db"
     monkeypatch.setattr(reflex.model, "get_config", mock.Mock(return_value=config_mock))
-    monkeypatch.setattr(reflex.constants, "ALEMBIC_CONFIG", str(alembic_ini))
+
+    Model.alembic_init()
+    assert alembic_ini.exists()
+    assert versions.exists()
 
     # initial table
     class AlembicThing(Model, table=True):  # type: ignore
