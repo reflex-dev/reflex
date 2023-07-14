@@ -131,6 +131,9 @@ def run(
     # Check the admin dashboard settings.
     prerequisites.check_admin_settings()
 
+    # Warn if schema is not up to date
+    prerequisites.check_schema_up_to_date()
+
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
     if env == constants.Env.DEV:
@@ -280,8 +283,8 @@ def migrate():
     prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
-    prerequisites.check_schema_up_to_date()
     model.Model.migrate()
+    prerequisites.check_schema_up_to_date()
 
 
 @db_cli.command()

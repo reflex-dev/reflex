@@ -41,7 +41,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
-from reflex.utils import format, prerequisites, types
+from reflex.utils import format, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -442,9 +442,6 @@ class App(Base):
 
         # Get the env mode.
         config = get_config()
-
-        # check and warn for schema changes
-        prerequisites.check_schema_up_to_date()
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
