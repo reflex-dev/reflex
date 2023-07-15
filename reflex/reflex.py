@@ -2,6 +2,7 @@
 
 import os
 import platform
+import signal
 import threading
 from pathlib import Path
 
@@ -162,6 +163,9 @@ def run(
             target=backend_cmd,
             args=(app.__name__, backend_host, backend_port, loglevel),
         ).start()
+
+    # Display custom message when there is a keyboard interrupt.
+    signal.signal(signal.SIGINT, processes.catch_keyboard_interrupt)
 
 
 @cli.command()
