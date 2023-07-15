@@ -375,7 +375,7 @@ def check_db_initialized() -> bool:
     """Check if the database migrations are initialized.
 
     Returns:
-        True if alembic is initialized (or if database is not used)
+        True if alembic is initialized (or if database is not used).
     """
     if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
         console.print(
