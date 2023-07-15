@@ -131,7 +131,7 @@ def run(
     # Check the admin dashboard settings.
     prerequisites.check_admin_settings()
 
-    # Warn if schema is not up to date
+    # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
 
     # Get the frontend and backend commands, based on the environment.
