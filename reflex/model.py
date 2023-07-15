@@ -199,8 +199,8 @@ class Model(Base, sqlmodel.SQLModel):
             if upgrade_ops is not None:
                 changes_detected = bool(upgrade_ops.ops)
         if changes_detected and write_migration_scripts:
-            for _script in revision_context.generate_scripts():
-                pass  # must iterate to actually generate the scripts
+            # Must iterate the generator to actually write the scripts.
+            _ = tuple(revision_context.generate_scripts())
         return changes_detected
 
     @classmethod
