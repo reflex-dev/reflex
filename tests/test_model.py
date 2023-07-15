@@ -82,8 +82,12 @@ def test_automigration(tmp_working_dir, monkeypatch):
     class AlembicThing(Model, table=True):  # type: ignore
         t1: str
 
-    Model.migrate(autogenerate=True)
-    assert len(list(versions.glob("*.py"))) == 1
+    with Model.get_db_engine().connect() as connection:
+        Model.alembic_autogenerate(connection=connection, message="Initial Revision")
+    Model.migrate()
+    version_scripts = list(versions.glob("*.py"))
+    assert len(version_scripts) == 1
+    assert version_scripts[0].name.endswith("initial_revision.py")
 
     with reflex.model.session() as session:
         session.add(AlembicThing(id=None, t1="foo"))
