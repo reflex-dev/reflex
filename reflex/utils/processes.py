@@ -7,6 +7,7 @@ import os
 import signal
 import subprocess
 import sys
+from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -145,3 +146,14 @@ def new_process(args, **kwargs):
         args,
         **kwargs,
     )
+
+
+def catch_keyboard_interrupt(signal, frame):
+    """Display a custom message with the current time when exiting an app.
+
+    Args:
+        signal: The keyboard interrupt signal.
+        frame: The current stack frame.
+    """
+    current_time = datetime.now().strftime("%H:%M:%S")
+    console.print(f"\nReflex app stopped at time: {current_time}")
