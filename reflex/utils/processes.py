@@ -155,5 +155,5 @@ def catch_keyboard_interrupt(signal, frame):
         signal: The keyboard interrupt signal.
         frame: The current stack frame.
     """
-    current_time = datetime.now().strftime("%H:%M:%S")
+    current_time = datetime.now().isoformat()
     console.print(f"\nReflex app stopped at time: {current_time}")
