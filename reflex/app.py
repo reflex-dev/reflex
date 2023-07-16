@@ -643,7 +643,7 @@ def upload(app: App):
             update = await app.postprocess(state, event, update)
             # Send update to client
             await asyncio.create_task(
-                app.event_namespace.emit(
+                app.event_namespace.emit(  # type: ignore
                     str(constants.SocketEvent.EVENT), update.json(), to=sid
                 )
             )

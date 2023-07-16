@@ -635,7 +635,7 @@ async def test_upload_file(fixture, request, delta):
         delta: Expected delta
     """
     app = App(state=request.getfixturevalue(fixture))
-    app.event_namespace.emit = AsyncMock()
+    app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = app.state_manager.get_state("token")
     data = b"This is binary data"
 
@@ -655,7 +655,7 @@ async def test_upload_file(fixture, request, delta):
     await upload_fn([file1, file2])
     state_update = StateUpdate(delta=delta, events=[], final=True)
 
-    app.event_namespace.emit.assert_called_with(
+    app.event_namespace.emit.assert_called_with(  # type: ignore
         "event", state_update.json(), to=current_state.get_sid()
     )
     assert app.state_manager.get_state("token").dict()["img_list"] == [
