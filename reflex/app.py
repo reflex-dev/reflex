@@ -594,9 +594,6 @@ def upload(app: App):
         Args:
             files: The file(s) to upload.
 
-        Returns:
-            The state update after processing the event.
-
         Raises:
             ValueError: if there are no args with supported annotation.
         """
