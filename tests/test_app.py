@@ -602,7 +602,7 @@ async def test_dict_mutation_detection__plain_list(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "fixture, expected",
+    "fixture, delta",
     [
         (
             "upload_state",
@@ -626,21 +626,22 @@ async def test_dict_mutation_detection__plain_list(
         ),
     ],
 )
-async def test_upload_file(fixture, request, expected):
+async def test_upload_file(fixture, request, delta):
     """Test that file upload works correctly.
 
     Args:
         fixture: The state.
         request: Fixture request.
-        expected: Expected delta
+        delta: Expected delta
     """
+    app = App(state=request.getfixturevalue(fixture))
+    app.event_namespace.emit = AsyncMock()
+    current_state = app.state_manager.get_state("token")
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
     bio = io.BytesIO()
     bio.write(data)
-
-    app = App(state=request.getfixturevalue(fixture))
 
     file1 = UploadFile(
         filename="token:file_upload_state.multi_handle_upload:True:image1.jpg",
@@ -650,10 +651,17 @@ async def test_upload_file(fixture, request, expected):
         filename="token:file_upload_state.multi_handle_upload:True:image2.jpg",
         file=bio,
     )
-    fn = upload(app)
-    result = await fn([file1, file2])  # type: ignore
-    assert isinstance(result, StateUpdate)
-    assert result.delta == expected
+    upload_fn = upload(app)
+    await upload_fn([file1, file2])
+    state_update = StateUpdate(delta=delta, events=[], final=True)
+
+    app.event_namespace.emit.assert_called_with(
+        "event", state_update.json(), to=current_state.get_sid()
+    )
+    assert app.state_manager.get_state("token").dict()["img_list"] == [
+        "image1.jpg",
+        "image2.jpg",
+    ]
 
 
 @pytest.mark.asyncio

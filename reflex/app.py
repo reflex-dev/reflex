@@ -88,9 +88,7 @@ class App(Base):
     # The component to render if there is a connection error to the server.
     connect_error_component: Optional[Component] = None
 
-    # SID - Event token mapping
-    session_map: Dict[str, str] = {}
-
+    # The async server name space
     event_namespace: Optional[AsyncNamespace] = None
 
     def __init__(self, *args, **kwargs):
@@ -607,12 +605,10 @@ def upload(app: App):
         for file in files:
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
-
-        # get the current session ID
-        sid = app.session_map[token]
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-
+        # get the current session ID
+        sid = state.get_sid()
         # get the current state(parent state/substate)
         path = handler.split(".")[:-1]
         current_state = state.get_substate(path)
@@ -642,7 +638,6 @@ def upload(app: App):
             name=handler,
             payload={handler_upload_param[0]: files},
         )
-
         async for update in state._process(event):
             # Postprocess the event.
             update = await app.postprocess(state, event, update)
@@ -652,7 +647,6 @@ def upload(app: App):
                     str(constants.SocketEvent.EVENT), update.json(), to=sid
                 )
             )
-
         # Set the state for the session.
         app.state_manager.set_state(event.token, state)
 
@@ -690,10 +684,7 @@ class EventNamespace(AsyncNamespace):
         Args:
             sid: The Socket.IO session id.
         """
-        # remove disconnected clients from mapping
-        for key, value in self.app.session_map.items():
-            if value == sid:
-                self.app.session_map.pop(key)
+        pass
 
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
@@ -704,8 +695,6 @@ class EventNamespace(AsyncNamespace):
         """
         # Get the event.
         event = Event.parse_raw(data)
-        # add client to mapping
-        self.app.session_map[event.token] = sid
 
         # Get the event environment.
         assert self.app.sio is not None
