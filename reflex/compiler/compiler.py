@@ -5,9 +5,8 @@ from typing import List, Set, Tuple, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
-from reflex.components.component import Component, CustomComponent
+from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.state import State
-from reflex.style import Style
 from reflex.utils import imports
 from reflex.vars import ImportVar
 
@@ -163,7 +162,7 @@ def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     return output_path, code
 
 
-def compile_theme(style: Style) -> Tuple[str, str]:
+def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     """Compile the theme.
 
     Args:
