@@ -23,7 +23,7 @@
 
 ---
 
-[English](README.md) | [繁體中文](/docs/zh/zh_tw/README.md)
+[English](README.md) | [简体中文](/docs/zh/zh_cn/README.md) | [繁體中文](/docs/zh/zh_tw/README.md)
 
 ---
 
