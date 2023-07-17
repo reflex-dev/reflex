@@ -63,11 +63,11 @@ class Markdown(Component):
             ._render()
             .add_props(
                 components={
-                    "h1": "{({node, ...props}) => <Heading size='2xl' paddingY='0.5em' {...props} />}",
-                    "h2": "{({node, ...props}) => <Heading size='xl' paddingY='0.5em' {...props} />}",
-                    "h3": "{({node, ...props}) => <Heading size='lg' paddingY='0.5em' {...props} />}",
-                    "h4": "{({node, ...props}) => <Heading size='sm' paddingY='0.5em' {...props} />}",
-                    "h5": "{({node, ...props}) => <Heading size='xs' paddingY='0.5em' {...props} />}",
+                    "h1": "{({node, ...props}) => <Heading style={{ color: 'red' }} size='2xl' paddingY='0.5em' {...props} />}",
+                    "h2": "{({node, ...props}) => <Heading style={{ color: 'blue' }} size='xl' paddingY='0.5em' {...props} />}",
+                    "h3": "{({node, ...props}) => <Heading style={{ color: 'green' }} size='lg' paddingY='0.5em' {...props} />}",
+                    "h4": "{({node, ...props}) => <Heading style={{ color: 'yellow' }} size='sm' paddingY='0.5em' {...props} />}",
+                    "h5": "{({node, ...props}) => <Heading style={{ color: 'orange' }} size='xs' paddingY='0.5em' {...props} />}",
                     "ul": "{UnorderedList}",
                     "ol": "{OrderedList}",
                     "li": "{ListItem}",
@@ -76,6 +76,9 @@ class Markdown(Component):
                     "code": """{({node, inline, className, children, ...props}) =>
                     {
         const match = (className || '').match(/language-(?<lang>.*)/);
+        const customStyles = {
+            background: 'grey',
+        };
         return !inline ? (
           <Prism
             children={String(children).replace(/\n$/, '')}
@@ -83,7 +86,7 @@ class Markdown(Component):
             {...props}
           />
         ) : (
-          <Code {...props}>
+          <Code style={customStyles} {...props}>
             {children}
           </Code>
         );
