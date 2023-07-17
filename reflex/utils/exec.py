@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
-from datetime import datetime
 from pathlib import Path
 
 from rich import print
@@ -42,7 +41,6 @@ def run_process_and_launch_url(
         cwd=constants.WEB_DIR,
     )
 
-    datetime.now()
     if process.stdout:
         for line in process.stdout:
             if "ready started server on" in line:
