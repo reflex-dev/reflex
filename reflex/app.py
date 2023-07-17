@@ -18,6 +18,7 @@ from typing import (
 
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
+from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
@@ -437,6 +438,14 @@ class App(Base):
 
     def compile(self):
         """Compile the app and output it to the pages folder."""
+        # Create a progress bar.
+        progress = Progress(
+            *Progress.get_default_columns()[:-1],
+            MofNCompleteColumn(),
+            TimeElapsedColumn(),
+        )
+        task = progress.add_task("Compiling: ", total=len(self.pages))
+
         for render, kwargs in DECORATED_ROUTES:
             self.add_page(render, **kwargs)
 
@@ -450,47 +459,60 @@ class App(Base):
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
 
-        # Compile the root document with base styles and fonts.
-        compiler.compile_document_root(self.stylesheets)
+        # Store the compile results.
+        compile_results = []
 
-        # Compile the theme.
-        compiler.compile_theme(self.style)
-
-        # Compile the Tailwind config.
-        compiler.compile_tailwind(
-            dict(**config.tailwind, content=constants.TAILWIND_CONTENT)
-            if config.tailwind is not None
-            else {}
-        )
-
-        # Compile the pages.
+        # Compile the pages in parallel.
         custom_components = set()
         thread_pool = ThreadPool()
-        compile_results = []
-        for route, component in self.pages.items():
-            component.add_style(self.style)
-            compile_results.append(
-                thread_pool.apply_async(
-                    compiler.compile_page,
-                    args=(
-                        route,
-                        component,
-                        self.state,
-                        self.connect_error_component,
-                    ),
+        with progress:
+            for route, component in self.pages.items():
+                progress.advance(task)
+                component.add_style(self.style)
+                compile_results.append(
+                    thread_pool.apply_async(
+                        compiler.compile_page,
+                        args=(
+                            route,
+                            component,
+                            self.state,
+                            self.connect_error_component,
+                        ),
+                    )
                 )
-            )
-            # Add the custom components from the page to the set.
-            custom_components |= component.get_custom_components()
+                # Add the custom components from the page to the set.
+                custom_components |= component.get_custom_components()
         thread_pool.close()
         thread_pool.join()
 
-        # check the results of all the threads in case an exception was raised.
-        for r in compile_results:
-            r.get()
+        # Get the results.
+        compile_results = [result.get() for result in compile_results]
 
         # Compile the custom components.
-        compiler.compile_components(custom_components)
+        compile_results.append(compiler.compile_components(custom_components))
+
+        # Compile the root document with base styles and fonts.
+        compile_results.append(compiler.compile_document_root(self.stylesheets))
+
+        # Compile the theme.
+        compile_results.append(compiler.compile_theme(self.style))
+
+        # Compile the Tailwind config.
+        compile_results.append(
+            compiler.compile_tailwind(
+                dict(**config.tailwind, content=constants.TAILWIND_CONTENT)
+                if config.tailwind is not None
+                else {}
+            )
+        )
+
+        # Write the pages at the end to trigger the NextJS hot reload only once.
+        thread_pool = ThreadPool()
+        for output_path, code in compile_results:
+            compiler_utils.write_page(output_path, code)
+            thread_pool.apply_async(compiler_utils.write_page, args=(output_path, code))
+        thread_pool.close()
+        thread_pool.join()
 
 
 async def process(

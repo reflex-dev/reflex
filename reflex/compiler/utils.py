@@ -18,7 +18,7 @@ from reflex.components.base import (
     Script,
     Title,
 )
-from reflex.components.component import Component, CustomComponent
+from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.event import get_hydrate_event
 from reflex.state import State
 from reflex.style import Style
@@ -188,7 +188,7 @@ def create_document_root(stylesheets: List[str]) -> Component:
     )
 
 
-def create_theme(style: Style) -> Dict:
+def create_theme(style: ComponentStyle) -> Dict:
     """Create the base style for the app.
 
     Args:

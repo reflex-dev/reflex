@@ -1,14 +1,12 @@
 """Compiler for the reflex apps."""
 from __future__ import annotations
 
-from functools import wraps
-from typing import Callable, List, Set, Tuple, Type
+from typing import List, Set, Tuple, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
-from reflex.components.component import Component, CustomComponent
+from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.state import State
-from reflex.style import Style
 from reflex.utils import imports
 from reflex.vars import ImportVar
 
@@ -144,36 +142,6 @@ def _compile_tailwind(
     )
 
 
-def write_output(fn: Callable[..., Tuple[str, str]]):
-    """Write the output of the function to a file.
-
-    Args:
-        fn: The function to decorate.
-
-    Returns:
-        The decorated function.
-    """
-
-    @wraps(fn)
-    def wrapper(*args, write: bool = True) -> Tuple[str, str]:
-        """Write the output of the function to a file.
-
-        Args:
-            *args: The arguments to pass to the function.
-            write: Whether to write the output to a file.
-
-        Returns:
-            The path and code of the output.
-        """
-        path, code = fn(*args)
-        if write:
-            utils.write_page(path, code)
-        return path, code
-
-    return wrapper
-
-
-@write_output
 def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     """Compile the document root.
 
@@ -194,8 +162,7 @@ def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     return output_path, code
 
 
-@write_output
-def compile_theme(style: Style) -> Tuple[str, str]:
+def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     """Compile the theme.
 
     Args:
@@ -214,7 +181,6 @@ def compile_theme(style: Style) -> Tuple[str, str]:
     return output_path, code
 
 
-@write_output
 def compile_page(
     path: str,
     component: Component,
@@ -240,7 +206,6 @@ def compile_page(
     return output_path, code
 
 
-@write_output
 def compile_components(components: Set[CustomComponent]):
     """Compile the custom components.
 
@@ -258,7 +223,6 @@ def compile_components(components: Set[CustomComponent]):
     return output_path, code
 
 
-@write_output
 def compile_tailwind(
     config: dict,
 ):

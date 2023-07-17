@@ -178,8 +178,7 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
     # Compile the app in production mode.
     typer.echo("Compiling production app")
-    app = prerequisites.get_app().app
-    build.export_app(app, zip=True, deploy_url=config.deploy_url)
+    export(for_reflex_deploy=True)
 
     # Exit early if this is a dry run.
     if dry_run:

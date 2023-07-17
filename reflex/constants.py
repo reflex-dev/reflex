@@ -190,7 +190,7 @@ CONFIG_FILE = f"{CONFIG_MODULE}{PY_EXT}"
 # The previous config file.
 OLD_CONFIG_FILE = f"pcconfig{PY_EXT}"
 # The deployment URL.
-PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.reflex.app"
+PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
 # Token expiration time in seconds.
 TOKEN_EXPIRATION = 60 * 60
 
