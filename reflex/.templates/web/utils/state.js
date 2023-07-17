@@ -338,12 +338,11 @@ export const uploadFiles = async (state, setResult, handler) => {
           console.log(error.request);
         } else {
           // Something happened in setting up the request that triggered an Error
-          console.log('Error', error.message);
+          console.log(error.message);
         }
         return false;
       }
     )
-  //  return true;
 };
 
 /**
