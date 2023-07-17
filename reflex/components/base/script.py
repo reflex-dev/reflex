@@ -5,8 +5,8 @@ https://nextjs.org/docs/app/api-reference/components/script
 from typing import Optional, Set
 
 from reflex.components.component import Component
-from reflex.event import EventHandler
-from reflex.vars import Var
+from reflex.event import EventChain, EventHandler
+from reflex.vars import BaseVar, Var
 
 
 class Script(Component):
@@ -63,3 +63,18 @@ class Script(Component):
             The event triggers.
         """
         return super().get_triggers() | {"on_load", "on_ready", "on_error"}
+
+
+def client_side(javascript_code) -> Var[EventChain]:
+    """Create an event handler that executes arbitrary javascript code.
+
+    The provided code will have access to `args`, which come from the event itself.
+
+    Args:
+        javascript_code: The code to execute.
+
+    Returns:
+        An EventChain, passable to any component, that will execute the client side javascript
+        when triggered.
+    """
+    return BaseVar(name=f"...args => {{{javascript_code}}}", type_=EventChain)
