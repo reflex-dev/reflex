@@ -42,22 +42,13 @@ def run_process_and_launch_url(
         cwd=constants.WEB_DIR,
     )
 
-    current_time = datetime.now()
+    datetime.now()
     if process.stdout:
         for line in process.stdout:
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
                 print(f"App running at: [bold green]{url}")
-            if (
-                "Fast Refresh" in line
-                or "compiling..." in line
-                and (datetime.now() - current_time).total_seconds() > 1
-            ):
-                current_time = datetime.now()
-                print(
-                    f"[yellow][Updating App][/yellow] Applying changes and refreshing. Time: {current_time}"
-                )
-            elif loglevel == constants.LogLevel.DEBUG:
+            if loglevel == constants.LogLevel.DEBUG:
                 print(line, end="")
 
 
@@ -130,8 +121,8 @@ def run_backend(
         "--log-level",
         loglevel,
         "--reload",
-        "--reload-exclude",
-        f"'{constants.WEB_DIR}/*'",
+        "--reload-dir",
+        app_name.split(".")[0],
     ]
     process = subprocess.Popen(cmd)
 
