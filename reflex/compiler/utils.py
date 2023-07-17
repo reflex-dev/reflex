@@ -14,8 +14,8 @@ from reflex.components.base import (
     Image,
     Main,
     Meta,
+    NextScript,
     RawLink,
-    Script,
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
@@ -183,7 +183,7 @@ def create_document_root(stylesheets: List[str]) -> Component:
         Body.create(
             ColorModeScript.create(),
             Main.create(),
-            Script.create(),
+            NextScript.create(),
         ),
     )
 

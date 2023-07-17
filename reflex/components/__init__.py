@@ -1,7 +1,7 @@
 """Import all the components."""
 from __future__ import annotations
 
-from .base import ScriptTag
+from .base import Script
 from .component import Component
 from .datadisplay import *
 from .disclosure import *
@@ -238,7 +238,7 @@ highlight = Highlight.create
 markdown = Markdown.create
 span = Span.create
 text = Text.create
-script = ScriptTag.create
+script = Script.create
 aspect_ratio = AspectRatio.create
 kbd = KeyboardKey.create
 color_mode_button = ColorModeButton.create
