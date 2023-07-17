@@ -21,6 +21,7 @@ from .constants import Transports as Transports
 from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
+from .event import browsercall as browsercall
 from .event import clear_local_storage as clear_local_storage
 from .event import console_log as console_log
 from .event import redirect as redirect

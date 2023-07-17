@@ -202,6 +202,18 @@ def window_alert(message: Union[str, Var[str]]) -> EventSpec:
     return server_side("_alert", get_fn_signature(window_alert), message=message)
 
 
+def browsercall(message: Union[str, Var[str]]) -> EventSpec:
+    """Do a browser-side javascript call on the browser.
+
+    Args:
+        message: The message to browser-side calling.
+
+    Returns:
+        An event to browser-side calling by message.
+    """
+    return server_side("_browsercall", get_fn_signature(browsercall), message=message)
+
+
 def set_focus(ref: str) -> EventSpec:
     """Set focus to specified ref.
 

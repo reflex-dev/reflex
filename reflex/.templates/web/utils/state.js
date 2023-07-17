@@ -116,6 +116,11 @@ export const applyEvent = async (event, router, socket) => {
     return false;
   }
 
+  if (event.name == "_browsercall") {
+    browsercall(event.payload.message);
+    return false;
+  }
+
   if (event.name == "_set_cookie") {
     cookies.set(event.payload.key, event.payload.value);
     return false;
