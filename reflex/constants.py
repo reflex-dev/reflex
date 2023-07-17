@@ -105,7 +105,9 @@ FRONTEND_PORT = get_value("FRONTEND_PORT", "3000")
 # The backend default port.
 BACKEND_PORT = get_value("BACKEND_PORT", "8000")
 # The backend api url.
-API_URL = get_value("API_URL", "http://localhost:8000")
+CODESPACE_NAME=os.getenv("CODESPACE_NAME")
+GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN=os.getenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")
+API_URL = get_value("API_URL", f"https://{CODESPACE_NAME}-8000.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}")
 # The deploy url
 DEPLOY_URL = get_value("DEPLOY_URL")
 # bun root location

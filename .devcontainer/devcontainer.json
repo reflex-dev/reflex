@@ -1,0 +1,7 @@
+{
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.11-bullseye",
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {}
+	},
+	"postCreateCommand": "/bin/bash -c '/usr/local/bin/pip install poetry'"
+}
