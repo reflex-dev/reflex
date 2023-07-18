@@ -100,6 +100,8 @@ class App(Base):
 
         Raises:
             ValueError: If the event namespace is not provided in the config.
+                        Also, if there are multiple client subclasses of rx.State(Subclasses of rx.State should consist
+                        of the DefaultState and the client app state).
         """
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()

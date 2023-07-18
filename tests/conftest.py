@@ -18,6 +18,9 @@ from reflex.state import DefaultState
 def app(mocker) -> App:
     """A base app.
 
+    Args:
+        mocker: Pytest mocker object.
+
     Returns:
         The app.
     """

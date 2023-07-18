@@ -59,6 +59,9 @@ def about_page():
 def test_state(mocker) -> Type[State]:
     """A default state.
 
+    Args:
+        mocker: Pytest mocker object.
+
     Returns:
         A default state.
     """
@@ -185,7 +188,10 @@ def test_multiple_states_error(mocker, test_state, redundant_test_state):
         test_state: A test state subclassing rx.State.
         redundant_test_state: Another test state subclassing rx.State.
     """
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[DefaultState, test_state, redundant_test_state])
+    mocker.patch(
+        "reflex.app.State.__subclasses__",
+        return_value=[DefaultState, test_state, redundant_test_state],
+    )
 
     with pytest.raises(ValueError):
         App()
@@ -272,10 +278,10 @@ def test_initialize_with_admin_dashboard(mocker, test_model):
 
 
 def test_initialize_with_custom_admin_dashboard(
-        mocker,
-        test_get_engine,
-        test_custom_auth_admin,
-        test_model_auth,
+    mocker,
+    test_get_engine,
+    test_custom_auth_admin,
+    test_model_auth,
 ):
     """Test setting the custom admin dashboard of an app.
 
@@ -395,12 +401,12 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                        "test_state.make_friend",
-                        {"test_state": {"plain_friends": ["Tommy", "another-fd"]}},
+                    "test_state.make_friend",
+                    {"test_state": {"plain_friends": ["Tommy", "another-fd"]}},
                 ),
                 (
-                        "test_state.change_first_friend",
-                        {"test_state": {"plain_friends": ["Jenny", "another-fd"]}},
+                    "test_state.change_first_friend",
+                    {"test_state": {"plain_friends": ["Jenny", "another-fd"]}},
                 ),
             ],
             id="append then __setitem__",
@@ -408,12 +414,12 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                        "test_state.unfriend_first_friend",
-                        {"test_state": {"plain_friends": []}},
+                    "test_state.unfriend_first_friend",
+                    {"test_state": {"plain_friends": []}},
                 ),
                 (
-                        "test_state.make_friend",
-                        {"test_state": {"plain_friends": ["another-fd"]}},
+                    "test_state.make_friend",
+                    {"test_state": {"plain_friends": ["another-fd"]}},
                 ),
             ],
             id="delitem then append",
@@ -421,20 +427,20 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                        "test_state.make_friends_with_colleagues",
-                        {"test_state": {"plain_friends": ["Tommy", "Peter", "Jimmy"]}},
+                    "test_state.make_friends_with_colleagues",
+                    {"test_state": {"plain_friends": ["Tommy", "Peter", "Jimmy"]}},
                 ),
                 (
-                        "test_state.remove_tommy",
-                        {"test_state": {"plain_friends": ["Peter", "Jimmy"]}},
+                    "test_state.remove_tommy",
+                    {"test_state": {"plain_friends": ["Peter", "Jimmy"]}},
                 ),
                 (
-                        "test_state.remove_last_friend",
-                        {"test_state": {"plain_friends": ["Peter"]}},
+                    "test_state.remove_last_friend",
+                    {"test_state": {"plain_friends": ["Peter"]}},
                 ),
                 (
-                        "test_state.unfriend_all_friends",
-                        {"test_state": {"plain_friends": []}},
+                    "test_state.unfriend_all_friends",
+                    {"test_state": {"plain_friends": []}},
                 ),
             ],
             id="extend, remove, pop, clear",
@@ -442,24 +448,24 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                        "test_state.add_jimmy_to_second_group",
-                        {
-                            "test_state": {
-                                "friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]
-                            }
-                        },
+                    "test_state.add_jimmy_to_second_group",
+                    {
+                        "test_state": {
+                            "friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]
+                        }
+                    },
                 ),
                 (
-                        "test_state.remove_first_person_from_first_group",
-                        {
-                            "test_state": {
-                                "friends_in_nested_list": [[], ["Jenny", "Jimmy"]]
-                            }
-                        },
+                    "test_state.remove_first_person_from_first_group",
+                    {
+                        "test_state": {
+                            "friends_in_nested_list": [[], ["Jenny", "Jimmy"]]
+                        }
+                    },
                 ),
                 (
-                        "test_state.remove_first_group",
-                        {"test_state": {"friends_in_nested_list": [["Jenny", "Jimmy"]]}},
+                    "test_state.remove_first_group",
+                    {"test_state": {"friends_in_nested_list": [["Jenny", "Jimmy"]]}},
                 ),
             ],
             id="nested list",
@@ -467,16 +473,16 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                        "test_state.add_jimmy_to_tommy_friends",
-                        {"test_state": {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}}},
+                    "test_state.add_jimmy_to_tommy_friends",
+                    {"test_state": {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}}},
                 ),
                 (
-                        "test_state.remove_jenny_from_tommy",
-                        {"test_state": {"friends_in_dict": {"Tommy": ["Jimmy"]}}},
+                    "test_state.remove_jenny_from_tommy",
+                    {"test_state": {"friends_in_dict": {"Tommy": ["Jimmy"]}}},
                 ),
                 (
-                        "test_state.tommy_has_no_fds",
-                        {"test_state": {"friends_in_dict": {"Tommy": []}}},
+                    "test_state.tommy_has_no_fds",
+                    {"test_state": {"friends_in_dict": {"Tommy": []}}},
                 ),
             ],
             id="list in dict",
@@ -484,7 +490,7 @@ async def test_dynamic_var_event(test_state):
     ],
 )
 async def test_list_mutation_detection__plain_list(
-        event_tuples: List[Tuple[str, List[str]]], list_mutation_state: State
+    event_tuples: List[Tuple[str, List[str]]], list_mutation_state: State
 ):
     """Test list mutation detection
     when reassignment is not explicitly included in the logic.
@@ -513,16 +519,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                        "test_state.add_age",
-                        {"test_state": {"details": {"name": "Tommy", "age": 20}}},
+                    "test_state.add_age",
+                    {"test_state": {"details": {"name": "Tommy", "age": 20}}},
                 ),
                 (
-                        "test_state.change_name",
-                        {"test_state": {"details": {"name": "Jenny", "age": 20}}},
+                    "test_state.change_name",
+                    {"test_state": {"details": {"name": "Jenny", "age": 20}}},
                 ),
                 (
-                        "test_state.remove_last_detail",
-                        {"test_state": {"details": {"name": "Jenny"}}},
+                    "test_state.remove_last_detail",
+                    {"test_state": {"details": {"name": "Jenny"}}},
                 ),
             ],
             id="update then __setitem__",
@@ -530,12 +536,12 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                        "test_state.clear_details",
-                        {"test_state": {"details": {}}},
+                    "test_state.clear_details",
+                    {"test_state": {"details": {}}},
                 ),
                 (
-                        "test_state.add_age",
-                        {"test_state": {"details": {"age": 20}}},
+                    "test_state.add_age",
+                    {"test_state": {"details": {"age": 20}}},
                 ),
             ],
             id="delitem then update",
@@ -543,16 +549,16 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                        "test_state.add_age",
-                        {"test_state": {"details": {"name": "Tommy", "age": 20}}},
+                    "test_state.add_age",
+                    {"test_state": {"details": {"name": "Tommy", "age": 20}}},
                 ),
                 (
-                        "test_state.remove_name",
-                        {"test_state": {"details": {"age": 20}}},
+                    "test_state.remove_name",
+                    {"test_state": {"details": {"age": 20}}},
                 ),
                 (
-                        "test_state.pop_out_age",
-                        {"test_state": {"details": {}}},
+                    "test_state.pop_out_age",
+                    {"test_state": {"details": {}}},
                 ),
             ],
             id="add, remove, pop",
@@ -560,19 +566,19 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                        "test_state.remove_home_address",
-                        {"test_state": {"address": [{}, {"work": "work address"}]}},
+                    "test_state.remove_home_address",
+                    {"test_state": {"address": [{}, {"work": "work address"}]}},
                 ),
                 (
-                        "test_state.add_street_to_home_address",
-                        {
-                            "test_state": {
-                                "address": [
-                                    {"street": "street address"},
-                                    {"work": "work address"},
-                                ]
-                            }
-                        },
+                    "test_state.add_street_to_home_address",
+                    {
+                        "test_state": {
+                            "address": [
+                                {"street": "street address"},
+                                {"work": "work address"},
+                            ]
+                        }
+                    },
                 ),
             ],
             id="dict in list",
@@ -580,30 +586,30 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                        "test_state.change_friend_name",
-                        {
-                            "test_state": {
-                                "friend_in_nested_dict": {
-                                    "name": "Nikhil",
-                                    "friend": {"name": "Tommy"},
-                                }
+                    "test_state.change_friend_name",
+                    {
+                        "test_state": {
+                            "friend_in_nested_dict": {
+                                "name": "Nikhil",
+                                "friend": {"name": "Tommy"},
                             }
-                        },
+                        }
+                    },
                 ),
                 (
-                        "test_state.add_friend_age",
-                        {
-                            "test_state": {
-                                "friend_in_nested_dict": {
-                                    "name": "Nikhil",
-                                    "friend": {"name": "Tommy", "age": 30},
-                                }
+                    "test_state.add_friend_age",
+                    {
+                        "test_state": {
+                            "friend_in_nested_dict": {
+                                "name": "Nikhil",
+                                "friend": {"name": "Tommy", "age": 30},
                             }
-                        },
+                        }
+                    },
                 ),
                 (
-                        "test_state.remove_friend",
-                        {"test_state": {"friend_in_nested_dict": {"name": "Nikhil"}}},
+                    "test_state.remove_friend",
+                    {"test_state": {"friend_in_nested_dict": {"name": "Nikhil"}}},
                 ),
             ],
             id="nested dict",
@@ -611,7 +617,7 @@ async def test_list_mutation_detection__plain_list(
     ],
 )
 async def test_dict_mutation_detection__plain_list(
-        event_tuples: List[Tuple[str, List[str]]], dict_mutation_state: State
+    event_tuples: List[Tuple[str, List[str]]], dict_mutation_state: State
 ):
     """Test dict mutation detection
     when reassignment is not explicitly included in the logic.
@@ -638,24 +644,24 @@ async def test_dict_mutation_detection__plain_list(
     "fixture, delta",
     [
         (
-                "upload_state",
-                {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+            "upload_state",
+            {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
         ),
         (
-                "upload_sub_state",
-                {
-                    "file_state.file_upload_state": {
-                        "img_list": ["image1.jpg", "image2.jpg"]
-                    }
-                },
+            "upload_sub_state",
+            {
+                "file_state.file_upload_state": {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
         ),
         (
-                "upload_grand_sub_state",
-                {
-                    "base_file_state.file_sub_state.file_upload_state": {
-                        "img_list": ["image1.jpg", "image2.jpg"]
-                    }
-                },
+            "upload_grand_sub_state",
+            {
+                "base_file_state.file_sub_state.file_upload_state": {
+                    "img_list": ["image1.jpg", "image2.jpg"]
+                }
+            },
         ),
     ],
 )
@@ -732,8 +738,8 @@ async def test_upload_file_without_annotation(mocker, fixture, request):
     with pytest.raises(ValueError) as err:
         await fn([file1, file2])
     assert (
-            err.value.args[0]
-            == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+        err.value.args[0]
+        == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
 
@@ -777,9 +783,9 @@ class DynamicState(State):
 
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-        mocker,
-        index_page,
-        windows_platform: bool,
+    mocker,
+    index_page,
+    windows_platform: bool,
 ):
     """Create app with dynamic route var, and simulate navigation.
 
