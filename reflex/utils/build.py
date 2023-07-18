@@ -178,7 +178,6 @@ def export_app(
             posix_export(backend, frontend)
         if os.name == "nt":
             nt_export(backend, frontend)
-    print("Export process completed.")
 
 
 def nt_export(backend: bool = True, frontend: bool = True):
