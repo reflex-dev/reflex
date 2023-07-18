@@ -12,6 +12,7 @@ from typing import Optional, Union
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
+from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.processes import new_process
 
@@ -65,7 +66,7 @@ def set_os_env(**kwargs):
         os.environ[key.upper()] = value
 
 
-def generate_sitemap(deploy_url: str):
+def generate_sitemap_config(deploy_url: str):
     """Generate the sitemap config file.
 
     Args:
@@ -83,6 +84,15 @@ def generate_sitemap(deploy_url: str):
 
     with open(constants.SITEMAP_CONFIG_FILE, "w") as f:
         f.write(templates.SITEMAP_CONFIG(config=config))
+
+
+def generate_sitemap():
+    """Generate the actual sitemap."""
+    subprocess.run(
+        [prerequisites.get_package_manager(), "run", "next-sitemap"],
+        cwd=constants.WEB_DIR,
+        stdout=subprocess.PIPE,
+    )
 
 
 def export_app(
@@ -106,7 +116,7 @@ def export_app(
 
     # Generate the sitemap file.
     if deploy_url is not None:
-        generate_sitemap(deploy_url)
+        generate_sitemap_config(deploy_url)
 
     # Create a progress object
     progress = Progress(
@@ -158,12 +168,17 @@ def export_app(
         )
         os._exit(1)
 
+    # Generate the actual sitemap.
+    if deploy_url is not None:
+        generate_sitemap()
+
     # Zip up the app.
     if zip:
         if os.name == "posix":
             posix_export(backend, frontend)
         if os.name == "nt":
             nt_export(backend, frontend)
+    print("Export process completed.")
 
 
 def nt_export(backend: bool = True, frontend: bool = True):
@@ -256,4 +271,4 @@ def setup_frontend_prod(
         disable_telemetry: Whether to disable the Next telemetry.
     """
     setup_frontend(root, loglevel, disable_telemetry)
-    export_app(loglevel=loglevel)
+    export_app(loglevel=loglevel, deploy_url=get_config().deploy_url)

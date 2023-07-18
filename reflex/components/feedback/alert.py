@@ -24,9 +24,9 @@ class Alert(ChakraComponent):
 
         Args:
             children: The children of the component.
-            icon (bool): The icon of the alert.
-            title (str): The title of the alert.
-            desc (str): The description of the alert
+            icon: The icon of the alert.
+            title: The title of the alert.
+            desc: The description of the alert
             props: The properties of the component.
 
         Returns:
