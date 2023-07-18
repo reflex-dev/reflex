@@ -2,10 +2,10 @@
 
 https://nextjs.org/docs/app/api-reference/components/script
 """
-from typing import Optional, Set
+from typing import Set
 
 from reflex.components.component import Component
-from reflex.event import EventChain, EventHandler
+from reflex.event import EventChain
 from reflex.vars import BaseVar, Var
 
 
@@ -21,19 +21,10 @@ class Script(Component):
     is_default = True
 
     # Required unless inline script is used
-    src: Optional[Var[str]] = None
+    src: Var[str]
 
     # When the script will execute: afterInteractive | beforeInteractive | lazyOnload
     strategy: Var[str] = "afterInteractive"  # type: ignore
-
-    # Execute code after the script has finished loading.
-    on_load: Optional[EventHandler] = None
-
-    # Execute code after the script has finished loading and every time the component is mounted.
-    on_ready: Optional[EventHandler] = None
-
-    # Execute code if the script fails to load.
-    on_error: Optional[EventHandler] = None
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -41,6 +32,13 @@ class Script(Component):
 
         If a string is provided as the first child, it will be rendered as an inline script
         otherwise the `src` prop must be provided.
+
+        The following event triggers are provided:
+
+        on_load: Execute code after the script has finished loading.
+        on_ready: Execute code after the script has finished loading and every
+            time the component is mounted.
+        on_error: Execute code if the script fails to load.
 
         Args:
             *children: The children of the component.
@@ -69,6 +67,8 @@ def client_side(javascript_code) -> Var[EventChain]:
     """Create an event handler that executes arbitrary javascript code.
 
     The provided code will have access to `args`, which come from the event itself.
+    The code may call functions or reference variables defined in a previously
+    included rx.script function.
 
     Args:
         javascript_code: The code to execute.
