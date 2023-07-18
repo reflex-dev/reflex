@@ -102,6 +102,14 @@ class App(Base):
             ValueError: If the event namespace is not provided in the config.
         """
         super().__init__(*args, **kwargs)
+        state_subclasses = State.__subclasses__()
+
+        # only the default state and the client state should be allowed as subclasses
+        if len(state_subclasses) > 2:
+            raise ValueError(
+                "rx.State has been subclassed multiple times. Only one subclass is allowed"
+            )
+        self.state = state_subclasses[-1]
 
         # Get the config
         config = get_config()

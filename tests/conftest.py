@@ -9,7 +9,21 @@ import pytest
 
 import reflex as rx
 from reflex import constants
+from reflex.app import App
 from reflex.event import EventSpec
+from reflex.state import DefaultState
+
+
+@pytest.fixture
+def app(mocker) -> App:
+    """A base app.
+
+    Returns:
+        The app.
+    """
+    mocker.patch("reflex.app.State.__subclasses__", return_value=[DefaultState])
+    mocker.patch.object(DefaultState, "__subclasses__", return_value=[])
+    return App()
 
 
 @pytest.fixture(scope="function")
