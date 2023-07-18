@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 from reflex import constants
@@ -202,16 +203,18 @@ def window_alert(message: Union[str, Var[str]]) -> EventSpec:
     return server_side("_alert", get_fn_signature(window_alert), message=message)
 
 
-def browsercall(message: Union[str, Var[str]]) -> EventSpec:
+def browsercall(dobj: Dict[str, Any]) -> EventSpec:
     """Do a browser-side javascript call on the browser.
 
     Args:
-        message: The message to browser-side calling.
+        dobj: The dictionary represents the format of the browser-side calling.
 
     Returns:
         An event to browser-side calling by message.
     """
-    return server_side("_browsercall", get_fn_signature(browsercall), message=message)
+    return server_side(
+        "_browsercall", get_fn_signature(browsercall), message=str(json.dumps(dobj))
+    )
 
 
 def set_focus(ref: str) -> EventSpec:
