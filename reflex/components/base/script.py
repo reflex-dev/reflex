@@ -12,8 +12,11 @@ from reflex.vars import BaseVar, Var
 class Script(Component):
     """Next.js script component.
 
-    Note that this component differs from reflex.components.base.document.Script
+    Note that this component differs from reflex.components.base.document.NextScript
     in that it is intended for use with custom and user-defined scripts.
+
+    It also differs from reflex.components.base.link.ScriptTag, which is the plain
+    HTML <script> tag which does not work when rendering a component.
     """
 
     library = "next/script"
