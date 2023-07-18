@@ -110,11 +110,11 @@ def export_app(
 
     # Create a progress object
     progress = Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-        )
-    
+        *Progress.get_default_columns()[:-1],
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+    )
+
     checkpoints = [
         "Linting and checking ",
         "Compiled successfully",
@@ -124,7 +124,7 @@ def export_app(
         'Copying "static build" directory',
         'Copying "public" directory',
         "Finalizing page optimization",
-        "Export successful"
+        "Export successful",
     ]
 
     # Add a single task to the progress object
@@ -153,9 +153,10 @@ def export_app(
 
     except Exception as e:
         console.print(f"[red]Export process errored: {e}")
-        console.print("[red]Run in with [bold]--loglevel debug[/bold] to see the full error.")
+        console.print(
+            "[red]Run in with [bold]--loglevel debug[/bold] to see the full error."
+        )
         os._exit(1)
-
 
     # Zip up the app.
     if zip:
