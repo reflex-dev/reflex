@@ -185,7 +185,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
         """
-        print(cls.__subclasses__())
         super().__init_subclass__(**kwargs)
 
         # Get the parent vars.
