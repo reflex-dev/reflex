@@ -65,11 +65,7 @@ class DataTable(Gridjs):
                 " should be provided."
             )
 
-        if (
-            columns
-            and isinstance(columns, ComputedVar)
-            and columns.type_ == Any
-        ):
+        if columns and isinstance(columns, ComputedVar) and columns.type_ == Any:
             raise ValueError(
                 "Annotation of the computed var assigned to the column field"
                 " should be provided."
@@ -91,8 +87,7 @@ class DataTable(Gridjs):
             or issubclass(type(data), List)
         ) and not props.get("columns"):
             raise ValueError(
-                "column field should be specified when the data field is a"
-                " list type"
+                "column field should be specified when the data field is a" " list type"
             )
 
         # Create the component.
