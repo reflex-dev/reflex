@@ -8,6 +8,7 @@ from pathlib import Path
 
 import httpx
 import typer
+from alembic.util.exc import CommandError
 
 from reflex import constants, model
 from reflex.config import get_config
@@ -275,6 +276,7 @@ def db_init():
             "scripts and [bold]reflex db migrate[/bold] to apply migrations "
             "to a new or existing database.",
         )
+        return
     prerequisites.get_app()
     model.Model.alembic_init()
     model.Model.migrate(autogenerate=True)
@@ -282,7 +284,7 @@ def db_init():
 
 @db_cli.command()
 def migrate():
-    """Create or update database schema based on app models or existing migration scripts."""
+    """Create or update database schema from migration scripts."""
     prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
@@ -301,7 +303,14 @@ def makemigrations(
     if not prerequisites.check_db_initialized():
         return
     with model.Model.get_db_engine().connect() as connection:
-        model.Model.alembic_autogenerate(connection=connection, message=message)
+        try:
+            model.Model.alembic_autogenerate(connection=connection, message=message)
+        except CommandError as command_error:
+            if "Target database is not up to date." not in str(command_error):
+                raise
+            console.print(
+                f"[red]{command_error} Run [bold]reflex db migrate[/bold] to update database."
+            )
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema")
