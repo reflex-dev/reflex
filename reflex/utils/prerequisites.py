@@ -16,10 +16,11 @@ from types import ModuleType
 from typing import Optional
 
 import typer
+from alembic.util.exc import CommandError
 from packaging import version
 from redis import Redis
 
-from reflex import constants
+from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
 
@@ -368,6 +369,41 @@ def check_admin_settings():
             console.print(
                 "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
             )
+
+
+def check_db_initialized() -> bool:
+    """Check if the database migrations are initialized.
+
+    Returns:
+        True if alembic is initialized (or if database is not used).
+    """
+    if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
+        console.print(
+            "[red]Database is not initialized. Run [bold]reflex db init[/bold] first."
+        )
+        return False
+    return True
+
+
+def check_schema_up_to_date():
+    """Check if the sqlmodel metadata matches the current database schema."""
+    if get_config().db_url is None or not Path(constants.ALEMBIC_CONFIG).exists():
+        return
+    with model.Model.get_db_engine().connect() as connection:
+        try:
+            if model.Model.alembic_autogenerate(
+                connection=connection,
+                write_migration_scripts=False,
+            ):
+                console.print(
+                    "[red]Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
+                    "to generate migration scripts.",
+                )
+        except CommandError as command_error:
+            if "Target database is not up to date." in str(command_error):
+                console.print(
+                    f"[red]{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                )
 
 
 def migrate_to_reflex():

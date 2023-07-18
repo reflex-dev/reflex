@@ -452,10 +452,6 @@ class App(Base):
         # Get the env mode.
         config = get_config()
 
-        # Update models during hot reload.
-        if config.db_url is not None and not Model.automigrate():
-            Model.create_all()
-
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
 
