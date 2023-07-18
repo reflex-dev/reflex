@@ -108,20 +108,27 @@ class DataTable(Gridjs):
         )
 
     def _render(self) -> Tag:
-        if isinstance(self.data, Var):
+        if isinstance(self.data, Var) and types.is_dataframe(self.data.type_):
+            self.columns = BaseVar(
+                name=f"{self.data.name}.columns",
+                type_=List[Any],
+                state=self.data.state,
+            )
             self.data = BaseVar(
-                name=f"{self.data.name}.data"
-                if types.is_dataframe(self.data.type_)
-                else f"{self.data.name}",
+                name=f"{self.data.name}.data",
+                type_=List[List[Any]],
+                state=self.data.state,
+            )
+        elif isinstance(self.data, Var):
+            self.data = BaseVar(
+                name=f"{self.data.name}",
                 type_=List[List[Any]],
                 state=self.data.state,
             )
 
         if isinstance(self.columns, Var):
             self.columns = BaseVar(
-                name=f"{self.columns.name}.columns"
-                if types.is_dataframe(self.columns.type_)
-                else f"{self.columns.name}",
+                name=f"{self.columns.name}",
                 type_=List[Any],
                 state=self.columns.state,
             )
