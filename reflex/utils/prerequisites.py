@@ -309,7 +309,7 @@ def install_frontend_packages(web_dir: str):
     into the given web directory.
 
     Args:
-        web_dir (str): The directory where the frontend code is located.
+        web_dir: The directory where the frontend code is located.
     """
     # Install the frontend packages.
     console.rule("[bold]Installing frontend packages")

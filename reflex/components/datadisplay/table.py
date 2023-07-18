@@ -148,8 +148,8 @@ class Tr(ChakraComponent):
         Args:
             children: The children of the component.
             props: The properties of the component.
-            cell_type (str): the type of cells in this table row. "header" or "data". Defaults to None.
-            cells (list, optional): The cells value to add in the table row. Defaults to None.
+            cell_type: the type of cells in this table row. "header" or "data". Defaults to None.
+            cells: The cells value to add in the table row. Defaults to None.
 
         Returns:
             The table row component
