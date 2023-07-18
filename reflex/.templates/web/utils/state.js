@@ -117,7 +117,13 @@ export const applyEvent = async (event, router, socket) => {
   }
 
   if (event.name == "_browsercall") {
-    browsercall(event.payload.message);
+    try {
+      var jobj = JSON.parse(event.payload.message);
+      var func = jobj.__func__;
+      eval(func + '(jobj)'); //dispatch browser-side js function
+    } catch(e) {
+      console.log("_browsercall [" + e.name +"] "+ e.message);
+    }
     return false;
   }
 
