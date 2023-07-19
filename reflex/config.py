@@ -255,8 +255,12 @@ class Config(Base):
             except AttributeError:
                 pass
 
-    def get_event_namespace(self):
-        """Get the websocket event namespace."""
+    def get_event_namespace(self) -> Optional[str]:
+        """Get the websocket event namespace.
+
+        Returns:
+            The namespace for websocket.
+        """
         if self.event_namespace:
             return f'/{self.event_namespace.strip("/")}'
 

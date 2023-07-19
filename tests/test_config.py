@@ -5,7 +5,7 @@ import pytest
 
 import reflex as rx
 from reflex import constants
-from reflex.config import DBConfig
+from reflex.config import DBConfig, get_config
 from reflex.constants import get_value
 
 
@@ -133,3 +133,27 @@ def test_get_value(monkeypatch, key, value, expected_value_type_in_config):
     casted_value = get_value(key, type_=expected_value_type_in_config)
 
     assert isinstance(casted_value, expected_value_type_in_config)
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({"app_name": "test_app", "api_url": "http://example.com"}, "/event"),
+        ({"app_name": "test_app", "api_url": "http://example.com/api"}, "/api/event"),
+        ({"app_name": "test_app", "event_namespace": "/event"}, "/event"),
+        ({"app_name": "test_app", "event_namespace": "event"}, "/event"),
+    ],
+)
+def test_event_name_space(mocker, kwargs, expected):
+    """Test the event namespace.
+
+    Args:
+        mocker: The pytest mock object.
+        kwargs: The Config kwargs.
+        expected: Expected namespace
+    """
+    conf = rx.Config(**kwargs)
+    mocker.patch("reflex.config.get_config", return_value=conf)
+
+    config = get_config()
+    assert config.get_event_namespace() == expected
