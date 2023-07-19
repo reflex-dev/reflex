@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import importlib
 import os
-import re
 import sys
 import urllib.parse
 from typing import Any, Dict, List, Optional
@@ -265,8 +264,7 @@ class Config(Base):
             return f'/{self.event_namespace.strip("/")}'
 
         event_url = constants.Endpoint.EVENT.get_url()
-        match = re.match(r"^\w+://[^/]+(/.*)?$", event_url)
-        return match.group(1) if match else None
+        return urllib.parse.urlsplit(event_url).path
 
 
 def get_config() -> Config:

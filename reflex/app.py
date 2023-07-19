@@ -97,6 +97,9 @@ class App(Base):
         Args:
             *args: Args to initialize the app with.
             **kwargs: Kwargs to initialize the app with.
+
+        Raises:
+            ValueError: If the event namespace is not provided in the config.
         """
         super().__init__(*args, **kwargs)
 
@@ -129,7 +132,10 @@ class App(Base):
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         self.socket_app = ASGIApp(self.sio, socketio_path="")
         namespace = config.get_event_namespace()
-        assert namespace
+
+        if not namespace:
+            raise ValueError("event namespace must be provided in the config.")
+
         # Create the event namespace and attach the main app. Not related to any paths.
         self.event_namespace = EventNamespace(namespace, self)
 

@@ -142,9 +142,10 @@ def test_get_value(monkeypatch, key, value, expected_value_type_in_config):
         ({"app_name": "test_app", "api_url": "http://example.com/api"}, "/api/event"),
         ({"app_name": "test_app", "event_namespace": "/event"}, "/event"),
         ({"app_name": "test_app", "event_namespace": "event"}, "/event"),
+        ({"app_name": "test_app", "event_namespace": "event/"}, "/event"),
     ],
 )
-def test_event_name_space(mocker, kwargs, expected):
+def test_event_namespace(mocker, kwargs, expected):
     """Test the event namespace.
 
     Args:
