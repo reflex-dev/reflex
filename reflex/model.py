@@ -40,9 +40,12 @@ def get_engine(url: Optional[str] = None):
         console.print(
             "[red]Database is not initialized, run [bold]reflex db init[/bold] first."
         )
+    echo_db_query = False
+    if conf.env == constants.Env.DEV and constants.SQLALCHEMY_ECHO:
+        echo_db_query = True
     return sqlmodel.create_engine(
         url,
-        echo=False,
+        echo=echo_db_query,
         connect_args={"check_same_thread": False} if conf.admin_dash else {},
     )
 
