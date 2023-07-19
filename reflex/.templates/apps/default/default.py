@@ -15,6 +15,7 @@ class State(rx.State):
 
 def index() -> rx.Component:
     return rx.fragment(
+        rx.connection_modal(),  # displays error when backend cannot connect
         rx.color_mode_button(rx.color_mode_icon(), float="right"),
         rx.vstack(
             rx.heading("Welcome to Reflex!", font_size="2em"),
