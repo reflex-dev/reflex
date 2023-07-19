@@ -104,7 +104,16 @@ class Tbody(ChakraComponent):
             Component: _description_
         """
         if len(children) == 0:
-            children = [Tr.create(cell_type="data", cells=row) for row in rows or []]
+            if isinstance(rows, Var):
+                children = [
+                    Foreach.create(
+                        rows, lambda row: Tr.create(cell_type="data", cells=row)
+                    )
+                ]
+            else:
+                children = [
+                    Tr.create(cell_type="data", cells=row) for row in rows or []
+                ]
         return super().create(*children, **props)
 
 
