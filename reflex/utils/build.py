@@ -79,6 +79,7 @@ def generate_sitemap_config(deploy_url: str):
         {
             "siteUrl": deploy_url,
             "generateRobotsTxt": True,
+            "outDir": constants.STATIC_DIR,
         }
     )
 
