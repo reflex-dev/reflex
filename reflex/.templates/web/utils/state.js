@@ -222,7 +222,7 @@ export const processEvent = async (
   const event = state.events.shift();
 
   // Set new events to avoid reprocessing the same event.
-  setState(state => ({ ...state, events: state.events }));
+  setState(currentState => ({ ...currentState, events: state.events }));
 
   // Process events with handlers via REST and all others via websockets.
   let eventSent = false;
