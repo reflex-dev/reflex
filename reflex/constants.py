@@ -193,7 +193,8 @@ OLD_CONFIG_FILE = f"pcconfig{PY_EXT}"
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
 # Token expiration time in seconds.
 TOKEN_EXPIRATION = 60 * 60
-
+# The event namespace for websocket
+EVENT_NAMESPACE = get_value("EVENT_NAMESPACE")
 
 # Env modes
 class Env(str, Enum):

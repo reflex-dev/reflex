@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import re
 import sys
 import urllib.parse
 from typing import Any, Dict, List, Optional
@@ -206,6 +207,9 @@ class Config(Base):
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
 
+    # The event namespace for ws connection
+    event_namespace: Optional[str] = constants.EVENT_NAMESPACE
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -250,6 +254,15 @@ class Config(Base):
                 setattr(self, field, getattr(constants, f"{field.upper()}"))
             except AttributeError:
                 pass
+
+    def get_event_namespace(self):
+        """Get the websocket event namespace."""
+        if self.event_namespace:
+            return f'/{self.event_namespace.strip("/")}'
+
+        event_url = constants.Endpoint.EVENT.get_url()
+        match = re.match(r"^\w+://[^/]+(/.*)?$", event_url)
+        return match.group(1) if match else None
 
 
 def get_config() -> Config:
