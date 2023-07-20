@@ -86,15 +86,6 @@ def generate_sitemap_config(deploy_url: str):
         f.write(templates.SITEMAP_CONFIG(config=config))
 
 
-def generate_sitemap():
-    """Generate the actual sitemap."""
-    subprocess.run(
-        [prerequisites.get_package_manager(), "run", "next-sitemap"],
-        cwd=constants.WEB_DIR,
-        stdout=subprocess.PIPE,
-    )
-
-
 def export_app(
     backend: bool = True,
     frontend: bool = True,
@@ -115,8 +106,10 @@ def export_app(
     path_ops.rm(constants.WEB_STATIC_DIR)
 
     # Generate the sitemap file.
+    command = "export"
     if deploy_url is not None:
         generate_sitemap_config(deploy_url)
+        command = "export-sitemap"
 
     # Create a progress object
     progress = Progress(
@@ -143,7 +136,7 @@ def export_app(
     # Start the subprocess with the progress bar.
     try:
         with progress, new_process(
-            [prerequisites.get_package_manager(), "run", "export"],
+            [prerequisites.get_package_manager(), "run", command],
             cwd=constants.WEB_DIR,
         ) as export_process:
             assert export_process.stdout is not None, "No stdout for export process."
@@ -167,10 +160,6 @@ def export_app(
             "[red]Run in with [bold]--loglevel debug[/bold] to see the full error."
         )
         os._exit(1)
-
-    # Generate the actual sitemap.
-    if deploy_url is not None:
-        generate_sitemap()
 
     # Zip up the app.
     if zip:

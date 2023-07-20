@@ -69,6 +69,8 @@ JINJA_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "jinja")
 WEB_DIR = ".web"
 # The name of the utils file.
 UTILS_DIR = "utils"
+# The name of the output static directory.
+STATIC_DIR = "_static"
 # The name of the state file.
 STATE_PATH = "/".join([UTILS_DIR, "state"])
 # The name of the components file.
@@ -76,7 +78,7 @@ COMPONENTS_PATH = "/".join([UTILS_DIR, "components"])
 # The directory where the app pages are compiled to.
 WEB_PAGES_DIR = os.path.join(WEB_DIR, "pages")
 # The directory where the static build is located.
-WEB_STATIC_DIR = os.path.join(WEB_DIR, "_static")
+WEB_STATIC_DIR = os.path.join(WEB_DIR, STATIC_DIR)
 # The directory where the utils file is located.
 WEB_UTILS_DIR = os.path.join(WEB_DIR, UTILS_DIR)
 # The directory where the assets are located.
