@@ -1,8 +1,10 @@
 """Breadcrumb components."""
 
 from reflex.components.component import Component
+from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.vars import Var
+from reflex.components.navigation.link import Link
+from reflex.vars import ComputedVar, Var
 
 
 class Breadcrumb(ChakraComponent):
@@ -31,11 +33,18 @@ class Breadcrumb(ChakraComponent):
             The breadcrumb component.
         """
         if len(children) == 0:
-            children = []
-            for label, link in items or []:
-                children.append(
-                    BreadcrumbItem.create(BreadcrumbLink.create(label, href=link))
-                )
+            if isinstance(items, (Var, ComputedVar)):
+                children = [
+                    Foreach.create(
+                        items,
+                        lambda item: BreadcrumbItem.create(label=item[0], href=item[1]),
+                    ),
+                ]
+
+            else:
+                children = []
+                for label, link in items or []:
+                    children.append(BreadcrumbItem.create(label=label, href=link))
         return super().create(*children, **props)
 
 
@@ -56,8 +65,22 @@ class BreadcrumbItem(ChakraComponent):
     # The left and right margin applied to the separator
     spacing: Var[str]
 
-    # The href of the item.
-    href: Var[str]
+    @classmethod
+    def create(cls, *children, label=None, href=None, **props):
+        """Create a Breadcrumb Item component.
+
+        Args:
+            children: The children of the component.
+            label: The label used in the link. Defaults to None.
+            href: The URL of the link. Defaults to None.
+            props: The properties of the component.
+
+        Returns:
+            The BreadcrumbItem component
+        """
+        if len(children) == 0:
+            children = [BreadcrumbLink.create(label or "", href=href or "")]
+        return super().create(*children, **props)
 
 
 class BreadcrumbSeparator(ChakraComponent):
@@ -66,7 +89,7 @@ class BreadcrumbSeparator(ChakraComponent):
     tag = "BreadcrumbSeparator"
 
 
-class BreadcrumbLink(ChakraComponent):
+class BreadcrumbLink(Link):
     """The breadcrumb link."""
 
     tag = "BreadcrumbLink"
