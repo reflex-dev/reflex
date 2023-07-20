@@ -106,10 +106,10 @@ class App(Base):
         """
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
-        pytest_run_config = os.getenv("PYTEST_RUN_CONFIG")
+        pytest_current_test = "PYTEST_CURRENT_TEST" in os.environ
 
         # special case to allow test cases have multiple subclasses of rx.State.
-        if not pytest_run_config:
+        if not pytest_current_test:
             # only the default state and the client state should be allowed as subclasses
             if len(state_subclasses) > 2:
                 raise ValueError(
