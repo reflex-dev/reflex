@@ -5,7 +5,7 @@ import inspect
 from typing import TYPE_CHECKING, Callable, List
 
 from reflex.components.tags.tag import Tag
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import Component
@@ -30,9 +30,11 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        index = Var.create(INDEX_VAR, is_local=False)
-        assert index is not None
-        return index
+        return BaseVar(
+            name=INDEX_VAR,
+            type_=int,
+            is_local=True,
+        )
 
     @staticmethod
     def get_index_var_arg() -> Var:
@@ -41,9 +43,10 @@ class IterTag(Tag):
         Returns:
             The index var.
         """
-        arg = Var.create(INDEX_VAR)
-        assert arg is not None
-        return arg
+        return BaseVar(
+            name=INDEX_VAR,
+            type_=int,
+        )
 
     @staticmethod
     def render_component(render_fn: Callable, arg: Var) -> Component:
