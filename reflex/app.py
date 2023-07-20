@@ -117,7 +117,7 @@ class App(Base):
                 )
             if self.state != DefaultState:
                 console.deprecate(
-                    "Passing the state as key word argument to `rx.App` is deprecated."
+                    "Passing the state as keyword argument to `rx.App` is deprecated."
                 )
             self.state = state_subclasses[-1]
 
