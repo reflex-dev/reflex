@@ -20,12 +20,17 @@ def FullyControlledInput():
 
     @app.add_page
     def index():
-        return rx.debounce_input(
-            rx.input(
+        return rx.fragment(
+            rx.debounce_input(
+                rx.input(
+                    on_change=State.set_text, id="debounce_input_input"  # type: ignore
+                ),
                 value=State.text,
-                on_change=State.set_text,  # type: ignore
+                debounce_timeout=0,
             ),
-            debounce_timeout=0,
+            rx.input(value=State.text, id="value_input"),
+            rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
+            rx.button("CLEAR", on_click=rx.set_value("on_change_input", "")),
         )
 
     app.compile()
@@ -65,14 +70,19 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     )[0]
 
     # find the input and wait for it to have the initial state value
-    text_input = driver.find_element(By.TAG_NAME, "input")
-    assert fully_controlled_input.poll_for_value(text_input) == "initial"
+    debounce_input = driver.find_element(By.ID, "debounce_input_input")
+    value_input = driver.find_element(By.ID, "value_input")
+    on_change_input = driver.find_element(By.ID, "on_change_input")
+    clear_button = driver.find_element(By.TAG_NAME, "button")
+    assert fully_controlled_input.poll_for_value(debounce_input) == "initial"
+    assert fully_controlled_input.poll_for_value(value_input) == "initial"
 
     # move cursor to home, then to the right and type characters
-    text_input.send_keys(Keys.HOME, Keys.ARROW_RIGHT)
-    text_input.send_keys("foo")
-    assert text_input.get_attribute("value") == "ifoonitial"
+    debounce_input.send_keys(Keys.HOME, Keys.ARROW_RIGHT)
+    debounce_input.send_keys("foo")
+    assert debounce_input.get_attribute("value") == "ifoonitial"
     assert backend_state.text == "ifoonitial"
+    assert fully_controlled_input.poll_for_value(value_input) == "ifoonitial"
 
     # clear the input on the backend
     backend_state.text = ""
@@ -80,12 +90,31 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     await fully_controlled_input.emit_state_updates()
     assert backend_state.text == ""
     assert (
-        fully_controlled_input.poll_for_value(text_input, exp_not_equal="ifoonitial")
+        fully_controlled_input.poll_for_value(
+            debounce_input, exp_not_equal="ifoonitial"
+        )
         == ""
     )
 
     # type more characters
-    text_input.send_keys("getting testing done")
+    debounce_input.send_keys("getting testing done")
     time.sleep(0.1)
-    assert text_input.get_attribute("value") == "getting testing done"
+    assert debounce_input.get_attribute("value") == "getting testing done"
     assert backend_state.text == "getting testing done"
+    assert fully_controlled_input.poll_for_value(value_input) == "getting testing done"
+
+    # type into the on_change input
+    on_change_input.send_keys("overwrite the state")
+    time.sleep(0.1)
+    assert debounce_input.get_attribute("value") == "overwrite the state"
+    assert on_change_input.get_attribute("value") == "overwrite the state"
+    assert backend_state.text == "overwrite the state"
+    assert fully_controlled_input.poll_for_value(value_input) == "overwrite the state"
+
+    clear_button.click()
+    time.sleep(0.1)
+    assert on_change_input.get_attribute("value") == ""
+    # potential bug: clearing the on_change field doesn't itself trigger on_change
+    # assert backend_state.text == ""
+    # assert debounce_input.get_attribute("value") == ""
+    # assert value_input.get_attribute("value") == ""
