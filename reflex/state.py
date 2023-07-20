@@ -492,8 +492,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         path = self.get_current_page()
         for k, v in self.get_query_params().items():
-            if k in path:
-                path = path.replace(f"[{k}]", v)
+            key = f"[{k}]"
+            if key in path:
+                path = path.replace(key, v)
         path_parts = path.lstrip("/").split("/")
         return [
             (part, "/" + "/".join(path_parts[: i + 1]))
