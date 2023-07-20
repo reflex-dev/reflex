@@ -79,7 +79,7 @@ class BreadcrumbItem(ChakraComponent):
             The BreadcrumbItem component
         """
         if len(children) == 0:
-            children = [BreadcrumbLink.create(label or "", href=href or "")]
+            children = [BreadcrumbLink.create(label or "", href=href or "")]  # type: ignore
         return super().create(*children, **props)
 
 
