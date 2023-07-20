@@ -1,17 +1,13 @@
 """Unit tests for the included testing tools."""
-from reflex.state import DefaultState
 from reflex.testing import AppHarness
 
 
-def test_app_harness(mocker, tmp_path):
+def test_app_harness(tmp_path):
     """Ensure that AppHarness can compile and start an app.
 
     Args:
-        mocker: Pytest mocker object.
         tmp_path: pytest tmp_path fixture
     """
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[DefaultState])
-    mocker.patch.object(DefaultState, "__subclasses__", return_value=[])
 
     def BasicApp():
         import reflex as rx

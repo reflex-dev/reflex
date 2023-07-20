@@ -56,11 +56,8 @@ def about_page():
 
 
 @pytest.fixture()
-def test_state(mocker) -> Type[State]:
+def test_state() -> Type[State]:
     """A default state.
-
-    Args:
-        mocker: Pytest mocker object.
 
     Returns:
         A default state.
@@ -68,9 +65,6 @@ def test_state(mocker) -> Type[State]:
 
     class TestState(State):
         var: int
-
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[TestState])
-    mocker.patch.object(TestState, "__subclasses__", return_value=[])
 
     return TestState
 
@@ -180,19 +174,15 @@ def test_default_app(app: App):
     assert app.admin_dash is None
 
 
-def test_multiple_states_error(mocker, test_state, redundant_test_state):
+def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
     """Test that an error is thrown when multiple classes subclass rx.State.
 
     Args:
-        mocker: Pytest mocker object.
+        monkeypatch: Pytest monkeypatch object.
         test_state: A test state subclassing rx.State.
         redundant_test_state: Another test state subclassing rx.State.
     """
-    mocker.patch(
-        "reflex.app.State.__subclasses__",
-        return_value=[DefaultState, test_state, redundant_test_state],
-    )
-
+    monkeypatch.delenv("PYTEST_RUN_CONFIG")
     with pytest.raises(ValueError):
         App()
 
@@ -261,16 +251,12 @@ def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool)
     assert set(app.pages.keys()) == {route.strip(os.path.sep)}
 
 
-def test_initialize_with_admin_dashboard(mocker, test_model):
+def test_initialize_with_admin_dashboard(test_model):
     """Test setting the admin dashboard of an app.
 
     Args:
-        mocker: Pytest mocker object.
         test_model: The default model.
     """
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[DefaultState])
-    mocker.patch.object(DefaultState, "__subclasses__", return_value=[])
-
     app = App(admin_dash=AdminDash(models=[test_model]))
     assert app.admin_dash is not None
     assert len(app.admin_dash.models) > 0
@@ -278,7 +264,6 @@ def test_initialize_with_admin_dashboard(mocker, test_model):
 
 
 def test_initialize_with_custom_admin_dashboard(
-    mocker,
     test_get_engine,
     test_custom_auth_admin,
     test_model_auth,
@@ -286,14 +271,10 @@ def test_initialize_with_custom_admin_dashboard(
     """Test setting the custom admin dashboard of an app.
 
     Args:
-        mocker: Pytest mocker object.
         test_get_engine: The default database engine.
         test_model_auth: The default model for an auth admin dashboard.
         test_custom_auth_admin: The custom auth provider.
     """
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[DefaultState])
-    mocker.patch.object(DefaultState, "__subclasses__", return_value=[])
-
     custom_admin = Admin(engine=test_get_engine, auth_provider=test_custom_auth_admin)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
     assert app.admin_dash is not None
@@ -303,15 +284,12 @@ def test_initialize_with_custom_admin_dashboard(
     assert app.admin_dash.admin.auth_provider == test_custom_auth_admin
 
 
-def test_initialize_admin_dashboard_with_view_overrides(mocker, test_model):
+def test_initialize_admin_dashboard_with_view_overrides(test_model):
     """Test setting the admin dashboard of an app with view class overriden.
 
     Args:
-        mocker: Pytest mocker object.
         test_model: The default model.
     """
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[DefaultState])
-    mocker.patch.object(DefaultState, "__subclasses__", return_value=[])
 
     class TestModelView(ModelView):
         pass
@@ -707,17 +685,13 @@ async def test_upload_file(fixture, request, delta):
 @pytest.mark.parametrize(
     "fixture", ["upload_state", "upload_sub_state", "upload_grand_sub_state"]
 )
-async def test_upload_file_without_annotation(mocker, fixture, request):
+async def test_upload_file_without_annotation(fixture, request):
     """Test that an error is thrown when there's no param annotated with rx.UploadFile or List[UploadFile].
 
     Args:
-        mocker: Pytest mocker object.
         fixture: The state.
         request: Fixture request.
     """
-    state = request.getfixturevalue(fixture)
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[state])
-    mocker.patch.object(state, "__subclasses__", return_value=[])
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
@@ -783,7 +757,6 @@ class DynamicState(State):
 
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    mocker,
     index_page,
     windows_platform: bool,
 ):
@@ -793,13 +766,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     initial page hydrate.
 
     Args:
-        mocker: Pytest mocker object.
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[DynamicState])
-    mocker.patch.object(DynamicState, "__subclasses__", return_value=[])
-
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
     if windows_platform:
@@ -945,9 +914,6 @@ async def test_process_events(gen_state, mocker):
         gen_state: The state.
         mocker: mocker object.
     """
-    mocker.patch("reflex.app.State.__subclasses__", return_value=[gen_state])
-    mocker.patch.object(gen_state, "__subclasses__", return_value=[])
-
     router_data = {
         "pathname": "/",
         "query": {},
