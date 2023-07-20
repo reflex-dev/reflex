@@ -106,11 +106,11 @@ class App(Base):
         """
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
-        pytest_current_test = "PYTEST_CURRENT_TEST" in os.environ
+        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
-        # special case to allow test cases have multiple subclasses of rx.State.
-        if not pytest_current_test:
-            # only the default state and the client state should be allowed as subclasses
+        # Special case to allow test cases have multiple subclasses of rx.State.
+        if not is_testing_env:
+            # Only the default state and the client state should be allowed as subclasses.
             if len(state_subclasses) > 2:
                 raise ValueError(
                     "rx.State has been subclassed multiple times. Only one subclass is allowed"
