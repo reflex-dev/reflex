@@ -182,7 +182,7 @@ def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
         test_state: A test state subclassing rx.State.
         redundant_test_state: Another test state subclassing rx.State.
     """
-    monkeypatch.delenv("PYTEST_RUN_CONFIG")
+    monkeypatch.delenv("PYTEST_CURRENT_TEST")
     with pytest.raises(ValueError):
         App()
 
