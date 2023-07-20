@@ -6,6 +6,7 @@ import copy
 import functools
 import inspect
 import json
+import os.path as op
 import traceback
 import urllib.parse
 from abc import ABC
@@ -484,20 +485,26 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         return self.router_data.get(constants.RouteVar.PATH, "")
 
-    def get_page_crumbs(self) -> List[Tuple[str, str]]:
-        """Obtain page crumbs based on current path and query params.
+    def get_page_breadcrumbs(self) -> List[Tuple[str, str]]:
+        """Obtain page breadcrumbs based on current path and query params.
 
         Returns:
             List[Tuple[str, str]]: the breacrumbs in a format easy to use with Breadcrumb component.
         """
         path = self.get_current_page()
+
+        # format the path to create breadcrumbs with the actual values
         for k, v in self.get_query_params().items():
             key = f"[{k}]"
             if key in path:
                 path = path.replace(key, v)
+
+        # split the path
         path_parts = path.lstrip("/").split("/")
+
+        # create and return breadcrumbs
         return [
-            (part, "/" + "/".join(path_parts[: i + 1]))
+            (part, op.join("/", *path_parts[: i + 1]))
             for i, part in enumerate(path_parts)
         ]
 
