@@ -206,6 +206,9 @@ class Config(Base):
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
 
+    # The event namespace for ws connection
+    event_namespace: Optional[str] = constants.EVENT_NAMESPACE
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -250,6 +253,18 @@ class Config(Base):
                 setattr(self, field, getattr(constants, f"{field.upper()}"))
             except AttributeError:
                 pass
+
+    def get_event_namespace(self) -> Optional[str]:
+        """Get the websocket event namespace.
+
+        Returns:
+            The namespace for websocket.
+        """
+        if self.event_namespace:
+            return f'/{self.event_namespace.strip("/")}'
+
+        event_url = constants.Endpoint.EVENT.get_url()
+        return urllib.parse.urlsplit(event_url).path
 
 
 def get_config() -> Config:
