@@ -281,6 +281,7 @@ def install_bun():
 
     Raises:
         FileNotFoundError: if unzip or curl packages are not found.
+        Exit: if installation failed
     """
     # Bun is not supported on Windows.
     if platform.system() == "Windows":
@@ -301,7 +302,10 @@ def install_bun():
         if unzip_path is None:
             raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-        os.system(constants.INSTALL_BUN)
+        result = subprocess.run(constants.INSTALL_BUN, shell=True)
+
+        if result.returncode != 0:
+            raise typer.Exit(code=result.returncode)
 
 
 def install_frontend_packages(web_dir: str):
