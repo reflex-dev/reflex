@@ -78,25 +78,27 @@ def hydrate_middleware() -> HydrateMiddleware:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "State, expected, event_fixture",
+    "test_state, expected, event_fixture",
     [
         (TestState, {"test_state": {"num": 1}}, "event1"),
         (TestState2, {"test_state2": {"num": 1}}, "event2"),
         (TestState3, {"test_state3": {"num": 1}}, "event3"),
     ],
 )
-async def test_preprocess(State, hydrate_middleware, request, event_fixture, expected):
+async def test_preprocess(
+    test_state, hydrate_middleware, request, event_fixture, expected
+):
     """Test that a state hydrate event is processed correctly.
 
     Args:
-        State: state to process event
-        hydrate_middleware: instance of HydrateMiddleware
-        request: pytest fixture request
-        event_fixture: The event fixture(an Event)
-        expected: expected delta
+        test_state: State to process event.
+        hydrate_middleware: Instance of HydrateMiddleware.
+        request: Pytest fixture request.
+        event_fixture: The event fixture(an Event).
+        expected: Expected delta.
     """
-    app = App(state=State, load_events={"index": [State.test_handler]})
-    state = State()
+    app = App(state=test_state, load_events={"index": [test_state.test_handler]})
+    state = test_state()
 
     update = await hydrate_middleware.preprocess(
         app=app, event=request.getfixturevalue(event_fixture), state=state
@@ -120,8 +122,8 @@ async def test_preprocess_multiple_load_events(hydrate_middleware, event1):
     """Test that a state hydrate event for multiple on-load events is processed correctly.
 
     Args:
-        hydrate_middleware: instance of HydrateMiddleware
-        event1: an Event.
+        hydrate_middleware: Instance of HydrateMiddleware
+        event1: An Event.
     """
     app = App(
         state=TestState,
@@ -151,8 +153,8 @@ async def test_preprocess_no_events(hydrate_middleware, event1):
     """Test that app without on_load is processed correctly.
 
     Args:
-        hydrate_middleware: instance of HydrateMiddleware
-        event1: an Event.
+        hydrate_middleware: Instance of HydrateMiddleware
+        event1: An Event.
     """
     state = TestState()
     update = await hydrate_middleware.preprocess(

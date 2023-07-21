@@ -14,8 +14,8 @@ from reflex.components.base import (
     Image,
     Main,
     Meta,
+    NextScript,
     RawLink,
-    Script,
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
@@ -123,7 +123,10 @@ def compile_state(state: Type[State]) -> Dict:
     Returns:
         A dictionary of the compiled state.
     """
-    initial_state = state().dict()
+    try:
+        initial_state = state().dict()
+    except Exception:
+        initial_state = state().dict(include_computed=False)
     initial_state.update(
         {
             "events": [{"name": get_hydrate_event(state)}],
@@ -183,7 +186,7 @@ def create_document_root(stylesheets: List[str]) -> Component:
         Body.create(
             ColorModeScript.create(),
             Main.create(),
-            Script.create(),
+            NextScript.create(),
         ),
     )
 

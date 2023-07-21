@@ -3,6 +3,7 @@
   "scripts": {
     "dev": "next dev",
     "export": "next build && next export -o _static",
+    "export-sitemap": "next build && next-sitemap && next export -o _static",
     "prod": "next start"
   },
   "dependencies": {
@@ -16,10 +17,10 @@
     "focus-visible": "^5.2.0",
     "framer-motion": "^10.12.4",
     "gridjs": "^6.0.6",
-    "universal-cookie": "^4.0.4",
     "gridjs-react": "^6.0.1",
     "json5": "^2.2.3",
     "next": "^13.3.1",
+    "next-sitemap": "^4.1.8",
     "plotly.js": "^2.22.0",
     "react": "^18.2.0",
     "react-debounce-input": "^3.3.0",
@@ -34,6 +35,7 @@
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
     "socket.io-client": "^4.6.1",
+    "universal-cookie": "^4.0.4",
     "victory": "^36.6.8"
   },
   "devDependencies": {

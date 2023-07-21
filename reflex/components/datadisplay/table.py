@@ -104,7 +104,16 @@ class Tbody(ChakraComponent):
             Component: _description_
         """
         if len(children) == 0:
-            children = [Tr.create(cell_type="data", cells=row) for row in rows or []]
+            if isinstance(rows, Var):
+                children = [
+                    Foreach.create(
+                        rows, lambda row: Tr.create(cell_type="data", cells=row)
+                    )
+                ]
+            else:
+                children = [
+                    Tr.create(cell_type="data", cells=row) for row in rows or []
+                ]
         return super().create(*children, **props)
 
 
@@ -148,8 +157,8 @@ class Tr(ChakraComponent):
         Args:
             children: The children of the component.
             props: The properties of the component.
-            cell_type (str): the type of cells in this table row. "header" or "data". Defaults to None.
-            cells (list, optional): The cells value to add in the table row. Defaults to None.
+            cell_type: the type of cells in this table row. "header" or "data". Defaults to None.
+            cells: The cells value to add in the table row. Defaults to None.
 
         Returns:
             The table row component

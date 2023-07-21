@@ -2,6 +2,7 @@
 
 import asyncio
 import inspect
+import os
 from multiprocessing.pool import ThreadPool
 from typing import (
     Any,
@@ -42,7 +43,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
-from reflex.utils import format, types
+from reflex.utils import console, format, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -88,14 +89,38 @@ class App(Base):
     # The component to render if there is a connection error to the server.
     connect_error_component: Optional[Component] = None
 
+    # The async server name space
+    event_namespace: Optional[AsyncNamespace] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the app.
 
         Args:
             *args: Args to initialize the app with.
             **kwargs: Kwargs to initialize the app with.
+
+        Raises:
+            ValueError: If the event namespace is not provided in the config.
+                        Also, if there are multiple client subclasses of rx.State(Subclasses of rx.State should consist
+                        of the DefaultState and the client app state).
         """
         super().__init__(*args, **kwargs)
+        state_subclasses = State.__subclasses__()
+        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
+
+        # Special case to allow test cases have multiple subclasses of rx.State.
+        if not is_testing_env:
+            # Only the default state and the client state should be allowed as subclasses.
+            if len(state_subclasses) > 2:
+                raise ValueError(
+                    "rx.State has been subclassed multiple times. Only one subclass is allowed"
+                )
+            if self.state != DefaultState:
+                console.deprecate(
+                    "Passing the state as keyword argument to `rx.App` is deprecated. "
+                    "The base state will automatically be inferred as the subclass of `rx.State`."
+                )
+            self.state = state_subclasses[-1]
 
         # Get the config
         config = get_config()
@@ -125,13 +150,16 @@ class App(Base):
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
         self.socket_app = ASGIApp(self.sio, socketio_path="")
+        namespace = config.get_event_namespace()
+
+        if not namespace:
+            raise ValueError("event namespace must be provided in the config.")
 
         # Create the event namespace and attach the main app. Not related to any paths.
-        event_namespace = EventNamespace("/event", self)
+        self.event_namespace = EventNamespace(namespace, self)
 
         # Register the event namespace with the socket.
-        self.sio.register_namespace(event_namespace)
-
+        self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
         self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
@@ -405,14 +433,7 @@ class App(Base):
         )
 
         froute = format.format_route
-        if (froute(constants.ROOT_404) not in self.pages) and (
-            not any(page.startswith("[[...") for page in self.pages)
-        ):
-            self.pages[froute(constants.ROOT_404)] = component
-        if not any(
-            page.startswith("[...") or page.startswith("[[...") for page in self.pages
-        ):
-            self.pages[froute(constants.SLUG_404)] = component
+        self.pages[froute(constants.SLUG_404)] = component
 
     def setup_admin_dash(self):
         """Setup the admin dash."""
@@ -451,10 +472,6 @@ class App(Base):
 
         # Get the env mode.
         config = get_config()
-
-        # Update models during hot reload.
-        if config.db_url is not None and not Model.automigrate():
-            Model.create_all()
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
@@ -498,13 +515,11 @@ class App(Base):
         compile_results.append(compiler.compile_theme(self.style))
 
         # Compile the Tailwind config.
-        compile_results.append(
-            compiler.compile_tailwind(
-                dict(**config.tailwind, content=constants.TAILWIND_CONTENT)
-                if config.tailwind is not None
-                else {}
+        if config.tailwind is not None:
+            config.tailwind["content"] = config.tailwind.get(
+                "content", constants.TAILWIND_CONTENT
             )
-        )
+            compile_results.append(compiler.compile_tailwind(config.tailwind))
 
         # Write the pages at the end to trigger the NextJS hot reload only once.
         thread_pool = ThreadPool()
@@ -596,9 +611,6 @@ def upload(app: App):
         Args:
             files: The file(s) to upload.
 
-        Returns:
-            The state update after processing the event.
-
         Raises:
             ValueError: if there are no args with supported annotation.
         """
@@ -607,10 +619,10 @@ def upload(app: App):
         for file in files:
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
-
         # Get the state for the session.
         state = app.state_manager.get_state(token)
-
+        # get the current session ID
+        sid = state.get_sid()
         # get the current state(parent state/substate)
         path = handler.split(".")[:-1]
         current_state = state.get_substate(path)
@@ -640,12 +652,15 @@ def upload(app: App):
             name=handler,
             payload={handler_upload_param[0]: files},
         )
-        # TODO: refactor this to handle yields.
-        update = await state._process(event).__anext__()
-
+        async for update in state._process(event):
+            # Postprocess the event.
+            update = await app.postprocess(state, event, update)
+            # Send update to client
+            await asyncio.create_task(
+                app.event_namespace.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
+            )
         # Set the state for the session.
         app.state_manager.set_state(event.token, state)
-        return update
 
     return upload_file
 

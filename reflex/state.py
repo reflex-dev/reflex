@@ -747,8 +747,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
-                for event in events:
-                    yield event, False
+                try:
+                    while True:
+                        yield next(events), False
+                except StopIteration as si:
+                    # the "return" value of the generator is not available
+                    # in the loop, we must catch StopIteration to access it
+                    if si.value is not None:
+                        yield si.value, False
                 yield None, True
 
             # Handle regular event chains.

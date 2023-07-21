@@ -69,6 +69,8 @@ JINJA_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "jinja")
 WEB_DIR = ".web"
 # The name of the utils file.
 UTILS_DIR = "utils"
+# The name of the output static directory.
+STATIC_DIR = "_static"
 # The name of the state file.
 STATE_PATH = "/".join([UTILS_DIR, "state"])
 # The name of the components file.
@@ -76,7 +78,7 @@ COMPONENTS_PATH = "/".join([UTILS_DIR, "components"])
 # The directory where the app pages are compiled to.
 WEB_PAGES_DIR = os.path.join(WEB_DIR, "pages")
 # The directory where the static build is located.
-WEB_STATIC_DIR = os.path.join(WEB_DIR, "_static")
+WEB_STATIC_DIR = os.path.join(WEB_DIR, STATIC_DIR)
 # The directory where the utils file is located.
 WEB_UTILS_DIR = os.path.join(WEB_DIR, UTILS_DIR)
 # The directory where the assets are located.
@@ -124,6 +126,8 @@ RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {TIMEOUT}".split()
 # Socket.IO web server
 PING_INTERVAL = 25
 PING_TIMEOUT = 120
+# flag to make the engine print all the SQL statements it executes
+SQLALCHEMY_ECHO = get_value("SQLALCHEMY_ECHO", False, type_=bool)
 
 # Compiler variables.
 # The extension for compiled Javascript files.
@@ -193,7 +197,12 @@ OLD_CONFIG_FILE = f"pcconfig{PY_EXT}"
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
 # Token expiration time in seconds.
 TOKEN_EXPIRATION = 60 * 60
+# The event namespace for websocket
+EVENT_NAMESPACE = get_value("EVENT_NAMESPACE")
 
+# Testing variables.
+# Testing os env set by pytest when running a test case.
+PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
 
 # Env modes
 class Env(str, Enum):
@@ -342,8 +351,7 @@ class RouteRegex(SimpleNamespace):
 
 
 # 404 variables
-ROOT_404 = ""
-SLUG_404 = "[..._]"
+SLUG_404 = "404"
 TITLE_404 = "404 - Not Found"
 FAVICON_404 = "favicon.ico"
 DESCRIPTION_404 = "The page was not found"

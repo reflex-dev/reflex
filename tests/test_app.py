@@ -28,16 +28,6 @@ from reflex.vars import ComputedVar
 
 
 @pytest.fixture
-def app() -> App:
-    """A base app.
-
-    Returns:
-        The app.
-    """
-    return App()
-
-
-@pytest.fixture
 def index_page():
     """An index page.
 
@@ -77,6 +67,20 @@ def test_state() -> Type[State]:
         var: int
 
     return TestState
+
+
+@pytest.fixture()
+def redundant_test_state() -> Type[State]:
+    """A default state.
+
+    Returns:
+        A default state.
+    """
+
+    class RedundantTestState(State):
+        var: int
+
+    return RedundantTestState
 
 
 @pytest.fixture()
@@ -168,6 +172,19 @@ def test_default_app(app: App):
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
+
+
+def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
+    """Test that an error is thrown when multiple classes subclass rx.State.
+
+    Args:
+        monkeypatch: Pytest monkeypatch object.
+        test_state: A test state subclassing rx.State.
+        redundant_test_state: Another test state subclassing rx.State.
+    """
+    monkeypatch.delenv(constants.PYTEST_CURRENT_TEST)
+    with pytest.raises(ValueError):
+        App()
 
 
 def test_add_page_default_route(app: App, index_page, about_page):
@@ -602,7 +619,7 @@ async def test_dict_mutation_detection__plain_list(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "fixture, expected",
+    "fixture, delta",
     [
         (
             "upload_state",
@@ -626,21 +643,22 @@ async def test_dict_mutation_detection__plain_list(
         ),
     ],
 )
-async def test_upload_file(fixture, request, expected):
+async def test_upload_file(fixture, request, delta):
     """Test that file upload works correctly.
 
     Args:
         fixture: The state.
         request: Fixture request.
-        expected: Expected delta
+        delta: Expected delta
     """
+    app = App(state=request.getfixturevalue(fixture))
+    app.event_namespace.emit = AsyncMock()  # type: ignore
+    current_state = app.state_manager.get_state("token")
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
     bio = io.BytesIO()
     bio.write(data)
-
-    app = App(state=request.getfixturevalue(fixture))
 
     file1 = UploadFile(
         filename="token:file_upload_state.multi_handle_upload:True:image1.jpg",
@@ -650,10 +668,17 @@ async def test_upload_file(fixture, request, expected):
         filename="token:file_upload_state.multi_handle_upload:True:image2.jpg",
         file=bio,
     )
-    fn = upload(app)
-    result = await fn([file1, file2])  # type: ignore
-    assert isinstance(result, StateUpdate)
-    assert result.delta == expected
+    upload_fn = upload(app)
+    await upload_fn([file1, file2])
+    state_update = StateUpdate(delta=delta, events=[], final=True)
+
+    app.event_namespace.emit.assert_called_with(  # type: ignore
+        "event", state_update.json(), to=current_state.get_sid()
+    )
+    assert app.state_manager.get_state("token").dict()["img_list"] == [
+        "image1.jpg",
+        "image2.jpg",
+    ]
 
 
 @pytest.mark.asyncio
@@ -700,7 +725,7 @@ class DynamicState(State):
 
     There are several counters:
       * loaded: counts how many times `on_load` was triggered by the hydrate middleware
-      * counter: counts how many times `on_counter` was triggered by a non-naviagational event
+      * counter: counts how many times `on_counter` was triggered by a non-navigational event
           -> these events should NOT trigger reload or recalculation of router_data dependent vars
       * side_effect_counter: counts how many times a computed var was
         recalculated when the dynamic route var was dirty

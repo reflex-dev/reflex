@@ -28,7 +28,7 @@ class Main(NextDocumentLib):
     tag = "Main"
 
 
-class Script(NextDocumentLib):
+class NextScript(NextDocumentLib):
     """The document main scripts."""
 
     tag = "NextScript"
