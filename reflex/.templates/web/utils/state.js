@@ -168,7 +168,8 @@ export const applyEvent = async (event, router, socket) => {
 
   // Send the event to the server.
   event.token = getToken();
-  event.router_data = (({ pathname, query }) => ({ pathname, query }))(router);
+  event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(router);
+
   if (socket) {
     socket.emit("event", JSON.stringify(event));
     return true;
