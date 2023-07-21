@@ -11,6 +11,7 @@ class ForEachState(State):
     """The test  state."""
 
     color_a: List[str] = ["red", "yellow"]
+    color_nested_list: List[List[str]] = [["red", "yellow"], ["blue", "green"]]
     color_b: List[Dict[str, str]] = [
         {
             "name": "red",
@@ -72,6 +73,10 @@ def display_g(color):
 
 def display_h(color):
     return box(text(color))
+
+
+def display_j(element: str, index: int):
+    return box(text(element[index]))
 
 
 @pytest.mark.parametrize(
@@ -158,6 +163,15 @@ def display_h(color):
                 "iterable_type": "set",
             },
         ),
+        (
+            ForEachState.color_nested_list,
+            lambda el, i: display_j(el, i),
+            {
+                "iterable_state": "for_each_state.color_nested_list",
+                "arg_index": "i",
+                "iterable_type": "list",
+            },
+        ),
     ],
 )
 def test_foreach_render(state_var, render_fn, render_dict):
@@ -171,7 +185,8 @@ def test_foreach_render(state_var, render_fn, render_dict):
     component = Foreach.create(state_var, render_fn)
 
     rend = component.render()
-
+    arg_index = rend["arg_index"]
     assert rend["iterable_state"] == render_dict["iterable_state"]
     assert rend["arg_index"] == render_dict["arg_index"]
+    assert arg_index.type_ == int
     assert rend["iterable_type"] == render_dict["iterable_type"]
