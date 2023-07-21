@@ -346,8 +346,7 @@ class RouteRegex(SimpleNamespace):
 
 
 # 404 variables
-ROOT_404 = ""
-SLUG_404 = "[..._]"
+SLUG_404 = "404"
 TITLE_404 = "404 - Not Found"
 FAVICON_404 = "favicon.ico"
 DESCRIPTION_404 = "The page was not found"

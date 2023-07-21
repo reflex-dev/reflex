@@ -414,14 +414,7 @@ class App(Base):
         )
 
         froute = format.format_route
-        if (froute(constants.ROOT_404) not in self.pages) and (
-            not any(page.startswith("[[...") for page in self.pages)
-        ):
-            self.pages[froute(constants.ROOT_404)] = component
-        if not any(
-            page.startswith("[...") or page.startswith("[[...") for page in self.pages
-        ):
-            self.pages[froute(constants.SLUG_404)] = component
+        self.pages[froute(constants.SLUG_404)] = component
 
     def setup_admin_dash(self):
         """Setup the admin dash."""
@@ -647,9 +640,7 @@ def upload(app: App):
             update = await app.postprocess(state, event, update)
             # Send update to client
             await asyncio.create_task(
-                app.event_namespace.emit(  # type: ignore
-                    str(constants.SocketEvent.EVENT), update.json(), to=sid
-                )
+                app.event_namespace.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
             )
         # Set the state for the session.
         app.state_manager.set_state(event.token, state)
