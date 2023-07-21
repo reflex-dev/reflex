@@ -23,6 +23,13 @@ def ServerSideEvent():
             yield rx.set_value("b", "")
             return rx.set_value("c", "")
 
+        def set_value_return(self):
+            return [
+                rx.set_value("a", ""),
+                rx.set_value("b", ""),
+                rx.set_value("c", ""),
+            ]
+
         def set_value_return_c(self):
             return rx.set_value("c", "")
 
@@ -52,6 +59,11 @@ def ServerSideEvent():
                 "Clear Chained Yield+Return",
                 id="clear_chained_yield_return",
                 on_click=SSState.set_value_yield_return,
+            ),
+            rx.button(
+                "Clear Chained Return",
+                id="clear_chained_return",
+                on_click=SSState.set_value_return,
             ),
             rx.button(
                 "Clear C Return",
@@ -102,7 +114,12 @@ def driver(server_side_event: AppHarness):
 
 @pytest.mark.parametrize(
     "button_id",
-    ["clear_immediate", "clear_chained_yield", "clear_chained_yield_return"],
+    [
+        "clear_immediate",
+        "clear_chained_yield",
+        "clear_chained_yield_return",
+        "clear_chained_return",
+    ],
 )
 def test_set_value(driver, button_id: str):
     """Call set_value as an event chain, via yielding, via yielding with return.
