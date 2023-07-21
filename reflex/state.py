@@ -6,7 +6,6 @@ import copy
 import functools
 import inspect
 import json
-import os.path as op
 import traceback
 import urllib.parse
 from abc import ABC
@@ -477,13 +476,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
 
-    def get_current_page(self) -> str:
+    def get_current_page(self, origin=False) -> str:
         """Obtain the path of current page from the router data.
+
+        Args:
+            origin: whether to return the base route as shown in browser
 
         Returns:
             The current page.
         """
-        return self.router_data.get(constants.RouteVar.PATH, "")
+        if origin:
+            return self.router_data.get(constants.RouteVar.ORIGIN, "")
+        else:
+            return self.router_data.get(constants.RouteVar.PATH, "")
 
     def get_page_breadcrumbs(self) -> List[Tuple[str, str]]:
         """Obtain page breadcrumbs based on current path and query params.
@@ -491,22 +496,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             List[Tuple[str, str]]: the breacrumbs in a format easy to use with Breadcrumb component.
         """
-        path = self.get_current_page()
-
-        # format the path to create breadcrumbs with the actual values
-        for k, v in self.get_query_params().items():
-            key = f"[{k}]"
-            if key in path:
-                path = path.replace(key, v)
-
-        # split the path
-        path_parts = path.lstrip("/").split("/")
+        page = self.get_current_page(origin=True)
 
         # create and return breadcrumbs
-        return [
-            (part, op.join("/", *path_parts[: i + 1]))
-            for i, part in enumerate(path_parts)
-        ]
+        return format.format_breadcrumbs(page)
 
     def get_query_params(self) -> Dict[str, str]:
         """Obtain the query parameters for the queried page.
