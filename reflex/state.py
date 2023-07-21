@@ -490,17 +490,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         else:
             return self.router_data.get(constants.RouteVar.PATH, "")
 
-    def get_page_breadcrumbs(self) -> List[Tuple[str, str]]:
-        """Obtain page breadcrumbs based on current path and query params.
-
-        Returns:
-            List[Tuple[str, str]]: the breacrumbs in a format easy to use with Breadcrumb component.
-        """
-        page = self.get_current_page(origin=True)
-
-        # create and return breadcrumbs
-        return format.format_breadcrumbs(page)
-
     def get_query_params(self) -> Dict[str, str]:
         """Obtain the query parameters for the queried page.
 
