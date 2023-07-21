@@ -28,16 +28,6 @@ from reflex.vars import ComputedVar
 
 
 @pytest.fixture
-def app() -> App:
-    """A base app.
-
-    Returns:
-        The app.
-    """
-    return App()
-
-
-@pytest.fixture
 def index_page():
     """An index page.
 
@@ -77,6 +67,20 @@ def test_state() -> Type[State]:
         var: int
 
     return TestState
+
+
+@pytest.fixture()
+def redundant_test_state() -> Type[State]:
+    """A default state.
+
+    Returns:
+        A default state.
+    """
+
+    class RedundantTestState(State):
+        var: int
+
+    return RedundantTestState
 
 
 @pytest.fixture()
@@ -168,6 +172,19 @@ def test_default_app(app: App):
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
+
+
+def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
+    """Test that an error is thrown when multiple classes subclass rx.State.
+
+    Args:
+        monkeypatch: Pytest monkeypatch object.
+        test_state: A test state subclassing rx.State.
+        redundant_test_state: Another test state subclassing rx.State.
+    """
+    monkeypatch.delenv(constants.PYTEST_CURRENT_TEST)
+    with pytest.raises(ValueError):
+        App()
 
 
 def test_add_page_default_route(app: App, index_page, about_page):
@@ -708,7 +725,7 @@ class DynamicState(State):
 
     There are several counters:
       * loaded: counts how many times `on_load` was triggered by the hydrate middleware
-      * counter: counts how many times `on_counter` was triggered by a non-naviagational event
+      * counter: counts how many times `on_counter` was triggered by a non-navigational event
           -> these events should NOT trigger reload or recalculation of router_data dependent vars
       * side_effect_counter: counts how many times a computed var was
         recalculated when the dynamic route var was dirty

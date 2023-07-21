@@ -200,6 +200,10 @@ TOKEN_EXPIRATION = 60 * 60
 # The event namespace for websocket
 EVENT_NAMESPACE = get_value("EVENT_NAMESPACE")
 
+# Testing variables.
+# Testing os env set by pytest when running a test case.
+PYTEST_CURRENT_TEST = "PYTEST_CURRENT_TEST"
+
 # Env modes
 class Env(str, Enum):
     """The environment modes."""

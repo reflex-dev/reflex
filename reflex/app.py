@@ -2,6 +2,7 @@
 
 import asyncio
 import inspect
+import os
 from multiprocessing.pool import ThreadPool
 from typing import (
     Any,
@@ -42,7 +43,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
-from reflex.utils import format, types
+from reflex.utils import console, format, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -100,8 +101,25 @@ class App(Base):
 
         Raises:
             ValueError: If the event namespace is not provided in the config.
+                        Also, if there are multiple client subclasses of rx.State(Subclasses of rx.State should consist
+                        of the DefaultState and the client app state).
         """
         super().__init__(*args, **kwargs)
+        state_subclasses = State.__subclasses__()
+        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
+
+        # Special case to allow test cases have multiple subclasses of rx.State.
+        if not is_testing_env:
+            # Only the default state and the client state should be allowed as subclasses.
+            if len(state_subclasses) > 2:
+                raise ValueError(
+                    "rx.State has been subclassed multiple times. Only one subclass is allowed"
+                )
+            if self.state != DefaultState:
+                console.deprecate(
+                    "Passing the state as keyword argument to `rx.App` is deprecated."
+                )
+            self.state = state_subclasses[-1]
 
         # Get the config
         config = get_config()

@@ -9,7 +9,18 @@ import pytest
 
 import reflex as rx
 from reflex import constants
+from reflex.app import App
 from reflex.event import EventSpec
+
+
+@pytest.fixture
+def app() -> App:
+    """A base app.
+
+    Returns:
+        The app.
+    """
+    return App()
 
 
 @pytest.fixture(scope="function")
