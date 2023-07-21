@@ -1,7 +1,7 @@
 """The Radix separator component."""
 from typing import Literal, Optional
 
-from reflex.components.component import Component
+from reflex.components import Component
 
 
 class Separator(Component):

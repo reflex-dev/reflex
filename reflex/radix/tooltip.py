@@ -1,10 +1,11 @@
+"""Radix tooltip components."""
 from typing import Dict, Literal, Optional, Union
 
-from reflex.components.component import Component
+from reflex.components import Component
 
 
 class TooltipComponent(Component):
-    """A component that wraps a Radix tooltip component."""
+    """Base class for all tooltip components."""
 
     library = "@radix-ui/react-tooltip"
 

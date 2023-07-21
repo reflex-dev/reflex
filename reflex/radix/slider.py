@@ -1,11 +1,11 @@
 """The Radix slider component."""
 from typing import List, Optional
 
-from reflex.components.component import Component
+from reflex.components import Component
 
 
 class SliderComponent(Component):
-    """A component that wraps a Radix slider component."""
+    """Base class for all slider components."""
 
     library = "@radix-ui/react-slider"
 
