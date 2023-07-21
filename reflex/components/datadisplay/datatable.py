@@ -101,25 +101,22 @@ class DataTable(Gridjs):
 
     def _render(self) -> Tag:
         if isinstance(self.data, Var):
-            self.columns = BaseVar(
-                name=f"{self.data.name}.columns"
-                if types.is_dataframe(self.data.type_)
-                else f"{self.columns.name}",
-                type_=List[Any],
-                state=self.data.state,
-            )
-            self.data = BaseVar(
-                name=f"{self.data.name}.data"
-                if types.is_dataframe(self.data.type_)
-                else f"{self.data.name}",
-                type_=List[List[Any]],
-                state=self.data.state,
-            )
-
-        # If given a pandas df break up the data and columns
-        if types.is_dataframe(type(self.data)):
-            self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
-            self.data = Var.create(format.format_dataframe_values(self.data))  # type: ignore
+            if types.is_dataframe(self.data.type_):
+                self.columns = BaseVar(
+                    name=f"{self.data.name}.columns",
+                    type_=List[Any],
+                    state=self.data.state,
+                )
+                self.data = BaseVar(
+                    name=f"{self.data.name}.data",
+                    type_=List[List[Any]],
+                    state=self.data.state,
+                )
+        else:
+            # If given a pandas df break up the data and columns
+            if types.is_dataframe(type(self.data)):
+                self.columns = Var.create(list(self.data.columns.values.tolist()))  # type: ignore
+                self.data = Var.create(format.format_dataframe_values(self.data))  # type: ignore
 
         # Render the table.
         return super()._render()
