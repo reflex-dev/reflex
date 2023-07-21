@@ -503,7 +503,7 @@ class App(Base):
         compile_results.append(compiler.compile_theme(self.style))
 
         # Compile the Tailwind config.
-        if config.tailwind:
+        if config.tailwind is not None:
             config.tailwind["content"] = config.tailwind.get(
                 "content", constants.TAILWIND_CONTENT
             )
