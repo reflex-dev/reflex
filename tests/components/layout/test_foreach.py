@@ -8,74 +8,73 @@ from reflex.state import State
 
 
 class ForEachState(State):
-    """The test  state."""
+    """A state for testing the ForEach component."""
 
-    color_a: List[str] = ["red", "yellow"]
-    color_nested_list: List[List[str]] = [["red", "yellow"], ["blue", "green"]]
-    color_b: List[Dict[str, str]] = [
+    colors_list: List[str] = ["red", "yellow"]
+    nested_colors_list: List[List[str]] = [["red", "yellow"], ["blue", "green"]]
+    colors_dict_list: List[Dict[str, str]] = [
         {
             "name": "red",
         },
         {"name": "yellow"},
     ]
-    color_c: List[Dict[str, List[str]]] = [{"shades": ["light-red"]}]
-    color_d: Dict[str, str] = {"category": "primary", "name": "red"}
-    color_e: Dict[str, List[str]] = {
+    colors_nested_dict_list: List[Dict[str, List[str]]] = [{"shades": ["light-red"]}]
+    primary_color: Dict[str, str] = {"category": "primary", "name": "red"}
+    color_with_shades: Dict[str, List[str]] = {
         "red": ["orange", "yellow"],
         "yellow": ["orange", "green"],
     }
-    color_f: Dict[str, Dict[str, List[Dict[str, str]]]] = {
+    nested_colors_with_shades: Dict[str, Dict[str, List[Dict[str, str]]]] = {
         "primary": {"red": [{"shade": "dark"}]}
     }
-    color_g: Tuple[str, str] = (
+    color_tuple: Tuple[str, str] = (
         "red",
         "yellow",
     )
-    color_h: Set[str] = {"red", "green"}
+    colors_set: Set[str] = {"red", "green"}
 
 
-def display_a(color):
+def display_color(color):
     return box(text(color))
 
 
-def display_b(color):
+def display_color_name(color):
     return box(text(color["name"]))
 
 
-def display_c(color):
+def display_shade(color):
     return box(text(color["shades"][0]))
 
 
-def display_d(color):
+def display_primary_colors(color):
     return box(text(color[0]), text(color[1]))
 
 
-def display_e(color):
-    # color is a key-value pair list similar to `dict.items()`
+def display_color_with_shades(color):
     return box(text(color[0]), text(color[1][0]))
 
 
-def display_f(color):
+def display_nested_color_with_shades(color):
     return box(text(color[0]), text(color[1]["red"][0]["shade"]))
 
 
-def show_item(item):
+def show_shade(item):
     return text(item[1][0]["shade"])
 
 
-def display_f1(color):
-    return box(text(foreach(color[1], show_item)))
+def display_nested_color_with_shades_v2(color):
+    return box(text(foreach(color[1], show_shade)))
 
 
-def display_g(color):
+def display_color_tuple(color):
     return box(text(color))
 
 
-def display_h(color):
+def display_colors_set(color):
     return box(text(color))
 
 
-def display_j(element: str, index: int):
+def display_nested_list_element(element: str, index: int):
     return box(text(element[index]))
 
 
@@ -83,91 +82,91 @@ def display_j(element: str, index: int):
     "state_var, render_fn, render_dict",
     [
         (
-            ForEachState.color_a,
-            display_a,
+            ForEachState.colors_list,
+            display_color,
             {
-                "iterable_state": "for_each_state.color_a",
+                "iterable_state": "for_each_state.colors_list",
                 "arg_index": "i",
                 "iterable_type": "list",
             },
         ),
         (
-            ForEachState.color_b,
-            display_b,
+            ForEachState.colors_dict_list,
+            display_color_name,
             {
-                "iterable_state": "for_each_state.color_b",
+                "iterable_state": "for_each_state.colors_dict_list",
                 "arg_index": "i",
                 "iterable_type": "list",
             },
         ),
         (
-            ForEachState.color_c,
-            display_c,
+            ForEachState.colors_nested_dict_list,
+            display_shade,
             {
-                "iterable_state": "for_each_state.color_c",
+                "iterable_state": "for_each_state.colors_nested_dict_list",
                 "arg_index": "i",
                 "iterable_type": "list",
             },
         ),
         (
-            ForEachState.color_d,
-            display_d,
+            ForEachState.primary_color,
+            display_primary_colors,
             {
-                "iterable_state": "for_each_state.color_d",
+                "iterable_state": "for_each_state.primary_color",
                 "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
         (
-            ForEachState.color_e,
-            display_e,
+            ForEachState.color_with_shades,
+            display_color_with_shades,
             {
-                "iterable_state": "for_each_state.color_e",
+                "iterable_state": "for_each_state.color_with_shades",
                 "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
         (
-            ForEachState.color_f,
-            display_f,
+            ForEachState.nested_colors_with_shades,
+            display_nested_color_with_shades,
             {
-                "iterable_state": "for_each_state.color_f",
+                "iterable_state": "for_each_state.nested_colors_with_shades",
                 "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
         (
-            ForEachState.color_f,
-            display_f1,
+            ForEachState.nested_colors_with_shades,
+            display_nested_color_with_shades_v2,
             {
-                "iterable_state": "for_each_state.color_f",
+                "iterable_state": "for_each_state.nested_colors_with_shades",
                 "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
         (
-            ForEachState.color_g,
-            display_g,
+            ForEachState.color_tuple,
+            display_color_tuple,
             {
-                "iterable_state": "for_each_state.color_g",
+                "iterable_state": "for_each_state.color_tuple",
                 "arg_index": "i",
                 "iterable_type": "tuple",
             },
         ),
         (
-            ForEachState.color_h,
-            display_h,
+            ForEachState.colors_set,
+            display_colors_set,
             {
-                "iterable_state": "for_each_state.color_h",
+                "iterable_state": "for_each_state.colors_set",
                 "arg_index": "i",
                 "iterable_type": "set",
             },
         ),
         (
-            ForEachState.color_nested_list,
-            lambda el, i: display_j(el, i),
+            ForEachState.nested_colors_list,
+            lambda el, i: display_nested_list_element(el, i),
             {
-                "iterable_state": "for_each_state.color_nested_list",
+                "iterable_state": "for_each_state.nested_colors_list",
                 "arg_index": "i",
                 "iterable_type": "list",
             },
