@@ -503,13 +503,11 @@ class App(Base):
         compile_results.append(compiler.compile_theme(self.style))
 
         # Compile the Tailwind config.
-        compile_results.append(
-            compiler.compile_tailwind(
-                dict(**config.tailwind, content=constants.TAILWIND_CONTENT)
-                if config.tailwind is not None
-                else {}
+        if config.tailwind is not None:
+            config.tailwind["content"] = config.tailwind.get(
+                "content", constants.TAILWIND_CONTENT
             )
-        )
+            compile_results.append(compiler.compile_tailwind(config.tailwind))
 
         # Write the pages at the end to trigger the NextJS hot reload only once.
         thread_pool = ThreadPool()
