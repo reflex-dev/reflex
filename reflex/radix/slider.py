@@ -1,5 +1,5 @@
 """The Radix slider component."""
-from typing import List, Literal, Optional
+from typing import List, Optional
 
 from reflex.components.component import Component
 
