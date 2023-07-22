@@ -33,7 +33,6 @@ class IterTag(Tag):
         return BaseVar(
             name=INDEX_VAR,
             type_=int,
-            is_local=True,
         )
 
     @staticmethod
@@ -46,6 +45,7 @@ class IterTag(Tag):
         return BaseVar(
             name=INDEX_VAR,
             type_=int,
+            is_local=True,
         )
 
     @staticmethod
