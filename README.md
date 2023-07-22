@@ -23,7 +23,7 @@
 
 ---
 
-[English](README.md) | [简体中文](/docs/zh/zh_cn/README.md) | [繁體中文](/docs/zh/zh_tw/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md)
 
 ---
 
