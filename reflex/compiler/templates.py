@@ -71,6 +71,9 @@ TAILWIND_CONFIG = get_template("web/tailwind.config.js.jinja2")
 # Code to render a single NextJS page.
 PAGE = get_template("web/pages/index.js.jinja2")
 
+# Template utils.
+UTILS = get_template("web/pages/utils.js.jinja2")
+
 # Code to render the custom components page.
 COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 

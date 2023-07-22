@@ -3,10 +3,8 @@
 from typing import Dict
 
 from reflex.components.component import Component
-from reflex.components.forms import Button
 from reflex.components.layout import Box
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import imports
@@ -65,6 +63,10 @@ class CodeBlock(Component):
         Returns:
             The text component.
         """
+        # Import here to avoid circular imports.
+        from reflex.components.media import Icon
+        from reflex.components.forms import Button
+
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
 

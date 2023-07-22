@@ -318,12 +318,17 @@ class Component(Base, ABC):
         """
         return format.json_dumps(self.render())
 
-    def _render(self) -> Tag:
+    def _render(self, ignore_props: Optional[Set[str]] = None) -> Tag:
         """Define how to render the component in React.
+
+        Args:
+            ignore_props: The props to ignore.
 
         Returns:
             The tag to render.
         """
+        ignore_props = ignore_props or set()
+
         # Create the base tag.
         tag = Tag(
             name=self.tag if not self.alias else self.alias,
@@ -332,8 +337,9 @@ class Component(Base, ABC):
 
         # Add component props to the tag.
         props = {
-            attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
-            for attr in self.get_props()
+            prop[:-1] if prop.endswith("_") else prop: getattr(self, prop)
+            for prop in self.get_props()
+            if prop not in ignore_props
         }
 
         # Add ref to element if `id` is not None.
