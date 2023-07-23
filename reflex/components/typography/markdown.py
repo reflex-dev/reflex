@@ -1,15 +1,16 @@
 """Markdown component."""
 
 import textwrap
-from typing import Dict, List, Union
+from typing import Callable, Dict, List, Optional, Set, Union
 
-from reflex.components.component import Component
+from reflex.components.component import Component, CustomComponent
 from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
 from reflex.components.datadisplay.list import UnorderedList, OrderedList, ListItem
 from reflex.components.datadisplay.code import Code, CodeBlock
 from reflex.components.navigation import Link
 
+from reflex.compiler import utils
 from reflex.utils import types
 from reflex.vars import BaseVar, ImportVar, Var
 from reflex.style import Style
@@ -25,7 +26,7 @@ class Markdown(Component):
     is_default = True
 
     # Custom defined styles for the markdown elements.
-    custom_components: Dict[str, Component] = {
+    custom_components: Dict[str, Callable] = {
         "h1": Heading,
         "h2": Heading,
         "h3": Heading,
@@ -83,23 +84,36 @@ class Markdown(Component):
             src = textwrap.dedent(src)
         return super().create(src, **props)
 
+    def get_custom_components(
+        self, seen: Optional[Set[str]] = None
+    ) -> Set[CustomComponent]:
+        """Get all the custom components used by the component.
+
+        Args:
+            seen: The tags of the components that have already been seen.
+
+        Returns:
+            The set of custom components.
+        """
+        custom_components = super().get_custom_components(seen=seen)
+        for component in self.custom_components.values():
+            custom_components |= component(text="hi").get_custom_components(seen=seen)
+        return custom_components
+
     def _get_imports(self):
         imports = super()._get_imports()
-        imports["@chakra-ui/react"] = {
-            ImportVar(tag="Heading"),
-            ImportVar(tag="Code"),
-            ImportVar(tag="Text"),
-            ImportVar(tag="Link"),
-            ImportVar(tag="UnorderedList"),
-            ImportVar(tag="OrderedList"),
-            ImportVar(tag="ListItem"),
-        }
-        imports["react-syntax-highlighter"] = {ImportVar(tag="Prism", is_default=True)}
+        # imports["react-syntax-highlighter"] = {ImportVar(tag="Prism", is_default=True)}
         imports["remark-math"] = {ImportVar(tag="remarkMath", is_default=True)}
         imports["remark-gfm"] = {ImportVar(tag="remarkGfm", is_default=True)}
         imports["rehype-katex"] = {ImportVar(tag="rehypeKatex", is_default=True)}
         imports["rehype-raw"] = {ImportVar(tag="rehypeRaw", is_default=True)}
         imports[""] = {ImportVar(tag="katex/dist/katex.min.css")}
+        for component in self.custom_components.values():
+            imports = utils.merge_imports(imports, component()._get_imports())
+
+        # if self.custom_components["h1"] != Heading:
+        #     breakpoint()
+
         return imports
 
     def _render(self):

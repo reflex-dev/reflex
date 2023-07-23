@@ -192,7 +192,11 @@ class Component(Base, ABC):
             kwargs["class_name"] = " ".join(class_name)
 
         # Construct the component.
-        super().__init__(*args, **kwargs)
+        try:
+            super().__init__(*args, **kwargs)
+        except:
+            breakpoint()
+            raise
 
     def _create_event_chain(
         self,
@@ -646,7 +650,7 @@ class CustomComponent(Component):
     # The props of the component.
     props: Dict[str, Any] = {}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, test: bool=False, **kwargs):
         """Initialize the custom component.
 
         Args:
@@ -660,6 +664,9 @@ class CustomComponent(Component):
 
         # Set the tag to the name of the function.
         self.tag = format.to_title_case(self.component_fn.__name__)
+
+        if test:
+            return
 
         # Set the props.
         props = typing.get_type_hints(self.component_fn)
