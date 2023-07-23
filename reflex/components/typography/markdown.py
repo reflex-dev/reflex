@@ -38,7 +38,6 @@ class Markdown(Component):
         "ol": OrderedList,
         "li": ListItem,
         "a": Link,
-        "code": Code,
     }
 
     # Custom defined styles for the markdown elements.
@@ -111,6 +110,9 @@ class Markdown(Component):
         for component in self.custom_components.values():
             imports = utils.merge_imports(imports, component()._get_imports())
 
+        imports = utils.merge_imports(imports, CodeBlock(theme="light")._get_imports())
+        imports = utils.merge_imports(imports, Code()._get_imports())
+
         # if self.custom_components["h1"] != Heading:
         #     breakpoint()
 
@@ -126,7 +128,7 @@ class Markdown(Component):
                 components={
                     tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props={'sx': Style(self.custom_styles.get(tag, {}))}).format_props())} />}}"
                     for tag, component in self.custom_components.items()
-                },
+                } | {
                     # "h1": "{({node, ...props}) => <Heading size='2xl' paddingY='0.5em' {...props} />}",
                     # "h2": "{({node, ...props}) => <Heading size='xl' paddingY='0.5em' {...props} />}",
                     # "h3": "{({node, ...props}) => <Heading size='lg' paddingY='0.5em' {...props} />}",
@@ -137,24 +139,25 @@ class Markdown(Component):
                     # "li": "{ListItem}",
                     # "p": "{({node, ...props}) => <Text paddingY='0.5em' {...props} />}",
                     # "a": "{Link}",
-    #                 "code": """{({node, inline, className, children, ...props}) =>
-    #                 {
-    #     const match = (className || '').match(/language-(?<lang>.*)/);
-    #     return !inline ? (
-    #       <Prism
-    #         children={String(children).replace(/\n$/, '')}
-    #         language={match ? match[1] : ''}
-    #         {...props}
-    #       />
-    #     ) : (
-    #       <Code {...props}>
-    #         {children}
-    #       </Code>
-    #     );
-    #   }}""".replace(
-    #                     "\n", " "
-    #                 ),
-                # },
+                    "code": """{({node, inline, className, children, ...props}) =>
+                    {
+        const match = (className || '').match(/language-(?<lang>.*)/);
+        return !inline ? (
+          <Prism
+            children={String(children).replace(/\n$/, '')}
+            language={match ? match[1] : 'python'}
+            theme={light}
+            {...props}
+          />
+        ) : (
+          <Code {...props}>
+            {children}
+          </Code>
+        );
+      }}""".replace(
+                        "\n", " "
+                    ),
+                },
                 remark_plugins=BaseVar(name="[remarkMath, remarkGfm]", type_=List[str]),
                 rehype_plugins=BaseVar(
                     name="[rehypeKatex, rehypeRaw]", type_=List[str]
