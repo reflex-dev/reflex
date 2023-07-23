@@ -124,7 +124,7 @@ class Markdown(Component):
             ._render(ignore_props={"custom_components", "custom_styles"})
             .add_props(
                 components={
-                    tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=self.custom_styles.get(tag, {})).format_props())} />}}"
+                    tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props={'sx': Style(self.custom_styles.get(tag, {}))}).format_props())} />}}"
                     for tag, component in self.custom_components.items()
                 },
                     # "h1": "{({node, ...props}) => <Heading size='2xl' paddingY='0.5em' {...props} />}",
