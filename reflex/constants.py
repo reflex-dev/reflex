@@ -116,6 +116,18 @@ BUN_ROOT_PATH = "$HOME/.bun"
 BUN_PATH = get_value("BUN_PATH", f"{BUN_ROOT_PATH}/bin/bun")
 # Command to install bun.
 INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
+# Command to install nvm.
+INSTALL_NVM = (
+    "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash"
+)
+# nvm root location.
+NVM_ROOT_PATH = f"$HOME/.nvm"
+# The default path where node is installed.
+NODE_PATH = get_value(
+    "NODE_PATH", f"{NVM_ROOT_PATH}/versions/node/v{MIN_NODE_VERSION}/bin/node"
+)
+# Command to install node.
+INSTALL_NODE = f". {NVM_ROOT_PATH}/nvm.sh && nvm install {MIN_NODE_VERSION}"
 # Default host in dev mode.
 BACKEND_HOST = get_value("BACKEND_HOST", "0.0.0.0")
 # The default timeout when launching the gunicorn server.

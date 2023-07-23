@@ -73,17 +73,8 @@ def get_package_manager() -> str:
 
     Raises:
         FileNotFoundError: If bun or npm is not installed.
-        Exit: If the app directory is invalid.
-
     """
     config = get_config()
-
-    # Check that the node version is valid.
-    if not check_node_version():
-        console.print(
-            f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Reflex."
-        )
-        raise typer.Exit()
 
     # On Windows, we use npm instead of bun.
     if platform.system() == "Windows" or config.disable_bun:
@@ -274,6 +265,47 @@ def remove_existing_bun_installation():
     if os.path.exists(package_manager):
         console.log("Removing bun...")
         path_ops.rm(os.path.expandvars(constants.BUN_ROOT_PATH))
+
+
+def validate_and_install_node():
+    """Validate nodejs have install or not."""
+    if not check_node_version():
+        install_node()
+
+
+def install_node():
+    """Install nvm and nodejs onto the user's system.
+
+
+    Raises:
+        FileNotFoundError: if unzip or curl packages are not found.
+        Exit: if installation failed
+    """
+    if platform.system() == "Linux":
+        # Only install if bun is not already installed.
+        console.log("Installing nvm...")
+
+        # Check if curl is installed
+        curl_path = path_ops.which("curl")
+        if curl_path is None:
+            raise FileNotFoundError("Reflex requires curl to be installed.")
+
+        result = subprocess.run(constants.INSTALL_NVM, shell=True)
+
+        if result.returncode != 0:
+            raise typer.Exit(code=result.returncode)
+
+        console.log("Installing node...")
+        result = subprocess.run(constants.INSTALL_NODE, shell=True)
+
+        if result.returncode != 0:
+            raise typer.Exit(code=result.returncode)
+
+    else:
+        console.print(
+            f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Reflex."
+        )
+        raise typer.Exit()
 
 
 def install_bun():
