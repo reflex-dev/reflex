@@ -44,7 +44,7 @@ MODULE_NAME = "reflex"
 # The current version of Reflex.
 VERSION = metadata.version(MODULE_NAME)
 # Minimum version of Node.js required to run Reflex.
-MIN_NODE_VERSION = "16.8.0"
+MIN_NODE_VERSION = "18.17.0"
 
 # Valid bun versions.
 MIN_BUN_VERSION = "0.5.9"
@@ -122,6 +122,7 @@ INSTALL_NVM = (
 )
 # nvm root location.
 NVM_ROOT_PATH = f"$HOME/.nvm"
+NVM_BIN = f"{NVM_ROOT_PATH}/versions/node/v{MIN_NODE_VERSION}/bin"
 # The default path where node is installed.
 NODE_PATH = get_value(
     "NODE_PATH", f"{NVM_ROOT_PATH}/versions/node/v{MIN_NODE_VERSION}/bin/node"

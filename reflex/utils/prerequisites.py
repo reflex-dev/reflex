@@ -37,7 +37,7 @@ def check_node_version(min_version=constants.MIN_NODE_VERSION):
     try:
         # Run the node -v command and capture the output
         result = subprocess.run(
-            ["node", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            [os.path.expandvars(constants.NODE_PATH), "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         current_version = version.parse(result.stdout.decode())
