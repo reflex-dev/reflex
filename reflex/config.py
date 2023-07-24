@@ -223,7 +223,15 @@ class Config(Base):
 
         super().__init__(*args, **kwargs)
 
-        # set overriden class attribute values as os env variables to avoid losing them
+        # Load config values from env_path and override os_env if override_os_env is True
+        if self.env_path is not None and os.path.isfile(self.env_path):
+            load_dotenv(self.env_path, override=self.override_os_envs)  # type: ignore
+            # Recompute constants after loading env variables
+            importlib.reload(constants)
+            # Recompute instance attributes
+            self.recompute_field_values()
+
+        # Set class attributes not present in os_env in os_env
         for key, value in dict(self).items():
             key = key.upper()
             if (
@@ -231,16 +239,16 @@ class Config(Base):
                 or key in os.environ
                 or (value is None and key != "DB_URL")
             ):
+                if key in os.environ and key == "ENV":
+                    env_values: Dict[str, constants.Env] = {
+                        "Env.DEV": constants.Env.DEV,
+                        "Env.PROD": constants.Env.PROD,
+                    }
+                    setattr(self, key.lower(), env_values[str(os.environ.get(key))])
                 continue
             os.environ[key] = str(value)
-
-        # Avoid overriding if env_path is not provided or does not exist
-        if self.env_path is not None and os.path.isfile(self.env_path):
-            load_dotenv(self.env_path, override=self.override_os_envs)  # type: ignore
-            # Recompute constants after loading env variables
-            importlib.reload(constants)
-            # Recompute instance attributes
-            self.recompute_field_values()
+        # Recompute constants to use the new values in os env
+        importlib.reload(constants)
 
     def recompute_field_values(self):
         """Recompute instance field values to reflect new values after reloading

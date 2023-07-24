@@ -68,7 +68,7 @@ def init(
 @cli.command()
 def run(
     env: constants.Env = typer.Option(
-        get_config().env, help="The environment to run the app in."
+        constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
         False, "--frontend-only", help="Execute only frontend."
@@ -88,7 +88,9 @@ def run(
         )
     # Set ports as os env variables to take precedence over config and
     # .env variables(if override_os_envs flag in config is set to False).
+    # print(env.value)
     build.set_os_env(
+        env=str(env),
         frontend_port=frontend_port,
         backend_port=backend_port,
         backend_host=backend_host,
