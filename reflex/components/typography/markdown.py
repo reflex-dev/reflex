@@ -120,7 +120,6 @@ class Markdown(Component):
 
     def _render(self):
         from reflex.components.tags.tag import Tag
-        from reflex.compiler.templates import UTILS
         return (
             super()
             ._render(ignore_props={"custom_components", "custom_styles"})
@@ -129,16 +128,6 @@ class Markdown(Component):
                     tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props={'sx': Style(self.custom_styles.get(tag, {}))}).format_props())} />}}"
                     for tag, component in self.custom_components.items()
                 } | {
-                    # "h1": "{({node, ...props}) => <Heading size='2xl' paddingY='0.5em' {...props} />}",
-                    # "h2": "{({node, ...props}) => <Heading size='xl' paddingY='0.5em' {...props} />}",
-                    # "h3": "{({node, ...props}) => <Heading size='lg' paddingY='0.5em' {...props} />}",
-                    # "h4": "{({node, ...props}) => <Heading size='sm' paddingY='0.5em' {...props} />}",
-                    # "h5": "{({node, ...props}) => <Heading size='xs' paddingY='0.5em' {...props} />}",
-                    # "ul": "{UnorderedList}",
-                    # "ol": "{OrderedList}",
-                    # "li": "{ListItem}",
-                    # "p": "{({node, ...props}) => <Text paddingY='0.5em' {...props} />}",
-                    # "a": "{Link}",
                     "code": """{({node, inline, className, children, ...props}) =>
                     {
         const match = (className || '').match(/language-(?<lang>.*)/);

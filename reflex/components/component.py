@@ -192,11 +192,7 @@ class Component(Base, ABC):
             kwargs["class_name"] = " ".join(class_name)
 
         # Construct the component.
-        try:
-            super().__init__(*args, **kwargs)
-        except:
-            breakpoint()
-            raise
+        super().__init__(*args, **kwargs)
 
     def _create_event_chain(
         self,
@@ -322,17 +318,12 @@ class Component(Base, ABC):
         """
         return format.json_dumps(self.render())
 
-    def _render(self, ignore_props: Optional[Set[str]] = None) -> Tag:
+    def _render(self) -> Tag:
         """Define how to render the component in React.
-
-        Args:
-            ignore_props: The props to ignore.
 
         Returns:
             The tag to render.
         """
-        ignore_props = ignore_props or set()
-
         # Create the base tag.
         tag = Tag(
             name=self.tag if not self.alias else self.alias,
@@ -341,9 +332,8 @@ class Component(Base, ABC):
 
         # Add component props to the tag.
         props = {
-            prop[:-1] if prop.endswith("_") else prop: getattr(self, prop)
-            for prop in self.get_props()
-            if prop not in ignore_props
+            attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
+            for attr in self.get_props()
         }
 
         # Add ref to element if `id` is not None.
@@ -650,7 +640,7 @@ class CustomComponent(Component):
     # The props of the component.
     props: Dict[str, Any] = {}
 
-    def __init__(self, *args, test: bool=False, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Initialize the custom component.
 
         Args:
@@ -664,9 +654,6 @@ class CustomComponent(Component):
 
         # Set the tag to the name of the function.
         self.tag = format.to_title_case(self.component_fn.__name__)
-
-        if test:
-            return
 
         # Set the props.
         props = typing.get_type_hints(self.component_fn)
