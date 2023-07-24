@@ -3,17 +3,16 @@
 import textwrap
 from typing import Callable, Dict, List, Optional, Set, Union
 
+from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
+from reflex.components.datadisplay.code import Code, CodeBlock
+from reflex.components.datadisplay.list import ListItem, OrderedList, UnorderedList
+from reflex.components.navigation import Link
 from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
-from reflex.components.datadisplay.list import UnorderedList, OrderedList, ListItem
-from reflex.components.datadisplay.code import Code, CodeBlock
-from reflex.components.navigation import Link
-
-from reflex.compiler import utils
+from reflex.style import Style
 from reflex.utils import types
 from reflex.vars import BaseVar, ImportVar, Var
-from reflex.style import Style
 
 
 class Markdown(Component):
@@ -42,24 +41,27 @@ class Markdown(Component):
 
     # Custom defined styles for the markdown elements.
     custom_styles: Dict[str, Style] = {
-        "h1": {
-            "size": "2xl",
-        },
-        "h2": {
-            "size": "xl",
-        },
-        "h3": {
-            "size": "lg",
-        },
-        "h4": {
-            "size": "md",
-        },
-        "h5": {
-            "size": "sm",
-        },
-        "h6": {
-            "size": "xs",
-        },
+        k: Style(v)
+        for k, v in {
+            "h1": {
+                "size": "2xl",
+            },
+            "h2": {
+                "size": "xl",
+            },
+            "h3": {
+                "size": "lg",
+            },
+            "h4": {
+                "size": "md",
+            },
+            "h5": {
+                "size": "sm",
+            },
+            "h6": {
+                "size": "xs",
+            },
+        }.items()
     }
 
     @classmethod
@@ -110,8 +112,8 @@ class Markdown(Component):
         for component in self.custom_components.values():
             imports = utils.merge_imports(imports, component()._get_imports())
 
-        imports = utils.merge_imports(imports, CodeBlock(theme="light")._get_imports())
-        imports = utils.merge_imports(imports, Code()._get_imports())
+        imports = utils.merge_imports(imports, CodeBlock.create(theme="light")._get_imports())
+        imports = utils.merge_imports(imports, Code.create()._get_imports())
 
         # if self.custom_components["h1"] != Heading:
         #     breakpoint()
@@ -120,6 +122,7 @@ class Markdown(Component):
 
     def _render(self):
         from reflex.components.tags.tag import Tag
+
         return (
             super()
             ._render(ignore_props={"custom_components", "custom_styles"})
@@ -127,7 +130,8 @@ class Markdown(Component):
                 components={
                     tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props={'sx': Style(self.custom_styles.get(tag, {}))}).format_props())} />}}"
                     for tag, component in self.custom_components.items()
-                } | {
+                }
+                | {
                     "code": """{({node, inline, className, children, ...props}) =>
                     {
         const match = (className || '').match(/language-(?<lang>.*)/);
@@ -151,5 +155,6 @@ class Markdown(Component):
                 rehype_plugins=BaseVar(
                     name="[rehypeKatex, rehypeRaw]", type_=List[str]
                 ),
-            ).remove_props("custom_components")
+            )
+            .remove_props("custom_components")
         )

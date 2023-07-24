@@ -83,7 +83,9 @@ class Tag(Base):
                     event = format.format_full_control_event(prop)
                 else:
                     # All other events.
-                    chain = ",".join([format.format_event(event) for event in prop.events])
+                    chain = ",".join(
+                        [format.format_event(event) for event in prop.events]
+                    )
                     event = f"Event([{chain}], {EVENT_ARG})"
                 prop = f"{EVENT_ARG} => {event}"
 

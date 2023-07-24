@@ -64,8 +64,8 @@ class CodeBlock(Component):
             The text component.
         """
         # Import here to avoid circular imports.
-        from reflex.components.media import Icon
         from reflex.components.forms import Button
+        from reflex.components.media import Icon
 
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
