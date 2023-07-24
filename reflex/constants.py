@@ -26,7 +26,7 @@ def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
     Returns:
         the value of the constant in its designated type
     """
-    value = os.getenv(key, default)
+    value = os.getenv(f"RX_{key}", os.getenv(key, default))
     try:
         if value and type_ != str:
             value = eval(value)
