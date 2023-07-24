@@ -1,10 +1,10 @@
 """Markdown component."""
 
 import textwrap
-from typing import Callable, Dict, List, Optional, Set, Union
+from typing import Callable, Dict, List, Union
 
 from reflex.compiler import utils
-from reflex.components.component import Component, CustomComponent
+from reflex.components.component import Component
 from reflex.components.datadisplay.code import Code, CodeBlock
 from reflex.components.datadisplay.list import ListItem, OrderedList, UnorderedList
 from reflex.components.navigation import Link
@@ -13,6 +13,21 @@ from reflex.components.typography.text import Text
 from reflex.style import Style
 from reflex.utils import types
 from reflex.vars import BaseVar, ImportVar, Var
+
+# Mapping from markdown tags to components.
+components_by_tag: Dict[str, Callable] = {
+    "h1": Heading,
+    "h2": Heading,
+    "h3": Heading,
+    "h4": Heading,
+    "h5": Heading,
+    "h6": Heading,
+    "p": Text,
+    "ul": UnorderedList,
+    "ol": OrderedList,
+    "li": ListItem,
+    "a": Link,
+}
 
 
 class Markdown(Component):
@@ -25,40 +40,31 @@ class Markdown(Component):
     is_default = True
 
     # Custom defined styles for the markdown elements.
-    custom_components: Dict[str, Callable] = {
-        "h1": Heading,
-        "h2": Heading,
-        "h3": Heading,
-        "h4": Heading,
-        "h5": Heading,
-        "h6": Heading,
-        "p": Text,
-        "ul": UnorderedList,
-        "ol": OrderedList,
-        "li": ListItem,
-        "a": Link,
-    }
-
-    # Custom defined styles for the markdown elements.
     custom_styles: Dict[str, Style] = {
         k: Style(v)
         for k, v in {
             "h1": {
+                "as_": "h1",
                 "size": "2xl",
             },
             "h2": {
+                "as_": "h2",
                 "size": "xl",
             },
             "h3": {
+                "as_": "h3",
                 "size": "lg",
             },
             "h4": {
+                "as_": "h4",
                 "size": "md",
             },
             "h5": {
+                "as_": "h5",
                 "size": "sm",
             },
             "h6": {
+                "as_": "h6",
                 "size": "xs",
             },
         }.items()
@@ -85,39 +91,25 @@ class Markdown(Component):
             src = textwrap.dedent(src)
         return super().create(src, **props)
 
-    def get_custom_components(
-        self, seen: Optional[Set[str]] = None
-    ) -> Set[CustomComponent]:
-        """Get all the custom components used by the component.
-
-        Args:
-            seen: The tags of the components that have already been seen.
-
-        Returns:
-            The set of custom components.
-        """
-        custom_components = super().get_custom_components(seen=seen)
-        for component in self.custom_components.values():
-            custom_components |= component(text="hi").get_custom_components(seen=seen)
-        return custom_components
-
     def _get_imports(self):
         imports = super()._get_imports()
-        # imports["react-syntax-highlighter"] = {ImportVar(tag="Prism", is_default=True)}
+
+        # Special markdown imports.
         imports["remark-math"] = {ImportVar(tag="remarkMath", is_default=True)}
         imports["remark-gfm"] = {ImportVar(tag="remarkGfm", is_default=True)}
         imports["rehype-katex"] = {ImportVar(tag="rehypeKatex", is_default=True)}
         imports["rehype-raw"] = {ImportVar(tag="rehypeRaw", is_default=True)}
         imports[""] = {ImportVar(tag="katex/dist/katex.min.css")}
-        for component in self.custom_components.values():
+
+        # Get the imports for each component.
+        for component in components_by_tag.values():
             imports = utils.merge_imports(imports, component()._get_imports())
 
-        imports = utils.merge_imports(imports, CodeBlock.create(theme="light")._get_imports())
+        # Get the imports for the code components.
+        imports = utils.merge_imports(
+            imports, CodeBlock.create(theme="light")._get_imports()
+        )
         imports = utils.merge_imports(imports, Code.create()._get_imports())
-
-        # if self.custom_components["h1"] != Heading:
-        #     breakpoint()
-
         return imports
 
     def _render(self):
@@ -125,11 +117,11 @@ class Markdown(Component):
 
         return (
             super()
-            ._render(ignore_props={"custom_components", "custom_styles"})
+            ._render()
             .add_props(
                 components={
-                    tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props={'sx': Style(self.custom_styles.get(tag, {}))}).format_props())} />}}"
-                    for tag, component in self.custom_components.items()
+                    tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=Style(self.custom_styles.get(tag, {}))).format_props())} />}}"
+                    for tag, component in components_by_tag.items()
                 }
                 | {
                     "code": """{({node, inline, className, children, ...props}) =>
