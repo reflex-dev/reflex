@@ -383,6 +383,9 @@ export const preventDefault = (event) => {
  * @returns The value.
  */
 export const getRefValue = (ref) => {
+  if (!ref || !ref.current){
+    return;
+  }
   if (ref.current.type == "checkbox") {
     return ref.current.checked;
   } else {
