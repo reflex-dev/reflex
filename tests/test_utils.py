@@ -18,7 +18,7 @@ def get_above_max_version():
         max bun version plus one.
 
     """
-    semantic_version_list = constants.MAX_BUN_VERSION.split(".")
+    semantic_version_list = constants.BUN_VERSION.split(".")
     semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
     return ".".join(semantic_version_list)
 
@@ -261,7 +261,7 @@ def test_format_route(route: str, expected: bool):
         (VMAXPLUS1, False, "yes"),
     ],
 )
-def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
+def test_initialize_bun(mocker, bun_version, is_valid, prompt_input):
     """Test that the bun version on host system is validated properly. Also test that
     the required bun version is installed should the user opt for it.
 
@@ -279,7 +279,7 @@ def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
         "reflex.utils.prerequisites.remove_existing_bun_installation"
     )
 
-    prerequisites.validate_and_install_bun()
+    prerequisites.initialize_bun()
     if not is_valid:
         remove_existing_bun_installation.assert_called_once()
     bun_install.assert_called_once()
@@ -296,7 +296,7 @@ def test_bun_validation_exception(mocker):
     mocker.patch("reflex.utils.prerequisites.console.ask", return_value="no")
 
     with pytest.raises(RuntimeError):
-        prerequisites.validate_and_install_bun()
+        prerequisites.initialize_bun()
 
 
 def test_remove_existing_bun_installation(mocker, tmp_path):
@@ -337,7 +337,7 @@ def test_setup_frontend(tmp_path, mocker):
     assets.mkdir()
     (assets / "favicon.ico").touch()
 
-    assert str(web_folder) == prerequisites.create_web_directory(tmp_path)
+    assert str(web_folder) == prerequisites.initialize_web_directory()
 
     mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
     mocker.patch("reflex.utils.build.set_environment_variables")

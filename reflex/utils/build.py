@@ -206,21 +206,18 @@ def setup_frontend(
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     disable_telemetry: bool = True,
 ):
-    """Set up the frontend.
+    """Set up the frontend to run the app.
 
     Args:
         root: The root path of the project.
         loglevel: The log level to use.
         disable_telemetry: Whether to disable the Next telemetry.
     """
-    # Validate bun version.
-    prerequisites.validate_and_install_bun(initialize=False)
-
-    # Initialize the web directory if it doesn't exist.
-    web_dir = prerequisites.create_web_directory(root)
+    # Initialize the dependencies.
+    prerequisites.initialize_frontend_dependencies()
 
     # Install frontend packages.
-    prerequisites.install_frontend_packages(web_dir)
+    prerequisites.install_frontend_packages()
 
     # Copy asset files to public folder.
     path_ops.cp(
@@ -228,7 +225,7 @@ def setup_frontend(
         dest=str(root / constants.WEB_ASSETS_DIR),
     )
 
-    # set the environment variables in client(env.json)
+    # Set the environment variables in client (env.json).
     set_environment_variables()
 
     # Disable the Next telemetry.

@@ -135,7 +135,7 @@ def new_process(args, **kwargs):
         Execute a child program in a new process.
     """
     env = os.environ.copy()
-    env["PATH"] = os.pathsep.join([env["PATH"], os.path.expandvars(constants.NVM_BIN)])
+    env["PATH"] = os.pathsep.join([env["PATH"], constants.NODE_BIN_PATH])
     kwargs = {
         "env": env,
         "stderr": subprocess.STDOUT,
