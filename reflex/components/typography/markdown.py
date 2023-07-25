@@ -128,7 +128,7 @@ class Markdown(Component):
         return !inline ? (
           <Prism
             children={String(children).replace(/\n$/, '')}
-            language={match ? match[1] : 'python'}
+            language={match ? match[1] : ''}
             theme={light}
             {...props}
           />
