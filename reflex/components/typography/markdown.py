@@ -1,7 +1,7 @@
 """Markdown component."""
 
 import textwrap
-from typing import Callable, Dict, List, Union, TYPE_CHECKING
+from typing import Callable, Dict, List, Union
 
 from reflex.compiler import utils
 from reflex.components.component import Component
@@ -92,6 +92,7 @@ class Markdown(Component):
 
     def _get_imports(self):
         from reflex.components.datadisplay.code import Code, CodeBlock
+
         imports = super()._get_imports()
 
         # Special markdown imports.
