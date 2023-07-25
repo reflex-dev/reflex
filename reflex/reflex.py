@@ -44,6 +44,7 @@ def init(
     console.rule(f"[bold]Initializing {app_name}")
     # Set up the web directory.
     prerequisites.validate_and_install_bun()
+    prerequisites.validate_and_install_node()
     prerequisites.initialize_web_directory()
 
     # Migrate Pynecone projects to Reflex.
