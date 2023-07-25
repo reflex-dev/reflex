@@ -281,7 +281,7 @@ def install_node():
         FileNotFoundError: if unzip or curl packages are not found.
         Exit: if installation failed
     """
-    if platform.system() !="Windows":
+    if platform.system() != "Windows":
         # Only install if bun is not already installed.
         console.log("Installing nvm...")
 
