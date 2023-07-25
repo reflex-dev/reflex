@@ -67,46 +67,48 @@ class Tag(Base):
         Raises:
             TypeError: If the prop is not a valid type.
         """
-        # Handle var props.
-        if isinstance(prop, Var):
-            if not prop.is_local or prop.is_string:
-                return str(prop)
-            if types._issubclass(prop.type_, str):
-                return format.json_dumps(prop.full_name)
-            prop = prop.full_name
+        try:
+            # Handle var props.
+            if isinstance(prop, Var):
+                if not prop.is_local or prop.is_string:
+                    return str(prop)
+                if types._issubclass(prop.type_, str):
+                    return format.json_dumps(prop.full_name)
+                prop = prop.full_name
 
-        # Handle event props.
-        elif isinstance(prop, EventChain):
-            if prop.full_control:
-                # Full control component events.
-                event = format.format_full_control_event(prop)
+            # Handle event props.
+            elif isinstance(prop, EventChain):
+                if prop.full_control:
+                    # Full control component events.
+                    event = format.format_full_control_event(prop)
+                else:
+                    # All other events.
+                    chain = ",".join(
+                        [format.format_event(event) for event in prop.events]
+                    )
+                    event = f"Event([{chain}], {EVENT_ARG})"
+                prop = f"{EVENT_ARG} => {event}"
+
+            # Handle other types.
+            elif isinstance(prop, str):
+                if format.is_wrapped(prop, "{"):
+                    return prop
+                return format.json_dumps(prop)
+
+            elif isinstance(prop, Figure):
+                prop = json.loads(to_json(prop))["data"]  # type: ignore
+
+            # For dictionaries, convert any properties to strings.
+            elif isinstance(prop, dict):
+                prop = format.format_dict(prop)
+
             else:
-                # All other events.
-                chain = ",".join([format.format_event(event) for event in prop.events])
-                event = f"Event([{chain}], {EVENT_ARG})"
-            prop = f"{EVENT_ARG} => {event}"
-
-        # Handle other types.
-        elif isinstance(prop, str):
-            if format.is_wrapped(prop, "{"):
-                return prop
-            return format.json_dumps(prop)
-
-        elif isinstance(prop, Figure):
-            prop = json.loads(to_json(prop))["data"]  # type: ignore
-
-        # For dictionaries, convert any properties to strings.
-        elif isinstance(prop, dict):
-            prop = format.format_dict(prop)
-
-        else:
-            # Dump the prop as JSON.
-            try:
+                # Dump the prop as JSON.
                 prop = format.json_dumps(prop)
-            except TypeError as e:
-                raise TypeError(
-                    f"Could not format prop: {prop} of type {type(prop)}"
-                ) from e
+        except TypeError as e:
+            raise TypeError(
+                f"Could not format prop: {prop} of type {type(prop)}"
+            ) from e
 
         # Wrap the variable in braces.
         assert isinstance(prop, str), "The prop must be a string."
