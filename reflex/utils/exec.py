@@ -68,9 +68,7 @@ def run_frontend(
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().frontend_port if port is None else port
-    run_process_and_launch_url(
-        ["npm", "run", "dev"], loglevel
-    )
+    run_process_and_launch_url(["npm", "run", "dev"], loglevel)
 
 
 def run_frontend_prod(
