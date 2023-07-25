@@ -120,8 +120,9 @@ class Markdown(Component):
             tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=Style(self.custom_styles.get(tag, {}))).format_props())} />}}"
             for tag, component in components_by_tag.items()
         }
-        components["code"] = (
-            """{({node, inline, className, children, ...props}) =>
+        components[
+            "code"
+        ] = """{({node, inline, className, children, ...props}) =>
                     {
         const match = (className || '').match(/language-(?<lang>.*)/);
         return !inline ? (
@@ -137,8 +138,7 @@ class Markdown(Component):
           </Code>
         );
       }}""".replace(
-                "\n", " "
-            )
+            "\n", " "
         )
 
         return (
