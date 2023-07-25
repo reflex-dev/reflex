@@ -116,16 +116,12 @@ class Markdown(Component):
     def _render(self):
         from reflex.components.tags.tag import Tag
 
-        return (
-            super()
-            ._render()
-            .add_props(
-                components={
-                    tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=Style(self.custom_styles.get(tag, {}))).format_props())} />}}"
-                    for tag, component in components_by_tag.items()
-                }
-                | {
-                    "code": """{({node, inline, className, children, ...props}) =>
+        components = {
+            tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=Style(self.custom_styles.get(tag, {}))).format_props())} />}}"
+            for tag, component in components_by_tag.items()
+        }
+        components["code"] = (
+            """{({node, inline, className, children, ...props}) =>
                     {
         const match = (className || '').match(/language-(?<lang>.*)/);
         return !inline ? (
@@ -141,9 +137,15 @@ class Markdown(Component):
           </Code>
         );
       }}""".replace(
-                        "\n", " "
-                    ),
-                },
+                "\n", " "
+            ),
+        )
+
+        return (
+            super()
+            ._render()
+            .add_props(
+                components=components,
                 remark_plugins=BaseVar(name="[remarkMath, remarkGfm]", type_=List[str]),
                 rehype_plugins=BaseVar(
                     name="[rehypeKatex, rehypeRaw]", type_=List[str]
