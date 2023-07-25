@@ -138,7 +138,7 @@ class Markdown(Component):
         );
       }}""".replace(
                 "\n", " "
-            ),
+            )
         )
 
         return (
