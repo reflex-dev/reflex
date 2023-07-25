@@ -144,8 +144,6 @@ def new_process(args, **kwargs):
         "encoding": "UTF-8",
         **kwargs,
     }
-    print("running", args, kwargs)
-    print("cwd", kwargs["cwd"])
     return subprocess.Popen(
         args,
         **kwargs,
