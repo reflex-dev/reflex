@@ -467,6 +467,7 @@ class App(Base):
         )
         task = progress.add_task("Compiling: ", total=len(self.pages))
 
+        # TODO: include all work done in progress indicator, not just self.pages
         for render, kwargs in DECORATED_ROUTES:
             self.add_page(render, **kwargs)
 
@@ -478,9 +479,11 @@ class App(Base):
 
         # Compile the pages in parallel.
         custom_components = set()
+        # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
         with progress:
             for route, component in self.pages.items():
+                # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
                 component.add_style(self.style)
                 compile_results.append(
@@ -502,7 +505,7 @@ class App(Base):
         # Get the results.
         compile_results = [result.get() for result in compile_results]
 
-        # TODO the compile tasks below may also benefit from parallelization
+        # TODO the compile tasks below may also benefit from parallelization too
 
         # Compile the custom components.
         compile_results.append(compiler.compile_components(custom_components))
