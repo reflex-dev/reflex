@@ -595,6 +595,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             self.mark_dirty()
             return
 
+
+
+        if name in self.vars and  isinstance(value, Union[list, dict]):
+            value = _convert_mutable_datatypes(value, self._reassign_field, name)
+
         # Set the attribute.
         super().__setattr__(name, value)
 
