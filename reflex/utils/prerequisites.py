@@ -294,7 +294,7 @@ def install_bun():
         return
 
     # Only install if bun is not already installed.
-    if not os.path.exists(get_package_manager()):
+    if not os.path.exists(constants.BUN_PATH):
         console.log("Installing bun...")
 
         # Check if curl is installed

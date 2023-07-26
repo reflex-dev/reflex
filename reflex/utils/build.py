@@ -136,7 +136,7 @@ def export_app(
     # Start the subprocess with the progress bar.
     try:
         with progress, new_process(
-            [prerequisites.get_package_manager(), "run", command],
+            ["npm", "run", command],
             cwd=constants.WEB_DIR,
         ) as export_process:
             assert export_process.stdout is not None, "No stdout for export process."
@@ -213,9 +213,6 @@ def setup_frontend(
         loglevel: The log level to use.
         disable_telemetry: Whether to disable the Next telemetry.
     """
-    # Initialize the dependencies.
-    prerequisites.initialize_frontend_dependencies()
-
     # Install frontend packages.
     prerequisites.install_frontend_packages()
 
@@ -232,7 +229,7 @@ def setup_frontend(
     if disable_telemetry:
         new_process(
             [
-                prerequisites.get_package_manager(),
+                "npm",
                 "run",
                 "next",
                 "telemetry",
