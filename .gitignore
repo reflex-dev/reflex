@@ -5,3 +5,4 @@ examples/
 .idea
 .vscode
 .coverage
+venv
