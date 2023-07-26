@@ -118,12 +118,7 @@ def run_backend(
         "--reload-dir",
         app_name.split(".")[0],
     ]
-    process = subprocess.Popen(cmd)
-
-    try:
-        process.wait()
-    except KeyboardInterrupt:
-        process.terminate()
+    subprocess.run(cmd)
 
 
 def run_backend_prod(
