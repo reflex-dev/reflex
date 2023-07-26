@@ -596,7 +596,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             return
 
         # Make sure lists and dicts are converted to ReflexList and ReflexDict.
-        if name in self.vars and isinstance(value, Union[List, Dict]):
+        if name in self.vars and types._isinstance(value, Union[List, Dict]):
             value = _convert_mutable_datatypes(value, self._reassign_field, name)
 
         # Set the attribute.
