@@ -70,6 +70,9 @@ NVM_PATH = f"{NVM_ROOT_PATH}/nvm.sh"
 NODE_BIN_PATH = f"{NVM_ROOT_PATH}/versions/node/v{NODE_VERSION}/bin"
 # The default path where node is installed.
 NODE_PATH = "node" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/node"
+# The default path where npm is installed.
+# NPM_PATH = "npm" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/npm"
+NPM_PATH = "npm"
 # Command to install nvm.
 INSTALL_NVM = f"curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | env NVM_DIR={NVM_ROOT_PATH} bash"
 # Command to install node.

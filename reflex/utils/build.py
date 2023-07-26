@@ -136,7 +136,7 @@ def export_app(
     # Start the subprocess with the progress bar.
     try:
         with progress, new_process(
-            ["npm", "run", command],
+            [constants.NPM_PATH, "run", command],
             cwd=constants.WEB_DIR,
         ) as export_process:
             assert export_process.stdout is not None, "No stdout for export process."

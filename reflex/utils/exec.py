@@ -68,7 +68,7 @@ def run_frontend(
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().frontend_port if port is None else port
-    run_process_and_launch_url(["npm", "run", "dev"], loglevel)
+    run_process_and_launch_url([constants.NPM_PATH, "run", "dev"], loglevel)
 
 
 def run_frontend_prod(
@@ -88,7 +88,7 @@ def run_frontend_prod(
 
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url(["npm", "run", "prod"], loglevel)
+    run_process_and_launch_url([constants.NPM_PATH, "run", "prod"], loglevel)
 
 
 def run_backend(
