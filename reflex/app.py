@@ -473,9 +473,6 @@ class App(Base):
         # Get the env mode.
         config = get_config()
 
-        # Empty the .web pages directory
-        compiler.purge_web_pages_dir()
-
         # Store the compile results.
         compile_results = []
 
@@ -505,6 +502,8 @@ class App(Base):
         # Get the results.
         compile_results = [result.get() for result in compile_results]
 
+        # TODO the compile tasks below may also benefit from parallelization
+
         # Compile the custom components.
         compile_results.append(compiler.compile_components(custom_components))
 
@@ -521,10 +520,12 @@ class App(Base):
             )
             compile_results.append(compiler.compile_tailwind(config.tailwind))
 
+        # Empty the .web pages directory
+        compiler.purge_web_pages_dir()
+
         # Write the pages at the end to trigger the NextJS hot reload only once.
         thread_pool = ThreadPool()
         for output_path, code in compile_results:
-            compiler_utils.write_page(output_path, code)
             thread_pool.apply_async(compiler_utils.write_page, args=(output_path, code))
         thread_pool.close()
         thread_pool.join()

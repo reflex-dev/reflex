@@ -9,7 +9,7 @@ ImportDict = Dict[str, Set[ImportVar]]
 
 
 def merge_imports(*imports) -> ImportDict:
-    """Merge two import dicts together.
+    """Merge multiple import dicts together.
 
     Args:
         *imports: The list of import dicts to merge.
