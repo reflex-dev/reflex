@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Union
 
+from reflex.components.component import Component
 from reflex.event import EventHandler
 
 DECORATED_PAGES = []
@@ -15,6 +16,7 @@ def page(
     image: Optional[str] = None,
     description: Optional[str] = None,
     meta: Optional[str] = None,
+    script_tags: Optional[List[Component]] = None,
     on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
 ):
     """Decorate a function as a page.
@@ -33,6 +35,7 @@ def page(
         description: The description of the page.
         meta: Additionnal meta to add to the page.
         on_load: The event handler(s) called when the page load.
+        script_tags: scripts to attach to the page
 
     Returns:
         The decorated function.
@@ -51,6 +54,8 @@ def page(
             kwargs["description"] = description
         if meta:
             kwargs["meta"] = meta
+        if script_tags:
+            kwargs["script_tags"] = script_tags
         if on_load:
             kwargs["on_load"] = on_load
 
