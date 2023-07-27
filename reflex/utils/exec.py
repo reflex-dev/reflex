@@ -11,7 +11,7 @@ from rich import print
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, processes
+from reflex.utils import console, prerequisites, processes
 from reflex.utils.processes import new_process
 from reflex.utils.watch import AssetFolderWatch
 
@@ -68,7 +68,9 @@ def run_frontend(
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().frontend_port if port is None else port
-    run_process_and_launch_url([constants.NPM_PATH, "run", "dev"], loglevel)
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "dev"], loglevel
+    )
 
 
 def run_frontend_prod(
