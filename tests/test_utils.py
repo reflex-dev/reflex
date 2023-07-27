@@ -1,9 +1,11 @@
 import os
+import subprocess
 import typing
 from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
+import typer
 from packaging import version
 
 from reflex import Env, constants
@@ -489,3 +491,83 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     assert gitignore_file.exists()
     file_content = [line.strip() for line in gitignore_file.open().readlines()]
     assert set(file_content) - expected == set()
+
+
+def test_app_default_name(tmp_path, mocker):
+    """Test that an error is raised if the app name is reflex.
+
+    Args:
+        tmp_path: Test working dir.
+        mocker: Pytest mocker object.
+    """
+    reflex = tmp_path / "reflex"
+    reflex.mkdir()
+
+    mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
+
+    with pytest.raises(typer.Exit):
+        prerequisites.get_default_app_name()
+
+
+def test_node_install_windows(mocker):
+    """Require user to install node manually for windows(Windows not supported yet).
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.prerequisites.platform.system", return_value="Windows")
+
+    with pytest.raises(typer.Exit):
+        prerequisites.install_node()
+
+
+def test_node_install_unix(tmp_path, mocker):
+    nvm_root_path = tmp_path / ".reflex" / ".nvm"
+
+    # result = mocker.Mock()
+    # mocker.patch.object(result, "returncode", 0)
+    mocker.patch("reflex.utils.prerequisites.constants.NVM_ROOT_PATH", nvm_root_path)
+    subprocess_run = mocker.patch(
+        "reflex.utils.prerequisites.subprocess.run",
+        return_value=subprocess.CompletedProcess(args="", returncode=0),
+    )
+
+    prerequisites.install_node()
+
+    assert nvm_root_path.exists()
+    subprocess_run.assert_called()
+    subprocess_run.call_count = 2
+
+
+def test_node_install_without_curl(mocker):
+    """Test that an error is thrown when installing node with curl not installed.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.prerequisites.path_ops.which", return_value=None)
+
+    with pytest.raises(FileNotFoundError):
+        prerequisites.install_node()
+
+
+def test_node_install_failure(tmp_path, mocker):
+    """Test that an error is thrown when the nvm or node installation fails.
+
+    Args:
+        tmp_path: Test path.
+        mocker: Pytest mocker object.
+
+    """
+    nvm_root_path = tmp_path / ".reflex" / ".nvm"
+
+    mocker.patch("reflex.utils.prerequisites.constants.NVM_ROOT_PATH", nvm_root_path)
+    mocker.patch(
+        "reflex.utils.prerequisites.subprocess.run",
+        return_value=subprocess.CompletedProcess(args="", returncode=1),
+    )
+
+    prerequisites.install_node()
+
+    with pytest.raises(typer.Exit):
+        prerequisites.install_node()
