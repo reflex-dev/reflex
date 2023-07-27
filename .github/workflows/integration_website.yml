@@ -64,5 +64,4 @@ jobs:
       run: poetry run reflex init
     - name: Run Website and Check for errors
       run: |
-        chmod +x ./scripts/integration.sh
         ./scripts/integration.sh ./pcweb prod

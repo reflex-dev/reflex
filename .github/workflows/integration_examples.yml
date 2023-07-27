@@ -23,12 +23,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - run: (node -v && rm -rf "$(which node)" ||:)
-    - run: (npm -v && rm -rf "$(which npm)" ||:)
-    - run: (!(node -v >/dev/null 2>&1)) || echo "Seeing unexpected system node" && exit 1
-    - run: (!(npm -v >/dev/null 2>&1)) || echo "Seeing unexpected system npm" && exit 1
-    - run: (!(nvm ls >/dev/null 2>&1)) || echo "Seeing unexpected system nvm" && exit 1
-    - run: (!(bun -v >/dev/null 2>&1)) || echo "Seeing unexpected system bun" && exit 1
+    - run: scripts/hide_node_and_friends_from_system.sh
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -71,5 +66,4 @@ jobs:
       run: poetry run reflex init
     - name: Check for errors
       run: |
-        chmod +x ./scripts/integration.sh
         ./scripts/integration.sh ./pynecone-examples/counter dev
