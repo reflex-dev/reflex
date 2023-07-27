@@ -90,9 +90,7 @@ def run_frontend_prod(
 
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "prod"], loglevel
-    )
+    run_process_and_launch_url([constants.NPM_PATH, "run", "prod"], loglevel)
 
 
 def run_backend(
@@ -122,12 +120,7 @@ def run_backend(
         "--reload-dir",
         app_name.split(".")[0],
     ]
-    process = subprocess.Popen(cmd)
-
-    try:
-        process.wait()
-    except KeyboardInterrupt:
-        process.terminate()
+    subprocess.run(cmd)
 
 
 def run_backend_prod(

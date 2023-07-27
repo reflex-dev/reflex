@@ -24,25 +24,30 @@ from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
 
+IS_WINDOWS = platform.system() == "Windows"
 
-def check_node_version(min_version=constants.MIN_NODE_VERSION):
+
+def check_node_version():
     """Check the version of Node.js.
 
-    Args:
-        min_version: The minimum version of Node.js required.
-
     Returns:
-        Whether the version of Node.js is high enough.
+        Whether the version of Node.js is valid.
     """
     try:
         # Run the node -v command and capture the output
         result = subprocess.run(
-            ["node", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            [constants.NODE_PATH, "-v"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         current_version = version.parse(result.stdout.decode())
         # Compare the version numbers
-        return current_version >= version.parse(min_version)
+        return (
+            current_version >= version.parse(constants.MIN_NODE_VERSION)
+            if IS_WINDOWS
+            else current_version == version.parse(constants.NODE_VERSION)
+        )
     except Exception:
         return False
 
@@ -56,7 +61,7 @@ def get_bun_version() -> Optional[version.Version]:
     try:
         # Run the bun -v command and capture the output
         result = subprocess.run(
-            [os.path.expandvars(get_config().bun_path), "-v"],
+            [constants.BUN_PATH, "-v"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
@@ -65,26 +70,50 @@ def get_bun_version() -> Optional[version.Version]:
         return None
 
 
-def get_package_manager() -> str:
-    """Get the package manager executable.
+def get_windows_package_manager() -> str:
+    """Get the package manager for windows.
 
     Returns:
-        The path to the package manager.
+        The path to the package manager for windows.
 
     Raises:
         FileNotFoundError: If bun or npm is not installed.
     """
-    config = get_config()
+    npm_path = path_ops.which("npm")
+    if npm_path is None:
+        raise FileNotFoundError("Reflex requires npm to be installed on Windows.")
+    return npm_path
+
+
+def get_install_package_manager() -> str:
+    """Get the package manager executable for installation.
+      currently on unix systems, bun is used for installation only.
+
+    Returns:
+        The path to the package manager.
+    """
+    get_config()
 
     # On Windows, we use npm instead of bun.
-    if platform.system() == "Windows" or config.disable_bun:
-        npm_path = path_ops.which("npm")
-        if npm_path is None:
-            raise FileNotFoundError("Reflex requires npm to be installed on Windows.")
-        return npm_path
+    if platform.system() == "Windows":
+        return get_windows_package_manager()
 
     # On other platforms, we use bun.
-    return os.path.expandvars(get_config().bun_path)
+    return constants.BUN_PATH
+
+
+def get_package_manager() -> str:
+    """Get the package manager executable for running app.
+      currently on unix systems, npm is used for running the app only.
+
+    Returns:
+        The path to the package manager.
+    """
+    get_config()
+
+    if platform.system() == "Windows":
+        return get_windows_package_manager()
+    return constants.NPM_PATH
 
 
 def get_app() -> ModuleType:
@@ -133,8 +162,20 @@ def get_default_app_name() -> str:
 
     Returns:
         The default app name.
+
+    Raises:
+        Exit: if the app directory name is reflex.
     """
-    return os.getcwd().split(os.path.sep)[-1].replace("-", "_")
+    app_name = os.getcwd().split(os.path.sep)[-1].replace("-", "_")
+
+    # Make sure the app is not named "reflex".
+    if app_name == constants.MODULE_NAME:
+        console.print(
+            f"[red]The app directory cannot be named [bold]{constants.MODULE_NAME}."
+        )
+        raise typer.Exit()
+
+    return app_name
 
 
 def create_config(app_name: str):
@@ -149,21 +190,6 @@ def create_config(app_name: str):
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
     with open(constants.CONFIG_FILE, "w") as f:
         f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
-
-
-def create_web_directory(root: Path) -> str:
-    """Creates a web directory in the given root directory
-    and returns the path to the directory.
-
-    Args:
-        root (Path): The root directory of the project.
-
-    Returns:
-        The path to the web directory.
-    """
-    web_dir = str(root / constants.WEB_DIR)
-    path_ops.cp(constants.WEB_TEMPLATE_DIR, web_dir, overwrite=False)
-    return web_dir
 
 
 def initialize_gitignore():
@@ -223,89 +249,65 @@ def initialize_web_directory():
         json.dump(reflex_json, f, ensure_ascii=False)
 
 
-def validate_and_install_bun(initialize=True):
-    """Check that bun version requirements are met. If they are not,
-    ask user whether to install required version.
+def initialize_bun():
+    """Check that bun requirements are met, and install if not."""
+    if IS_WINDOWS:
+        # Bun is not supported on Windows.
+        return
 
-    Args:
-        initialize: whether this function is called on `reflex init` or `reflex run`.
-
-    Raises:
-        Exit: If the bun version is not supported.
-
-    """
-    bun_version = get_bun_version()
-    if bun_version is not None and (
-        bun_version < version.parse(constants.MIN_BUN_VERSION)
-        or bun_version > version.parse(constants.MAX_BUN_VERSION)
-    ):
-        console.print(
-            f"""[red]Bun version {bun_version} is not supported by Reflex. Please change your to bun version to be between {constants.MIN_BUN_VERSION} and {constants.MAX_BUN_VERSION}."""
-        )
-        action = console.ask(
-            "Enter 'yes' to install the latest supported bun version or 'no' to exit.",
-            choices=["yes", "no"],
-            default="no",
-        )
-
-        if action == "yes":
-            remove_existing_bun_installation()
-            install_bun()
-            return
-        else:
-            raise typer.Exit()
-
-    if initialize:
+    # Check the bun version.
+    if get_bun_version() != version.parse(constants.BUN_VERSION):
+        remove_existing_bun_installation()
         install_bun()
 
 
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
-    package_manager = get_package_manager()
-    if os.path.exists(package_manager):
-        console.log("Removing bun...")
-        path_ops.rm(os.path.expandvars(constants.BUN_ROOT_PATH))
+    if os.path.exists(constants.BUN_PATH):
+        path_ops.rm(constants.BUN_ROOT_PATH)
 
 
-def validate_and_install_node():
+def initialize_node():
     """Validate nodejs have install or not."""
     if not check_node_version():
         install_node()
 
 
 def install_node():
-    """Install nvm and nodejs onto the user's system.
-
+    """Install nvm and nodejs for use by Reflex.
+       Independent of any existing system installations.
 
     Raises:
         FileNotFoundError: if unzip or curl packages are not found.
         Exit: if installation failed
     """
-    if platform.system() != "Windows":
-        # Only install if bun is not already installed.
-        console.log("Installing nvm...")
-
-        # Check if curl is installed
-        curl_path = path_ops.which("curl")
-        if curl_path is None:
-            raise FileNotFoundError("Reflex requires curl to be installed.")
-
-        result = subprocess.run(constants.INSTALL_NVM, shell=True)
-
-        if result.returncode != 0:
-            raise typer.Exit(code=result.returncode)
-
-        console.log("Installing node...")
-        result = subprocess.run(constants.INSTALL_NODE, shell=True)
-
-        if result.returncode != 0:
-            raise typer.Exit(code=result.returncode)
-
-    else:
+    if IS_WINDOWS:
         console.print(
-            f"[red]Node.js version {constants.MIN_NODE_VERSION} or higher is required to run Reflex."
+            f"[red]Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
         )
         raise typer.Exit()
+
+    # Only install if bun is not already installed.
+    console.log("Installing nvm...")
+
+    # Check if curl is installed
+    # TODO no need to shell out to curl
+    curl_path = path_ops.which("curl")
+    if curl_path is None:
+        raise FileNotFoundError("Reflex requires curl to be installed.")
+
+    # Create the nvm directory and install.
+    path_ops.mkdir(constants.NVM_ROOT_PATH)
+    result = subprocess.run(constants.INSTALL_NVM, shell=True)
+
+    if result.returncode != 0:
+        raise typer.Exit(code=result.returncode)
+
+    console.log("Installing node...")
+    result = subprocess.run(constants.INSTALL_NODE, shell=True)
+
+    if result.returncode != 0:
+        raise typer.Exit(code=result.returncode)
 
 
 def install_bun():
@@ -316,12 +318,12 @@ def install_bun():
         Exit: if installation failed
     """
     # Bun is not supported on Windows.
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         console.log("Skipping bun installation on Windows.")
         return
 
     # Only install if bun is not already installed.
-    if not os.path.exists(get_package_manager()):
+    if not os.path.exists(constants.BUN_PATH):
         console.log("Installing bun...")
 
         # Check if curl is installed
@@ -340,20 +342,15 @@ def install_bun():
             raise typer.Exit(code=result.returncode)
 
 
-def install_frontend_packages(web_dir: str):
-    """Installs the base and custom frontend packages
-    into the given web directory.
-
-    Args:
-        web_dir: The directory where the frontend code is located.
-    """
+def install_frontend_packages():
+    """Installs the base and custom frontend packages."""
     # Install the frontend packages.
     console.rule("[bold]Installing frontend packages")
 
     # Install the base packages.
     subprocess.run(
-        [get_package_manager(), "install"],
-        cwd=web_dir,
+        [get_install_package_manager(), "install"],
+        cwd=constants.WEB_DIR,
         stdout=subprocess.PIPE,
     )
 
@@ -361,8 +358,8 @@ def install_frontend_packages(web_dir: str):
     packages = get_config().frontend_packages
     if len(packages) > 0:
         subprocess.run(
-            [get_package_manager(), "add", *packages],
-            cwd=web_dir,
+            [get_install_package_manager(), "add", *packages],
+            cwd=constants.WEB_DIR,
             stdout=subprocess.PIPE,
         )
 
@@ -387,6 +384,19 @@ def is_latest_template() -> bool:
     with open(constants.REFLEX_JSON) as f:  # type: ignore
         app_version = json.load(f)["version"]
     return app_version == constants.VERSION
+
+
+def initialize_frontend_dependencies():
+    """Initialize all the frontend dependencies."""
+    # Create the reflex directory.
+    path_ops.mkdir(constants.REFLEX_DIR)
+
+    # Install the frontend dependencies.
+    initialize_bun()
+    initialize_node()
+
+    # Set up the web directory.
+    initialize_web_directory()
 
 
 def check_admin_settings():

@@ -165,12 +165,6 @@ class Config(Base):
     # The environment mode.
     env: constants.Env = constants.Env.DEV
 
-    # The path to the bun executable.
-    bun_path: str = constants.BUN_PATH
-
-    # Disable bun.
-    disable_bun: bool = False
-
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 

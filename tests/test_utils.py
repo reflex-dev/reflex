@@ -1,9 +1,11 @@
 import os
+import subprocess
 import typing
 from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
+import typer
 from packaging import version
 
 from reflex import Env, constants
@@ -18,7 +20,7 @@ def get_above_max_version():
         max bun version plus one.
 
     """
-    semantic_version_list = constants.MAX_BUN_VERSION.split(".")
+    semantic_version_list = constants.BUN_VERSION.split(".")
     semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
     return ".".join(semantic_version_list)
 
@@ -261,7 +263,7 @@ def test_format_route(route: str, expected: bool):
         (VMAXPLUS1, False, "yes"),
     ],
 )
-def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
+def test_initialize_bun(mocker, bun_version, is_valid, prompt_input):
     """Test that the bun version on host system is validated properly. Also test that
     the required bun version is installed should the user opt for it.
 
@@ -279,48 +281,23 @@ def test_bun_validate_and_install(mocker, bun_version, is_valid, prompt_input):
         "reflex.utils.prerequisites.remove_existing_bun_installation"
     )
 
-    prerequisites.validate_and_install_bun()
+    prerequisites.initialize_bun()
     if not is_valid:
         remove_existing_bun_installation.assert_called_once()
     bun_install.assert_called_once()
 
 
-def test_bun_validation_exception(mocker):
-    """Test that an exception is thrown and program exists when user selects no when asked
-    whether to install bun or not.
-
-    Args:
-        mocker: Pytest mocker.
-    """
-    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=V056)
-    mocker.patch("reflex.utils.prerequisites.console.ask", return_value="no")
-
-    with pytest.raises(RuntimeError):
-        prerequisites.validate_and_install_bun()
-
-
-def test_remove_existing_bun_installation(mocker, tmp_path):
+def test_remove_existing_bun_installation(mocker):
     """Test that existing bun installation is removed.
 
     Args:
         mocker: Pytest mocker.
-        tmp_path: test path.
     """
-    bun_location = tmp_path / ".bun"
-    bun_location.mkdir()
-
-    mocker.patch(
-        "reflex.utils.prerequisites.get_package_manager",
-        return_value=str(bun_location),
-    )
-    mocker.patch(
-        "reflex.utils.prerequisites.os.path.expandvars",
-        return_value=str(bun_location),
-    )
+    mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
+    rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
 
     prerequisites.remove_existing_bun_installation()
-
-    assert not bun_location.exists()
+    rm.assert_called_once()
 
 
 def test_setup_frontend(tmp_path, mocker):
@@ -331,19 +308,15 @@ def test_setup_frontend(tmp_path, mocker):
         tmp_path: root path of test case data directory
         mocker: mocker object to allow mocking
     """
-    web_folder = tmp_path / ".web"
-    web_public_folder = web_folder / "public"
+    web_public_folder = tmp_path / ".web" / "public"
     assets = tmp_path / "assets"
     assets.mkdir()
     (assets / "favicon.ico").touch()
-
-    assert str(web_folder) == prerequisites.create_web_directory(tmp_path)
 
     mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
     mocker.patch("reflex.utils.build.set_environment_variables")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
-    assert web_folder.exists()
     assert web_public_folder.exists()
     assert (web_public_folder / "favicon.ico").exists()
 
@@ -518,3 +491,60 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     assert gitignore_file.exists()
     file_content = [line.strip() for line in gitignore_file.open().readlines()]
     assert set(file_content) - expected == set()
+
+
+def test_app_default_name(tmp_path, mocker):
+    """Test that an error is raised if the app name is reflex.
+
+    Args:
+        tmp_path: Test working dir.
+        mocker: Pytest mocker object.
+    """
+    reflex = tmp_path / "reflex"
+    reflex.mkdir()
+
+    mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
+
+    with pytest.raises(typer.Exit):
+        prerequisites.get_default_app_name()
+
+
+def test_node_install_windows(mocker):
+    """Require user to install node manually for windows if node is not installed.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", True)
+    mocker.patch("reflex.utils.prerequisites.check_node_version", return_value=False)
+
+    with pytest.raises(typer.Exit):
+        prerequisites.initialize_node()
+
+
+def test_node_install_unix(tmp_path, mocker):
+    nvm_root_path = tmp_path / ".reflex" / ".nvm"
+
+    mocker.patch("reflex.utils.prerequisites.constants.NVM_ROOT_PATH", nvm_root_path)
+    subprocess_run = mocker.patch(
+        "reflex.utils.prerequisites.subprocess.run",
+        return_value=subprocess.CompletedProcess(args="", returncode=0),
+    )
+
+    prerequisites.install_node()
+
+    assert nvm_root_path.exists()
+    subprocess_run.assert_called()
+    subprocess_run.call_count = 2
+
+
+def test_node_install_without_curl(mocker):
+    """Test that an error is thrown when installing node with curl not installed.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mocker.patch("reflex.utils.prerequisites.path_ops.which", return_value=None)
+
+    with pytest.raises(FileNotFoundError):
+        prerequisites.install_node()

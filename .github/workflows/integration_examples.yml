@@ -1,16 +1,14 @@
-name: integration-test
+name: integration-test-examples
 
 on:
-  pull_request_review:
-    types: [submitted]
-
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   build:
-    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
 
     # Specify python/node versions to test against
@@ -65,6 +63,10 @@ jobs:
     - name: Init Website
       working-directory: ./pynecone-examples/counter
       run: poetry run reflex init
+    - name: Validate Reflex's own installation of Node
+      run: |
+        /home/runner/.reflex/.nvm/versions/node/v*/bin/npm -v
+        /home/runner/.reflex/.nvm/versions/node/v*/bin/node -v
     - name: Check for errors
       run: |
         chmod +x ./scripts/integration.sh

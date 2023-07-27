@@ -32,20 +32,12 @@ def init(
     ),
 ):
     """Initialize a new Reflex app in the current directory."""
+    # Get the app name.
     app_name = prerequisites.get_default_app_name() if name is None else name
-
-    # Make sure they don't name the app "reflex".
-    if app_name == constants.MODULE_NAME:
-        console.print(
-            f"[red]The app directory cannot be named [bold]{constants.MODULE_NAME}."
-        )
-        raise typer.Exit()
-
     console.rule(f"[bold]Initializing {app_name}")
-    # Set up the web directory.
-    prerequisites.validate_and_install_bun()
-    prerequisites.validate_and_install_node()
-    prerequisites.initialize_web_directory()
+
+    # Set up the web project.
+    prerequisites.initialize_frontend_dependencies()
 
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
@@ -57,11 +49,11 @@ def init(
         build.set_reflex_project_hash()
         telemetry.send("init", get_config().telemetry_enabled)
     else:
-        build.set_reflex_project_hash()
         telemetry.send("reinit", get_config().telemetry_enabled)
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
+
     # Finish initializing the app.
     console.log(f"[bold green]Finished Initializing: {app_name}")
 
@@ -85,7 +77,7 @@ def run(
     """Run the app in the current directory."""
     if platform.system() == "Windows":
         console.print(
-            "[yellow][WARNING] We strongly advise you to use Windows Subsystem for Linux (WSL) for optimal performance when using Reflex. Due to compatibility issues with one of our dependencies, Bun, you may experience slower performance on Windows. By using WSL, you can expect to see a significant speed increase."
+            "[yellow][WARNING] We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
         )
     # Set ports as os env variables to take precedence over config and
     # .env variables(if override_os_envs flag in config is set to False).

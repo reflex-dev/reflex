@@ -1,6 +1,7 @@
 """Constants used throughout the package."""
 
 import os
+import platform
 import re
 from enum import Enum
 from types import SimpleNamespace
@@ -43,12 +44,41 @@ def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
 MODULE_NAME = "reflex"
 # The current version of Reflex.
 VERSION = metadata.version(MODULE_NAME)
-# Minimum version of Node.js required to run Reflex.
-MIN_NODE_VERSION = "16.8.0"
 
-# Valid bun versions.
-MIN_BUN_VERSION = "0.5.9"
-MAX_BUN_VERSION = "0.6.9"
+# Project dependencies.
+# The directory to store reflex dependencies.
+REFLEX_DIR = os.path.expandvars("$HOME/.reflex")
+
+# Bun config.
+# The Bun version.
+BUN_VERSION = "0.7.0"
+# The directory to store the bun.
+BUN_ROOT_PATH = f"{REFLEX_DIR}/.bun"
+# The bun path.
+BUN_PATH = f"{BUN_ROOT_PATH}/bin/bun"
+# Command to install bun.
+INSTALL_BUN = f"curl -fsSL https://bun.sh/install | env BUN_INSTALL={BUN_ROOT_PATH} bash -s -- bun-v{BUN_VERSION}"
+
+# NVM / Node config.
+# The Node version.
+NODE_VERSION = "18.17.0"
+# The minimum required node version.
+MIN_NODE_VERSION = "16.8.0"
+# The directory to store nvm.
+NVM_ROOT_PATH = f"{REFLEX_DIR}/.nvm"
+# The nvm path.
+NVM_PATH = f"{NVM_ROOT_PATH}/nvm.sh"
+# The node bin path.
+NODE_BIN_PATH = f"{NVM_ROOT_PATH}/versions/node/v{NODE_VERSION}/bin"
+# The default path where node is installed.
+NODE_PATH = "node" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/node"
+# The default path where npm is installed.
+NPM_PATH = "npm" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/npm"
+# Command to install nvm.
+INSTALL_NVM = f"curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | env NVM_DIR={NVM_ROOT_PATH} bash"
+# Command to install node.
+INSTALL_NODE = f'bash -c "export NVM_DIR={NVM_ROOT_PATH} && . {NVM_ROOT_PATH}/nvm.sh && nvm install {NODE_VERSION}"'
+
 
 # Files and directories used to init a new project.
 # The root directory of the reflex library.
@@ -110,24 +140,6 @@ BACKEND_PORT = get_value("BACKEND_PORT", "8000")
 API_URL = get_value("API_URL", "http://localhost:8000")
 # The deploy url
 DEPLOY_URL = get_value("DEPLOY_URL")
-# bun root location
-BUN_ROOT_PATH = "$HOME/.bun"
-# The default path where bun is installed.
-BUN_PATH = get_value("BUN_PATH", f"{BUN_ROOT_PATH}/bin/bun")
-# Command to install bun.
-INSTALL_BUN = f"curl -fsSL https://bun.sh/install | bash -s -- bun-v{MAX_BUN_VERSION}"
-# Command to install nvm.
-INSTALL_NVM = (
-    "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash"
-)
-# nvm root location.
-NVM_ROOT_PATH = f"$HOME/.nvm"
-# The default path where node is installed.
-NODE_PATH = get_value(
-    "NODE_PATH", f"{NVM_ROOT_PATH}/versions/node/v{MIN_NODE_VERSION}/bin/node"
-)
-# Command to install node.
-INSTALL_NODE = f". {NVM_ROOT_PATH}/nvm.sh && nvm install {MIN_NODE_VERSION}"
 # Default host in dev mode.
 BACKEND_HOST = get_value("BACKEND_HOST", "0.0.0.0")
 # The default timeout when launching the gunicorn server.

@@ -179,7 +179,7 @@ class AppHarness:
         frontend_env = os.environ.copy()
         frontend_env["PORT"] = "0"
         self.frontend_process = subprocess.Popen(
-            [reflex.utils.prerequisites.get_package_manager(), "run", "dev"],
+            [reflex.utils.prerequisites.get_install_package_manager(), "run", "dev"],
             stdout=subprocess.PIPE,
             encoding="utf-8",
             cwd=self.app_path / reflex.constants.WEB_DIR,
