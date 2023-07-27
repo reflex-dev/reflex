@@ -510,15 +510,16 @@ def test_app_default_name(tmp_path, mocker):
 
 
 def test_node_install_windows(mocker):
-    """Require user to install node manually for windows(Windows not supported yet).
+    """Require user to install node manually for windows if node is not installed.
 
     Args:
         mocker: Pytest mocker object.
     """
-    mocker.patch("reflex.utils.prerequisites.platform.system", return_value="Windows")
+    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", True)
+    mocker.patch("reflex.utils.prerequisites.check_node_version", return_value=False)
 
     with pytest.raises(typer.Exit):
-        prerequisites.install_node()
+        prerequisites.initialize_node()
 
 
 def test_node_install_unix(tmp_path, mocker):

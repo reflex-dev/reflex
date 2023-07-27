@@ -251,7 +251,7 @@ def initialize_node():
 
 def install_node():
     """Install nvm and nodejs for use by Reflex.
-       Independent from any existing system installations.
+       Independent of any existing system installations.
 
     Raises:
         FileNotFoundError: if unzip or curl packages are not found.
