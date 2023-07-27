@@ -36,7 +36,7 @@ def check_node_version():
     try:
         # Run the node -v command and capture the output
         result = subprocess.run(
-            ["node" if IS_WINDOWS else constants.NODE_PATH, "-v"],
+            [constants.NODE_PATH, "-v"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
