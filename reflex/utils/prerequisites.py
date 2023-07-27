@@ -132,6 +132,9 @@ def get_default_app_name() -> str:
 
     Returns:
         The default app name.
+
+    Raises:
+        Exit: if the app directory name is reflex.
     """
     app_name = os.getcwd().split(os.path.sep)[-1].replace("-", "_")
 
@@ -217,12 +220,7 @@ def initialize_web_directory():
 
 
 def initialize_bun():
-    """Check that bun requirements are met, and install if not.
-
-    Raises:
-        Exit: If the bun version is not supported.
-
-    """
+    """Check that bun requirements are met, and install if not."""
     if platform.system == "Windows":
         # Bun is not supported on Windows.
         return

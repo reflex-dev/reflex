@@ -75,7 +75,7 @@ NPM_PATH = "npm" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/npm"
 # Command to install nvm.
 INSTALL_NVM = f"curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | env NVM_DIR={NVM_ROOT_PATH} bash"
 # Command to install node.
-INSTALL_NODE = f"bash -c \". {NVM_ROOT_PATH}/nvm.sh && nvm install {NODE_VERSION}\""
+INSTALL_NODE = f'bash -c ". {NVM_ROOT_PATH}/nvm.sh && nvm install {NODE_VERSION}"'
 
 
 # Files and directories used to init a new project.
