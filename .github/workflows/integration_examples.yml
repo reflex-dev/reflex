@@ -23,7 +23,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - run: node -v && echo "Node available - but we don't want it!" && exit 1
+    - run: node -v && rm -rf $(which node)
+    - run: bun -v && rm -rf $(which bun)
+    - run: nvm ls && rm -rf $(which nvm)
+    - run: npm -v && rm -rf $(which node)
+    - run: (node -v || bun -v || nvm ls || npm -v) && echo "Something didn't get purged right"
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
