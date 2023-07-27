@@ -13,18 +13,13 @@ jobs:
     if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
 
-    # Specify python/node versions to test against
+    # Specify Python versions to test against
     strategy:
       matrix:
         python-version: ["3.10", "3.11"]
-        node-version: ["16.x"]
 
     steps:
     - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-          node-version: ${{ matrix.node-version }}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
