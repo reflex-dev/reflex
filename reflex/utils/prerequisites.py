@@ -24,6 +24,8 @@ from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
 
+IS_WINDOWS = platform.system() == "Windows"
+
 
 def check_node_version():
     """Check the version of Node.js.
@@ -34,14 +36,18 @@ def check_node_version():
     try:
         # Run the node -v command and capture the output
         result = subprocess.run(
-            [constants.NODE_PATH, "-v"],
+            ["node" if IS_WINDOWS else constants.NODE_PATH, "-v"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         current_version = version.parse(result.stdout.decode())
         # Compare the version numbers
-        return current_version == version.parse(constants.NODE_VERSION)
+        return (
+            current_version >= version.parse(constants.MIN_NODE_VERSION)
+            if IS_WINDOWS
+            else current_version == version.parse(constants.NODE_VERSION)
+        )
     except Exception:
         return False
 
@@ -221,7 +227,7 @@ def initialize_web_directory():
 
 def initialize_bun():
     """Check that bun requirements are met, and install if not."""
-    if platform.system == "Windows":
+    if IS_WINDOWS:
         # Bun is not supported on Windows.
         return
 
@@ -251,7 +257,7 @@ def install_node():
         FileNotFoundError: if unzip or curl packages are not found.
         Exit: if installation failed
     """
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         console.print(
             f"[red]Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
         )
@@ -288,7 +294,7 @@ def install_bun():
         Exit: if installation failed
     """
     # Bun is not supported on Windows.
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         console.log("Skipping bun installation on Windows.")
         return
 

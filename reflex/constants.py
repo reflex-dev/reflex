@@ -62,6 +62,8 @@ INSTALL_BUN = f"curl -fsSL https://bun.sh/install | env BUN_INSTALL={BUN_ROOT_PA
 # NVM / Node config.
 # The Node version.
 NODE_VERSION = "18.17.0"
+# The minimum required node version.
+MIN_NODE_VERSION = "16.8.0"
 # The directory to store nvm.
 NVM_ROOT_PATH = f"{REFLEX_DIR}/.nvm"
 # The nvm path.
