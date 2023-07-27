@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Union
 
 from reflex import constants
 from reflex.event import EventHandler
-
-DECORATED_ROUTES = []
+from reflex.page import page
+from reflex.utils.console import deprecate
 
 
 def route(
@@ -37,25 +37,15 @@ def route(
     Returns:
         The decorated function.
     """
+    deprecate("@rx.route is deprecated and is being replaced by @rx.page instead")
 
-    def decorator(render_fn):
-        kwargs = {}
-        if route:
-            kwargs["route"] = route
-        if title:
-            kwargs["title"] = title
-        if image:
-            kwargs["image"] = image
-        if description:
-            kwargs["description"] = description
-        if on_load:
-            kwargs["on_load"] = on_load
-
-        DECORATED_ROUTES.append((render_fn, kwargs))
-
-        return render_fn
-
-    return decorator
+    return page(
+        route=route,
+        title=title,
+        image=image,
+        description=description,
+        on_load=on_load,
+    )
 
 
 def verify_route_validity(route: str) -> None:

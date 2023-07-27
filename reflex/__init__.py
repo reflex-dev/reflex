@@ -36,6 +36,7 @@ from .event import window_alert as window_alert
 from .middleware import Middleware as Middleware
 from .model import Model as Model
 from .model import session as session
+from .page import page as page
 from .route import route as route
 from .state import ComputedVar as var
 from .state import State as State

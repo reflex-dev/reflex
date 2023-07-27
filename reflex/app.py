@@ -35,8 +35,10 @@ from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
 from reflex.model import Model
+from reflex.page import (
+    DECORATED_PAGES,
+)
 from reflex.route import (
-    DECORATED_ROUTES,
     catchall_in_route,
     catchall_prefix,
     get_route_args,
@@ -468,7 +470,7 @@ class App(Base):
         task = progress.add_task("Compiling: ", total=len(self.pages))
 
         # TODO: include all work done in progress indicator, not just self.pages
-        for render, kwargs in DECORATED_ROUTES:
+        for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
 
         # Get the env mode.
