@@ -136,7 +136,7 @@ def export_app(
     # Start the subprocess with the progress bar.
     try:
         with progress, new_process(
-            [constants.NPM_PATH, "run", command],
+            [prerequisites.get_package_manager(), "run", command],
             cwd=constants.WEB_DIR,
         ) as export_process:
             assert export_process.stdout is not None, "No stdout for export process."
@@ -229,7 +229,7 @@ def setup_frontend(
     if disable_telemetry:
         new_process(
             [
-                "npm",
+                prerequisites.get_package_manager(),
                 "run",
                 "next",
                 "telemetry",

@@ -70,26 +70,50 @@ def get_bun_version() -> Optional[version.Version]:
         return None
 
 
-def get_package_manager() -> str:
-    """Get the package manager executable.
+def get_windows_package_manager() -> str:
+    """Get the package manager for windows.
 
     Returns:
-        The path to the package manager.
+        The path to the package manager for windows.
 
     Raises:
         FileNotFoundError: If bun or npm is not installed.
+    """
+    npm_path = path_ops.which("npm")
+    if npm_path is None:
+        raise FileNotFoundError("Reflex requires npm to be installed on Windows.")
+    return npm_path
+
+
+def get_install_package_manager() -> str:
+    """Get the package manager executable for installation.
+      currently on unix systems, bun is used for installation only.
+
+    Returns:
+        The path to the package manager.
     """
     get_config()
 
     # On Windows, we use npm instead of bun.
     if platform.system() == "Windows":
-        npm_path = path_ops.which("npm")
-        if npm_path is None:
-            raise FileNotFoundError("Reflex requires npm to be installed on Windows.")
-        return npm_path
+        return get_windows_package_manager()
 
     # On other platforms, we use bun.
     return constants.BUN_PATH
+
+
+def get_package_manager() -> str:
+    """Get the package manager executable for running app.
+      currently on unix systems, npm is used for running the app only.
+
+    Returns:
+        The path to the package manager.
+    """
+    get_config()
+
+    if platform.system() == "Windows":
+        return get_windows_package_manager()
+    return constants.NPM_PATH
 
 
 def get_app() -> ModuleType:
@@ -325,7 +349,7 @@ def install_frontend_packages():
 
     # Install the base packages.
     subprocess.run(
-        [get_package_manager(), "install"],
+        [get_install_package_manager(), "install"],
         cwd=constants.WEB_DIR,
         stdout=subprocess.PIPE,
     )
@@ -334,7 +358,7 @@ def install_frontend_packages():
     packages = get_config().frontend_packages
     if len(packages) > 0:
         subprocess.run(
-            [get_package_manager(), "add", *packages],
+            [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
             stdout=subprocess.PIPE,
         )
