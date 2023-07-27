@@ -23,7 +23,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - run: node -v && "Node available - but we don't want it!" && exit 1
+    - run: node -v && echo "Node available - but we don't want it!" && exit 1
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
