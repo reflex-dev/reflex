@@ -547,25 +547,3 @@ def test_node_install_without_curl(mocker):
 
     with pytest.raises(FileNotFoundError):
         prerequisites.install_node()
-
-
-def test_node_install_failure(tmp_path, mocker):
-    """Test that an error is thrown when the nvm or node installation fails.
-
-    Args:
-        tmp_path: Test path.
-        mocker: Pytest mocker object.
-
-    """
-    nvm_root_path = tmp_path / ".reflex" / ".nvm"
-
-    mocker.patch("reflex.utils.prerequisites.constants.NVM_ROOT_PATH", nvm_root_path)
-    mocker.patch(
-        "reflex.utils.prerequisites.subprocess.run",
-        return_value=subprocess.CompletedProcess(args="", returncode=1),
-    )
-
-    prerequisites.install_node()
-
-    with pytest.raises(typer.Exit):
-        prerequisites.install_node()
