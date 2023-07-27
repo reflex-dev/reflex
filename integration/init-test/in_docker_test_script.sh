@@ -12,4 +12,3 @@ cd /reflex-repo
 poetry install
 echo "Running reflex init in test project dir"
 poetry run /bin/bash -c "cd ~/hello && reflex init"
-sleep 3600
