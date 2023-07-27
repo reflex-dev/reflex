@@ -25,7 +25,10 @@ jobs:
 
     - run: (node -v && rm -rf "$(which node)" ||:)
     - run: (npm -v && rm -rf "$(which npm)" ||:)
-    - run: (node -v || bun -v || nvm ls || npm -v) && echo "An unexpected program still exists!" && exit 1
+    - run: !(node -v >/dev/null 2>&1) || echo "Seeing unexpected system node" && exit 1
+    - run: !(npm -v >/dev/null 2>&1) || echo "Seeing unexpected system npm" && exit 1
+    - run: !(nvm ls >/dev/null 2>&1) || echo "Seeing unexpected system nvm" && exit 1
+    - run: !(bun -v >/dev/null 2>&1) || echo "Seeing unexpected system bun" && exit 1
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
