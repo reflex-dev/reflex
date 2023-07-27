@@ -524,8 +524,6 @@ def test_node_install_windows(mocker):
 def test_node_install_unix(tmp_path, mocker):
     nvm_root_path = tmp_path / ".reflex" / ".nvm"
 
-    # result = mocker.Mock()
-    # mocker.patch.object(result, "returncode", 0)
     mocker.patch("reflex.utils.prerequisites.constants.NVM_ROOT_PATH", nvm_root_path)
     subprocess_run = mocker.patch(
         "reflex.utils.prerequisites.subprocess.run",
