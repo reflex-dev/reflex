@@ -244,8 +244,8 @@ def initialize_node():
 
 
 def install_node():
-    """Install nvm and nodejs onto the user's system.
-
+    """Install nvm and nodejs for use by Reflex.
+       Independent from any existing system installations.
 
     Raises:
         FileNotFoundError: if unzip or curl packages are not found.
@@ -261,6 +261,7 @@ def install_node():
     console.log("Installing nvm...")
 
     # Check if curl is installed
+    # TODO no need to shell out to curl
     curl_path = path_ops.which("curl")
     if curl_path is None:
         raise FileNotFoundError("Reflex requires curl to be installed.")
