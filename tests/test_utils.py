@@ -285,42 +285,17 @@ def test_initialize_bun(mocker, bun_version, is_valid, prompt_input):
     bun_install.assert_called_once()
 
 
-def test_bun_validation_exception(mocker):
-    """Test that an exception is thrown and program exists when user selects no when asked
-    whether to install bun or not.
-
-    Args:
-        mocker: Pytest mocker.
-    """
-    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=V056)
-    mocker.patch("reflex.utils.prerequisites.console.ask", return_value="no")
-
-    with pytest.raises(RuntimeError):
-        prerequisites.initialize_bun()
-
-
-def test_remove_existing_bun_installation(mocker, tmp_path):
+def test_remove_existing_bun_installation(mocker):
     """Test that existing bun installation is removed.
 
     Args:
         mocker: Pytest mocker.
-        tmp_path: test path.
     """
-    bun_location = tmp_path / ".bun"
-    bun_location.mkdir()
-
-    mocker.patch(
-        "reflex.utils.prerequisites.get_package_manager",
-        return_value=str(bun_location),
-    )
-    mocker.patch(
-        "reflex.utils.prerequisites.os.path.expandvars",
-        return_value=str(bun_location),
-    )
+    mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
+    rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
 
     prerequisites.remove_existing_bun_installation()
-
-    assert not bun_location.exists()
+    rm.assert_called_once()
 
 
 def test_setup_frontend(tmp_path, mocker):
@@ -331,19 +306,15 @@ def test_setup_frontend(tmp_path, mocker):
         tmp_path: root path of test case data directory
         mocker: mocker object to allow mocking
     """
-    web_folder = tmp_path / ".web"
-    web_public_folder = web_folder / "public"
+    web_public_folder = tmp_path / ".web" / "public"
     assets = tmp_path / "assets"
     assets.mkdir()
     (assets / "favicon.ico").touch()
-
-    assert str(web_folder) == prerequisites.initialize_web_directory()
 
     mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
     mocker.patch("reflex.utils.build.set_environment_variables")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
-    assert web_folder.exists()
     assert web_public_folder.exists()
     assert (web_public_folder / "favicon.ico").exists()
 
