@@ -1,5 +1,5 @@
 import functools
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import pytest
 from plotly.graph_objects import Figure
@@ -1148,7 +1148,6 @@ def test_setattr_of_mutable_types(mutable_state):
     Args:
         mutable_state: A test state.
     """
-
     array = mutable_state.array
     hashmap = mutable_state.hashmap
 
