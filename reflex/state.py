@@ -595,6 +595,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             self.mark_dirty()
             return
 
+        # Make sure lists and dicts are converted to ReflexList and ReflexDict.
+        if name in self.vars and types._isinstance(value, Union[List, Dict]):
+            value = _convert_mutable_datatypes(value, self._reassign_field, name)
+
         # Set the attribute.
         super().__setattr__(name, value)
 
@@ -990,21 +994,22 @@ def _convert_mutable_datatypes(
         The converted field_value
     """
     if isinstance(field_value, list):
-        for index in range(len(field_value)):
-            field_value[index] = _convert_mutable_datatypes(
-                field_value[index], reassign_field, field_name
-            )
+        field_value = [
+            _convert_mutable_datatypes(value, reassign_field, field_name)
+            for value in field_value
+        ]
 
         field_value = ReflexList(
             field_value, reassign_field=reassign_field, field_name=field_name
         )
 
     if isinstance(field_value, dict):
-        for key, value in field_value.items():
-            field_value[key] = _convert_mutable_datatypes(
-                value, reassign_field, field_name
-            )
+        field_value = {
+            key: _convert_mutable_datatypes(value, reassign_field, field_name)
+            for key, value in field_value.items()
+        }
         field_value = ReflexDict(
             field_value, reassign_field=reassign_field, field_name=field_name
         )
+
     return field_value

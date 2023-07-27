@@ -3,7 +3,7 @@ import contextlib
 import os
 import platform
 from pathlib import Path
-from typing import Dict, Generator, List
+from typing import Dict, Generator, List, Union
 
 import pytest
 
@@ -538,3 +538,36 @@ def tmp_working_dir(tmp_path):
     working_dir.mkdir()
     with chdir(working_dir):
         yield working_dir
+
+
+@pytest.fixture
+def mutable_state():
+    """Create a Test state containing mutable types.
+
+    Returns:
+        A state object.
+    """
+
+    class MutableTestState(rx.State):
+        """A test state."""
+
+        array: List[Union[str, List, Dict[str, str]]] = [
+            "value",
+            [1, 2, 3],
+            {"key": "value"},
+        ]
+        hashmap: Dict[str, Union[List, str, Dict[str, str]]] = {
+            "key": ["list", "of", "values"],
+            "another_key": "another_value",
+            "third_key": {"key": "value"},
+        }
+
+        def reassign_mutables(self):
+            self.array = ["modified_value", [1, 2, 3], {"mod_key": "mod_value"}]
+            self.hashmap = {
+                "mod_key": ["list", "of", "values"],
+                "mod_another_key": "another_value",
+                "mod_third_key": {"key": "value"},
+            }
+
+    return MutableTestState()
