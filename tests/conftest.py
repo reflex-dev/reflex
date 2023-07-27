@@ -542,12 +542,16 @@ def tmp_working_dir(tmp_path):
 
 @pytest.fixture
 def mutable_state():
-    """Create a Test state containing mutable types"""
+    """Create a Test state containing mutable types.
+
+    Returns:
+        A state object.
+    """
 
     class MutableTestState(rx.State):
         """A test state."""
 
-        array: List[Union[List, Dict[str, str]]] = [
+        array: List[Union[str, List, Dict[str, str]]] = [
             "value",
             [1, 2, 3],
             {"key": "value"},
