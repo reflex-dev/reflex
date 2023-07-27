@@ -1,16 +1,14 @@
-name: integration-test
+name: integration-test-website
 
 on:
-  pull_request_review:
-    types: [submitted]
-
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: read
 
 jobs:
   build:
-    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
 
     # Specify python/node versions to test against
