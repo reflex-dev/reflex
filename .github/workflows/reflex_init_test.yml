@@ -1,0 +1,20 @@
+name: reflex-init-test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  reflex-install-and-init:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - shell: bash
+      run: |
+        # Run reflex init in a docker container
+ 
+        # cwd is repo root
+        docker build -f integration/init-test/Dockerfile -t reflex-init-test integration/init-test
+        docker run --rm -v $(pwd):/reflex-repo/ reflex-init-test /reflex-repo/integration/init-test/in_docker_test_script.sh
