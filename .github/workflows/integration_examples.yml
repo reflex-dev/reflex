@@ -55,6 +55,8 @@ jobs:
         path: .venv
         key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
+    - name: install nvm
+      run:  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
     - name: Poetry Install
       run: poetry install --no-interaction
     - name: Install Requirements
