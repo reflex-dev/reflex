@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     # Specify python/node versions to test against
     strategy:
@@ -59,7 +59,7 @@ jobs:
       run:  |
         ls -a $HOME
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
-        cat ~/.bashrc
+        cat ~/.zshrc
         . $NVM_DIR/nvm.sh
         nvm install v16.2.0
         echo "========================================="
@@ -72,7 +72,7 @@ jobs:
       working-directory: ./pynecone-examples/counter
       run: |
         poetry run reflex init
-        cat ~/.bashrc
+        cat ~/.zshrc
         echo "========================================="
     - name: Validate Reflex's own installation of Node
       run: |
