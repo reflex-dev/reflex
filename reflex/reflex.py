@@ -19,7 +19,14 @@ cli = typer.Typer()
 
 
 def version(value: bool):
-    """Get the Reflex version."""
+    """Get the Reflex version.
+
+    Args:
+        value: Whether the version flag was passed.
+
+    Raises:
+        typer.Exit: If the version flag was passed.
+    """
     if value:
         console.print(constants.VERSION)
         raise typer.Exit()
