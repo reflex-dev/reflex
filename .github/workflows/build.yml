@@ -19,34 +19,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - uses: ./.github/actions/setup_build_env
       with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: cache poetry install
-      uses: actions/cache@v2
-      with:
-        path: ~/.local
-        key: python-${{ matrix.python-version }}-poetry-1.3.1
-
-    - uses: snok/install-poetry@v1
-      with:
-        version: 1.3.1
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-
-    - name: cache deps
-      id: cache-deps
-      uses: actions/cache@v2
-      with:
-        path: .venv
-        key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
-
-    - run: poetry install --no-interaction --no-root
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-    - run: poetry install --no-interaction
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          shell: bash
+          create-venv-at-path: .venv
     - run: poetry run pytest tests --cov --no-cov-on-fail --cov-report=
     - run: poetry run pyright reflex tests
     - run: poetry run ruff check . --format github
