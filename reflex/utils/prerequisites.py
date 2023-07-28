@@ -295,7 +295,7 @@ def download_and_run(url: str, *args, **env):
     with open(script.name, "w") as f:
         f.write(response.text)
 
-    # Run the nvm install script.
+    # Run the script.
     env = {
         **os.environ,
         **env,
@@ -359,7 +359,7 @@ def install_bun():
     if unzip_path is None:
         raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-    # Get the bun install script.
+    # Run the bun install script.
     download_and_run(
         constants.BUN_INSTALL_URL,
         f"bun-v{constants.BUN_VERSION}",
