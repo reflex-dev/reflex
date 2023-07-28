@@ -314,7 +314,14 @@ def install_node():
 
     # Install node.
     print("installing node")
-    result = subprocess.run(["bash", "-c", f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}"], env=env)
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
+        ],
+        env=env,
+    )
     if result.returncode != 0:
         raise typer.Exit(code=result.returncode)
 

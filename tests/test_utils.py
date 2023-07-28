@@ -527,7 +527,7 @@ def test_node_install_windows(mocker):
 def test_node_install_unix(tmp_path, mocker):
     nvm_root_path = tmp_path / ".reflex" / ".nvm"
 
-    mocker.patch("reflex.utils.prerequisites.constants.NVM_ROOT_PATH", nvm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.NVM_DIR", nvm_root_path)
     subprocess_run = mocker.patch(
         "reflex.utils.prerequisites.subprocess.run",
         return_value=subprocess.CompletedProcess(args="", returncode=0),
@@ -541,14 +541,15 @@ def test_node_install_unix(tmp_path, mocker):
     subprocess_run.call_count = 2
 
 
-def test_node_install_without_curl(mocker):
-    """Test that an error is thrown when installing node with curl not installed.
+def test_bun_install_without_unzip(mocker):
+    """Test that an error is thrown when installing bun with unzip not installed.
 
     Args:
         mocker: Pytest mocker object.
     """
-    mocker.patch("reflex.utils.prerequisites.path_ops.which", return_value=None)
+    mocker.patch("reflex.utils.path_ops.which", return_value=None)
+    mocker.patch("os.path.exists", return_value=False)
     mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
 
     with pytest.raises(FileNotFoundError):
-        prerequisites.install_node()
+        prerequisites.install_bun()

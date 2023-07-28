@@ -85,11 +85,17 @@ NVM_PATH = os.path.join(NVM_DIR, "nvm.sh")
 # The node bin path.
 NODE_BIN_PATH = os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
 # The default path where node is installed.
-NODE_PATH = "node" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "node")
+NODE_PATH = (
+    "node" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "node")
+)
 # The default path where npm is installed.
-NPM_PATH = "npm" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "npm")
+NPM_PATH = (
+    "npm" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "npm")
+)
 # The URL to the nvm install script.
-NVM_INSTALL_URL = f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
+NVM_INSTALL_URL = (
+    f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
+)
 
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.
