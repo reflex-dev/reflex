@@ -9,12 +9,14 @@ import platform
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
+import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -281,6 +283,7 @@ def install_node():
         FileNotFoundError: if unzip or curl packages are not found.
         Exit: if installation failed
     """
+    # NVM is not supported on Windows.
     if IS_WINDOWS:
         console.print(
             f"[red]Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
@@ -289,26 +292,29 @@ def install_node():
 
     # Create the nvm directory and install.
     path_ops.mkdir(constants.NVM_DIR)
-    import httpx
-    resp = httpx.get(constants.NVM_INSTALL_URL)
-    script = resp.text
+
+    # Get the nvm install script.
+    response = httpx.get(constants.NVM_INSTALL_URL)
+    if response.status_code != httpx.codes.OK:
+        response.raise_for_status()
+
+    # Save the nvm install script to a temporary file.
+    script = tempfile.NamedTemporaryFile()
+    with open(script.name, "w") as f:
+        f.write(response.text)
+
+    # Run the nvm install script.
     env = {
         **os.environ,
         "NVM_DIR": constants.NVM_DIR,
     }
-
-    import tempfile
-    with tempfile.NamedTemporaryFile(mode="w") as f:
-        f.write(script)
-        result = subprocess.run(["bash", f.name], env=env)
-        
-
+    result = subprocess.run(["bash", f.name], env=env)
     if result.returncode != 0:
         raise typer.Exit(code=result.returncode)
 
-    console.log("Installing node...")
-    result = subprocess.run(["bash", "-c", f"source {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}"], env=env)
-
+    # Install node.
+    print("installing node")
+    result = subprocess.run(["bash", "-c", f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}"], env=env)
     if result.returncode != 0:
         raise typer.Exit(code=result.returncode)
 
@@ -322,31 +328,35 @@ def install_bun():
     """
     # Bun is not supported on Windows.
     if IS_WINDOWS:
-        console.log("Skipping bun installation on Windows.")
         return
 
-    # Only install if bun is not already installed.
-    if not os.path.exists(constants.BUN_PATH):
-        console.log("Installing bun...")
-        # Check if unzip is installed
-        unzip_path = path_ops.which("unzip")
-        if unzip_path is None:
-            raise FileNotFoundError("Reflex requires unzip to be installed.")
-        import httpx
-        resp = httpx.get(constants.BUN_INSTALL_URL)
-        script = resp.text
-        env = {
-            **os.environ,
-            "BUN_INSTALL": constants.BUN_ROOT_PATH,
-        }
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode="w") as f:
-            f.write(script)
-            result = subprocess.run(["bash", f.name, f"bun-v-{constants.BUN_VERSION}"], env=env)
-        
+    # Skip if bun is already installed.
+    if os.path.exists(constants.BUN_PATH):
+        return
 
-        if result.returncode != 0:
-            raise typer.Exit(code=result.returncode)
+    # Check if unzip is installed
+    unzip_path = path_ops.which("unzip")
+    if unzip_path is None:
+        raise FileNotFoundError("Reflex requires unzip to be installed.")
+
+    # Get the bun install script.
+    response = httpx.get(constants.BUN_INSTALL_URL)
+    if response.status_code != httpx.codes.OK:
+        response.raise_for_status()
+
+    # Save the bun install script to a temporary file.
+    script = tempfile.NamedTemporaryFile()
+    with open(script.name, "w") as f:
+        f.write(response.text)
+
+    # Run the bun install script.
+    env = {
+        **os.environ,
+        "BUN_INSTALL": constants.BUN_ROOT_PATH,
+    }
+    result = subprocess.run(["bash", f.name, f"bun-v{constants.BUN_VERSION}"], env=env)
+    if result.returncode != 0:
+        raise typer.Exit(code=result.returncode)
 
 
 def install_frontend_packages():

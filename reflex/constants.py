@@ -45,41 +45,9 @@ MODULE_NAME = "reflex"
 # The current version of Reflex.
 VERSION = metadata.version(MODULE_NAME)
 
-# Project dependencies.
-# The directory to store reflex dependencies.
-REFLEX_DIR = os.path.expandvars("$HOME/.reflex")
-
-# Bun config.
-# The Bun version.
-BUN_VERSION = "0.7.0"
-# The directory to store the bun.
-BUN_ROOT_PATH = f"{REFLEX_DIR}/.bun"
-# The bun path.
-BUN_PATH = f"{BUN_ROOT_PATH}/bin/bun"
-# URL to bun install script.
-BUN_INSTALL_URL = "https://bun.sh/install"
-
-# NVM / Node config.
-# The NVM version.
-NVM_VERSION = "0.39.1"
-# The Node version.
-NODE_VERSION = "18.17.0"
-# The minimum required node version.
-NODE_VERSION_MIN = "16.8.0"
-# The directory to store nvm.
-NVM_DIR = f"{REFLEX_DIR}/.nvm"
-# The nvm path.
-NVM_PATH = f"{NVM_DIR}/nvm.sh"
-# The node bin path.
-NODE_BIN_PATH = f"{NVM_DIR}/versions/node/v{NODE_VERSION}/bin"
-# The default path where node is installed.
-NODE_PATH = "node" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/node"
-# The default path where npm is installed.
-NPM_PATH = "npm" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/npm"
-# The URL to the nvm install script.
-NVM_INSTALL_URL = f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
-
 # Files and directories used to init a new project.
+# The directory to store reflex dependencies.
+REFLEX_DIR = os.path.expandvars(os.path.join("$HOME", f".{MODULE_NAME}"))
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # The name of the assets directory.
@@ -92,6 +60,36 @@ WEB_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "web")
 ASSETS_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, APP_ASSETS_DIR)
 # The jinja template directory.
 JINJA_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "jinja")
+
+# Bun config.
+# The Bun version.
+BUN_VERSION = "0.7.0"
+# The directory to store the bun.
+BUN_ROOT_PATH = os.path.join(REFLEX_DIR, ".bun")
+# The bun path.
+BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
+# URL to bun install script.
+BUN_INSTALL_URL = "https://bun.sh/install"
+
+# NVM / Node config.
+# The NVM version.
+NVM_VERSION = "0.39.1"
+# The Node version.
+NODE_VERSION = "18.17.0"
+# The minimum required node version.
+NODE_VERSION_MIN = "16.8.0"
+# The directory to store nvm.
+NVM_DIR = os.path.join(REFLEX_DIR, ".nvm")
+# The nvm path.
+NVM_PATH = os.path.join(NVM_DIR, "nvm.sh")
+# The node bin path.
+NODE_BIN_PATH = os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
+# The default path where node is installed.
+NODE_PATH = "node" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "node")
+# The default path where npm is installed.
+NPM_PATH = "npm" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "npm")
+# The URL to the nvm install script.
+NVM_INSTALL_URL = f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
 
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.
