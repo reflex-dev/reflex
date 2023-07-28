@@ -274,7 +274,7 @@ def test_initialize_bun(mocker, bun_version, is_valid, prompt_input):
         prompt_input: The input from user on whether to install bun.
     """
     mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=bun_version)
-    mocker.patch("reflex.utils.prerequisites.console.ask", return_value=prompt_input)
+    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
 
     bun_install = mocker.patch("reflex.utils.prerequisites.install_bun")
     remove_existing_bun_installation = mocker.patch(
@@ -489,7 +489,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     prerequisites.initialize_gitignore()
 
     assert gitignore_file.exists()
-    file_content = [line.strip() for line in gitignore_file.open().readlines()]
+    file_content = [line.strip() for line in gitignore_file.open().read().splitlines() if line]
     assert set(file_content) - expected == set()
 
 
@@ -530,6 +530,7 @@ def test_node_install_unix(tmp_path, mocker):
         "reflex.utils.prerequisites.subprocess.run",
         return_value=subprocess.CompletedProcess(args="", returncode=0),
     )
+    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
 
     prerequisites.install_node()
 
