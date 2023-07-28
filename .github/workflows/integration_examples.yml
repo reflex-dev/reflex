@@ -55,8 +55,12 @@ jobs:
         path: .venv
         key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
-#    - name: install nvm
-#      run:  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+    - name: install nvm
+      run:  |
+        ls -a $HOME
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+        cat ~/.bashrc
+        echo "========================================="
     - name: Poetry Install
       run: poetry install --no-interaction
     - name: Install Requirements
@@ -65,8 +69,9 @@ jobs:
     - name: Init Website
       working-directory: ./pynecone-examples/counter
       run: |
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
         poetry run reflex init
+        cat ~/.bashrc
+        echo "========================================="
     - name: Validate Reflex's own installation of Node
       run: |
         /home/runner/.reflex/.nvm/versions/node/v*/bin/npm -v
