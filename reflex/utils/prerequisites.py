@@ -367,9 +367,11 @@ def install_frontend_packages():
 def check_initialized(frontend: bool = True):
     """Check that the app is initialized.
 
-
     Args:
         frontend: Whether to check if the frontend is initialized.
+
+    Raises:
+        Exit: If the app is not initialized.
     """
     has_config = os.path.exists(constants.CONFIG_FILE)
     has_reflex_dir = IS_WINDOWS or os.path.exists(constants.REFLEX_DIR)
