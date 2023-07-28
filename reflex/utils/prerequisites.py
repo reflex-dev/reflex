@@ -417,11 +417,15 @@ def initialize_frontend_dependencies():
     path_ops.mkdir(constants.REFLEX_DIR)
 
     # Install the frontend dependencies.
-    threading.Thread(target=initialize_bun).start()
-    threading.Thread(target=initialize_node).start()
+    bun_thread = threading.Thread(target=initialize_bun).start()
+    node_thread = threading.Thread(target=initialize_node).start()
 
     # Set up the web directory.
     initialize_web_directory()
+
+    # Wait for bun and node to finish.
+    bun_thread.join()
+    node_thread.join()
 
 
 def check_admin_settings():
