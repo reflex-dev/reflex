@@ -489,7 +489,9 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     prerequisites.initialize_gitignore()
 
     assert gitignore_file.exists()
-    file_content = [line.strip() for line in gitignore_file.open().read().splitlines() if line]
+    file_content = [
+        line.strip() for line in gitignore_file.open().read().splitlines() if line
+    ]
     assert set(file_content) - expected == set()
 
 
