@@ -276,6 +276,35 @@ def initialize_node():
         install_node()
 
 
+def download_and_run(url: str, *args, **env):
+    """Download and run a script.
+
+
+    Args:
+        url: The url of the script.
+        args: The arguments to pass to the script.
+        env: The environment variables to use.
+    """
+    # Download the script
+    response = httpx.get(url)
+    if response.status_code != httpx.codes.OK:
+        response.raise_for_status()
+
+    # Save the script to a temporary file.
+    script = tempfile.NamedTemporaryFile()
+    with open(script.name, "w") as f:
+        f.write(response.text)
+
+    # Run the nvm install script.
+    env = {
+        **os.environ,
+        **env,
+    }
+    result = subprocess.run(["bash", f.name, *args], env=env)
+    if result.returncode != 0:
+        raise typer.Exit(code=result.returncode)
+
+
 def install_node():
     """Install nvm and nodejs for use by Reflex.
        Independent of any existing system installations.
@@ -293,28 +322,11 @@ def install_node():
 
     # Create the nvm directory and install.
     path_ops.mkdir(constants.NVM_DIR)
-
-    # Get the nvm install script.
-    response = httpx.get(constants.NVM_INSTALL_URL)
-    if response.status_code != httpx.codes.OK:
-        response.raise_for_status()
-
-    # Save the nvm install script to a temporary file.
-    script = tempfile.NamedTemporaryFile()
-    with open(script.name, "w") as f:
-        f.write(response.text)
-
-    # Run the nvm install script.
-    env = {
-        **os.environ,
-        "NVM_DIR": constants.NVM_DIR,
-    }
-    result = subprocess.run(["bash", f.name], env=env)
-    if result.returncode != 0:
-        raise typer.Exit(code=result.returncode)
+    env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
+    download_and_run(constants.NVM_INSTALL_URL, **env)
 
     # Install node.
-    print("installing node")
+    # We use bash -c as we need to source nvm.sh to use nvm.
     result = subprocess.run(
         [
             "bash",
@@ -348,23 +360,11 @@ def install_bun():
         raise FileNotFoundError("Reflex requires unzip to be installed.")
 
     # Get the bun install script.
-    response = httpx.get(constants.BUN_INSTALL_URL)
-    if response.status_code != httpx.codes.OK:
-        response.raise_for_status()
-
-    # Save the bun install script to a temporary file.
-    script = tempfile.NamedTemporaryFile()
-    with open(script.name, "w") as f:
-        f.write(response.text)
-
-    # Run the bun install script.
-    env = {
-        **os.environ,
-        "BUN_INSTALL": constants.BUN_ROOT_PATH,
-    }
-    result = subprocess.run(["bash", f.name, f"bun-v{constants.BUN_VERSION}"], env=env)
-    if result.returncode != 0:
-        raise typer.Exit(code=result.returncode)
+    download_and_run(
+        constants.BUN_INSTALL_URL,
+        f"bun-v{constants.BUN_VERSION}",
+        BUN_ROOT=constants.BUN_ROOT_PATH,
+    )
 
 
 def install_frontend_packages():
