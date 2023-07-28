@@ -108,6 +108,7 @@ class App(Base):
         """
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
+        inferred_state = state_subclasses[-1]
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
         # Special case to allow test cases have multiple subclasses of rx.State.
@@ -117,13 +118,14 @@ class App(Base):
                 raise ValueError(
                     "rx.State has been subclassed multiple times. Only one subclass is allowed"
                 )
-            if self.state != DefaultState:
-                console.deprecate(
-                    "Passing the state as keyword argument to `rx.App` is deprecated. "
-                    "The base state will automatically be inferred as the subclass of `rx.State`."
-                )
-            self.state = state_subclasses[-1]
 
+            # verify that provided state is valid
+            if self.state not in [DefaultState, inferred_state]:
+                console.warn(
+                    f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
+                    f" Defaulting to root state: ({inferred_state.__name__})"
+                )
+            self.state = inferred_state
         # Get the config
         config = get_config()
 

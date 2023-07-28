@@ -21,6 +21,15 @@ def deprecate(msg: str) -> None:
     _console.print(f"[yellow]DeprecationWarning: {msg}[/yellow]")
 
 
+def warn(msg: str) -> None:
+    """Print a warning about bad usage in Reflex.
+
+    Args:
+        msg: The warning message.
+    """
+    _console.print(f"[orange1]UsageWarning: {msg}[/orange1]")
+
+
 def log(msg: str) -> None:
     """Takes a string and logs it to the console.
 
