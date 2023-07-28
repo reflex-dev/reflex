@@ -1,7 +1,6 @@
 """Reflex CLI to create, run, and deploy apps."""
 
 import os
-import platform
 import signal
 import threading
 from pathlib import Path
@@ -75,10 +74,9 @@ def run(
     backend_host: str = typer.Option(None, help="Specify the backend host."),
 ):
     """Run the app in the current directory."""
-    if platform.system() == "Windows":
-        console.print(
-            "[yellow][WARNING] We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
-        )
+    # Check that the app is initialized.
+    prerequisites.check_initialized(frontend=frontend)
+
     # Set ports as os env variables to take precedence over config and
     # .env variables(if override_os_envs flag in config is set to False).
     build.set_os_env(
@@ -104,20 +102,6 @@ def run(
 
     if backend and processes.is_process_on_port(backend_port):
         backend_port = processes.change_or_terminate_port(backend_port, "backend")
-
-    # Check that the app is initialized.
-    if frontend and not prerequisites.is_initialized():
-        console.print(
-            "[red]The app is not initialized. Run [bold]reflex init[/bold] first."
-        )
-        raise typer.Exit()
-
-    # Check that the template is up to date.
-    if frontend and not prerequisites.is_latest_template():
-        console.print(
-            "[red]The base app template has updated. Run [bold]reflex init[/bold] again."
-        )
-        raise typer.Exit()
 
     # Get the app module.
     console.rule("[bold]Starting Reflex App")
@@ -169,7 +153,6 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
     """Deploy the app to the Reflex hosting service."""
     # Get the app config.
     config = get_config()
-    config.api_url = prerequisites.get_production_backend_url()
 
     # Check if the deploy url is set.
     if config.rxdeploy_url is None:
@@ -178,7 +161,7 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
     # Compile the app in production mode.
     typer.echo("Compiling production app")
-    export(for_reflex_deploy=True)
+    export()
 
     # Exit early if this is a dry run.
     if dry_run:
@@ -210,28 +193,22 @@ def export(
     backend: bool = typer.Option(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
-    for_reflex_deploy: bool = typer.Option(
-        False,
-        "--for-reflex-deploy",
-        help="Whether export the app for Reflex Deploy Service.",
-    ),
 ):
     """Export the app to a zip file."""
-    config = get_config()
-
-    if for_reflex_deploy:
-        # Get the app config and modify the api_url base on username and app_name.
-        config.api_url = prerequisites.get_production_backend_url()
+    # Check that the app is initialized.
+    prerequisites.check_initialized(frontend=frontend)
 
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
 
     if frontend:
-        # ensure module can be imported and app.compile() is called
+        # Ensure module can be imported and app.compile() is called.
         prerequisites.get_app()
-        # set up .web directory and install frontend dependencies
+        # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 
+    # Export the app.
+    config = get_config()
     build.export_app(
         backend=backend,
         frontend=frontend,

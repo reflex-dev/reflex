@@ -364,13 +364,36 @@ def install_frontend_packages():
         )
 
 
-def is_initialized() -> bool:
-    """Check whether the app is initialized.
+def check_initialized(frontend: bool = True):
+    """Check that the app is initialized.
 
-    Returns:
-        Whether the app is initialized in the current directory.
+
+    Args:
+        frontend: Whether to check if the frontend is initialized.
     """
-    return os.path.exists(constants.CONFIG_FILE) and os.path.exists(constants.WEB_DIR)
+    has_config = os.path.exists(constants.CONFIG_FILE)
+    has_reflex_dir = IS_WINDOWS or os.path.exists(constants.REFLEX_DIR)
+    has_web_dir = not frontend or os.path.exists(constants.WEB_DIR)
+
+    # Check if the app is initialized.
+    if not (has_config and has_reflex_dir and has_web_dir):
+        console.print(
+            f"[red]The app is not initialized. Run [bold]{constants.MODULE_NAME} init[/bold] first."
+        )
+        raise typer.Exit()
+
+    # Check that the template is up to date.
+    if frontend and not is_latest_template():
+        console.print(
+            "[red]The base app template has updated. Run [bold]reflex init[/bold] again."
+        )
+        raise typer.Exit()
+
+    # Print a warning for Windows users.
+    if IS_WINDOWS:
+        console.print(
+            "[yellow][WARNING] We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
+        )
 
 
 def is_latest_template() -> bool:
