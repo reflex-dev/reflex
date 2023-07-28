@@ -300,7 +300,6 @@ def download_and_run(url: str, *args, **env):
         f.write(response.text)
 
     # Run the script.
-    print("running script", script.name, env)
     env = {
         **os.environ,
         **env,
