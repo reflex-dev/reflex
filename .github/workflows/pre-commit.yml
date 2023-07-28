@@ -2,7 +2,7 @@ name: pre-commit
 
 on:
   pull_request:
-    branches: [main] # TODO remove jackie-py-setup
+    branches: [main]
   push:
     # Note even though this job is called "pre-commit" and runs "pre-commit", this job will run
     # also POST-commit on main also!  In case there are mishandled merge conflicts / bad auto-resolves
