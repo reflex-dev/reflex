@@ -650,7 +650,6 @@ async def test_process_event_generator(gen_state):
             assert update.delta == {}
             assert update.final
         else:
-
             assert gen_state.value == count
             assert update.delta == {
                 "gen_state": {"value": count},

@@ -65,6 +65,7 @@ if platform.system == "Windows":
 else:
     FRONTEND_POPEN_ARGS["start_new_session"] = True
 
+
 # borrowed from py3.11
 class chdir(contextlib.AbstractContextManager):
     """Non thread-safe context manager to change the current working directory."""
