@@ -18,10 +18,27 @@ from reflex.utils import build, console, exec, prerequisites, processes, telemet
 cli = typer.Typer()
 
 
-@cli.command()
-def version():
+# @cli.command()
+def version(value: bool):
     """Get the Reflex version."""
-    console.print(constants.VERSION)
+    if value:
+        console.print(constants.VERSION)
+        raise typer.Exit()
+
+
+@cli.callback()
+def main(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-v",
+        callback=version,
+        help="Get the Reflex version.",
+        is_eager=True,
+    ),
+):
+    """Reflex CLI global configuration."""
+    pass
 
 
 @cli.command()
@@ -306,8 +323,7 @@ def makemigrations(
             )
 
 
-cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema")
-main = cli
+cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 
 if __name__ == "__main__":
-    main()
+    cli()
