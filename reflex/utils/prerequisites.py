@@ -284,6 +284,9 @@ def download_and_run(url: str, *args, **env):
         url: The url of the script.
         args: The arguments to pass to the script.
         env: The environment variables to use.
+    
+    Raises:
+        Exit: if installation failed
     """
     # Download the script
     response = httpx.get(url)
@@ -311,7 +314,6 @@ def install_node():
        Independent of any existing system installations.
 
     Raises:
-        FileNotFoundError: if unzip or curl packages are not found.
         Exit: if installation failed
     """
     # NVM is not supported on Windows.
@@ -344,8 +346,7 @@ def install_bun():
     """Install bun onto the user's system.
 
     Raises:
-        FileNotFoundError: if unzip or curl packages are not found.
-        Exit: if installation failed
+        FileNotFoundError: If required packages are not found.
     """
     # Bun is not supported on Windows.
     if IS_WINDOWS:
