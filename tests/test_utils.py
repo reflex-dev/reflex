@@ -9,6 +9,7 @@ import typer
 from packaging import version
 
 from reflex import Env, constants
+from reflex.base import Base
 from reflex.utils import build, format, imports, prerequisites, types
 from reflex.vars import Var
 
@@ -533,6 +534,12 @@ def test_node_install_unix(tmp_path, mocker):
         return_value=subprocess.CompletedProcess(args="", returncode=0),
     )
     mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
+
+    class Resp(Base):
+        status_code = 200
+        text = "test"
+
+    mocker.patch("httpx.get", return_value=Resp())
 
     prerequisites.install_node()
 
