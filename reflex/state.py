@@ -476,13 +476,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
 
-    def get_current_page(self) -> str:
+    def get_current_page(self, origin=False) -> str:
         """Obtain the path of current page from the router data.
+
+        Args:
+            origin: whether to return the base route as shown in browser
 
         Returns:
             The current page.
         """
-        return self.router_data.get(constants.RouteVar.PATH, "")
+        if origin:
+            return self.router_data.get(constants.RouteVar.ORIGIN, "")
+        else:
+            return self.router_data.get(constants.RouteVar.PATH, "")
 
     def get_query_params(self) -> Dict[str, str]:
         """Obtain the query parameters for the queried page.

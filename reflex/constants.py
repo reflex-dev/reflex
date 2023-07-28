@@ -357,6 +357,7 @@ class RouteVar(SimpleNamespace):
     CLIENT_TOKEN = "token"
     HEADERS = "headers"
     PATH = "pathname"
+    ORIGIN = "asPath"
     SESSION_ID = "sid"
     QUERY = "query"
     COOKIE = "cookie"

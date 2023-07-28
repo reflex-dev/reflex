@@ -6,6 +6,7 @@ import base64
 import io
 import json
 import os
+import os.path as op
 import re
 import sys
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
@@ -458,6 +459,24 @@ def format_dict(prop: ComponentStyle) -> str:
 
     # Return the formatted dict.
     return fprop
+
+
+def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
+    """Take a route and return a list of tuple for use in breadcrumb.
+
+    Args:
+        route: The route to transform.
+
+    Returns:
+        list[tuple[str, str]]: the list of tuples for the breadcrumb.
+    """
+    route_parts = route.lstrip("/").split("/")
+
+    # create and return breadcrumbs
+    return [
+        (part, op.join("/", *route_parts[: i + 1]))
+        for i, part in enumerate(route_parts)
+    ]
 
 
 def json_dumps(obj: Any) -> str:
