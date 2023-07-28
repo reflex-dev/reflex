@@ -42,13 +42,14 @@ def init(
     prerequisites.migrate_to_reflex()
 
     # Set up the app directory, only if the config doesn't exist.
+    config = get_config()
     if not os.path.exists(constants.CONFIG_FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
         build.set_reflex_project_hash()
-        telemetry.send("init", get_config().telemetry_enabled)
+        telemetry.send("init", config.telemetry_enabled)
     else:
-        telemetry.send("reinit", get_config().telemetry_enabled)
+        telemetry.send("reinit", config.telemetry_enabled)
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -85,11 +86,11 @@ def run(
         backend_host=backend_host,
     )
 
-    frontend_port = (
-        get_config().frontend_port if frontend_port is None else frontend_port
-    )
-    backend_port = get_config().backend_port if backend_port is None else backend_port
-    backend_host = get_config().backend_host if backend_host is None else backend_host
+    # Get the ports from the config.
+    config = get_config()
+    frontend_port = config.frontend_port if frontend_port is None else frontend_port
+    backend_port = config.backend_port if backend_port is None else backend_port
+    backend_host = config.backend_host if backend_host is None else backend_host
 
     # If no --frontend-only and no --backend-only, then turn on frontend and backend both
     if not frontend and not backend:
@@ -130,7 +131,7 @@ def run(
     assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
 
     # Post a telemetry event.
-    telemetry.send(f"run-{env.value}", get_config().telemetry_enabled)
+    telemetry.send(f"run-{env.value}", config.telemetry_enabled)
 
     # Run the frontend and backend.
     if frontend:
@@ -217,7 +218,7 @@ def export(
     )
 
     # Post a telemetry event.
-    telemetry.send("export", get_config().telemetry_enabled)
+    telemetry.send("export", config.telemetry_enabled)
 
     if zipping:
         console.rule(
