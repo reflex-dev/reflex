@@ -296,6 +296,7 @@ def download_and_run(url: str, *args, **env):
         f.write(response.text)
 
     # Run the script.
+    print("running script", script.name, env)
     env = {
         **os.environ,
         **env,
@@ -363,7 +364,7 @@ def install_bun():
     download_and_run(
         constants.BUN_INSTALL_URL,
         f"bun-v{constants.BUN_VERSION}",
-        BUN_ROOT=constants.BUN_ROOT_PATH,
+        BUN_INSTALL=constants.BUN_ROOT_PATH,
     )
 
 
@@ -417,15 +418,19 @@ def initialize_frontend_dependencies():
     path_ops.mkdir(constants.REFLEX_DIR)
 
     # Install the frontend dependencies.
-    bun_thread = threading.Thread(target=initialize_bun).start()
-    node_thread = threading.Thread(target=initialize_node).start()
+    threads = [
+        threading.Thread(target=initialize_bun),
+        threading.Thread(target=initialize_node),
+    ]
+    for thread in threads:
+        thread.start()
 
     # Set up the web directory.
     initialize_web_directory()
 
-    # Wait for bun and node to finish.
-    bun_thread.join()
-    node_thread.join()
+    # Wait for the threads to finish.
+    for thread in threads:
+        thread.join()
 
 
 def check_admin_settings():
