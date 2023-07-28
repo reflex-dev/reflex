@@ -18,7 +18,6 @@ from reflex.utils import build, console, exec, prerequisites, processes, telemet
 cli = typer.Typer()
 
 
-# @cli.command()
 def version(value: bool):
     """Get the Reflex version."""
     if value:
