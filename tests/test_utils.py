@@ -540,6 +540,7 @@ def test_node_install_unix(tmp_path, mocker):
         text = "test"
 
     mocker.patch("httpx.get", return_value=Resp())
+    mocker.patch("reflex.utils.prerequisites.download_and_run")
 
     prerequisites.install_node()
 
