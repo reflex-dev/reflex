@@ -66,7 +66,7 @@ pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 selenium = "^4.10.0"
 
 [tool.poetry.scripts]
-reflex = "reflex.reflex:main"
+reflex = "reflex.reflex:cli"
 
 [build-system]
 requires = ["poetry-core>=1.5.1"]
