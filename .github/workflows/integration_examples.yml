@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     # Specify python/node versions to test against
     strategy:
@@ -56,13 +56,7 @@ jobs:
         key: python-${{ matrix.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
     - name: install nvm
-      run:  |
-        ls -a $HOME
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
-        cat ~/.zshrc
-        . $NVM_DIR/nvm.sh
-        nvm install v16.2.0
-        echo "========================================="
+      run:  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
     - name: Poetry Install
       run: poetry install --no-interaction
     - name: Install Requirements
@@ -70,10 +64,7 @@ jobs:
       run: poetry run pip install -r requirements.txt
     - name: Init Website
       working-directory: ./pynecone-examples/counter
-      run: |
-        poetry run reflex init
-        cat ~/.zshrc
-        echo "========================================="
+      run: poetry run reflex init
     - name: Validate Reflex's own installation of Node
       run: |
         /home/runner/.reflex/.nvm/versions/node/v*/bin/npm -v
