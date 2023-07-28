@@ -1,0 +1,87 @@
+# Assumes:
+# - CWD is the root directory of your project (e.g. reflex/)
+# - You have a poetry.lock file in the root directory of your project
+# - You have a pyproject.toml file in the root directory of your project
+name: 'Setup Reflex build environment'
+description: 'Sets up Python, install poetry (cached), install project deps (cached)'
+inputs:
+  python-version:
+    description: 'Python version setup'
+    required: true
+  poetry-version:
+    description: 'Poetry version to install'
+    required: false
+    default: '1.3.1'
+  run-poetry-install:
+    description: 'Whether to run poetry install on current dir'
+    required: false
+    default: false
+  create-venv-at-path:
+    description: 'Path to venv (if poetry install is enabled)'
+    required: false
+    default: '.venv'
+  shell:
+    description: 'Shell to use for running commands'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Restore cached poetry install
+      id: restore-poetry-cache
+      uses: actions/cache/restore@v3
+      with:
+        path: ~/.local
+        key: python-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}
+
+    - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
+      name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ inputs.poetry-version }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
+      name: Save poetry install to cache
+      uses: actions/cache/save@v3
+      with:
+        path: ~/.local
+        key: ${{ steps.restore-poetry-cache.outputs.cache-primary-key }}
+
+    - name: Restore cached project python deps
+      id: restore-pydeps-cache
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ inputs.create-venv-at-path }}
+        key: python-${{ inputs.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
+
+    - if: ${{ inputs.run-poetry-install == 'true' && steps.restore-pydeps-cache.outputs.cache-hit != 'true' }}
+      name: Run poetry install (will get cached)
+      shell: ${{ inputs.shell }}
+      # We skip over installing the root package (the current project code under CI)
+      # Root package should not be cached - its content is not reflected in poetry.lock / cache key
+      run: |
+         python -m venv ${{ inputs.create-venv-at-path }}
+         source ${{ inputs.create-venv-at-path }}/bin/activate
+         poetry install --no-interaction --no-root
+
+    - if: steps.restore-pydeps-cache.outputs.cache-hit != 'true'
+      name: Save Python deps to cache
+      uses: actions/cache/save@v3
+      with:
+        path: ${{ inputs.create-venv-at-path }}
+        key: ${{ steps.restore-pydeps-cache.outputs.cache-primary-key }}
+
+    - if: ${{ inputs.run-poetry-install == 'true' }}
+      name: Run poetry install (including root package)
+      shell: ${{ inputs.shell }}
+      # Here we really install the root package (the current project code under CI).env:
+      # This should not be cached.
+      run: |
+        source ${{ inputs.create-venv-at-path }}/bin/activate
+        poetry install --only-root --no-interaction

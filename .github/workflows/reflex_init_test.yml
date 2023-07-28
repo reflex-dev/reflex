@@ -6,6 +6,8 @@ on:
       - main
 
 jobs:
+  # TODO we can extend to various starting points (e.g. Ubuntu with node, without node, with unzip, without unzip, etc.)
+  # Currently starting point is: Ubuntu + unzip, xz-utils, Python suite.  No node.
   reflex-install-and-init:
     runs-on: ubuntu-latest
     steps:
