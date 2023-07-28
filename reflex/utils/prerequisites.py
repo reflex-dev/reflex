@@ -309,29 +309,35 @@ def install_node():
     Raises:
         Exit: if installation failed
     """
-    # NVM is not supported on Windows.
     if IS_WINDOWS:
-        console.error(
-            f"Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
+        # See if existing node is good enough.
+        # On Windows, this must be installed manually, outside of Reflex.
+        if not check_node_version():
+            # We don't currently support auto install of node on Windows
+            # because NVM is not supported there
+            console.error(
+                f"Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
+            )
+            raise typer.Exit(1)
+        return
+    else:  # All other platforms (Linux, MacOS)
+        # TODO we can skip installation if check_node_version() checks out
+        # Create the nvm directory and install.
+        path_ops.mkdir(constants.NVM_DIR)
+        env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
+        download_and_run(constants.NVM_INSTALL_URL, show_status=True, **env)
+
+        # Install node.
+        # We use bash -c as we need to source nvm.sh to use nvm.
+        process = processes.new_process(
+            [
+                "bash",
+                "-c",
+                f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
+            ],
+            env=env,
         )
-        raise typer.Exit(1)
-
-    # Create the nvm directory and install.
-    path_ops.mkdir(constants.NVM_DIR)
-    env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
-    download_and_run(constants.NVM_INSTALL_URL, show_status=True, **env)
-
-    # Install node.
-    # We use bash -c as we need to source nvm.sh to use nvm.
-    process = processes.new_process(
-        [
-            "bash",
-            "-c",
-            f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
-        ],
-        env=env,
-    )
-    processes.show_status("Installing node", process)
+        processes.show_status("Installing node", process)
 
 
 def install_bun():

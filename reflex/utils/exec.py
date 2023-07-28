@@ -77,7 +77,7 @@ def run_frontend_prod(
 
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([constants.NPM_PATH, "run", "prod"])
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])
 
 
 def run_backend(

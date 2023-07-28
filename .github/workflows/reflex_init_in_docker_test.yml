@@ -1,9 +1,15 @@
-name: reflex-init-test
+name: reflex-init-in-docker-test
 
 on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
 
 jobs:
   # TODO we can extend to various starting points (e.g. Ubuntu with node, without node, with unzip, without unzip, etc.)

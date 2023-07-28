@@ -1,0 +1,103 @@
+name: integration-tests
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  example-counter:
+    strategy:
+      # Prioritize getting more information out of the workflow (even if something fails)
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11" ]
+        node-version: [ "16.x" ]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+
+      - name: Clone Reflex Examples Repo
+        uses: actions/checkout@v3
+        with:
+          repository: reflex-dev/reflex-examples
+          path: reflex-examples
+
+      - name: Install requirements for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          poetry run pip install -r requirements.txt
+      - name: Init Website for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          poetry run reflex init --loglevel debug
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/integration.sh ./reflex-examples/counter dev
+
+  reflex-web:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Show OS combos first in GUI
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ "3.10", "3.11" ]
+        node-version: [ "16.x" ]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-poetry-install: true
+          create-venv-at-path: .venv
+
+      - name: Clone Reflex Website Repo
+        uses: actions/checkout@v3
+        with:
+          repository: reflex-dev/reflex-web
+          ref: reflex-ci
+          path: reflex-web
+
+      - name: Install Requirements for reflex-web
+        working-directory: ./reflex-web
+        run: poetry run pip install -r requirements.txt
+      - name: Init Website for reflex-web
+        working-directory: ./reflex-web
+        run: poetry run reflex init
+      - name: Run Website and Check for errors
+        run: |
+          # Check that npm is home
+          npm -v
+          poetry run bash scripts/integration.sh ./reflex-web prod
