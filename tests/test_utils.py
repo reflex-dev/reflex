@@ -545,6 +545,7 @@ def test_node_install_without_curl(mocker):
         mocker: Pytest mocker object.
     """
     mocker.patch("reflex.utils.prerequisites.path_ops.which", return_value=None)
+    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
 
     with pytest.raises(FileNotFoundError):
         prerequisites.install_node()
