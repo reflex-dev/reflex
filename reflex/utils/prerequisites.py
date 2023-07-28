@@ -284,7 +284,8 @@ def download_and_run(url: str, *args, **env):
         url: The url of the script.
         args: The arguments to pass to the script.
         env: The environment variables to use.
-    
+
+
     Raises:
         Exit: if installation failed
     """
