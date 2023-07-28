@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
@@ -416,8 +417,8 @@ def initialize_frontend_dependencies():
     path_ops.mkdir(constants.REFLEX_DIR)
 
     # Install the frontend dependencies.
-    initialize_bun()
-    initialize_node()
+    threading.Thread(target=initialize_bun).start()
+    threading.Thread(target=initialize_node).start()
 
     # Set up the web directory.
     initialize_web_directory()
