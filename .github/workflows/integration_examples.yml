@@ -60,6 +60,7 @@ jobs:
         ls -a $HOME
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
         cat ~/.bashrc
+        source ~/.bashrc
         nvm install v16.2.0
         echo "========================================="
     - name: Poetry Install
