@@ -56,29 +56,28 @@ BUN_VERSION = "0.7.0"
 BUN_ROOT_PATH = f"{REFLEX_DIR}/.bun"
 # The bun path.
 BUN_PATH = f"{BUN_ROOT_PATH}/bin/bun"
-# Command to install bun.
-INSTALL_BUN = f"curl -fsSL https://bun.sh/install | env BUN_INSTALL={BUN_ROOT_PATH} bash -s -- bun-v{BUN_VERSION}"
+# URL to bun install script.
+BUN_INSTALL_URL = "https://bun.sh/install"
 
 # NVM / Node config.
+# The NVM version.
+NVM_VERSION = "0.39.1"
 # The Node version.
 NODE_VERSION = "18.17.0"
 # The minimum required node version.
-MIN_NODE_VERSION = "16.8.0"
+NODE_VERSION_MIN = "16.8.0"
 # The directory to store nvm.
-NVM_ROOT_PATH = f"{REFLEX_DIR}/.nvm"
+NVM_DIR = f"{REFLEX_DIR}/.nvm"
 # The nvm path.
-NVM_PATH = f"{NVM_ROOT_PATH}/nvm.sh"
+NVM_PATH = f"{NVM_DIR}/nvm.sh"
 # The node bin path.
-NODE_BIN_PATH = f"{NVM_ROOT_PATH}/versions/node/v{NODE_VERSION}/bin"
+NODE_BIN_PATH = f"{NVM_DIR}/versions/node/v{NODE_VERSION}/bin"
 # The default path where node is installed.
 NODE_PATH = "node" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/node"
 # The default path where npm is installed.
 NPM_PATH = "npm" if platform.system() == "Windows" else f"{NODE_BIN_PATH}/npm"
-# Command to install nvm.
-INSTALL_NVM = f"curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | env NVM_DIR={NVM_ROOT_PATH} bash"
-# Command to install node.
-INSTALL_NODE = f'bash -c "export NVM_DIR={NVM_ROOT_PATH} && . {NVM_ROOT_PATH}/nvm.sh && nvm install {NODE_VERSION}"'
-
+# The URL to the nvm install script.
+NVM_INSTALL_URL = f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
 
 # Files and directories used to init a new project.
 # The root directory of the reflex library.

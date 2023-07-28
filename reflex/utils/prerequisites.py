@@ -44,7 +44,7 @@ def check_node_version():
         current_version = version.parse(result.stdout.decode())
         # Compare the version numbers
         return (
-            current_version >= version.parse(constants.MIN_NODE_VERSION)
+            current_version >= version.parse(constants.NODE_VERSION_MIN)
             if IS_WINDOWS
             else current_version == version.parse(constants.NODE_VERSION)
         )
@@ -287,24 +287,27 @@ def install_node():
         )
         raise typer.Exit()
 
-    # Only install if bun is not already installed.
-    console.log("Installing nvm...")
-
-    # Check if curl is installed
-    # TODO no need to shell out to curl
-    curl_path = path_ops.which("curl")
-    if curl_path is None:
-        raise FileNotFoundError("Reflex requires curl to be installed.")
-
     # Create the nvm directory and install.
-    path_ops.mkdir(constants.NVM_ROOT_PATH)
-    result = subprocess.run(constants.INSTALL_NVM, shell=True)
+    path_ops.mkdir(constants.NVM_DIR)
+    import httpx
+    resp = httpx.get(constants.NVM_INSTALL_URL)
+    script = resp.text
+    env = {
+        **os.environ,
+        "NVM_DIR": constants.NVM_DIR,
+    }
+
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode="w") as f:
+        f.write(script)
+        result = subprocess.run(["bash", f.name], env=env)
+        
 
     if result.returncode != 0:
         raise typer.Exit(code=result.returncode)
 
     console.log("Installing node...")
-    result = subprocess.run(constants.INSTALL_NODE, shell=True)
+    result = subprocess.run(["bash", "-c", f"source {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}"], env=env)
 
     if result.returncode != 0:
         raise typer.Exit(code=result.returncode)
@@ -325,18 +328,22 @@ def install_bun():
     # Only install if bun is not already installed.
     if not os.path.exists(constants.BUN_PATH):
         console.log("Installing bun...")
-
-        # Check if curl is installed
-        curl_path = path_ops.which("curl")
-        if curl_path is None:
-            raise FileNotFoundError("Reflex requires curl to be installed.")
-
         # Check if unzip is installed
         unzip_path = path_ops.which("unzip")
         if unzip_path is None:
             raise FileNotFoundError("Reflex requires unzip to be installed.")
-
-        result = subprocess.run(constants.INSTALL_BUN, shell=True)
+        import httpx
+        resp = httpx.get(constants.BUN_INSTALL_URL)
+        script = resp.text
+        env = {
+            **os.environ,
+            "BUN_INSTALL": constants.BUN_ROOT_PATH,
+        }
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w") as f:
+            f.write(script)
+            result = subprocess.run(["bash", f.name, f"bun-v-{constants.BUN_VERSION}"], env=env)
+        
 
         if result.returncode != 0:
             raise typer.Exit(code=result.returncode)
