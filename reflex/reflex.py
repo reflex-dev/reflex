@@ -246,7 +246,7 @@ def export(
 
     # Export the app.
     config = get_config()
-    build.export_app(
+    build.export(
         backend=backend,
         frontend=frontend,
         zip=zipping,

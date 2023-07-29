@@ -7,7 +7,7 @@ import os
 import signal
 import subprocess
 import sys
-from typing import Optional
+from typing import List, Optional
 from urllib.parse import urlparse
 
 import psutil
@@ -153,6 +153,44 @@ def new_process(args, wait: bool = False, **kwargs):
     if wait:
         process.wait()
     return process
+
+
+def show_progress(process: subprocess.Popen, message: str, checkpoints: List[str]):
+    """Show a progress bar for a process.
+
+
+    Args:
+        process: The process.
+        message: The message to display.
+        checkpoints: The checkpoints to advance the progress bar.
+    """
+    # Create a progress object
+    progress = console.progress()
+    task = progress.add_task(f"{message}: ", total=len(checkpoints))
+
+    # Iterate over the process output.
+    try:
+        with progress, process:
+            assert process.stdout is not None, "No stdout for process."
+            for line in process.stdout:
+                console.debug(line)
+
+                # Check for special strings and update the progress bar.
+                for special_string in checkpoints:
+                    if special_string in line:
+                        if special_string == checkpoints[-1]:
+                            progress.update(task, completed=len(checkpoints))
+                            break
+                        else:
+                            progress.update(task, advance=1)
+                            break
+
+    except Exception as e:
+        console.error(f"Error during {message} {e}")
+        console.error(
+            "Run in with [bold]--loglevel debug[/bold] to see the full error."
+        )
+        os._exit(1)
 
 
 def catch_keyboard_interrupt(signal, frame):

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from rich.console import Console
+from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
 
 from reflex.constants import LogLevel
@@ -130,3 +131,12 @@ def ask(
         A string with the user input.
     """
     return Prompt.ask(question, choices=choices, default=default)  # type: ignore
+
+
+def progress():
+    """Create a new progress bar."""
+    return Progress(
+        *Progress.get_default_columns()[:-1],
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+    )

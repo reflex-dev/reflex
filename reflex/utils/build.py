@@ -9,12 +9,10 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Union
 
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
-
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, path_ops, prerequisites
-from reflex.utils.processes import new_process
+from reflex.utils import path_ops, prerequisites
+from reflex.utils.processes import new_process, show_progress
 
 
 def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
@@ -86,13 +84,13 @@ def generate_sitemap_config(deploy_url: str):
         f.write(templates.SITEMAP_CONFIG(config=config))
 
 
-def export_app(
+def export(
     backend: bool = True,
     frontend: bool = True,
     zip: bool = False,
     deploy_url: Optional[str] = None,
 ):
-    """Zip up the app for deployment.
+    """Export the app for deployment.
 
     Args:
         backend: Whether to zip up the backend app.
@@ -109,13 +107,6 @@ def export_app(
         generate_sitemap_config(deploy_url)
         command = "export-sitemap"
 
-    # Create a progress object
-    progress = Progress(
-        *Progress.get_default_columns()[:-1],
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-    )
-
     checkpoints = [
         "Linting and checking ",
         "Compiled successfully",
@@ -128,35 +119,12 @@ def export_app(
         "Export successful",
     ]
 
-    # Add a single task to the progress object
-    task = progress.add_task("Creating Production Build: ", total=len(checkpoints))
-
     # Start the subprocess with the progress bar.
-    try:
-        with progress, new_process(
-            [prerequisites.get_package_manager(), "run", command],
-            cwd=constants.WEB_DIR,
-        ) as export_process:
-            assert export_process.stdout is not None, "No stdout for export process."
-            for line in export_process.stdout:
-                console.debug(line)
-
-                # Check for special strings and update the progress bar.
-                for special_string in checkpoints:
-                    if special_string in line:
-                        if special_string == checkpoints[-1]:
-                            progress.update(task, completed=len(checkpoints))
-                            break  # Exit the loop if the completion message is found
-                        else:
-                            progress.update(task, advance=1)
-                            break
-
-    except Exception as e:
-        console.error(f"Export process errored: {e}")
-        console.error(
-            "Run in with [bold]--loglevel debug[/bold] to see the full error."
-        )
-        os._exit(1)
+    process = new_process(
+        [prerequisites.get_package_manager(), "run", command],
+        cwd=constants.WEB_DIR,
+    )
+    show_progress(process, "Creating Production Build", checkpoints)
 
     # Zip up the app.
     if zip:
@@ -246,4 +214,4 @@ def setup_frontend_prod(
         disable_telemetry: Whether to disable the Next telemetry.
     """
     setup_frontend(root, disable_telemetry)
-    export_app(deploy_url=get_config().deploy_url)
+    export(deploy_url=get_config().deploy_url)
