@@ -107,7 +107,7 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    cmd = [
+    new_process([
         "uvicorn",
         f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
         "--host",
@@ -119,8 +119,8 @@ def run_backend(
         "--reload",
         "--reload-dir",
         app_name.split(".")[0],
-    ]
-    subprocess.run(cmd)
+        wait=True
+    ])
 
 
 def run_backend_prod(

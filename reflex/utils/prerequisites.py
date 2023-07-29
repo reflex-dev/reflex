@@ -26,6 +26,7 @@ from redis import Redis
 from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
+from reflex.utils.processes import new_process
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -38,13 +39,9 @@ def check_node_version():
     """
     try:
         # Run the node -v command and capture the output
-        result = subprocess.run(
-            [constants.NODE_PATH, "-v"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        result = new_process([constants.NODE_PATH, "-v"], wait=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        current_version = version.parse(result.stdout.decode())
+        current_version = version.parse(result.stdout.read())
         # Compare the version numbers
         return (
             current_version >= version.parse(constants.NODE_VERSION_MIN)

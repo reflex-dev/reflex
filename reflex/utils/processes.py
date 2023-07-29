@@ -124,11 +124,12 @@ def change_or_terminate_port(port, _type) -> str:
         sys.exit()
 
 
-def new_process(args, **kwargs):
+def new_process(args, wait: bool = False, **kwargs):
     """Wrapper over subprocess.Popen to unify the launch of child processes.
 
     Args:
         args: A string, or a sequence of program arguments.
+        wait: Whether to wait for the process to finish.
         **kwargs: Kwargs to override default wrap values to pass to subprocess.Popen as arguments.
 
     Returns:
@@ -146,10 +147,13 @@ def new_process(args, **kwargs):
         "encoding": "UTF-8",
         **kwargs,
     }
-    return subprocess.Popen(
+    process = subprocess.Popen(
         args,
         **kwargs,
     )
+    if wait:
+        process.wait()
+    return process
 
 
 def catch_keyboard_interrupt(signal, frame):
