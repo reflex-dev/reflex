@@ -24,7 +24,7 @@ from redis import Redis
 from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
-from reflex.utils.processes import new_process
+from reflex.utils.processes import new_process, show_logs
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -183,6 +183,7 @@ def create_config(app_name: str):
 
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
     with open(constants.CONFIG_FILE, "w") as f:
+        console.debug(f"Creating {constants.CONFIG_FILE}")
         f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
 
 
@@ -195,8 +196,10 @@ def initialize_gitignore():
     if os.path.exists(constants.GITIGNORE_FILE):
         with open(constants.GITIGNORE_FILE, "r") as f:
             files |= set([line.strip() for line in f.readlines()])
+
     # Write files to the .gitignore file.
     with open(constants.GITIGNORE_FILE, "w") as f:
+        console.debug(f"Creating {constants.GITIGNORE_FILE}")
         f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
 
@@ -247,16 +250,22 @@ def initialize_bun():
     """Check that bun requirements are met, and install if not."""
     if IS_WINDOWS:
         # Bun is not supported on Windows.
+        console.debug("Skipping bun installation on Windows.")
         return
 
     # Check the bun version.
-    if get_bun_version() != version.parse(constants.BUN_VERSION):
+    bun_version = get_bun_version()
+    if bun_version != version.parse(constants.BUN_VERSION):
+        console.debug(
+            f"Current bun version ({bun_version}) does not match ({constants.BUN_VERSION})."
+        )
         remove_existing_bun_installation()
         install_bun()
 
 
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
+    console.debug("Removing existing bun installation.")
     if os.path.exists(constants.BUN_PATH):
         path_ops.rm(constants.BUN_ROOT_PATH)
 
@@ -295,9 +304,8 @@ def download_and_run(url: str, *args, **env):
         **os.environ,
         **env,
     }
-    result = new_process(["bash", f.name, *args], wait=True, env=env)
-    if result.returncode != 0:
-        raise typer.Exit(code=result.returncode)
+    process = new_process(["bash", f.name, *args], env=env)
+    show_logs(process, f"Installing {url}")
 
 
 def install_node():
@@ -321,17 +329,15 @@ def install_node():
 
     # Install node.
     # We use bash -c as we need to source nvm.sh to use nvm.
-    result = new_process(
+    process = new_process(
         [
             "bash",
             "-c",
             f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
         ],
-        wait=True,
         env=env,
     )
-    if result.returncode != 0:
-        raise typer.Exit(code=result.returncode)
+    show_logs(process, "Installing node")
 
 
 def install_bun():
@@ -342,10 +348,12 @@ def install_bun():
     """
     # Bun is not supported on Windows.
     if IS_WINDOWS:
+        console.debug("Skipping bun installation on Windows.")
         return
 
     # Skip if bun is already installed.
     if os.path.exists(constants.BUN_PATH):
+        console.debug("Skipping bun installation as it is already installed.")
         return
 
     # Check if unzip is installed

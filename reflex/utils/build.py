@@ -11,7 +11,7 @@ from typing import Optional, Union
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import path_ops, prerequisites
+from reflex.utils import console, path_ops, prerequisites
 from reflex.utils.processes import new_process, show_progress
 
 
@@ -37,7 +37,9 @@ def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
 
 def set_reflex_project_hash():
     """Write the hash of the Reflex project to a REFLEX_JSON."""
-    update_json_file(constants.REFLEX_JSON, {"project_hash": random.getrandbits(128)})
+    project_hash = random.getrandbits(128)
+    console.debug(f"Setting project hash to {project_hash}.")
+    update_json_file(constants.REFLEX_JSON, {"project_hash": project_hash})
 
 
 def set_environment_variables():
