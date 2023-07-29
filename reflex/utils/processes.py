@@ -7,7 +7,6 @@ import os
 import signal
 import subprocess
 import sys
-from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -101,7 +100,7 @@ def change_or_terminate_port(port, _type) -> str:
     Returns:
         The new port or the current one.
     """
-    console.print(
+    console.info(
         f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
     )
     frontend_action = console.ask("Kill or change it?", choices=["k", "c", "n"])
@@ -115,12 +114,12 @@ def change_or_terminate_port(port, _type) -> str:
         if is_process_on_port(new_port):
             return change_or_terminate_port(new_port, _type)
         else:
-            console.print(
+            console.info(
                 f"The {_type} will run on port [bold underline]{new_port}[/bold underline]."
             )
             return new_port
     else:
-        console.print("Exiting...")
+        console.log("Exiting...")
         sys.exit()
 
 
@@ -163,5 +162,4 @@ def catch_keyboard_interrupt(signal, frame):
         signal: The keyboard interrupt signal.
         frame: The current stack frame.
     """
-    current_time = datetime.now().isoformat()
-    console.print(f"\nReflex app stopped at time: {current_time}")
+    console.log("Reflex app stopped.")

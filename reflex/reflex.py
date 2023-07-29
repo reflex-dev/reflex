@@ -53,10 +53,13 @@ def init(
         constants.Template.DEFAULT, help="Template to use for the app."
     ),
     loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.ERROR, help="The log level to use."
+        constants.LogLevel.INFO, help="The log level to use."
     ),
 ):
     """Initialize a new Reflex app in the current directory."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
     # Get the app name.
     app_name = prerequisites.get_default_app_name() if name is None else name
     console.rule(f"[bold]Initializing {app_name}")
@@ -81,7 +84,7 @@ def init(
     prerequisites.initialize_gitignore()
 
     # Finish initializing the app.
-    console.log(f"[bold green]Finished Initializing: {app_name}")
+    console.success(f"Finished Initializing: {app_name}")
 
 
 @cli.command()
@@ -93,14 +96,17 @@ def run(
         False, "--frontend-only", help="Execute only frontend."
     ),
     backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
-    loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.ERROR, help="The log level to use."
-    ),
     frontend_port: str = typer.Option(None, help="Specify a different frontend port."),
     backend_port: str = typer.Option(None, help="Specify a different backend port."),
     backend_host: str = typer.Option(None, help="Specify the backend host."),
+    loglevel: constants.LogLevel = typer.Option(
+        constants.LogLevel.INFO, help="The log level to use."
+    ),
 ):
     """Run the app in the current directory."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
     # Check that the app is initialized.
     prerequisites.check_initialized(frontend=frontend)
 
@@ -161,14 +167,12 @@ def run(
 
     # Run the frontend and backend.
     if frontend:
-        setup_frontend(Path.cwd(), loglevel)
-        threading.Thread(
-            target=frontend_cmd, args=(Path.cwd(), frontend_port, loglevel)
-        ).start()
+        setup_frontend(Path.cwd())
+        threading.Thread(target=frontend_cmd, args=(Path.cwd(), frontend_port)).start()
     if backend:
         threading.Thread(
             target=backend_cmd,
-            args=(app.__name__, backend_host, backend_port, loglevel),
+            args=(app.__name__, backend_host, backend_port),
         ).start()
 
     # Display custom message when there is a keyboard interrupt.
@@ -220,8 +224,14 @@ def export(
     backend: bool = typer.Option(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
+    loglevel: constants.LogLevel = typer.Option(
+        constants.LogLevel.INFO, help="The log level to use."
+    ),
 ):
     """Export the app to a zip file."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
     # Check that the app is initialized.
     prerequisites.check_initialized(frontend=frontend)
 
@@ -247,12 +257,12 @@ def export(
     telemetry.send("export", config.telemetry_enabled)
 
     if zipping:
-        console.rule(
+        console.log(
             """Backend & Frontend compiled. See [green bold]backend.zip[/green bold]
             and [green bold]frontend.zip[/green bold]."""
         )
     else:
-        console.rule(
+        console.log(
             """Backend & Frontend compiled. See [green bold]app[/green bold]
             and [green bold].web/_static[/green bold] directories."""
         )
@@ -264,16 +274,22 @@ db_cli = typer.Typer()
 @db_cli.command(name="init")
 def db_init():
     """Create database schema and migration configuration."""
+    # Check the database url.
     if get_config().db_url is None:
-        console.print("[red]db_url is not configured, cannot initialize.")
+        console.error("db_url is not configured, cannot initialize.")
+        return
+
+    # Check the alembic config.
     if Path(constants.ALEMBIC_CONFIG).exists():
-        console.print(
-            "[red]Database is already initialized. Use "
+        console.error(
+            "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
             "scripts and [bold]reflex db migrate[/bold] to apply migrations "
             "to a new or existing database.",
         )
         return
+
+    # Initialize the database.
     prerequisites.get_app()
     model.Model.alembic_init()
     model.Model.migrate(autogenerate=True)
@@ -305,8 +321,8 @@ def makemigrations(
         except CommandError as command_error:
             if "Target database is not up to date." not in str(command_error):
                 raise
-            console.print(
-                f"[red]{command_error} Run [bold]reflex db migrate[/bold] to update database."
+            console.error(
+                f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
 
 

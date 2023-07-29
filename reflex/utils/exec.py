@@ -6,8 +6,6 @@ import os
 import platform
 from pathlib import Path
 
-from rich import print
-
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, prerequisites, processes
@@ -27,7 +25,6 @@ def start_watching_assets_folder(root):
 
 def run_process_and_launch_url(
     run_command: list[str],
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
     """Run the process and launch the URL.
 
@@ -44,15 +41,14 @@ def run_process_and_launch_url(
         for line in process.stdout:
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
-                print(f"App running at: [bold green]{url}")
-            if loglevel == constants.LogLevel.DEBUG:
-                print(line, end="")
+                console.info(f"App running at: [bold green]{url}")
+            else:
+                console.debug(line)
 
 
 def run_frontend(
     root: Path,
     port: str,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
     """Run the frontend.
 
@@ -67,15 +63,12 @@ def run_frontend(
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = get_config().frontend_port if port is None else port
-    run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev"], loglevel
-    )
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])
 
 
 def run_frontend_prod(
     root: Path,
     port: str,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
     """Run the frontend.
 
@@ -89,7 +82,7 @@ def run_frontend_prod(
 
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([constants.NPM_PATH, "run", "prod"], loglevel)
+    run_process_and_launch_url([constants.NPM_PATH, "run", "prod"])
 
 
 def run_backend(

@@ -6,7 +6,6 @@ from typing import List, Optional
 
 from rich.console import Console
 from rich.prompt import Prompt
-from rich.status import Status
 
 from reflex.constants import LogLevel
 
@@ -17,6 +16,16 @@ _console = Console()
 LOG_LEVEL = LogLevel.INFO
 
 
+def set_log_level(log_level: LogLevel):
+    """Set the log level.
+
+    Args:
+        log_level: The log level to set.
+    """
+    global LOG_LEVEL
+    LOG_LEVEL = log_level
+
+
 def print(msg: str):
     """Print a message.
 
@@ -24,6 +33,7 @@ def print(msg: str):
         msg: The message to print.
     """
     _console.print(msg)
+
 
 def debug(msg: str):
     """Print a debug message.
@@ -42,7 +52,17 @@ def info(msg: str):
         msg: The info message.
     """
     if LOG_LEVEL <= LogLevel.INFO:
-       print(f"[green]Info: {msg}[/green]")
+        print(f"[cyan]Info: {msg}[/cyan]")
+
+
+def success(msg: str):
+    """Print a success message.
+
+    Args:
+        msg: The success message.
+    """
+    if LOG_LEVEL <= LogLevel.INFO:
+        print(f"[green]Success: {msg}[/green]")
 
 
 def log(msg: str):
@@ -61,7 +81,8 @@ def rule(title: str):
     Args:
         title: The title of the rule.
     """
-    _console.rule(title)
+    if LOG_LEVEL <= LogLevel.INFO:
+        _console.rule(title)
 
 
 def warn(msg: str):
@@ -72,6 +93,7 @@ def warn(msg: str):
     """
     if LOG_LEVEL <= LogLevel.WARNING:
         print(f"[orange1]Warning: {msg}[/orange1]")
+
 
 def deprecate(msg: str):
     """Print a deprecation warning.

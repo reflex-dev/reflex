@@ -10,7 +10,6 @@ import re
 import sys
 import tempfile
 import threading
-from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
@@ -133,7 +132,7 @@ def get_redis() -> Optional[Redis]:
     if config.redis_url is None:
         return None
     redis_url, redis_port = config.redis_url.split(":")
-    print("Using redis at", config.redis_url)
+    console.info("Using redis at", config.redis_url)
     return Redis(host=redis_url, port=int(redis_port), db=0)
 
 
