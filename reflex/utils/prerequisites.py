@@ -9,12 +9,15 @@ import platform
 import re
 import subprocess
 import sys
+import tempfile
+import threading
 from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
+import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -44,7 +47,7 @@ def check_node_version():
         current_version = version.parse(result.stdout.decode())
         # Compare the version numbers
         return (
-            current_version >= version.parse(constants.MIN_NODE_VERSION)
+            current_version >= version.parse(constants.NODE_VERSION_MIN)
             if IS_WINDOWS
             else current_version == version.parse(constants.NODE_VERSION)
         )
@@ -273,39 +276,68 @@ def initialize_node():
         install_node()
 
 
+def download_and_run(url: str, *args, **env):
+    """Download and run a script.
+
+
+    Args:
+        url: The url of the script.
+        args: The arguments to pass to the script.
+        env: The environment variables to use.
+
+
+    Raises:
+        Exit: if installation failed
+    """
+    # Download the script
+    response = httpx.get(url)
+    if response.status_code != httpx.codes.OK:
+        response.raise_for_status()
+
+    # Save the script to a temporary file.
+    script = tempfile.NamedTemporaryFile()
+    with open(script.name, "w") as f:
+        f.write(response.text)
+
+    # Run the script.
+    env = {
+        **os.environ,
+        **env,
+    }
+    result = subprocess.run(["bash", f.name, *args], env=env)
+    if result.returncode != 0:
+        raise typer.Exit(code=result.returncode)
+
+
 def install_node():
     """Install nvm and nodejs for use by Reflex.
        Independent of any existing system installations.
 
     Raises:
-        FileNotFoundError: if unzip or curl packages are not found.
         Exit: if installation failed
     """
+    # NVM is not supported on Windows.
     if IS_WINDOWS:
         console.print(
             f"[red]Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
         )
         raise typer.Exit()
 
-    # Only install if bun is not already installed.
-    console.log("Installing nvm...")
-
-    # Check if curl is installed
-    # TODO no need to shell out to curl
-    curl_path = path_ops.which("curl")
-    if curl_path is None:
-        raise FileNotFoundError("Reflex requires curl to be installed.")
-
     # Create the nvm directory and install.
-    path_ops.mkdir(constants.NVM_ROOT_PATH)
-    result = subprocess.run(constants.INSTALL_NVM, shell=True)
+    path_ops.mkdir(constants.NVM_DIR)
+    env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
+    download_and_run(constants.NVM_INSTALL_URL, **env)
 
-    if result.returncode != 0:
-        raise typer.Exit(code=result.returncode)
-
-    console.log("Installing node...")
-    result = subprocess.run(constants.INSTALL_NODE, shell=True)
-
+    # Install node.
+    # We use bash -c as we need to source nvm.sh to use nvm.
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
+        ],
+        env=env,
+    )
     if result.returncode != 0:
         raise typer.Exit(code=result.returncode)
 
@@ -314,32 +346,27 @@ def install_bun():
     """Install bun onto the user's system.
 
     Raises:
-        FileNotFoundError: if unzip or curl packages are not found.
-        Exit: if installation failed
+        FileNotFoundError: If required packages are not found.
     """
     # Bun is not supported on Windows.
     if IS_WINDOWS:
-        console.log("Skipping bun installation on Windows.")
         return
 
-    # Only install if bun is not already installed.
-    if not os.path.exists(constants.BUN_PATH):
-        console.log("Installing bun...")
+    # Skip if bun is already installed.
+    if os.path.exists(constants.BUN_PATH):
+        return
 
-        # Check if curl is installed
-        curl_path = path_ops.which("curl")
-        if curl_path is None:
-            raise FileNotFoundError("Reflex requires curl to be installed.")
+    # Check if unzip is installed
+    unzip_path = path_ops.which("unzip")
+    if unzip_path is None:
+        raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-        # Check if unzip is installed
-        unzip_path = path_ops.which("unzip")
-        if unzip_path is None:
-            raise FileNotFoundError("Reflex requires unzip to be installed.")
-
-        result = subprocess.run(constants.INSTALL_BUN, shell=True)
-
-        if result.returncode != 0:
-            raise typer.Exit(code=result.returncode)
+    # Run the bun install script.
+    download_and_run(
+        constants.BUN_INSTALL_URL,
+        f"bun-v{constants.BUN_VERSION}",
+        BUN_INSTALL=constants.BUN_ROOT_PATH,
+    )
 
 
 def install_frontend_packages():
@@ -417,11 +444,19 @@ def initialize_frontend_dependencies():
     path_ops.mkdir(constants.REFLEX_DIR)
 
     # Install the frontend dependencies.
-    initialize_bun()
-    initialize_node()
+    threads = [
+        threading.Thread(target=initialize_bun),
+        threading.Thread(target=initialize_node),
+    ]
+    for thread in threads:
+        thread.start()
 
     # Set up the web directory.
     initialize_web_directory()
+
+    # Wait for the threads to finish.
+    for thread in threads:
+        thread.join()
 
 
 def check_admin_settings():

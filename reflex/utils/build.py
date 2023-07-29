@@ -147,7 +147,7 @@ def export_app(
                 # Check for special strings and update the progress bar.
                 for special_string in checkpoints:
                     if special_string in line:
-                        if special_string == "Export successful":
+                        if special_string == checkpoints[-1]:
                             progress.update(task, completed=len(checkpoints))
                             break  # Exit the loop if the completion message is found
                         else:

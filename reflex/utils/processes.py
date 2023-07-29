@@ -134,13 +134,15 @@ def new_process(args, **kwargs):
     Returns:
         Execute a child program in a new process.
     """
-    env = os.environ.copy()
-    env["PATH"] = os.pathsep.join([constants.NODE_BIN_PATH, env["PATH"]])
+    env = {
+        **os.environ,
+        "PATH": os.pathsep.join([constants.NODE_BIN_PATH, os.environ["PATH"]]),
+    }
     kwargs = {
         "env": env,
         "stderr": subprocess.STDOUT,
-        "stdout": subprocess.PIPE,  # Redirect stdout to a pipe
-        "universal_newlines": True,  # Set universal_newlines to True for text mode
+        "stdout": subprocess.PIPE,
+        "universal_newlines": True,
         "encoding": "UTF-8",
         **kwargs,
     }
