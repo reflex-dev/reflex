@@ -146,6 +146,7 @@ def new_process(args, wait: bool = False, **kwargs):
         "encoding": "UTF-8",
         **kwargs,
     }
+    console.debug(f"Running command: {args} with kwargs: {kwargs}")
     process = subprocess.Popen(
         args,
         **kwargs,

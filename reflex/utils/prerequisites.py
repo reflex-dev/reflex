@@ -375,20 +375,20 @@ def install_frontend_packages():
     console.rule("[bold]Installing frontend packages")
 
     # Install the base packages.
-    new_process(
+    process = new_process(
         [get_install_package_manager(), "install"],
-        wait=True,
         cwd=constants.WEB_DIR,
     )
+    show_logs(process, "Installing base frontend packages")
 
     # Install the app packages.
     packages = get_config().frontend_packages
     if len(packages) > 0:
-        new_process(
+        process = new_process(
             [get_install_package_manager(), "add", *packages],
-            wait=True,
             cwd=constants.WEB_DIR,
         )
+        show_logs(process, "Installing custom frontend packages")
 
 
 def check_initialized(frontend: bool = True):

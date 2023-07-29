@@ -9,7 +9,7 @@ from pathlib import Path
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, prerequisites, processes
-from reflex.utils.processes import new_process
+from reflex.utils.processes import new_process, show_logs
 from reflex.utils.watch import AssetFolderWatch
 
 
@@ -99,7 +99,7 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    new_process(
+    process = new_process(
         [
             "uvicorn",
             f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
@@ -113,8 +113,8 @@ def run_backend(
             "--reload-dir",
             app_name.split(".")[0],
         ],
-        wait=True,
     )
+    show_logs(process, "Running backend server")
 
 
 def run_backend_prod(
@@ -158,4 +158,5 @@ def run_backend_prod(
         "--workers",
         str(num_workers),
     ]
-    new_process(command, wait=True)
+    process = new_process(command)
+    show_logs(process, "Running backend server")
