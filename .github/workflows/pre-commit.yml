@@ -1,0 +1,28 @@
+name: pre-commit
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    # Note even though this job is called "pre-commit" and runs "pre-commit", this job will run
+    # also POST-commit on main also!  In case there are mishandled merge conflicts / bad auto-resolves
+    # when merging into main branch.
+    branches: [main]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup_build_env
+        with:
+          # running vs. one version of Python is OK
+          # i.e. ruff, black, etc.
+          python-version: 3.11
+          run-poetry-install: true
+          shell: bash
+          create-venv-at-path: .venv
+      # TODO pre-commit related stuff can be cached too (not a bottleneck yet)
+      - run: |
+          poetry run pip install pre-commit
+          poetry run pre-commit run --all-files

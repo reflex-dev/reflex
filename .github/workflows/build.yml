@@ -26,8 +26,4 @@ jobs:
           shell: bash
           create-venv-at-path: .venv
     - run: poetry run pytest tests --cov --no-cov-on-fail --cov-report=
-    - run: poetry run pyright reflex tests
-    - run: poetry run ruff check . --format github
-    - run: find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs poetry run darglint
-    - run: poetry run black --check reflex tests
     - run: poetry run coverage html
