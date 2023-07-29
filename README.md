@@ -19,33 +19,31 @@
 ---
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md)
 ---
-## Installation
+## ⚙️ Installation
 
-Open a terminal and run (Requires **Python 3.7+**):
+Open a terminal and run (Requires Python 3.7+):
 
-```
+```bash
 pip install reflex
 ```
 
-## Create your first app
+## 🥳 Create your first app
 
 Installing `reflex` also installs the `reflex` command line tool.
 
 Test that the install was successful by creating a new project. (Replace `my_app_name` with your project name):
 
-```
+```bash
 mkdir my_app_name
 cd my_app_name
 reflex init
 ```
 
-This command initializes a template app in your new directory.
-
-##  Run your app
+This command initializes a template app in your new directory. 
 
 You can run this app in development mode:
 
-```
+```bash
 reflex run
 ```
 
@@ -53,7 +51,8 @@ You should see your app running at http://localhost:3000.
 
 Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has fast refreshes so you can see your changes instantly when you save your code.
 
-## 🫧 Example
+
+## 🫧 Example App
 
 Let's go over an example: creating an image generation UI around DALL·E. For simplicity, we just call the OpenAI API, but you could replace this with an ML model run locally.
 
@@ -120,14 +119,14 @@ def index():
     )
 
 # Add state and page to the app.
-app = rx.App(state=State)
+app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
 app.compile()
 ```
 
-Let's break this down.
+## Let's break this down.
 
-### **UI In Reflex**
+### **Reflex UI**
 
 Let's start with the UI.
 
@@ -183,26 +182,38 @@ Our DALL·E. app has an event handler, `get_image` to which get this image from 
 
 ### **Routing**
 
-Finally, we define our app and pass it our state.
+Finally, we define our app.
 
 ```python
-app = rx.App(state=State)
+app = rx.App()
 ```
 
-We add a route from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
+We add a page from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
 
 ```python
 app.add_page(index, title="DALL-E")
 app.compile()
 ```
 
-You can create a multi-page app by adding more routes.
+You can create a multi-page app by adding more pages.
 
-## Status
+## 📑 Resources
+
+<div align="center">
+
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+
+</div>
+
+
+
+
+
+## ✅ Status
 
 Reflex launched in December 2022 with the name Pynecone.
 
-As of June 2023, we are in the **Public Beta** stage.
+As of July 2023, we are in the **Public Beta** stage.
 
 -   :white_check_mark: **Public Alpha**: Anyone can install and use Reflex. There may be issues, but we are working to resolve them actively.
 -   :large_orange_diamond: **Public Beta**: Stable enough for non-enterprise use-cases.
