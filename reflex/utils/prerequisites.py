@@ -7,7 +7,6 @@ import json
 import os
 import platform
 import re
-import subprocess
 import sys
 import tempfile
 import threading
@@ -60,12 +59,8 @@ def get_bun_version() -> Optional[version.Version]:
     """
     try:
         # Run the bun -v command and capture the output
-        result = subprocess.run(
-            [constants.BUN_PATH, "-v"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        return version.parse(result.stdout.decode().strip())
+        result = new_process([constants.BUN_PATH, "-v"], wait=True)
+        return version.parse(result.stdout.read())
     except Exception:
         return None
 
@@ -301,7 +296,7 @@ def download_and_run(url: str, *args, **env):
         **os.environ,
         **env,
     }
-    result = subprocess.run(["bash", f.name, *args], env=env)
+    result = new_process(["bash", f.name, *args], wait=True, env=env)
     if result.returncode != 0:
         raise typer.Exit(code=result.returncode)
 
@@ -327,12 +322,13 @@ def install_node():
 
     # Install node.
     # We use bash -c as we need to source nvm.sh to use nvm.
-    result = subprocess.run(
+    result = new_process(
         [
             "bash",
             "-c",
             f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
         ],
+        wait=True,
         env=env,
     )
     if result.returncode != 0:
@@ -372,19 +368,19 @@ def install_frontend_packages():
     console.rule("[bold]Installing frontend packages")
 
     # Install the base packages.
-    subprocess.run(
+    new_process(
         [get_install_package_manager(), "install"],
+        wait=True,
         cwd=constants.WEB_DIR,
-        stdout=subprocess.PIPE,
     )
 
     # Install the app packages.
     packages = get_config().frontend_packages
     if len(packages) > 0:
-        subprocess.run(
+        new_process(
             [get_install_package_manager(), "add", *packages],
+            wait=True,
             cwd=constants.WEB_DIR,
-            stdout=subprocess.PIPE,
         )
 
 

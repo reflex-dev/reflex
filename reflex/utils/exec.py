@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import platform
-import subprocess
 from pathlib import Path
 
 from rich import print
@@ -107,20 +106,22 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    new_process([
-        "uvicorn",
-        f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
-        "--host",
-        host,
-        "--port",
-        str(port),
-        "--log-level",
-        loglevel,
-        "--reload",
-        "--reload-dir",
-        app_name.split(".")[0],
-        wait=True
-    ])
+    new_process(
+        [
+            "uvicorn",
+            f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+            "--host",
+            host,
+            "--port",
+            str(port),
+            "--log-level",
+            loglevel,
+            "--reload",
+            "--reload-dir",
+            app_name.split(".")[0],
+        ],
+        wait=True,
+    )
 
 
 def run_backend_prod(
@@ -164,4 +165,4 @@ def run_backend_prod(
         "--workers",
         str(num_workers),
     ]
-    subprocess.run(command)
+    new_process(command, wait=True)
