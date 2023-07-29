@@ -165,8 +165,8 @@ def get_default_app_name() -> str:
 
     # Make sure the app is not named "reflex".
     if app_name == constants.MODULE_NAME:
-        console.print(
-            f"[red]The app directory cannot be named [bold]{constants.MODULE_NAME}."
+        console.error(
+            f"The app directory cannot be named [bold]{constants.MODULE_NAME}[/bold]."
         )
         raise typer.Exit()
 
@@ -310,8 +310,8 @@ def install_node():
     """
     # NVM is not supported on Windows.
     if IS_WINDOWS:
-        console.print(
-            f"[red]Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
+        console.error(
+            f"Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
         )
         raise typer.Exit()
 
@@ -399,22 +399,22 @@ def check_initialized(frontend: bool = True):
 
     # Check if the app is initialized.
     if not (has_config and has_reflex_dir and has_web_dir):
-        console.print(
-            f"[red]The app is not initialized. Run [bold]{constants.MODULE_NAME} init[/bold] first."
+        console.error(
+            f"The app is not initialized. Run [bold]{constants.MODULE_NAME} init[/bold] first."
         )
         raise typer.Exit()
 
     # Check that the template is up to date.
     if frontend and not is_latest_template():
-        console.print(
-            "[red]The base app template has updated. Run [bold]reflex init[/bold] again."
+        console.error(
+            "The base app template has updated. Run [bold]reflex init[/bold] again."
         )
         raise typer.Exit()
 
     # Print a warning for Windows users.
     if IS_WINDOWS:
-        console.print(
-            "[yellow][WARNING] We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
+        console.warn(
+            "We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
         )
 
 
@@ -455,17 +455,16 @@ def initialize_frontend_dependencies():
 def check_admin_settings():
     """Check if admin settings are set and valid for logging in cli app."""
     admin_dash = get_config().admin_dash
-    current_time = datetime.now()
     if admin_dash:
         if not admin_dash.models:
-            console.print(
-                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]rxconfig.py[/bold magenta]. Time: {current_time}"
+            console.log(
+                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]rxconfig.py[/bold magenta]."
             )
         else:
-            console.print(
-                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard. Time: {current_time}"
+            console.log(
+                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard."
             )
-            console.print(
+            console.log(
                 "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
             )
 
@@ -477,8 +476,8 @@ def check_db_initialized() -> bool:
         True if alembic is initialized (or if database is not used).
     """
     if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
-        console.print(
-            "[red]Database is not initialized. Run [bold]reflex db init[/bold] first."
+        console.error(
+            "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
         return False
     return True
@@ -494,14 +493,14 @@ def check_schema_up_to_date():
                 connection=connection,
                 write_migration_scripts=False,
             ):
-                console.print(
-                    "[red]Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
+                console.error(
+                    "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
                     "to generate migration scripts.",
                 )
         except CommandError as command_error:
             if "Target database is not up to date." in str(command_error):
-                console.print(
-                    f"[red]{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                console.error(
+                    f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
                 )
 
 
@@ -520,7 +519,7 @@ def migrate_to_reflex():
         return
 
     # Rename pcconfig to rxconfig.
-    console.print(
+    console.log(
         f"[bold]Renaming {constants.OLD_CONFIG_FILE} to {constants.CONFIG_FILE}"
     )
     os.rename(constants.OLD_CONFIG_FILE, constants.CONFIG_FILE)

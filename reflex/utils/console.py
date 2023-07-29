@@ -8,53 +8,89 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.status import Status
 
+from reflex.constants import LogLevel
+
 # Console for pretty printing.
 _console = Console()
 
-
-def deprecate(msg: str) -> None:
-    """Print a deprecation warning.
-
-    Args:
-        msg: The deprecation message.
-    """
-    _console.print(f"[yellow]DeprecationWarning: {msg}[/yellow]")
+# The current log level.
+LOG_LEVEL = LogLevel.INFO
 
 
-def warn(msg: str) -> None:
-    """Print a warning about bad usage in Reflex.
+def print(msg: str):
+    """Print a message.
 
     Args:
-        msg: The warning message.
+        msg: The message to print.
     """
-    _console.print(f"[orange1]UsageWarning: {msg}[/orange1]")
+    _console.print(msg)
+
+def debug(msg: str):
+    """Print a debug message.
+
+    Args:
+        msg: The debug message.
+    """
+    if LOG_LEVEL <= LogLevel.DEBUG:
+        print(f"[blue]Debug: {msg}[/blue]")
 
 
-def log(msg: str) -> None:
+def info(msg: str):
+    """Print an info message.
+
+    Args:
+        msg: The info message.
+    """
+    if LOG_LEVEL <= LogLevel.INFO:
+       print(f"[green]Info: {msg}[/green]")
+
+
+def log(msg: str):
     """Takes a string and logs it to the console.
 
     Args:
         msg: The message to log.
     """
-    _console.log(msg)
+    if LOG_LEVEL <= LogLevel.INFO:
+        _console.log(msg)
 
 
-def print(msg: str) -> None:
-    """Prints the given message to the console.
-
-    Args:
-        msg: The message to print to the console.
-    """
-    _console.print(msg)
-
-
-def rule(title: str) -> None:
+def rule(title: str):
     """Prints a horizontal rule with a title.
 
     Args:
         title: The title of the rule.
     """
     _console.rule(title)
+
+
+def warn(msg: str):
+    """Print a warning message.
+
+    Args:
+        msg: The warning message.
+    """
+    if LOG_LEVEL <= LogLevel.WARNING:
+        print(f"[orange1]Warning: {msg}[/orange1]")
+
+def deprecate(msg: str):
+    """Print a deprecation warning.
+
+    Args:
+        msg: The deprecation message.
+    """
+    if LOG_LEVEL <= LogLevel.WARNING:
+        print(f"[yellow]DeprecationWarning: {msg}[/yellow]")
+
+
+def error(msg: str):
+    """Print an error message.
+
+    Args:
+        msg: The error message.
+    """
+    if LOG_LEVEL <= LogLevel.ERROR:
+        print(f"[red]Error: {msg}[/red]")
 
 
 def ask(
@@ -69,19 +105,6 @@ def ask(
         default: The default option selected.
 
     Returns:
-        A string
+        A string with the user input.
     """
     return Prompt.ask(question, choices=choices, default=default)  # type: ignore
-
-
-def status(msg: str) -> Status:
-    """Returns a status,
-    which can be used as a context manager.
-
-    Args:
-        msg: The message to be used as status title.
-
-    Returns:
-        The status of the console.
-    """
-    return _console.status(msg)

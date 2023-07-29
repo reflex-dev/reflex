@@ -1,4 +1,5 @@
 """Constants used throughout the package."""
+from __future__ import annotations
 
 import os
 import platform
@@ -249,6 +250,19 @@ class LogLevel(str, Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
+    QUIET = "quiet"
+
+    def __le__(self, other: LogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is less than or equal to the other log level.
+        """
+        levels = list(LogLevel)
+        return levels.index(self) <= levels.index(other)
 
 
 # Templates

@@ -52,6 +52,9 @@ def init(
     template: constants.Template = typer.Option(
         constants.Template.DEFAULT, help="Template to use for the app."
     ),
+    loglevel: constants.LogLevel = typer.Option(
+        constants.LogLevel.ERROR, help="The log level to use."
+    ),
 ):
     """Initialize a new Reflex app in the current directory."""
     # Get the app name.
