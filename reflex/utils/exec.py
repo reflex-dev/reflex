@@ -9,7 +9,7 @@ from pathlib import Path
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, prerequisites, processes
-from reflex.utils.processes import new_process, show_logs
+from reflex.utils.processes import new_process
 from reflex.utils.watch import AssetFolderWatch
 
 
@@ -30,7 +30,6 @@ def run_process_and_launch_url(
 
     Args:
         run_command: The command to run.
-        loglevel: The log level to use.
     """
     process = new_process(
         run_command,
@@ -55,7 +54,6 @@ def run_frontend(
     Args:
         root: The root path of the project.
         port: The port to run the frontend on.
-        loglevel: The log level to use.
     """
     # Start watching asset folder.
     start_watching_assets_folder(root)
@@ -75,7 +73,6 @@ def run_frontend_prod(
     Args:
         root: The root path of the project (to keep same API as run_frontend).
         port: The port to run the frontend on.
-        loglevel: The log level to use.
     """
     # Set the port.
     os.environ["PORT"] = get_config().frontend_port if port is None else port
@@ -99,7 +96,7 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    process = new_process(
+    new_process(
         [
             "uvicorn",
             f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
@@ -113,8 +110,9 @@ def run_backend(
             "--reload-dir",
             app_name.split(".")[0],
         ],
+        run=True,
+        show_logs=True,
     )
-    show_logs(process, "Running backend server")
 
 
 def run_backend_prod(
@@ -158,5 +156,4 @@ def run_backend_prod(
         "--workers",
         str(num_workers),
     ]
-    process = new_process(command)
-    show_logs(process, "Running backend server")
+    new_process(command, run=True, show_logs=True)

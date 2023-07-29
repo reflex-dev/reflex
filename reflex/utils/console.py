@@ -27,93 +27,102 @@ def set_log_level(log_level: LogLevel):
     LOG_LEVEL = log_level
 
 
-def print(msg: str):
+def print(msg: str, **kwargs):
     """Print a message.
 
     Args:
         msg: The message to print.
+        kwargs: Keyword arguments to pass to the print function.
     """
-    _console.print(msg)
+    _console.print(msg, **kwargs)
 
 
-def debug(msg: str):
+def debug(msg: str, **kwargs):
     """Print a debug message.
 
     Args:
         msg: The debug message.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.DEBUG:
-        print(f"[blue]Debug: {msg}[/blue]")
+        print(f"[blue]Debug: {msg}[/blue]", **kwargs)
 
 
-def info(msg: str):
+def info(msg: str, **kwargs):
     """Print an info message.
 
     Args:
         msg: The info message.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.INFO:
-        print(f"[cyan]Info: {msg}[/cyan]")
+        print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
-def success(msg: str):
+def success(msg: str, **kwargs):
     """Print a success message.
 
     Args:
         msg: The success message.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.INFO:
-        print(f"[green]Success: {msg}[/green]")
+        print(f"[green]Success: {msg}[/green]", **kwargs)
 
 
-def log(msg: str):
+def log(msg: str, **kwargs):
     """Takes a string and logs it to the console.
 
     Args:
         msg: The message to log.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.INFO:
-        _console.log(msg)
+        _console.log(msg, **kwargs)
 
 
-def rule(title: str):
+def rule(title: str, **kwargs):
     """Prints a horizontal rule with a title.
 
     Args:
         title: The title of the rule.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.INFO:
-        _console.rule(title)
+        _console.rule(title, **kwargs)
 
 
-def warn(msg: str):
+def warn(msg: str, **kwargs):
     """Print a warning message.
 
     Args:
         msg: The warning message.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.WARNING:
-        print(f"[orange1]Warning: {msg}[/orange1]")
+        print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-def deprecate(msg: str):
+def deprecate(msg: str, **kwargs):
     """Print a deprecation warning.
 
     Args:
         msg: The deprecation message.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.WARNING:
-        print(f"[yellow]DeprecationWarning: {msg}[/yellow]")
+        print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
 
 
-def error(msg: str):
+def error(msg: str, **kwargs):
     """Print an error message.
 
     Args:
         msg: The error message.
+        kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.ERROR:
-        print(f"[red]Error: {msg}[/red]")
+        print(f"[red]Error: {msg}[/red]", **kwargs)
 
 
 def ask(
@@ -134,7 +143,12 @@ def ask(
 
 
 def progress():
-    """Create a new progress bar."""
+    """Create a new progress bar.
+
+
+    Returns:
+        A new progress bar.
+    """
     return Progress(
         *Progress.get_default_columns()[:-1],
         MofNCompleteColumn(),

@@ -29,25 +29,26 @@ from reflex.utils.processes import new_process, show_logs
 IS_WINDOWS = platform.system() == "Windows"
 
 
-def check_node_version():
+def check_node_version() -> bool:
     """Check the version of Node.js.
 
     Returns:
         Whether the version of Node.js is valid.
     """
     try:
-        # Run the node -v command and capture the output
-        result = new_process([constants.NODE_PATH, "-v"], wait=True)
-        # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        current_version = version.parse(result.stdout.read())
-        # Compare the version numbers
-        return (
-            current_version >= version.parse(constants.NODE_VERSION_MIN)
-            if IS_WINDOWS
-            else current_version == version.parse(constants.NODE_VERSION)
-        )
-    except Exception:
+        # Run the node -v command and capture the output.
+        result = new_process([constants.NODE_PATH, "-v"], run=True)
+    except FileNotFoundError:
         return False
+
+    # The output will be in the form "vX.Y.Z", but version.parse() can handle it
+    current_version = version.parse(result.stdout)  # type: ignore
+    # Compare the version numbers
+    return (
+        current_version >= version.parse(constants.NODE_VERSION_MIN)
+        if IS_WINDOWS
+        else current_version == version.parse(constants.NODE_VERSION)
+    )
 
 
 def get_bun_version() -> Optional[version.Version]:
@@ -58,9 +59,9 @@ def get_bun_version() -> Optional[version.Version]:
     """
     try:
         # Run the bun -v command and capture the output
-        result = new_process([constants.BUN_PATH, "-v"], wait=True)
-        return version.parse(result.stdout.read())
-    except Exception:
+        result = new_process([constants.BUN_PATH, "-v"], run=True)
+        return version.parse(result.stdout)  # type: ignore
+    except FileNotFoundError:
         return None
 
 
@@ -132,7 +133,7 @@ def get_redis() -> Optional[Redis]:
     if config.redis_url is None:
         return None
     redis_url, redis_port = config.redis_url.split(":")
-    console.info("Using redis at", config.redis_url)
+    console.info(f"Using redis at {config.redis_url}")
     return Redis(host=redis_url, port=int(redis_port), db=0)
 
 
@@ -259,6 +260,7 @@ def initialize_bun():
         console.debug(
             f"Current bun version ({bun_version}) does not match ({constants.BUN_VERSION})."
         )
+        breakpoint()
         remove_existing_bun_installation()
         install_bun()
 
@@ -279,17 +281,13 @@ def initialize_node():
 def download_and_run(url: str, *args, **env):
     """Download and run a script.
 
-
     Args:
         url: The url of the script.
         args: The arguments to pass to the script.
         env: The environment variables to use.
-
-
-    Raises:
-        Exit: if installation failed
     """
     # Download the script
+    console.debug(f"Downloading {url}")
     response = httpx.get(url)
     if response.status_code != httpx.codes.OK:
         response.raise_for_status()
@@ -305,7 +303,7 @@ def download_and_run(url: str, *args, **env):
         **env,
     }
     process = new_process(["bash", f.name, *args], env=env)
-    show_logs(process, f"Installing {url}")
+    show_logs(f"Installing {url}", process)
 
 
 def install_node():
@@ -337,7 +335,7 @@ def install_node():
         ],
         env=env,
     )
-    show_logs(process, "Installing node")
+    show_logs("Installing node", process)
 
 
 def install_bun():
@@ -356,7 +354,7 @@ def install_bun():
         console.debug("Skipping bun installation as it is already installed.")
         return
 
-    # Check if unzip is installed
+    #  if unzip is installed
     unzip_path = path_ops.which("unzip")
     if unzip_path is None:
         raise FileNotFoundError("Reflex requires unzip to be installed.")
@@ -371,15 +369,12 @@ def install_bun():
 
 def install_frontend_packages():
     """Installs the base and custom frontend packages."""
-    # Install the frontend packages.
-    console.rule("[bold]Installing frontend packages")
-
     # Install the base packages.
     process = new_process(
         [get_install_package_manager(), "install"],
         cwd=constants.WEB_DIR,
     )
-    show_logs(process, "Installing base frontend packages")
+    show_logs("Installing base frontend packages", process)
 
     # Install the app packages.
     packages = get_config().frontend_packages
@@ -388,7 +383,7 @@ def install_frontend_packages():
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
         )
-        show_logs(process, "Installing custom frontend packages")
+        show_logs("Installing custom frontend packages", process)
 
 
 def check_initialized(frontend: bool = True):

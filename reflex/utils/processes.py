@@ -6,7 +6,8 @@ import contextlib
 import os
 import signal
 import subprocess
-from typing import List, Optional
+import sys
+from typing import Callable, List, Optional
 from urllib.parse import urlparse
 
 import psutil
@@ -120,15 +121,16 @@ def change_or_terminate_port(port, _type) -> str:
             return new_port
     else:
         console.log("Exiting...")
-        typer.Exit()
+        sys.exit()
 
 
-def new_process(args, wait: bool = False, **kwargs):
+def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     """Wrapper over subprocess.Popen to unify the launch of child processes.
 
     Args:
         args: A string, or a sequence of program arguments.
-        wait: Whether to wait for the process to finish.
+        run: Whether to run the process to completion.
+        show_logs: Whether to show the logs of the process.
         **kwargs: Kwargs to override default wrap values to pass to subprocess.Popen as arguments.
 
     Returns:
@@ -140,25 +142,19 @@ def new_process(args, wait: bool = False, **kwargs):
     }
     kwargs = {
         "env": env,
-        "stderr": subprocess.STDOUT,
-        "stdout": subprocess.PIPE,
+        "stderr": None if show_logs else subprocess.STDOUT,
+        "stdout": None if show_logs else subprocess.PIPE,
         "universal_newlines": True,
         "encoding": "UTF-8",
         **kwargs,
     }
     console.debug(f"Running command: {args} with kwargs: {kwargs}")
-    process = subprocess.Popen(
-        args,
-        **kwargs,
-    )
-    if wait:
-        process.wait()
-    return process
+    fn = subprocess.run if run else subprocess.Popen
+    return fn(args, **kwargs)
 
 
 def show_progress(process: subprocess.Popen, message: str, checkpoints: List[str]):
     """Show a progress bar for a process.
-
 
     Args:
         process: The process.
@@ -172,9 +168,10 @@ def show_progress(process: subprocess.Popen, message: str, checkpoints: List[str
     # Iterate over the process output.
     try:
         with progress, process:
-            assert process.stdout is not None, "No stdout for process."
+            if process.stdout is None:
+                return
             for line in process.stdout:
-                console.debug(line)
+                console.debug(line, end="")
 
                 # Check for special strings and update the progress bar.
                 for special_string in checkpoints:
@@ -193,21 +190,24 @@ def show_progress(process: subprocess.Popen, message: str, checkpoints: List[str
         typer.Exit(1)
 
 
-def show_logs(process: subprocess.Popen, message: str):
+def show_logs(
+    message: str, process: subprocess.Popen, logger: Callable = console.debug
+):
     """Show the logs for a process.
 
-
     Args:
-        process: The process.
         message: The message to display.
+        process: The process.
+        logger: The log function to use.
     """
     # TODO: refactor this function with show_progress
     # Iterate over the process output.
     try:
         with process:
-            assert process.stdout is not None, "No stdout for process."
+            if process.stdout is None:
+                return
             for line in process.stdout:
-                console.debug(line)
+                logger(line, end="")
 
     except Exception as e:
         console.error(f"Error during {message} {e}")
