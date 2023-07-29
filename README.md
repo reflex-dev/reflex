@@ -3,46 +3,35 @@
 ```
 
 <div align="center">
+<img src="docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
+<img src="docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
 
-<img src="docs/images/reflex.png">
 <hr>
 
-# **Reflex** 
-**✨ Performant, customizable web apps in pure Python. Deploy in seconds.**
-
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)
-
+### **✨ Performant, customizable web apps in pure Python. Deploy in seconds. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
+[![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
-
 </div>
 
-### README in different language
-
 ---
-
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md)
-
 ---
+## Installation
 
-## 📦 1. Install
-
-Reflex requires the following to get started:
-
--   Python 3.7+
--   [Node.js 16.8.0+](https://nodejs.org/en/) (Don't worry, you won’t have to write any JavaScript!)
+Open a terminal and run (Requires **Python 3.7+**):
 
 ```
 pip install reflex
 ```
 
-## 🥳 2. Create your first app
+## Create your first app
 
-Installing `reflex` also installs the `reflex` command line tool. Test that the install was successful by creating a new project.
+Installing `reflex` also installs the `reflex` command line tool.
 
-Replace my_app_name with your project name:
+Test that the install was successful by creating a new project. (Replace `my_app_name` with your project name):
 
 ```
 mkdir my_app_name
@@ -50,11 +39,9 @@ cd my_app_name
 reflex init
 ```
 
-When you run this command for the first time, we will download and install [bun](https://bun.sh/) automatically.
-
 This command initializes a template app in your new directory.
 
-## 🏃 3. Run your app
+##  Run your app
 
 You can run this app in development mode:
 
