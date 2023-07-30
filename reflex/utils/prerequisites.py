@@ -260,7 +260,6 @@ def initialize_bun():
         console.debug(
             f"Current bun version ({bun_version}) does not match ({constants.BUN_VERSION})."
         )
-        breakpoint()
         remove_existing_bun_installation()
         install_bun()
 

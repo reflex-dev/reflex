@@ -1,5 +1,4 @@
 import os
-import subprocess
 import typing
 from pathlib import Path
 from typing import Any, List, Union
@@ -529,10 +528,6 @@ def test_node_install_unix(tmp_path, mocker):
     nvm_root_path = tmp_path / ".reflex" / ".nvm"
 
     mocker.patch("reflex.utils.prerequisites.constants.NVM_DIR", nvm_root_path)
-    subprocess_run = mocker.patch(
-        "reflex.utils.prerequisites.subprocess.run",
-        return_value=subprocess.CompletedProcess(args="", returncode=0),
-    )
     mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
 
     class Resp(Base):
@@ -540,13 +535,15 @@ def test_node_install_unix(tmp_path, mocker):
         text = "test"
 
     mocker.patch("httpx.get", return_value=Resp())
-    mocker.patch("reflex.utils.prerequisites.download_and_run")
+    download = mocker.patch("reflex.utils.prerequisites.download_and_run")
+    mocker.patch("reflex.utils.processes.new_process")
+    mocker.patch("reflex.utils.processes.show_logs")
 
     prerequisites.install_node()
 
     assert nvm_root_path.exists()
-    subprocess_run.assert_called()
-    subprocess_run.call_count = 2
+    download.assert_called()
+    download.call_count = 2
 
 
 def test_bun_install_without_unzip(mocker):

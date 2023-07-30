@@ -14,7 +14,7 @@ from reflex.config import get_config
 from reflex.utils import build, console, exec, prerequisites, processes, telemetry
 
 # Create the app.
-cli = typer.Typer()
+cli = typer.Typer(add_completion=False)
 
 
 def version(value: bool):
@@ -35,14 +35,14 @@ def version(value: bool):
 def main(
     version: bool = typer.Option(
         None,
-        "--version",
         "-v",
+        "--version",
         callback=version,
         help="Get the Reflex version.",
         is_eager=True,
     ),
 ):
-    """Reflex CLI global configuration."""
+    """Reflex CLI to create, run, and deploy apps."""
     pass
 
 
