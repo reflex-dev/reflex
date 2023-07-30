@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
-from typer.models import OptionInfo
 
 from reflex.constants import LogLevel
 
