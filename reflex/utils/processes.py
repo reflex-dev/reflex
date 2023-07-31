@@ -7,7 +7,7 @@ import os
 import signal
 import subprocess
 import sys
-from typing import Callable, List, Optional
+from typing import List, Optional
 from urllib.parse import urlparse
 
 import psutil
@@ -156,24 +156,22 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
 def stream_logs(
     message: str,
     process: subprocess.Popen,
-    logger: Callable = console.debug,
 ):
     """Stream the logs for a process.
 
     Args:
         message: The message to display.
         process: The process.
-        logger: The log function to use.
 
     Yields:
         The lines of the process output.
     """
     with process:
-        logger(message)
+        console.debug(message)
         if process.stdout is None:
             return
         for line in process.stdout:
-            logger(line, end="")
+            console.debug(line, end="")
             yield line
 
     if process.returncode != 0:
@@ -187,16 +185,14 @@ def stream_logs(
 def show_logs(
     message: str,
     process: subprocess.Popen,
-    logger: Callable = console.debug,
 ):
     """Show the logs for a process.
 
     Args:
         message: The message to display.
         process: The process.
-        logger: The log function to use.
     """
-    for _ in stream_logs(message, process, logger):
+    for _ in stream_logs(message, process):
         pass
 
 

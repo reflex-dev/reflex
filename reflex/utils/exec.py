@@ -39,7 +39,7 @@ def run_process_and_launch_url(
         for line in process.stdout:
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
-                console.log(f"App running at: [bold green]{url}")
+                console.print(f"App running at: [bold green]{url}")
             else:
                 console.debug(line)
 
