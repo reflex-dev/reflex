@@ -250,7 +250,6 @@ class LogLevel(str, Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
-    QUIET = "quiet"
 
     def __le__(self, other: LogLevel) -> bool:
         """Compare log levels.
