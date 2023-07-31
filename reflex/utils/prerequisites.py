@@ -370,7 +370,7 @@ def install_frontend_packages():
     """Installs the base and custom frontend packages."""
     # Install the base packages.
     process = new_process(
-        [get_install_package_manager(), "instasll", "--loglevel", "silly"],
+        [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
     )
     show_status("Installing base frontend packages", process)

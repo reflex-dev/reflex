@@ -157,5 +157,13 @@ def progress():
 
 
 def status(*args, **kwargs):
-    """Create a status with a spinner."""
+    """Create a status with a spinner.
+
+    Args:
+        *args: Args to pass to the status.
+        **kwargs: Kwargs to pass to the status.
+
+    Returns:
+        A new status.
+    """
     return _console.status(*args, **kwargs)

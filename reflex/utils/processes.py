@@ -162,6 +162,9 @@ def show_logs(
         message: The message to display.
         process: The process.
         logger: The log function to use.
+
+    Yields:
+        The lines of the process output.
     """
     with process:
         logger(message)
