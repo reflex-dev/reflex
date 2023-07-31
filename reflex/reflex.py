@@ -16,6 +16,9 @@ from reflex.utils import build, console, exec, prerequisites, processes, telemet
 # Create the app.
 cli = typer.Typer(add_completion=False)
 
+# Get the config
+config = get_config()
+
 
 def version(value: bool):
     """Get the Reflex version.
@@ -73,7 +76,6 @@ def init(
     prerequisites.migrate_to_reflex()
 
     # Set up the app directory, only if the config doesn't exist.
-    config = get_config()
     if not os.path.exists(constants.CONFIG_FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
@@ -92,15 +94,25 @@ def init(
 @cli.command()
 def run(
     env: constants.Env = typer.Option(
-        get_config().env, help="The environment to run the app in."
+        constants.Env.DEV, help="The environment to run the app in."
     ),
-    frontend: bool = typer.Option(
-        False, "--frontend-only", help="Execute only frontend."
+    frontend_only: bool = typer.Option(
+        False, "frontend-only", help="Execute only frontend."
     ),
-    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
-    frontend_port: str = typer.Option(None, help="Specify a different frontend port."),
-    backend_port: str = typer.Option(None, help="Specify a different backend port."),
-    backend_host: str = typer.Option(None, help="Specify the backend host."),
+    backend_only: bool = typer.Option(
+        False, "backend-only", help="Execute only backend."
+    ),
+    frontend_port: str = typer.Option(
+        constants.FRONTEND_PORT,
+        help="Specify a different frontend port.",
+        metavar="PORT",
+    ),
+    backend_port: str = typer.Option(
+        constants.BACKEND_PORT, help="Specify a different backend port.", metavar="PORT"
+    ),
+    backend_host: str = typer.Option(
+        constants.BACKEND_HOST, help="Specify the backend host url.", metavar="URL"
+    ),
     loglevel: constants.LogLevel = typer.Option(
         constants.LogLevel.INFO, help="The log level to use."
     ),
@@ -108,38 +120,16 @@ def run(
     """Run the app in the current directory."""
     # Set the log level.
     console.set_log_level(loglevel)
+    console.rule("[bold]Starting Reflex App")
 
-    # Set ports as os env variables to take precedence over config and
-    # .env variables(if override_os_envs flag in config is set to False).
-    build.set_os_env(
-        frontend_port=frontend_port,
-        backend_port=backend_port,
-        backend_host=backend_host,
-    )
-
-    # Get the ports from the config.
-    config = get_config()
-    frontend_port = config.frontend_port if frontend_port is None else frontend_port
-    backend_port = config.backend_port if backend_port is None else backend_port
-    backend_host = config.backend_host if backend_host is None else backend_host
-
-    # If no --frontend-only and no --backend-only, then turn on frontend and backend both
-    if not frontend and not backend:
-        frontend = True
-        backend = True
+    # Check which parts of the app to run.
+    run_frontend = not backend_only
+    run_backend = not frontend_only
 
     # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
-
-    # If something is running on the ports, ask the user if they want to kill or change it.
-    if frontend and processes.is_process_on_port(frontend_port):
-        frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
-
-    if backend and processes.is_process_on_port(backend_port):
-        backend_port = processes.change_or_terminate_port(backend_port, "backend")
+    prerequisites.check_initialized(frontend=run_frontend)
 
     # Get the app module.
-    console.rule("[bold]Starting Reflex App")
     app = prerequisites.get_app()
 
     # Check the admin dashboard settings.
@@ -168,10 +158,12 @@ def run(
     telemetry.send(f"run-{env.value}", config.telemetry_enabled)
 
     # Run the frontend and backend.
-    if frontend:
+    if run_frontend:
         setup_frontend(Path.cwd())
+        frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
         threading.Thread(target=frontend_cmd, args=(Path.cwd(), frontend_port)).start()
-    if backend:
+    if run_backend:
+        backend_port = processes.change_or_terminate_port(backend_port, "backend")
         threading.Thread(
             target=backend_cmd,
             args=(app.__name__, backend_host, backend_port),
@@ -184,9 +176,6 @@ def run(
 @cli.command()
 def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
     """Deploy the app to the Reflex hosting service."""
-    # Get the app config.
-    config = get_config()
-
     # Check if the deploy url is set.
     if config.rxdeploy_url is None:
         typer.echo("This feature is coming soon!")
@@ -217,15 +206,8 @@ def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")
 
 @cli.command()
 def export(
-    zipping: bool = typer.Option(
-        True, "--no-zip", help="Disable zip for backend and frontend exports."
-    ),
-    frontend: bool = typer.Option(
-        True, "--backend-only", help="Export only backend.", show_default=False
-    ),
-    backend: bool = typer.Option(
-        True, "--frontend-only", help="Export only frontend.", show_default=False
-    ),
+    backend_only: bool = typer.Option(False, help="Export only backend."),
+    frontend_only: bool = typer.Option(False, help="Export only frontend."),
     loglevel: constants.LogLevel = typer.Option(
         constants.LogLevel.INFO, help="The log level to use."
     ),
@@ -234,40 +216,34 @@ def export(
     # Set the log level.
     console.set_log_level(loglevel)
 
+    # Check which parts of the app to run.
+    export_frontend = not backend_only
+    export_backend = not frontend_only
+
     # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
+    prerequisites.check_initialized(frontend=export_frontend)
 
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
 
-    if frontend:
+    if export_frontend:
         # Ensure module can be imported and app.compile() is called.
         prerequisites.get_app()
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 
     # Export the app.
-    config = get_config()
     build.export(
-        backend=backend,
-        frontend=frontend,
-        zip=zipping,
+        backend=export_backend,
+        frontend=export_frontend,
         deploy_url=config.deploy_url,
     )
 
     # Post a telemetry event.
     telemetry.send("export", config.telemetry_enabled)
-
-    if zipping:
-        console.log(
-            """Backend & Frontend compiled. See [green bold]backend.zip[/green bold]
-            and [green bold]frontend.zip[/green bold]."""
-        )
-    else:
-        console.log(
-            """Backend & Frontend compiled. See [green bold]app[/green bold]
-            and [green bold].web/_static[/green bold] directories."""
-        )
+    console.success(
+        """App exported to[bold]backend.zip[/bold] and [bold]frontend.zip[bold]."""
+    )
 
 
 db_cli = typer.Typer()
@@ -277,7 +253,7 @@ db_cli = typer.Typer()
 def db_init():
     """Create database schema and migration configuration."""
     # Check the database url.
-    if get_config().db_url is None:
+    if config.db_url is None:
         console.error("db_url is not configured, cannot initialize.")
         return
 

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from reflex import constants
-from reflex.config import get_config
 from reflex.utils import console, prerequisites, processes
 from reflex.utils.watch import AssetFolderWatch
 
@@ -58,8 +56,9 @@ def run_frontend(
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    os.environ["PORT"] = get_config().frontend_port if port is None else port
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])
+    run_process_and_launch_url(
+        [prerequisites.get_package_manager(), "run", "dev", "-p", port]
+    )
 
 
 def run_frontend_prod(
@@ -72,12 +71,9 @@ def run_frontend_prod(
         root: The root path of the project (to keep same API as run_frontend).
         port: The port to run the frontend on.
     """
-    # Set the port.
-    os.environ["PORT"] = get_config().frontend_port if port is None else port
-
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([constants.NPM_PATH, "run", "prod"])
+    run_process_and_launch_url([constants.NPM_PATH, "run", "prod", "-p", port])
 
 
 def run_backend(

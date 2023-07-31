@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import importlib
 import os
 import sys
 import urllib.parse
 from typing import Any, Dict, List, Optional
-
-from dotenv import load_dotenv
 
 from reflex import constants
 from reflex.admin import AdminDash
@@ -129,18 +126,6 @@ class Config(Base):
     # The name of the app.
     app_name: str
 
-    # The username.
-    username: Optional[str] = None
-
-    # The frontend port.
-    frontend_port: str = constants.FRONTEND_PORT
-
-    # The backend port.
-    backend_port: str = constants.BACKEND_PORT
-
-    # The backend host.
-    backend_host: str = constants.BACKEND_HOST
-
     # The backend API url.
     api_url: str = constants.API_URL
 
@@ -158,12 +143,6 @@ class Config(Base):
 
     # Telemetry opt-in.
     telemetry_enabled: bool = True
-
-    # The rxdeploy url.
-    rxdeploy_url: Optional[str] = None
-
-    # The environment mode.
-    env: constants.Env = constants.Env.DEV
 
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
@@ -185,12 +164,6 @@ class Config(Base):
     # The maximum size of a message when using the polling backend transport.
     polling_max_http_buffer_size: Optional[int] = constants.POLLING_MAX_HTTP_BUFFER_SIZE
 
-    # Dotenv file path.
-    env_path: Optional[str] = constants.DOT_ENV_FILE
-
-    # Whether to override OS environment variables.
-    override_os_envs: Optional[bool] = True
-
     # Tailwind config.
     tailwind: Optional[Dict[str, Any]] = None
 
@@ -202,6 +175,12 @@ class Config(Base):
 
     # The event namespace for ws connection
     event_namespace: Optional[str] = constants.EVENT_NAMESPACE
+
+    # The deploy username.
+    username: Optional[str] = None
+
+    # The rxdeploy url.
+    rxdeploy_url: Optional[str] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -227,14 +206,6 @@ class Config(Base):
             ):
                 continue
             os.environ[key] = str(value)
-
-        # Avoid overriding if env_path is not provided or does not exist
-        if self.env_path is not None and os.path.isfile(self.env_path):
-            load_dotenv(self.env_path, override=self.override_os_envs)  # type: ignore
-            # Recompute constants after loading env variables
-            importlib.reload(constants)
-            # Recompute instance attributes
-            self.recompute_field_values()
 
     def recompute_field_values(self):
         """Recompute instance field values to reflect new values after reloading

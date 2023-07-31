@@ -100,6 +100,11 @@ def change_or_terminate_port(port, _type) -> str:
     Returns:
         The new port or the current one.
     """
+    # If nothing is running on the port, return the port.
+    if not is_process_on_port(port):
+        return port
+
+    # Ask the user if they want to kill or change the port.
     console.info(
         f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
     )

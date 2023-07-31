@@ -136,19 +136,6 @@ def get_redis() -> Optional[Redis]:
     return Redis(host=redis_url, port=int(redis_port), db=0)
 
 
-def get_production_backend_url() -> str:
-    """Get the production backend URL.
-
-    Returns:
-        The production backend URL.
-    """
-    config = get_config()
-    return constants.PRODUCTION_BACKEND_URL.format(
-        username=config.username,
-        app_name=config.app_name,
-    )
-
-
 def get_default_app_name() -> str:
     """Get the default app name.
 
