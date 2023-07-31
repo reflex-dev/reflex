@@ -398,7 +398,7 @@ def check_initialized(frontend: bool = True):
         Exit: If the app is not initialized.
     """
     has_config = os.path.exists(constants.CONFIG_FILE)
-    has_reflex_dir = IS_WINDOWS or os.path.exists(constants.REFLEX_DIR)
+    has_reflex_dir = not frontend or IS_WINDOWS or os.path.exists(constants.REFLEX_DIR)
     has_web_dir = not frontend or os.path.exists(constants.WEB_DIR)
 
     # Check if the app is initialized.
