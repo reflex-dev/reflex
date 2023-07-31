@@ -23,8 +23,7 @@ from redis import Redis
 
 from reflex import constants, model
 from reflex.config import get_config
-from reflex.utils import console, path_ops
-from reflex.utils.processes import new_process, show_logs, show_status
+from reflex.utils import console, path_ops, processes
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -37,7 +36,7 @@ def check_node_version() -> bool:
     """
     try:
         # Run the node -v command and capture the output.
-        result = new_process([constants.NODE_PATH, "-v"], run=True)
+        result = processes.new_process([constants.NODE_PATH, "-v"], run=True)
     except FileNotFoundError:
         return False
 
@@ -59,7 +58,7 @@ def get_bun_version() -> Optional[version.Version]:
     """
     try:
         # Run the bun -v command and capture the output
-        result = new_process([constants.BUN_PATH, "-v"], run=True)
+        result = processes.new_process([constants.BUN_PATH, "-v"], run=True)
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
         return None
@@ -277,12 +276,13 @@ def initialize_node():
         install_node()
 
 
-def download_and_run(url: str, *args, **env):
+def download_and_run(url: str, *args, show_status: bool = False, **env):
     """Download and run a script.
 
     Args:
         url: The url of the script.
         args: The arguments to pass to the script.
+        show_status: Whether to show the status of the script.
         env: The environment variables to use.
     """
     # Download the script
@@ -298,8 +298,9 @@ def download_and_run(url: str, *args, **env):
 
     # Run the script.
     env = {**os.environ, **env}
-    process = new_process(["bash", f.name, *args], env=env)
-    show_logs(f"Installing {url}", process)
+    process = processes.new_process(["bash", f.name, *args], env=env)
+    show = processes.show_status if show_status else processes.show_logs
+    show(f"Installing {url}", process)
 
 
 def install_node():
@@ -319,11 +320,11 @@ def install_node():
     # Create the nvm directory and install.
     path_ops.mkdir(constants.NVM_DIR)
     env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
-    download_and_run(constants.NVM_INSTALL_URL, **env)
+    download_and_run(constants.NVM_INSTALL_URL, show_status=True, **env)
 
     # Install node.
     # We use bash -c as we need to source nvm.sh to use nvm.
-    process = new_process(
+    process = processes.new_process(
         [
             "bash",
             "-c",
@@ -331,7 +332,7 @@ def install_node():
         ],
         env=env,
     )
-    show_logs("Installing node", process)
+    processes.show_status("", process)
 
 
 def install_bun():
@@ -366,20 +367,20 @@ def install_bun():
 def install_frontend_packages():
     """Installs the base and custom frontend packages."""
     # Install the base packages.
-    process = new_process(
+    process = processes.new_process(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
     )
-    show_status("Installing base frontend packages", process)
+    processes.show_status("Installing base frontend packages", process)
 
     # Install the app packages.
     packages = get_config().frontend_packages
     if len(packages) > 0:
-        process = new_process(
+        process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
         )
-        show_status("Installing custom frontend packages", process)
+        processes.show_status("Installing custom frontend packages", process)
 
 
 def check_initialized(frontend: bool = True):

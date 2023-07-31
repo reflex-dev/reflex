@@ -205,7 +205,7 @@ def show_status(message: str, process: subprocess.Popen):
     """
     with console.status(message) as status:
         for line in stream_logs(message, process):
-            status.update(f"{message}: {line}")
+            status.update(f"{message} {line}")
 
 
 def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str]):
