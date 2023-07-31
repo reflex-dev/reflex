@@ -20,16 +20,16 @@ class DebounceInput(Component):
     tag = "DebounceInput"
 
     # Minimum input characters before triggering the on_change event
-    min_length: Var[int] = 0  # type: ignore
+    min_length: Var[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int] = 100  # type: ignore
+    debounce_timeout: Var[int]
 
     # If true, notify when Enter key is pressed
-    force_notify_by_enter: Var[bool] = True  # type: ignore
+    force_notify_by_enter: Var[bool]
 
     # If true, notify when form control loses focus
-    force_notify_on_blur: Var[bool] = True  # type: ignore
+    force_notify_on_blur: Var[bool]
 
     # If provided, create a fully-controlled input
     value: Var[str]
@@ -47,16 +47,17 @@ class DebounceInput(Component):
         Raises:
             RuntimeError: unless exactly one child element is provided.
         """
-        if not self.children or len(self.children) > 1:
+        child, props = _collect_first_child_and_props(self)
+        if isinstance(child, type(self)) or len(self.children) > 1:
             raise RuntimeError(
                 "Provide a single child for DebounceInput, such as rx.input() or "
                 "rx.text_area()",
             )
-        child = self.children[0]
+        self.children = []
         tag = super()._render()
         tag.add_props(
+            **props,
             **child.event_triggers,
-            **props_not_none(child),
             sx=child.style,
             id=child.id,
             class_name=child.class_name,
@@ -78,3 +79,29 @@ def props_not_none(c: Component) -> dict[str, Any]:
     """
     cdict = {a: getattr(c, a) for a in c.get_props() if getattr(c, a, None) is not None}
     return cdict
+
+
+def _collect_first_child_and_props(c: Component) -> tuple[Component, dict[str, Any]]:
+    """Recursively find the first child of a different type than `c` with props.
+
+    This function is used to collapse nested DebounceInput components by
+    applying props from each level. Parent props take precedent over child
+    props. The first child component that differs in type will be returned
+    along with all combined parent props seen along the way.
+
+    Args:
+        c: the component to get_props from
+
+    Returns:
+        tuple containing the first nested child of a different type and the collected
+        props from each component traversed.
+    """
+    props = props_not_none(c)
+    if not c.children:
+        return c, props
+    child = c.children[0]
+    if not isinstance(child, type(c)):
+        return child, {**props_not_none(child), **props}
+    # carry props from nested DebounceInput components
+    recursive_child, child_props = _collect_first_child_and_props(child)
+    return recursive_child, {**child_props, **props}

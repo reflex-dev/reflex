@@ -10,7 +10,7 @@ from reflex.testing import AppHarness
 
 
 def FullyControlledInput():
-    """App using a fully controlled input with debounce wrapper."""
+    """App using a fully controlled input with implicit debounce wrapper."""
     import reflex as rx
 
     class State(rx.State):
@@ -21,12 +21,10 @@ def FullyControlledInput():
     @app.add_page
     def index():
         return rx.fragment(
-            rx.debounce_input(
-                rx.input(
-                    on_change=State.set_text, id="debounce_input_input"  # type: ignore
-                ),
+            rx.input(
+                id="debounce_input_input",
+                on_change=State.set_text,  # type: ignore
                 value=State.text,
-                debounce_timeout=0,
             ),
             rx.input(value=State.text, id="value_input"),
             rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
