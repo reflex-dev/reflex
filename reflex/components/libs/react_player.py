@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
-from reflex.components.component import Component
-from reflex.vars import ImportVar, Var
+from reflex.components.component import NoSSRComponent
+from reflex.vars import Var
 
 
-class ReactPlayerComponent(Component):
+class ReactPlayerComponent(NoSSRComponent):
     """Using react-player and not implement all props and callback yet.
     reference: https://github.com/cookpete/react-player.
     """
@@ -43,11 +41,3 @@ class ReactPlayerComponent(Component):
 
     # Set the height of the player: ex:640px
     height: Var[str]
-
-    def _get_imports(self):
-        return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
-
-    def _get_custom_code(self) -> Optional[str]:
-        return """
-const ReactPlayer = dynamic(() => import("react-player/lazy"), { ssr: false });
-"""

@@ -777,3 +777,13 @@ def custom_component(
         return CustomComponent(component_fn=component_fn, children=children, **props)
 
     return wrapper
+
+
+class NoSSRComponent(Component):
+    """A dynamic component that is not rendered on the server."""
+
+    def _get_imports(self):
+        return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+
+    def _get_custom_code(self) -> str:
+        return f"const {self.tag} = dynamic(() => import('{self.library}'), {{ ssr: false }});"

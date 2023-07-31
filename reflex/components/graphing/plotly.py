@@ -4,12 +4,12 @@ from typing import Dict
 
 from plotly.graph_objects import Figure
 
-from reflex.components.component import Component
+from reflex.components.component import NoSSRComponent
 from reflex.components.tags import Tag
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 
-class PlotlyLib(Component):
+class PlotlyLib(NoSSRComponent):
     """A component that wraps a plotly lib."""
 
     library = "react-plotly.js"
@@ -34,14 +34,6 @@ class Plotly(PlotlyLib):
 
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool]
-
-    def _get_imports(self):
-        return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
-
-    def _get_custom_code(self) -> str:
-        return """
-const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
-"""
 
     def _render(self) -> Tag:
         if (
