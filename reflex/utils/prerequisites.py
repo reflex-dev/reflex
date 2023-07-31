@@ -9,7 +9,6 @@ import platform
 import re
 import sys
 import tempfile
-import threading
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
@@ -167,7 +166,7 @@ def get_default_app_name() -> str:
         console.error(
             f"The app directory cannot be named [bold]{constants.MODULE_NAME}[/bold]."
         )
-        raise typer.Exit()
+        raise typer.Exit(1)
 
     return app_name
 
@@ -315,7 +314,7 @@ def install_node():
         console.error(
             f"Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
         )
-        raise typer.Exit()
+        raise typer.Exit(1)
 
     # Create the nvm directory and install.
     path_ops.mkdir(constants.NVM_DIR)
@@ -332,7 +331,7 @@ def install_node():
         ],
         env=env,
     )
-    processes.show_status("", process)
+    processes.show_status("Installing node", process)
 
 
 def install_bun():
@@ -401,14 +400,14 @@ def check_initialized(frontend: bool = True):
         console.error(
             f"The app is not initialized. Run [bold]{constants.MODULE_NAME} init[/bold] first."
         )
-        raise typer.Exit()
+        raise typer.Exit(1)
 
     # Check that the template is up to date.
     if frontend and not is_latest_template():
         console.error(
             "The base app template has updated. Run [bold]reflex init[/bold] again."
         )
-        raise typer.Exit()
+        raise typer.Exit(1)
 
     # Print a warning for Windows users.
     if IS_WINDOWS:
@@ -436,19 +435,10 @@ def initialize_frontend_dependencies():
     path_ops.mkdir(constants.REFLEX_DIR)
 
     # Install the frontend dependencies.
-    threads = [
-        threading.Thread(target=initialize_bun),
-        threading.Thread(target=initialize_node),
-    ]
-    for thread in threads:
-        thread.start()
+    processes.run_concurrently(install_node, install_bun)
 
     # Set up the web directory.
     initialize_web_directory()
-
-    # Wait for the threads to finish.
-    for thread in threads:
-        thread.join()
 
 
 def check_admin_settings():

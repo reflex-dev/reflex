@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+import collections
 import contextlib
 import os
 import signal
 import subprocess
-import sys
-from typing import List, Optional
+from concurrent import futures
+from typing import Callable, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import psutil
+import typer
 
 from reflex import constants
 from reflex.config import get_config
@@ -99,6 +101,10 @@ def change_or_terminate_port(port, _type) -> str:
 
     Returns:
         The new port or the current one.
+
+
+    Raises:
+        Exit: If the user wants to exit.
     """
     console.info(
         f"Something is already running on port [bold underline]{port}[/bold underline]. This is the port the {_type} runs on."
@@ -120,7 +126,7 @@ def change_or_terminate_port(port, _type) -> str:
             return new_port
     else:
         console.log("Exiting...")
-        sys.exit()
+        raise typer.Exit()
 
 
 def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
@@ -153,6 +159,26 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     return fn(args, **kwargs)
 
 
+def run_concurrently(*fns: Union[Callable, Tuple]):
+    """Run functions concurrently in a thread pool.
+
+
+    Args:
+        *fns: The functions to run.
+    """
+    # Convert the functions to tuples.
+    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
+
+    # Run the functions concurrently.
+    with futures.ThreadPoolExecutor(max_workers=len(fns)) as executor:
+        # Submit the tasks.
+        tasks = [executor.submit(*fn) for fn in fns]  # type: ignore
+
+        # Get the results in the order completed to check any exceptions.
+        for task in futures.as_completed(tasks):
+            task.result()
+
+
 def stream_logs(
     message: str,
     process: subprocess.Popen,
@@ -165,21 +191,27 @@ def stream_logs(
 
     Yields:
         The lines of the process output.
+
+    Raises:
+        Exit: If the process failed.
     """
+    # Store the tail of the logs.
+    logs = collections.deque(maxlen=512)
     with process:
         console.debug(message)
         if process.stdout is None:
             return
         for line in process.stdout:
             console.debug(line, end="")
+            logs.append(line)
             yield line
 
     if process.returncode != 0:
-        console.error(f"Error during {message}")
-        console.error(
-            "Run in with [bold]--loglevel debug[/bold] to see the full error."
-        )
-        os._exit(1)
+        console.error(f"{message} failed with exit code {process.returncode}")
+        for line in logs:
+            console.error(line, end="")
+        console.error("Run with [bold]--loglevel debug [/bold] for the full log.")
+        raise typer.Exit(1)
 
 
 def show_logs(
