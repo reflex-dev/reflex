@@ -48,5 +48,6 @@ class ReactPlayerComponent(Component):
         return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
 
     def _get_custom_code(self) -> Optional[str]:
-        return """const ReactPlayer = dynamic(() => import("react-player/lazy"), { ssr: false });
+        return """
+const ReactPlayer = dynamic(() => import("react-player/lazy"), { ssr: false });
 """
