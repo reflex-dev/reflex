@@ -3,62 +3,47 @@
 ```
 
 <div align="center">
+<img src="docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
+<img src="docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
 
-<img src="docs/images/reflex.png">
 <hr>
 
-# **Reflex** 
-**✨ Performant, customizable web apps in pure Python. Deploy in seconds.**
-
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)
-
+### **✨ Performant, customizable web apps in pure Python. Deploy in seconds. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
+[![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
-
 </div>
 
-### README in different language
-
 ---
-
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md)
-
 ---
+## ⚙️ Installation
 
-## 📦 1. Install
+Open a terminal and run (Requires Python 3.7+):
 
-Reflex requires the following to get started:
-
--   Python 3.7+
--   [Node.js 16.8.0+](https://nodejs.org/en/) (Don't worry, you won’t have to write any JavaScript!)
-
-```
+```bash
 pip install reflex
 ```
 
-## 🥳 2. Create your first app
+## 🥳 Create your first app
 
-Installing `reflex` also installs the `reflex` command line tool. Test that the install was successful by creating a new project.
+Installing `reflex` also installs the `reflex` command line tool.
 
-Replace my_app_name with your project name:
+Test that the install was successful by creating a new project. (Replace `my_app_name` with your project name):
 
-```
+```bash
 mkdir my_app_name
 cd my_app_name
 reflex init
 ```
 
-When you run this command for the first time, we will download and install [bun](https://bun.sh/) automatically.
-
-This command initializes a template app in your new directory.
-
-## 🏃 3. Run your app
+This command initializes a template app in your new directory. 
 
 You can run this app in development mode:
 
-```
+```bash
 reflex run
 ```
 
@@ -66,7 +51,8 @@ You should see your app running at http://localhost:3000.
 
 Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has fast refreshes so you can see your changes instantly when you save your code.
 
-## 🫧 Example
+
+## 🫧 Example App
 
 Let's go over an example: creating an image generation UI around DALL·E. For simplicity, we just call the OpenAI API, but you could replace this with an ML model run locally.
 
@@ -133,14 +119,14 @@ def index():
     )
 
 # Add state and page to the app.
-app = rx.App(state=State)
+app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
 app.compile()
 ```
 
-Let's break this down.
+## Let's break this down.
 
-### **UI In Reflex**
+### **Reflex UI**
 
 Let's start with the UI.
 
@@ -196,26 +182,38 @@ Our DALL·E. app has an event handler, `get_image` to which get this image from 
 
 ### **Routing**
 
-Finally, we define our app and pass it our state.
+Finally, we define our app.
 
 ```python
-app = rx.App(state=State)
+app = rx.App()
 ```
 
-We add a route from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
+We add a page from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
 
 ```python
 app.add_page(index, title="DALL-E")
 app.compile()
 ```
 
-You can create a multi-page app by adding more routes.
+You can create a multi-page app by adding more pages.
 
-## Status
+## 📑 Resources
+
+<div align="center">
+
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+
+</div>
+
+
+
+
+
+## ✅ Status
 
 Reflex launched in December 2022 with the name Pynecone.
 
-As of June 2023, we are in the **Public Beta** stage.
+As of July 2023, we are in the **Public Beta** stage.
 
 -   :white_check_mark: **Public Alpha**: Anyone can install and use Reflex. There may be issues, but we are working to resolve them actively.
 -   :large_orange_diamond: **Public Beta**: Stable enough for non-enterprise use-cases.
