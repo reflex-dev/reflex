@@ -108,24 +108,24 @@ def export(
         generate_sitemap_config(deploy_url)
         command = "export-sitemap"
 
-    checkpoints = [
-        "Linting and checking ",
-        "Compiled successfully",
-        "Route (pages)",
-        "Collecting page data",
-        "automatically rendered as static HTML",
-        'Copying "static build" directory',
-        'Copying "public" directory',
-        "Finalizing page optimization",
-        "Export successful",
-    ]
-
-    # Start the subprocess with the progress bar.
-    process = processes.new_process(
-        [prerequisites.get_package_manager(), "run", command],
-        cwd=constants.WEB_DIR,
-    )
-    processes.show_progress("Creating Production Build", process, checkpoints)
+    if frontend:
+        checkpoints = [
+            "Linting and checking ",
+            "Compiled successfully",
+            "Route (pages)",
+            "Collecting page data",
+            "automatically rendered as static HTML",
+            'Copying "static build" directory',
+            'Copying "public" directory',
+            "Finalizing page optimization",
+            "Export successful",
+        ]
+        # Start the subprocess with the progress bar.
+        process = processes.new_process(
+            [prerequisites.get_package_manager(), "run", command],
+            cwd=constants.WEB_DIR,
+        )
+        processes.show_progress("Creating Production Build", process, checkpoints)
 
     # Zip up the app.
     if zip:
