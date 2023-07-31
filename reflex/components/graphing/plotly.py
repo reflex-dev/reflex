@@ -6,7 +6,7 @@ from plotly.graph_objects import Figure
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
-from reflex.vars import Var
+from reflex.vars import ImportVar, Var
 
 
 class PlotlyLib(Component):
@@ -36,10 +36,10 @@ class Plotly(PlotlyLib):
     use_resize_handler: Var[bool]
 
     def _get_imports(self):
-        return {}
+        return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
 
     def _get_custom_code(self) -> str:
-        return """import dynamic from 'next/dynamic'
+        return """
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 """
 
