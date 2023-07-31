@@ -86,7 +86,7 @@ def init(
     prerequisites.initialize_gitignore()
 
     # Finish initializing the app.
-    console.success(f"Finished Initializing: {app_name}")
+    console.success(f"Initialized {app_name}")
 
 
 @cli.command()

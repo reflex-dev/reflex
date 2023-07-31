@@ -11,8 +11,7 @@ from typing import Optional, Union
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, path_ops, prerequisites
-from reflex.utils.processes import new_process, show_progress
+from reflex.utils import console, path_ops, prerequisites, processes
 
 
 def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
@@ -122,11 +121,11 @@ def export(
     ]
 
     # Start the subprocess with the progress bar.
-    process = new_process(
+    process = processes.new_process(
         [prerequisites.get_package_manager(), "run", command],
         cwd=constants.WEB_DIR,
     )
-    show_progress("Creating Production Build", process, checkpoints)
+    processes.show_progress("Creating Production Build", process, checkpoints)
 
     # Zip up the app.
     if zip:
@@ -192,7 +191,7 @@ def setup_frontend(
 
     # Disable the Next telemetry.
     if disable_telemetry:
-        new_process(
+        processes.new_process(
             [
                 prerequisites.get_package_manager(),
                 "run",

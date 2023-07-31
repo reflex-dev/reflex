@@ -536,8 +536,8 @@ def test_node_install_unix(tmp_path, mocker):
 
     mocker.patch("httpx.get", return_value=Resp())
     download = mocker.patch("reflex.utils.prerequisites.download_and_run")
-    mocker.patch("reflex.utils.prerequisites.new_process")
-    mocker.patch("reflex.utils.prerequisites.show_logs")
+    mocker.patch("reflex.utils.processes.new_process")
+    mocker.patch("reflex.utils.processes.stream_logs")
 
     prerequisites.install_node()
 

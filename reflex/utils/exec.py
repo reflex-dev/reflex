@@ -8,7 +8,6 @@ from pathlib import Path
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, prerequisites, processes
-from reflex.utils.processes import new_process
 from reflex.utils.watch import AssetFolderWatch
 
 
@@ -30,7 +29,7 @@ def run_process_and_launch_url(
     Args:
         run_command: The command to run.
     """
-    process = new_process(
+    process = processes.new_process(
         run_command,
         cwd=constants.WEB_DIR,
     )
@@ -95,7 +94,7 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    new_process(
+    processes.new_process(
         [
             "uvicorn",
             f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
@@ -155,4 +154,4 @@ def run_backend_prod(
         "--workers",
         str(num_workers),
     ]
-    new_process(command, run=True, show_logs=True)
+    processes.new_process(command, run=True, show_logs=True)
