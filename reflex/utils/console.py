@@ -88,8 +88,7 @@ def rule(title: str, **kwargs):
         title: The title of the rule.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if LOG_LEVEL <= LogLevel.INFO:
-        _console.rule(title, **kwargs)
+    _console.rule(title, **kwargs)
 
 
 def warn(msg: str, **kwargs):
