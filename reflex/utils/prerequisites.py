@@ -7,11 +7,9 @@ import json
 import os
 import platform
 import re
-import subprocess
 import sys
 import tempfile
 import threading
-from datetime import datetime
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
@@ -26,33 +24,31 @@ from redis import Redis
 from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
+from reflex.utils.processes import new_process, show_logs, show_status
 
 IS_WINDOWS = platform.system() == "Windows"
 
 
-def check_node_version():
+def check_node_version() -> bool:
     """Check the version of Node.js.
 
     Returns:
         Whether the version of Node.js is valid.
     """
     try:
-        # Run the node -v command and capture the output
-        result = subprocess.run(
-            [constants.NODE_PATH, "-v"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-        current_version = version.parse(result.stdout.decode())
-        # Compare the version numbers
-        return (
-            current_version >= version.parse(constants.NODE_VERSION_MIN)
-            if IS_WINDOWS
-            else current_version == version.parse(constants.NODE_VERSION)
-        )
-    except Exception:
+        # Run the node -v command and capture the output.
+        result = new_process([constants.NODE_PATH, "-v"], run=True)
+    except FileNotFoundError:
         return False
+
+    # The output will be in the form "vX.Y.Z", but version.parse() can handle it
+    current_version = version.parse(result.stdout)  # type: ignore
+    # Compare the version numbers
+    return (
+        current_version >= version.parse(constants.NODE_VERSION_MIN)
+        if IS_WINDOWS
+        else current_version == version.parse(constants.NODE_VERSION)
+    )
 
 
 def get_bun_version() -> Optional[version.Version]:
@@ -63,13 +59,9 @@ def get_bun_version() -> Optional[version.Version]:
     """
     try:
         # Run the bun -v command and capture the output
-        result = subprocess.run(
-            [constants.BUN_PATH, "-v"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        return version.parse(result.stdout.decode().strip())
-    except Exception:
+        result = new_process([constants.BUN_PATH, "-v"], run=True)
+        return version.parse(result.stdout)  # type: ignore
+    except FileNotFoundError:
         return None
 
 
@@ -98,7 +90,7 @@ def get_install_package_manager() -> str:
     get_config()
 
     # On Windows, we use npm instead of bun.
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         return get_windows_package_manager()
 
     # On other platforms, we use bun.
@@ -114,7 +106,7 @@ def get_package_manager() -> str:
     """
     get_config()
 
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         return get_windows_package_manager()
     return constants.NPM_PATH
 
@@ -141,7 +133,7 @@ def get_redis() -> Optional[Redis]:
     if config.redis_url is None:
         return None
     redis_url, redis_port = config.redis_url.split(":")
-    print("Using redis at", config.redis_url)
+    console.info(f"Using redis at {config.redis_url}")
     return Redis(host=redis_url, port=int(redis_port), db=0)
 
 
@@ -173,8 +165,8 @@ def get_default_app_name() -> str:
 
     # Make sure the app is not named "reflex".
     if app_name == constants.MODULE_NAME:
-        console.print(
-            f"[red]The app directory cannot be named [bold]{constants.MODULE_NAME}."
+        console.error(
+            f"The app directory cannot be named [bold]{constants.MODULE_NAME}[/bold]."
         )
         raise typer.Exit()
 
@@ -192,6 +184,7 @@ def create_config(app_name: str):
 
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
     with open(constants.CONFIG_FILE, "w") as f:
+        console.debug(f"Creating {constants.CONFIG_FILE}")
         f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
 
 
@@ -204,8 +197,10 @@ def initialize_gitignore():
     if os.path.exists(constants.GITIGNORE_FILE):
         with open(constants.GITIGNORE_FILE, "r") as f:
             files |= set([line.strip() for line in f.readlines()])
+
     # Write files to the .gitignore file.
     with open(constants.GITIGNORE_FILE, "w") as f:
+        console.debug(f"Creating {constants.GITIGNORE_FILE}")
         f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
 
@@ -256,16 +251,22 @@ def initialize_bun():
     """Check that bun requirements are met, and install if not."""
     if IS_WINDOWS:
         # Bun is not supported on Windows.
+        console.debug("Skipping bun installation on Windows.")
         return
 
     # Check the bun version.
-    if get_bun_version() != version.parse(constants.BUN_VERSION):
+    bun_version = get_bun_version()
+    if bun_version != version.parse(constants.BUN_VERSION):
+        console.debug(
+            f"Current bun version ({bun_version}) does not match ({constants.BUN_VERSION})."
+        )
         remove_existing_bun_installation()
         install_bun()
 
 
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
+    console.debug("Removing existing bun installation.")
     if os.path.exists(constants.BUN_PATH):
         path_ops.rm(constants.BUN_ROOT_PATH)
 
@@ -279,17 +280,13 @@ def initialize_node():
 def download_and_run(url: str, *args, **env):
     """Download and run a script.
 
-
     Args:
         url: The url of the script.
         args: The arguments to pass to the script.
         env: The environment variables to use.
-
-
-    Raises:
-        Exit: if installation failed
     """
     # Download the script
+    console.debug(f"Downloading {url}")
     response = httpx.get(url)
     if response.status_code != httpx.codes.OK:
         response.raise_for_status()
@@ -300,13 +297,9 @@ def download_and_run(url: str, *args, **env):
         f.write(response.text)
 
     # Run the script.
-    env = {
-        **os.environ,
-        **env,
-    }
-    result = subprocess.run(["bash", f.name, *args], env=env)
-    if result.returncode != 0:
-        raise typer.Exit(code=result.returncode)
+    env = {**os.environ, **env}
+    process = new_process(["bash", f.name, *args], env=env)
+    show_logs(f"Installing {url}", process)
 
 
 def install_node():
@@ -318,8 +311,8 @@ def install_node():
     """
     # NVM is not supported on Windows.
     if IS_WINDOWS:
-        console.print(
-            f"[red]Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
+        console.error(
+            f"Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
         )
         raise typer.Exit()
 
@@ -330,7 +323,7 @@ def install_node():
 
     # Install node.
     # We use bash -c as we need to source nvm.sh to use nvm.
-    result = subprocess.run(
+    process = new_process(
         [
             "bash",
             "-c",
@@ -338,8 +331,7 @@ def install_node():
         ],
         env=env,
     )
-    if result.returncode != 0:
-        raise typer.Exit(code=result.returncode)
+    show_logs("Installing node", process)
 
 
 def install_bun():
@@ -350,13 +342,15 @@ def install_bun():
     """
     # Bun is not supported on Windows.
     if IS_WINDOWS:
+        console.debug("Skipping bun installation on Windows.")
         return
 
     # Skip if bun is already installed.
     if os.path.exists(constants.BUN_PATH):
+        console.debug("Skipping bun installation as it is already installed.")
         return
 
-    # Check if unzip is installed
+    #  if unzip is installed
     unzip_path = path_ops.which("unzip")
     if unzip_path is None:
         raise FileNotFoundError("Reflex requires unzip to be installed.")
@@ -371,24 +365,21 @@ def install_bun():
 
 def install_frontend_packages():
     """Installs the base and custom frontend packages."""
-    # Install the frontend packages.
-    console.rule("[bold]Installing frontend packages")
-
     # Install the base packages.
-    subprocess.run(
-        [get_install_package_manager(), "install"],
+    process = new_process(
+        [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
-        stdout=subprocess.PIPE,
     )
+    show_status("Installing base frontend packages", process)
 
     # Install the app packages.
     packages = get_config().frontend_packages
     if len(packages) > 0:
-        subprocess.run(
+        process = new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
-            stdout=subprocess.PIPE,
         )
+        show_status("Installing custom frontend packages", process)
 
 
 def check_initialized(frontend: bool = True):
@@ -406,22 +397,22 @@ def check_initialized(frontend: bool = True):
 
     # Check if the app is initialized.
     if not (has_config and has_reflex_dir and has_web_dir):
-        console.print(
-            f"[red]The app is not initialized. Run [bold]{constants.MODULE_NAME} init[/bold] first."
+        console.error(
+            f"The app is not initialized. Run [bold]{constants.MODULE_NAME} init[/bold] first."
         )
         raise typer.Exit()
 
     # Check that the template is up to date.
     if frontend and not is_latest_template():
-        console.print(
-            "[red]The base app template has updated. Run [bold]reflex init[/bold] again."
+        console.error(
+            "The base app template has updated. Run [bold]reflex init[/bold] again."
         )
         raise typer.Exit()
 
     # Print a warning for Windows users.
     if IS_WINDOWS:
-        console.print(
-            "[yellow][WARNING] We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
+        console.warn(
+            "We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
         )
 
 
@@ -462,17 +453,16 @@ def initialize_frontend_dependencies():
 def check_admin_settings():
     """Check if admin settings are set and valid for logging in cli app."""
     admin_dash = get_config().admin_dash
-    current_time = datetime.now()
     if admin_dash:
         if not admin_dash.models:
-            console.print(
-                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]rxconfig.py[/bold magenta]. Time: {current_time}"
+            console.log(
+                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]rxconfig.py[/bold magenta]."
             )
         else:
-            console.print(
-                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard. Time: {current_time}"
+            console.log(
+                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard."
             )
-            console.print(
+            console.log(
                 "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
             )
 
@@ -484,8 +474,8 @@ def check_db_initialized() -> bool:
         True if alembic is initialized (or if database is not used).
     """
     if get_config().db_url is not None and not Path(constants.ALEMBIC_CONFIG).exists():
-        console.print(
-            "[red]Database is not initialized. Run [bold]reflex db init[/bold] first."
+        console.error(
+            "Database is not initialized. Run [bold]reflex db init[/bold] first."
         )
         return False
     return True
@@ -501,14 +491,14 @@ def check_schema_up_to_date():
                 connection=connection,
                 write_migration_scripts=False,
             ):
-                console.print(
-                    "[red]Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
+                console.error(
+                    "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
                     "to generate migration scripts.",
                 )
         except CommandError as command_error:
             if "Target database is not up to date." in str(command_error):
-                console.print(
-                    f"[red]{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                console.error(
+                    f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
                 )
 
 
@@ -527,7 +517,7 @@ def migrate_to_reflex():
         return
 
     # Rename pcconfig to rxconfig.
-    console.print(
+    console.log(
         f"[bold]Renaming {constants.OLD_CONFIG_FILE} to {constants.CONFIG_FILE}"
     )
     os.rename(constants.OLD_CONFIG_FILE, constants.CONFIG_FILE)

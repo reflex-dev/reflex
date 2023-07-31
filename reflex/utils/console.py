@@ -5,56 +5,123 @@ from __future__ import annotations
 from typing import List, Optional
 
 from rich.console import Console
+from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
-from rich.status import Status
+
+from reflex.constants import LogLevel
 
 # Console for pretty printing.
 _console = Console()
 
-
-def deprecate(msg: str) -> None:
-    """Print a deprecation warning.
-
-    Args:
-        msg: The deprecation message.
-    """
-    _console.print(f"[yellow]DeprecationWarning: {msg}[/yellow]")
+# The current log level.
+LOG_LEVEL = LogLevel.INFO
 
 
-def warn(msg: str) -> None:
-    """Print a warning about bad usage in Reflex.
+def set_log_level(log_level: LogLevel):
+    """Set the log level.
 
     Args:
-        msg: The warning message.
+        log_level: The log level to set.
     """
-    _console.print(f"[orange1]UsageWarning: {msg}[/orange1]")
+    global LOG_LEVEL
+    LOG_LEVEL = log_level
 
 
-def log(msg: str) -> None:
+def print(msg: str, **kwargs):
+    """Print a message.
+
+    Args:
+        msg: The message to print.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    _console.print(msg, **kwargs)
+
+
+def debug(msg: str, **kwargs):
+    """Print a debug message.
+
+    Args:
+        msg: The debug message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if LOG_LEVEL <= LogLevel.DEBUG:
+        print(f"[blue]Debug: {msg}[/blue]", **kwargs)
+
+
+def info(msg: str, **kwargs):
+    """Print an info message.
+
+    Args:
+        msg: The info message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if LOG_LEVEL <= LogLevel.INFO:
+        print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
+
+
+def success(msg: str, **kwargs):
+    """Print a success message.
+
+    Args:
+        msg: The success message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if LOG_LEVEL <= LogLevel.INFO:
+        print(f"[green]Success: {msg}[/green]", **kwargs)
+
+
+def log(msg: str, **kwargs):
     """Takes a string and logs it to the console.
 
     Args:
         msg: The message to log.
+        kwargs: Keyword arguments to pass to the print function.
     """
-    _console.log(msg)
+    if LOG_LEVEL <= LogLevel.INFO:
+        _console.log(msg, **kwargs)
 
 
-def print(msg: str) -> None:
-    """Prints the given message to the console.
-
-    Args:
-        msg: The message to print to the console.
-    """
-    _console.print(msg)
-
-
-def rule(title: str) -> None:
+def rule(title: str, **kwargs):
     """Prints a horizontal rule with a title.
 
     Args:
         title: The title of the rule.
+        kwargs: Keyword arguments to pass to the print function.
     """
-    _console.rule(title)
+    _console.rule(title, **kwargs)
+
+
+def warn(msg: str, **kwargs):
+    """Print a warning message.
+
+    Args:
+        msg: The warning message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if LOG_LEVEL <= LogLevel.WARNING:
+        print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
+
+
+def deprecate(msg: str, **kwargs):
+    """Print a deprecation warning.
+
+    Args:
+        msg: The deprecation message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if LOG_LEVEL <= LogLevel.WARNING:
+        print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
+
+
+def error(msg: str, **kwargs):
+    """Print an error message.
+
+    Args:
+        msg: The error message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    if LOG_LEVEL <= LogLevel.ERROR:
+        print(f"[red]Error: {msg}[/red]", **kwargs)
 
 
 def ask(
@@ -69,19 +136,33 @@ def ask(
         default: The default option selected.
 
     Returns:
-        A string
+        A string with the user input.
     """
     return Prompt.ask(question, choices=choices, default=default)  # type: ignore
 
 
-def status(msg: str) -> Status:
-    """Returns a status,
-    which can be used as a context manager.
+def progress():
+    """Create a new progress bar.
 
-    Args:
-        msg: The message to be used as status title.
 
     Returns:
-        The status of the console.
+        A new progress bar.
     """
-    return _console.status(msg)
+    return Progress(
+        *Progress.get_default_columns()[:-1],
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+    )
+
+
+def status(*args, **kwargs):
+    """Create a status with a spinner.
+
+    Args:
+        *args: Args to pass to the status.
+        **kwargs: Kwargs to pass to the status.
+
+    Returns:
+        A new status.
+    """
+    return _console.status(*args, **kwargs)

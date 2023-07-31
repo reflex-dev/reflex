@@ -37,8 +37,8 @@ def get_engine(url: Optional[str] = None):
     if url is None:
         raise ValueError("No database url configured")
     if not Path(constants.ALEMBIC_CONFIG).exists():
-        console.print(
-            "[red]Database is not initialized, run [bold]reflex db init[/bold] first."
+        console.warn(
+            "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
     echo_db_query = False
     if conf.env == constants.Env.DEV and constants.SQLALCHEMY_ECHO:

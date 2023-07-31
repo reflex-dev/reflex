@@ -9,12 +9,10 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Union
 
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
-
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites
-from reflex.utils.processes import new_process
+from reflex.utils.processes import new_process, show_progress
 
 
 def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
@@ -39,7 +37,9 @@ def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
 
 def set_reflex_project_hash():
     """Write the hash of the Reflex project to a REFLEX_JSON."""
-    update_json_file(constants.REFLEX_JSON, {"project_hash": random.getrandbits(128)})
+    project_hash = random.getrandbits(128)
+    console.debug(f"Setting project hash to {project_hash}.")
+    update_json_file(constants.REFLEX_JSON, {"project_hash": project_hash})
 
 
 def set_environment_variables():
@@ -86,21 +86,19 @@ def generate_sitemap_config(deploy_url: str):
         f.write(templates.SITEMAP_CONFIG(config=config))
 
 
-def export_app(
+def export(
     backend: bool = True,
     frontend: bool = True,
     zip: bool = False,
     deploy_url: Optional[str] = None,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
 ):
-    """Zip up the app for deployment.
+    """Export the app for deployment.
 
     Args:
         backend: Whether to zip up the backend app.
         frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
         deploy_url: The URL of the deployed app.
-        loglevel: The log level to use.
     """
     # Remove the static folder.
     path_ops.rm(constants.WEB_STATIC_DIR)
@@ -110,13 +108,6 @@ def export_app(
     if deploy_url is not None:
         generate_sitemap_config(deploy_url)
         command = "export-sitemap"
-
-    # Create a progress object
-    progress = Progress(
-        *Progress.get_default_columns()[:-1],
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-    )
 
     checkpoints = [
         "Linting and checking ",
@@ -130,36 +121,12 @@ def export_app(
         "Export successful",
     ]
 
-    # Add a single task to the progress object
-    task = progress.add_task("Creating Production Build: ", total=len(checkpoints))
-
     # Start the subprocess with the progress bar.
-    try:
-        with progress, new_process(
-            [prerequisites.get_package_manager(), "run", command],
-            cwd=constants.WEB_DIR,
-        ) as export_process:
-            assert export_process.stdout is not None, "No stdout for export process."
-            for line in export_process.stdout:
-                if loglevel == constants.LogLevel.DEBUG:
-                    print(line, end="")
-
-                # Check for special strings and update the progress bar.
-                for special_string in checkpoints:
-                    if special_string in line:
-                        if special_string == checkpoints[-1]:
-                            progress.update(task, completed=len(checkpoints))
-                            break  # Exit the loop if the completion message is found
-                        else:
-                            progress.update(task, advance=1)
-                            break
-
-    except Exception as e:
-        console.print(f"[red]Export process errored: {e}")
-        console.print(
-            "[red]Run in with [bold]--loglevel debug[/bold] to see the full error."
-        )
-        os._exit(1)
+    process = new_process(
+        [prerequisites.get_package_manager(), "run", command],
+        cwd=constants.WEB_DIR,
+    )
+    show_progress("Creating Production Build", process, checkpoints)
 
     # Zip up the app.
     if zip:
@@ -203,14 +170,12 @@ def posix_export(backend: bool = True, frontend: bool = True):
 
 def setup_frontend(
     root: Path,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     disable_telemetry: bool = True,
 ):
     """Set up the frontend to run the app.
 
     Args:
         root: The root path of the project.
-        loglevel: The log level to use.
         disable_telemetry: Whether to disable the Next telemetry.
     """
     # Install frontend packages.
@@ -242,15 +207,13 @@ def setup_frontend(
 
 def setup_frontend_prod(
     root: Path,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     disable_telemetry: bool = True,
 ):
     """Set up the frontend for prod mode.
 
     Args:
         root: The root path of the project.
-        loglevel: The log level to use.
         disable_telemetry: Whether to disable the Next telemetry.
     """
-    setup_frontend(root, loglevel, disable_telemetry)
-    export_app(loglevel=loglevel, deploy_url=get_config().deploy_url)
+    setup_frontend(root, disable_telemetry)
+    export(deploy_url=get_config().deploy_url)
