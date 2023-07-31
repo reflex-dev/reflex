@@ -31,6 +31,9 @@ class DebounceInput(Component):
     # If true, notify when form control loses focus
     force_notify_on_blur: Var[bool] = True  # type: ignore
 
+    # If provided, create a fully-controlled input
+    value: Var[str]
+
     def _render(self) -> Tag:
         """Carry first child props directly on this tag.
 
