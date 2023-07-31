@@ -153,10 +153,12 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     return fn(args, **kwargs)
 
 
-def show_logs(
-    message: str, process: subprocess.Popen, logger: Callable = console.debug
+def stream_logs(
+    message: str,
+    process: subprocess.Popen,
+    logger: Callable = console.debug,
 ):
-    """Show the logs for a process.
+    """Stream the logs for a process.
 
     Args:
         message: The message to display.
@@ -182,6 +184,22 @@ def show_logs(
         os._exit(1)
 
 
+def show_logs(
+    message: str,
+    process: subprocess.Popen,
+    logger: Callable = console.debug,
+):
+    """Show the logs for a process.
+
+    Args:
+        message: The message to display.
+        process: The process.
+        logger: The log function to use.
+    """
+    for _ in stream_logs(message, process, logger):
+        pass
+
+
 def show_status(message: str, process: subprocess.Popen):
     """Show the status of a process.
 
@@ -190,7 +208,7 @@ def show_status(message: str, process: subprocess.Popen):
         process: The process.
     """
     with console.status(message) as status:
-        for line in show_logs(message, process):
+        for line in stream_logs(message, process):
             status.update(f"{message}: {line}")
 
 
@@ -205,7 +223,7 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
     # Iterate over the process output.
     with console.progress() as progress:
         task = progress.add_task(f"{message}: ", total=len(checkpoints))
-        for line in show_logs(message, process):
+        for line in stream_logs(message, process):
             # Check for special strings and update the progress bar.
             for special_string in checkpoints:
                 if special_string in line:

@@ -297,10 +297,7 @@ def download_and_run(url: str, *args, **env):
         f.write(response.text)
 
     # Run the script.
-    env = {
-        **os.environ,
-        **env,
-    }
+    env = {**os.environ, **env}
     process = new_process(["bash", f.name, *args], env=env)
     show_logs(f"Installing {url}", process)
 
