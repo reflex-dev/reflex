@@ -24,7 +24,7 @@ from redis import Redis
 from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops
-from reflex.utils.processes import new_process, show_logs
+from reflex.utils.processes import new_process, show_logs, show_status
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -90,7 +90,7 @@ def get_install_package_manager() -> str:
     get_config()
 
     # On Windows, we use npm instead of bun.
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         return get_windows_package_manager()
 
     # On other platforms, we use bun.
@@ -106,7 +106,7 @@ def get_package_manager() -> str:
     """
     get_config()
 
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         return get_windows_package_manager()
     return constants.NPM_PATH
 
@@ -370,10 +370,10 @@ def install_frontend_packages():
     """Installs the base and custom frontend packages."""
     # Install the base packages.
     process = new_process(
-        [get_install_package_manager(), "install"],
+        [get_install_package_manager(), "instasll", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
     )
-    show_logs("Installing base frontend packages", process)
+    show_status("Installing base frontend packages", process)
 
     # Install the app packages.
     packages = get_config().frontend_packages
@@ -382,7 +382,7 @@ def install_frontend_packages():
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
         )
-        show_logs("Installing custom frontend packages", process)
+        show_status("Installing custom frontend packages", process)
 
 
 def check_initialized(frontend: bool = True):

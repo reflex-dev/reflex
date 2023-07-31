@@ -11,7 +11,6 @@ from typing import Callable, List, Optional
 from urllib.parse import urlparse
 
 import psutil
-import typer
 
 from reflex import constants
 from reflex.config import get_config
@@ -136,6 +135,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     Returns:
         Execute a child program in a new process.
     """
+    # Add the node bin path to the PATH environment variable.
     env = {
         **os.environ,
         "PATH": os.pathsep.join([constants.NODE_BIN_PATH, os.environ["PATH"]]),
@@ -148,46 +148,9 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         "encoding": "UTF-8",
         **kwargs,
     }
-    console.debug(f"Running command: {args} with kwargs: {kwargs}")
+    console.debug(f"Running command: {args}")
     fn = subprocess.run if run else subprocess.Popen
     return fn(args, **kwargs)
-
-
-def show_progress(process: subprocess.Popen, message: str, checkpoints: List[str]):
-    """Show a progress bar for a process.
-
-    Args:
-        process: The process.
-        message: The message to display.
-        checkpoints: The checkpoints to advance the progress bar.
-    """
-    # Create a progress object
-    progress = console.progress()
-    task = progress.add_task(f"{message}: ", total=len(checkpoints))
-
-    # Iterate over the process output.
-    try:
-        with progress, process:
-            if process.stdout is None:
-                return
-            for line in process.stdout:
-                console.debug(line, end="")
-
-                # Check for special strings and update the progress bar.
-                for special_string in checkpoints:
-                    if special_string in line:
-                        if special_string == checkpoints[-1]:
-                            progress.update(task, completed=len(checkpoints))
-                        else:
-                            progress.update(task, advance=1)
-                        break
-
-    except Exception as e:
-        console.error(f"Error during {message} {e}")
-        console.error(
-            "Run in with [bold]--loglevel debug[/bold] to see the full error."
-        )
-        typer.Exit(1)
 
 
 def show_logs(
@@ -200,21 +163,53 @@ def show_logs(
         process: The process.
         logger: The log function to use.
     """
-    # TODO: refactor this function with show_progress
-    # Iterate over the process output.
-    try:
-        with process:
-            if process.stdout is None:
-                return
-            for line in process.stdout:
-                logger(line, end="")
+    with process:
+        logger(message)
+        if process.stdout is None:
+            return
+        for line in process.stdout:
+            logger(line, end="")
+            yield line
 
-    except Exception as e:
-        console.error(f"Error during {message} {e}")
+    if process.returncode != 0:
+        console.error(f"Error during {message}")
         console.error(
             "Run in with [bold]--loglevel debug[/bold] to see the full error."
         )
-        typer.Exit(1)
+        os._exit(1)
+
+
+def show_status(message: str, process: subprocess.Popen):
+    """Show the status of a process.
+
+    Args:
+        message: The initial message to display.
+        process: The process.
+    """
+    with console.status(message) as status:
+        for line in show_logs(message, process):
+            status.update(f"{message}: {line}")
+
+
+def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str]):
+    """Show a progress bar for a process.
+
+    Args:
+        message: The message to display.
+        process: The process.
+        checkpoints: The checkpoints to advance the progress bar.
+    """
+    # Iterate over the process output.
+    with console.progress() as progress:
+        task = progress.add_task(f"{message}: ", total=len(checkpoints))
+        for line in show_logs(message, process):
+            # Check for special strings and update the progress bar.
+            for special_string in checkpoints:
+                if special_string in line:
+                    progress.update(task, advance=1)
+                    if special_string == checkpoints[-1]:
+                        progress.update(task, completed=len(checkpoints))
+                    break
 
 
 def catch_keyboard_interrupt(signal, frame):

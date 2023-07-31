@@ -48,9 +48,11 @@ def main(
 
 @cli.command()
 def init(
-    name: str = typer.Option(None, help="Name of the app to be initialized."),
+    name: str = typer.Option(
+        None, metavar="APP_NAME", help="The name of the app to be initialized."
+    ),
     template: constants.Template = typer.Option(
-        constants.Template.DEFAULT, help="Template to use for the app."
+        constants.Template.DEFAULT, help="The template to initialize the app with."
     ),
     loglevel: constants.LogLevel = typer.Option(
         constants.LogLevel.INFO, help="The log level to use."
@@ -107,9 +109,6 @@ def run(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
-
     # Set ports as os env variables to take precedence over config and
     # .env variables(if override_os_envs flag in config is set to False).
     build.set_os_env(
@@ -128,6 +127,9 @@ def run(
     if not frontend and not backend:
         frontend = True
         backend = True
+
+    # Check that the app is initialized.
+    prerequisites.check_initialized(frontend=frontend)
 
     # If something is running on the ports, ask the user if they want to kill or change it.
     if frontend and processes.is_process_on_port(frontend_port):

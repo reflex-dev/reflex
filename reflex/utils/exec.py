@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import platform
 from pathlib import Path
 
 from reflex import constants
@@ -40,7 +39,7 @@ def run_process_and_launch_url(
         for line in process.stdout:
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
-                console.info(f"App running at: [bold green]{url}")
+                console.log(f"App running at: [bold green]{url}")
             else:
                 console.debug(line)
 
@@ -139,7 +138,7 @@ def run_backend_prod(
             str(port),
             f"{app_name}:{constants.APP_VAR}",
         ]
-        if platform.system() == "Windows"
+        if prerequisites.IS_WINDOWS
         else [
             *constants.RUN_BACKEND_PROD,
             "--bind",

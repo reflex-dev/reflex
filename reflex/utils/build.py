@@ -126,7 +126,7 @@ def export(
         [prerequisites.get_package_manager(), "run", command],
         cwd=constants.WEB_DIR,
     )
-    show_progress(process, "Creating Production Build", checkpoints)
+    show_progress("Creating Production Build", process, checkpoints)
 
     # Zip up the app.
     if zip:

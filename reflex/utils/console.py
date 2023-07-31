@@ -154,3 +154,8 @@ def progress():
         MofNCompleteColumn(),
         TimeElapsedColumn(),
     )
+
+
+def status(*args, **kwargs):
+    """Create a status with a spinner."""
+    return _console.status(*args, **kwargs)
