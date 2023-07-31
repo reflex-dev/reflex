@@ -19,24 +19,24 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
-def run_process_and_launch_url(
-    run_command: list[str],
-):
+def run_process_and_launch_url(command: list[str], port: str):
     """Run the process and launch the URL.
 
     Args:
-        run_command: The command to run.
+        command: The command to run.
+        port: The port to run the process on.
     """
     process = processes.new_process(
-        run_command,
+        command,
         cwd=constants.WEB_DIR,
+        env={"PORT": port},
     )
 
     if process.stdout:
         for line in process.stdout:
             if "ready started server on" in line:
                 url = line.split("url: ")[-1].strip()
-                console.print(f"App running at: [bold green]{url}")
+                console.print(f"App starting at: [bold green]{url}")
             else:
                 console.debug(line)
 
@@ -55,9 +55,8 @@ def run_frontend(
     start_watching_assets_folder(root)
 
     # Run the frontend in development mode.
-    console.rule("[bold green]App Running")
     run_process_and_launch_url(
-        [prerequisites.get_package_manager(), "run", "dev", "-p", port]
+        [prerequisites.get_package_manager(), "run", "dev"], port
     )
 
 
@@ -73,7 +72,7 @@ def run_frontend_prod(
     """
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([constants.NPM_PATH, "run", "prod", "-p", port])
+    run_process_and_launch_url([constants.NPM_PATH, "run", "prod"], port)
 
 
 def run_backend(

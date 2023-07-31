@@ -97,10 +97,10 @@ def run(
         constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend_only: bool = typer.Option(
-        False, "frontend-only", help="Execute only frontend."
+        False, "--frontend-only", help="Execute only frontend.", show_default=False
     ),
     backend_only: bool = typer.Option(
-        False, "backend-only", help="Execute only backend."
+        False, "--backend-only", help="Execute only backend.", show_default=False
     ),
     frontend_port: str = typer.Option(
         constants.FRONTEND_PORT,
@@ -128,9 +128,6 @@ def run(
 
     # Check that the app is initialized.
     prerequisites.check_initialized(frontend=run_frontend)
-
-    # Get the app module.
-    app = prerequisites.get_app()
 
     # Check the admin dashboard settings.
     prerequisites.check_admin_settings()
@@ -163,51 +160,25 @@ def run(
         frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
         threading.Thread(target=frontend_cmd, args=(Path.cwd(), frontend_port)).start()
     if run_backend:
+        module = f"{config.app_name}.{config.app_name}"
         backend_port = processes.change_or_terminate_port(backend_port, "backend")
         threading.Thread(
             target=backend_cmd,
-            args=(app.__name__, backend_host, backend_port),
+            args=(module, backend_host, backend_port),
         ).start()
 
-    # Display custom message when there is a keyboard interrupt.
+    # Catch a keyboard interrupt.
     signal.signal(signal.SIGINT, processes.catch_keyboard_interrupt)
 
 
 @cli.command()
-def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
-    """Deploy the app to the Reflex hosting service."""
-    # Check if the deploy url is set.
-    if config.rxdeploy_url is None:
-        typer.echo("This feature is coming soon!")
-        return
-
-    # Compile the app in production mode.
-    typer.echo("Compiling production app")
-    export()
-
-    # Exit early if this is a dry run.
-    if dry_run:
-        return
-
-    # Deploy the app.
-    data = {"userId": config.username, "projectId": config.app_name}
-    original_response = httpx.get(config.rxdeploy_url, params=data)
-    response = original_response.json()
-    frontend = response["frontend_resources_url"]
-    backend = response["backend_resources_url"]
-
-    # Upload the frontend and backend.
-    with open(constants.FRONTEND_ZIP, "rb") as f:
-        httpx.put(frontend, data=f)  # type: ignore
-
-    with open(constants.BACKEND_ZIP, "rb") as f:
-        httpx.put(backend, data=f)  # type: ignore
-
-
-@cli.command()
 def export(
-    backend_only: bool = typer.Option(False, help="Export only backend."),
-    frontend_only: bool = typer.Option(False, help="Export only frontend."),
+    frontend_only: bool = typer.Option(
+        False, "--frontend-only", help="Export only frontend."
+    ),
+    backend_only: bool = typer.Option(
+        False, "--backend-only", help="Export only backend."
+    ),
     loglevel: constants.LogLevel = typer.Option(
         constants.LogLevel.INFO, help="The log level to use."
     ),
@@ -246,6 +217,38 @@ def export(
     )
 
 
+@cli.command()
+def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
+    """Deploy the app to the Reflex hosting service."""
+    # Check if the deploy url is set.
+    if config.rxdeploy_url is None:
+        typer.echo("This feature is coming soon!")
+        return
+
+    # Compile the app in production mode.
+    typer.echo("Compiling production app")
+    export()
+
+    # Exit early if this is a dry run.
+    if dry_run:
+        return
+
+    # Deploy the app.
+    data = {"userId": config.username, "projectId": config.app_name}
+    original_response = httpx.get(config.rxdeploy_url, params=data)
+    response = original_response.json()
+    frontend = response["frontend_resources_url"]
+    backend = response["backend_resources_url"]
+
+    # Upload the frontend and backend.
+    with open(constants.FRONTEND_ZIP, "rb") as f:
+        httpx.put(frontend, data=f)  # type: ignore
+
+    with open(constants.BACKEND_ZIP, "rb") as f:
+        httpx.put(backend, data=f)  # type: ignore
+
+
+# Database commands.
 db_cli = typer.Typer()
 
 
