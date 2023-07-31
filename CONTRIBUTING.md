@@ -27,7 +27,7 @@ Here is a quick guide to how the run Reflex repo locally so you can start contri
 
 First clone Reflex:
 ``` bash
-git clone https://github.com/pynecone-io/pynecone.git
+git clone https://github.com/reflex-dev/reflex.git
 ```
 
 Navigate into the repo:
