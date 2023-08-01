@@ -42,11 +42,13 @@ class Link(ChakraComponent):
             **props: The props of the component.
 
         Raises:
-            ValueError: in case of missing children
+            ValueError: in case of missing children or link
 
         Returns:
             Component: The link component
         """
+        if href and not isinstance(href, str):
+            raise ValueError("Invalid href passed in Link. Expected a 'str' for href.")
         if href and not len(children):
             raise ValueError("Link without a child will not display")
         elif href is None and len(children):
