@@ -1,7 +1,14 @@
-# Assumes:
-# - CWD is the root directory of your project (e.g. reflex/)
-# - You have a poetry.lock file in the root directory of your project
-# - You have a pyproject.toml file in the root directory of your project
+# Entry conditions:
+# - `setup/checkout` has already happened
+# - working dir is the root directory of your project (e.g. `reflex/`).
+# - You have a `poetry.lock` file in the root directory of your project
+# - You have a `pyproject.toml` file in the root directory of your project
+#
+# Exit conditions:
+# - Python of version `python-version` is ready to be invoked as `python`.
+# - Poetry of version `poetry-version` is ready ot be invoked as `poetry`.
+# - If `run-poetry-install` is true, deps as defined in `pyproject.toml` will have been installed into the venv at `create-venv-at-path`.
+
 name: 'Setup Reflex build environment'
 description: 'Sets up Python, install poetry (cached), install project deps (cached)'
 inputs:
@@ -20,9 +27,7 @@ inputs:
     description: 'Path to venv (if poetry install is enabled)'
     required: false
     default: '.venv'
-  shell:
-    description: 'Shell to use for running commands'
-    required: true
+
 runs:
   using: "composite"
   steps:
@@ -31,12 +36,25 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
+    # This is required for OS portability in presence of caching.
+    #
+    # The act of installing poetry has the side effect of adding
+    # poetry bin path to system path.
+    #
+    # But, if we get a cache hit on the poetry installation, we
+    # don't get this important side effect. As a result, bare calls
+    # to "poetry" fails.
+    - name: Prepare PATH env to include where poetry will be installed into
+      shell: bash
+      run: |
+        echo "~/.local/bin/" >> $GITHUB_PATH
+
     - name: Restore cached poetry install
       id: restore-poetry-cache
       uses: actions/cache/restore@v3
       with:
         path: ~/.local
-        key: python-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-poetry-${{ inputs.poetry-version }}
 
     - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
       name: Install Poetry
@@ -45,6 +63,7 @@ runs:
         version: ${{ inputs.poetry-version }}
         virtualenvs-create: true
         virtualenvs-in-project: true
+        virtualenvs-path: ${{ inputs.create-venv-at-path }}
 
     - if: steps.restore-poetry-cache.outputs.cache-hit != 'true'
       name: Save poetry install to cache
@@ -58,17 +77,19 @@ runs:
       uses: actions/cache/restore@v3
       with:
         path: ${{ inputs.create-venv-at-path }}
-        key: python-${{ inputs.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
+        key: ${{ runner.os }}-python-${{ inputs.python-version }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
     - if: ${{ inputs.run-poetry-install == 'true' && steps.restore-pydeps-cache.outputs.cache-hit != 'true' }}
       name: Run poetry install (will get cached)
-      shell: ${{ inputs.shell }}
       # We skip over installing the root package (the current project code under CI)
       # Root package should not be cached - its content is not reflected in poetry.lock / cache key
+
+      # On Windows, it is scripts/activate. On Linux and MacOS, it is bin/activate
+      shell: bash
       run: |
-         python -m venv ${{ inputs.create-venv-at-path }}
-         source ${{ inputs.create-venv-at-path }}/bin/activate
-         poetry install --no-interaction --no-root
+        python -m venv ${{ inputs.create-venv-at-path }}
+        source ${{ inputs.create-venv-at-path }}/*/activate
+        poetry install --no-interaction --no-root
 
     - if: steps.restore-pydeps-cache.outputs.cache-hit != 'true'
       name: Save Python deps to cache
@@ -78,10 +99,10 @@ runs:
         key: ${{ steps.restore-pydeps-cache.outputs.cache-primary-key }}
 
     - if: ${{ inputs.run-poetry-install == 'true' }}
-      name: Run poetry install (including root package)
-      shell: ${{ inputs.shell }}
+      name: Run poetry install (root package)
       # Here we really install the root package (the current project code under CI).env:
       # This should not be cached.
+      shell: bash
       run: |
-        source ${{ inputs.create-venv-at-path }}/bin/activate
+        source ${{ inputs.create-venv-at-path }}/*/activate
         poetry install --only-root --no-interaction

@@ -285,6 +285,7 @@ class AppHarness:
             success = target()
             if success:
                 return success
+            time.sleep(step)
         return False
 
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
