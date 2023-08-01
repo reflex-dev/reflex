@@ -17,6 +17,14 @@ defaults:
   run:
     shell: bash
 
+env:
+  # Windows CI would fail without this.
+  # Ref: https://gist.github.com/NodeJSmith/e7e37f2d3f162456869f015f842bcf15
+  # TODO: can we fix windows encoding natively within reflex? Bug above can hit real users too (less common, but possible)
+  # - Catch encoding errors when printing logs
+  # - Best effort print lines that contain illegal chars (map to some default char, etc.)
+  PYTHONIOENCODING: "utf8"
+
 jobs:
   example-counter:
     strategy:
