@@ -54,7 +54,7 @@ def init(
         constants.Template.DEFAULT, help="The template to initialize the app with."
     ),
     loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.INFO, help="The log level to use."
+        console.LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Initialize a new Reflex app in the current directory."""
@@ -101,7 +101,7 @@ def run(
     backend_port: str = typer.Option(None, help="Specify a different backend port."),
     backend_host: str = typer.Option(None, help="Specify the backend host."),
     loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.INFO, help="The log level to use."
+        console.LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Run the app in the current directory."""
@@ -180,19 +180,27 @@ def run(
 
 
 @cli.command()
-def deploy(dry_run: bool = typer.Option(False, help="Whether to run a dry run.")):
+def deploy(
+    dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+):
     """Deploy the app to the Reflex hosting service."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
     # Get the app config.
     config = get_config()
 
     # Check if the deploy url is set.
     if config.rxdeploy_url is None:
-        typer.echo("This feature is coming soon!")
+        console.info("This feature is coming soon!")
         return
 
     # Compile the app in production mode.
-    typer.echo("Compiling production app")
-    export()
+    console.info("Compiling production app")
+    export(loglevel=loglevel)
 
     # Exit early if this is a dry run.
     if dry_run:
@@ -225,7 +233,7 @@ def export(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
     loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.INFO, help="The log level to use."
+        console.LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Export the app to a zip file."""
