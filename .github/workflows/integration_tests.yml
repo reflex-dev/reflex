@@ -59,10 +59,21 @@ jobs:
         working-directory: ./reflex-examples/counter
         run: |
           poetry run pip install -r requirements.txt
+      - name: Check export --backend-only before init for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          poetry run reflex export --backend-only
+      - name: Check run --backend-only before init for counter example
+        run: |
+          poetry run bash scripts/integration.sh ./reflex-examples/counter dev 8000 --backend-only
       - name: Init Website for counter example
         working-directory: ./reflex-examples/counter
         run: |
           poetry run reflex init --loglevel debug
+      - name: Check export for counter example
+        working-directory: ./reflex-examples/counter
+        run: |
+          poetry run reflex export
       - name: Run Website and Check for errors
         run: |
           # Check that npm is home
