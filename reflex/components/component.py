@@ -61,12 +61,13 @@ class Component(Base, ABC):
     # Special component props.
     special_props: Set[Var] = set()
 
-    # Whether the component should take the focus once the page is loaded
+    # Whether the component should take the focus once the page is loaded.
     autofocus: bool = False
 
-    # components that cannot be children
+    # Components that cannot be children
     invalid_children: List[str] = []
-    # custom attribute
+
+    # Custom attributes.
     custom_attrs: Dict[str, str] = {}
 
     @classmethod
@@ -194,6 +195,11 @@ class Component(Base, ABC):
         # Construct the component.
         super().__init__(*args, **kwargs)
 
+    def __hash__(self):
+        """Hash the component."""
+        import hashlib
+        return int(hashlib.md5(str(self.render()).encode()).hexdigest(), 16)
+
     def _create_event_chain(
         self,
         event_trigger: str,
@@ -308,15 +314,7 @@ class Component(Base, ABC):
         Returns:
             The code to render the component.
         """
-        return format.json_dumps(self.render())
-
-    def __str__(self) -> str:
-        """Represent the component in React.
-
-        Returns:
-            The code to render the component.
-        """
-        return format.json_dumps(self.render())
+        return repr(self.render())
 
     def _render(self) -> Tag:
         """Define how to render the component in React.
@@ -433,11 +431,17 @@ class Component(Base, ABC):
         """
         tag = self._render()
 
+        def sortstyle(style):
+            return {k: sortstyle(style[k]) if isinstance(style[k], dict) else
+                    style[k] for k in sorted(style.keys())}
+
+        style = sortstyle(self.style)
+
         rendered_dict = dict(
             tag.add_props(
                 **self.event_triggers,
                 key=self.key,
-                sx=self.style,
+                sx=style,
                 id=self.id,
                 class_name=self.class_name,
                 **self.custom_attrs,
@@ -448,9 +452,24 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
+        print("style", style)
+        for key in style:
+            print(style)
+            try:
+                key = format.to_snake_case(key)
+                if key in rendered_dict:
+                    print("deleting", key)
+                    del rendered_dict[key]
+            except:
+                pass
         self._validate_component_children(
             rendered_dict["name"], rendered_dict["children"]
         )
+
+        # Sort the keys to make the rendered dict deterministic.
+        return {
+            k: rendered_dict[k] for k in sorted(rendered_dict.keys())
+        }
         return rendered_dict
 
     def _validate_component_children(self, comp_name: str, children: List[Dict]):
@@ -687,14 +706,6 @@ class CustomComponent(Component):
             Whether the component is equal to the other.
         """
         return isinstance(other, CustomComponent) and self.tag == other.tag
-
-    def __hash__(self) -> int:
-        """Get the hash of the component.
-
-        Returns:
-            The hash of the component.
-        """
-        return hash(self.tag)
 
     @classmethod
     def get_props(cls) -> Set[str]:

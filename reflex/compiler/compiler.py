@@ -1,7 +1,8 @@
 """Compiler for the reflex apps."""
 from __future__ import annotations
 
-from typing import List, Set, Tuple, Type
+import hashlib
+from typing import Dict, List, Set, Tuple, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
