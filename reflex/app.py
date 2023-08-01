@@ -51,9 +51,6 @@ from reflex.utils import console, format, types
 ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
-# Page checksums to cache compiled pages.
-PAGE_CHECKSUMS: Dict[str, str] = {}
-
 
 class App(Base):
     """A Reflex application."""
@@ -488,16 +485,25 @@ class App(Base):
         custom_components = set()
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
-        import hashlib
         new_checksums = {}
-        with open("o", "w") as f:
+        import json
+        import os
+
+        if os.path.exists("cache.json"):
+            with open("cache.json", "r") as f:
+                PAGE_CHECKSUMS = json.load(f)
+        else:
+            PAGE_CHECKSUMS = {}
+        # with open("o", "w") as f:
+        with progress:
             for route, component in self.pages.items():
+                progress.advance(task)
                 checksum = hash(component)
                 if checksum == PAGE_CHECKSUMS.get(route):
                     continue
                 new_checksums[route] = checksum
                 # TODO: this progress does not reflect actual threaded task completion
-                # progress.advance(task)
+                progress.advance(task)
                 component.add_style(self.style)
                 compile_results.append(
                     thread_pool.apply_async(
@@ -548,7 +554,8 @@ class App(Base):
 
         # Update the checksums.
         PAGE_CHECKSUMS.update(new_checksums)
-
+        with open("cache.json", "w") as f:
+            json.dump(PAGE_CHECKSUMS, f)
 
 
 async def process(

@@ -198,6 +198,7 @@ class Component(Base, ABC):
     def __hash__(self):
         """Hash the component."""
         import hashlib
+
         return int(hashlib.md5(str(self.render()).encode()).hexdigest(), 16)
 
     def _create_event_chain(
@@ -432,8 +433,10 @@ class Component(Base, ABC):
         tag = self._render()
 
         def sortstyle(style):
-            return {k: sortstyle(style[k]) if isinstance(style[k], dict) else
-                    style[k] for k in sorted(style.keys())}
+            return {
+                k: sortstyle(style[k]) if isinstance(style[k], dict) else style[k]
+                for k in sorted(style.keys())
+            }
 
         style = sortstyle(self.style)
 
@@ -452,13 +455,10 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
-        print("style", style)
         for key in style:
-            print(style)
             try:
                 key = format.to_snake_case(key)
                 if key in rendered_dict:
-                    print("deleting", key)
                     del rendered_dict[key]
             except:
                 pass
@@ -467,9 +467,7 @@ class Component(Base, ABC):
         )
 
         # Sort the keys to make the rendered dict deterministic.
-        return {
-            k: rendered_dict[k] for k in sorted(rendered_dict.keys())
-        }
+        return {k: rendered_dict[k] for k in sorted(rendered_dict.keys())}
         return rendered_dict
 
     def _validate_component_children(self, comp_name: str, children: List[Dict]):
