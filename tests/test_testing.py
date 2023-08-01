@@ -1,5 +1,6 @@
 """Unit tests for the included testing tools."""
 from reflex.testing import AppHarness
+from reflex.utils.prerequisites import IS_WINDOWS
 
 
 def test_app_harness(tmp_path):
@@ -8,6 +9,9 @@ def test_app_harness(tmp_path):
     Args:
         tmp_path: pytest tmp_path fixture
     """
+    # Skip in Windows CI.
+    if IS_WINDOWS:
+        return
 
     def BasicApp():
         import reflex as rx

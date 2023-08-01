@@ -2,7 +2,6 @@
 
 import os
 import signal
-import threading
 from pathlib import Path
 
 import httpx
@@ -167,18 +166,17 @@ def run(
     # Post a telemetry event.
     telemetry.send(f"run-{env.value}", config.telemetry_enabled)
 
-    # Run the frontend and backend.
-    if frontend:
-        setup_frontend(Path.cwd())
-        threading.Thread(target=frontend_cmd, args=(Path.cwd(), frontend_port)).start()
-    if backend:
-        threading.Thread(
-            target=backend_cmd,
-            args=(app.__name__, backend_host, backend_port),
-        ).start()
-
     # Display custom message when there is a keyboard interrupt.
     signal.signal(signal.SIGINT, processes.catch_keyboard_interrupt)
+
+    # Run the frontend and backend together.
+    commands = []
+    if frontend:
+        setup_frontend(Path.cwd())
+        commands.append((frontend_cmd, Path.cwd(), frontend_port))
+    if backend:
+        commands.append((backend_cmd, app.__name__, backend_host, backend_port))
+    processes.run_concurrently(*commands)
 
 
 @cli.command()

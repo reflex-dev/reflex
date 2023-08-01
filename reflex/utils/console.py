@@ -121,7 +121,7 @@ def error(msg: str, **kwargs):
         kwargs: Keyword arguments to pass to the print function.
     """
     if LOG_LEVEL <= LogLevel.ERROR:
-        print(f"[red]Error: {msg}[/red]", **kwargs)
+        print(f"[red]{msg}[/red]", **kwargs)
 
 
 def ask(
