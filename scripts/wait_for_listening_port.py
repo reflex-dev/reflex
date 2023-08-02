@@ -7,21 +7,36 @@ import argparse
 import socket
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Tuple
+
+# psutil is already a dependency of Reflex itself - so it's OK to use
+import psutil
 
 
-def _wait_for_port(port, server_pid, timeout):
+def _pid_exists(pid):
+    # os.kill(pid, 0) doesn't work on Windows (actually kills the PID)
+    # psutil.pid_exists() doesn't work on Windows (does os.kill underneath)
+    # psutil.pids() seems to return the right thing. Inefficient but doesn't matter - keeps things simple.
+    #
+    # Note: For windows, the pid here is really the "winpid".
+    return pid in psutil.pids()
+
+
+def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
     start = time.time()
     print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")
     while True:
-        # TODO fail early if server pid not there
+        if not _pid_exists(server_pid):
+            return False, f"Server PID {server_pid} is not running."
         try:
             socket.create_connection(("localhost", port), timeout=0.5)
-            print(f"OK! Port {port} is listening after {time.time() - start} seconds")
-            return True
+            return True, f"Port {port} is listening after {time.time() - start} seconds"
         except Exception:
             if time.time() - start > timeout:
-                print(f"FAIL: Port {port} still not listening after {timeout} seconds.")
-                return False
+                return (
+                    False,
+                    f"Port {port} still not listening after {timeout} seconds.",
+                )
             time.sleep(5)
 
 
@@ -39,8 +54,11 @@ def main():
             executor.submit(_wait_for_port, p, args.server_pid, args.timeout)
         )
     for f in as_completed(futures):
-        if not f.result():
-            print("At least one port failed... exiting with failure.")
+        ok, msg = f.result()
+        if ok:
+            print(f"OK: {msg}")
+        else:
+            print(f"FAIL: {msg}")
             exit(1)
 
 

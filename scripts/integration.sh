@@ -17,11 +17,20 @@ shift
 # Start the server in the background
 reflex run --loglevel debug --env "$env_mode" "$@" & pid=$!
 
-# TODO does this even work on windows? Not clear, possibly not impactful though.
-trap "kill -INT $pid ||:" EXIT
+# Within the context of this bash, $pid_in_bash is what we need to pass to "kill" on exit
+# This is true on all platforms.
+pid_in_bash=$pid
+trap "kill -INT $pid_in_bash ||:" EXIT
 
 echo "Started server with PID $pid"
 
 # Assume we run from the root of the repo
 popd
-python scripts/wait_for_listening_port.py $check_ports --timeout=600 --server-pid "$pid"
+
+# In Windows, our Python script below needs to work with the WINPID
+if [ -f /proc/$pid/winpid ]; then
+  pid=$(cat /proc/$pid/winpid)
+  echo "Windows detected, passing winpid $pid to port waiter"
+fi
+
+python scripts/wait_for_listening_port.py 3000 8000 --timeout=600 --server-pid "$pid"
