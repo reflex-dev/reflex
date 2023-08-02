@@ -6,10 +6,12 @@ from reflex.components.component import Component
 from reflex.utils import format
 from reflex.components.media.icon import Icon
 
+
 class ChakraIconComponent(Component):
     """A component that wraps a Chakra icon component."""
 
     library = "@chakra-ui/icons"
+
 
 class IconButton(ChakraIconComponent):
     """A button with an icon."""
@@ -42,7 +44,7 @@ class IconButton(ChakraIconComponent):
 
     @classmethod
     def create(cls, **props):
-        """Create Icon Button component. 
+        """Create Icon Button component.
 
         Run some additional checks on Icon Button component.
 
@@ -59,7 +61,9 @@ class IconButton(ChakraIconComponent):
         """
 
         if "icon" not in props or "aria_label" not in props:
-            raise AttributeError("Missing 'icon' or 'aria_label' keyword-argument for IconButton")
+            raise AttributeError(
+                "Missing 'icon' or 'aria_label' keyword-argument for IconButton"
+            )
         icon_tag = props["icon"]
         if type(icon_tag) != str or icon_tag.lower() not in ICON_LIST:
             raise ValueError(
