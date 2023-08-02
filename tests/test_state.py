@@ -560,12 +560,27 @@ def test_reset(test_state, child_state):
     assert test_state.num2 == 3.14
     assert child_state.value == ""
 
+    expected_dirty_vars = {
+        "num1",
+        "num2",
+        "obj",
+        "upper",
+        "complex",
+        "is_hydrated",
+        "fig",
+        "key",
+        "sum",
+        "array",
+        "map_key",
+        "mapping",
+    }
+
     # The dirty vars should be reset.
-    assert test_state.dirty_vars == set()
-    assert child_state.dirty_vars == set()
+    assert test_state.dirty_vars == expected_dirty_vars
+    assert child_state.dirty_vars == {"count", "value"}
 
     # The dirty substates should be reset.
-    assert test_state.dirty_substates == set()
+    assert test_state.dirty_substates == {"child_state", "child_state2"}
 
 
 @pytest.mark.asyncio
