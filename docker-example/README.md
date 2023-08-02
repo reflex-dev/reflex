@@ -8,15 +8,14 @@ The `requirements.txt` includes the reflex package which is need to install Refl
 
 ## Customize Reflex Config
 
-The `rxconfig.py` includes the configuration of your Reflex service. Edit the file like the following configuration. If you want to use a custom database you can set the endpoint in this file.
+The `rxconfig.py` includes the configuration of your Reflex service. Edit the file like the following configuration. If you want to use a custom database you can set the endpoint in this file. Ensure that `api_url` points to the publicly accessible hostname where the container will be running.
 
 ```python
 import reflex as rx
 
 config = rx.Config(
     app_name="app",
-    api_url="0.0.0.0:8000",
-    bun_path="/app/.bun/bin/bun",
+    api_url="http://app.example.com:8000",
     db_url="sqlite:///reflex.db",
 )
 ```
@@ -34,5 +33,5 @@ docker build -t reflex-project:latest .
 Finally, you can start your Reflex container service as follows:
 
 ```bash
-docker run -d -p 3000:3000 -p 8000:8000 --name reflex reflex-project:latest
+docker run -d -p 3000:3000 -p 8000:8000 --name app reflex-project:latest
 ```
