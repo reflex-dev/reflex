@@ -103,7 +103,7 @@ def run_backend(
             "--port",
             str(port),
             "--log-level",
-            loglevel,
+            loglevel.value,
             "--reload",
             "--reload-dir",
             app_name.split(".")[0],
