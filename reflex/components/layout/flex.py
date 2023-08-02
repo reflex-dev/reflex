@@ -2,6 +2,7 @@
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
+from typing import Union
 
 
 class Flex(ChakraComponent):
@@ -16,7 +17,7 @@ class Flex(ChakraComponent):
     basis: Var[str]
 
     # Shorthand for flexDirection style prop
-    direction: Var[str]
+    direction: Var[Union[str, list]]
 
     # Shorthand for flexGrow style prop
     grow: Var[str]
@@ -25,7 +26,7 @@ class Flex(ChakraComponent):
     justify: Var[str]
 
     # Shorthand for flexWrap style prop
-    wrap: Var[str]
+    wrap: Var[Union[str, list]]
 
     # Shorthand for flexShrink style prop
     shrink: Var[str]
