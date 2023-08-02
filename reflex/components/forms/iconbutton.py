@@ -1,6 +1,4 @@
 """An icon button component."""
-
-# from reflex.components.typography.text import Text
 from reflex.components.tags import Tag
 from reflex.vars import Var
 from reflex.components.libs.chakra import ChakraComponent
@@ -44,6 +42,22 @@ class IconButton(ChakraIconComponent):
 
     @classmethod
     def create(cls, **props):
+        """Create Icon Button component. 
+
+        Run some additional checks on Icon Button component.
+
+        Args:
+            children: The positional arguments
+            props: The keyword arguments
+
+        Raises:
+            AttributeError: The errors tied to bad usage of the Icon Button component.
+            ValueError: If the icon or aria_label tag is invalid.
+
+        Returns:
+            The created component.
+        """
+
         if "icon" not in props or "aria_label" not in props:
             raise AttributeError("Missing 'icon' or 'aria_label' keyword-argument for IconButton")
         icon_tag = props["icon"]
