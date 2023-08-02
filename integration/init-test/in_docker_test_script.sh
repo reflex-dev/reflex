@@ -11,4 +11,4 @@ echo "Installing reflex from local repo code"
 cd /reflex-repo
 poetry install
 echo "Running reflex init in test project dir"
-poetry run /bin/bash -c "cd ~/hello && reflex init"
+poetry run /bin/bash -c "cd ~/hello && reflex init && rm -rf ~/.reflex .web && reflex export --backend-only"
