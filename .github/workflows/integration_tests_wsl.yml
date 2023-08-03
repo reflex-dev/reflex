@@ -67,8 +67,6 @@ jobs:
         shell: wsl-bash {0}
         run: |
           poetry run reflex init --loglevel debug
-          # Symlink seems easier to make work than persisting PATH changes, in WSL
-          ln -s ~/.reflex/.bun/bin/bun /usr/local/bin/bun
       - name: Check export for counter example
         working-directory: ./reflex-examples/counter
         shell: wsl-bash {0}
