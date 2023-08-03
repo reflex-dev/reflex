@@ -51,7 +51,7 @@ class Link(ChakraComponent):
             raise ValueError("Invalid href passed in Link. Expected a 'str' for href.")
         if href and not len(children):
             raise ValueError("Link without a child will not display")
-        elif href is None and len(children):
+        elif not href and len(children):
             # Don't use a NextLink if there is no href.
             props["as_"] = ""
         if href:
