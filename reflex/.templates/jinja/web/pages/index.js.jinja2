@@ -7,23 +7,27 @@
 {% endblock %}
 
 {% block export %}
+
 export default function Component() {
   const [{{state_name}}, {{state_name|react_setter}}] = useState({{initial_state|json_dumps}})
-  const [{{const.result}}, {{const.result|react_setter}}] = useState({{const.initial_result|json_dumps}})
+  const [queueNotifyCounter, setQueueNotifyCounter] = useState(0)
   const [notConnected, setNotConnected] = useState(false)
   const {{const.router}} = useRouter()
   const {{const.socket}} = useRef(null)
   const { isReady } = {{const.router}}
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
   const focusRef = useRef();
+
+  // Function to trigger re-render when event queue is updated by websocket or event handler
+  const queueNotify = () => {
+    setQueueNotifyCounter(count => (count + 1))
+  }
   
   // Function to add new events to the event queue.
   const Event = (events, _e) => {
       preventDefault(_e);
-      {{state_name|react_setter}}(state => ({
-        ...state,
-        events: [...state.events, ...events],
-      }))
+      pending_events.push(...events)
+      queueNotify()
   }
 
   // Function to add new files to be uploaded.
@@ -41,37 +45,29 @@ export default function Component() {
 
     // Initialize the websocket connection.
     if (!{{const.socket}}.current) {
-      connect({{const.socket}}, {{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{transports}}, setNotConnected)
+      connect({{const.socket}}, queueNotify, {{const.router}}, {{transports}}, setNotConnected)
+      // perform hydration when websocket connects
+      Event([E('{{state_name}}.{{const.hydrate}}', {})])
     }
 
-    // If we are not processing an event, process the next event.
-    if (!{{const.result}}.{{const.processing}}) {
-      processEvent({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
-    }
-
-    // Reset the result.
-    {{const.result|react_setter}}(result => {
-      // If there is a new result, update the state.
-      if ({{const.result}}.{{const.state}} != null) {
-        // Apply the new result to the state and the new events to the queue.
-        {{state_name|react_setter}}(state => {
-          return {
-            ...{{const.result}}.{{const.state}},
-            events: [...state.{{const.events}}, ...{{const.result}}.{{const.events}}],
-          } 
-        })
-        return {
-          {{const.state}}: null,
-          {{const.events}}: [],
-          {{const.final}}: true,
-          {{const.processing}}: !{{const.result}}.{{const.final}},
-        }
+    (async () => {
+      // Process all outstanding events
+      while (pending_events.length > 0 && !event_status.processing) {
+        await processEvent({{const.router}}, {{const.socket}}.current)
       }
-      return result;
-    })
-
-    // Process the next event.
-    processEvent({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
+      // Update the state based on deltas from the websocket connection
+      if (pending_updates.length > 0) {
+        {{state_name|react_setter}}(currentState => {
+          pending_updates.forEach((update) => {
+            applyDelta(currentState, update.delta)
+            event_status.{{const.processing}} = !update.{{const.final}}
+          })
+          pending_updates.length = 0  // all updates processed
+          queueNotify()
+          return currentState
+        })
+      }
+    })()
   })
 
   // Set focus to the specified element.
@@ -80,15 +76,6 @@ export default function Component() {
       focusRef.current.focus();
     }
   })
-
-  // Route after the initial page hydration.
-  useEffect(() => {
-    const change_complete = () => Event([E('{{state_name}}.{{const.hydrate}}', {})])
-    {{const.router}}.events.on('routeChangeComplete', change_complete)
-    return () => {
-      {{const.router}}.events.off('routeChangeComplete', change_complete)
-    }
-  }, [{{const.router}}])
 
   {% for hook in hooks %}
   {{ hook }}

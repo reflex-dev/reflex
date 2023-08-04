@@ -23,6 +23,13 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
+// Array holding pending updates to be applied to the state
+export const pending_updates = [];
+// Dictionary tracking event processing status
+export const event_status = {"processing": false}
+// Array holding pending events to be processed
+export const pending_events = [];
+
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -97,7 +104,7 @@ export const getAllLocalStorageItems = () => {
 
 
 /**
- * Send an event to the server.
+ * Send an event to the server via Websocket.
  * @param event The event to send.
  * @param router The router object.
  * @param socket The socket object to send the event on.
@@ -179,82 +186,63 @@ export const applyEvent = async (event, router, socket) => {
 };
 
 /**
- * Process an event off the event queue.
+ * Send an event to the server via REST
  * @param event The current event
  * @param state The state with the event queue.
- * @param setResult The function to set the result.
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event, state, setResult) => {
+export const applyRestEvent = async (event, state) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(state, setResult, event.name);
+    eventSent = await uploadFiles(state, event.name);
   }
   return eventSent;
 };
 
 /**
  * Process an event off the event queue.
- * @param state The state with the event queue.
- * @param setState The function to set the state.
- * @param result The current result.
- * @param setResult The function to set the result.
  * @param router The router object.
  * @param socket The socket object to send the event on.
  */
 export const processEvent = async (
-  state,
-  setState,
-  result,
-  setResult,
   router,
   socket
 ) => {
-  // If we are already processing an event, or there are no events to process, return.
-  if (result.processing || state.events.length == 0) {
+  // Only proceed if we're not already processing an event
+  if (pending_events.length === 0 || event_status.processing) {
     return;
   }
 
   // Set processing to true to block other events from being processed.
-  setResult({ ...result, processing: true });
+  event_status.processing = true;
 
   // Apply the next event in the queue.
-  const event = state.events.shift();
+  const event = pending_events.shift();
 
-  // Set new events to avoid reprocessing the same event.
-  setState(currentState => ({ ...currentState, events: state.events }));
-
+  let eventSent = false
   // Process events with handlers via REST and all others via websockets.
-  let eventSent = false;
   if (event.handler) {
-    eventSent = await applyRestEvent(event, state, setResult);
+    eventSent = await applyRestEvent(event, currentState);
   } else {
     eventSent = await applyEvent(event, router, socket);
   }
-
   // If no event was sent, set processing to false.
   if (!eventSent) {
-    setResult({ ...result, final: true, processing: false });
+    event_status.processing = false;
   }
-};
+}
 
 /**
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
- * @param state The state object to apply the deltas to.
- * @param setState The function to set the state.
- * @param result The current result.
- * @param setResult The function to set the result.
+ * @param queueNotify The function to trigger re-render when queue is updated.
  * @param endpoint The endpoint to connect to.
  * @param transports The transports to use.
  */
 export const connect = async (
   socket,
-  state,
-  setState,
-  result,
-  setResult,
+  queueNotify,
   router,
   transports,
   setNotConnected
@@ -270,7 +258,7 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    processEvent(state, setState, result, setResult, router, socket.current);
+    processEvent(router, socket.current);
     setNotConnected(false)
   });
 
@@ -278,16 +266,14 @@ export const connect = async (
     setNotConnected(true)
   });
 
-  // On each received message, apply the delta and set the result.
-  socket.current.on("event", update => {
-    update = JSON5.parse(update);
-    applyDelta(state, update.delta);
-    setResult(result => ({
-      state: state,
-      events: [...result.events, ...update.events],
-      final: update.final,
-      processing: true,
-    }));
+  // On each received message, queue the updates and events out of band
+  socket.current.on("event", message => {
+    const update = JSON5.parse(message)
+    pending_updates.push(update)
+    if (update.events) {
+      pending_events.push(...update.events)
+    }
+    queueNotify()
   });
 };
 
@@ -295,13 +281,11 @@ export const connect = async (
  * Upload files to the server.
  *
  * @param state The state to apply the delta to.
- * @param setResult The function to set the result.
  * @param handler The handler to use.
- * @param endpoint The endpoint to upload to.
  *
  * @returns Whether the files were uploaded.
  */
-export const uploadFiles = async (state, setResult, handler) => {
+export const uploadFiles = async (state, handler) => {
   const files = state.files;
 
   // return if there's no file to upload

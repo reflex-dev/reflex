@@ -29,6 +29,10 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="refs"),
         ImportVar(tag="getRefValue"),
         ImportVar(tag="getAllLocalStorageItems"),
+        ImportVar(tag="pending_updates"),
+        ImportVar(tag="event_status"),
+        ImportVar(tag="pending_events"),
+        ImportVar(tag="applyDelta"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {
