@@ -10,25 +10,10 @@
 
 export default function Component() {
   const [{{state_name}}, {{state_name|react_setter}}] = useState({{initial_state|json_dumps}})
-  const [queueNotifyCounter, setQueueNotifyCounter] = useState(0)
-  const [notConnected, setNotConnected] = useState(false)
   const {{const.router}} = useRouter()
   const {{const.socket}} = useRef(null)
-  const { isReady } = {{const.router}}
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
   const focusRef = useRef();
-
-  // Function to trigger re-render when event queue is updated by websocket or event handler
-  const queueNotify = () => {
-    setQueueNotifyCounter(count => (count + 1))
-  }
-  
-  // Function to add new events to the event queue.
-  const Event = (events, _e) => {
-      preventDefault(_e);
-      pending_events.push(...events)
-      queueNotify()
-  }
 
   // Function to add new files to be uploaded.
   const File = files => {{state_name|react_setter}}(state => ({
@@ -37,38 +22,12 @@ export default function Component() {
   }))
 
   // Main event loop.
-  useEffect(()=> {
-    // Skip if the router is not ready.
-    if (!isReady) {
-      return;
-    }
-
-    // Initialize the websocket connection.
-    if (!{{const.socket}}.current) {
-      connect({{const.socket}}, queueNotify, {{const.router}}, {{transports}}, setNotConnected)
-      // perform hydration when websocket connects
-      Event([E('{{state_name}}.{{const.hydrate}}', {})])
-    }
-
-    (async () => {
-      // Process all outstanding events
-      while (pending_events.length > 0 && !event_status.processing) {
-        await processEvent({{const.router}}, {{const.socket}}.current)
-      }
-      // Update the state based on deltas from the websocket connection
-      if (pending_updates.length > 0) {
-        {{state_name|react_setter}}(currentState => {
-          pending_updates.forEach((update) => {
-            applyDelta(currentState, update.delta)
-            event_status.{{const.processing}} = !update.{{const.final}}
-          })
-          pending_updates.length = 0  // all updates processed
-          queueNotify()
-          return currentState
-        })
-      }
-    })()
-  })
+  const [Event, notConnected] = useEventLoop(
+    {{const.socket}},
+    {{const.router}},
+    {{state_name|react_setter}},
+    [E('{{state_name}}.{{const.hydrate}}', {})],
+  )
 
   // Set focus to the specified element.
   useEffect(() => {

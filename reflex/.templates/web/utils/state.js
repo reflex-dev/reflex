@@ -4,6 +4,7 @@ import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "env.json";
 import Cookies from "universal-cookie";
+import { useEffect, useState } from "react";
 
 
 // Endpoint URLs.
@@ -237,15 +238,18 @@ export const processEvent = async (
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
  * @param queueNotify The function to trigger re-render when queue is updated.
- * @param endpoint The endpoint to connect to.
+ * @param router The next router
  * @param transports The transports to use.
+ * @param setNotConnected The function to update connection state
+ * @param initial_events Array of events to seed the queue after connecting
  */
 export const connect = async (
   socket,
   queueNotify,
   router,
   transports,
-  setNotConnected
+  setNotConnected,
+  initial_events = [],
 ) => {
   // Get backend URL object from the endpoint
   const endpoint = new URL(EVENTURL);
@@ -258,7 +262,8 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    processEvent(router, socket.current);
+    pending_events.push(...initial_events)
+    processEvent(router, socket.current)
     setNotConnected(false)
   });
 
@@ -266,7 +271,7 @@ export const connect = async (
     setNotConnected(true)
   });
 
-  // On each received message, queue the updates and events out of band
+  // On each received message, queue the updates and events
   socket.current.on("event", message => {
     const update = JSON5.parse(message)
     pending_updates.push(update)
@@ -334,13 +339,77 @@ export const uploadFiles = async (state, handler) => {
  * Create an event object.
  * @param name The name of the event.
  * @param payload The payload of the event.
- * @param use_websocket Whether the event uses websocket.
  * @param handler The client handler to process event.
  * @returns The event object.
  */
 export const E = (name, payload = {}, handler = null) => {
   return { name, payload, handler };
 };
+
+/**
+ * Establish websocket event loop for a NextJS page
+ * @param socket The socket object to connect.
+ * @param router The next router
+ * @param setState The function to update the page state
+ * @param initial_events Array of events to seed the queue after connecting
+ *
+ * @returns [Event, notConnected] - Event is used to queue an event, and notConnected
+ *   is a reactive boolean indicating whether the websocket is connected.
+ */
+export const useEventLoop = (
+  socket,
+  router,
+  setState,
+  initial_events = [],
+) => {
+  const [notConnected, setNotConnected] = useState(false)
+  const [queueNotifyCounter, setQueueNotifyCounter] = useState(0)
+
+  // Function to trigger re-render when event queue is updated by websocket or event handler
+  const queueNotify = () => {
+    setQueueNotifyCounter(count => (count + 1))
+  }
+  
+  // Function to add new events to the event queue.
+  const Event = (events, _e) => {
+      preventDefault(_e);
+      pending_events.push(...events)
+      queueNotify()
+  }
+
+  // Main event loop.
+  useEffect(()=> {
+    // Skip if the router is not ready.
+    if (!router.isReady) {
+      return;
+    }
+
+    // Initialize the websocket connection.
+    if (!socket.current) {
+      connect(socket, queueNotify, router, ['websocket', 'polling'], setNotConnected, initial_events)
+    }
+
+    (async () => {
+      // Process all outstanding events
+      while (pending_events.length > 0 && !event_status.processing) {
+        await processEvent(router, socket.current)
+      }
+      // Update the state based on deltas from the websocket connection
+      if (pending_updates.length > 0) {
+        setState(currentState => {
+          pending_updates.forEach((update) => {
+            applyDelta(currentState, update.delta)
+            event_status.processing = !update.final
+          })
+          pending_updates.length = 0  // all updates processed
+          queueNotify()
+          return currentState
+        })
+      }
+    })()
+  })
+  return [Event, notConnected]
+}
 
 /***
  * Check if a value is truthy in python.

@@ -20,8 +20,6 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     },
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
-        ImportVar(tag="connect"),
-        ImportVar(tag="processEvent"),
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="E"),
         ImportVar(tag="isTrue"),
@@ -29,10 +27,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="refs"),
         ImportVar(tag="getRefValue"),
         ImportVar(tag="getAllLocalStorageItems"),
-        ImportVar(tag="pending_updates"),
-        ImportVar(tag="event_status"),
-        ImportVar(tag="pending_events"),
-        ImportVar(tag="applyDelta"),
+        ImportVar(tag="useEventLoop"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {
