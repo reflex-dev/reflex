@@ -10,7 +10,7 @@ from reflex.constants import IS_HYDRATED, RouteVar
 from reflex.event import Event, EventHandler
 from reflex.state import State
 from reflex.utils import format
-from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList
+from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
 
 
 class Object(Base):
@@ -1164,6 +1164,7 @@ def test_setattr_of_mutable_types(mutable_state):
     """
     array = mutable_state.array
     hashmap = mutable_state.hashmap
+    test_set = mutable_state.test_set
 
     assert isinstance(array, ReflexList)
     assert isinstance(array[1], ReflexList)
@@ -1173,10 +1174,14 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(hashmap["key"], ReflexList)
     assert isinstance(hashmap["third_key"], ReflexDict)
 
+    assert isinstance(test_set, set)
+
     mutable_state.reassign_mutables()
 
     array = mutable_state.array
     hashmap = mutable_state.hashmap
+    test_set = mutable_state.test_set
+
     assert isinstance(array, ReflexList)
     assert isinstance(array[1], ReflexList)
     assert isinstance(array[2], ReflexDict)
@@ -1184,3 +1189,5 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(hashmap, ReflexDict)
     assert isinstance(hashmap["mod_key"], ReflexList)
     assert isinstance(hashmap["mod_third_key"], ReflexDict)
+
+    assert isinstance(test_set, ReflexSet)
