@@ -4,8 +4,8 @@ This example describes how to create and use a container image for Reflex with y
 
 ## Update Requirements
 
-The `requirements.txt` includes the reflex package which is need to install
-Reflex framework. If you use additional packages in your project you have add
+The `requirements.txt` includes the reflex package which is needed to install
+Reflex framework. If you use additional packages in your project you have to add
 this in the `requirements.txt` first. Copy the `Dockerfile`, `.dockerignore` and
 the `requirements.txt` file in your project folder.
 
