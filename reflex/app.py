@@ -404,14 +404,14 @@ class App(Base):
 
     def add_custom_404_page(
         self,
-        component=None,
-        title=None,
-        image=None,
-        description=None,
+        component: Optional[Union[Component, ComponentCallable]],
+        title: str = constants.TITLE_404,
+        image: str = constants.FAVICON_404,
+        description: str = constants.DESCRIPTION_404,
         on_load: Optional[
             Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
         ] = None,
-        meta=constants.DEFAULT_META_LIST,
+        meta: List[Dict] = constants.DEFAULT_META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
