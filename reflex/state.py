@@ -621,7 +621,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             for substate in self.substates.values():
                 setattr(substate, name, value)
 
-    def reset(self):
+    def _reset(self):
         """Reset all the base vars to their default values."""
         # Reset the base vars.
         fields = self.get_fields()
@@ -630,7 +630,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Recursively reset the substates.
         for substate in self.substates.values():
-            substate.reset()
+            substate._reset()
 
     def get_substate(self, path: Sequence[str]) -> Optional[State]:
         """Get the substate.

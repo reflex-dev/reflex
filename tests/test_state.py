@@ -553,7 +553,7 @@ def test_reset(test_state, child_state):
     child_state.value = "test"
 
     # Reset the state.
-    test_state.reset()
+    test_state._reset()
 
     # The values should be reset.
     assert test_state.num1 == 0
