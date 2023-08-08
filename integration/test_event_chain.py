@@ -280,11 +280,11 @@ def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
     btn.click()
     if "redirect" in button_id:
         # wait a bit longer if we're redirecting
-        time.sleep(0.5)
+        time.sleep(1)
     if "many_events" in button_id:
         # wait a bit longer if we have loads of events
-        time.sleep(0.5)
-    time.sleep(0.2)
+        time.sleep(1)
+    time.sleep(0.5)
     backend_state = event_chain.app_instance.state_manager.states[token]
     assert backend_state.event_order == exp_event_order
 
@@ -327,6 +327,6 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
 
     token = event_chain.poll_for_value(token_input)
 
-    time.sleep(0.2)
+    time.sleep(0.5)
     backend_state = event_chain.app_instance.state_manager.states[token]
     assert backend_state.event_order == exp_event_order
