@@ -6,7 +6,7 @@ import pytest
 import reflex as rx
 from reflex import constants
 from reflex.config import DBConfig, get_config
-from reflex.constants import get_value
+from reflex.constants import Endpoint, get_value
 
 
 @pytest.fixture
@@ -138,11 +138,17 @@ def test_get_value(monkeypatch, key, value, expected_value_type_in_config):
 @pytest.mark.parametrize(
     "kwargs, expected",
     [
-        ({"app_name": "test_app", "api_url": "http://example.com"}, "/_event"),
-        ({"app_name": "test_app", "api_url": "http://example.com/api"}, "/api/_event"),
-        ({"app_name": "test_app", "event_namespace": "/event"}, "/_event"),
-        ({"app_name": "test_app", "event_namespace": "event"}, "/_event"),
-        ({"app_name": "test_app", "event_namespace": "event/"}, "/_event"),
+        (
+            {"app_name": "test_app", "api_url": "http://example.com"},
+            f"{Endpoint.EVENT}",
+        ),
+        (
+            {"app_name": "test_app", "api_url": "http://example.com/api"},
+            f"/api{Endpoint.EVENT}",
+        ),
+        ({"app_name": "test_app", "event_namespace": "/event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "event/"}, f"{Endpoint.EVENT}"),
     ],
 )
 def test_event_namespace(mocker, kwargs, expected):
