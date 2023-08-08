@@ -561,7 +561,7 @@ def mutable_state():
             "another_key": "another_value",
             "third_key": {"key": "value"},
         }
-        test_set: Set[Union[str,int]] = {1, 2, 3, 4, "five"}
+        test_set: Set[Union[str, int]] = {1, 2, 3, 4, "five"}
 
         def reassign_mutables(self):
             self.array = ["modified_value", [1, 2, 3], {"mod_key": "mod_value"}]
