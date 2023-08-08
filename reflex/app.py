@@ -404,7 +404,7 @@ class App(Base):
 
     def add_custom_404_page(
         self,
-        component: Optional[Union[Component, ComponentCallable]],
+        component: Optional[Union[Component, ComponentCallable]] = None,
         title: str = constants.TITLE_404,
         image: str = constants.FAVICON_404,
         description: str = constants.DESCRIPTION_404,
