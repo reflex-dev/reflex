@@ -138,11 +138,11 @@ def test_get_value(monkeypatch, key, value, expected_value_type_in_config):
 @pytest.mark.parametrize(
     "kwargs, expected",
     [
-        ({"app_name": "test_app", "api_url": "http://example.com"}, "/event"),
-        ({"app_name": "test_app", "api_url": "http://example.com/api"}, "/api/event"),
-        ({"app_name": "test_app", "event_namespace": "/event"}, "/event"),
-        ({"app_name": "test_app", "event_namespace": "event"}, "/event"),
-        ({"app_name": "test_app", "event_namespace": "event/"}, "/event"),
+        ({"app_name": "test_app", "api_url": "http://example.com"}, "/_event"),
+        ({"app_name": "test_app", "api_url": "http://example.com/api"}, "/api/_event"),
+        ({"app_name": "test_app", "event_namespace": "/event"}, "/_event"),
+        ({"app_name": "test_app", "event_namespace": "event"}, "/_event"),
+        ({"app_name": "test_app", "event_namespace": "event/"}, "/_event"),
     ],
 )
 def test_event_namespace(mocker, kwargs, expected):
