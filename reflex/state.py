@@ -598,7 +598,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if types.is_backend_variable(name) and name != "_backend_vars":
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
-            self.mark_dirty()
+            self._mark_dirty()
             return
 
         # Make sure lists and dicts are converted to ReflexList, ReflexDict and ReflexSet.
@@ -611,12 +611,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Add the var to the dirty list.
         if name in self.vars or name in self.computed_var_dependencies:
             self.dirty_vars.add(name)
-            self.mark_dirty()
+            self._mark_dirty()
 
         # For now, handle router_data updates as a special case
         if name == constants.ROUTER_DATA:
             self.dirty_vars.add(name)
-            self.mark_dirty()
+            self._mark_dirty()
             # propagate router_data updates down the state tree
             for substate in self.substates.values():
                 setattr(substate, name, value)
@@ -806,7 +806,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Apply dirty variables down into substates
         self.dirty_vars.update(self._always_dirty_computed_vars())
-        self.mark_dirty()
+        self._mark_dirty()
 
         # Return the dirty vars for this instance, any cached/dependent computed vars,
         # and always dirty computed vars (cache=False)
@@ -835,7 +835,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Return the delta.
         return delta
 
-    def mark_dirty(self):
+    def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
         state_name = self.get_name()
         if (
@@ -843,7 +843,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             and state_name not in self.parent_state.dirty_substates
         ):
             self.parent_state.dirty_substates.add(self.get_name())
-            self.parent_state.mark_dirty()
+            self.parent_state._mark_dirty()
 
         # have to mark computed vars dirty to allow access to newly computed
         # values within the same ComputedVar function
@@ -856,7 +856,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 self.dirty_substates.add(substate_name)
                 substate = substates[substate_name]
                 substate.dirty_vars.add(var)
-                substate.mark_dirty()
+                substate._mark_dirty()
 
     def clean(self):
         """Reset the dirty vars."""
@@ -882,7 +882,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Apply dirty variables down into substates to allow never-cached ComputedVar to
             # trigger recalculation of dependent vars
             self.dirty_vars.update(self._always_dirty_computed_vars())
-            self.mark_dirty()
+            self._mark_dirty()
 
         base_vars = {
             prop_name: self.get_value(getattr(self, prop_name))
