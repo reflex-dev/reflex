@@ -84,7 +84,6 @@ class PinInput(ChakraComponent):
         """
         ref = format.format_array_ref(self.id, None)
         if ref:
-            ref = ref.replace("ref_", "refs_")
             return f"const {ref} = Array.from({{length:{self.length}}}, () => useRef(null));"
         return super()._get_hooks()
 

@@ -389,7 +389,7 @@ export const getRefValue = (ref) => {
   if (ref.current.type == "checkbox") {
     return ref.current.checked;
   } else {
-    return ref.current.value;
+    return ref.current.value || ref.current.querySelector(':checked').value;
   }
 }
 
@@ -402,5 +402,5 @@ export const getRefValues = (refs) => {
   if (!refs) {
     return;
   }
-  return refs.map((ref) => int(ref.current.value));
+  return refs.map((ref) => ref.current.getAttribute("aria-valuenow") || ref.current.value);
 }
