@@ -1,6 +1,6 @@
 """A range slider component."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -64,7 +64,7 @@ class RangeSlider(ChakraComponent):
         """
         return None
 
-    def _get_hooks(self) -> str | None:
+    def _get_hooks(self) -> Optional[str]:
         """Override the base get_hooks to handle array refs.
 
         Returns:
@@ -129,7 +129,7 @@ class RangeSliderThumb(ChakraComponent):
     # The position of the thumb.
     index: Var[int]
 
-    def _get_hooks(self) -> str | None:
+    def _get_hooks(self) -> Optional[str]:
         return None
 
     def get_ref(self):
