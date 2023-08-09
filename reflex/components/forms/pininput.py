@@ -76,7 +76,7 @@ class PinInput(ChakraComponent):
         """
         return None
 
-    def _get_hooks(self) -> str | None:
+    def _get_hooks(self) -> Optional[str]:
         """Override the base get_hooks to handle array refs.
 
         Returns:
