@@ -197,14 +197,24 @@ app.compile()
 
 你可以添加更多頁面至路由藉此來建立多頁面應用程式(multi-page app)
 
+## 📑 資源
+
+<div align="center">
+
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+
+</div>
+
+
+
 ## Reflex 狀態
 
-Reflex 於 2022 年 12 月推出。
+Reflex 於 2022 年 12 月推出，當時名為 Pynecone。
 
-截至 2023 年 3 月，我們處於 **Public Beta** 階段。
+截至 2023 年 7 月，我們處於 **Public Beta** 階段。
 
 -   :white_check_mark: **Public Alpha**: 任何人都可以安裝與使用 Reflex，或許包含問題， 但我們正在積極的解決他們。
--   :large_orange_diamond: **Public Beta**: 對於非軟體產品來說足夠穩定。
+-   :large_orange_diamond: **Public Beta**: 對於不涉及商業目的使用情境來說足夠穩定。
 -   **Public Hosting Beta**: _Optionally_, 部屬跟託管你的 Reflex!
 -   **Public**: 這版本的 Reflex 是可用於軟體產品的。
 
