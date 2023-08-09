@@ -451,7 +451,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @staticmethod
     def get_base_functions() -> List[str]:
-        """Get all functions of the state class excluding dunder functions."""
+        """Get all functions of the state class excluding dunder methods."""
         return [
             methods[0]
             for methods in inspect.getmembers(State, predicate=inspect.isfunction)
