@@ -1,3 +1,7 @@
+```diff
++ 正在尋找 Pynecone？ 你在正確的 repo 中。 Pynecone 已更名為 Reflex。 +
+```
+
 <div align="center">
 
 <img src="../../images/cones.png">
