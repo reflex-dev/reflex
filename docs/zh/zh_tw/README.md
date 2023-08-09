@@ -8,25 +8,17 @@
 
 <hr>
 
-**✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。**
-
-📑 [Docs](https://pynecone.io/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://pynecone.io/docs/library) &nbsp; 🖼️ [Gallery](https://pynecone.io/docs/gallery) &nbsp; 🛸 [Deployment](https://pynecone.io/docs/hosting/deploy)
-
+**✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
-![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
-![versions](https://img.shields.io/pypi/pyversions/reflex-dev.svg)
+![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
+![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
+[![Documentaiton](https://img.shields.io/badge/Documentation%20-Introduction%20-%20%23007ec6)](https://reflex.dev/docs/getting-started/introduction)
 [![Discord](https://img.shields.io/discord/1029853095527727165?color=%237289da&label=Discord)](https://discord.gg/T5WSbC2YtQ)
-
 </div>
 
-### 不同語言的 README
-
 ---
-
-[English](../../../README.md) | [简体中文](../zh_cn/README.md) | [繁體中文](README.md)
-
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md)
 ---
-
 ## 📦 1. 安裝
 
 Reflex 需要以下最低要求:
