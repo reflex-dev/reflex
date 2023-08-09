@@ -237,7 +237,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
-            if not name.startswith("__")
+            if not name.startswith("_")
             and isinstance(fn, Callable)
             and not isinstance(fn, EventHandler)
         }
