@@ -127,7 +127,7 @@ class PinInputField(ChakraComponent):
 
     index: Optional[Var[int]] = None
 
-    def _get_hooks(self) -> str | None:
+    def _get_hooks(self) -> Optional[str]:
         return None
 
     def get_ref(self):
