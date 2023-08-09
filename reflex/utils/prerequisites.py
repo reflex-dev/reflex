@@ -351,25 +351,8 @@ def install_bun():
         console.debug("Skipping bun installation on Windows.")
         return
 
-    # if a custom bun path is provided, make sure its valid
-    # This is specific to non-FHS OS
-    bun_path = get_config().bun_path
-    if bun_path != constants.DEFAULT_BUN_PATH:
-        bun_version = get_bun_version()
-        if not bun_version:
-            console.error(
-                f"Failed to obtain bun version. Make sure the specified bun path in your config is correct."
-            )
-        elif bun_version < constants.BUN_VERSION:
-            console.error(
-                f"Reflex requires bun version {constants.BUN_VERSION} to run. If you specified a bun path in your "
-                f"config,"
-                f"make sure to specify one that meets the requirements."
-            )
-        raise typer.Exit(1)
-
     # Skip if bun is already installed.
-    if os.path.exists(bun_path):
+    if os.path.exists(get_config().bun_path):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -452,11 +435,41 @@ def is_latest_template() -> bool:
     return app_version == constants.VERSION
 
 
+def validate_bun():
+    """Validate bun if a custom bun path is specified to ensure the bun version meets requirements."""
+    # if a custom bun path is provided, make sure its valid
+    # This is specific to non-FHS OS
+    bun_path = get_config().bun_path
+    if bun_path != constants.DEFAULT_BUN_PATH:
+        bun_version = get_bun_version()
+        if not bun_version:
+            console.error(
+                f"Failed to obtain bun version. Make sure the specified bun path in your config is correct."
+            )
+            raise typer.Exit(1)
+        elif bun_version < version.parse(constants.BUN_VERSION):
+            console.error(
+                f"Reflex requires bun version {constants.BUN_VERSION} to run. If you specified a bun path in your "
+                f"config,"
+                f"make sure to specify one that meets the requirements."
+            )
+            raise typer.Exit(1)
+
+
+def validate_frontend_dependencies():
+    """Validate frontend dependencies to ensure they meet requirements."""
+    if IS_WINDOWS:
+        return
+    return validate_bun()
+
+
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
     if not IS_WINDOWS:
         path_ops.mkdir(constants.REFLEX_DIR)
+    # validate dependencies before install
+    validate_frontend_dependencies()
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)
 
