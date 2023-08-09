@@ -9,6 +9,7 @@
 <hr>
 
 **✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。✨**  
+
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
@@ -27,33 +28,29 @@
 pip install reflex
 ```
 
-## 🥳 2. 建立你的第一個應用程式
+## 🥳 建立你的第一個應用程式
 
-安裝 Reflex 的同時也會安裝 `rx` 命令行工具. 通過創建一個新專案來測試是否安裝成功。
+安裝 Reflex 的同時也會安裝 `reflex` 命令行工具。
 
-把 my_app_name 替代為你的專案名字:
+通過創建一個新專案來測試是否安裝成功。(把 my_app_name 作為新專案名稱):
 
-```
+```bash
 mkdir my_app_name
 cd my_app_name
 reflex init
 ```
 
-當你第一次運行這個命令，將會自動下載與安裝 [bun](https://bun.sh/)。
-
-這個命令會初始化一個應用程式模板在一個新的資料夾。
-
-## 🏃 3. 運行
+此命令會初始化一個應用程式模板在你的新資料夾中。
 
 你可以在開發者模式運行這個應用程式:
 
-```
+```bash
 reflex run
 ```
 
 你可以看到你的應用程式運行在 http://localhost:3000。
 
-現在在以下位置修改原始碼 `my_app_name/my_app_name.py`，Reflex 擁有快速重整所以你可以在保存程式碼後馬上看到更改。
+現在在以下位置修改原始碼 `my_app_name/my_app_name.py`，Reflex 擁有快速刷新功能，存儲程式碼後便可立即看到改變。
 
 ## 🫧 範例
 
