@@ -124,9 +124,10 @@ app.add_page(index, title="reflex:DALL·E")
 app.compile()
 ```
 
-### **Reflex 中的圖形使用者介面**
+## 讓我們來拆解一下。
+### **Reflex 使用者介面**
 
-讓我們分解以上步驟。
+讓我們從使用介面開始。
 
 ```python
 def index():
@@ -135,13 +136,12 @@ def index():
     )
 ```
 
-這個 `index` function 定義了應用程式的前端.
+這個 `index` 函式定義了應用程式的前端.
 
-我們用不同的元件像是 `center`, `vstack`, `input`, 和 `button` 來建立前端， 元件之間可以相互嵌入，來建立複雜的佈局。
+我們用不同的元件像是 `center`, `vstack`, `input`, 和 `button` 來建立前端， 元件之間可互相套入以建立出複雜的版面配置。
 並且你可以使用關鍵字參數來使用 CSS 的全部功能。
 
-Reflex 擁有 [60+ built-in components](https://pynecone.io/docs/library) 來幫助你開始建立應用程式。
-我們正在積極添加元件， 但是你也可以簡單的自己創建一些元件 [create your own components](https://pynecone.io/docs/advanced-guide/wrapping-react)。
+Reflex 擁有 [60+ 內建元件](https://reflex.dev/docs/library) 來幫助你開始建立應用程式。我們正積極添加元件，你也以簡單的 [創建自己的元件](https://reflex.dev/docs/advanced-guide/wrapping-react)。
 
 ### **狀態**
 
