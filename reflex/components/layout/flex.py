@@ -1,6 +1,6 @@
 """A reflexive container component."""
 
-from typing import Union
+from typing import List, Union
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
@@ -18,7 +18,7 @@ class Flex(ChakraComponent):
     basis: Var[str]
 
     # Shorthand for flexDirection style prop
-    direction: Var[Union[str, list]]
+    direction: Var[Union[str, List[str]]]
 
     # Shorthand for flexGrow style prop
     grow: Var[str]
@@ -27,7 +27,7 @@ class Flex(ChakraComponent):
     justify: Var[str]
 
     # Shorthand for flexWrap style prop
-    wrap: Var[Union[str, list]]
+    wrap: Var[Union[str, List[str]]]
 
     # Shorthand for flexShrink style prop
     shrink: Var[str]
