@@ -3,6 +3,7 @@
 from typing import Dict
 
 from reflex.components.component import EVENT_ARG, Component
+from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
 
@@ -66,14 +67,10 @@ class TextArea(ChakraComponent):
 
         Returns:
             The component.
-
-        Raises:
-            ValueError: If the value is a state Var.
         """
         if isinstance(props.get("value"), Var) and props.get("on_change"):
-            raise ValueError(
-                "TextArea value cannot be bound to a state Var with on_change handler.\n"
-                "Provide value prop to rx.debounce_input with rx.text_area as a child "
-                "component to create a fully controlled input."
+            # create a debounced input if the user requests full control to avoid typing jank
+            return DebounceInput.create(
+                super().create(*children, **props), debounce_timeout=0
             )
         return super().create(*children, **props)

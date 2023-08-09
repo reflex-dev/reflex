@@ -49,25 +49,29 @@ export default function Component() {
       processEvent({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
     }
 
-    // If there is a new result, update the state.
-    if ({{const.result}}.{{const.state}} != null) {
-      // Apply the new result to the state and the new events to the queue.
-      {{state_name|react_setter}}(state => ({
-        ...{{const.result}}.{{const.state}},
-        events: [...state.{{const.events}}, ...{{const.result}}.{{const.events}}],
-      }))
+    // Reset the result.
+    {{const.result|react_setter}}(result => {
+      // If there is a new result, update the state.
+      if ({{const.result}}.{{const.state}} != null) {
+        // Apply the new result to the state and the new events to the queue.
+        {{state_name|react_setter}}(state => {
+          return {
+            ...{{const.result}}.{{const.state}},
+            events: [...state.{{const.events}}, ...{{const.result}}.{{const.events}}],
+          } 
+        })
+        return {
+          {{const.state}}: null,
+          {{const.events}}: [],
+          {{const.final}}: true,
+          {{const.processing}}: !{{const.result}}.{{const.final}},
+        }
+      }
+      return result;
+    })
 
-      // Reset the result.
-      {{const.result|react_setter}}(result => ({
-        {{const.state}}: null,
-        {{const.events}}: [],
-        {{const.final}}: true,
-        {{const.processing}}: !{{const.result}}.{{const.final}},
-      }))
-
-      // Process the next event.
-      processEvent({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
-    }
+    // Process the next event.
+    processEvent({{state_name}}, {{state_name|react_setter}}, {{const.result}}, {{const.result|react_setter}}, {{const.router}}, {{const.socket}}.current)
   })
 
   // Set focus to the specified element.

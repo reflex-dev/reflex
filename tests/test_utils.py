@@ -558,3 +558,28 @@ def test_bun_install_without_unzip(mocker):
 
     with pytest.raises(FileNotFoundError):
         prerequisites.install_bun()
+
+
+# from
+@pytest.mark.parametrize("is_windows", [True, False])
+def test_create_reflex_dir(mocker, is_windows):
+    """Test that a reflex directory is created on initializing frontend
+    dependencies.
+
+    Args:
+        mocker: Pytest mocker object.
+        is_windows: Whether platform is windows.
+    """
+    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", is_windows)
+    mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
+    mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
+    create_cmd = mocker.patch(
+        "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
+    )
+
+    prerequisites.initialize_frontend_dependencies()
+
+    if is_windows:
+        assert not create_cmd.called
+    else:
+        assert create_cmd.called

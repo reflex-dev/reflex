@@ -1,0 +1,37 @@
+name: integration-app-harness
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
+
+permissions:
+  contents: read
+
+jobs:
+  integration-app-harness:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/setup_build_env
+      with:
+          python-version: "3.11"
+          run-poetry-install: true
+          create-venv-at-path: .venv
+    - run: poetry run pip install pyvirtualdisplay pillow
+    - name: Run app harness tests
+      env:
+        SCREENSHOT_DIR: /tmp/screenshots
+      run: |
+        poetry run pytest integration
+    - uses: actions/upload-artifact@v3
+      name: Upload failed test screenshots
+      if: always()
+      with:
+        name: failed_test_screenshots
+        path: /tmp/screenshots

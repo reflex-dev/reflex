@@ -261,17 +261,23 @@ class Config(Base):
         return urllib.parse.urlsplit(event_url).path
 
 
-def get_config() -> Config:
+def get_config(reload: bool = False) -> Config:
     """Get the app config.
+
+    Args:
+        reload: Re-import the rxconfig module from disk
 
     Returns:
         The app config.
     """
     from reflex.config import Config
 
-    sys.path.append(os.getcwd())
+    sys.path.insert(0, os.getcwd())
     try:
-        return __import__(constants.CONFIG_MODULE).config
+        rxconfig = __import__(constants.CONFIG_MODULE)
+        if reload:
+            importlib.reload(rxconfig)
+        return rxconfig.config
 
     except ImportError:
         return Config(app_name="")  # type: ignore

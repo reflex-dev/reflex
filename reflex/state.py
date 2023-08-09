@@ -632,9 +632,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate.reset()
 
-        # Clean the state.
-        self.clean()
-
     def get_substate(self, path: Sequence[str]) -> Optional[State]:
         """Get the substate.
 

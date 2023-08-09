@@ -438,7 +438,8 @@ def is_latest_template() -> bool:
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
-    path_ops.mkdir(constants.REFLEX_DIR)
+    if not IS_WINDOWS:
+        path_ops.mkdir(constants.REFLEX_DIR)
 
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)

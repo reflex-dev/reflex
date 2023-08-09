@@ -1,7 +1,7 @@
 """Import all classes and functions the end user will need to make an app.
 
 Anything imported here will be available in the default Reflex import as `rx.*`.
-To signal to typecheckers that something should be reexported, 
+To signal to typecheckers that something should be reexported,
 we use the Flask "import name as name" syntax.
 """
 

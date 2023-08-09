@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from .base import Script
 from .component import Component
+from .component import NoSSRComponent as NoSSRComponent
 from .datadisplay import *
 from .disclosure import *
 from .feedback import *

@@ -42,6 +42,9 @@ class Image(ChakraComponent):
     # The path/url to the image or PIL image object.
     src: Var[Any]
 
+    # The alt text of the image.
+    alt: Var[str]
+
     # Provide multiple sources for an image, allowing the browser
     # to select the most appropriate source based on factors like
     # screen resolution and device capabilities.
