@@ -52,19 +52,19 @@ reflex run
 
 現在在以下位置修改原始碼 `my_app_name/my_app_name.py`，Reflex 擁有快速刷新功能，存儲程式碼後便可立即看到改變。
 
-## 🫧 範例
+## 🫧 範例應用程式
 
-讓我們來看一個例子: 建立一個使用 DALL·E 的圖形使用者介面，為了保持範例簡單，我們只使用 OpenAI API，但是你可以將其替換成本地端的 ML 模型。
+讓我們來看一個例子: 建立一個使用 DALL·E 的圖形使用者介面，為了保持範例簡單，我們只呼叫 OpenAI API，而這部份可以置換掉，改為執行成本地端的 ML 模型。
 
 &nbsp;
 
 <div align="center">
-<img src="../images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="../../images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
 
-這是上述範例的完整程式碼，只需要一個 Python 檔案就可以完成!
+下方為該應用之完整程式碼，這一切都只需要一個 Python 檔案就能作到!
 
 ```python
 import reflex as rx
@@ -76,57 +76,51 @@ class State(rx.State):
     """應用程式狀態"""
     prompt = ""
     image_url = ""
-    image_processing = False
-    image_made = False
-
-    def process_image(self):
-        """設置圖片處理旗標為 True 並設定還未產生圖片"""
-        self.image_processing = True
-        self.image_made = False
+    processing = False
+    complete = False
 
     def get_image(self):
-        """運用 prompt 取得的參數產生圖片"""
+        """透過提示詞取得圖片"""
+        if self.prompt == "":
+            return rx.window_alert("Prompt Empty")
+
+        self.processing, self.complete = True, False
+        yield
         response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
         self.image_url = response["data"][0]["url"]
-        self.image_processing = False
-        self.image_made = True
+        self.processing, self.complete = False, True
+        
 
 def index():
     return rx.center(
         rx.vstack(
-            rx.heading("DALL·E", font_size="1.5em"),
-            rx.input(placeholder="Enter a prompt..", on_blur=State.set_prompt),
+            rx.heading("DALL·E"),
+            rx.input(placeholder="Enter a prompt", on_blur=State.set_prompt),
             rx.button(
-                "產生圖片",
-                on_click=[State.process_image, State.get_image],
+                "Generate Image",
+                on_click=State.get_image,
+                is_loading=State.processing,
                 width="100%",
             ),
-            rx.divider(),
             rx.cond(
-                State.image_processing,
-                rx.circular_progress(is_indeterminate=True),
-                rx.cond(
-                     State.image_made,
+                State.complete,
                      rx.image(
                          src=State.image_url,
                          height="25em",
                          width="25em",
                     )
-                )
             ),
-            bg="white",
             padding="2em",
             shadow="lg",
             border_radius="lg",
         ),
         width="100%",
         height="100vh",
-        bg="radial-gradient(circle at 22% 11%,rgba(62, 180, 137,.20),hsla(0,0%,100%,0) 19%)",
     )
 
 # 把狀態跟頁面添加到應用程式。
-app = rx.App(state=State)
-app.add_page(index, title="Reflex:DALL·E")
+app = rx.App()
+app.add_page(index, title="reflex:DALL·E")
 app.compile()
 ```
 
