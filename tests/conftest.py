@@ -573,3 +573,16 @@ def mutable_state():
             self.test_set = {1, 2, 3, 4, "five"}
 
     return MutableTestState()
+
+
+@pytest.fixture
+def state_with_invalid_event_handler():
+    """A test state with an event handler that shadows a
+    builtin state method.
+    """
+
+    class InvalidTest(rx.State):
+        def _reset(self):
+            pass
+
+    return InvalidTest
