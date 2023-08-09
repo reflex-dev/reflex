@@ -43,6 +43,8 @@ class Icon(ChakraIconComponent):
                 f"Invalid icon tag: {props['tag']}. Please use one of the following: {ICON_LIST}"
             )
         props["tag"] = format.to_title_case(props["tag"]) + "Icon"
+        print(props)
+        print(children)
         return super().create(*children, **props)
 
 
