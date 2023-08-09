@@ -57,7 +57,7 @@ def get_bun_version() -> Optional[version.Version]:
     """
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([constants.BUN_PATH, "-v"], run=True)
+        result = processes.new_process([get_config().bun_path, "-v"], run=True)
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
         return None
@@ -92,7 +92,7 @@ def get_install_package_manager() -> str:
         return get_windows_package_manager()
 
     # On other platforms, we use bun.
-    return constants.BUN_PATH
+    return get_config().bun_path
 
 
 def get_package_manager() -> str:
@@ -265,7 +265,7 @@ def initialize_bun():
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
     console.debug("Removing existing bun installation.")
-    if os.path.exists(constants.BUN_PATH):
+    if os.path.exists(get_config().bun_path):
         path_ops.rm(constants.BUN_ROOT_PATH)
 
 
@@ -351,8 +351,25 @@ def install_bun():
         console.debug("Skipping bun installation on Windows.")
         return
 
+    # if a custom bun path is provided, make sure its valid
+    # This is specific to non-FHS OS
+    bun_path = get_config().bun_path
+    if bun_path != constants.DEFAULT_BUN_PATH:
+        bun_version = get_bun_version()
+        if not bun_version:
+            console.error(
+                f"Failed to obtain bun version. Make sure the specified bun path in your config is correct."
+            )
+        elif bun_version < constants.BUN_VERSION:
+            console.error(
+                f"Reflex requires bun version {constants.BUN_VERSION} to run. If you specified a bun path in your "
+                f"config,"
+                f"make sure to specify one that meets the requirements."
+            )
+        raise typer.Exit(1)
+
     # Skip if bun is already installed.
-    if os.path.exists(constants.BUN_PATH):
+    if os.path.exists(bun_path):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -440,7 +457,6 @@ def initialize_frontend_dependencies():
     # Create the reflex directory.
     if not IS_WINDOWS:
         path_ops.mkdir(constants.REFLEX_DIR)
-
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)
 
