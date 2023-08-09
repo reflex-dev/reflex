@@ -142,9 +142,9 @@ def index():
 
 Reflex 擁有 [60+ 內建元件](https://reflex.dev/docs/library) 來幫助你開始建立應用程式。我們正積極添加元件，你也可以簡單地 [創建自己所屬的元件](https://reflex.dev/docs/advanced-guide/wrapping-react)。
 
-### **狀態**
+### **應用程式狀態**
 
-Reflex 用 State 來渲染你的 UI。
+Reflex 使用應用程式狀態中的函式來渲染你的 UI。
 
 ```python
 class State(rx.State):
@@ -155,9 +155,9 @@ class State(rx.State):
     image_made = False
 ```
 
-State 定義了應用程式中所有可以更改的變數及變更他們的 function (稱為 vars)。
+應用程式狀態定義了應用程式中所有可以更改的變數及變更他們的函式 (稱為 vars)。
 
-這裡的狀態由 `prompt` 和 `image_url`組成， 以及布林變數 `image_processing` 和 `image_made` 來決定何時顯示進度條及圖片。
+這裡的狀態由 `prompt` 和 `image_url`組成， 以及布林變數 `processing` 和 `complete` 來指示何時顯示進度條及圖片。
 
 ### **事件處理程序**
 
