@@ -162,22 +162,23 @@ class State(rx.State):
 ### **事件處理程序**
 
 ```python
-    def process_image(self):
-        """設置圖片處理旗標為 True 並設定還未產生圖片"""
-        self.image_processing = True
-        self.image_made = False
+def get_image(self):
+    """透過提示詞取得圖片"""
+    if self.prompt == "":
+        return rx.window_alert("Prompt Empty")
 
-    def get_image(self):
-        """運用 prompt 取得的參數產生圖片"""
-        response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
-        self.image_url = response["data"][0]["url"]
-        self.image_processing = False
-        self.image_made = True
+    self.processing, self.complete = True, False
+    yield
+    response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
+    self.image_url = response["data"][0]["url"]
+    self.processing, self.complete = False, True
 ```
 
-在 State 中我們定義了事件處理程序來更改狀態變數，事件處理程序是我們在 Reflex 中修改狀態的方法，可以使用它們來回應使用者操作，像是點擊按鈕或在文字框輸入這些動作都是一種事件。
+在應用程式狀態中，我們定義稱之為事件處理程序的函式來改變其 vars. 事件處理程序是我們用來改變 Reflex 應用程式狀態的方法。
 
-我們的 DALL·E. 應用程式有兩個事件處理程序 `process_image` 表示正在生成圖片和 `get_image` 呼叫 OpenAI API。
+當使用者動作被響應時，對應的事件處理程序就會被呼叫。點擊按鈕或是文字框輸入都是使用者動作，它們被稱之為事件。
+
+我們的 DALL·E. 應用程式有一個事件處理程序 `get_image`，它透過 Open AI API 取得圖片。在事件處理程序中使用 `yield` 將讓使用者介面中途更新，若不使用的話，使用介面只能在事件處理程序結束時才更新。
 
 ### **路由**
 
