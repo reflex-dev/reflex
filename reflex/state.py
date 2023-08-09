@@ -105,9 +105,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Setup the substates.
         for substate in self.get_substates():
             self.substates[substate.get_name()] = substate(parent_state=self)
-
+        base_state_functions = self.get_base_functions()
         # Convert the event handlers to functions.
         for name, event_handler in self.event_handlers.items():
+            if name in base_state_functions:
+                raise NameError(
+                    f"The event handler name `{name}` shadows a builtin State method; use a different name instead"
+                )
+
             fn = functools.partial(event_handler.fn, self)
             fn.__module__ = event_handler.fn.__module__  # type: ignore
             fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
@@ -229,7 +234,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
-            if not name.startswith("_")
+            if not name.startswith("__")
             and isinstance(fn, Callable)
             and not isinstance(fn, EventHandler)
         }
@@ -443,6 +448,15 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if field.required and default_value is not None:
             field.required = False
             field.default = default_value
+
+    @staticmethod
+    def get_base_functions() -> List[str]:
+        """Get all functions of the state class excluding dunder functions."""
+        return [
+            methods[0]
+            for methods in inspect.getmembers(State, predicate=inspect.isfunction)
+            if not methods[0].startswith("__")
+        ]
 
     def get_token(self) -> str:
         """Return the token of the client associated with this state.
