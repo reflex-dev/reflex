@@ -1,8 +1,9 @@
 """A reflexive container component."""
 
+from typing import Union
+
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
-from typing import Union
 
 
 class Flex(ChakraComponent):
