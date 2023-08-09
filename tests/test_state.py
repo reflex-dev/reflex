@@ -498,7 +498,7 @@ def test_set_dirty_var(test_state):
     assert test_state.dirty_vars == {"num1", "num2", "sum"}
 
     # Cleaning the state should remove all dirty vars.
-    test_state.clean()
+    test_state._clean()
     assert test_state.dirty_vars == set()
 
 
@@ -524,7 +524,7 @@ def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_st
     assert child_state.dirty_substates == set()
 
     # Cleaning the parent state should remove the dirty substate.
-    test_state.clean()
+    test_state._clean()
     assert test_state.dirty_substates == set()
     assert child_state.dirty_vars == set()
 
@@ -534,7 +534,7 @@ def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_st
     assert test_state.dirty_substates == {"child_state"}
 
     # Cleaning the middle state should keep the parent state dirty.
-    child_state.clean()
+    child_state._clean()
     assert test_state.dirty_substates == {"child_state"}
     assert child_state.dirty_substates == set()
     assert grandchild_state.dirty_vars == set()
@@ -626,7 +626,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
     }
-    test_state.clean()
+    test_state._clean()
 
     # Test with the granchild state.
     assert grandchild_state.value2 == ""
@@ -1044,23 +1044,23 @@ def test_computed_var_cached_depends_on_non_cached():
     cs = ComputedState()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
     assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
     assert cs.get_delta() == {
         cs.get_name(): {"v": 1, "no_cache_v": 1, "dep_v": 1, "comp_v": 1}
     }
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
 
 
@@ -1194,7 +1194,11 @@ def test_setattr_of_mutable_types(mutable_state):
 
 
 def test_error_on_state_method_shadow(state_with_invalid_event_handler):
-    """Test that an error is thrown when an event handler shadows a state method."""
+    """Test that an error is thrown when an event handler shadows a state method.
+
+    Args:
+        state_with_invalid_event_handler: A test state.
+    """
     with pytest.raises(NameError) as err:
         state_with_invalid_event_handler()
     assert (

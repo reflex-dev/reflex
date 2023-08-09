@@ -365,7 +365,7 @@ class AppHarness:
             delta = state.get_delta()
             if delta:
                 update = reflex.state.StateUpdate(delta=delta, events=[], final=True)
-                state.clean()
+                state._clean()
                 # Emit the event.
                 pending.append(
                     event_ns.emit(

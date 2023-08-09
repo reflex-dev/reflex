@@ -579,6 +579,9 @@ def mutable_state():
 def state_with_invalid_event_handler():
     """A test state with an event handler that shadows a
     builtin state method.
+
+    Returns:
+        A test state.
     """
 
     class InvalidTest(rx.State):

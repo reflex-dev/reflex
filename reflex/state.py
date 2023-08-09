@@ -94,6 +94,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
             **kwargs: The kwargs to pass to the Pydantic init method.
+
+        Raises:
+            NameError: When an event handler shadows an inbuilt state method.
         """
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
@@ -159,7 +162,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             if types._issubclass(field.type_, Union[List, Dict]):
                 setattr(self, field.name, value_in_rx_data)
 
-        self.clean()
+        self._clean()
 
     def _reassign_field(self, field_name: str):
         """Reassign the given field.
@@ -451,7 +454,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @staticmethod
     def get_base_functions() -> List[str]:
-        """Get all functions of the state class excluding dunder methods."""
+        """Get all functions of the state class excluding dunder methods.
+
+        Returns:
+            The function names of rx.State class as a list.
+        """
         return [
             methods[0]
             for methods in inspect.getmembers(State, predicate=inspect.isfunction)
@@ -699,7 +706,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
 
         # Clean the state before processing the event.
-        self.clean()
+        self._clean()
 
         # Run the event generator and return state updates.
         async for events, final in event_iter:
@@ -713,7 +720,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             yield StateUpdate(delta=delta, events=events, final=final)
 
             # Clean the state to prepare for the next event.
-            self.clean()
+            self._clean()
 
     async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict
@@ -872,11 +879,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 substate.dirty_vars.add(var)
                 substate._mark_dirty()
 
-    def clean(self):
+    def _clean(self):
         """Reset the dirty vars."""
         # Recursively clean the substates.
         for substate in self.dirty_substates:
-            self.substates[substate].clean()
+            self.substates[substate]._clean()
 
         # Clean this state.
         self.dirty_vars = set()
