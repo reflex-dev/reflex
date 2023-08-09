@@ -426,35 +426,19 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
-        title = title or constants.TITLE_404
-        image = image or constants.FAVICON_404
-        description = description or constants.DESCRIPTION_404
-
-        component = (
-            component
-            if isinstance(component, Component)
-            else (component() if component else Fragment.create())
-        )
-
-        compiler_utils.add_meta(
-            component,
-            title=title,
-            image=image,
-            description=description,
+        self.add_page(
+            component=(
+                component
+                if isinstance(component, Component)
+                else (component() if component else Fragment.create())
+            ),
+            route=constants.SLUG_404,
+            title=title or constants.TITLE_404,
+            image=image or constants.FAVICON_404,
+            description=description or constants.DESCRIPTION_404,
+            on_load=on_load,
             meta=meta,
         )
-
-        # format 404 route
-        route = format.format_route(constants.SLUG_404)
-
-        # add the page
-        self.pages[route] = component
-
-        # Add the load events.
-        if on_load:
-            if not isinstance(on_load, list):
-                on_load = [on_load]
-            self.load_events[route] = on_load
 
     def setup_admin_dash(self):
         """Setup the admin dash."""
