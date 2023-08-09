@@ -383,7 +383,7 @@ export const preventDefault = (event) => {
  * @returns The value.
  */
 export const getRefValue = (ref) => {
-  if (!ref || !ref.current){
+  if (!ref || !ref.current) {
     return;
   }
   if (ref.current.type == "checkbox") {
@@ -391,4 +391,16 @@ export const getRefValue = (ref) => {
   } else {
     return ref.current.value;
   }
+}
+
+/**
+ * Get the values from a ref array.
+ * @param refs The refs to get the values from.
+ * @returns The values array.
+ */
+export const getRefValues = (refs) => {
+  if (!refs) {
+    return;
+  }
+  return refs.map((ref) => int(ref.current.value));
 }

@@ -1,10 +1,12 @@
 """A pin input component."""
 
-from typing import Dict
+from typing import Dict, Optional
 
 from reflex.components.component import Component
+from reflex.components.layout import Foreach
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.event import EVENT_ARG
+from reflex.utils import format
 from reflex.vars import Var
 
 
@@ -66,6 +68,26 @@ class PinInput(ChakraComponent):
             "on_complete": EVENT_ARG,
         }
 
+    def get_ref(self):
+        """Get the reference.
+
+        Returns:
+            None.
+        """
+        return None
+
+    def _get_hooks(self) -> str | None:
+        """Override the base get_hooks to handle array refs.
+
+        Returns:
+            The overrided hooks.
+        """
+        ref = format.format_array_ref(self.id, None)
+        if ref:
+            ref = ref.replace("ref_", "refs_")
+            return f"const {ref} = Array.from({{length:{self.length}}}, () => useRef(null));"
+        return super()._get_hooks()
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a pin input component.
@@ -81,7 +103,21 @@ class PinInput(ChakraComponent):
             The pin input component.
         """
         if not children and "length" in props:
-            children = [PinInputField()] * props["length"]
+            _id = props.get("id", None)
+            length = props["length"]
+            if _id:
+                children = [
+                    Foreach.create(
+                        list(range(length)),  # type: ignore
+                        lambda ref, i: PinInputField.create(
+                            key=i,
+                            id=_id,
+                            index=i,
+                        ),
+                    )
+                ]
+            else:
+                children = [PinInputField()] * length
         return super().create(*children, **props)
 
 
@@ -89,3 +125,16 @@ class PinInputField(ChakraComponent):
     """The text field that user types in - must be a direct child of PinInput."""
 
     tag = "PinInputField"
+
+    index: Optional[Var[int]] = None
+
+    def _get_hooks(self) -> str | None:
+        return None
+
+    def get_ref(self):
+        """Get the array ref for the pin input.
+
+        Returns:
+            The array ref.
+        """
+        return format.format_array_ref(self.id, self.index)
