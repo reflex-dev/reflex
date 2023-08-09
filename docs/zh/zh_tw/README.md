@@ -138,10 +138,9 @@ def index():
 
 這個 `index` 函式定義了應用程式的前端.
 
-我們用不同的元件像是 `center`, `vstack`, `input`, 和 `button` 來建立前端， 元件之間可互相套入以建立出複雜的版面配置。
-並且你可以使用關鍵字參數來使用 CSS 的全部功能。
+我們用不同的元件像是 `center`, `vstack`, `input`, 和 `button` 來建立前端，元件之間可互相套入以建立出複雜的版面配置。並且您可使用關鍵字引數 *keyword args* 運行 CSS 全部功能來設計這些元件們的樣式。
 
-Reflex 擁有 [60+ 內建元件](https://reflex.dev/docs/library) 來幫助你開始建立應用程式。我們正積極添加元件，你也以簡單的 [創建自己的元件](https://reflex.dev/docs/advanced-guide/wrapping-react)。
+Reflex 擁有 [60+ 內建元件](https://reflex.dev/docs/library) 來幫助你開始建立應用程式。我們正積極添加元件，你也可以簡單地 [創建自己所屬的元件](https://reflex.dev/docs/advanced-guide/wrapping-react)。
 
 ### **狀態**
 
