@@ -182,20 +182,20 @@ def get_image(self):
 
 ### **路由**
 
-最後定義我們的應用程式並傳送狀態給它。
+最後，我們定義我們的應用程式 app。
 
 ```python
-app = rx.App(state=State)
+app = rx.App()
 ```
 
-添加從應用程式根目錄到 index 元件的路由。 我們也添加了一個標題將會顯示在 預覽/瀏覽 分頁。
+添加從應用程式根目錄(root of the app) 到 index 元件的路由。 我們也添加了一個標題將會顯示在 預覽/瀏覽 分頁。
 
 ```python
-app.add_page(index, title="Reflex:DALL-E")
+app.add_page(index, title="DALL-E")
 app.compile()
 ```
 
-你可以藉由通過添加路由來增加更多頁面。
+你可以添加更多頁面至路由藉此來建立多頁面應用程式(multi-page app)
 
 ## Reflex 狀態
 
