@@ -19,14 +19,11 @@
 ---
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md)
 ---
-## 📦 1. 安裝
+## ⚙️ 安裝
 
-Reflex 需要以下最低要求:
+開啟一個終端機並且執行 (需要 Python 3.7+):
 
--   Python 3.7+
--   [Node.js 16.8.0+](https://nodejs.org/en/) (不用擔心，你不需要寫任何 JavaScript!)
-
-```
+```bash
 pip install reflex
 ```
 
