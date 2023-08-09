@@ -8,7 +8,7 @@
 
 <hr>
 
-**✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。✨**
+**✨ 使用 Python 建立高效且可自訂的網頁應用程式，幾秒鐘內即可部署。✨**  
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
