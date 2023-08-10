@@ -94,9 +94,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
             **kwargs: The kwargs to pass to the Pydantic init method.
-
-        Raises:
-            NameError: When an event handler shadows an inbuilt state method.
         """
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
@@ -108,14 +105,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Setup the substates.
         for substate in self.get_substates():
             self.substates[substate.get_name()] = substate(parent_state=self)
-        base_state_functions = self.get_base_functions()
         # Convert the event handlers to functions.
         for name, event_handler in self.event_handlers.items():
-            if name in base_state_functions:
-                raise NameError(
-                    f"The event handler name `{name}` shadows a builtin State method; use a different name instead"
-                )
-
             fn = functools.partial(event_handler.fn, self)
             fn.__module__ = event_handler.fn.__module__  # type: ignore
             fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
@@ -194,6 +185,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
         """
         super().__init_subclass__(**kwargs)
+        # Event handlers should not shadow builtin state methods.
+        cls._check_overridden_methods()
 
         # Get the parent vars.
         parent_state = cls.get_parent_state()
@@ -245,6 +238,28 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             handler = EventHandler(fn=fn)
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
+
+    @classmethod
+    def _check_overridden_methods(cls):
+        """Check for shadow methods and raise error if any.
+
+        Raises:
+            NameError: When an event handler shadows an inbuilt state method.
+        """
+        overridden_methods = set()
+        for name, method in inspect.getmembers(cls, inspect.isfunction):
+            # Check if the method is overridden and not a dunder method
+            if (
+                not name.startswith("__")
+                and method.__name__ in dir(State)
+                and getattr(State, method.__name__) != method
+            ):
+                overridden_methods.add(method.__name__)
+
+        for method_name in overridden_methods:
+            raise NameError(
+                f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
+            )
 
     @classmethod
     def get_skip_vars(cls) -> Set[str]:
@@ -451,19 +466,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if field.required and default_value is not None:
             field.required = False
             field.default = default_value
-
-    @staticmethod
-    def get_base_functions() -> List[str]:
-        """Get all functions of the state class excluding dunder methods.
-
-        Returns:
-            The function names of rx.State class as a list.
-        """
-        return [
-            methods[0]
-            for methods in inspect.getmembers(State, predicate=inspect.isfunction)
-            if not methods[0].startswith("__")
-        ]
 
     def get_token(self) -> str:
         """Return the token of the client associated with this state.

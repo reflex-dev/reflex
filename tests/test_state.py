@@ -1193,14 +1193,14 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(test_set, ReflexSet)
 
 
-def test_error_on_state_method_shadow(state_with_invalid_event_handler):
-    """Test that an error is thrown when an event handler shadows a state method.
-
-    Args:
-        state_with_invalid_event_handler: A test state.
-    """
+def test_error_on_state_method_shadow():
+    """Test that an error is thrown when an event handler shadows a state method."""
     with pytest.raises(NameError) as err:
-        state_with_invalid_event_handler()
+
+        class InvalidTest(rx.State):
+            def _reset(self):
+                pass
+
     assert (
         err.value.args[0]
         == f"The event handler name `_reset` shadows a builtin State method; use a different name instead"
