@@ -389,8 +389,8 @@ export const getRefValue = (ref) => {
   if (ref.current.type == "checkbox") {
     return ref.current.checked;
   } else {
-    //querySelector(":checked") is needed by radio_group
-    return ref.current.value || ref.current.querySelector(':checked').value;
+    //querySelector(":checked") is needed to get value from radio_group
+    return ref.current.value || (ref.current.querySelector(':checked') && ref.current.querySelector(':checked').value);
   }
 }
 
