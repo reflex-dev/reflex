@@ -553,7 +553,7 @@ def test_reset(test_state, child_state):
     child_state.value = "test"
 
     # Reset the state.
-    test_state._reset()
+    test_state.reset()
 
     # The values should be reset.
     assert test_state.num1 == 0
@@ -1198,7 +1198,7 @@ def test_error_on_state_method_shadow():
     with pytest.raises(NameError) as err:
 
         class InvalidTest(rx.State):
-            def _reset(self):
+            def reset(self):
                 pass
 
     assert (

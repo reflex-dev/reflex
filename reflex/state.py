@@ -473,7 +473,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """Get all functions of the state class excluding dunder methods.
 
         Returns:
-            The function names of rx.State class as a dict.
+            The functions of rx.State class as a dict.
         """
         return {
             func[0]: func[1]
@@ -658,7 +658,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             for substate in self.substates.values():
                 setattr(substate, name, value)
 
-    def _reset(self):
+    def reset(self):
         """Reset all the base vars to their default values."""
         # Reset the base vars.
         fields = self.get_fields()
@@ -667,7 +667,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Recursively reset the substates.
         for substate in self.substates.values():
-            substate._reset()
+            substate.reset()
 
     def get_substate(self, path: Sequence[str]) -> Optional[State]:
         """Get the substate.
