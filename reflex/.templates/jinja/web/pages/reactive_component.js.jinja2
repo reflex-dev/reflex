@@ -1,0 +1,7 @@
+{% import 'web/pages/utils.js.jinja2' as utils %}
+
+function {{tag_name}} () {
+  const {{state_name}} = useContext(StateContext);
+  const [Event, notConnected] = useContext(EventLoopContext);
+  return {{utils.render(component.render())}}
+}

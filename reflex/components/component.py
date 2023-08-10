@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import typing
 from abc import ABC
 from functools import wraps
@@ -537,6 +538,26 @@ class Component(Base, ABC):
         """
         return None
 
+    def _render_out_of_band(self, base_state) -> str | None:
+        from reflex.compiler.templates import REACTIVE_COMPONENT
+
+        def _render() -> Tag:
+            """Define how to render the component in React.
+
+            Returns:
+                The tag to render.
+            """
+            self.children = []
+            return Tag(name=self.tag)
+
+        tag_name = "Comp" + str(random.randint(0, 1024))
+        code = REACTIVE_COMPONENT.render(
+            tag_name=tag_name, component=self, state_name=base_state
+        )
+        self.tag = tag_name
+        self._render = _render
+        return code
+
     def get_custom_code(self) -> Set[str]:
         """Get custom code for the component and its children.
 
@@ -545,6 +566,37 @@ class Component(Base, ABC):
         """
         # Store the code in a set to avoid duplicates.
         code = set()
+
+        # check if any props are state vars
+        js_func = None
+        from reflex.components.base.bare import Bare
+
+        if not isinstance(self, Bare):
+            for prop in self.get_props():
+                prop_var = getattr(self, prop)
+                if isinstance(prop_var, Var) and prop_var.state:
+                    print(
+                        "Component {} has Var prop {}".format(
+                            type(self).__name__, prop_var
+                        )
+                    )
+                    js_func = self._render_out_of_band(
+                        base_state=prop_var.state.partition(".")[0],
+                    )
+                    if js_func:
+                        break
+        if js_func is None:
+            for child in self.children:
+                if isinstance(child, Bare):
+                    child = child.contents
+                if isinstance(child, Var) and child.state:
+                    js_func = self._render_out_of_band(
+                        base_state=child.state.partition(".")[0],
+                    )
+                    if js_func:
+                        break
+        if js_func:
+            code.add(js_func)
 
         # Add the custom code for this component.
         custom_code = self._get_custom_code()

@@ -8,9 +8,6 @@
 
 {% block export %}
 export default function Component() {
-{% if state_name %}
-  const {{state_name}} = useContext(StateContext)
-{% endif %}
   const {{const.router}} = useRouter()
   const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
   const focusRef = useRef();

@@ -81,6 +81,9 @@ PAGE = get_template("web/pages/index.js.jinja2")
 # Code to render the custom components page.
 COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 
+# Template for components with state Var props
+REACTIVE_COMPONENT = get_template("web/pages/reactive_component.js.jinja2")
+
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
 
