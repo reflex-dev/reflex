@@ -247,12 +247,13 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             NameError: When an event handler shadows an inbuilt state method.
         """
         overridden_methods = set()
+        state_base_functions = cls._get_base_functions()
         for name, method in inspect.getmembers(cls, inspect.isfunction):
             # Check if the method is overridden and not a dunder method
             if (
                 not name.startswith("__")
-                and method.__name__ in dir(State)
-                and getattr(State, method.__name__) != method
+                and method.__name__ in state_base_functions
+                and state_base_functions[method.__name__] != method
             ):
                 overridden_methods.add(method.__name__)
 
@@ -466,6 +467,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if field.required and default_value is not None:
             field.required = False
             field.default = default_value
+
+    @staticmethod
+    def _get_base_functions() -> Dict[str, FunctionType]:
+        """Get all functions of the state class excluding dunder methods.
+
+        Returns:
+            The function names of rx.State class as a dict.
+        """
+        return {
+            func[0]: func[1]
+            for func in inspect.getmembers(State, predicate=inspect.isfunction)
+            if not func[0].startswith("__")
+        }
 
     def get_token(self) -> str:
         """Return the token of the client associated with this state.
