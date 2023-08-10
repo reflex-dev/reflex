@@ -427,11 +427,7 @@ class App(Base):
             meta: The metadata of the page.
         """
         self.add_page(
-            component=(
-                component
-                if isinstance(component, Component)
-                else (component() if component else Fragment.create())
-            ),
+            component=component if component else Fragment.create(),
             route=constants.SLUG_404,
             title=title or constants.TITLE_404,
             image=image or constants.FAVICON_404,
