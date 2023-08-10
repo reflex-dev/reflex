@@ -18,6 +18,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="useEffect"),
         ImportVar(tag="useRef"),
         ImportVar(tag="useState"),
+        ImportVar(tag="useContext"),
     },
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
@@ -30,6 +31,10 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getRefValues"),
         ImportVar(tag="getAllLocalStorageItems"),
         ImportVar(tag="useEventLoop"),
+    },
+    "/utils/context.js": {
+        ImportVar(tag="EventLoopContext"),
+        ImportVar(tag="StateContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {
@@ -67,6 +72,21 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
+def _compile_contexts(state: Type[State]) -> str:
+    """Compile the initial state and contexts.
+
+    Args:
+        state: The app state.
+
+    Returns:
+        The compiled context file.
+    """
+    return templates.CONTEXT.render(
+        initial_state=utils.compile_state(state),
+        state_name=state.get_name(),
+    )
+
+
 def _compile_page(
     component: Component,
     state: Type[State],
@@ -93,7 +113,6 @@ def _compile_page(
     return templates.PAGE.render(
         imports=imports,
         custom_codes=component.get_custom_code(),
-        initial_state=utils.compile_state(state),
         state_name=state.get_name(),
         hooks=component.get_hooks(),
         render=component.render(),
@@ -184,6 +203,24 @@ def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     # Compile the theme.
     code = _compile_theme(theme)
     return output_path, code
+
+
+def compile_contexts(
+    state: Type[State],
+) -> Tuple[str, str]:
+    """Compile the initial state / context
+
+    Args:
+        path: The path to compile the page to.
+        state: The app state.
+
+    Returns:
+        The path and code of the compiled context.
+    """
+    # Get the path for the output file.
+    output_path = utils.get_context_path()
+
+    return output_path, _compile_contexts(state)
 
 
 def compile_page(

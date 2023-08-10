@@ -1,0 +1,7 @@
+import { createContext } from "react"
+import { E } from "/utils/state.js"
+
+export const initialState = {{ initial_state|json_dumps }}
+export const initialEvents = [E('{{state_name}}.{{const.hydrate}}', {})]
+export const StateContext = createContext(null);
+export const EventLoopContext = createContext(null);

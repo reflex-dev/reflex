@@ -517,6 +517,9 @@ class App(Base):
         # Compile the theme.
         compile_results.append(compiler.compile_theme(self.style))
 
+        # Compile the contexts.
+        compile_results.append(compiler.compile_contexts(self.state))
+
         # Compile the Tailwind config.
         if config.tailwind is not None:
             config.tailwind["content"] = config.tailwind.get(

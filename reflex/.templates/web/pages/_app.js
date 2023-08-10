@@ -1,6 +1,8 @@
 import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { Global, css } from "@emotion/react";
 import theme from "/utils/theme";
+import { initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
+import { useEventLoop } from "utils/state";
 
 import '../styles/tailwind.css'
 
@@ -13,10 +15,19 @@ const GlobalStyles = css`
 `;
 
 function MyApp({ Component, pageProps }) {
+  const [state, Event, notConnected] = useEventLoop(
+    initialState,
+    initialEvents,
+  )
+
   return (
     <ChakraProvider theme={extendTheme(theme)}>
       <Global styles={GlobalStyles} />
-      <Component {...pageProps} />
+      <EventLoopContext.Provider value={[Event, notConnected]}>
+        <StateContext.Provider value={state}>
+          <Component {...pageProps} />
+        </StateContext.Provider>
+      </EventLoopContext.Provider>
     </ChakraProvider>
   );
 }

@@ -65,6 +65,9 @@ DOCUMENT_ROOT = get_template("web/pages/_document.js.jinja2")
 # Template for the theme file.
 THEME = get_template("web/utils/theme.js.jinja2")
 
+# Template for the context file.
+CONTEXT = get_template("web/utils/context.js.jinja2")
+
 # Template for Tailwind config.
 TAILWIND_CONFIG = get_template("web/tailwind.config.js.jinja2")
 
