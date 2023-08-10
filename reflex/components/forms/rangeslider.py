@@ -131,6 +131,7 @@ class RangeSliderThumb(ChakraComponent):
     index: Var[int]
 
     def _get_hooks(self) -> Optional[str]:
+        # hook is None because RangeSlider is handling it.
         return None
 
     def get_ref(self):

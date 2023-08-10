@@ -24,6 +24,8 @@ class Form(ChakraComponent):
         # Send all the input refs to the handler.
         form_refs = {}
         for ref in self.get_refs():
+            # when ref start with refs_ it's an array of refs, so we need different method
+            # to collect data
             if ref.startswith("refs_"):
                 form_refs[ref[5:-3]] = Var.create(
                     f"getRefValues({ref[:-3]})", is_local=False

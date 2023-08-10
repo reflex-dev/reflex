@@ -69,7 +69,7 @@ class PinInput(ChakraComponent):
         }
 
     def get_ref(self):
-        """Get the reference.
+        """Return a reference because we actually attached the ref to the PinInputFields.
 
         Returns:
             None.
@@ -126,6 +126,8 @@ class PinInputField(ChakraComponent):
 
     tag = "PinInputField"
 
+    # the position of the PinInputField inside the PinInput.
+    # Default to None because it is assigned by PinInput when created.
     index: Optional[Var[int]] = None
 
     def _get_hooks(self) -> Optional[str]:

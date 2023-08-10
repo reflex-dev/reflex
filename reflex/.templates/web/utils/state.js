@@ -389,6 +389,7 @@ export const getRefValue = (ref) => {
   if (ref.current.type == "checkbox") {
     return ref.current.checked;
   } else {
+    //querySelector(":checked") is needed by radio_group
     return ref.current.value || ref.current.querySelector(':checked').value;
   }
 }
@@ -402,5 +403,6 @@ export const getRefValues = (refs) => {
   if (!refs) {
     return;
   }
-  return refs.map((ref) => ref.current.getAttribute("aria-valuenow") || ref.current.value);
+  // getAttribute is used by RangeSlider because it doesn't assign value
+  return refs.map((ref) => ref.current.value || ref.current.getAttribute("aria-valuenow"));
 }
