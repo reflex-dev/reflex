@@ -13,6 +13,7 @@ from reflex.vars import (
     ImportVar,
     ReflexDict,
     ReflexList,
+    ReflexSet,
     Var,
     get_local_storage,
 )
@@ -530,6 +531,16 @@ def test_pickleable_rx_dict():
 
     pickled_dict = cloudpickle.dumps(rx_dict)
     assert cloudpickle.loads(pickled_dict) == rx_dict
+
+
+def test_pickleable_rx_set():
+    """Test that ReflexSet is pickleable."""
+    rx_set = ReflexSet(
+        original_set={1, 2, 3}, reassign_field=lambda x: x, field_name="random"
+    )
+
+    pickled_set = cloudpickle.dumps(rx_set)
+    assert cloudpickle.loads(pickled_set) == rx_set
 
 
 @pytest.mark.parametrize(

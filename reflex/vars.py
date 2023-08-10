@@ -1130,6 +1130,91 @@ class ReflexDict(dict):
         self._reassign_field()
 
 
+class ReflexSet(set):
+    """A custom set that reflex can detect its mutation."""
+
+    def __init__(
+        self,
+        original_set: Set,
+        reassign_field: Callable = lambda _field_name: None,
+        field_name: str = "",
+    ):
+        """Initialize ReflexSet.
+
+        Args:
+            original_set (Set): The original set
+            reassign_field (Callable):
+                The method in the parent state to reassign the field.
+                Default to be a no-op function
+            field_name (str): the name of field in the parent state
+        """
+        self._reassign_field = lambda: reassign_field(field_name)
+
+        super().__init__(original_set)
+
+    def add(self, *args, **kwargs):
+        """Add an element to set.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().add(*args, **kwargs)
+        self._reassign_field()
+
+    def remove(self, *args, **kwargs):
+        """Remove an element.
+        Raise key error if element not found.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().remove(*args, **kwargs)
+        self._reassign_field()
+
+    def discard(self, *args, **kwargs):
+        """Remove an element.
+        Does not raise key error if element not found.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().discard(*args, **kwargs)
+        self._reassign_field()
+
+    def pop(self, *args, **kwargs):
+        """Remove an element.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().pop(*args, **kwargs)
+        self._reassign_field()
+
+    def clear(self, *args, **kwargs):
+        """Remove all elements from the set.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().clear(*args, **kwargs)
+        self._reassign_field()
+
+    def update(self, *args, **kwargs):
+        """Adds elements from an iterable to the set.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().update(*args, **kwargs)
+        self._reassign_field()
+
+
 class ImportVar(Base):
     """An import var."""
 

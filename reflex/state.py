@@ -34,7 +34,7 @@ from reflex import constants
 from reflex.base import Base
 from reflex.event import Event, EventHandler, EventSpec, fix_events, window_alert
 from reflex.utils import format, prerequisites, types
-from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, Var
+from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet, Var
 
 Delta = Dict[str, Any]
 
@@ -601,8 +601,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             self.mark_dirty()
             return
 
-        # Make sure lists and dicts are converted to ReflexList and ReflexDict.
-        if name in self.vars and types._isinstance(value, Union[List, Dict]):
+        # Make sure lists and dicts are converted to ReflexList, ReflexDict and ReflexSet.
+        if name in self.vars and types._isinstance(value, Union[List, Dict, Set]):
             value = _convert_mutable_datatypes(value, self._reassign_field, name)
 
         # Set the attribute.
@@ -985,7 +985,7 @@ def _convert_mutable_datatypes(
 ) -> Any:
     """Recursively convert mutable data to the Rx data types.
 
-    Note: right now only list & dict would be handled recursively.
+    Note: right now only list, dict and set would be handled recursively.
 
     Args:
         field_value: The target field_value.
@@ -1012,6 +1012,16 @@ def _convert_mutable_datatypes(
             for key, value in field_value.items()
         }
         field_value = ReflexDict(
+            field_value, reassign_field=reassign_field, field_name=field_name
+        )
+
+    if isinstance(field_value, set):
+        field_value = [
+            _convert_mutable_datatypes(value, reassign_field, field_name)
+            for value in field_value
+        ]
+
+        field_value = ReflexSet(
             field_value, reassign_field=reassign_field, field_name=field_name
         )
 
