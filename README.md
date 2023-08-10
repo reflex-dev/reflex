@@ -3,8 +3,8 @@
 ```
 
 <div align="center">
-<img src="docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
-<img src="docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_dark.svg#gh-light-mode-only" alt="Reflex Logo" width="300px">
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/reflex_light.svg#gh-dark-mode-only" alt="Reflex Logo" width="300px">
 
 <hr>
 
@@ -59,7 +59,7 @@ Let's go over an example: creating an image generation UI around DALL·E. For si
 &nbsp;
 
 <div align="center">
-<img src="docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
 </div>
 
 &nbsp;
