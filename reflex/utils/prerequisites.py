@@ -418,7 +418,7 @@ def check_initialized(frontend: bool = True):
     # Print a warning for Windows users.
     if IS_WINDOWS:
         console.warn(
-            "We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
+            """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
 
 
