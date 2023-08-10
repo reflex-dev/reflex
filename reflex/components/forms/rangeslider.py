@@ -70,10 +70,11 @@ class RangeSlider(ChakraComponent):
         Returns:
             The overrided hooks.
         """
-        ref = format.format_array_ref(self.id, None)
-        if ref:
-            return f"const {ref} = Array.from({{length:2}}, () => useRef(null));"
-        return super()._get_hooks()
+        if self.id:
+            ref = format.format_array_ref(self.id, None)
+            if ref:
+                return f"const {ref} = Array.from({{length:2}}, () => useRef(null));"
+            return super()._get_hooks()
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -133,9 +134,10 @@ class RangeSliderThumb(ChakraComponent):
         return None
 
     def get_ref(self):
-        """Get the array ref for the pin input.
+        """Get an array ref for the range slider thumb.
 
         Returns:
             The array ref.
         """
-        return format.format_array_ref(self.id, self.index)
+        if self.id:
+            return format.format_array_ref(self.id, self.index)
