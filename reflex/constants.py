@@ -79,6 +79,8 @@ BUN_INSTALL_URL = "https://bun.sh/install"
 # NVM / Node config.
 # The NVM version.
 NVM_VERSION = "0.39.1"
+# The NVM-Windows version.
+NVM_WINDOWS_VERSION = "1.1.11"
 # The Node version.
 NODE_VERSION = "18.17.0"
 # The minimum required node version.
