@@ -404,11 +404,14 @@ class App(Base):
 
     def add_custom_404_page(
         self,
-        component,
-        title=None,
-        image=None,
-        description=None,
-        meta=constants.DEFAULT_META_LIST,
+        component: Optional[Union[Component, ComponentCallable]] = None,
+        title: str = constants.TITLE_404,
+        image: str = constants.FAVICON_404,
+        description: str = constants.DESCRIPTION_404,
+        on_load: Optional[
+            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
+        ] = None,
+        meta: List[Dict] = constants.DEFAULT_META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
@@ -420,24 +423,18 @@ class App(Base):
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
+            on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
-        title = title or constants.TITLE_404
-        image = image or constants.FAVICON_404
-        description = description or constants.DESCRIPTION_404
-
-        component = component if isinstance(component, Component) else component()
-
-        compiler_utils.add_meta(
-            component,
-            title=title,
-            image=image,
-            description=description,
+        self.add_page(
+            component=component if component else Fragment.create(),
+            route=constants.SLUG_404,
+            title=title or constants.TITLE_404,
+            image=image or constants.FAVICON_404,
+            description=description or constants.DESCRIPTION_404,
+            on_load=on_load,
             meta=meta,
         )
-
-        froute = format.format_route
-        self.pages[froute(constants.SLUG_404)] = component
 
     def setup_admin_dash(self):
         """Setup the admin dash."""
