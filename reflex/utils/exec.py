@@ -165,6 +165,12 @@ def output_system_info():
 
     console.rule(f"System Info")
 
+    dependencies = [
+        f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{constants.NODE_PATH})]",
+        f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
+    ]
+
     system = platform.system()
 
     if system == "Linux":
@@ -174,12 +180,12 @@ def output_system_info():
     else:
         os_version = platform.version()
 
-    dependencies = [
-        f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION})]",
-        f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION})]",
-        f"[{platform.system()} {os_version}]",
-    ]
+    if system != "Windows":
+        dependencies.append(
+            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {constants.BUN_PATH})]",
+        )
+
+    dependencies.append(f"[OS {platform.system()} {os_version}]")
 
     for dep in dependencies:
         console.debug(f"{dep}")
