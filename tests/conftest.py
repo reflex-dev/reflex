@@ -23,7 +23,7 @@ def app() -> App:
     return App()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def windows_platform() -> Generator:
     """Check if system is windows.
 
