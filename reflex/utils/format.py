@@ -434,6 +434,24 @@ def format_ref(ref: str) -> str:
     return f"ref_{clean_ref}"
 
 
+def format_array_ref(refs: str, idx) -> str:
+    """Format a ref accessed by array.
+
+    Args:
+        refs : The ref array to access.
+        idx : The index of the ref in the array.
+
+    Returns:
+        The formatted ref.
+    """
+    clean_ref = re.sub(r"[^\w]+", "_", refs)
+    if idx:
+        idx.is_local = True
+        return f"refs_{clean_ref}[{idx}]"
+    else:
+        return f"refs_{clean_ref}"
+
+
 def format_dict(prop: ComponentStyle) -> str:
     """Format a dict with vars potentially as values.
 
