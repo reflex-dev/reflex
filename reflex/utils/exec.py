@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import os
+import platform
+import sys
 from pathlib import Path
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, prerequisites, processes
+from reflex.utils import console, path_ops, prerequisites, processes
 from reflex.utils.watch import AssetFolderWatch
 
 
@@ -154,3 +156,44 @@ def run_backend_prod(
         str(num_workers),
     ]
     processes.new_process(command, run=True, show_logs=True)
+
+
+def output_system_info():
+    """Show system informations if the loglevel is in DEBUG."""
+    if console.LOG_LEVEL > constants.LogLevel.DEBUG:
+        return
+
+    console.rule(f"System Info")
+
+    system = platform.system()
+
+    if system == "Linux":
+        import distro
+
+        os_version = distro.name(pretty=True)
+    else:
+        os_version = platform.version()
+
+    dependencies = [
+        f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION})]",
+        f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION})]",
+        f"[{platform.system()} {os_version}]",
+    ]
+
+    for dep in dependencies:
+        console.debug(f"{dep}")
+
+    if system == "Windows":
+        console.debug(
+            f"Using package manager at : {prerequisites.get_windows_package_manager()}"
+        )
+    else:
+        console.debug(
+            f"Using package installer at : {prerequisites.get_install_package_manager()}"
+        )
+        console.debug(
+            f"Using package executer at: {prerequisites.get_package_manager()}"
+        )
+        console.debug(f"Unzip path : {path_ops.which('unzip')}")
+    # exit()

@@ -31,20 +31,30 @@ def check_node_version() -> bool:
     Returns:
         Whether the version of Node.js is valid.
     """
-    try:
-        # Run the node -v command and capture the output.
-        result = processes.new_process([constants.NODE_PATH, "-v"], run=True)
-    except FileNotFoundError:
+    current_version = get_node_version()
+    if current_version:
+        # Compare the version numbers
+        return (
+            current_version >= version.parse(constants.NODE_VERSION_MIN)
+            if constants.IS_WINDOWS
+            else current_version == version.parse(constants.NODE_VERSION)
+        )
+    else:
         return False
 
-    # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-    current_version = version.parse(result.stdout)  # type: ignore
-    # Compare the version numbers
-    return (
-        current_version >= version.parse(constants.NODE_VERSION_MIN)
-        if constants.IS_WINDOWS
-        else current_version == version.parse(constants.NODE_VERSION)
-    )
+
+def get_node_version() -> Optional[version.Version]:
+    """Get the version of node.
+
+    Returns:
+        The version of node.
+    """
+    try:
+        result = processes.new_process([constants.NODE_PATH, "-v"], run=True)
+        # The output will be in the form "vX.Y.Z", but version.parse() can handle it
+        return version.parse(result.stdout)  # type: ignore
+    except FileNotFoundError:
+        return None
 
 
 def get_bun_version() -> Optional[version.Version]:
