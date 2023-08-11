@@ -481,7 +481,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     if gitignore_exists:
         gitignore_file.touch()
         gitignore_file.write_text(
-            """reflex.db
+            """*.db
         __pycache__/
         """
         )
