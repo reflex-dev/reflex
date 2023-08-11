@@ -9,7 +9,6 @@
 {% block export %}
 
 export default function Component() {
-  const [{{state_name}}, {{state_name|react_setter}}] = useState({{initial_state|json_dumps}})
   const {{const.router}} = useRouter()
   const {{const.socket}} = useRef(null)
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
@@ -22,10 +21,10 @@ export default function Component() {
   }))
 
   // Main event loop.
-  const [Event, notConnected] = useEventLoop(
+  const [{{state_name}}, Event, notConnected] = useEventLoop(
     {{const.socket}},
     {{const.router}},
-    {{state_name|react_setter}},
+    {{initial_state|json_dumps}},
     [E('{{state_name}}.{{const.hydrate}}', {})],
   )
 

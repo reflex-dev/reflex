@@ -4,7 +4,7 @@ import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "env.json";
 import Cookies from "universal-cookie";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 
 // Endpoint URLs.
@@ -75,6 +75,7 @@ export const getToken = () => {
  * @param delta The delta to apply.
  */
 export const applyDelta = (state, delta) => {
+  const new_state = {...state}
   for (const substate in delta) {
     let s = state;
     const path = substate.split(".").slice(1);
@@ -85,6 +86,7 @@ export const applyDelta = (state, delta) => {
       s[key] = delta[substate][key];
     }
   }
+  return new_state
 };
 
 
@@ -237,7 +239,7 @@ export const processEvent = async (
 /**
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
- * @param queueNotify The function to trigger re-render when queue is updated.
+ * @param dispatch The function to queue state update
  * @param router The next router
  * @param transports The transports to use.
  * @param setNotConnected The function to update connection state
@@ -245,7 +247,7 @@ export const processEvent = async (
  */
 export const connect = async (
   socket,
-  queueNotify,
+  dispatch,
   router,
   transports,
   setNotConnected,
@@ -359,16 +361,11 @@ export const E = (name, payload = {}, handler = null) => {
 export const useEventLoop = (
   socket,
   router,
-  setState,
+  initial_state = {},
   initial_events = [],
 ) => {
+  const [state, dispatch] = useReducer(applyDelta, initial_state)
   const [notConnected, setNotConnected] = useState(false)
-  const [queueNotifyCounter, setQueueNotifyCounter] = useState(0)
-
-  // Function to trigger re-render when event queue is updated by websocket or event handler
-  const queueNotify = () => {
-    setQueueNotifyCounter(count => (count + 1))
-  }
   
   // Function to add new events to the event queue.
   const Event = (events, _e) => {
@@ -386,29 +383,10 @@ export const useEventLoop = (
 
     // Initialize the websocket connection.
     if (!socket.current) {
-      connect(socket, queueNotify, router, ['websocket', 'polling'], setNotConnected, initial_events)
+      connect(socket, dispatch, router, ['websocket', 'polling'], setNotConnected, initial_events)
     }
-
-    (async () => {
-      // Process all outstanding events
-      while (pending_events.length > 0 && !event_status.processing) {
-        await processEvent(router, socket.current)
-      }
-      // Update the state based on deltas from the websocket connection
-      if (pending_updates.length > 0) {
-        setState(currentState => {
-          pending_updates.forEach((update) => {
-            applyDelta(currentState, update.delta)
-            event_status.processing = !update.final
-          })
-          pending_updates.length = 0  // all updates processed
-          queueNotify()
-          return currentState
-        })
-      }
-    })()
   })
-  return [Event, notConnected]
+  return [state, Event, notConnected]
 }
 
 /***
