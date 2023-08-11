@@ -241,10 +241,14 @@ class AppHarness:
                 os.killpg(pgrp, signal.SIGTERM)
             # kill any remaining child processes
             for child in frontend_children:
-                child.terminate()
+                # It's okay if the process is already gone.
+                with contextlib.suppress(psutil.NoSuchProcess):
+                    child.terminate()
             _, still_alive = psutil.wait_procs(frontend_children, timeout=3)
             for child in still_alive:
-                child.kill()
+                # It's okay if the process is already gone.
+                with contextlib.suppress(psutil.NoSuchProcess):
+                    child.kill()
             # wait for main process to exit
             self.frontend_process.communicate()
         if self.backend_thread is not None:
