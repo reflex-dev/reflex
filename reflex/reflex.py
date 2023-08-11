@@ -199,7 +199,6 @@ def deploy(
         return
 
     # Compile the app in production mode.
-    console.info("Compiling production app")
     export(loglevel=loglevel)
 
     # Exit early if this is a dry run.
