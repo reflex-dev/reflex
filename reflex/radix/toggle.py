@@ -1,7 +1,6 @@
 """Radix toggle component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class ToggleRoot(Component):
@@ -13,7 +12,7 @@ class ToggleRoot(Component):
     tag = "Root"
     alias = "ToggleRoot"
 
-    as_child: Optional[bool]
-    pressed: Optional[bool]
-    default_pressed: Optional[bool]
-    disabled: Optional[bool]
+    as_child: Var[bool]
+    pressed: Var[bool]
+    default_pressed: Var[bool]
+    disabled: Var[bool]

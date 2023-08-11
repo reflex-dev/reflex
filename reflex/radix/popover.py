@@ -1,7 +1,8 @@
 """The Radix popover component."""
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class PopoverComponent(Component):
@@ -17,9 +18,9 @@ class PopoverRoot(PopoverComponent):
     tag = "Root"
     alias = "PopoverRoot"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
-    modal: Optional[bool]
+    default_open: Var[bool]
+    open: Var[bool]
+    modal: Var[bool]
 
 
 class PopoverTrigger(PopoverComponent):
@@ -28,7 +29,7 @@ class PopoverTrigger(PopoverComponent):
     tag = "Trigger"
     alias = "PopoverTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class PopoverAnchor(PopoverComponent):
@@ -37,7 +38,7 @@ class PopoverAnchor(PopoverComponent):
     tag = "Anchor"
     alias = "PopoverAnchor"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class PopoverPortal(PopoverComponent):
@@ -46,7 +47,7 @@ class PopoverPortal(PopoverComponent):
     tag = "Portal"
     alias = "PopoverPortal"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class PopoverContent(PopoverComponent):
@@ -55,19 +56,19 @@ class PopoverContent(PopoverComponent):
     tag = "Content"
     alias = "PopoverContent"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
-    side: Optional[Literal["top", "right", "bottom", "left"]]
-    side_offset: Optional[int]
-    align: Optional[Literal["start", "center", "end"]]
-    alignOffset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    force_mount: Var[bool]
+    side: Var[Literal["top", "right", "bottom", "left"]]
+    side_offset: Var[int]
+    align: Var[Literal["start", "center", "end"]]
+    alignOffset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]
 
 
 class PopoverArrow(PopoverComponent):
@@ -76,9 +77,9 @@ class PopoverArrow(PopoverComponent):
     tag = "Arrow"
     alias = "PopoverArrow"
 
-    as_child: Optional[bool]
-    width: Optional[int]
-    height: Optional[int]
+    as_child: Var[bool]
+    width: Var[int]
+    height: Var[int]
 
 
 class PopoverClose(PopoverComponent):
@@ -87,4 +88,4 @@ class PopoverClose(PopoverComponent):
     tag = "Close"
     alias = "PopoverClose"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]

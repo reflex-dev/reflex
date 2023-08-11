@@ -1,7 +1,6 @@
 """The Radix collapsible component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class CollapsibleComponent(Component):
@@ -11,7 +10,7 @@ class CollapsibleComponent(Component):
     is_default = False
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class CollapsibleRoot(CollapsibleComponent):
@@ -20,9 +19,9 @@ class CollapsibleRoot(CollapsibleComponent):
     tag = "Root"
     alias = "CollapsibleRoot"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
-    disabled: Optional[bool]
+    default_open: Var[bool]
+    open: Var[bool]
+    disabled: Var[bool]
 
 
 class CollapsibleTrigger(CollapsibleComponent):
@@ -38,4 +37,4 @@ class CollapsibleContent(CollapsibleComponent):
     tag = "Content"
     alias = "CollapsibleContent"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]

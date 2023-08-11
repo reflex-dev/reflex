@@ -1,7 +1,6 @@
 """The Radix checkbox component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class CheckboxComponent(Component):
@@ -11,27 +10,27 @@ class CheckboxComponent(Component):
     is_default = False
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
-class CheckboxRoot(Component):
+class CheckboxRoot(CheckboxComponent):
     """Radix checkbox root. The onCheckedChange prop is not currently supported."""
 
     tag = "Root"
     alias = "CheckboxRoot"
 
-    default_checked: Optional[bool]
-    checked: Optional[bool]
-    disabled: Optional[bool]
-    required: Optional[bool]
-    name: Optional[str]
-    value: Optional[str]
+    default_checked: Var[bool]
+    checked: Var[bool]
+    disabled: Var[bool]
+    required: Var[bool]
+    name: Var[str]
+    value: Var[str]
 
 
-class CheckboxIndicator(Component):
+class CheckboxIndicator(CheckboxComponent):
     """Radix checkbox indicator."""
 
     tag = "Indicator"
     alias = "CheckboxIndicator"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]

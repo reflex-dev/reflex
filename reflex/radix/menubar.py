@@ -1,7 +1,8 @@
 """The Radix menubar component."""
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class MenubarComponent(Component):
@@ -17,11 +18,11 @@ class MenubarRoot(MenubarComponent):
     tag = "Root"
     alias = "MenubarRoot"
 
-    as_child: Optional[bool]
-    default_value: Optional[str]
-    value: Optional[str]
-    dir: Optional[Literal["ltr", "rtl"]]
-    loop: Optional[bool]
+    as_child: Var[bool]
+    default_value: Var[str]
+    value: Var[str]
+    dir: Var[Literal["ltr", "rtl"]]
+    loop: Var[bool]
 
 
 class MenubarMenu(MenubarComponent):
@@ -30,8 +31,8 @@ class MenubarMenu(MenubarComponent):
     tag = "Menu"
     alias = "MenubarMenu"
 
-    as_child: Optional[bool]
-    value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
 
 
 class MenubarTrigger(MenubarComponent):
@@ -40,7 +41,7 @@ class MenubarTrigger(MenubarComponent):
     tag = "Trigger"
     alias = "MenubarTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class MenubarPortal(MenubarComponent):
@@ -49,7 +50,7 @@ class MenubarPortal(MenubarComponent):
     tag = "Portal"
     alias = "MenubarPortal"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class MenubarContent(MenubarComponent):
@@ -58,20 +59,20 @@ class MenubarContent(MenubarComponent):
     tag = "Content"
     alias = "MenubarContent"
 
-    as_child: Optional[bool]
-    loop: Optional[bool]
-    force_mount: Optional[bool]
-    side: Optional[Literal["top", "right", "bottom", "left"]]
-    side_offset: Optional[int]
-    align: Optional[Literal["start", "center", "end"]]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    loop: Var[bool]
+    force_mount: Var[bool]
+    side: Var[Literal["top", "right", "bottom", "left"]]
+    side_offset: Var[int]
+    align: Var[Literal["start", "center", "end"]]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]
 
 
 class MenubarArrow(MenubarComponent):
@@ -80,9 +81,9 @@ class MenubarArrow(MenubarComponent):
     tag = "Arrow"
     alias = "MenubarArrow"
 
-    as_child: Optional[bool]
-    width: Optional[int]
-    height: Optional[int]
+    as_child: Var[bool]
+    width: Var[int]
+    height: Var[int]
 
 
 class MenubarItem(MenubarComponent):
@@ -91,9 +92,9 @@ class MenubarItem(MenubarComponent):
     tag = "Item"
     alias = "MenubarItem"
 
-    as_child: Optional[bool]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class MenubarGroup(MenubarComponent):
@@ -102,7 +103,7 @@ class MenubarGroup(MenubarComponent):
     tag = "Group"
     alias = "MenubarGroup"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class MenubarLabel(MenubarComponent):
@@ -111,7 +112,7 @@ class MenubarLabel(MenubarComponent):
     tag = "Label"
     alias = "MenubarLabel"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class MenubarCheckboxItem(MenubarComponent):
@@ -120,10 +121,10 @@ class MenubarCheckboxItem(MenubarComponent):
     tag = "CheckboxItem"
     alias = "MenubarCheckboxItem"
 
-    as_child: Optional[bool]
-    checked: Optional[Union[bool, Literal["indeterminate"]]]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    checked: Var[Union[bool, Literal["indeterminate"]]]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class MenubarRadioGroup(MenubarComponent):
@@ -132,8 +133,8 @@ class MenubarRadioGroup(MenubarComponent):
     tag = "RadioGroup"
     alias = "MenubarRadioGroup"
 
-    as_child: Optional[bool]
-    value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
 
 
 class MenubarRadioItem(MenubarComponent):
@@ -142,10 +143,10 @@ class MenubarRadioItem(MenubarComponent):
     tag = "RadioItem"
     alias = "MenubarRadioItem"
 
-    as_child: Optional[bool]
-    value: str
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class MenubarItemIndicator(MenubarComponent):
@@ -154,8 +155,8 @@ class MenubarItemIndicator(MenubarComponent):
     tag = "ItemIndicator"
     alias = "MenubarItemIndicator"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class MenubarSeparator(MenubarComponent):
@@ -164,7 +165,7 @@ class MenubarSeparator(MenubarComponent):
     tag = "Separator"
     alias = "MenubarSeparator"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class MenubarSub(MenubarComponent):
@@ -173,8 +174,8 @@ class MenubarSub(MenubarComponent):
     tag = "Sub"
     alias = "MenubarSub"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
+    default_open: Var[bool]
+    open: Var[bool]
 
 
 class MenubarSubTrigger(MenubarComponent):
@@ -183,9 +184,9 @@ class MenubarSubTrigger(MenubarComponent):
     tag = "SubTrigger"
     alias = "MenubarSubTrigger"
 
-    as_child: Optional[bool]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class MenubarSubContent(MenubarComponent):
@@ -194,15 +195,15 @@ class MenubarSubContent(MenubarComponent):
     tag = "SubContent"
     alias = "MenubarSubContent"
 
-    as_child: Optional[bool]
-    loop: Optional[bool]
-    force_mount: Optional[bool]
-    side_offset: Optional[int]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    loop: Var[bool]
+    force_mount: Var[bool]
+    side_offset: Var[int]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]

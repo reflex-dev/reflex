@@ -1,7 +1,8 @@
 """The Radix scroll area component."""
-from typing import Literal, Optional
+from typing import Literal
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class ScrollAreaComponent(Component):
@@ -10,7 +11,7 @@ class ScrollAreaComponent(Component):
     library = "@radix-ui/react-scroll-area"
     is_default = False
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ScrollAreaRoot(ScrollAreaComponent):
@@ -19,9 +20,9 @@ class ScrollAreaRoot(ScrollAreaComponent):
     tag = "Root"
     alias = "ScrollAreaRoot"
 
-    type: Optional[Literal["auto", "always", "scroll", "hover"]]
-    scroll_hide_delay: Optional[int]
-    dir: Optional[Literal["ltr", "rtl"]]
+    type_: Var[Literal["auto", "always", "scroll", "hover"]]
+    scroll_hide_delay: Var[int]
+    dir: Var[Literal["ltr", "rtl"]]
 
 
 class ScrollAreaViewport(ScrollAreaComponent):
@@ -37,8 +38,8 @@ class ScrollAreaScrollbar(ScrollAreaComponent):
     tag = "Scrollbar"
     alias = "ScrollAreaScrollbar"
 
-    force_mount: Optional[bool]
-    orientation: Optional[Literal["vertical", "horizontal"]]
+    force_mount: Var[bool]
+    orientation: Var[Literal["vertical", "horizontal"]]
 
 
 class ScrollAreaThumb(ScrollAreaComponent):

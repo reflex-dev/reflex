@@ -1,14 +1,14 @@
 """Radix toast components."""
-from typing import List, Literal, Optional
+from typing import List, Literal
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class ToastComponent(Component):
     """Base class for all toast components."""
 
     library = "@radix-ui/react-toast"
-
     is_default = False
 
 
@@ -18,10 +18,10 @@ class ToastProvider(ToastComponent):
     tag = "Provider"
     alias = "ToastProvider"
 
-    duration: Optional[int]
-    label: str
-    swipe_direction: Optional[List[Literal["right", "left", "up", "down"]]]
-    swipe_threshold: Optional[int]
+    duration: Var[int]
+    label: Var[str]
+    swipe_direction: Var[List[Literal["right", "left", "up", "down"]]]
+    swipe_threshold: Var[int]
 
 
 class ToastViewport(ToastComponent):
@@ -30,9 +30,9 @@ class ToastViewport(ToastComponent):
     tag = "Viewport"
     alias = "ToastViewport"
 
-    as_child: Optional[bool]
-    hotkey: Optional[List[str]]
-    label: Optional[str]
+    as_child: Var[bool]
+    hotkey: Var[List[str]]
+    label: Var[str]
 
 
 class ToastRoot(ToastComponent):
@@ -41,12 +41,12 @@ class ToastRoot(ToastComponent):
     tag = "Root"
     alias = "ToastRoot"
 
-    as_child: Optional[bool]
-    type: Optional[Literal["foreground", "background"]]
-    duration: Optional[int]
-    default_open: Optional[bool]
-    open: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    type_: Var[Literal["foreground", "background"]]
+    duration: Var[int]
+    default_open: Var[bool]
+    open: Var[bool]
+    force_mount: Var[bool]
 
 
 class ToastTitle(ToastComponent):
@@ -55,7 +55,7 @@ class ToastTitle(ToastComponent):
     tag = "Title"
     alias = "ToastTitle"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ToastDescription(ToastComponent):
@@ -64,7 +64,7 @@ class ToastDescription(ToastComponent):
     tag = "Description"
     alias = "ToastDescription"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ToastClose(ToastComponent):
@@ -73,7 +73,7 @@ class ToastClose(ToastComponent):
     tag = "Close"
     alias = "ToastClose"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ToastAction(ToastComponent):
@@ -82,5 +82,5 @@ class ToastAction(ToastComponent):
     tag = "Action"
     alias = "ToastAction"
 
-    as_child: Optional[bool]
-    alt_text: str
+    as_child: Var[bool]
+    alt_text: Var[str]

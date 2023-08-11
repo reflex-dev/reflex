@@ -1,14 +1,14 @@
 """Radix tooltip components."""
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class TooltipComponent(Component):
     """Base class for all tooltip components."""
 
     library = "@radix-ui/react-tooltip"
-
     is_default = False
 
 
@@ -18,9 +18,9 @@ class TooltipProvider(TooltipComponent):
     tag = "Provider"
     alias = "TooltipProvider"
 
-    delay_duration: Optional[int]
-    skip_delay_duration: Optional[int]
-    disable_hoverable_content: Optional[bool]
+    delay_duration: Var[int]
+    skip_delay_duration: Var[int]
+    disable_hoverable_content: Var[bool]
 
 
 class TooltipRoot(TooltipComponent):
@@ -29,11 +29,11 @@ class TooltipRoot(TooltipComponent):
     tag = "Root"
     alias = "TooltipRoot"
 
-    open: Optional[bool]
-    default_open: Optional[bool]
-    on_open_change: Optional[bool]
-    delay_duration: Optional[int]
-    disable_hoverable_content: Optional[bool]
+    open: Var[bool]
+    default_open: Var[bool]
+    on_open_change: Var[bool]
+    delay_duration: Var[int]
+    disable_hoverable_content: Var[bool]
 
 
 class TooltipTrigger(TooltipComponent):
@@ -43,36 +43,36 @@ class TooltipTrigger(TooltipComponent):
     alias = "TooltipTrigger"
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class TooltipPortal(TooltipComponent):
     """Radix tooltip portal. The container prop is not currently supported."""
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class TooltipContent(TooltipComponent):
     """Radix tooltip content. The aria-*, event handler, and collisionBoundary props are not currently supported."""
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
-    side: Optional[Literal["top", "right", "bottom", "left"]]
-    side_offset: Optional[int]
-    align: Optional[Literal["start", "center", "end"]]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    force_mount: Var[bool]
+    side: Var[Literal["top", "right", "bottom", "left"]]
+    side_offset: Var[int]
+    align: Var[Literal["start", "center", "end"]]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["always", "partial"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["always", "partial"]]
+    hide_when_detached: Var[bool]
 
 
 class TooltipArrow(TooltipComponent):
     """Radix tooltip arrow."""
 
-    as_child: Optional[bool]
-    height: Optional[int]
-    width: Optional[int]
+    as_child: Var[bool]
+    height: Var[int]
+    width: Var[int]

@@ -1,7 +1,8 @@
 """The Radix slider component."""
-from typing import List, Optional
+from typing import List
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class SliderComponent(Component):
@@ -12,7 +13,7 @@ class SliderComponent(Component):
     is_default = False  # Use named exports.
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SliderRoot(SliderComponent):
@@ -22,28 +23,28 @@ class SliderRoot(SliderComponent):
     alias = "SliderRoot"
 
     # The default value of the slider.
-    default_value: Optional[List[int]]
+    default_value: Var[List[int]]
 
     # The current value of the slider.
-    value: Optional[List[int]]
+    value: Var[List[int]]
 
     # Whether the slider is disabled.
-    disabled: Optional[bool]
+    disabled: Var[bool]
 
     # The name of the slider.
-    name: Optional[str]
+    name: Var[str]
 
     # The minimum value of the slider.
-    min: Optional[int]
+    min: Var[int]
 
     # The maximum value of the slider.
-    max: Optional[int]
+    max: Var[int]
 
     # The step of the slider.
-    step: Optional[int]
+    step: Var[int]
 
     # The minimum steps between thumbs.
-    min_steps_between_thumbs: Optional[int]
+    min_steps_between_thumbs: Var[int]
 
 
 class SliderTrack(SliderComponent):

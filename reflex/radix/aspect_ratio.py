@@ -1,7 +1,6 @@
 """The Radix aspect ratio component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class AspectRatio(Component):
@@ -17,5 +16,5 @@ class AspectRatioRoot(AspectRatio):
     tag = "Root"
     alias = "AspectRatioRoot"
 
-    as_child: Optional[bool]
-    ratio: Optional[float]
+    as_child: Var[bool]
+    ratio: Var[float]

@@ -1,7 +1,8 @@
 """The Radix hover card component."""
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class HoverCardComponent(Component):
@@ -17,10 +18,10 @@ class HoverCardRoot(HoverCardComponent):
     tag = "Root"
     alias = "HoverCardRoot"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
-    open_delay: Optional[int]
-    close_delay: Optional[int]
+    default_open: Var[bool]
+    open: Var[bool]
+    open_delay: Var[int]
+    close_delay: Var[int]
 
 
 class HoverCardTrigger(HoverCardComponent):
@@ -29,7 +30,7 @@ class HoverCardTrigger(HoverCardComponent):
     tag = "Trigger"
     alias = "HoverCardTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class HoverCardPortal(HoverCardComponent):
@@ -38,7 +39,7 @@ class HoverCardPortal(HoverCardComponent):
     tag = "Portal"
     alias = "HoverCardPortal"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class HoverCardContent(HoverCardComponent):
@@ -47,19 +48,19 @@ class HoverCardContent(HoverCardComponent):
     tag = "Content"
     alias = "HoverCardContent"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
-    side: Optional[Literal["top", "right", "bottom", "left"]]
-    side_offset: Optional[int]
-    align: Optional[Literal["start", "center", "end"]]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    force_mount: Var[bool]
+    side: Var[Literal["top", "right", "bottom", "left"]]
+    side_offset: Var[int]
+    align: Var[Literal["start", "center", "end"]]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]
 
 
 class HoverCardArrow(HoverCardComponent):
@@ -68,6 +69,6 @@ class HoverCardArrow(HoverCardComponent):
     tag = "Arrow"
     alias = "HoverCardArrow"
 
-    as_child: Optional[bool]
-    width: Optional[int]
-    height: Optional[int]
+    as_child: Var[bool]
+    width: Var[int]
+    height: Var[int]

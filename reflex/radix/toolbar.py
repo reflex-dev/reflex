@@ -1,14 +1,14 @@
 """Radix toolbar component."""
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class ToolbarComponent(Component):
     """Base class for all tooltip components."""
 
     library = "@radix-ui/react-toolbar"
-
     is_default = False
 
 
@@ -18,10 +18,10 @@ class ToolbarRoot(ToolbarComponent):
     tag = "Root"
     alias = "ToolbarRoot"
 
-    as_child: Optional[bool]
-    orientation: Optional[Literal["horizontal", "vertical"]]
-    dir: Optional[Literal["ltr", "rtl"]]
-    loop: Optional[bool]
+    as_child: Var[bool]
+    orientation: Var[Literal["horizontal", "vertical"]]
+    dir: Var[Literal["ltr", "rtl"]]
+    loop: Var[bool]
 
 
 class ToolbarButton(ToolbarComponent):
@@ -30,7 +30,7 @@ class ToolbarButton(ToolbarComponent):
     tag = "Button"
     alias = "ToolbarButton"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ToolbarLink(ToolbarComponent):
@@ -39,7 +39,7 @@ class ToolbarLink(ToolbarComponent):
     tag = "Link"
     alias = "ToolbarLink"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ToolbarSeparator(ToolbarComponent):
@@ -48,7 +48,7 @@ class ToolbarSeparator(ToolbarComponent):
     tag = "Separator"
     alias = "ToolbarSeparator"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ToolbarToggleGroup(ToolbarComponent):
@@ -57,11 +57,11 @@ class ToolbarToggleGroup(ToolbarComponent):
     tag = "ToggleGroup"
     alias = "ToolbarToggleGroup"
 
-    as_child: Optional[bool]
-    type: Literal["single", "multiple"]
-    value: Optional[Union[str, List[str]]]
-    default_value: Optional[Union[str, List[str]]]
-    disabled: Optional[bool]
+    as_child: Var[bool]
+    type_: Var[Literal["single", "multiple"]]
+    value: Var[Union[str, List[str]]]
+    default_value: Var[Union[str, List[str]]]
+    disabled: Var[bool]
 
 
 class ToolbarToggleItem(ToolbarComponent):
@@ -70,6 +70,6 @@ class ToolbarToggleItem(ToolbarComponent):
     tag = "ToggleItem"
     alias = "ToolbarToggleItem"
 
-    as_child: Optional[bool]
-    value: str
-    disabled: Optional[bool]
+    as_child: Var[bool]
+    value: Var[str]
+    disabled: Var[bool]

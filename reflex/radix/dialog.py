@@ -1,7 +1,6 @@
 """The Radix dialog component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class DialogComponent(Component):
@@ -17,9 +16,9 @@ class DialogRoot(DialogComponent):
     tag = "Root"
     alias = "DialogRoot"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
-    modal: Optional[bool]
+    default_open: Var[bool]
+    open: Var[bool]
+    modal: Var[bool]
 
 
 class DialogTrigger(DialogComponent):
@@ -28,7 +27,7 @@ class DialogTrigger(DialogComponent):
     tag = "Trigger"
     alias = "DialogTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class DialogPortal(DialogComponent):
@@ -37,7 +36,7 @@ class DialogPortal(DialogComponent):
     tag = "Portal"
     alias = "DialogPortal"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class DialogOverlay(DialogComponent):
@@ -46,8 +45,8 @@ class DialogOverlay(DialogComponent):
     tag = "Overlay"
     alias = "DialogOverlay"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class DialogContent(DialogComponent):
@@ -56,8 +55,8 @@ class DialogContent(DialogComponent):
     tag = "Content"
     alias = "DialogContent"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class DialogClose(DialogComponent):
@@ -66,7 +65,7 @@ class DialogClose(DialogComponent):
     tag = "Close"
     alias = "DialogClose"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class DialogTitle(DialogComponent):
@@ -75,7 +74,7 @@ class DialogTitle(DialogComponent):
     tag = "Title"
     alias = "DialogTitle"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class DialogDescription(DialogComponent):
@@ -84,4 +83,4 @@ class DialogDescription(DialogComponent):
     tag = "Description"
     alias = "DialogDescription"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]

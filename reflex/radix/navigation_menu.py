@@ -1,7 +1,8 @@
 """A Radix navigation menu component."""
-from typing import Literal, Optional
+from typing import Literal
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class NavigationMenuComponent(Component):
@@ -17,12 +18,12 @@ class NavigationMenuRoot(NavigationMenuComponent):
     tag = "Root"
     alias = "NavigationMenuRoot"
 
-    default_value: Optional[str]
-    value: Optional[str]
-    delay_duration: Optional[int]
-    skip_delay_duration: Optional[int]
-    dir: Optional[Literal["ltr", "rtl"]]
-    orientation: Optional[Literal["horizontal", "vertical"]]
+    default_value: Var[str]
+    value: Var[str]
+    delay_duration: Var[int]
+    skip_delay_duration: Var[int]
+    dir: Var[Literal["ltr", "rtl"]]
+    orientation: Var[Literal["horizontal", "vertical"]]
 
 
 class NavigationMenuSub(NavigationMenuComponent):
@@ -31,9 +32,9 @@ class NavigationMenuSub(NavigationMenuComponent):
     tag = "Sub"
     alias = "NavigationMenuSub"
 
-    default_value: Optional[str]
-    value: Optional[str]
-    orientation: Optional[Literal["horizontal", "vertical"]]
+    default_value: Var[str]
+    value: Var[str]
+    orientation: Var[Literal["horizontal", "vertical"]]
 
 
 class NavigationMenuList(NavigationMenuComponent):
@@ -42,7 +43,7 @@ class NavigationMenuList(NavigationMenuComponent):
     tag = "List"
     alias = "NavigationMenuList"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class NavigationMenuItem(NavigationMenuComponent):
@@ -51,8 +52,8 @@ class NavigationMenuItem(NavigationMenuComponent):
     tag = "Item"
     alias = "NavigationMenuItem"
 
-    as_child: Optional[bool]
-    value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
 
 
 class NavigationMenuTrigger(NavigationMenuComponent):
@@ -61,7 +62,7 @@ class NavigationMenuTrigger(NavigationMenuComponent):
     tag = "Trigger"
     alias = "NavigationMenuTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class NavigationMenuContent(NavigationMenuComponent):
@@ -70,9 +71,9 @@ class NavigationMenuContent(NavigationMenuComponent):
     tag = "Content"
     alias = "NavigationMenuContent"
 
-    as_child: Optional[bool]
-    disable_outside_pointer_events: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    disable_outside_pointer_events: Var[bool]
+    force_mount: Var[bool]
 
 
 class NavigationMenuLink(NavigationMenuComponent):
@@ -81,8 +82,8 @@ class NavigationMenuLink(NavigationMenuComponent):
     tag = "Link"
     alias = "NavigationMenuLink"
 
-    as_child: Optional[bool]
-    active: Optional[bool]
+    as_child: Var[bool]
+    active: Var[bool]
 
 
 class NavigationMenuIndicator(NavigationMenuComponent):
@@ -91,8 +92,8 @@ class NavigationMenuIndicator(NavigationMenuComponent):
     tag = "Indicator"
     alias = "NavigationMenuIndicator"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class NavigationMenuViewport(NavigationMenuComponent):
@@ -101,5 +102,5 @@ class NavigationMenuViewport(NavigationMenuComponent):
     tag = "Viewport"
     alias = "NavigationMenuViewport"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]

@@ -1,7 +1,6 @@
 """The Radix alert dialog component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class AlertDialogComponent(Component):
@@ -17,8 +16,8 @@ class AlertDialogRoot(AlertDialogComponent):
     tag = "Root"
     alias = "AlertDialogRoot"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
+    default_open: Var[bool]
+    open: Var[bool]
 
 
 class AlertDialogTrigger(AlertDialogComponent):
@@ -27,7 +26,7 @@ class AlertDialogTrigger(AlertDialogComponent):
     tag = "Trigger"
     alias = "AlertDialogTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class AlertDialogPortal(AlertDialogComponent):
@@ -36,7 +35,7 @@ class AlertDialogPortal(AlertDialogComponent):
     tag = "Portal"
     alias = "AlertDialogPortal"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class AlertDialogOverlay(AlertDialogComponent):
@@ -45,8 +44,8 @@ class AlertDialogOverlay(AlertDialogComponent):
     tag = "Overlay"
     alias = "AlertDialogOverlay"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class AlertDialogContent(AlertDialogComponent):
@@ -55,8 +54,8 @@ class AlertDialogContent(AlertDialogComponent):
     tag = "Content"
     alias = "AlertDialogContent"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class AlertDialogCancel(AlertDialogComponent):
@@ -65,7 +64,7 @@ class AlertDialogCancel(AlertDialogComponent):
     tag = "Cancel"
     alias = "AlertDialogCancel"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class AlertDialogAction(AlertDialogComponent):
@@ -74,7 +73,7 @@ class AlertDialogAction(AlertDialogComponent):
     tag = "Action"
     alias = "AlertDialogAction"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class AlertDialogTitle(AlertDialogComponent):
@@ -83,7 +82,7 @@ class AlertDialogTitle(AlertDialogComponent):
     tag = "Title"
     alias = "AlertDialogTitle"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class AlertDialogDescription(AlertDialogComponent):
@@ -92,4 +91,4 @@ class AlertDialogDescription(AlertDialogComponent):
     tag = "Description"
     alias = "AlertDialogDescription"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]

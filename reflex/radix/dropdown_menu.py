@@ -1,7 +1,8 @@
 """The Radix dropdown menu component."""
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class DropdownMenuComponent(Component):
@@ -17,10 +18,10 @@ class DropdownMenuRoot(DropdownMenuComponent):
     tag = "Root"
     alias = "DropdownMenuRoot"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
-    modal: Optional[bool]
-    dir: Optional[Literal["ltr", "rtl"]]
+    default_open: Var[bool]
+    open: Var[bool]
+    modal: Var[bool]
+    dir: Var[Literal["ltr", "rtl"]]
 
 
 class DropdownMenuTrigger(DropdownMenuComponent):
@@ -29,7 +30,7 @@ class DropdownMenuTrigger(DropdownMenuComponent):
     tag = "Trigger"
     alias = "DropdownMenuTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class DropdownMenuPortal(DropdownMenuComponent):
@@ -38,7 +39,7 @@ class DropdownMenuPortal(DropdownMenuComponent):
     tag = "Portal"
     alias = "DropdownMenuPortal"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class DropdownMenuContent(DropdownMenuComponent):
@@ -47,20 +48,20 @@ class DropdownMenuContent(DropdownMenuComponent):
     tag = "Content"
     alias = "DropdownMenuContent"
 
-    as_child: Optional[bool]
-    loop: Optional[bool]
-    force_mount: Optional[bool]
-    side: Optional[Literal["top", "right", "bottom", "left"]]
-    side_offset: Optional[int]
-    align: Optional[Literal["start", "center", "end"]]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    loop: Var[bool]
+    force_mount: Var[bool]
+    side: Var[Literal["top", "right", "bottom", "left"]]
+    side_offset: Var[int]
+    align: Var[Literal["start", "center", "end"]]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]
 
 
 class DropdownMenuArrow(DropdownMenuComponent):
@@ -69,9 +70,9 @@ class DropdownMenuArrow(DropdownMenuComponent):
     tag = "Arrow"
     alias = "DropdownMenuArrow"
 
-    as_child: Optional[bool]
-    width: Optional[int]
-    height: Optional[int]
+    as_child: Var[bool]
+    width: Var[int]
+    height: Var[int]
 
 
 class DropdownMenuItem(DropdownMenuComponent):
@@ -80,9 +81,9 @@ class DropdownMenuItem(DropdownMenuComponent):
     tag = "Item"
     alias = "DropdownMenuItem"
 
-    as_child: Optional[bool]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class DropdownMenuGroup(DropdownMenuComponent):
@@ -91,7 +92,7 @@ class DropdownMenuGroup(DropdownMenuComponent):
     tag = "Group"
     alias = "DropdownMenuGroup"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class DropdownMenuLabel(DropdownMenuComponent):
@@ -100,7 +101,7 @@ class DropdownMenuLabel(DropdownMenuComponent):
     tag = "Label"
     alias = "DropdownMenuLabel"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class DropdownMenuCheckboxItem(DropdownMenuComponent):
@@ -109,10 +110,10 @@ class DropdownMenuCheckboxItem(DropdownMenuComponent):
     tag = "CheckboxItem"
     alias = "DropdownMenuCheckboxItem"
 
-    as_child: Optional[bool]
-    checked: Optional[Union[bool, Literal["indeterminate"]]]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    checked: Var[Union[bool, Literal["indeterminate"]]]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class DropdownMenuRadioGroup(DropdownMenuComponent):
@@ -121,8 +122,8 @@ class DropdownMenuRadioGroup(DropdownMenuComponent):
     tag = "RadioGroup"
     alias = "DropdownMenuRadioGroup"
 
-    as_child: Optional[bool]
-    value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
 
 
 class DropdownMenuRadioItem(DropdownMenuComponent):
@@ -131,10 +132,10 @@ class DropdownMenuRadioItem(DropdownMenuComponent):
     tag = "RadioItem"
     alias = "DropdownMenuRadioItem"
 
-    as_child: Optional[bool]
-    value: str
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class DropdownMenuItemIndicator(DropdownMenuComponent):
@@ -143,8 +144,8 @@ class DropdownMenuItemIndicator(DropdownMenuComponent):
     tag = "ItemIndicator"
     alias = "DropdownMenuItemIndicator"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class DropdownMenuSeparator(DropdownMenuComponent):
@@ -153,7 +154,7 @@ class DropdownMenuSeparator(DropdownMenuComponent):
     tag = "Separator"
     alias = "DropdownMenuSeparator"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class DropdownMenuSub(DropdownMenuComponent):
@@ -162,8 +163,8 @@ class DropdownMenuSub(DropdownMenuComponent):
     tag = "Sub"
     alias = "DropdownMenuSub"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
+    default_open: Var[bool]
+    open: Var[bool]
 
 
 class DropdownMenuSubTrigger(DropdownMenuComponent):
@@ -172,9 +173,9 @@ class DropdownMenuSubTrigger(DropdownMenuComponent):
     tag = "SubTrigger"
     alias = "DropdownMenuSubTrigger"
 
-    as_child: Optional[bool]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class DropdownMenuSubContent(DropdownMenuComponent):
@@ -183,15 +184,15 @@ class DropdownMenuSubContent(DropdownMenuComponent):
     tag = "SubContent"
     alias = "DropdownMenuSubContent"
 
-    as_child: Optional[bool]
-    loop: Optional[bool]
-    force_mount: Optional[bool]
-    side_offset: Optional[int]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    loop: Var[bool]
+    force_mount: Var[bool]
+    side_offset: Var[int]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]

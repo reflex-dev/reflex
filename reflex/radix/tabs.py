@@ -1,7 +1,8 @@
 """Radix tabs components."""
-from typing import Literal, Optional
+from typing import Literal
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class TabsComponent(Component):
@@ -12,7 +13,7 @@ class TabsComponent(Component):
     is_default = False
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class TabsRoot(TabsComponent):
@@ -21,11 +22,11 @@ class TabsRoot(TabsComponent):
     tag = "Root"
     alias = "TabsRoot"
 
-    default_value: Optional[str]
-    value: Optional[str]
-    orientation: Optional[Literal["horizontal", "vertical"]]
-    dir: Optional[Literal["ltr", "rtl"]]
-    activation_mode: Optional[Literal["automatic", "manual"]]
+    default_value: Var[str]
+    value: Var[str]
+    orientation: Var[Literal["horizontal", "vertical"]]
+    dir: Var[Literal["ltr", "rtl"]]
+    activation_mode: Var[Literal["automatic", "manual"]]
 
 
 class TabsList(TabsComponent):
@@ -34,7 +35,7 @@ class TabsList(TabsComponent):
     tag = "List"
     alias = "TabsList"
 
-    loop: Optional[bool]
+    loop: Var[bool]
 
 
 class TabsTrigger(TabsComponent):
@@ -44,7 +45,7 @@ class TabsTrigger(TabsComponent):
     alias = "TabsTrigger"
 
     value: str
-    disabled: Optional[bool]
+    disabled: Var[bool]
 
 
 class TabsContent(TabsComponent):
@@ -54,4 +55,4 @@ class TabsContent(TabsComponent):
     alias = "TabsContent"
 
     value: str
-    force_mount: Optional[bool]
+    force_mount: Var[bool]

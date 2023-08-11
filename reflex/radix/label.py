@@ -1,7 +1,6 @@
 """The Radix label component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class LabelRoot(Component):
@@ -13,5 +12,5 @@ class LabelRoot(Component):
     tag = "Root"
     alias = "LabelRoot"
 
-    as_child: Optional[bool]
-    html_for: Optional[str]
+    as_child: Var[bool]
+    html_for: Var[str]

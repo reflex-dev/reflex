@@ -1,7 +1,8 @@
 """Radix radio group components."""
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class RadioGroupComponent(Component):
@@ -12,7 +13,7 @@ class RadioGroupComponent(Component):
     is_default = False  # Use named exports.
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class RadioGroupRoot(RadioGroupComponent):
@@ -21,14 +22,14 @@ class RadioGroupRoot(RadioGroupComponent):
     tag = "Root"
     alias = "RadioGroupRoot"
 
-    default_value: Optional[Union[str, List[str]]]
-    value: Optional[Union[str, List[str]]]
-    disabled: Optional[bool]
-    name: Optional[str]
-    required: Optional[bool]
-    orientation: Optional[Literal["horizontal", "vertical"]]
-    dir: Optional[Literal["ltr", "rtl"]]
-    loop: Optional[bool]
+    default_value: Var[Union[str, List[str]]]
+    value: Var[Union[str, List[str]]]
+    disabled: Var[bool]
+    name: Var[str]
+    required: Var[bool]
+    orientation: Var[Literal["horizontal", "vertical"]]
+    dir: Var[Literal["ltr", "rtl"]]
+    loop: Var[bool]
 
 
 class RadioGroupItem(RadioGroupComponent):
@@ -37,9 +38,9 @@ class RadioGroupItem(RadioGroupComponent):
     tag = "Item"
     alias = "RadioGroupItem"
 
-    value: Optional[str]
-    disabled: Optional[bool]
-    required: Optional[bool]
+    value: Var[str]
+    disabled: Var[bool]
+    required: Var[bool]
 
 
 class RadioGroupIndicator(RadioGroupComponent):
@@ -48,4 +49,4 @@ class RadioGroupIndicator(RadioGroupComponent):
     tag = "Indicator"
     alias = "RadioGroupIndicator"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]

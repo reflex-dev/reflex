@@ -1,7 +1,6 @@
 """The Radix progress component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class ProgressComponent(Component):
@@ -10,7 +9,7 @@ class ProgressComponent(Component):
     library = "@radix-ui/react-progress"
     is_default = False
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ProgressRoot(ProgressComponent):
@@ -19,8 +18,8 @@ class ProgressRoot(ProgressComponent):
     tag = "Root"
     alias = "ProgressRoot"
 
-    value: Optional[float]
-    max: Optional[float]
+    value: Var[float]
+    max: Var[float]
 
 
 class ProgressIndicator(ProgressComponent):

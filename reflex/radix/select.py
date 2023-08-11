@@ -1,7 +1,8 @@
 """Radix select components."""
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class SelectComponent(Component):
@@ -18,14 +19,14 @@ class SelectRoot(SelectComponent):
     tag = "Root"
     alias = "SelectRoot"
 
-    default_value: Optional[str]
-    value: Optional[str]
-    default_open: Optional[bool]
-    open: Optional[bool]
-    dir: Optional[str]
-    name: Optional[str]
-    disabled: Optional[bool]
-    required: Optional[bool]
+    default_value: Var[str]
+    value: Var[str]
+    default_open: Var[bool]
+    open: Var[bool]
+    dir: Var[str]
+    name: Var[str]
+    disabled: Var[bool]
+    required: Var[bool]
 
 
 class SelectTrigger(SelectComponent):
@@ -34,7 +35,7 @@ class SelectTrigger(SelectComponent):
     tag = "Trigger"
     alias = "SelectTrigger"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectValue(SelectComponent):
@@ -43,8 +44,8 @@ class SelectValue(SelectComponent):
     tag = "Value"
     alias = "SelectValue"
 
-    as_child: Optional[bool]
-    placeholder: Optional[str]
+    as_child: Var[bool]
+    placeholder: Var[str]
 
 
 class SelectIcon(Component):
@@ -53,7 +54,7 @@ class SelectIcon(Component):
     tag = "Icon"
     alias = "SelectIcon"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectPortal(SelectComponent):
@@ -62,7 +63,7 @@ class SelectPortal(SelectComponent):
     tag = "Portal"
     alias = "SelectPortal"
 
-    container: Optional[bool]
+    container: Var[bool]
 
 
 class SelectContent(SelectComponent):
@@ -71,19 +72,19 @@ class SelectContent(SelectComponent):
     tag = "Content"
     alias = "SelectContent"
 
-    as_child: Optional[bool]
-    position: Optional[Literal["item-aligned", "popper"]]
-    side: Optional[Literal["top", "right", "bottom", "left"]]
-    side_offset: Optional[int]
-    align: Optional[Literal["start", "center", "end"]]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    position: Var[Literal["item-aligned", "popper"]]
+    side: Var[Literal["top", "right", "bottom", "left"]]
+    side_offset: Var[int]
+    align: Var[Literal["start", "center", "end"]]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]
 
 
 class SelectViewport(SelectComponent):
@@ -92,7 +93,7 @@ class SelectViewport(SelectComponent):
     tag = "Viewport"
     alias = "SelectViewport"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectItem(SelectComponent):
@@ -101,10 +102,10 @@ class SelectItem(SelectComponent):
     tag = "Item"
     alias = "SelectItem"
 
-    as_child: Optional[bool]
-    value: str
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class SelectItemText(SelectComponent):
@@ -113,7 +114,7 @@ class SelectItemText(SelectComponent):
     tag = "ItemText"
     alias = "SelectItemText"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectItemIndicator(SelectComponent):
@@ -122,7 +123,7 @@ class SelectItemIndicator(SelectComponent):
     tag = "ItemIndicator"
     alias = "SelectItemIndicator"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectScrollUpButton(SelectComponent):
@@ -131,7 +132,7 @@ class SelectScrollUpButton(SelectComponent):
     tag = "ScrollUpButton"
     alias = "SelectScrollUpButton"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectScrollDownButton(SelectComponent):
@@ -140,7 +141,7 @@ class SelectScrollDownButton(SelectComponent):
     tag = "ScrollDownButton"
     alias = "SelectScrollDownButton"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectGroup(SelectComponent):
@@ -149,7 +150,7 @@ class SelectGroup(SelectComponent):
     tag = "Group"
     alias = "SelectGroup"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectLabel(SelectComponent):
@@ -158,7 +159,7 @@ class SelectLabel(SelectComponent):
     tag = "Label"
     alias = "SelectLabel"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectSeparator(SelectComponent):
@@ -167,7 +168,7 @@ class SelectSeparator(SelectComponent):
     tag = "Separator"
     alias = "SelectSeparator"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SelectArrow(SelectComponent):
@@ -176,6 +177,6 @@ class SelectArrow(SelectComponent):
     tag = "Arrow"
     alias = "SelectArrow"
 
-    as_child: Optional[bool]
-    width: Optional[int]
-    height: Optional[int]
+    as_child: Var[bool]
+    width: Var[int]
+    height: Var[int]

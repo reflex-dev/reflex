@@ -1,7 +1,6 @@
 """Radix Avatar components."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class AvatarComponent(Component):
@@ -12,7 +11,7 @@ class AvatarComponent(Component):
     is_default = False  # Use named exports.
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class AvatarRoot(AvatarComponent):
@@ -27,6 +26,9 @@ class AvatarImage(AvatarComponent):
 
     tag = "Image"
     alias = "AvatarImage"
+
+    src: Var[str]
+    alt: Var[str]
 
 
 class AvatarFallback(AvatarComponent):

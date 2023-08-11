@@ -1,7 +1,8 @@
 """The Radix context menu component."""
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class ContextMenuComponent(Component):
@@ -17,8 +18,8 @@ class ContextMenuRoot(ContextMenuComponent):
     tag = "Root"
     alias = "ContextMenuRoot"
 
-    dir: Optional[Literal["ltr", "rtl"]]
-    modal: Optional[bool]
+    dir: Var[Literal["ltr", "rtl"]]
+    modal: Var[bool]
 
 
 class ContextMenuTrigger(ContextMenuComponent):
@@ -27,8 +28,8 @@ class ContextMenuTrigger(ContextMenuComponent):
     tag = "Trigger"
     alias = "ContextMenuTrigger"
 
-    as_child: Optional[bool]
-    disabled: Optional[bool]
+    as_child: Var[bool]
+    disabled: Var[bool]
 
 
 class ContextMenuPortal(ContextMenuComponent):
@@ -37,7 +38,7 @@ class ContextMenuPortal(ContextMenuComponent):
     tag = "Portal"
     alias = "ContextMenuPortal"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]
 
 
 class ContextMenuContent(ContextMenuComponent):
@@ -46,17 +47,17 @@ class ContextMenuContent(ContextMenuComponent):
     tag = "Content"
     alias = "ContextMenuContent"
 
-    as_child: Optional[bool]
-    loop: Optional[bool]
-    force_mount: Optional[bool]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    loop: Var[bool]
+    force_mount: Var[bool]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]
 
 
 class ContextMenuArrow(ContextMenuComponent):
@@ -65,9 +66,9 @@ class ContextMenuArrow(ContextMenuComponent):
     tag = "Arrow"
     alias = "ContextMenuArrow"
 
-    as_child: Optional[bool]
-    width: Optional[int]
-    height: Optional[int]
+    as_child: Var[bool]
+    width: Var[int]
+    height: Var[int]
 
 
 class ContextMenuItem(ContextMenuComponent):
@@ -76,9 +77,9 @@ class ContextMenuItem(ContextMenuComponent):
     tag = "Item"
     alias = "ContextMenuItem"
 
-    as_child: Optional[bool]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class ContextMenuGroup(ContextMenuComponent):
@@ -87,7 +88,7 @@ class ContextMenuGroup(ContextMenuComponent):
     tag = "Group"
     alias = "ContextMenuGroup"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ContextMenuLabel(ContextMenuComponent):
@@ -96,7 +97,7 @@ class ContextMenuLabel(ContextMenuComponent):
     tag = "Label"
     alias = "ContextMenuLabel"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ContextMenuCheckboxItem(ContextMenuComponent):
@@ -105,10 +106,10 @@ class ContextMenuCheckboxItem(ContextMenuComponent):
     tag = "CheckboxItem"
     alias = "ContextMenuCheckboxItem"
 
-    as_child: Optional[bool]
-    checked: Optional[Union[bool, Literal["indeterminate"]]]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    checked: Var[Union[bool, Literal["indeterminate"]]]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class ContextMenuRadioGroup(ContextMenuComponent):
@@ -117,8 +118,8 @@ class ContextMenuRadioGroup(ContextMenuComponent):
     tag = "RadioGroup"
     alias = "ContextMenuRadioGroup"
 
-    as_child: Optional[bool]
-    value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
 
 
 class ContextMenuRadioItem(ContextMenuComponent):
@@ -127,10 +128,10 @@ class ContextMenuRadioItem(ContextMenuComponent):
     tag = "RadioItem"
     alias = "ContextMenuRadioItem"
 
-    as_child: Optional[bool]
-    value: str
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    value: Var[str]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class ContextMenuItemIndicator(ContextMenuComponent):
@@ -139,8 +140,8 @@ class ContextMenuItemIndicator(ContextMenuComponent):
     tag = "ItemIndicator"
     alias = "ContextMenuItemIndicator"
 
-    as_child: Optional[bool]
-    force_mount: Optional[bool]
+    as_child: Var[bool]
+    force_mount: Var[bool]
 
 
 class ContextMenuSeparator(ContextMenuComponent):
@@ -149,7 +150,7 @@ class ContextMenuSeparator(ContextMenuComponent):
     tag = "Separator"
     alias = "ContextMenuSeparator"
 
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class ContextMenuSub(ContextMenuComponent):
@@ -158,8 +159,8 @@ class ContextMenuSub(ContextMenuComponent):
     tag = "Sub"
     alias = "ContextMenuSub"
 
-    default_open: Optional[bool]
-    open: Optional[bool]
+    default_open: Var[bool]
+    open: Var[bool]
 
 
 class ContextMenuSubTrigger(ContextMenuComponent):
@@ -168,9 +169,9 @@ class ContextMenuSubTrigger(ContextMenuComponent):
     tag = "SubTrigger"
     alias = "ContextMenuSubTrigger"
 
-    as_child: Optional[bool]
-    disabled: Optional[bool]
-    text_value: Optional[str]
+    as_child: Var[bool]
+    disabled: Var[bool]
+    text_value: Var[str]
 
 
 class ContextMenuSubContent(ContextMenuComponent):
@@ -179,15 +180,15 @@ class ContextMenuSubContent(ContextMenuComponent):
     tag = "SubContent"
     alias = "ContextMenuSubContent"
 
-    as_child: Optional[bool]
-    loop: Optional[bool]
-    force_mount: Optional[bool]
-    side_offset: Optional[int]
-    align_offset: Optional[int]
-    avoid_collisions: Optional[bool]
-    collision_padding: Optional[
+    as_child: Var[bool]
+    loop: Var[bool]
+    force_mount: Var[bool]
+    side_offset: Var[int]
+    align_offset: Var[int]
+    avoid_collisions: Var[bool]
+    collision_padding: Var[
         Union[int, Dict[Literal["top", "right", "bottom", "left"], int]]
     ]
-    arrow_padding: Optional[int]
-    sticky: Optional[Literal["partial", "always"]]
-    hide_when_detached: Optional[bool]
+    arrow_padding: Var[int]
+    sticky: Var[Literal["partial", "always"]]
+    hide_when_detached: Var[bool]

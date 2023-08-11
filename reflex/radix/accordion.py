@@ -1,7 +1,8 @@
 """The Radix accordion component."""
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Union
 
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class AccordionComponent(Component):
@@ -11,7 +12,7 @@ class AccordionComponent(Component):
     is_default = False
 
     # Whether to use a child.
-    as_child: bool
+    as_child: Var[bool]
 
 
 class AccordionRoot(AccordionComponent):
@@ -20,13 +21,13 @@ class AccordionRoot(AccordionComponent):
     tag = "Root"
     alias = "AccordionRoot"
 
-    type: Literal["single", "multiple"]
-    value: Optional[Union[str, List[str]]]
-    default_value: Optional[Union[str, List[str]]]
-    collapsible: Optional[bool]
-    disabled: Optional[bool]
-    dir: Optional[Literal["ltr", "rtl"]]
-    orientation: Optional[Literal["horizontal", "vertical"]]
+    type_: Var[Literal["single", "multiple"]]
+    value: Var[Union[str, List[str]]]
+    default_value: Var[Union[str, List[str]]]
+    collapsible: Var[bool]
+    disabled: Var[bool]
+    dir: Var[Literal["ltr", "rtl"]]
+    orientation: Var[Literal["horizontal", "vertical"]]
 
 
 class AccordionItem(AccordionComponent):
@@ -35,8 +36,8 @@ class AccordionItem(AccordionComponent):
     tag = "Item"
     alias = "AccordionItem"
 
-    disabled: Optional[bool]
-    value: str
+    disabled: Var[bool]
+    value: Var[str]
 
 
 class AccordionHeader(AccordionComponent):
@@ -59,4 +60,4 @@ class AccordionContent(AccordionComponent):
     tag = "Content"
     alias = "AccordionContent"
 
-    force_mount: Optional[bool]
+    force_mount: Var[bool]

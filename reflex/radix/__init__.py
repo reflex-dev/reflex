@@ -41,7 +41,7 @@ alert_dialog_title = AlertDialogTitle.create
 alert_dialog_description = AlertDialogDescription.create
 alert_dialog_action = AlertDialogAction.create
 
-aspect_ratio_root = AspectRatioRoot.create
+aspect_ratio = aspect_ratio_root = AspectRatioRoot.create
 
 avatar_root = AvatarRoot.create
 avatar_image = AvatarImage.create
@@ -165,7 +165,7 @@ select_scroll_up_button = SelectScrollUpButton.create
 select_scroll_down_button = SelectScrollDownButton.create
 select_arrow = SelectArrow.create
 
-separator = Separator.create
+separator = separator_root = Separator.create
 
 slider_root = SliderRoot.create
 slider_track = SliderTrack.create

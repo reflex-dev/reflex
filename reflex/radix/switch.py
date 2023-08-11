@@ -1,18 +1,16 @@
 """Radix switch component."""
-from typing import Optional
-
 from reflex.components import Component
+from reflex.vars import Var
 
 
 class SwitchComponent(Component):
     """Base class for all switch components."""
 
     library = "@radix-ui/react-switch"
-
     is_default = False
 
     # Whether to use a child.
-    as_child: Optional[bool]
+    as_child: Var[bool]
 
 
 class SwitchRoot(SwitchComponent):
@@ -21,12 +19,12 @@ class SwitchRoot(SwitchComponent):
     tag = "Root"
     alias = "SwitchRoot"
 
-    default_checked: Optional[bool]
-    checked: Optional[bool]
-    disabled: Optional[bool]
-    required: Optional[bool]
-    name: Optional[str]
-    value: Optional[str]
+    default_checked: Var[bool]
+    checked: Var[bool]
+    disabled: Var[bool]
+    required: Var[bool]
+    name: Var[str]
+    value: Var[str]
 
 
 class SwitchThumb(SwitchComponent):
