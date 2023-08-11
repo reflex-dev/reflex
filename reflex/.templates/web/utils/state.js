@@ -24,12 +24,10 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
-// Array holding pending updates to be applied to the state
-export const pending_updates = [];
-// Dictionary tracking event processing status
-export const event_status = {"processing": false}
+// Flag ensures that only one event is processing on the backend concurrently.
+let event_backend_processing = false
 // Array holding pending events to be processed
-export const pending_events = [];
+const pending_events = [];
 
 /**
  * Generate a UUID (Used for session tokens).
@@ -204,6 +202,17 @@ export const applyRestEvent = async (event, state) => {
 };
 
 /**
+ * Queue events to be processed and trigger processing of queue.
+ * @param events Array of events to queue
+ * @param socket The socket object to send the event on.
+ * @param router The router object.
+ */
+export const queueEvents = async (events, router, socket) => {
+  pending_events.push(...events)
+  await processEvent(router, socket.current)
+}
+
+/**
  * Process an event off the event queue.
  * @param router The router object.
  * @param socket The socket object to send the event on.
@@ -213,12 +222,12 @@ export const processEvent = async (
   socket
 ) => {
   // Only proceed if we're not already processing an event
-  if (pending_events.length === 0 || event_status.processing) {
+  if (pending_events.length === 0 || event_backend_processing) {
     return;
   }
 
   // Set processing to true to block other events from being processed.
-  event_status.processing = true;
+  event_backend_processing = true
 
   // Apply the next event in the queue.
   const event = pending_events.shift();
@@ -232,7 +241,10 @@ export const processEvent = async (
   }
   // If no event was sent, set processing to false.
   if (!eventSent) {
-    event_status.processing = false;
+    event_backend_processing = false;
+    // recursively call processEvent to drain the queue, since there is
+    // no state update to trigger the useEffect event loop.
+    await processEvent(router, socket)
   }
 }
 
@@ -264,8 +276,7 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    pending_events.push(...initial_events)
-    processEvent(router, socket.current)
+    queueEvents(initial_events, router, socket)
     setNotConnected(false)
   });
 
@@ -276,11 +287,11 @@ export const connect = async (
   // On each received message, queue the updates and events
   socket.current.on("event", message => {
     const update = JSON5.parse(message)
-    pending_updates.push(update)
+    dispatch(update.delta)
+    event_backend_processing = !update.final
     if (update.events) {
-      pending_events.push(...update.events)
+      queueEvents(update.events, router, socket)
     }
-    queueNotify()
   });
 };
 
@@ -370,8 +381,7 @@ export const useEventLoop = (
   // Function to add new events to the event queue.
   const Event = (events, _e) => {
       preventDefault(_e);
-      pending_events.push(...events)
-      queueNotify()
+      queueEvents(events, router, socket)
   }
 
   // Main event loop.
@@ -385,6 +395,12 @@ export const useEventLoop = (
     if (!socket.current) {
       connect(socket, dispatch, router, ['websocket', 'polling'], setNotConnected, initial_events)
     }
+    (async () => {
+      // Process all outstanding events
+      while (pending_events.length > 0 && !event_backend_processing) {
+        await processEvent(router, socket.current)
+      }
+    })()
   })
   return [state, Event, notConnected]
 }
