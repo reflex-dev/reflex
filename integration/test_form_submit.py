@@ -98,14 +98,14 @@ def test_submit(driver, form_submit: AppHarness):
     name_input.send_keys("foo")
 
     pin_inputs = driver.find_elements(By.CLASS_NAME, "chakra-pin-input")
-    for pin_input in pin_inputs:
-        pin_input.send_keys("5")
+    pin_values = ["8", "1", "6", "4"]
+    for i, pin_input in enumerate(pin_inputs):
+        pin_input.send_keys(pin_values[i])
 
     number_input = driver.find_element(By.CLASS_NAME, "chakra-numberinput")
     buttons = number_input.find_elements(By.XPATH, "//div[@role='button']")
-    buttons[1].click()
-    buttons[1].click()
-    buttons[1].click()
+    for _ in range(3):
+        buttons[1].click()
 
     checkbox_input = driver.find_element(By.CLASS_NAME, "chakra-checkbox__control")
     checkbox_input.click()
@@ -125,7 +125,7 @@ def test_submit(driver, form_submit: AppHarness):
     submit_input.click()
 
     assert backend_state.form_data["name_input"] == "foo"
-    assert backend_state.form_data["pin_input"] == ["5", "5", "5", "5"]
+    assert backend_state.form_data["pin_input"] == pin_values
     assert backend_state.form_data["number_input"] == "-3"
     assert backend_state.form_data["bool_input"] is True
     assert backend_state.form_data["bool_input2"] is True
