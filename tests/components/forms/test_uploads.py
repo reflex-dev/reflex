@@ -68,7 +68,7 @@ def test_upload_component_render(upload_component):
     # input, button and text inside of box
     [input, button, text] = box["children"]
     assert input["name"] == "Input"
-    assert input["props"] == ['type="file"', "{...getInputProps()}"]
+    assert input["props"] == ["type={`file`}", "{...getInputProps()}"]
 
     assert button["name"] == "Button"
     assert button["children"][0]["contents"] == "{`select file`}"
