@@ -239,7 +239,7 @@ def test_create_type_error():
 
 
 def v(value) -> Var:
-    val = Var.create(value)
+    val = Var.create(value, is_local=False)
     assert val is not None
     return val
 

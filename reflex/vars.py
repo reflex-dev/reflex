@@ -254,6 +254,7 @@ class Var(ABC):
                     name=f"{self.name}.slice({start}, {stop})",
                     type_=self.type_,
                     state=self.state,
+                    is_local=self.is_local,
                 )
 
             # Get the type of the indexed var.
@@ -268,6 +269,7 @@ class Var(ABC):
                 name=f"{self.name}.at({i})",
                 type_=type_,
                 state=self.state,
+                is_local=self.is_local,
             )
 
         # Dictionary / dataframe indexing.
@@ -294,6 +296,7 @@ class Var(ABC):
             name=f"{self.name}[{i}]",
             type_=type_,
             state=self.state,
+            is_local=self.is_local,
         )
 
     def __getattribute__(self, name: str) -> Var:
@@ -326,6 +329,7 @@ class Var(ABC):
                         name=f"{self.name}.{name}",
                         type_=type_,
                         state=self.state,
+                        is_local=self.is_local,
                     )
             raise AttributeError(
                 f"The State var `{self.full_name}` has no attribute '{name}' or may have been annotated "
@@ -372,6 +376,7 @@ class Var(ABC):
         return BaseVar(
             name=name,
             type_=type_,
+            is_local=self.is_local,
         )
 
     def compare(self, op: str, other: Var) -> Var:
@@ -424,6 +429,7 @@ class Var(ABC):
         return BaseVar(
             name=f"{self.full_name}.length",
             type_=int,
+            is_local=self.is_local,
         )
 
     def __eq__(self, other: Var) -> Var:
@@ -695,6 +701,7 @@ class Var(ABC):
         return BaseVar(
             name=f"{self.full_name}.map(({arg.name}, i) => {fn(arg, key='i')})",
             type_=self.type_,
+            is_local=self.is_local,
         )
 
     def to(self, type_: Type) -> Var:
