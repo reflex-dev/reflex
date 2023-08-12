@@ -2,7 +2,7 @@
 
 ## Getting started
 
-To navigate our codebase with confidence, see [Reflex Docs](https://pynecone.io/docs/getting-started/introduction) :confetti_ball:. 
+To navigate our codebase with confidence, see [Reflex Docs](https://reflex.dev/docs/getting-started/introduction) :confetti_ball:.
 
 ### Discussions
 

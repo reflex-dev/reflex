@@ -8,4 +8,4 @@
 
 ## Reporting a Vulnerability
 
-Please report any security vulnerabilities to contact@pynecone.io
+Please report any security vulnerabilities to contact@reflex.dev

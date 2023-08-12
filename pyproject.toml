@@ -4,8 +4,8 @@ version = "0.2.4"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
-    "Nikhil Rao <nikhil@pynecone.io>",
-    "Alek Petuskey <alek@pynecone.io>",
+    "Nikhil Rao <nikhil@reflex.dev>",
+    "Alek Petuskey <alek@reflex.dev>",
 ]
 readme = "README.md"
 homepage = "https://reflex.dev"
