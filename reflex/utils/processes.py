@@ -145,6 +145,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     env = {
         **os.environ,
         "PATH": os.pathsep.join([constants.NODE_BIN_PATH, os.environ["PATH"]]),
+        **kwargs.pop("env", {}),
     }
     kwargs = {
         "env": env,
