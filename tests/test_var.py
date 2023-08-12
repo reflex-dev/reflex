@@ -614,3 +614,21 @@ def test_get_local_storage_raise_error(key):
         err.value.args[0]
         == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
     )
+
+
+@pytest.mark.parametrize(
+    "out, expected",
+    [
+        (f"{BaseVar(name='var', type_=str)}", "${var}"),
+        (
+            f"testing f-string with {BaseVar(name='myvar', state='state', type_=int)}",
+            "testing f-string with ${state.myvar}",
+        ),
+        (
+            f"testing local f-string {BaseVar(name='x', is_local=True, type_=str)}",
+            "testing local f-string x",
+        ),
+    ],
+)
+def test_fstrings(out, expected):
+    assert out == expected
