@@ -4,8 +4,9 @@ from typing import Dict
 import pytest
 
 import reflex as rx
+import reflex.config
 from reflex import constants
-from reflex.config import DBConfig, get_config
+from reflex.config import DBConfig
 from reflex.constants import Endpoint, get_value
 
 
@@ -146,9 +147,12 @@ def test_get_value(monkeypatch, key, value, expected_value_type_in_config):
             {"app_name": "test_app", "api_url": "http://example.com/api"},
             f"/api{Endpoint.EVENT}",
         ),
-        ({"app_name": "test_app", "event_namespace": "/event"}, f"{Endpoint.EVENT}"),
-        ({"app_name": "test_app", "event_namespace": "event"}, f"{Endpoint.EVENT}"),
-        ({"app_name": "test_app", "event_namespace": "event/"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "/event"}, f"/event"),
+        ({"app_name": "test_app", "event_namespace": "event"}, f"/event"),
+        ({"app_name": "test_app", "event_namespace": "event/"}, f"/event"),
+        ({"app_name": "test_app", "event_namespace": "/_event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "_event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "_event/"}, f"{Endpoint.EVENT}"),
     ],
 )
 def test_event_namespace(mocker, kwargs, expected):
@@ -162,5 +166,6 @@ def test_event_namespace(mocker, kwargs, expected):
     conf = rx.Config(**kwargs)
     mocker.patch("reflex.config.get_config", return_value=conf)
 
-    config = get_config()
+    config = reflex.config.get_config()
+    assert conf == config
     assert config.get_event_namespace() == expected
