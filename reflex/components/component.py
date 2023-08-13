@@ -679,15 +679,11 @@ class CustomComponent(Component):
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
                 try:
-                    value = BaseVar(name=value.json(), type_=type_)
+                    value = BaseVar(name=value.json(), type_=type_, is_local=True)
                 except Exception:
                     value = Var.create(value)
             else:
                 value = Var.create(value, is_string=type(value) is str)
-
-            # Make sure the value is local.
-            if value:
-                value.set(is_local=True)  # type: ignore
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value
