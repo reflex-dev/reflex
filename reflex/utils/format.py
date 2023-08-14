@@ -227,9 +227,12 @@ def format_cond(
 
     # Format prop conds.
     if is_prop:
-        prop1 = Var.create(true_value, is_string=type(true_value) is str)
-        prop2 = Var.create(false_value, is_string=type(false_value) is str)
-        assert prop1 is not None and prop2 is not None, "Invalid prop values"
+        prop1 = Var.create_safe(true_value, is_string=type(true_value) is str).set(
+            is_local=True
+        )  # type: ignore
+        prop2 = Var.create_safe(false_value, is_string=type(false_value) is str).set(
+            is_local=True
+        )  # type: ignore
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
     # Format component conds.

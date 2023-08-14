@@ -187,6 +187,19 @@ class Var(ABC):
             out = format.format_string(out)
         return out
 
+    def __format__(self, format_spec: str) -> str:
+        """Format the var into a Javascript equivalent to an f-string.
+
+        Args:
+            format_spec: The format specifier (Ignored for now).
+
+        Returns:
+            The formatted var.
+        """
+        if self.is_local:
+            return str(self)
+        return f"${str(self)}"
+
     def __getitem__(self, i: Any) -> Var:
         """Index into a var.
 
@@ -206,8 +219,8 @@ class Var(ABC):
         ):
             if self.type_ == Any:
                 raise TypeError(
-                    f"Could not index into var of type Any. (If you are trying to index into a state var, "
-                    f"add the correct type annotation to the var.)"
+                    "Could not index into var of type Any. (If you are trying to index into a state var, "
+                    "add the correct type annotation to the var.)"
                 )
             raise TypeError(
                 f"Var {self.name} of type {self.type_} does not support indexing."
@@ -241,6 +254,7 @@ class Var(ABC):
                     name=f"{self.name}.slice({start}, {stop})",
                     type_=self.type_,
                     state=self.state,
+                    is_local=self.is_local,
                 )
 
             # Get the type of the indexed var.
@@ -255,6 +269,7 @@ class Var(ABC):
                 name=f"{self.name}.at({i})",
                 type_=type_,
                 state=self.state,
+                is_local=self.is_local,
             )
 
         # Dictionary / dataframe indexing.
@@ -281,6 +296,7 @@ class Var(ABC):
             name=f"{self.name}[{i}]",
             type_=type_,
             state=self.state,
+            is_local=self.is_local,
         )
 
     def __getattribute__(self, name: str) -> Var:
@@ -313,6 +329,7 @@ class Var(ABC):
                         name=f"{self.name}.{name}",
                         type_=type_,
                         state=self.state,
+                        is_local=self.is_local,
                     )
             raise AttributeError(
                 f"The State var `{self.full_name}` has no attribute '{name}' or may have been annotated "
@@ -359,6 +376,7 @@ class Var(ABC):
         return BaseVar(
             name=name,
             type_=type_,
+            is_local=self.is_local,
         )
 
     def compare(self, op: str, other: Var) -> Var:
@@ -411,6 +429,7 @@ class Var(ABC):
         return BaseVar(
             name=f"{self.full_name}.length",
             type_=int,
+            is_local=self.is_local,
         )
 
     def __eq__(self, other: Var) -> Var:
@@ -682,6 +701,7 @@ class Var(ABC):
         return BaseVar(
             name=f"{self.full_name}.map(({arg.name}, i) => {fn(arg, key='i')})",
             type_=self.type_,
+            is_local=self.is_local,
         )
 
     def to(self, type_: Type) -> Var:

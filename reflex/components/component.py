@@ -658,16 +658,25 @@ class CustomComponent(Component):
         # Set the props.
         props = typing.get_type_hints(self.component_fn)
         for key, value in kwargs.items():
+            # Skip kwargs that are not props.
             if key not in props:
                 continue
+
+            # Get the type based on the annotation.
             type_ = props[key]
+
+            # Handle event chains.
             if types._issubclass(type_, EventChain):
                 value = self._create_event_chain(key, value)
                 self.props[format.to_camel_case(key)] = value
                 continue
+
+            # Convert the type to a Var, then get the type of the var.
             if not types._issubclass(type_, Var):
                 type_ = Var[type_]
             type_ = types.get_args(type_)[0]
+
+            # Handle subclasses of Base.
             if types._issubclass(type_, Base):
                 try:
                     value = BaseVar(name=value.json(), type_=type_, is_local=True)
@@ -675,6 +684,8 @@ class CustomComponent(Component):
                     value = Var.create(value)
             else:
                 value = Var.create(value, is_string=type(value) is str)
+
+            # Set the prop.
             self.props[format.to_camel_case(key)] = value
 
     def __eq__(self, other: Any) -> bool:

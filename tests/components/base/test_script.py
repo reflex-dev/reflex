@@ -22,7 +22,7 @@ def test_script_src():
     assert render_dict["name"] == "Script"
     assert not render_dict["contents"]
     assert not render_dict["children"]
-    assert 'src="foo.js"' in render_dict["props"]
+    assert "src={`foo.js`}" in render_dict["props"]
 
 
 def test_script_neither():

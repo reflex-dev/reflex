@@ -74,8 +74,8 @@ def test_format_prop(prop: Var, formatted: str):
     [
         ({}, []),
         ({"key": 1}, ["key={1}"]),
-        ({"key": "value"}, ['key="value"']),
-        ({"key": True, "key2": "value2"}, ["key={true}", 'key2="value2"']),
+        ({"key": "value"}, ["key={`value`}"]),
+        ({"key": True, "key2": "value2"}, ["key={true}", "key2={`value2`}"]),
     ],
 )
 def test_format_props(props: Dict[str, Var], test_props: List):
