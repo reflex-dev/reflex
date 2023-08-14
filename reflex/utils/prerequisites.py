@@ -436,7 +436,11 @@ def is_latest_template() -> bool:
 
 
 def validate_bun():
-    """Validate bun if a custom bun path is specified to ensure the bun version meets requirements."""
+    """Validate bun if a custom bun path is specified to ensure the bun version meets requirements.
+
+    Raises:
+        Exit: If custom specified bun does not exist or does not meet requirements.
+    """
     # if a custom bun path is provided, make sure its valid
     # This is specific to non-FHS OS
     bun_path = get_config().bun_path
