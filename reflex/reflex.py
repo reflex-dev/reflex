@@ -15,6 +15,9 @@ from reflex.utils import build, console, exec, prerequisites, processes, telemet
 # Create the app.
 cli = typer.Typer(add_completion=False)
 
+# Get the config.
+config = get_config()
+
 
 def version(value: bool):
     """Get the Reflex version.
@@ -48,13 +51,13 @@ def main(
 @cli.command()
 def init(
     name: str = typer.Option(
-        None, metavar="APP_NAME", help="The name of the app to be initialized."
+        None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
     template: constants.Template = typer.Option(
         constants.Template.DEFAULT, help="The template to initialize the app with."
     ),
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
 ):
     """Initialize a new Reflex app in the current directory."""
@@ -75,7 +78,6 @@ def init(
     prerequisites.migrate_to_reflex()
 
     # Set up the app directory, only if the config doesn't exist.
-    config = get_config()
     if not os.path.exists(constants.CONFIG_FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
@@ -94,17 +96,23 @@ def init(
 @cli.command()
 def run(
     env: constants.Env = typer.Option(
-        get_config().env, help="The environment to run the app in."
+        constants.Env.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
         False, "--frontend-only", help="Execute only frontend."
     ),
     backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
-    frontend_port: str = typer.Option(None, help="Specify a different frontend port."),
-    backend_port: str = typer.Option(None, help="Specify a different backend port."),
-    backend_host: str = typer.Option(None, help="Specify the backend host."),
+    frontend_port: str = typer.Option(
+        config.frontend_port, help="Specify a different frontend port."
+    ),
+    backend_port: str = typer.Option(
+        config.backend_port, help="Specify a different backend port."
+    ),
+    backend_host: str = typer.Option(
+        config.backend_host, help="Specify the backend host."
+    ),
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
 ):
     """Run the app in the current directory."""
@@ -113,20 +121,6 @@ def run(
 
     # Show system info
     exec.output_system_info()
-
-    # Set ports as os env variables to take precedence over config and
-    # .env variables(if override_os_envs flag in config is set to False).
-    build.set_os_env(
-        frontend_port=frontend_port,
-        backend_port=backend_port,
-        backend_host=backend_host,
-    )
-
-    # Get the ports from the config.
-    config = get_config()
-    frontend_port = config.frontend_port if frontend_port is None else frontend_port
-    backend_port = config.backend_port if backend_port is None else backend_port
-    backend_host = config.backend_host if backend_host is None else backend_host
 
     # If no --frontend-only and no --backend-only, then turn on frontend and backend both
     if not frontend and not backend:
@@ -146,9 +140,6 @@ def run(
     # Get the app module.
     console.rule("[bold]Starting Reflex App")
     app = prerequisites.get_app()
-
-    # Check the admin dashboard settings.
-    prerequisites.check_admin_settings()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -198,9 +189,6 @@ def deploy(
 
     # Show system info
     exec.output_system_info()
-
-    # Get the app config.
-    config = get_config()
 
     # Check if the deploy url is set.
     if config.rxdeploy_url is None:
@@ -264,7 +252,6 @@ def export(
         build.setup_frontend(Path.cwd())
 
     # Export the app.
-    config = get_config()
     build.export(
         backend=backend,
         frontend=frontend,
@@ -294,7 +281,7 @@ db_cli = typer.Typer()
 def db_init():
     """Create database schema and migration configuration."""
     # Check the database url.
-    if get_config().db_url is None:
+    if config.db_url is None:
         console.error("db_url is not configured, cannot initialize.")
         return
 

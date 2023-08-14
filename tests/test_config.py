@@ -107,19 +107,6 @@ def test_db_url_precedence(base_config_values, sqlite_db_config_values):
     assert config.db_url == base_config_values["db_url"]
 
 
-def test_db_url_from_db_config(config_no_db_url_values, sqlite_db_config_values):
-    """Test db_url generation from db_config.
-
-    Args:
-        config_no_db_url_values: Config values with no db_url.
-        sqlite_db_config_values: DB config values.
-    """
-    db_config = DBConfig(**sqlite_db_config_values)
-    config_no_db_url_values["db_config"] = db_config
-    config = rx.Config(**config_no_db_url_values)
-    assert config.db_url == db_config.get_url()
-
-
 @pytest.mark.parametrize(
     "key, value, expected_value_type_in_config",
     (

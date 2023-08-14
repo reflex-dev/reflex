@@ -45,7 +45,7 @@ def get_api_port() -> int:
     """
     port = urlparse(get_config().api_url).port
     if port is None:
-        port = urlparse(constants.API_URL).port
+        port = 80
     assert port is not None
     return port
 

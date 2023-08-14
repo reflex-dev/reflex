@@ -8,10 +8,7 @@ import sys
 import urllib.parse
 from typing import Any, Dict, List, Optional
 
-from dotenv import load_dotenv
-
 from reflex import constants
-from reflex.admin import AdminDash
 from reflex.base import Base
 
 
@@ -129,29 +126,26 @@ class Config(Base):
     # The name of the app.
     app_name: str
 
-    # The username.
-    username: Optional[str] = None
+    # The log level to use.
+    loglevel: constants.LogLevel = constants.LogLevel.INFO
 
-    # The frontend port.
-    frontend_port: str = constants.FRONTEND_PORT
+    # The port to run the frontend on.
+    frontend_port: int = 3000
 
-    # The backend port.
-    backend_port: str = constants.BACKEND_PORT
+    # The port to run the backend on.
+    backend_port: int = 8000
 
-    # The backend host.
-    backend_host: str = constants.BACKEND_HOST
+    # The backend url the frontend will connect to. TODO(maybe rename this?)
+    api_url: str = f"http://localhost:{backend_port}"
 
-    # The backend API url.
-    api_url: str = constants.API_URL
+    # The url the frontend will be hosted on. TODO(maybe rename to frontend_url)
+    deploy_url: Optional[str] = f"http://localhost:{frontend_port}"
 
-    # The deploy url.
-    deploy_url: Optional[str] = constants.DEPLOY_URL
+    # The url the backend will be hosted on. TODO(make the naming for this more consistent)
+    backend_host: str = "0.0.0.0"
 
     # The database url.
-    db_url: Optional[str] = constants.DB_URL
-
-    # The database config.
-    db_config: Optional[DBConfig] = None
+    db_url: Optional[str] = "sqlite:///reflex.db"
 
     # The redis url.
     redis_url: Optional[str] = constants.REDIS_URL
@@ -159,20 +153,8 @@ class Config(Base):
     # Telemetry opt-in.
     telemetry_enabled: bool = True
 
-    # The rxdeploy url.
-    rxdeploy_url: Optional[str] = None
-
-    # The environment mode.
-    env: constants.Env = constants.Env.DEV
-
-    # Additional frontend packages to install.
-    frontend_packages: List[str] = []
-
     # The bun path
     bun_path: str = constants.BUN_PATH
-
-    # The Admin Dash.
-    admin_dash: Optional[AdminDash] = None
 
     # Backend transport methods.
     backend_transports: Optional[
@@ -180,31 +162,30 @@ class Config(Base):
     ] = constants.Transports.WEBSOCKET_POLLING
 
     # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: Optional[list] = constants.CORS_ALLOWED_ORIGINS
-
-    # Whether credentials (cookies, authentication) are allowed in requests to the backend API.
-    cors_credentials: Optional[bool] = True
-
-    # The maximum size of a message when using the polling backend transport.
-    polling_max_http_buffer_size: Optional[int] = constants.POLLING_MAX_HTTP_BUFFER_SIZE
-
-    # Dotenv file path.
-    env_path: Optional[str] = constants.DOT_ENV_FILE
-
-    # Whether to override OS environment variables.
-    override_os_envs: Optional[bool] = True
+    cors_allowed_origins: list[str] = ["*"]
 
     # Tailwind config.
     tailwind: Optional[Dict[str, Any]] = None
 
-    # Timeout when launching the gunicorn server.
-    timeout: int = constants.TIMEOUT
+    # Timeout when launching the gunicorn server. TODO(rename this to backend_timeout?)
+    timeout: int = 120
 
     # Whether to enable or disable nextJS gzip compression.
     next_compression: bool = True
 
     # The event namespace for ws connection
     event_namespace: Optional[str] = constants.EVENT_NAMESPACE
+
+    # Params to remove eventually.
+    # Additional frontend packages to install. (TODO: these can be inferred from the imports)
+    frontend_packages: List[str] = []
+
+    # For rest are for deploy only.
+    # The rxdeploy url.
+    rxdeploy_url: Optional[str] = None
+
+    # The username.
+    username: Optional[str] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
@@ -215,9 +196,6 @@ class Config(Base):
             *args: The args to pass to the Pydantic init method.
             **kwargs: The kwargs to pass to the Pydantic init method.
         """
-        if "db_url" not in kwargs and "db_config" in kwargs:
-            kwargs["db_url"] = kwargs["db_config"].get_url()
-
         super().__init__(*args, **kwargs)
 
         # set overriden class attribute values as os env variables to avoid losing them
@@ -230,14 +208,6 @@ class Config(Base):
             ):
                 continue
             os.environ[key] = str(value)
-
-        # Avoid overriding if env_path is not provided or does not exist
-        if self.env_path is not None and os.path.isfile(self.env_path):
-            load_dotenv(self.env_path, override=self.override_os_envs)  # type: ignore
-            # Recompute constants after loading env variables
-            importlib.reload(constants)
-            # Recompute instance attributes
-            self.recompute_field_values()
 
     def recompute_field_values(self):
         """Recompute instance field values to reflect new values after reloading

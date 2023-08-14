@@ -162,25 +162,6 @@ REFLEX_JSON = os.path.join(WEB_DIR, "reflex.json")
 ENV_JSON = os.path.join(WEB_DIR, "env.json")
 
 # Commands to run the app.
-DOT_ENV_FILE = ".env"
-# The frontend default port.
-FRONTEND_PORT = get_value("FRONTEND_PORT", "3000")
-# The backend default port.
-BACKEND_PORT = get_value("BACKEND_PORT", "8000")
-# The backend api url.
-API_URL = get_value("API_URL", "http://localhost:8000")
-# The deploy url
-DEPLOY_URL = get_value("DEPLOY_URL")
-# Default host in dev mode.
-BACKEND_HOST = get_value("BACKEND_HOST", "0.0.0.0")
-# The default timeout when launching the gunicorn server.
-TIMEOUT = get_value("TIMEOUT", 120, type_=int)
-# The command to run the backend in production mode.
-RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {TIMEOUT} --log-level critical".split()
-RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {TIMEOUT}".split()
-# Socket.IO web server
-PING_INTERVAL = 25
-PING_TIMEOUT = 120
 # flag to make the engine print all the SQL statements it executes
 SQLALCHEMY_ECHO = get_value("SQLALCHEMY_ECHO", False, type_=bool)
 
@@ -430,8 +411,9 @@ COLOR_MODE = "colorMode"
 TOGGLE_COLOR_MODE = "toggleColorMode"
 
 # Server socket configuration variables
-CORS_ALLOWED_ORIGINS = get_value("CORS_ALLOWED_ORIGINS", ["*"], list)
 POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000
+PING_INTERVAL = 25
+PING_TIMEOUT = 120
 
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")

@@ -7,7 +7,7 @@ import pytest
 import typer
 from packaging import version
 
-from reflex import Env, constants
+from reflex import constants
 from reflex.base import Base
 from reflex.utils import (
     build,
@@ -422,7 +422,6 @@ def test_create_config_e2e(tmp_working_dir):
     config = eval_globals["config"]
     assert config.app_name == app_name
     assert config.db_url == constants.DB_URL
-    assert config.env == Env.DEV
 
 
 @pytest.mark.parametrize(
