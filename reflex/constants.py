@@ -44,7 +44,7 @@ def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
 
 # App names and versions.
 # The name of the Reflex package.
-MODULE_NAME = "reflex" if IS_WINDOWS else ".reflex"
+MODULE_NAME = "reflex"
 # The current version of Reflex.
 VERSION = metadata.version(MODULE_NAME)
 
