@@ -1,4 +1,5 @@
 """Integration tests for dynamic route page behavior."""
+import time
 from contextlib import contextmanager
 from typing import Generator
 from urllib.parse import urlsplit
@@ -15,13 +16,10 @@ def DynamicRoute():
 
     class DynamicState(rx.State):
         order: list[str] = []
-
-        @rx.var
-        def page_id(self) -> str:
-            return self.get_query_params().get("page_id", "")
+        page_id: str = ""
 
         def on_load(self):
-            self.order.append(self.page_id)
+            self.order.append(self.page_id or "no page id")
 
         @rx.var
         def next_page(self) -> str:
@@ -36,8 +34,8 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rx.input(value=DynamicState.token, readonly=True, id="token"),
-            rx.input(value=DynamicState.page_id, readonly=True, id="page_id"),
+            rx.input(value=DynamicState.token, is_read_only=True, id="token"),
+            rx.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
             rx.link("index", href="/", id="link_index"),  # type: ignore
             rx.link("page_X", href="/static/x", id="link_page_x"),  # type: ignore
             rx.link(
@@ -150,6 +148,7 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     # TODO: navigating to dynamic page initially fires hydrate twice
     # because the new page re-initializes `useEventLoop`, with the same hydrate event
     # but routeChangeComplete also still fires.
+    time.sleep(0.2)
     assert backend_state.order[1:] == [str(ix) for ix in range(10)]
 
 
@@ -177,7 +176,8 @@ def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):
 
     # look up the backend state and assert that `on_load` was called once
     backend_state = dynamic_route.app_instance.state_manager.states[token]
-    assert backend_state.order == [""]
+    time.sleep(0.2)
+    assert backend_state.order == ["no page id"]
 
     # go back to the index and navigate back to the static route
     link = driver.find_element(By.ID, "link_index")
@@ -189,4 +189,5 @@ def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):
     with poll_for_navigation(driver):
         link.click()
     assert urlsplit(driver.current_url).path == "/static/x/"
-    assert backend_state.order == ["", ""]
+    time.sleep(0.2)
+    assert backend_state.order == ["no page id", "no page id"]
