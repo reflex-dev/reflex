@@ -25,8 +25,10 @@ will be hosted.
 Finally, you can start your Reflex container service as follows:
 
 ```bash
-docker run -d -p 3000:3000 -p 8000:8000 --name app reflex-app:latest
+docker run -p 3000:3000 -p 8000:8000 --name app reflex-app:latest
 ```
+
+It may take a few seconds for the service to become available.
 
 # Production Service with Docker Compose and Caddy
 
@@ -57,7 +59,7 @@ from the `app` service into the container.
 ## Run Reflex Production Service
 
 ```bash
-DOMAIN=example.com docker compose up -d
+DOMAIN=example.com docker compose up
 ```
 
 The app should be available at the specified domain via HTTPS. Certificate
