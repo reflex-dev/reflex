@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import platform
-from platformdirs import PlatformDirs
 import re
 from enum import Enum
 from types import SimpleNamespace
