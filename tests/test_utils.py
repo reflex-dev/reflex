@@ -580,7 +580,6 @@ def test_bun_install_without_unzip(mocker):
         prerequisites.install_bun()
 
 
-# from
 @pytest.mark.parametrize("is_windows", [True, False])
 def test_create_reflex_dir(mocker, is_windows):
     """Test that a reflex directory is created on initializing frontend
@@ -599,7 +598,4 @@ def test_create_reflex_dir(mocker, is_windows):
 
     prerequisites.initialize_frontend_dependencies()
 
-    if is_windows:
-        assert not create_cmd.called
-    else:
-        assert create_cmd.called
+    assert create_cmd.called
