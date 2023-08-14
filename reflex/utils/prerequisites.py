@@ -100,10 +100,6 @@ def get_package_manager() -> str:
     Returns:
         The path to the package manager.
     """
-    get_config()
-
-    if constants.IS_WINDOWS:
-        return get_windows_package_manager()
     return constants.NPM_PATH
 
 
