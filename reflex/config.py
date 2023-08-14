@@ -169,7 +169,7 @@ class Config(Base):
     frontend_packages: List[str] = []
 
     # The bun path
-    bun_path: Optional[str] = constants.BUN_PATH
+    bun_path: str = constants.BUN_PATH
 
     # The Admin Dash.
     admin_dash: Optional[AdminDash] = None
