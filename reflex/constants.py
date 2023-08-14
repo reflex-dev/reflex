@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import os
 import platform
-from platformdirs import PlatformDirs
 import re
 from enum import Enum
 from types import SimpleNamespace
 from typing import Any, Type
+
+from platformdirs import PlatformDirs
 
 # importlib is only available for Python 3.8+ so we need the backport for Python 3.7
 try:
@@ -51,10 +52,15 @@ VERSION = metadata.version(MODULE_NAME)
 
 # Files and directories used to init a new project.
 # The directory to store reflex dependencies.
-REFLEX_DIR = PlatformDirs(MODULE_NAME, False).user_data_dir if IS_WINDOWS else os.path.expandvars(
-    os.path.join(
-        "$HOME", f".{MODULE_NAME}",
-    ),
+REFLEX_DIR = (
+    PlatformDirs(MODULE_NAME, False).user_data_dir
+    if IS_WINDOWS
+    else os.path.expandvars(
+        os.path.join(
+            "$HOME",
+            f".{MODULE_NAME}",
+        ),
+    )
 )
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
