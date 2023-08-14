@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import platform
+from platformdirs import PlatformDirs
 import re
 from enum import Enum
 from types import SimpleNamespace
@@ -49,12 +50,10 @@ MODULE_NAME = "reflex"
 VERSION = metadata.version(MODULE_NAME)
 
 # Files and directories used to init a new project.
-HOME_VAR = "%USERPROFILE%\\AppData\\Roaming" if IS_WINDOWS else "$HOME"
 # The directory to store reflex dependencies.
-REFLEX_DIR = os.path.expandvars(
+REFLEX_DIR = PlatformDirs(MODULE_NAME, False).user_data_dir if IS_WINDOWS else os.path.expandvars(
     os.path.join(
-        HOME_VAR,
-        ("." if not IS_WINDOWS else "") + MODULE_NAME,
+        "$HOME", f".{MODULE_NAME}",
     ),
 )
 # The root directory of the reflex library.
