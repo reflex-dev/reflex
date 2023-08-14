@@ -29,7 +29,9 @@ def run_process_and_launch_url(
     Args:
         run_command: The command to run.
     """
-    process = processes.new_process(run_command, cwd=constants.WEB_DIR, shell=True)
+    process = processes.new_process(
+        run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
+    )
 
     if process.stdout:
         for line in process.stdout:

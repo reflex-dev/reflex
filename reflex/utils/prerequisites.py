@@ -377,7 +377,7 @@ def install_frontend_packages():
     process = processes.new_process(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
-        shell=True,
+        shell=constants.IS_WINDOWS,
     )
     processes.show_status("Installing base frontend packages", process)
 
@@ -387,7 +387,7 @@ def install_frontend_packages():
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
-            shell=True,
+            shell=constants.IS_WINDOWS,
         )
         processes.show_status("Installing custom frontend packages", process)
 

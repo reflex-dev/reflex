@@ -201,7 +201,7 @@ def setup_frontend(
             ],
             cwd=constants.WEB_DIR,
             stdout=subprocess.DEVNULL,
-            shell=True,
+            # shell=True,
         )
 
 
