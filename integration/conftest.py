@@ -48,7 +48,7 @@ def pytest_exception_interact(node, call, report):
     safe_filename = re.sub(
         r"(?u)[^-\w.]",
         "_",
-        str(node.nodeid).strip().replace(" ", "_"),
+        str(node.nodeid).strip().replace(" ", "_").replace(":", "_"),
     )
 
     DISPLAY.waitgrab().save(
