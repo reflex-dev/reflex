@@ -53,6 +53,7 @@ VERSION = metadata.version(MODULE_NAME)
 # Files and directories used to init a new project.
 # The directory to store reflex dependencies.
 REFLEX_DIR = (
+    # on windows, we use C:/Users/<username>/AppData/Local/reflex.
     PlatformDirs(MODULE_NAME, False).user_data_dir
     if IS_WINDOWS
     else os.path.expandvars(
