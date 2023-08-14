@@ -276,14 +276,19 @@ def download_and_extract_fnm_zip(url: str):
 
     Args:
         url: The url of the fnm release zip binary.
+
+    Raises:
+        Exit: If an error occurs while downloading or extracting the FNM zip.
     """
+    # TODO: make this OS agnostic
     # Download the zip file
     console.debug(f"Downloading {url}")
     fnm_zip_file = f"{constants.FNM_DIR}\\fnm_windows.zip"
     # Function to download and extract the FNM zip release
     try:
         # Download the FNM zip release
-        with httpx.stream("GET", url, follow_redirects=True) as response:
+        # TODO: show progress to improve UX
+        with httpx.stream("GET", "url", follow_redirects=True) as response:
             response.raise_for_status()
             with open(fnm_zip_file, "wb") as output_file:
                 for chunk in response.iter_bytes():
@@ -304,10 +309,7 @@ def download_and_extract_fnm_zip(url: str):
 
 def install_node():
     """Install nvm and nodejs for use by Reflex.
-       Independent of any existing system installations.
-
-    Raises:
-        Exit: if installation failed
+    Independent of any existing system installations.
     """
     if constants.IS_WINDOWS:
         path_ops.mkdir(constants.FNM_DIR)
