@@ -51,7 +51,12 @@ VERSION = metadata.version(MODULE_NAME)
 # Files and directories used to init a new project.
 HOME_VAR = "%USERPROFILE%\\AppData\\Roaming" if IS_WINDOWS else "$HOME"
 # The directory to store reflex dependencies.
-REFLEX_DIR = os.path.expandvars(os.path.join(HOME_VAR, MODULE_NAME))
+REFLEX_DIR = os.path.expandvars(
+    os.path.join(
+        HOME_VAR,
+        ("." if not IS_WINDOWS else "") + MODULE_NAME,
+    ),
+)
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # The name of the assets directory.
