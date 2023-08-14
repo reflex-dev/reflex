@@ -59,7 +59,7 @@ def run_frontend(
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    os.environ["PORT"] = get_config().frontend_port if port is None else port
+    os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])
 
 
@@ -74,7 +74,7 @@ def run_frontend_prod(
         port: The port to run the frontend on.
     """
     # Set the port.
-    os.environ["PORT"] = get_config().frontend_port if port is None else port
+    os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
 
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
@@ -129,9 +129,12 @@ def run_backend_prod(
         loglevel: The log level.
     """
     num_workers = processes.get_num_workers()
+    config = get_config()
+    RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
+    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
     command = (
         [
-            *constants.RUN_BACKEND_PROD_WINDOWS,
+            *RUN_BACKEND_PROD_WINDOWS,
             "--host",
             host,
             "--port",
@@ -140,7 +143,7 @@ def run_backend_prod(
         ]
         if constants.IS_WINDOWS
         else [
-            *constants.RUN_BACKEND_PROD,
+            *RUN_BACKEND_PROD,
             "--bind",
             f"{host}:{port}",
             "--threads",
