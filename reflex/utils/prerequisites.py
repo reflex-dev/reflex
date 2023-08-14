@@ -83,11 +83,9 @@ def get_install_package_manager() -> str:
     Returns:
         The path to the package manager.
     """
-    get_config()
-
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS:
-        return get_windows_package_manager()
+        return constants.NPM_PATH
 
     # On other platforms, we use bun.
     return get_config().bun_path
@@ -379,6 +377,7 @@ def install_frontend_packages():
     process = processes.new_process(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
+        shell=True,
     )
     processes.show_status("Installing base frontend packages", process)
 
@@ -388,6 +387,7 @@ def install_frontend_packages():
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
+            shell=True,
         )
         processes.show_status("Installing custom frontend packages", process)
 
