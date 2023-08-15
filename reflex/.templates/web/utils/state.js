@@ -26,9 +26,9 @@ const cookies = new Cookies();
 export const refs = {};
 
 // Flag ensures that only one event is processing on the backend concurrently.
-let event_backend_processing = false
-// Array holding pending events to be processed
-const pending_events = [];
+let event_processing = false
+// Array holding pending events to be processed.
+const event_queue = [];
 
 /**
  * Generate a UUID (Used for session tokens).
@@ -106,7 +106,7 @@ export const getAllLocalStorageItems = () => {
 
 
 /**
- * Send an event to the server via Websocket.
+ * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.
  *
@@ -187,8 +187,8 @@ export const applyEvent = async (event, socket) => {
 };
 
 /**
- * Send an event to the server via REST
- * @param event The current event
+ * Send an event to the server via REST.
+ * @param event The current event.
  * @param state The state with the event queue.
  *
  * @returns Whether the event was sent.
@@ -203,11 +203,11 @@ export const applyRestEvent = async (event, state) => {
 
 /**
  * Queue events to be processed and trigger processing of queue.
- * @param events Array of events to queue
+ * @param events Array of events to queue.
  * @param socket The socket object to send the event on.
  */
 export const queueEvents = async (events, socket) => {
-  pending_events.push(...events)
+  event_queue.push(...events)
   await processEvent(socket.current)
 }
 
@@ -218,16 +218,16 @@ export const queueEvents = async (events, socket) => {
 export const processEvent = async (
   socket
 ) => {
-  // Only proceed if we're not already processing an event
-  if (pending_events.length === 0 || event_backend_processing) {
+  // Only proceed if we're not already processing an event.
+  if (event_queue.length === 0 || event_processing) {
     return;
   }
 
   // Set processing to true to block other events from being processed.
-  event_backend_processing = true
+  event_processing = true
 
   // Apply the next event in the queue.
-  const event = pending_events.shift();
+  const event = event_queue.shift();
 
   let eventSent = false
   // Process events with handlers via REST and all others via websockets.
@@ -238,7 +238,7 @@ export const processEvent = async (
   }
   // If no event was sent, set processing to false.
   if (!eventSent) {
-    event_backend_processing = false;
+    event_processing = false;
     // recursively call processEvent to drain the queue, since there is
     // no state update to trigger the useEffect event loop.
     await processEvent(socket)
@@ -250,8 +250,8 @@ export const processEvent = async (
  * @param socket The socket object to connect.
  * @param dispatch The function to queue state update
  * @param transports The transports to use.
- * @param setNotConnected The function to update connection state
- * @param initial_events Array of events to seed the queue after connecting
+ * @param setNotConnected The function to update connection state.
+ * @param initial_events Array of events to seed the queue after connecting.
  */
 export const connect = async (
   socket,
@@ -260,7 +260,7 @@ export const connect = async (
   setNotConnected,
   initial_events = [],
 ) => {
-  // Get backend URL object from the endpoint
+  // Get backend URL object from the endpoint.
   const endpoint = new URL(EVENTURL);
   // Create the socket.
   socket.current = io(EVENTURL, {
@@ -279,11 +279,11 @@ export const connect = async (
     setNotConnected(true)
   });
 
-  // On each received message, queue the updates and events
+  // On each received message, queue the updates and events.
   socket.current.on("event", message => {
     const update = JSON5.parse(message)
     dispatch(update.delta)
-    event_backend_processing = !update.final
+    event_processing = !update.final
     if (update.events) {
       queueEvents(update.events, socket)
     }
@@ -355,13 +355,14 @@ export const E = (name, payload = {}, handler = null) => {
 };
 
 /**
- * Establish websocket event loop for a NextJS page
- * @param initial_state The initial page state
- * @param initial_events Array of events to seed the queue after connecting
+ * Establish websocket event loop for a NextJS page.
+ * @param initial_state The initial page state.
+ * @param initial_events Array of events to seed the queue after connecting.
  *
- * @returns [state, Event, notConnected] - state is a reactive dict,
- *   Event is used to queue an event, and notConnected
- *   is a reactive boolean indicating whether the websocket is connected.
+ * @returns [state, Event, notConnected] -
+ *   state is a reactive dict,
+ *   Event is used to queue an event, and
+ *   notConnected is a reactive boolean indicating whether the websocket is connected.
  */
 export const useEventLoop = (
   initial_state = {},
@@ -389,8 +390,8 @@ export const useEventLoop = (
       connect(socket, dispatch, ['websocket', 'polling'], setNotConnected, initial_events)
     }
     (async () => {
-      // Process all outstanding events
-      while (pending_events.length > 0 && !event_backend_processing) {
+      // Process all outstanding events.
+      while (event_queue.length > 0 && !event_processing) {
         await processEvent(socket.current)
       }
     })()
