@@ -520,6 +520,7 @@ def test_node_install_windows(mocker):
         mocker: Pytest mocker object.
     """
     mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", True)
+    mocker.patch("reflex.utils.prerequisites.check_node_version", return_value=False)
 
     with pytest.raises(typer.Exit):
         prerequisites.install_node()
