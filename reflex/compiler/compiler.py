@@ -6,6 +6,7 @@ from typing import List, Set, Tuple, Type
 from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.route import get_route_args
 from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import ImportVar
@@ -20,8 +21,6 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     },
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
-        ImportVar(tag="connect"),
-        ImportVar(tag="processEvent"),
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="E"),
         ImportVar(tag="isTrue"),
@@ -30,6 +29,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getRefValue"),
         ImportVar(tag="getRefValues"),
         ImportVar(tag="getAllLocalStorageItems"),
+        ImportVar(tag="useEventLoop"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {
@@ -68,7 +68,10 @@ def _compile_theme(theme: dict) -> str:
 
 
 def _compile_page(
-    component: Component, state: Type[State], connect_error_component
+    component: Component,
+    state: Type[State],
+    connect_error_component,
+    is_dynamic: bool,
 ) -> str:
     """Compile the component given the app state.
 
@@ -76,7 +79,7 @@ def _compile_page(
         component: The component to compile.
         state: The app state.
         connect_error_component: The component to render on sever connection error.
-
+        is_dynamic: if True, include route change re-hydration logic
 
     Returns:
         The compiled component.
@@ -96,6 +99,7 @@ def _compile_page(
         render=component.render(),
         transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
         err_comp=connect_error_component.render() if connect_error_component else None,
+        is_dynamic=is_dynamic,
     )
 
 
@@ -203,7 +207,9 @@ def compile_page(
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(component, state, connect_error_component)
+    code = _compile_page(
+        component, state, connect_error_component, is_dynamic=bool(get_route_args(path))
+    )
     return output_path, code
 
 

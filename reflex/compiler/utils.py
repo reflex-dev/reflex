@@ -19,7 +19,6 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.event import get_hydrate_event
 from reflex.state import State
 from reflex.style import Style
 from reflex.utils import format, imports, path_ops
@@ -129,7 +128,6 @@ def compile_state(state: Type[State]) -> Dict:
         initial_state = state().dict(include_computed=False)
     initial_state.update(
         {
-            "events": [{"name": get_hydrate_event(state)}],
             "files": [],
         }
     )
