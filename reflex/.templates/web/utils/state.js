@@ -5,7 +5,7 @@ import JSON5 from "json5";
 import env from "env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
-import Router from "next/router";
+import Router, { useRouter } from "next/router";
 
 
 // Endpoint URLs.
@@ -369,6 +369,7 @@ export const useEventLoop = (
   initial_events = [],
 ) => {
   const socket = useRef(null)
+  const router = useRouter()
   const [state, dispatch] = useReducer(applyDelta, initial_state)
   const [notConnected, setNotConnected] = useState(false)
   
@@ -379,9 +380,9 @@ export const useEventLoop = (
   }
 
   // Main event loop.
-  useEffect(()=> {
+  useEffect(() => {
     // Skip if the router is not ready.
-    if (!Router.isReady) {
+    if (!router.isReady) {
       return;
     }
 
