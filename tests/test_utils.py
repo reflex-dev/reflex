@@ -255,36 +255,38 @@ def test_format_route(route: str, expected: bool):
     assert format.format_route(route) == expected
 
 
-@pytest.mark.parametrize(
-    "bun_version,is_valid, prompt_input",
-    [
-        (V055, False, "yes"),
-        (V059, True, None),
-        (VMAXPLUS1, False, "yes"),
-    ],
-)
-def test_initialize_bun(mocker, bun_version, is_valid, prompt_input):
-    """Test that the bun version on host system is validated properly. Also test that
-    the required bun version is installed should the user opt for it.
+def test_validate_invalid_bun_path(mocker):
+    """Test that an error is thrown when a custom specified bun path is not valid
+    or does not exist.
 
     Args:
         mocker: Pytest mocker object.
-        bun_version: The bun version.
-        is_valid: Whether bun version is valid for running reflex.
-        prompt_input: The input from user on whether to install bun.
     """
-    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=bun_version)
-    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
+    mock = mocker.Mock()
+    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
+    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
-    bun_install = mocker.patch("reflex.utils.prerequisites.install_bun")
-    remove_existing_bun_installation = mocker.patch(
-        "reflex.utils.prerequisites.remove_existing_bun_installation"
+    with pytest.raises(typer.Exit):
+        prerequisites.validate_bun()
+
+
+def test_validate_bun_path_incompatible_version(mocker):
+    """Test that an error is thrown when the bun version does not meet minimum requirements.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mock = mocker.Mock()
+    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
+    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mocker.patch(
+        "reflex.utils.prerequisites.get_bun_version",
+        return_value=version.parse("0.6.5"),
     )
 
-    prerequisites.initialize_bun()
-    if not is_valid:
-        remove_existing_bun_installation.assert_called_once()
-    bun_install.assert_called_once()
+    with pytest.raises(typer.Exit):
+        prerequisites.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker):
@@ -518,10 +520,9 @@ def test_node_install_windows(mocker):
         mocker: Pytest mocker object.
     """
     mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", True)
-    mocker.patch("reflex.utils.prerequisites.check_node_version", return_value=False)
 
     with pytest.raises(typer.Exit):
-        prerequisites.initialize_node()
+        prerequisites.install_node()
 
 
 def test_node_install_unix(tmp_path, mocker):

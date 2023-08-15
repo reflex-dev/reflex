@@ -245,34 +245,11 @@ def initialize_web_directory():
         json.dump(reflex_json, f, ensure_ascii=False)
 
 
-def initialize_bun():
-    """Check that bun requirements are met, and install if not."""
-    if IS_WINDOWS:
-        # Bun is not supported on Windows.
-        console.debug("Skipping bun installation on Windows.")
-        return
-
-    # Check the bun version.
-    bun_version = get_bun_version()
-    if bun_version != version.parse(constants.BUN_VERSION):
-        console.debug(
-            f"Current bun version ({bun_version}) does not match ({constants.BUN_VERSION})."
-        )
-        remove_existing_bun_installation()
-        install_bun()
-
-
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
     console.debug("Removing existing bun installation.")
     if os.path.exists(get_config().bun_path):
         path_ops.rm(constants.BUN_ROOT_PATH)
-
-
-def initialize_node():
-    """Validate nodejs have install or not."""
-    if not check_node_version():
-        install_node()
 
 
 def download_and_run(url: str, *args, show_status: bool = False, **env):
@@ -448,7 +425,7 @@ def validate_bun():
         bun_version = get_bun_version()
         if not bun_version:
             console.error(
-                f"Failed to obtain bun version. Make sure the specified bun path in your config is correct."
+                "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
             raise typer.Exit(1)
         elif bun_version < version.parse(constants.MIN_BUN_VERSION):
