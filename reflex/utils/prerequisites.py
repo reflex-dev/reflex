@@ -405,7 +405,7 @@ def check_initialized(frontend: bool = True):
     """
     has_config = os.path.exists(constants.CONFIG_FILE)
     has_reflex_dir = (
-        not frontend or constants.IS_WINDOWS or os.path.exists(constants.REFLEX_DIR)
+        not frontend or os.path.exists(constants.REFLEX_DIR)
     )
     has_web_dir = not frontend or os.path.exists(constants.WEB_DIR)
 
