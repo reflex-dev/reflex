@@ -6,7 +6,6 @@ from typing import List, Set, Tuple, Type
 from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.route import get_route_args
 from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import ImportVar
@@ -91,7 +90,6 @@ def _compile_page(
     component: Component,
     state: Type[State],
     connect_error_component,
-    is_dynamic: bool,
 ) -> str:
     """Compile the component given the app state.
 
@@ -99,7 +97,6 @@ def _compile_page(
         component: The component to compile.
         state: The app state.
         connect_error_component: The component to render on sever connection error.
-        is_dynamic: if True, include route change re-hydration logic
 
     Returns:
         The compiled component.
@@ -118,7 +115,6 @@ def _compile_page(
         render=component.render(),
         transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
         err_comp=connect_error_component.render() if connect_error_component else None,
-        is_dynamic=is_dynamic,
     )
 
 
@@ -208,10 +204,9 @@ def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
 def compile_contexts(
     state: Type[State],
 ) -> Tuple[str, str]:
-    """Compile the initial state / context
+    """Compile the initial state / context.
 
     Args:
-        path: The path to compile the page to.
         state: The app state.
 
     Returns:
@@ -245,7 +240,9 @@ def compile_page(
 
     # Add the style to the component.
     code = _compile_page(
-        component, state, connect_error_component, is_dynamic=bool(get_route_args(path))
+        component,
+        state,
+        connect_error_component,
     )
     return output_path, code
 
