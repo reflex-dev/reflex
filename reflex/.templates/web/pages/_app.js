@@ -14,20 +14,27 @@ const GlobalStyles = css`
   }
 `;
 
-function MyApp({ Component, pageProps }) {
+function EventLoopProvider({ children }) {
   const [state, Event, notConnected] = useEventLoop(
     initialState,
     initialEvents,
   )
+  return (
+    <EventLoopContext.Provider value={[Event, notConnected]}>
+      <StateContext.Provider value={state}>
+        {children}
+      </StateContext.Provider>
+    </EventLoopContext.Provider>
+  )
+}
 
+function MyApp({ Component, pageProps }) {
   return (
     <ChakraProvider theme={extendTheme(theme)}>
       <Global styles={GlobalStyles} />
-      <EventLoopContext.Provider value={[Event, notConnected]}>
-        <StateContext.Provider value={state}>
-          <Component {...pageProps} />
-        </StateContext.Provider>
-      </EventLoopContext.Provider>
+      <EventLoopProvider>
+        <Component {...pageProps} />
+      </EventLoopProvider>
     </ChakraProvider>
   );
 }
