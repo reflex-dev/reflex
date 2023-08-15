@@ -453,10 +453,11 @@ def validate_bun():
             raise typer.Exit(1)
         elif bun_version < version.parse(constants.MIN_BUN_VERSION):
             console.error(
-                f"Reflex requires bun version {constants.BUN_VERSION}+ to run. If you specified a bun path in your "
-                f"config,"
-                f"make sure to specify one that meets the requirements."
+                f"Reflex requires bun version {constants.BUN_VERSION} or higher to run, but the detected version is "
+                f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
+                f"that satisfies the minimum version requirement."
             )
+
             raise typer.Exit(1)
 
 
