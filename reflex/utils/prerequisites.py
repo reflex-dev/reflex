@@ -353,14 +353,15 @@ def install_frontend_packages(packages):
         [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
     )
-    #processes.show_status("Installing base frontend packages", process)
 
+    processes.show_status("Installing base frontend packages", process)
+    print(packages)
     if len(packages) > 0:
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
         )
-        #processes.show_status("Installing custom frontend packages", process)
+        processes.show_status("Installing custom frontend packages", process)
 
 
 def check_initialized(frontend: bool = True):

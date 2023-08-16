@@ -67,6 +67,7 @@ def run_process_and_launch_url(
                     if first_run:
                         url = line.split("url: ")[-1].strip()
                         console.print(f"App running at: [bold green]{url}")
+                        first_run = False
                     else:
                         console.print(f"New packages detected updating app...")
                 else:

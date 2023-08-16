@@ -460,6 +460,7 @@ class App(Base):
 
 
     def get_frontend_packages(self, import_dicts):
+        #print("import_dicts", import_dicts.keys() )
         page_imports = [
             i for i in import_dicts.keys() 
             if i not in compiler.DEFAULT_IMPORTS.keys() 
@@ -468,7 +469,7 @@ class App(Base):
             and not i.startswith("/") 
             and i != ""
         ]
-        print("page_imports", page_imports)
+        #print("page_imports", page_imports)
         prerequisites.install_frontend_packages(page_imports)
 
     def compile(self):
@@ -514,14 +515,12 @@ class App(Base):
                 )
                 # add component.get_imports() to all_imports
                 all_imports.update(component.get_imports())
+
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
         
         thread_pool.close()
         thread_pool.join()
-
-        # install frontend packages
-        self.get_frontend_packages(all_imports)
 
         # Get the results.
         compile_results = [result.get() for result in compile_results]
@@ -531,11 +530,16 @@ class App(Base):
         # Compile the custom components.
         compile_results.append(compiler.compile_components(custom_components))
 
+        # Iterate through all the custom components and add their imports to the all_imports
+        for component in custom_components:
+            all_imports.update(component.get_imports())
+
         # Compile the root document with base styles and fonts.
         compile_results.append(compiler.compile_document_root(self.stylesheets))
 
         # Compile the theme.
         compile_results.append(compiler.compile_theme(self.style))
+        
 
         # Compile the Tailwind config.
         if config.tailwind is not None:
@@ -546,6 +550,9 @@ class App(Base):
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
+
+        # install frontend packages
+        self.get_frontend_packages(all_imports)
 
         # Write the pages at the end to trigger the NextJS hot reload only once.
         thread_pool = ThreadPool()
