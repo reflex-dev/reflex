@@ -473,10 +473,12 @@ def format_dict(prop: ComponentStyle) -> str:
     # Dump the dict to a string.
     fprop = json_dumps(prop)
 
+    def unescape_double_quotes_in_var(m: re.Match) -> str:
+        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
+        return re.sub('\\\\"', '"', m.group(1))
+
     # This substitution is necessary to unwrap var values.
-    fprop = re.sub('"{', "", fprop)
-    fprop = re.sub('}"', "", fprop)
-    fprop = re.sub('\\\\"', '"', fprop)
+    fprop = re.sub(r'"{([^}]*)}"', unescape_double_quotes_in_var, fprop)
 
     # Return the formatted dict.
     return fprop

@@ -23,6 +23,14 @@ def mock_event(arg):
         ([1, 2, 3], "{[1, 2, 3]}"),
         (["a", "b", "c"], '{["a", "b", "c"]}'),
         ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
+        ({"a": 'foo "bar" baz'}, r'{{"a": "foo \"bar\" baz"}}'),
+        (
+            {
+                "a": 'foo "{ "bar" }" baz',
+                "b": BaseVar(name="val", type_="str"),
+            },
+            r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
+        ),
         (
             EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
             '{_e => Event([E("mock_event", {})], _e)}',
