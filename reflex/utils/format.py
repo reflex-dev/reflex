@@ -478,7 +478,16 @@ def format_dict(prop: ComponentStyle) -> str:
         return re.sub('\\\\"', '"', m.group(1))
 
     # This substitution is necessary to unwrap var values.
-    fprop = re.sub(r'"{([^}]*)}"', unescape_double_quotes_in_var, fprop)
+    fprop = re.sub(
+        pattern=r'''
+            (?<!\\)      # must NOT start with a backslash
+            "            # match opening double quote of JSON value
+            {(.*?)}      # extract the value between curly braces (non-greedy)
+            "            # match must end with an unescaped double quote
+        ''',
+        repl=unescape_double_quotes_in_var,
+        string=fprop,
+        flags=re.VERBOSE)
 
     # Return the formatted dict.
     return fprop
