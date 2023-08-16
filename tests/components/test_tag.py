@@ -4,6 +4,7 @@ import pytest
 
 from reflex.components.tags import CondTag, Tag, tagless
 from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.style import Style
 from reflex.vars import BaseVar, Var
 
 
@@ -64,6 +65,13 @@ def mock_event(arg):
         (
             {"a": BaseVar(name='state.colors["val"]', type_="str")},
             '{{"a": state.colors["val"]}}',
+        ),
+        # tricky real-world case from markdown component
+        (
+            {
+                "h1": f"{{({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />}}"
+            },
+            '{{"h1": ({node, ...props}) => <Heading {...props} as={`h1`} />}}',
         ),
     ],
 )
