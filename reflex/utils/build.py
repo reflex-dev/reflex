@@ -41,6 +41,30 @@ def set_reflex_project_hash():
     update_json_file(constants.REFLEX_JSON, {"project_hash": project_hash})
 
 
+def set_environment_variables():
+    """Write the upload url to a REFLEX_JSON."""
+    update_json_file(
+        constants.ENV_JSON,
+        {
+            "uploadUrl": constants.Endpoint.UPLOAD.get_url(),
+            "eventUrl": constants.Endpoint.EVENT.get_url(),
+            "pingUrl": constants.Endpoint.PING.get_url(),
+        },
+    )
+
+
+def set_os_env(**kwargs):
+    """Set os environment variables.
+
+    Args:
+        kwargs: env key word args.
+    """
+    for key, value in kwargs.items():
+        if not value:
+            continue
+        os.environ[key.upper()] = value
+
+
 def generate_sitemap_config(deploy_url: str):
     """Generate the sitemap config file.
 
@@ -78,13 +102,15 @@ def export(
     # Remove the static folder.
     path_ops.rm(constants.WEB_STATIC_DIR)
 
-    # Generate the sitemap file.
+    # The export command to run.
     command = "export"
-    if frontend and deploy_url is not None:
-        generate_sitemap_config(deploy_url)
-        command = "export-sitemap"
 
     if frontend:
+        # Generate a sitemap if a deploy URL is provided.
+        if deploy_url is not None:
+            generate_sitemap_config(deploy_url)
+            command = "export-sitemap"
+
         checkpoints = [
             "Linting and checking ",
             "Compiled successfully",
@@ -162,6 +188,9 @@ def setup_frontend(
         src=str(root / constants.APP_ASSETS_DIR),
         dest=str(root / constants.WEB_ASSETS_DIR),
     )
+
+    # Set the environment variables in client (env.json).
+    set_environment_variables()
 
     # Disable the Next telemetry.
     if disable_telemetry:
