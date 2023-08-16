@@ -51,6 +51,9 @@ def pytest_exception_interact(node, call, report):
         str(node.nodeid).strip().replace(" ", "_").replace(":", "_"),
     )
 
-    DISPLAY.waitgrab().save(
-        (Path(screenshot_dir) / safe_filename).with_suffix(".png"),
-    )
+    try:
+        DISPLAY.waitgrab().save(
+            (Path(screenshot_dir) / safe_filename).with_suffix(".png"),
+        )
+    except Exception as e:
+        print(f"Failed to take screenshot for {node}: {e}")
