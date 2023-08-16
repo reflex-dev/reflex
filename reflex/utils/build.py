@@ -92,7 +92,7 @@ def export(
 
     # Generate the sitemap file.
     command = "export"
-    if deploy_url is not None:
+    if frontend and deploy_url is not None:
         generate_sitemap_config(deploy_url)
         command = "export-sitemap"
 
