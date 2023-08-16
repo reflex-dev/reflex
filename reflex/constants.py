@@ -65,10 +65,14 @@ JINJA_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "jinja")
 # Bun config.
 # The Bun version.
 BUN_VERSION = "0.7.0"
+# Min Bun Version
+MIN_BUN_VERSION = "0.7.0"
 # The directory to store the bun.
 BUN_ROOT_PATH = os.path.join(REFLEX_DIR, ".bun")
+# Default bun path.
+DEFAULT_BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
 # The bun path.
-BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
+BUN_PATH = get_value("BUN_PATH", DEFAULT_BUN_PATH)
 # URL to bun install script.
 BUN_INSTALL_URL = "https://bun.sh/install"
 

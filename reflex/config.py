@@ -168,6 +168,9 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
+    # The bun path
+    bun_path: str = constants.BUN_PATH
+
     # The Admin Dash.
     admin_dash: Optional[AdminDash] = None
 

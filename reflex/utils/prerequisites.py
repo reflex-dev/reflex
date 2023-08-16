@@ -57,7 +57,7 @@ def get_bun_version() -> Optional[version.Version]:
     """
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([constants.BUN_PATH, "-v"], run=True)
+        result = processes.new_process([get_config().bun_path, "-v"], run=True)
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
         return None
@@ -92,7 +92,7 @@ def get_install_package_manager() -> str:
         return get_windows_package_manager()
 
     # On other platforms, we use bun.
-    return constants.BUN_PATH
+    return get_config().bun_path
 
 
 def get_package_manager() -> str:
@@ -245,34 +245,11 @@ def initialize_web_directory():
         json.dump(reflex_json, f, ensure_ascii=False)
 
 
-def initialize_bun():
-    """Check that bun requirements are met, and install if not."""
-    if IS_WINDOWS:
-        # Bun is not supported on Windows.
-        console.debug("Skipping bun installation on Windows.")
-        return
-
-    # Check the bun version.
-    bun_version = get_bun_version()
-    if bun_version != version.parse(constants.BUN_VERSION):
-        console.debug(
-            f"Current bun version ({bun_version}) does not match ({constants.BUN_VERSION})."
-        )
-        remove_existing_bun_installation()
-        install_bun()
-
-
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
     console.debug("Removing existing bun installation.")
-    if os.path.exists(constants.BUN_PATH):
+    if os.path.exists(get_config().bun_path):
         path_ops.rm(constants.BUN_ROOT_PATH)
-
-
-def initialize_node():
-    """Validate nodejs have install or not."""
-    if not check_node_version():
-        install_node()
 
 
 def download_and_run(url: str, *args, show_status: bool = False, **env):
@@ -352,7 +329,7 @@ def install_bun():
         return
 
     # Skip if bun is already installed.
-    if os.path.exists(constants.BUN_PATH):
+    if os.path.exists(get_config().bun_path):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -435,12 +412,46 @@ def is_latest_template() -> bool:
     return app_version == constants.VERSION
 
 
+def validate_bun():
+    """Validate bun if a custom bun path is specified to ensure the bun version meets requirements.
+
+    Raises:
+        Exit: If custom specified bun does not exist or does not meet requirements.
+    """
+    # if a custom bun path is provided, make sure its valid
+    # This is specific to non-FHS OS
+    bun_path = get_config().bun_path
+    if bun_path != constants.DEFAULT_BUN_PATH:
+        bun_version = get_bun_version()
+        if not bun_version:
+            console.error(
+                "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
+            )
+            raise typer.Exit(1)
+        elif bun_version < version.parse(constants.MIN_BUN_VERSION):
+            console.error(
+                f"Reflex requires bun version {constants.BUN_VERSION} or higher to run, but the detected version is "
+                f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
+                f"that satisfies the minimum version requirement."
+            )
+
+            raise typer.Exit(1)
+
+
+def validate_frontend_dependencies():
+    """Validate frontend dependencies to ensure they meet requirements."""
+    if IS_WINDOWS:
+        return
+    return validate_bun()
+
+
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
     if not IS_WINDOWS:
         path_ops.mkdir(constants.REFLEX_DIR)
-
+    # validate dependencies before install
+    validate_frontend_dependencies()
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)
 
