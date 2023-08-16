@@ -162,7 +162,7 @@ class Config(Base):
     ] = constants.Transports.WEBSOCKET_POLLING
 
     # List of origins that are allowed to connect to the backend API.
-    cors_allowed_origins: list[str] = ["*"]
+    cors_allowed_origins: List[str] = ["*"]
 
     # Tailwind config.
     tailwind: Optional[Dict[str, Any]] = None
