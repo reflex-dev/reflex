@@ -94,7 +94,7 @@ BUN_INSTALL_URL = "https://bun.sh/install"
 # The NVM version.
 NVM_VERSION = "0.39.1"
 # The FNM version.
-FNM_VERSION = "1.33.1"
+FNM_VERSION = "1.35.1"
 # The Node version.
 NODE_VERSION = "18.17.0"
 # The minimum required node version.
