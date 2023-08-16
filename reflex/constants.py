@@ -6,7 +6,6 @@ import platform
 import re
 from enum import Enum
 from types import SimpleNamespace
-from typing import Any, Type
 
 from platformdirs import PlatformDirs
 
@@ -17,31 +16,6 @@ except ImportError:
     import importlib_metadata as metadata  # pyright: ignore[reportMissingImports]
 
 IS_WINDOWS = platform.system() == "Windows"
-
-
-def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
-    """Get the value for the constant.
-    Obtain os env value and cast non-string types into
-    their original types.
-
-    Args:
-        key: constant name.
-        default: default value if key doesn't exist.
-        type_: the type of the constant.
-
-    Returns:
-        the value of the constant in its designated type
-    """
-    value = os.getenv(key, default)
-    try:
-        if value and type_ != str:
-            value = eval(value)
-    except Exception:
-        pass
-    finally:
-        # Special case for db_url expects None to be a valid input when
-        # user explicitly overrides db_url as None
-        return value if value != "None" else None  # noqa B012
 
 
 # App names and versions.
@@ -85,8 +59,6 @@ MIN_BUN_VERSION = "0.7.0"
 BUN_ROOT_PATH = os.path.join(REFLEX_DIR, ".bun")
 # Default bun path.
 DEFAULT_BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
-# The bun path.
-BUN_PATH = get_value("BUN_PATH", DEFAULT_BUN_PATH)
 # URL to bun install script.
 BUN_INSTALL_URL = "https://bun.sh/install"
 
@@ -161,10 +133,6 @@ REFLEX_JSON = os.path.join(WEB_DIR, "reflex.json")
 # The env json file.
 ENV_JSON = os.path.join(WEB_DIR, "env.json")
 
-# Commands to run the app.
-# flag to make the engine print all the SQL statements it executes
-SQLALCHEMY_ECHO = get_value("SQLALCHEMY_ECHO", False, type_=bool)
-
 # Compiler variables.
 # The extension for compiled Javascript files.
 JS_EXT = ".js"
@@ -204,12 +172,6 @@ SETTER_PREFIX = "set_"
 FRONTEND_ZIP = "frontend.zip"
 # The name of the backend zip during deployment.
 BACKEND_ZIP = "backend.zip"
-# The name of the sqlite database.
-DB_NAME = os.getenv("DB_NAME", "reflex.db")
-# The sqlite url.
-DB_URL = get_value("DB_URL", f"sqlite:///{DB_NAME}")
-# The redis url
-REDIS_URL = get_value("REDIS_URL")
 # The default title to show for Reflex apps.
 DEFAULT_TITLE = "Reflex App"
 # The default description to show for Reflex apps.
@@ -233,8 +195,6 @@ OLD_CONFIG_FILE = f"pcconfig{PY_EXT}"
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
 # Token expiration time in seconds.
 TOKEN_EXPIRATION = 60 * 60
-# The event namespace for websocket
-EVENT_NAMESPACE = get_value("EVENT_NAMESPACE")
 
 # Testing variables.
 # Testing os env set by pytest when running a test case.

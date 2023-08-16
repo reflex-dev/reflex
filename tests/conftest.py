@@ -8,7 +8,6 @@ from typing import Dict, Generator, List, Set, Union
 import pytest
 
 import reflex as rx
-from reflex import constants
 from reflex.app import App
 from reflex.event import EventSpec
 
@@ -392,7 +391,7 @@ def base_config_values() -> Dict:
     Returns:
         Dictionary of base config values
     """
-    return {"app_name": "app", "db_url": constants.DB_URL, "env": rx.Env.DEV}
+    return {"app_name": "app", "db_url": "sqlite:///reflex.db", "env": rx.Env.DEV}
 
 
 @pytest.fixture

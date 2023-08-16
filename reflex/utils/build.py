@@ -41,18 +41,6 @@ def set_reflex_project_hash():
     update_json_file(constants.REFLEX_JSON, {"project_hash": project_hash})
 
 
-def set_environment_variables():
-    """Write the upload url to a REFLEX_JSON."""
-    update_json_file(
-        constants.ENV_JSON,
-        {
-            "uploadUrl": constants.Endpoint.UPLOAD.get_url(),
-            "eventUrl": constants.Endpoint.EVENT.get_url(),
-            "pingUrl": constants.Endpoint.PING.get_url(),
-        },
-    )
-
-
 def generate_sitemap_config(deploy_url: str):
     """Generate the sitemap config file.
 
@@ -174,9 +162,6 @@ def setup_frontend(
         src=str(root / constants.APP_ASSETS_DIR),
         dest=str(root / constants.WEB_ASSETS_DIR),
     )
-
-    # Set the environment variables in client (env.json).
-    set_environment_variables()
 
     # Disable the Next telemetry.
     if disable_telemetry:

@@ -40,9 +40,8 @@ def get_engine(url: Optional[str] = None):
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
-    echo_db_query = (
-        console.LOG_LEVEL <= console.LogLevel.INFO and constants.SQLALCHEMY_ECHO
-    )
+    # Print the SQL queries if the log level is INFO or lower.
+    echo_db_query = console.LOG_LEVEL <= console.LogLevel.INFO
     return sqlmodel.create_engine(
         url,
         echo=echo_db_query,

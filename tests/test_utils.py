@@ -323,7 +323,6 @@ def test_setup_frontend(tmp_path, mocker):
     (assets / "favicon.ico").touch()
 
     mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
-    mocker.patch("reflex.utils.build.set_environment_variables")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
     assert web_public_folder.exists()
@@ -421,7 +420,6 @@ def test_create_config_e2e(tmp_working_dir):
     exec((tmp_working_dir / constants.CONFIG_FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
-    assert config.db_url == constants.DB_URL
 
 
 @pytest.mark.parametrize(
