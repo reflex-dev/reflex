@@ -20,6 +20,8 @@ class Plotly(PlotlyLib):
 
     tag = "Plot"
 
+    is_default = True
+
     # The figure to display. This can be a plotly figure or a plotly data json.
     data: Var[Figure]
 

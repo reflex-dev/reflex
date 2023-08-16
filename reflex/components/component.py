@@ -799,4 +799,10 @@ class NoSSRComponent(Component):
     def _get_custom_code(self) -> str:
         opts_fragment = ", { ssr: false });"
         library_import = f"const {self.tag} = dynamic(() => import('{self.library}')"
-        return "".join((library_import, opts_fragment))
+        mod_import = (
+            # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
+            f".then((mod) => mod.{self.tag})"
+            if not self.is_default
+            else ""
+        )
+        return "".join((library_import, mod_import, opts_fragment))
