@@ -166,7 +166,7 @@ class Var(ABC):
         Returns:
             The stringified var.
         """
-        return self.operation(fn="JSON.stringify")
+        return self.operation(fn="JSON.stringify", type_=str)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -661,7 +661,7 @@ class Var(ABC):
         Returns:
             A var representing the logical and.
         """
-        return self.operation("&&", other, flip=True)
+        return self.operation("&&", other, type_=bool, flip=True)
 
     def __or__(self, other: Var) -> Var:
         """Perform a logical or.
@@ -672,7 +672,7 @@ class Var(ABC):
         Returns:
             A var representing the logical or.
         """
-        return self.operation("||", other)
+        return self.operation("||", other, type_=bool)
 
     def __ror__(self, other: Var) -> Var:
         """Perform a logical or.
