@@ -265,19 +265,16 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     show(f"Installing {url}", process)
 
 
-def download_and_extract_fnm_zip(url: str):
+def download_and_extract_fnm_zip():
     """Download and run a script.
-
-    Args:
-        url: The url of the fnm release zip binary.
 
     Raises:
         Exit: If an error occurs while downloading or extracting the FNM zip.
     """
-    # TODO: make this OS agnostic
     # Download the zip file
+    url = constants.FNM_INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = f"{constants.FNM_DIR}\\fnm_windows.zip"
+    fnm_zip_file = os.sep.join([constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip"])
     # Function to download and extract the FNM zip release
     try:
         # Download the FNM zip release
@@ -292,7 +289,7 @@ def download_and_extract_fnm_zip(url: str):
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
             zip_ref.extractall(constants.FNM_DIR)
 
-        console.debug("FNM for Windows downloaded and extracted successfully.")
+        console.debug("FNM package downloaded and extracted successfully.")
     except Exception as e:
         console.error(f"An error occurred while downloading fnm package: {e}")
         raise typer.Exit(1) from e
@@ -302,15 +299,19 @@ def download_and_extract_fnm_zip(url: str):
 
 
 def install_node():
-    """Install nvm and nodejs for use by Reflex.
+    """Install fnm and nodejs for use by Reflex.
     Independent of any existing system installations.
     """
-    if constants.IS_WINDOWS:
-        path_ops.mkdir(constants.FNM_DIR)
-        if not os.path.exists(constants.FNM_EXE):
-            download_and_extract_fnm_zip(constants.FNM_WINDOWS_INSTALL_URL)
+    if not constants.FNM_FILENAME:
+        # fnm only support Linux, macOS and Windows distros.
+        return
 
-        # Install node.
+    path_ops.mkdir(constants.FNM_DIR)
+    if not os.path.exists(constants.FNM_EXE):
+        download_and_extract_fnm_zip()
+
+    if constants.IS_WINDOWS:
+        # Install node
         process = processes.new_process(
             [
                 "powershell",
@@ -320,20 +321,17 @@ def install_node():
         )
     else:  # All other platforms (Linux, MacOS)
         # TODO we can skip installation if check_node_version() checks out
-        # Create the nvm directory and install.
-        path_ops.mkdir(constants.NVM_DIR)
-        env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
-        download_and_run(constants.NVM_INSTALL_URL, show_status=True, **env)
-
+        # Add execute permissions to fnm executable.
+        processes.new_process(["chmod", "+x", constants.FNM_EXE])
         # Install node.
-        # We use bash -c as we need to source nvm.sh to use nvm.
         process = processes.new_process(
             [
-                "bash",
-                "-c",
-                f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
-            ],
-            env=env,
+                constants.FNM_EXE,
+                "install",
+                constants.NODE_VERSION,
+                "--fnm-dir",
+                constants.FNM_DIR,
+            ]
         )
     processes.show_status("Installing node", process)
 

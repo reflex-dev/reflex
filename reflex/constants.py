@@ -29,13 +29,6 @@ VERSION = metadata.version(MODULE_NAME)
 REFLEX_DIR = (
     # on windows, we use C:/Users/<username>/AppData/Local/reflex.
     PlatformDirs(MODULE_NAME, False).user_data_dir
-    if IS_WINDOWS
-    else os.path.expandvars(
-        os.path.join(
-            "$HOME",
-            f".{MODULE_NAME}",
-        ),
-    )
 )
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -71,31 +64,26 @@ FNM_VERSION = "1.35.1"
 NODE_VERSION = "18.17.0"
 # The minimum required node version.
 NODE_VERSION_MIN = "16.8.0"
-# The directory to store nvm.
-NVM_DIR = os.path.join(REFLEX_DIR, ".nvm")
 # The directory to store fnm.
 FNM_DIR = os.path.join(REFLEX_DIR, "fnm")
+FNM_FILENAME = get_fnm_name()
 # The fnm executable binary.
-FNM_EXE = os.path.join(FNM_DIR, "fnm.exe")
-# The nvm path.
-NVM_PATH = os.path.join(NVM_DIR, "nvm.sh")
+FNM_EXE = os.path.join(FNM_DIR, "fnm.exe" if IS_WINDOWS else "fnm")
 # The node bin path.
-NODE_BIN_PATH = (
-    os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
-    if not IS_WINDOWS
-    else os.path.join(FNM_DIR, "node-versions", f"v{NODE_VERSION}", "installation")
+NODE_BIN_PATH = os.path.join(
+    FNM_DIR,
+    "node-versions",
+    f"v{NODE_VERSION}",
+    "installation",
+    "bin" if not IS_WINDOWS else "",
 )
 # The default path where node is installed.
 NODE_PATH = os.path.join(NODE_BIN_PATH, "node.exe" if IS_WINDOWS else "node")
 # The default path where npm is installed.
 NPM_PATH = os.path.join(NODE_BIN_PATH, "npm")
-# The URL to the nvm install script.
-NVM_INSTALL_URL = (
-    f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
-)
 # The URL to the fnm release binary
-FNM_WINDOWS_INSTALL_URL = (
-    f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/fnm-windows.zip"
+FNM_INSTALL_URL = (
+    f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/{FNM_FILENAME}.zip"
 )
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.
