@@ -9,7 +9,7 @@ authors = [
 ]
 readme = "README.md"
 homepage = "https://reflex.dev"
-repository = "https://github.com/pynecone-io/pynecone"
+repository = "https://github.com/reflex-dev/reflex"
 documentation = "https://reflex.dev/docs/getting-started/introduction"
 keywords = [
     "web",
