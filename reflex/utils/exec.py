@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import hashlib
+import psutil
+import json
 from pathlib import Path
 
 import psutil
@@ -47,6 +50,7 @@ def detect_package_change(json_file_path: str):
     return hash_object.hexdigest()
 
 
+<<<<<<< HEAD
 def kill(proc_pid: int):
     """Kills a process and all its child processes.
 
@@ -56,6 +60,9 @@ def kill(proc_pid: int):
     Example:
         >>> kill(1234)
     """
+=======
+def kill(proc_pid):
+>>>>>>> 4955d90 (Incrementally add new packages)
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
         proc.kill()
