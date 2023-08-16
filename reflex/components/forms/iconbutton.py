@@ -1,6 +1,8 @@
 from reflex.components import Component
 from reflex.components.media.icon import Icon
 from reflex.vars import Var
+from reflex.utils import format
+
 
 class ChakraIconButtonComponent(Component):
     """A component that wraps a Chakra icon button component."""
@@ -18,8 +20,6 @@ class IconButton(ChakraIconButtonComponent):
 
     #  A label that describes the button
     aria_label: Var[str]
-
-    # aria-label: Var[str]
 
     # The icon to be used in the button.
     icon: Var[str]
@@ -48,5 +48,5 @@ class IconButton(ChakraIconButtonComponent):
 
         # Get the Chakra UI's icon component instance
         icon_instance = Icon.create(tag=props.pop("icon"))
-
+        
         return super().create(icon_instance, **props)
