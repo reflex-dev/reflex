@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import os
+import hashlib
+import psutil
+import json
 from pathlib import Path
 
 from reflex import constants
@@ -21,6 +24,24 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
+
+def detect_package_change(json_file_path):
+    with open(json_file_path, 'r') as file:
+            json_data = json.load(file)
+
+    # Calculate the hash
+    json_string = json.dumps(json_data, sort_keys=True)
+    hash_object = hashlib.sha256(json_string.encode())
+    return hash_object.hexdigest()
+
+
+def kill(proc_pid):
+    process = psutil.Process(proc_pid)
+    for proc in process.children(recursive=True):
+        proc.kill()
+    process.kill()
+
+
 def run_process_and_launch_url(
     run_command: list[str],
 ):
@@ -29,18 +50,37 @@ def run_process_and_launch_url(
     Args:
         run_command: The command to run.
     """
-    process = processes.new_process(
-        run_command,
-        cwd=constants.WEB_DIR,
-    )
+    json_file_path = os.path.join(constants.WEB_DIR, "package.json")
+    last_hash = detect_package_change(json_file_path)
+    process = None
+    first_run = True
 
-    if process.stdout:
-        for line in process.stdout:
-            if "ready started server on" in line:
-                url = line.split("url: ")[-1].strip()
-                console.print(f"App running at: [bold green]{url}")
-            else:
-                console.debug(line)
+    while True:
+        if process is None:
+            process = processes.new_process(
+                run_command,
+                cwd=constants.WEB_DIR,
+            )
+        if process.stdout:
+            for line in process.stdout:
+                if "ready started server on" in line:
+                    if first_run:
+                        url = line.split("url: ")[-1].strip()
+                        console.print(f"App running at: [bold green]{url}")
+                    else:
+                        console.print(f"New packages detected updating app...")
+                else:
+                    console.debug(line)
+                    new_hash = detect_package_change(json_file_path)
+                    if new_hash != last_hash:
+                        last_hash = new_hash
+                        kill(process.pid)
+                        process = None
+                        break
+        if process != None:
+            break
+
+    print("App stopped")
 
 
 def run_frontend(

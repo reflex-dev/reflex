@@ -177,8 +177,6 @@ def setup_frontend(
         root: The root path of the project.
         disable_telemetry: Whether to disable the Next telemetry.
     """
-    # Install frontend packages.
-    prerequisites.install_frontend_packages()
 
     # Copy asset files to public folder.
     path_ops.cp(

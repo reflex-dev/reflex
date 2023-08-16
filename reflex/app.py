@@ -45,7 +45,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
-from reflex.utils import console, format, types
+from reflex.utils import console, format, types, prerequisites
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -458,6 +458,19 @@ class App(Base):
 
             admin.mount_to(self.api)
 
+
+    def get_frontend_packages(self, import_dicts):
+        page_imports = [
+            i for i in import_dicts.keys() 
+            if i not in compiler.DEFAULT_IMPORTS.keys() 
+            and i != "focus-visible/dist/focus-visible"
+            and "next" not in i
+            and not i.startswith("/") 
+            and i != ""
+        ]
+        print("page_imports", page_imports)
+        prerequisites.install_frontend_packages(page_imports)
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
         # Create a progress bar.
@@ -482,6 +495,7 @@ class App(Base):
         custom_components = set()
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
+        all_imports = {}
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
@@ -498,10 +512,16 @@ class App(Base):
                         ),
                     )
                 )
+                # add component.get_imports() to all_imports
+                all_imports.update(component.get_imports())
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
+        
         thread_pool.close()
         thread_pool.join()
+
+        # install frontend packages
+        self.get_frontend_packages(all_imports)
 
         # Get the results.
         compile_results = [result.get() for result in compile_results]
