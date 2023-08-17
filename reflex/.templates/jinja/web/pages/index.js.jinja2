@@ -20,7 +20,7 @@ export default function Component() {
   }))
 
   // Main event loop.
-  const [Event, notConnected] = useContext(EventLoopContext)
+  const [Event, connectError] = useContext(EventLoopContext)
 
   // Set focus to the specified element.
   useEffect(() => {
