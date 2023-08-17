@@ -469,6 +469,7 @@ class App(Base):
             and not i.startswith("/") 
             and i != ""
         ]
+        page_imports.extend(get_config().frontend_packages)
         #print("page_imports", page_imports)
         prerequisites.install_frontend_packages(page_imports)
 
@@ -534,7 +535,7 @@ class App(Base):
         for component in custom_components:
             all_imports.update(component.get_imports())
 
-        # Compile the root document with base styles and fonts.
+        # Compile the root document with base styles and fonts
         compile_results.append(compiler.compile_document_root(self.stylesheets))
 
         # Compile the theme.
