@@ -1207,8 +1207,7 @@ def test_error_on_state_method_shadow():
     )
 
 
-@pytest.mark.asyncio
-async def test_state_with_invalid_yield():
+def test_state_with_invalid_yield():
     """Test that an error is thrown when a state yields an invalid value."""
 
     class StateWithInvalidYield(rx.State):
