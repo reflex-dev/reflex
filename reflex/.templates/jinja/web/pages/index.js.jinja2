@@ -8,6 +8,7 @@
 
 {% block export %}
 export default function Component() {
+  const {{state_name}} = useContext(StateContext)
   const {{const.router}} = useRouter()
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
   const focusRef = useRef();
@@ -19,10 +20,7 @@ export default function Component() {
   }))
 
   // Main event loop.
-  const [{{state_name}}, Event, notConnected] = useEventLoop(
-    {{initial_state|json_dumps}},
-    [E('{{state_name}}.{{const.hydrate}}', {})],
-  )
+  const [Event, notConnected] = useContext(EventLoopContext)
 
   // Set focus to the specified element.
   useEffect(() => {
@@ -31,7 +29,6 @@ export default function Component() {
     }
   })
 
-  {% if is_dynamic %}
   // Route after the initial page hydration.
   useEffect(() => {
     const change_complete = () => Event([E('{{state_name}}.{{const.hydrate}}', {})])
@@ -40,7 +37,6 @@ export default function Component() {
       {{const.router}}.events.off('routeChangeComplete', change_complete)
     }
   }, [{{const.router}}])
-  {% endif %}
 
   {% for hook in hooks %}
   {{ hook }}
