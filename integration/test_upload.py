@@ -126,3 +126,49 @@ def test_upload_file(tmp_path, upload_file: AppHarness, driver):
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, "selected_files")
     assert selected_files.text == exp_name
+
+
+def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
+    """Submit several file uploads and check that they arrived on the backend.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        upload_file: harness for UploadFile app.
+        driver: WebDriver instance.
+    """
+    assert upload_file.app_instance is not None
+    token_input = driver.find_element(By.ID, "token")
+    assert token_input
+    # wait for the backend connection to send the token
+    token = upload_file.poll_for_value(token_input)
+    assert token is not None
+
+    upload_box = driver.find_element(By.XPATH, "//input[@type='file']")
+    assert upload_box
+    upload_button = driver.find_element(By.ID, "upload_button")
+    assert upload_button
+
+    exp_files = {
+        "test1.txt": "test file contents!",
+        "test2.txt": "this is test file number 2!",
+        "reflex.txt": "reflex is awesome!",
+    }
+    for exp_name, exp_contents in exp_files.items():
+        target_file = tmp_path / exp_name
+        target_file.write_text(exp_contents)
+        upload_box.send_keys(str(target_file))
+
+    time.sleep(0.2)
+
+    # check that the selected files are displayed
+    selected_files = driver.find_element(By.ID, "selected_files")
+    assert selected_files.text == "\n".join(exp_files)
+
+    # do the upload
+    upload_button.click()
+
+    # look up the backend state and assert on uploaded contents
+    backend_state = upload_file.app_instance.state_manager.states[token]
+    time.sleep(0.5)
+    for exp_name, exp_contents in exp_files.items():
+        assert backend_state._file_data[exp_name] == exp_contents
