@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import os
 import hashlib
-import psutil
 import json
+import os
 from pathlib import Path
+
+import psutil
 
 from reflex import constants
 from reflex.config import get_config
@@ -24,10 +25,21 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
+def detect_package_change(json_file_path: str):
+    """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
 
-def detect_package_change(json_file_path):
-    with open(json_file_path, 'r') as file:
-            json_data = json.load(file)
+    Args:
+        json_file_path (str): The path to the JSON file to be hashed.
+
+    Returns:
+        str: The SHA-256 hash of the JSON file as a hexadecimal string.
+
+    Example:
+        >>> detect_package_change("package.json")
+        'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'
+    """
+    with open(json_file_path, "r") as file:
+        json_data = json.load(file)
 
     # Calculate the hash
     json_string = json.dumps(json_data, sort_keys=True)
@@ -35,7 +47,15 @@ def detect_package_change(json_file_path):
     return hash_object.hexdigest()
 
 
-def kill(proc_pid):
+def kill(proc_pid: int):
+    """Kills a process and all its child processes.
+
+    Args:
+        proc_pid (int): The process ID of the process to be killed.
+
+    Example:
+        >>> kill(1234)
+    """
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
         proc.kill()
@@ -78,7 +98,7 @@ def run_process_and_launch_url(
                         kill(process.pid)
                         process = None
                         break
-        if process != None:
+        if process is not None:
             break
 
     print("App stopped")

@@ -21,10 +21,9 @@ from reflex.components.base import (
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.state import State
 from reflex.style import Style
-from reflex.utils import format, imports, path_ops, prerequisites
+from reflex.utils import format, imports, path_ops
 from reflex.vars import ImportVar
 
-import json
 # To re-export this function.
 merge_imports = imports.merge_imports
 
@@ -93,7 +92,7 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
             continue
 
         import_dicts.append(get_import_dict(lib, default, rest))
-    
+
     return import_dicts
 
 

@@ -45,7 +45,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
-from reflex.utils import console, format, types, prerequisites
+from reflex.utils import console, format, prerequisites, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -458,19 +458,25 @@ class App(Base):
 
             admin.mount_to(self.api)
 
+    def get_frontend_packages(self, imports: Dict[str, str]):
+        """Gets the frontend packages to be installed and filters out the unnecessary ones.
 
-    def get_frontend_packages(self, import_dicts):
-        #print("import_dicts", import_dicts.keys() )
+        Args:
+            imports (Dict[str, str]): A dictionary containing the imports used in the current page.
+
+        Example:
+            >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
+        """
         page_imports = [
-            i for i in import_dicts.keys() 
-            if i not in compiler.DEFAULT_IMPORTS.keys() 
+            i
+            for i in imports
+            if i not in compiler.DEFAULT_IMPORTS.keys()
             and i != "focus-visible/dist/focus-visible"
             and "next" not in i
-            and not i.startswith("/") 
+            and not i.startswith("/")
             and i != ""
         ]
         page_imports.extend(get_config().frontend_packages)
-        #print("page_imports", page_imports)
         prerequisites.install_frontend_packages(page_imports)
 
     def compile(self):
@@ -519,7 +525,7 @@ class App(Base):
 
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
-        
+
         thread_pool.close()
         thread_pool.join()
 
@@ -540,7 +546,6 @@ class App(Base):
 
         # Compile the theme.
         compile_results.append(compiler.compile_theme(self.style))
-        
 
         # Compile the Tailwind config.
         if config.tailwind is not None:
