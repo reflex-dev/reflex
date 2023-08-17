@@ -368,13 +368,18 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
 
     Returns:
         The event spec from calling the event handler.
+
+    Raises:
+        ValueError: If the event handler does not take in 1 or 2 arguments.
     """
     args = inspect.getfullargspec(event_handler.fn).args
     if len(args) == 1:
         return event_handler()
-    assert (
-        len(args) == 2
-    ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
+    if len(args) >= 2:
+        raise ValueError(
+            f"Event handler {event_handler.fn} must have 1 or 2 arguments. "
+            f"Specified arguments: {args}"
+        )
     return event_handler(arg)
 
 
