@@ -765,7 +765,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             return events
 
         raise TypeError(
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers"
+            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
         )
 
     async def _process_event(
