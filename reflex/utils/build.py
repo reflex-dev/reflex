@@ -124,6 +124,7 @@ def export(
         process = processes.new_process(
             [prerequisites.get_package_manager(), "run", command],
             cwd=constants.WEB_DIR,
+            shell=constants.IS_WINDOWS,
         )
         processes.show_progress("Creating Production Build", process, checkpoints)
 
@@ -201,6 +202,7 @@ def setup_frontend(
             ],
             cwd=constants.WEB_DIR,
             stdout=subprocess.DEVNULL,
+            shell=constants.IS_WINDOWS,
         )
 
 

@@ -30,8 +30,7 @@ def run_process_and_launch_url(
         run_command: The command to run.
     """
     process = processes.new_process(
-        run_command,
-        cwd=constants.WEB_DIR,
+        run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
     )
 
     if process.stdout:
@@ -137,7 +136,7 @@ def run_backend_prod(
             str(port),
             f"{app_name}:{constants.APP_VAR}",
         ]
-        if prerequisites.IS_WINDOWS
+        if constants.IS_WINDOWS
         else [
             *constants.RUN_BACKEND_PROD,
             "--bind",

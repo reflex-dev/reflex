@@ -8,11 +8,15 @@ from enum import Enum
 from types import SimpleNamespace
 from typing import Any, Type
 
+from platformdirs import PlatformDirs
+
 # importlib is only available for Python 3.8+ so we need the backport for Python 3.7
 try:
     from importlib import metadata
 except ImportError:
     import importlib_metadata as metadata  # pyright: ignore[reportMissingImports]
+
+IS_WINDOWS = platform.system() == "Windows"
 
 
 def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
@@ -48,7 +52,17 @@ VERSION = metadata.version(MODULE_NAME)
 
 # Files and directories used to init a new project.
 # The directory to store reflex dependencies.
-REFLEX_DIR = os.path.expandvars(os.path.join("$HOME", f".{MODULE_NAME}"))
+REFLEX_DIR = (
+    # on windows, we use C:/Users/<username>/AppData/Local/reflex.
+    PlatformDirs(MODULE_NAME, False).user_data_dir
+    if IS_WINDOWS
+    else os.path.expandvars(
+        os.path.join(
+            "$HOME",
+            f".{MODULE_NAME}",
+        ),
+    )
+)
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # The name of the assets directory.
@@ -79,29 +93,38 @@ BUN_INSTALL_URL = "https://bun.sh/install"
 # NVM / Node config.
 # The NVM version.
 NVM_VERSION = "0.39.1"
+# The FNM version.
+FNM_VERSION = "1.35.1"
 # The Node version.
 NODE_VERSION = "18.17.0"
 # The minimum required node version.
 NODE_VERSION_MIN = "16.8.0"
 # The directory to store nvm.
 NVM_DIR = os.path.join(REFLEX_DIR, ".nvm")
+# The directory to store fnm.
+FNM_DIR = os.path.join(REFLEX_DIR, "fnm")
+# The fnm executable binary.
+FNM_EXE = os.path.join(FNM_DIR, "fnm.exe")
 # The nvm path.
 NVM_PATH = os.path.join(NVM_DIR, "nvm.sh")
 # The node bin path.
-NODE_BIN_PATH = os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
+NODE_BIN_PATH = (
+    os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
+    if not IS_WINDOWS
+    else os.path.join(FNM_DIR, "node-versions", f"v{NODE_VERSION}", "installation")
+)
 # The default path where node is installed.
-NODE_PATH = (
-    "node" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "node")
-)
+NODE_PATH = os.path.join(NODE_BIN_PATH, "node.exe" if IS_WINDOWS else "node")
 # The default path where npm is installed.
-NPM_PATH = (
-    "npm" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "npm")
-)
+NPM_PATH = os.path.join(NODE_BIN_PATH, "npm")
 # The URL to the nvm install script.
 NVM_INSTALL_URL = (
     f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
 )
-
+# The URL to the fnm release binary
+FNM_WINDOWS_INSTALL_URL = (
+    f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/fnm-windows.zip"
+)
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.
 WEB_DIR = ".web"

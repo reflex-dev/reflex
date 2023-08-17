@@ -5,10 +5,10 @@ from __future__ import annotations
 import glob
 import json
 import os
-import platform
 import re
 import sys
 import tempfile
+import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
@@ -23,8 +23,6 @@ from redis import Redis
 from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops, processes
-
-IS_WINDOWS = platform.system() == "Windows"
 
 
 def check_node_version() -> bool:
@@ -44,7 +42,7 @@ def check_node_version() -> bool:
     # Compare the version numbers
     return (
         current_version >= version.parse(constants.NODE_VERSION_MIN)
-        if IS_WINDOWS
+        if constants.IS_WINDOWS
         else current_version == version.parse(constants.NODE_VERSION)
     )
 
@@ -85,11 +83,9 @@ def get_install_package_manager() -> str:
     Returns:
         The path to the package manager.
     """
-    get_config()
-
     # On Windows, we use npm instead of bun.
-    if IS_WINDOWS:
-        return get_windows_package_manager()
+    if constants.IS_WINDOWS:
+        return constants.NPM_PATH
 
     # On other platforms, we use bun.
     return get_config().bun_path
@@ -102,10 +98,6 @@ def get_package_manager() -> str:
     Returns:
         The path to the package manager.
     """
-    get_config()
-
-    if IS_WINDOWS:
-        return get_windows_package_manager()
     return constants.NPM_PATH
 
 
@@ -279,24 +271,59 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     show(f"Installing {url}", process)
 
 
-def install_node():
-    """Install nvm and nodejs for use by Reflex.
-       Independent of any existing system installations.
+def download_and_extract_fnm_zip(url: str):
+    """Download and run a script.
+
+    Args:
+        url: The url of the fnm release zip binary.
 
     Raises:
-        Exit: if installation failed
+        Exit: If an error occurs while downloading or extracting the FNM zip.
     """
-    if IS_WINDOWS:
-        # See if existing node is good enough.
-        # On Windows, this must be installed manually, outside of Reflex.
-        if not check_node_version():
-            # We don't currently support auto install of node on Windows
-            # because NVM is not supported there
-            console.error(
-                f"Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
-            )
-            raise typer.Exit(1)
-        return
+    # TODO: make this OS agnostic
+    # Download the zip file
+    console.debug(f"Downloading {url}")
+    fnm_zip_file = f"{constants.FNM_DIR}\\fnm_windows.zip"
+    # Function to download and extract the FNM zip release
+    try:
+        # Download the FNM zip release
+        # TODO: show progress to improve UX
+        with httpx.stream("GET", url, follow_redirects=True) as response:
+            response.raise_for_status()
+            with open(fnm_zip_file, "wb") as output_file:
+                for chunk in response.iter_bytes():
+                    output_file.write(chunk)
+
+        # Extract the downloaded zip file
+        with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
+            zip_ref.extractall(constants.FNM_DIR)
+
+        console.debug("FNM for Windows downloaded and extracted successfully.")
+    except Exception as e:
+        console.error(f"An error occurred while downloading fnm package: {e}")
+        raise typer.Exit(1) from e
+    finally:
+        # Clean up the downloaded zip file
+        path_ops.rm(fnm_zip_file)
+
+
+def install_node():
+    """Install nvm and nodejs for use by Reflex.
+    Independent of any existing system installations.
+    """
+    if constants.IS_WINDOWS:
+        path_ops.mkdir(constants.FNM_DIR)
+        if not os.path.exists(constants.FNM_EXE):
+            download_and_extract_fnm_zip(constants.FNM_WINDOWS_INSTALL_URL)
+
+        # Install node.
+        process = processes.new_process(
+            [
+                "powershell",
+                "-Command",
+                f'& "{constants.FNM_EXE}" install {constants.NODE_VERSION} --fnm-dir "{constants.FNM_DIR}"',
+            ],
+        )
     else:  # All other platforms (Linux, MacOS)
         # TODO we can skip installation if check_node_version() checks out
         # Create the nvm directory and install.
@@ -314,7 +341,7 @@ def install_node():
             ],
             env=env,
         )
-        processes.show_status("Installing node", process)
+    processes.show_status("Installing node", process)
 
 
 def install_bun():
@@ -324,7 +351,7 @@ def install_bun():
         FileNotFoundError: If required packages are not found.
     """
     # Bun is not supported on Windows.
-    if IS_WINDOWS:
+    if constants.IS_WINDOWS:
         console.debug("Skipping bun installation on Windows.")
         return
 
@@ -352,6 +379,7 @@ def install_frontend_packages():
     process = processes.new_process(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
+        shell=constants.IS_WINDOWS,
     )
     processes.show_status("Installing base frontend packages", process)
 
@@ -361,6 +389,7 @@ def install_frontend_packages():
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
+            shell=constants.IS_WINDOWS,
         )
         processes.show_status("Installing custom frontend packages", process)
 
@@ -375,7 +404,7 @@ def check_initialized(frontend: bool = True):
         Exit: If the app is not initialized.
     """
     has_config = os.path.exists(constants.CONFIG_FILE)
-    has_reflex_dir = not frontend or IS_WINDOWS or os.path.exists(constants.REFLEX_DIR)
+    has_reflex_dir = not frontend or os.path.exists(constants.REFLEX_DIR)
     has_web_dir = not frontend or os.path.exists(constants.WEB_DIR)
 
     # Check if the app is initialized.
@@ -393,7 +422,7 @@ def check_initialized(frontend: bool = True):
         raise typer.Exit(1)
 
     # Print a warning for Windows users.
-    if IS_WINDOWS:
+    if constants.IS_WINDOWS:
         console.warn(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
@@ -440,7 +469,7 @@ def validate_bun():
 
 def validate_frontend_dependencies():
     """Validate frontend dependencies to ensure they meet requirements."""
-    if IS_WINDOWS:
+    if constants.IS_WINDOWS:
         return
     return validate_bun()
 
@@ -448,8 +477,7 @@ def validate_frontend_dependencies():
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
-    if not IS_WINDOWS:
-        path_ops.mkdir(constants.REFLEX_DIR)
+    path_ops.mkdir(constants.REFLEX_DIR)
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
