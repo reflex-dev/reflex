@@ -707,7 +707,6 @@ class EventNamespace(AsyncNamespace):
         pass
 
     async def on_event(self, sid, data):
-        # TODO: should this be front-end websocket events below?
         """Event for receiving front-end websocket events.
 
         Args:
