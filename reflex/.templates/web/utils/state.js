@@ -76,7 +76,7 @@ export const getToken = () => {
 export const applyDelta = (state, delta) => {
   const new_state = {...state}
   for (const substate in delta) {
-    let s = state;
+    let s = new_state;
     const path = substate.split(".").slice(1);
     while (path.length > 0) {
       s = s[path.shift()];
