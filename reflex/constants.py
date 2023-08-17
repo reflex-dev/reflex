@@ -55,9 +55,7 @@ DEFAULT_BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
 # URL to bun install script.
 BUN_INSTALL_URL = "https://bun.sh/install"
 
-# NVM / Node config.
-# The NVM version.
-NVM_VERSION = "0.39.1"
+# FNM / Node config.
 # The FNM version.
 FNM_VERSION = "1.35.1"
 # The Node version.
