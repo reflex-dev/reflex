@@ -1205,3 +1205,30 @@ def test_error_on_state_method_shadow():
         err.value.args[0]
         == f"The event handler name `reset` shadows a builtin State method; use a different name instead"
     )
+
+
+@pytest.mark.asyncio
+async def test_state_with_invalid_yield():
+    """Test that an error is thrown when a state yields an invalid value."""
+
+    class StateWithInvalidYield(rx.State):
+        """A state that yields an invalid value."""
+
+        def invalid_handler(self):
+            """Invalid handler.
+
+            Yields:
+                an invalid value.
+            """
+            yield 1
+
+    invalid_state = StateWithInvalidYield()
+    with pytest.raises(TypeError) as err:
+        invalid_state._check_valid(
+            invalid_state.event_handlers["invalid_handler"],
+            rx.event.Event(token="fake_token", name="invalid_handler"),
+        )
+    assert (
+        "must only return/yield: None, Events or other EventHandlers"
+        in err.value.args[0]
+    )

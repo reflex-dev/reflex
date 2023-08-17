@@ -738,13 +738,43 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Clean the state to prepare for the next event.
             self._clean()
 
+    def _check_valid(self, handler: EventHandler, events: Any) -> Any:
+        """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
+
+        Args:
+            handler: EventHandler.
+            events: The events to be checked.
+
+        Raises:
+            TypeError: If any of the events are not valid.
+
+        Returns:
+            The events as they are if valid.
+        """
+        if (
+            events is None
+            or (
+                isinstance(events, list)
+                and all(isinstance(e, (EventHandler, EventSpec)) for e in events)
+            )
+            or (
+                not isinstance(events, list)
+                and isinstance(events, (EventHandler, EventSpec))
+            )
+        ):
+            return events
+
+        raise TypeError(
+            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers"
+        )
+
     async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict
     ) -> AsyncIterator[Tuple[Optional[List[EventSpec]], bool]]:
         """Process event.
 
         Args:
-            handler: Eventhandler to process.
+            handler: EventHandler to process.
             state: State to process the handler.
             payload: The event payload.
 
@@ -765,28 +795,27 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Handle regular functions.
             else:
                 events = fn(**payload)
-
             # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
-                    yield event, False
+                    yield self._check_valid(handler, event), False
                 yield None, True
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
                 try:
                     while True:
-                        yield next(events), False
+                        yield self._check_valid(handler, next(events)), False
                 except StopIteration as si:
                     # the "return" value of the generator is not available
                     # in the loop, we must catch StopIteration to access it
                     if si.value is not None:
-                        yield si.value, False
+                        yield self._check_valid(handler, si.value), False
                 yield None, True
 
             # Handle regular event chains.
             else:
-                yield events, True
+                yield self._check_valid(handler, events), True
 
         # If an error occurs, throw a window alert.
         except Exception:
