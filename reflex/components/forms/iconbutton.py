@@ -1,8 +1,6 @@
 from reflex.components import Component
 from reflex.components.media.icon import Icon
 from reflex.vars import Var
-from reflex.utils import format
-
 
 class ChakraIconButtonComponent(Component):
     """A component that wraps a Chakra icon button component."""
