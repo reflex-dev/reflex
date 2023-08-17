@@ -347,3 +347,6 @@ PING_TIMEOUT = 120
 
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
+
+ON_MOUNT = "on_mount"
+ON_UNMOUNT = "on_unmount"

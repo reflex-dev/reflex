@@ -218,6 +218,11 @@ export const queueEvents = async (events, socket) => {
 export const processEvent = async (
   socket
 ) => {
+  // Only proceed if the socket is up, otherwise we throw the event into the void
+  if (!socket) {
+    return;
+  }
+
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0 || event_processing) {
     return;

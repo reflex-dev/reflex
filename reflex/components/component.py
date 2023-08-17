@@ -279,7 +279,7 @@ class Component(Base, ABC):
         Returns:
             The event triggers.
         """
-        return EVENT_TRIGGERS | set(self.get_controlled_triggers())
+        return EVENT_TRIGGERS | set(self.get_controlled_triggers()) | set((constants.ON_MOUNT, constants.ON_UNMOUNT))
 
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
@@ -509,10 +509,35 @@ class Component(Base, ABC):
         Returns:
             The hooks for just this component.
         """
+        hooks = []
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
-        return None
+            hooks.append(f"const {ref} = useRef(null); refs['{ref}'] = {ref};")
+        # pop on_mount and on_unmount from event_triggers for useEffect
+        on_mount = self.event_triggers.pop(constants.ON_MOUNT, "")
+        on_unmount = self.event_triggers.pop(constants.ON_UNMOUNT, "")
+        if on_mount or on_unmount:
+            if on_mount:
+                on_mount = "Event([{chain}])".format(
+                    chain=",".join(
+                        [format.format_event(event) for event in on_mount.events]
+                    )
+                )
+            if on_unmount:
+                on_unmount = "Event([{chain}])".format(
+                    chain=",".join(
+                        [format.format_event(event) for event in on_unmount.events]
+                    )
+                )
+            hooks.append(f"""
+                useEffect(() => {{
+                    {on_mount}
+                    return () => {{
+                        {on_unmount}
+                    }}
+                }}, []);""")
+            hooks.append('console.log("state.hello_mounted", state.hello_mounted)')
+        return "\n".join(hooks) if hooks else None
 
     def get_hooks(self) -> Set[str]:
         """Get the React hooks for this component and its children.
