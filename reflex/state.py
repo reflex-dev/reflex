@@ -17,6 +17,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -751,17 +752,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The events as they are if valid.
         """
-        if (
-            events is None
-            or (
-                isinstance(events, list)
-                and all(isinstance(e, (EventHandler, EventSpec)) for e in events)
-            )
-            or (
-                not isinstance(events, list)
-                and isinstance(events, (EventHandler, EventSpec))
-            )
-        ):
+        def _is_valid_type(events: Any) -> bool:
+            return isinstance(events, (EventHandler, EventSpec))
+        if events is None or _is_valid_type(events):
+            return events
+        elif isinstance(events, Iterable) and all(_is_valid_type(e) for e in events):
             return events
 
         raise TypeError(
