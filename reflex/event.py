@@ -64,6 +64,8 @@ class EventHandler(Base):
                 return EventSpec(
                     handler=self,
                     client_handler_name="uploadFiles",
+                    # `files` is defined in the Upload component's _use_hooks
+                    args=((Var.create_safe("files"), Var.create_safe("files")),),
                 )
 
             # Otherwise, convert to JSON.

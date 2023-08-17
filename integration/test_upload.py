@@ -40,6 +40,13 @@ def UploadFile():
                 on_click=lambda: UploadState.handle_upload(rx.upload_files()),  # type: ignore
                 id="upload_button",
             ),
+            rx.box(
+                rx.foreach(
+                    rx.selected_files,
+                    lambda f: rx.text(f),
+                ),
+                id="selected_files",
+            ),
         )
 
     app = rx.App(state=UploadState)
@@ -115,3 +122,7 @@ def test_upload_file(tmp_path, upload_file: AppHarness, driver):
     backend_state = upload_file.app_instance.state_manager.states[token]
     time.sleep(0.5)
     assert backend_state._file_data[exp_name] == exp_contents
+
+    # check that the selected files are displayed
+    selected_files = driver.find_element(By.ID, "selected_files")
+    assert selected_files.text == exp_name
