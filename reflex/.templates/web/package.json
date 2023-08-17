@@ -28,15 +28,13 @@
     "react-dropzone": "^14.2.3",
     "react-markdown": "^8.0.7",
     "react-player": "^2.12.0",
-    "react-plotly.js": "^2.6.0",
     "react-syntax-highlighter": "^15.5.0",
     "rehype-katex": "^6.0.3",
     "rehype-raw": "^6.1.1",
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
     "socket.io-client": "^4.6.1",
-    "universal-cookie": "^4.0.4",
-    "victory": "^36.6.8"
+    "universal-cookie": "^4.0.4"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
