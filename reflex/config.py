@@ -157,11 +157,6 @@ class Config(Base):
     # The bun path
     bun_path: str = constants.DEFAULT_BUN_PATH
 
-    # Backend transport methods.
-    backend_transports: Optional[
-        constants.Transports
-    ] = constants.Transports.WEBSOCKET_POLLING
-
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
 

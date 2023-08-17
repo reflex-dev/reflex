@@ -292,36 +292,6 @@ class SocketEvent(Enum):
         return str(self.value)
 
 
-class Transports(Enum):
-    """Socket transports used by the reflex backend API."""
-
-    POLLING_WEBSOCKET = "['polling', 'websocket']"
-    WEBSOCKET_POLLING = "['websocket', 'polling']"
-    WEBSOCKET_ONLY = "['websocket']"
-    POLLING_ONLY = "['polling']"
-
-    def __str__(self) -> str:
-        """Get the string representation of the transports.
-
-        Returns:
-            The transports string.
-        """
-        return str(self.value)
-
-    def get_transports(self) -> str:
-        """Get the transports config for the backend.
-
-        Returns:
-            The transports config for the backend.
-        """
-        # Import here to avoid circular imports.
-        from reflex.config import get_config
-
-        # Get the API URL from the config.
-        config = get_config()
-        return str(config.backend_transports)
-
-
 class RouteArgType(SimpleNamespace):
     """Type of dynamic route arg extracted from URI route."""
 

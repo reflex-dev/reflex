@@ -113,7 +113,6 @@ def _compile_page(
         state_name=state.get_name(),
         hooks=component.get_hooks(),
         render=component.render(),
-        transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
         err_comp=connect_error_component.render() if connect_error_component else None,
     )
 
