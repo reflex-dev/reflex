@@ -174,7 +174,7 @@ def output_system_info():
     system = platform.system()
 
     if system == "Linux":
-        import distro
+        import distro  # type: ignore
 
         os_version = distro.name(pretty=True)
     else:
