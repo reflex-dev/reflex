@@ -93,11 +93,6 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
             continue
 
         import_dicts.append(get_import_dict(lib, default, rest))
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 4955d90 (Incrementally add new packages)
     return import_dicts
 
 
