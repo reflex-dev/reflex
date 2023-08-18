@@ -39,8 +39,7 @@ def check_node_version() -> bool:
             if constants.IS_WINDOWS
             else current_version == version.parse(constants.NODE_VERSION)
         )
-    else:
-        return False
+    return False
 
 
 def get_node_version() -> Optional[version.Version]:
