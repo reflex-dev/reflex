@@ -160,7 +160,6 @@ class Component(Base, ABC):
 
             # Check if the key is an event trigger.
             if key in triggers:
-                kwargs["value"].name if kwargs.get("value", False) else ""
                 # Temporarily disable full control for event triggers.
                 kwargs["event_triggers"][key] = self._create_event_chain(key, value)
 

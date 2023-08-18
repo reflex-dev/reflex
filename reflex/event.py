@@ -107,9 +107,6 @@ class EventChain(Base):
 
     events: List[EventSpec]
 
-    # State name when fully controlled.
-    state_name: str = ""
-
 
 class Target(Base):
     """A Javascript event target."""
