@@ -4,5 +4,6 @@ dist/*
 examples/
 .idea
 .vscode
-.coverage*
+.coverage
+.coverage.*
 venv
