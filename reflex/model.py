@@ -1,5 +1,6 @@
 """Database built into Reflex."""
 
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
@@ -41,7 +42,7 @@ def get_engine(url: Optional[str] = None):
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
     # Print the SQL queries if the log level is INFO or lower.
-    echo_db_query = console.LOG_LEVEL <= console.LogLevel.INFO
+    echo_db_query = os.environ.get("SQLALCHEMY_ECHO") == "True"
     return sqlmodel.create_engine(
         url,
         echo=echo_db_query,

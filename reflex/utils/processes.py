@@ -9,13 +9,11 @@ import signal
 import subprocess
 from concurrent import futures
 from typing import Callable, List, Optional, Tuple, Union
-from urllib.parse import urlparse
 
 import psutil
 import typer
 
 from reflex import constants
-from reflex.config import get_config
 from reflex.utils import console, prerequisites
 
 
@@ -35,19 +33,6 @@ def get_num_workers() -> int:
         The number of backend worker processes.
     """
     return 1 if prerequisites.get_redis() is None else (os.cpu_count() or 1) * 2 + 1
-
-
-def get_api_port() -> int:
-    """Get the API port.
-
-    Returns:
-        The API port.
-    """
-    port = urlparse(get_config().api_url).port
-    if port is None:
-        port = 80
-    assert port is not None
-    return port
 
 
 def get_process_on_port(port) -> Optional[psutil.Process]:
