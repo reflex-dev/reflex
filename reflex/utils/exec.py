@@ -197,9 +197,9 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at : {prerequisites.get_install_package_manager()}"
+        f"Using package installer at: {prerequisites.get_install_package_manager()}"
     )
     console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")
     if system != "Windows":
-        console.debug(f"Unzip path : {path_ops.which('unzip')}")
+        console.debug(f"Unzip path: {path_ops.which('unzip')}")
     # exit()
