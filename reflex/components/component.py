@@ -160,12 +160,9 @@ class Component(Base, ABC):
 
             # Check if the key is an event trigger.
             if key in triggers:
-                state_name = kwargs["value"].name if kwargs.get("value", False) else ""
+                kwargs["value"].name if kwargs.get("value", False) else ""
                 # Temporarily disable full control for event triggers.
-                full_control = False
-                kwargs["event_triggers"][key] = self._create_event_chain(
-                    key, value, state_name, full_control
-                )
+                kwargs["event_triggers"][key] = self._create_event_chain(key, value)
 
         # Remove any keys that were added as events.
         for key in kwargs["event_triggers"]:
@@ -200,16 +197,12 @@ class Component(Base, ABC):
         value: Union[
             Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
         ],
-        state_name: str = "",
-        full_control: bool = False,
     ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
         Args:
             event_trigger: The event trigger to bind the chain to.
             value: The value to create the event chain from.
-            state_name: The state to be fully controlled.
-            full_control: Whether full controlled or not.
 
         Returns:
             The event chain.
@@ -278,13 +271,8 @@ class Component(Base, ABC):
                 for e in events
             ]
 
-        # set state name when fully controlled input
-        state_name = state_name if full_control else ""
-
         # Return the event chain.
-        return EventChain(
-            events=events, state_name=state_name, full_control=full_control
-        )
+        return EventChain(events=events)
 
     def get_triggers(self) -> Set[str]:
         """Get the event triggers for the component.
@@ -600,27 +588,6 @@ class Component(Base, ABC):
             An import var.
         """
         return ImportVar(tag=self.tag, is_default=self.is_default, alias=self.alias)
-
-    def is_full_control(self, kwargs: dict) -> bool:
-        """Return if the component is fully controlled input.
-
-        Args:
-            kwargs: The component kwargs.
-
-        Returns:
-            Whether fully controlled.
-        """
-        value = kwargs.get("value")
-        if value is None or type(value) != BaseVar:
-            return False
-
-        on_change = kwargs.get("on_change")
-        if on_change is None or type(on_change) != EventHandler:
-            return False
-
-        value = value.full_name
-        on_change = on_change.fn.__qualname__
-        return value == on_change.replace(constants.SETTER_PREFIX, "")
 
 
 # Map from component to styling.

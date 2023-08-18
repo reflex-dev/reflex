@@ -19,7 +19,7 @@ from reflex.utils import types
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import EventChain, EventHandler, EventSpec
+    from reflex.event import EventHandler, EventSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -309,25 +309,6 @@ def format_event(event_spec: EventSpec) -> str:
     if event_spec.client_handler_name:
         event_args.append(wrap(event_spec.client_handler_name, '"'))
     return f"E({', '.join(event_args)})"
-
-
-def format_full_control_event(event_chain: EventChain) -> str:
-    """Format a fully controlled input prop.
-
-    Args:
-        event_chain: The event chain for full controlled input.
-
-    Returns:
-        The compiled event.
-    """
-    from reflex.compiler import templates
-
-    event_spec = event_chain.events[0]
-    arg = event_spec.args[0][1] if event_spec.args else None
-    state_name = event_chain.state_name
-    chain = ",".join([format_event(event) for event in event_chain.events])
-    event = templates.FULL_CONTROL(state_name=state_name, arg=arg, chain=chain)
-    return event
 
 
 def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
