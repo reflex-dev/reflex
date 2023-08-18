@@ -71,21 +71,6 @@ def get_bun_version() -> Optional[version.Version]:
         return None
 
 
-def get_windows_package_manager() -> str:
-    """Get the package manager for windows.
-
-    Returns:
-        The path to the package manager for windows.
-
-    Raises:
-        FileNotFoundError: If bun or npm is not installed.
-    """
-    npm_path = path_ops.which("npm")
-    if npm_path is None:
-        raise FileNotFoundError("Reflex requires npm to be installed on Windows.")
-    return npm_path
-
-
 def get_install_package_manager() -> str:
     """Get the package manager executable for installation.
       currently on unix systems, bun is used for installation only.
