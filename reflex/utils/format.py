@@ -381,7 +381,7 @@ def format_image_data(value: Type) -> str:
     return f"data:image/png;base64,{base64_image}"
 
 
-def format_state(value: Any) -> Dict:
+def format_state(value: Any) -> Any:
     """Recursively format values in the given state.
 
     Args:
@@ -396,6 +396,10 @@ def format_state(value: Any) -> Dict:
     # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v) for k, v in value.items()}
+
+    # Handle lists, sets, typles.
+    if isinstance(value, types.StateIterBases):
+        return [format_state(v) for v in value]
 
     # Return state vars as is.
     if isinstance(value, types.StateBases):
