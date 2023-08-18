@@ -166,7 +166,15 @@ def output_system_info():
     if console.LOG_LEVEL > constants.LogLevel.DEBUG:
         return
 
+    config = get_config()
+    try:
+        config_file = sys.modules[config.__module__].__file__
+    except Exception:
+        config_file = None
+
     console.rule(f"System Info")
+    console.debug(f"Config file: {config_file!r}")
+    console.debug(f"Config: {config}")
 
     dependencies = [
         f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
@@ -179,6 +187,7 @@ def output_system_info():
         dependencies.extend(
             [
                 f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {config.bun_path})]",
             ],
         )
     else:
