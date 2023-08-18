@@ -168,10 +168,21 @@ def output_system_info():
     dependencies = [
         f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
         f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{constants.NODE_PATH})]",
-        f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
     ]
 
     system = platform.system()
+
+    if system != "Windows":
+        dependencies.extend(
+            [
+                f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {constants.BUN_PATH})]",
+            ],
+        )
+    else:
+        dependencies.append(
+            f"[FNM {constants.FNM_VERSION} (Expected: {constants.FNM_VERSION}) (PATH: {constants.FNM_EXE})]",
+        )
 
     if system == "Linux":
         import distro  # type: ignore
@@ -180,26 +191,15 @@ def output_system_info():
     else:
         os_version = platform.version()
 
-    if system != "Windows":
-        dependencies.append(
-            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {constants.BUN_PATH})]",
-        )
-
     dependencies.append(f"[OS {platform.system()} {os_version}]")
 
     for dep in dependencies:
         console.debug(f"{dep}")
 
-    if system == "Windows":
-        console.debug(
-            f"Using package manager at : {prerequisites.get_windows_package_manager()}"
-        )
-    else:
-        console.debug(
-            f"Using package installer at : {prerequisites.get_install_package_manager()}"
-        )
-        console.debug(
-            f"Using package executer at: {prerequisites.get_package_manager()}"
-        )
+    console.debug(
+        f"Using package installer at : {prerequisites.get_install_package_manager()}"
+    )
+    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")
+    if system != "Windows":
         console.debug(f"Unzip path : {path_ops.which('unzip')}")
     # exit()
