@@ -5,6 +5,7 @@ import pytest
 import reflex as rx
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
+from reflex.constants import ON_MOUNT, ON_UNMOUNT
 from reflex.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from reflex.state import State
 from reflex.style import Style
@@ -343,8 +344,9 @@ def test_get_triggers(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1().get_triggers() == EVENT_TRIGGERS
-    assert component2().get_triggers() == {"on_open", "on_close"} | EVENT_TRIGGERS
+    default_triggers = {ON_MOUNT, ON_UNMOUNT} | EVENT_TRIGGERS
+    assert component1().get_triggers() == default_triggers
+    assert component2().get_triggers() == {"on_open", "on_close"} | default_triggers
 
 
 def test_create_custom_component(my_component):
