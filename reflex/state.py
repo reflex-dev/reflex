@@ -758,8 +758,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         if events is None or _is_valid_type(events):
             return events
-        elif isinstance(events, Iterable) and all(_is_valid_type(e) for e in events):
-            return events
+        try:
+            if all(_is_valid_type(e) for e in events):
+                return events
+        except TypeError:
+            pass
 
         raise TypeError(
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
