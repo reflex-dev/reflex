@@ -482,23 +482,6 @@ def initialize_frontend_dependencies():
     initialize_web_directory()
 
 
-def check_admin_settings():
-    """Check if admin settings are set and valid for logging in cli app."""
-    admin_dash = get_config().admin_dash
-    if admin_dash:
-        if not admin_dash.models:
-            console.log(
-                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]rxconfig.py[/bold magenta]."
-            )
-        else:
-            console.log(
-                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard."
-            )
-            console.log(
-                "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
-            )
-
-
 def check_db_initialized() -> bool:
     """Check if the database migrations are initialized.
 

@@ -7,7 +7,7 @@ import pytest
 import typer
 from packaging import version
 
-from reflex import Env, constants
+from reflex import constants
 from reflex.base import Base
 from reflex.utils import (
     build,
@@ -323,7 +323,7 @@ def test_setup_frontend(tmp_path, mocker):
     (assets / "favicon.ico").touch()
 
     mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
-    mocker.patch("reflex.utils.build.set_environment_variables")
+    mocker.patch("reflex.utils.build.set_env_json")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
     assert web_public_folder.exists()
@@ -421,8 +421,6 @@ def test_create_config_e2e(tmp_working_dir):
     exec((tmp_working_dir / constants.CONFIG_FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
-    assert config.db_url == constants.DB_URL
-    assert config.env == Env.DEV
 
 
 @pytest.mark.parametrize(
