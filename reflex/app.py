@@ -690,7 +690,7 @@ class EventNamespace(AsyncNamespace):
         self.app = app
 
     def on_connect(self, sid, environ):
-        """Event for when the websocket disconnects.
+        """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
