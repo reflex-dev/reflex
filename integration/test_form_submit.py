@@ -124,6 +124,11 @@ def test_submit(driver, form_submit: AppHarness):
     submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
     submit_input.click()
 
+    # wait for the form data to arrive at the backend
+    AppHarness._poll_for(
+        lambda: backend_state.form_data != {},
+    )
+
     assert backend_state.form_data["name_input"] == "foo"
     assert backend_state.form_data["pin_input"] == pin_values
     assert backend_state.form_data["number_input"] == "-3"
