@@ -14,8 +14,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 import plotly.graph_objects as go
 from plotly.io import to_json
 
-from reflex import constants, vars
+from reflex import constants
 from reflex.utils import types
+from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -182,7 +183,7 @@ def format_string(string: str) -> str:
     return string
 
 
-def format_var(var: vars.Var) -> str:
+def format_var(var: Var) -> str:
     """Format the given Var as a javascript value.
 
     Args:
@@ -330,8 +331,8 @@ def format_event(event_spec: EventSpec) -> str:
 
 
 def format_event_chain(
-    event_chain: [EventChain | vars.Var[EventChain]],
-    event_arg: vars.Var | None = None,
+    event_chain: [EventChain | Var[EventChain]],
+    event_arg: Var | None = None,
 ) -> str:
     """Format an event chain as a javascript invocation.
 
@@ -345,7 +346,9 @@ def format_event_chain(
     Raises:
         ValueError: When the given event chain is not a valid event chain.
     """
-    if isinstance(event_chain, vars.Var):
+    if isinstance(event_chain, Var):
+        from reflex.event import EventChain
+
         if event_chain.type_ is not EventChain:
             raise ValueError(f"Invalid event chain: {event_chain}")
         return "".join(
