@@ -41,7 +41,7 @@ def set_reflex_project_hash():
     update_json_file(constants.REFLEX_JSON, {"project_hash": project_hash})
 
 
-def set_environment_variables():
+def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     update_json_file(
         constants.ENV_JSON,
@@ -190,7 +190,7 @@ def setup_frontend(
     )
 
     # Set the environment variables in client (env.json).
-    set_environment_variables()
+    set_env_json()
 
     # Disable the Next telemetry.
     if disable_telemetry:

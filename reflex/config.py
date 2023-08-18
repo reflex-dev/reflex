@@ -124,6 +124,11 @@ class DBConfig(Base):
 class Config(Base):
     """A Reflex config."""
 
+    class Config:
+        """Pydantic config for the config."""
+
+        validate_assignment = True
+
     # The name of the app.
     app_name: str
 
@@ -192,29 +197,61 @@ class Config(Base):
         """
         super().__init__(*args, **kwargs)
 
-        # Check for deprecated config values.
+        # Check for deprecated values.
+        self.check_deprecated_values(**kwargs)
+
+        # Update the config from environment variables.
+        self.update_from_env()
+
+    @staticmethod
+    def check_deprecated_values(**kwargs):
+        """Check for deprecated config values.
+
+        Args:
+            **kwargs: The kwargs passed to the config.
+
+        Raises:
+            ValueError: If a deprecated config value is found.
+        """
         if "db_config" in kwargs:
-            console.deprecate("db_config is deprecated - use db_url instead")
+            raise ValueError("db_config is deprecated - use db_url instead")
         if "admin_dash" in kwargs:
-            console.deprecate(
+            raise ValueError(
                 "admin_dash is deprecated in the config - pass it as a param to rx.App instead"
             )
         if "env_path" in kwargs:
-            console.deprecate(
-                ".env file is deprecated - use environment variables instead"
+            raise ValueError(
+                "env_path is deprecated - use environment variables instead"
             )
 
-        # Check env variables for overriden values.
-        for key in dict(self):
-            if key.startswith("_"):
-                continue
+    def update_from_env(self):
+        """Update the config from environment variables.
 
+
+        Raises:
+            ValueError: If an environment variable is set to an invalid type.
+        """
+        # Iterate over the fields.
+        for key, field in self.__fields__.items():
             # The env var name is the key in uppercase.
             env_var = os.environ.get(key.upper())
+
+            # If the env var is set, override the config value.
             if env_var is not None:
                 console.info(
                     f"Overriding config value {key} with env var {key.upper()}={env_var}"
                 )
+
+                # Convert the env var to the expected type.
+                try:
+                    env_var = field.type_(env_var)
+                except ValueError:
+                    console.error(
+                        f"Could not convert {key.upper()}={env_var} to type {field.type_}"
+                    )
+                    raise
+
+                # Set the value.
                 setattr(self, key, env_var)
 
     def get_event_namespace(self) -> Optional[str]:

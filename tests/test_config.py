@@ -1,94 +1,73 @@
-from typing import Dict
+import os
 
 import pytest
 
 import reflex as rx
-from reflex.config import DBConfig, get_config
+from reflex.config import get_config
 
 
-@pytest.fixture
-def config_no_db_url_values(base_config_values) -> Dict:
-    """Create config values with no db_url.
-
-    Args:
-        base_config_values: Base config fixture.
-
-    Returns:
-        Config values.
-    """
-    base_config_values.pop("db_url")
-    return base_config_values
+def test_requires_app_name():
+    """Test that a config requires an app_name."""
+    with pytest.raises(ValueError):
+        rx.Config()
 
 
-@pytest.fixture(autouse=True)
-def config_empty_db_url_values(base_config_values):
-    """Create config values with empty db_url.
+def test_set_app_name(base_config_values):
+    """Test that the app name is set to the value passed in.
 
     Args:
-        base_config_values: Base config values fixture.
-
-    Yields:
-        Config values
+        base_config_values: Config values.
     """
-    base_config_values["db_url"] = None
-    yield base_config_values
-
-
-@pytest.fixture
-def config_none_db_url_values(base_config_values):
-    """Create config values with None (string) db_url.
-
-    Args:
-        base_config_values: Base config values fixture.
-
-    Yields:
-        Config values
-    """
-    base_config_values["db_url"] = "None"
-    yield base_config_values
-
-
-def test_default_db_url(config_no_db_url_values):
-    """Test that db_url is assigned the default value if not passed.
-
-    Args:
-        config_no_db_url_values: Config values with no db_url defined.
-    """
-    config = rx.Config(**config_no_db_url_values)
-    assert config.db_url == "sqlite:///reflex.db"
-
-
-def test_empty_db_url(config_empty_db_url_values):
-    """Test that db_url is not automatically assigned if an empty value is defined.
-
-    Args:
-        config_empty_db_url_values: Config values with empty db_url.
-    """
-    config = rx.Config(**config_empty_db_url_values)
-    assert config.db_url is None
-
-
-def test_none_db_url(config_none_db_url_values):
-    """Test that db_url is set 'None' (string) assigned if an 'None' (string) value is defined.
-
-    Args:
-        config_none_db_url_values: Config values with None (string) db_url.
-    """
-    config = rx.Config(**config_none_db_url_values)
-    assert config.db_url == "None"
-
-
-def test_db_url_precedence(base_config_values, sqlite_db_config_values):
-    """Test that db_url is not overwritten when db_url is defined.
-
-    Args:
-        base_config_values: config values that include db_ur.
-        sqlite_db_config_values: DB config values.
-    """
-    db_config = DBConfig(**sqlite_db_config_values)
-    base_config_values["db_config"] = db_config
     config = rx.Config(**base_config_values)
-    assert config.db_url == base_config_values["db_url"]
+    assert config.app_name == base_config_values["app_name"]
+
+
+@pytest.mark.parametrize(
+    "param",
+    [
+        "db_config",
+        "admin_dash",
+        "env_path",
+    ],
+)
+def test_deprecated_params(base_config_values, param):
+    """Test that deprecated params are removed from the config.
+
+    Args:
+        base_config_values: Config values.
+        param: The deprecated param.
+    """
+    with pytest.raises(ValueError):
+        rx.Config(**base_config_values, **{param: "test"})
+
+
+@pytest.mark.parametrize(
+    "env_var, value",
+    [
+        ("APP_NAME", "my_test_app"),
+        ("FRONTEND_PORT", 3001),
+        ("BACKEND_PORT", 8001),
+        ("API_URL", "https://mybackend.com:8000"),
+        ("DEPLOY_URL", "https://myfrontend.com"),
+        ("BACKEND_HOST", "127.0.0.1"),
+        ("DB_URL", "postgresql://user:pass@localhost:5432/db"),
+        ("REDIS_URL", "redis://localhost:6379"),
+        ("TIMEOUT", 600),
+    ],
+)
+def test_update_from_env(base_config_values, monkeypatch, env_var, value):
+    """Test that environment variables override config values.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: The pytest monkeypatch object.
+        env_var: The environment variable name.
+        value: The environment variable value.
+    """
+    monkeypatch.setenv(env_var, value)
+    assert os.environ.get(env_var) == str(value)
+    config = rx.Config(**base_config_values)
+    assert getattr(config, env_var.lower()) == value
 
 
 @pytest.mark.parametrize(

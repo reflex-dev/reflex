@@ -391,7 +391,7 @@ def base_config_values() -> Dict:
     Returns:
         Dictionary of base config values
     """
-    return {"app_name": "app", "db_url": "sqlite:///reflex.db", "env": rx.Env.DEV}
+    return {"app_name": "app"}
 
 
 @pytest.fixture
