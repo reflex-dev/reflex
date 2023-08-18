@@ -473,8 +473,9 @@ def initialize_frontend_dependencies():
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
-    processes.run_concurrently(install_node, install_bun)
-
+    # processes.run_concurrently(install_node, install_bun)
+    install_node()
+    install_bun()
     # Set up the web directory.
     initialize_web_directory()
 
