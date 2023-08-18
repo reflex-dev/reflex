@@ -179,7 +179,6 @@ def output_system_info():
         dependencies.extend(
             [
                 f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {constants.BUN_PATH})]",
             ],
         )
     else:
@@ -205,4 +204,3 @@ def output_system_info():
     console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
-    # exit()
