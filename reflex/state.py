@@ -752,8 +752,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The events as they are if valid.
         """
+
         def _is_valid_type(events: Any) -> bool:
             return isinstance(events, (EventHandler, EventSpec))
+
         if events is None or _is_valid_type(events):
             return events
         elif isinstance(events, Iterable) and all(_is_valid_type(e) for e in events):
