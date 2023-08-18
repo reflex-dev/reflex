@@ -9,7 +9,14 @@ from packaging import version
 
 from reflex import Env, constants
 from reflex.base import Base
-from reflex.utils import build, format, imports, prerequisites, types
+from reflex.utils import (
+    build,
+    format,
+    imports,
+    prerequisites,
+    types,
+)
+from reflex.utils import exec as utils_exec
 from reflex.vars import Var
 
 
@@ -599,3 +606,16 @@ def test_create_reflex_dir(mocker, is_windows):
     prerequisites.initialize_frontend_dependencies()
 
     assert create_cmd.called
+
+
+def test_output_system_info(mocker):
+    """Make sure reflex does not crash dumping system info.
+
+    Args:
+        mocker: Pytest mocker object.
+
+    This test makes no assertions about the output, other than it executes
+    without crashing.
+    """
+    mocker.patch("reflex.utils.console.LOG_LEVEL", constants.LogLevel.DEBUG)
+    utils_exec.output_system_info()

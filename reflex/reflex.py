@@ -61,6 +61,9 @@ def init(
     # Set the log level.
     console.set_log_level(loglevel)
 
+    # Show system info
+    exec.output_system_info()
+
     # Get the app name.
     app_name = prerequisites.get_default_app_name() if name is None else name
     console.rule(f"[bold]Initializing {app_name}")
@@ -107,6 +110,9 @@ def run(
     """Run the app in the current directory."""
     # Set the log level.
     console.set_log_level(loglevel)
+
+    # Show system info
+    exec.output_system_info()
 
     # Set ports as os env variables to take precedence over config and
     # .env variables(if override_os_envs flag in config is set to False).
@@ -190,6 +196,9 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
+    # Show system info
+    exec.output_system_info()
+
     # Get the app config.
     config = get_config()
 
@@ -238,6 +247,9 @@ def export(
     """Export the app to a zip file."""
     # Set the log level.
     console.set_log_level(loglevel)
+
+    # Show system info
+    exec.output_system_info()
 
     # Check that the app is initialized.
     prerequisites.check_initialized(frontend=frontend)
