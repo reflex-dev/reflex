@@ -1,7 +1,7 @@
 import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { Global, css } from "@emotion/react";
 import theme from "/utils/theme";
-import { initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
+import { clientStorage, initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
 import { useEventLoop } from "utils/state";
 
 import '../styles/tailwind.css'
@@ -18,6 +18,7 @@ function EventLoopProvider({ children }) {
   const [state, Event, notConnected] = useEventLoop(
     initialState,
     initialEvents,
+    clientStorage,
   )
   return (
     <EventLoopContext.Provider value={[Event, notConnected]}>

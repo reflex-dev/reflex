@@ -1,7 +1,10 @@
 """Common utility functions used in the compiler."""
+from __future__ import annotations
 
 import os
-from typing import Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, List, Optional, Set, Tuple, Type
+
+from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.components.base import (
@@ -19,7 +22,7 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import State
+from reflex.state import Cookie, LocalStorage, State
 from reflex.style import Style
 from reflex.utils import format, imports, path_ops
 from reflex.vars import ImportVar
@@ -132,6 +135,83 @@ def compile_state(state: Type[State]) -> Dict:
         }
     )
     return format.format_state(initial_state)
+
+
+def _compile_client_storage_field(
+    field: ModelField,
+) -> tuple[Type[Cookie] | Type[LocalStorage] | None, dict[str, Any] | None]:
+    """Compile the given cookie or local_storage field.
+
+    Args:
+        field: The possible cookie field to compile.
+
+    Returns:
+        A dictionary of the compiled cookie or None if the field is not cookie-like.
+    """
+    for field_type in (Cookie, LocalStorage):
+        if isinstance(field.default, field_type):
+            cs_obj = field.default
+        elif isinstance(field.type_, type) and issubclass(field.type_, field_type):
+            cs_obj = field.type_()
+        else:
+            continue
+        return field_type, cs_obj.options()
+    return None, None
+
+
+def _compile_client_storage_recursive(
+    state: Type[State],
+) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:
+    """Compile the client-side storage for the given state recursively.
+
+    Args:
+        state: The app state object.
+
+    Returns:
+        A tuple of the compiled client-side storage info:
+            (
+                cookies: dict[str, dict],
+                local_storage: dict[str, dict[str, str]]
+            )
+    """
+    cookies = {}
+    local_storage = {}
+    state_name = state.get_full_name()
+    for name, field in state.__fields__.items():
+        if name in state.inherited_vars:
+            # only include vars defined in this state
+            continue
+        state_key = f"{state_name}.{name}"
+        field_type, options = _compile_client_storage_field(field)
+        if field_type is Cookie:
+            cookies[state_key] = options
+        elif field_type is LocalStorage:
+            local_storage[state_key] = options
+        else:
+            continue
+    for substate in state.get_substates():
+        substate_cookies, substate_local_storage = _compile_client_storage_recursive(
+            substate
+        )
+        cookies.update(substate_cookies)
+        local_storage.update(substate_local_storage)
+    return cookies, local_storage
+
+
+def compile_client_storage(state: Type[State]) -> dict[str, dict]:
+    """Compile the client-side storage for the given state.
+
+    Args:
+        state: The app state object.
+
+    Returns:
+        A dictionary of the compiled client-side storage info.
+    """
+    cookies, local_storage = _compile_client_storage_recursive(state)
+    return {
+        constants.COOKIES: cookies,
+        constants.LOCAL_STORAGE: local_storage,
+    }
 
 
 def compile_custom_component(
