@@ -515,8 +515,8 @@ class Component(Base, ABC):
         """
         # pop on_mount and on_unmount from event_triggers since these are handled by
         # hooks, not as actually props in the component
-        on_mount = self.event_triggers.pop(constants.ON_MOUNT, "")
-        on_unmount = self.event_triggers.pop(constants.ON_UNMOUNT, "")
+        on_mount = self.event_triggers.pop(constants.ON_MOUNT, None)
+        on_unmount = self.event_triggers.pop(constants.ON_UNMOUNT, None)
         if on_mount:
             on_mount = format.format_event_chain(on_mount)
         if on_unmount:
@@ -524,9 +524,9 @@ class Component(Base, ABC):
         if on_mount or on_unmount:
             return f"""
                 useEffect(() => {{
-                    {on_mount}
+                    {on_mount or ""}
                     return () => {{
-                        {on_unmount}
+                        {on_unmount or ""}
                     }}
                 }}, []);"""
 

@@ -20,7 +20,7 @@ from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import EventHandler, EventSpec
+    from reflex.event import EventChain, EventHandler, EventSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -196,9 +196,9 @@ def format_var(var: Var) -> str:
         return str(var)
     if types._issubclass(var.type_, str):
         return format_string(var.full_name)
-    if format.is_wrapped(var.full_name, "{"):
+    if is_wrapped(var.full_name, "{"):
         return var.full_name
-    return format.json_dumps(var.full_name)
+    return json_dumps(var.full_name)
 
 
 def format_route(route: str) -> str:
@@ -331,7 +331,7 @@ def format_event(event_spec: EventSpec) -> str:
 
 
 def format_event_chain(
-    event_chain: [EventChain | Var[EventChain]],
+    event_chain: EventChain | Var[EventChain],
     event_arg: Var | None = None,
 ) -> str:
     """Format an event chain as a javascript invocation.
@@ -352,10 +352,12 @@ def format_event_chain(
         if event_chain.type_ is not EventChain:
             raise ValueError(f"Invalid event chain: {event_chain}")
         return "".join(
-            "(() => {",
-            format_var(event_chain),
-            f"; preventDefault({format_var(event_arg)})" if event_arg else "",
-            "})()",
+            [
+                "(() => {",
+                format_var(event_chain),
+                f"; preventDefault({format_var(event_arg)})" if event_arg else "",
+                "})()",
+            ]
         )
 
     chain = ",".join([format_event(event) for event in event_chain.events])
