@@ -170,7 +170,10 @@ def EventChain():
         return rx.fragment(
             rx.text(
                 "yield",
-                on_mount=State.on_load_yield_chain,
+                on_mount=[
+                    State.on_load_yield_chain,
+                    lambda: State.event_arg("mount"),  # type: ignore
+                ],
                 on_unmount=State.event_no_args,
             ),
             rx.input(value=State.token, readonly=True, id="token"),
@@ -378,8 +381,10 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
             "/on-mount-yield-chain",
             [
                 "on_load_yield_chain",
+                "event_arg:mount",
                 "event_no_args",
                 "on_load_yield_chain",
+                "event_arg:mount",
                 "event_arg:4",
                 "event_arg:5",
                 "event_arg:6",
