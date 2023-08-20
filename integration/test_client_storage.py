@@ -31,7 +31,7 @@ def ClientSide():
         c2: rx.Cookie = "c2 default"  # type: ignore
 
         # cookies with custom settings
-        c3: str = rx.Cookie(max_age=1)  # expires after 1 second
+        c3: str = rx.Cookie(max_age=2)  # expires after 2 second
         c4: rx.Cookie = rx.Cookie(same_site="strict")
         c5: str = rx.Cookie(path="/foo/")  # only accessible on `/foo/`
         c6: str = rx.Cookie(name="c6")
@@ -344,7 +344,7 @@ def test_client_side_state(
     }
     # assert all cookies have been popped for this page
     assert not cookies
-    time.sleep(1.5)  # wait for c3 to expire
+    time.sleep(2)  # wait for c3 to expire
     assert "client_side_state.client_side_sub_state.c3" not in {
         cookie_info["name"] for cookie_info in driver.get_cookies()
     }
