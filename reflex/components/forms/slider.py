@@ -43,6 +43,9 @@ class Slider(ChakraComponent):
     # The maximum value of the slider.
     max_: Var[int]
 
+    # The step in which increments/decrements have to be made
+    step: Var[int]
+
     # The minimum distance between slider thumbs. Useful for preventing the thumbs from being too close together.
     min_steps_between_thumbs: Var[int]
 
