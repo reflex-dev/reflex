@@ -28,7 +28,7 @@ def test_full_control_implicit_debounce_editable():
 
 
 def test_full_control_explicit_debounce_editable():
-    """DebounceInput is used when user specifies `debounce_time`."""
+    """DebounceInput is used when user specifies `debounce_timeout`."""
     tag = rx.editable(
         on_change=S.on_change,
         debounce_timeout=33,

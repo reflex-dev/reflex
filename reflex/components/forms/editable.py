@@ -38,9 +38,6 @@ class Editable(ChakraComponent):
     # The initial value of the Editable in both edit and preview mode.
     default_value: Var[str]
 
-    # Time in milliseconds to wait between end of input and triggering on_change
-    debounce_timeout: Var[int]
-
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create an Editable component.
