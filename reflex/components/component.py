@@ -66,6 +66,10 @@ class Component(Base, ABC):
 
     # components that cannot be children
     invalid_children: List[str] = []
+
+    # components that are only allowed as children
+    valid_children: List[str] = []
+
     # custom attribute
     custom_attrs: Dict[str, str] = {}
 
@@ -435,28 +439,36 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
-        self._validate_component_children(
-            rendered_dict["name"], rendered_dict["children"]
-        )
+        self._validate_component_children(rendered_dict)
         return rendered_dict
 
-    def _validate_component_children(self, comp_name: str, children: List[Dict]):
+    def _validate_component_children(self, rendered_dict: Dict[str, Any]):
         """Validate the children components.
 
         Args:
-            comp_name: name of the component.
-            children: list of children components.
+            rendered_dict: The component's rendered dictionary.
 
         Raises:
             ValueError: when an unsupported component is matched.
         """
-        if not self.invalid_children:
+        if not self.invalid_children or not self.valid_children:
             return
+        children = rendered_dict["children"]
+        comp_name = rendered_dict["name"]
+
+        # check that explicitly stated invalid components are not allowed.
         for child in children:
             name = child["name"]
             if name in self.invalid_children:
                 raise ValueError(
                     f"The component `{comp_name.lower()}` cannot have `{name.lower()}` as a child component"
+                )
+        # check that only explicitly stated valid components are allowed.
+        for child in children:
+            name = child["name"]
+            if name not in self.valid_children:
+                raise ValueError(
+                    f"The component `{comp_name.lower()}` only allows the components: {','.join([f'`{v_child}`' for v_child in self.valid_children])} as children. Got `{name.lower()}` instead."
                 )
 
     def _get_custom_code(self) -> Optional[str]:

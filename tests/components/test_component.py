@@ -121,9 +121,11 @@ def component5() -> Type[Component]:
     """
 
     class TestComponent5(Component):
-        tag = "Tag"
+        tag = "RandomComponent"
 
         invalid_children: List[str] = ["Text"]
+
+        valid_children: List[str] = ["Text"]
 
     return TestComponent5
 
@@ -462,7 +464,8 @@ def test_get_hooks_nested2(component3, component4):
 
 
 def test_unsupported_child_components(component5):
-    """Test that a value error is raised when an unsupported component is provided as a child.
+    """Test that a value error is raised when an unsupported component (a child component found in the
+    component's invalid children list) is provided as a child.
 
     Args:
         component5: the test component
@@ -472,5 +475,22 @@ def test_unsupported_child_components(component5):
         comp.render()
     assert (
         err.value.args[0]
-        == f"The component `tag` cannot have `text` as a child component"
+        == f"The component `randomcomponent` cannot have `text` as a child component"
+    )
+
+
+def test_component_with_only_valid_children(component5):
+    """Test that a value error is raised when an unsupported component (a child component not found in the
+    component's valid children list) is provided as a child.
+
+    Args:
+        component5: the test component
+    """
+    with pytest.raises(ValueError) as err:
+        comp = component5.create(rx.box("testing component"))
+        comp.render()
+    assert (
+        err.value.args[0]
+        == f"The component `randomcomponent` only allows the components: `Text` as children. "
+        f"Got `box` instead."
     )
