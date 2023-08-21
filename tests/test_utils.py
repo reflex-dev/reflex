@@ -598,6 +598,8 @@ def test_create_reflex_dir(mocker, is_windows):
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
     mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
     mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
+    mocker.patch("reflex.utils.processes.new_process")
+    mocker.patch("reflex.utils.processes.stream_logs")
     create_cmd = mocker.patch(
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )
