@@ -323,6 +323,8 @@ def install_node():
         # TODO we can skip installation if check_node_version() checks out
         # Add execute permissions to fnm executable.
         processes.new_process(["chmod", "+x", constants.FNM_EXE])
+        res = processes.new_process(["ls", "-lh", constants.FNM_DIR])
+        print("-"*40, "\n", res.stdout.readlines())
         # Install node.
         process = processes.new_process(
             [
