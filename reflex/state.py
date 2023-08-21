@@ -669,6 +669,23 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate.reset()
 
+    def _reset_client_storage(self):
+        """Reset client storage base vars to their default values."""
+        # Client-side storage is reset during hydrate so that clearing cookies
+        # on the browser also resets the values on the backend.
+        fields = self.get_fields()
+        for prop_name in self.base_vars:
+            field = fields[prop_name]
+            if isinstance(field.default, ClientStorageBase) or (
+                isinstance(field.type_, type)
+                and issubclass(field.type_, ClientStorageBase)
+            ):
+                setattr(self, prop_name, field.default)
+
+        # Recursively reset the substates.
+        for substate in self.substates.values():
+            substate.reset()
+
     def get_substate(self, path: Sequence[str]) -> Optional[State]:
         """Get the substate.
 

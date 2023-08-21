@@ -36,6 +36,9 @@ class HydrateMiddleware(Middleware):
         if event.name != get_hydrate_event(state):
             return None
 
+        # Clear client storage, to respect clearing cookies
+        state._reset_client_storage()
+
         # Mark state as not hydrated (until on_loads are complete)
         setattr(state, constants.IS_HYDRATED, False)
 

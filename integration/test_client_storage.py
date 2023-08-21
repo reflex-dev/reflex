@@ -407,7 +407,7 @@ def test_client_side_state(
 
     assert c1.text == "c1 value"
     assert c2.text == "c2 value"
-    assert c3.text == "c3 value"  # still in the state even though expired
+    assert c3.text == ""  # cookie expired so value removed from state
     assert c4.text == "c4 value"
     assert c5.text == "c5 value"
     assert c6.text == "c6 value"
@@ -470,3 +470,46 @@ def test_client_side_state(
         "secure": False,
         "value": "c5%20value",
     }
+
+    # clear the cookie jar and local storage, ensure state reset to default
+    driver.delete_all_cookies()
+    local_storage.clear()
+
+    # refresh the page to trigger re-hydrate
+    driver.refresh()
+
+    # wait for the backend connection to send the token (again)
+    token_input = driver.find_element(By.ID, "token")
+    assert token_input
+    token = client_side.poll_for_value(token_input)
+    assert token is not None
+
+    # all values should be back to their defaults
+    c1 = driver.find_element(By.ID, "c1")
+    c2 = driver.find_element(By.ID, "c2")
+    c3 = driver.find_element(By.ID, "c3")
+    c4 = driver.find_element(By.ID, "c4")
+    c5 = driver.find_element(By.ID, "c5")
+    c6 = driver.find_element(By.ID, "c6")
+    c7 = driver.find_element(By.ID, "c7")
+    l1 = driver.find_element(By.ID, "l1")
+    l2 = driver.find_element(By.ID, "l2")
+    l3 = driver.find_element(By.ID, "l3")
+    l4 = driver.find_element(By.ID, "l4")
+    c1s = driver.find_element(By.ID, "c1s")
+    l1s = driver.find_element(By.ID, "l1s")
+
+    # assert on defaults where present
+    assert c1.text == ""
+    assert c2.text == "c2 default"
+    assert c3.text == ""
+    assert c4.text == ""
+    assert c5.text == ""
+    assert c6.text == ""
+    assert c7.text == "c7 default"
+    assert l1.text == ""
+    assert l2.text == "l2 default"
+    assert l3.text == ""
+    assert l4.text == "l4 default"
+    assert c1s.text == ""
+    assert l1s.text == ""
