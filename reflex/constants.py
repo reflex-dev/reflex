@@ -37,8 +37,7 @@ def get_fnm_name() -> Optional[str]:
             return "fnm-arm32"
         elif machine.startswith("aarch") or machine.startswith("armv8"):
             return "fnm-arm64"
-        else:
-            return "fnm-linux"
+        return "fnm-linux"
     return
 
 
@@ -52,11 +51,13 @@ VERSION = metadata.version(MODULE_NAME)
 # The directory to store reflex dependencies.
 REFLEX_DIR = (
     # on windows, we use C:/Users/<username>/AppData/Local/reflex.
+    # on macOS, we use ~/Library/Application Support/reflex.
+    # on linux, we use ~/.local/share/reflex.
     PlatformDirs(MODULE_NAME, False).user_data_dir
 )
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# The name of the assets directory.
+# The name of the assets' directory.
 APP_ASSETS_DIR = "assets"
 # The template directory used during reflex init.
 TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, ".templates")

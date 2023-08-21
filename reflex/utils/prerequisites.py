@@ -72,7 +72,7 @@ def get_bun_version() -> Optional[version.Version]:
 
 def get_install_package_manager() -> str:
     """Get the package manager executable for installation.
-      currently on unix systems, bun is used for installation only.
+      Currently on unix systems, bun is used for installation only.
 
     Returns:
         The path to the package manager.
@@ -87,7 +87,7 @@ def get_install_package_manager() -> str:
 
 def get_package_manager() -> str:
     """Get the package manager executable for running app.
-      currently on unix systems, npm is used for running the app only.
+      Currently on unix systems, npm is used for running the app only.
 
     Returns:
         The path to the package manager.
@@ -323,8 +323,6 @@ def install_node():
         # TODO we can skip installation if check_node_version() checks out
         # Add execute permissions to fnm executable.
         processes.new_process(["chmod", "+x", constants.FNM_EXE])
-        res = processes.new_process(["ls", "-lh", constants.FNM_DIR])
-        print("-" * 40, "\n", res.stdout.readlines())  # type: ignore
         # Install node.
         process = processes.new_process(
             [
