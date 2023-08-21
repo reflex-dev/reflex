@@ -324,7 +324,9 @@ def install_node():
         # Add execute permissions to fnm executable.
         processes.new_process(["chmod", "+x", constants.FNM_EXE])
         res = processes.new_process(["ls", "-lh", constants.FNM_DIR])
-        print("-"*40, "\n", res.stdout.readlines())
+        print(
+            "-" * 40, "\n", res.stdout.readlines()
+        )  # pyright: ignore [reportOptionalMemberAccess]
         # Install node.
         process = processes.new_process(
             [
