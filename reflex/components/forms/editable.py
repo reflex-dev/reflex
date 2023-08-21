@@ -56,10 +56,11 @@ class Editable(ChakraComponent):
             isinstance(props.get("value"), Var) and props.get("on_change")
         ) or "debounce_timeout" in props:
             # Create a debounced input if the user requests full control to avoid typing jank
+            # Currently default to 50ms, which appears to be a good balance
+            debounce_timeout = props.pop("debounce_timeout", 50)
             return DebounceInput.create(
                 super().create(*children, **props),
-                # Currently default to 50ms, which appears to be a good balance
-                debounce_timeout=props.pop("debounce_timeout", 50),
+                debounce_timeout=debounce_timeout,
             )
         return super().create(*children, **props)
 
