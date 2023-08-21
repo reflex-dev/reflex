@@ -324,9 +324,7 @@ def install_node():
         # Add execute permissions to fnm executable.
         processes.new_process(["chmod", "+x", constants.FNM_EXE])
         res = processes.new_process(["ls", "-lh", constants.FNM_DIR])
-        print(
-            "-" * 40, "\n", res.stdout.readlines()
-        )  # pyright: ignore [reportOptionalMemberAccess]
+        print("-" * 40, "\n", res.stdout.readlines())  # type: ignore
         # Install node.
         process = processes.new_process(
             [
@@ -477,9 +475,7 @@ def initialize_frontend_dependencies():
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
-    # processes.run_concurrently(install_node, install_bun)
-    install_node()
-    install_bun()
+    processes.run_concurrently(install_node, install_bun)
     # Set up the web directory.
     initialize_web_directory()
 
