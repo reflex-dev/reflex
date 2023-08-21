@@ -81,7 +81,9 @@ class Input(ChakraComponent):
         Returns:
             The component.
         """
-        if isinstance(props.get("value"), Var) and props.get("on_change"):
+        if (isinstance(props.get("value"), Var) and props.get("on_change")) or props.get("debounce_timeout") is not None:
+            # Currently default to 50ms, which appears to be a good balance 
+            debounce_timeout = props.pop("debounce_timeout", 50)
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(
                 super().create(*children, **props), debounce_timeout=debounce_timeout
