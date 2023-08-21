@@ -74,7 +74,7 @@ BUN_VERSION = "0.7.0"
 # Min Bun Version
 MIN_BUN_VERSION = "0.7.0"
 # The directory to store the bun.
-BUN_ROOT_PATH = os.path.join(REFLEX_DIR, ".bun")
+BUN_ROOT_PATH = os.path.join(REFLEX_DIR, "bun")
 # Default bun path.
 DEFAULT_BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
 # URL to bun install script.
