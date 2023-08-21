@@ -71,6 +71,6 @@ class TextArea(ChakraComponent):
         if isinstance(props.get("value"), Var) and props.get("on_change"):
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(
-                super().create(*children, **props), debounce_timeout=0
+                 super().create(*children, **props), debounce_timeout=0
             )
         return super().create(*children, **props)
