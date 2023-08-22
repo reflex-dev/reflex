@@ -6,8 +6,10 @@ import glob
 import json
 import os
 import re
+import stat
 import sys
 import tempfile
+import time
 import zipfile
 from fileinput import FileInput
 from pathlib import Path
@@ -322,7 +324,9 @@ def install_node():
     else:  # All other platforms (Linux, MacOS)
         # TODO we can skip installation if check_node_version() checks out
         # Add execute permissions to fnm executable.
-        processes.new_process(["chmod", "+x", constants.FNM_EXE])
+        os.chmod(constants.FNM_EXE, stat.S_IXUSR)
+
+        time.sleep(0.5)
         # Install node.
         process = processes.new_process(
             [
