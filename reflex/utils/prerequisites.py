@@ -320,7 +320,7 @@ def install_node():
                 f'& "{constants.FNM_EXE}" install {constants.NODE_VERSION} --fnm-dir "{constants.FNM_DIR}"',
             ],
         )
-    else:  # All other platforms (Linux, MacOS)
+    else:  # All other platforms (Linux, MacOS).
         # TODO we can skip installation if check_node_version() checks out
         # Add execute permissions to fnm executable.
         os.chmod(constants.FNM_EXE, stat.S_IXUSR)
