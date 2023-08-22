@@ -252,7 +252,11 @@ def export(
 
     if frontend:
         # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_app()
+        app = prerequisites.get_app()
+        # Find the attribute of the imported app that is rx.App to run compilation.
+        for app_local in vars(app).values():
+            if isinstance(app_local, App):
+                app_local._compile()
         # Set up .web directory and install frontend dependencies.
         build.setup_frontend(Path.cwd())
 
