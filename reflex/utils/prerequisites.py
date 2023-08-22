@@ -276,6 +276,7 @@ def download_and_extract_fnm_zip():
     # Download the zip file
     url = constants.FNM_INSTALL_URL
     console.debug(f"Downloading {url}")
+    print(f"FNM DIR is : {constants.FNM_DIR}")
     fnm_zip_file = os.sep.join([constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip"])
     # Function to download and extract the FNM zip release
     try:
@@ -304,6 +305,7 @@ def install_node():
     """Install fnm and nodejs for use by Reflex.
     Independent of any existing system installations.
     """
+    print(f"GOT HERRRRRRRRe")
     if not constants.FNM_FILENAME:
         # fnm only support Linux, macOS and Windows distros.
         return
@@ -325,8 +327,9 @@ def install_node():
         # TODO we can skip installation if check_node_version() checks out
         # Add execute permissions to fnm executable.
         os.chmod(constants.FNM_EXE, stat.S_IXUSR)
-
-        time.sleep(0.5)
+        res = processes.new_process(["ls", "-lh", constants.FNM_DIR])
+        print("-" * 40, "\n", res.stdout.readlines())
+        # time.sleep(0.5)
         # Install node.
         process = processes.new_process(
             [
