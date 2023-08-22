@@ -286,7 +286,7 @@ def download_and_extract_fnm_zip():
                 for chunk in response.iter_bytes():
                     output_file.write(chunk)
 
-        # Extract the downloaded zip file
+        # Extract the downloaded zip file.
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
             zip_ref.extractall(constants.FNM_DIR)
 
