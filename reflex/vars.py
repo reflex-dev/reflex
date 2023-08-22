@@ -836,9 +836,9 @@ class BaseVar(Var, Base):
                     value = self.type_(value)
                 except ValueError:
                     console.warn(
-                        f"{self.name}: Failed conversion of {value} to '{self.type_.__name__}'. Set to 'None'",
+                        f"{self.name}: Failed conversion of {value} to '{self.type_.__name__}'. Set to '0'",
                     )
-                    value = None
+                    value = 0
             setattr(state, self.name, value)
 
         setter.__qualname__ = self.get_setter_name()
