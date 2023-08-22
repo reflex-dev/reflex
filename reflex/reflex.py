@@ -251,7 +251,7 @@ def export(
     console.rule("[bold]Compiling production app and preparing for export.")
 
     if frontend:
-        # Ensure module can be imported and app.compile() is called.
+        # Ensure module can be imported and app._compile() is called.
         app = prerequisites.get_app()
         # Find the attribute of the imported app that is rx.App to run compilation.
         for app_local in vars(app).values():
