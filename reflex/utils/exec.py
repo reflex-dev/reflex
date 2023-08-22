@@ -158,7 +158,12 @@ def run_backend_prod(
         "--workers",
         str(num_workers),
     ]
-    processes.new_process(command, run=True, show_logs=True)
+    processes.new_process(
+        command,
+        run=True,
+        show_logs=True,
+        env={constants.SKIP_COMPILE_ENV_VAR: "yes"},  # skip compile for prod backend
+    )
 
 
 def output_system_info():

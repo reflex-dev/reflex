@@ -461,6 +461,8 @@ class App(Base):
 
     def compile(self):
         """Compile the app and output it to the pages folder."""
+        if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
+            return
         # Create a progress bar.
         progress = Progress(
             *Progress.get_default_columns()[:-1],
