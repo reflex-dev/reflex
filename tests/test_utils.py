@@ -595,7 +595,10 @@ def test_create_reflex_dir(mocker, is_windows):
         is_windows: Whether platform is windows.
     """
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
-    mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
+    mocker.patch(
+        "reflex.utils.prerequisites.processes.run_concurrently",
+        mocker.MagicMock(),
+    )
     mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
     create_cmd = mocker.patch(
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
