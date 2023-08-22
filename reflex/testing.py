@@ -158,8 +158,8 @@ class AppHarness:
             # ensure config is reloaded when testing different app
             reflex.config.get_config(reload=True)
             self.app_module = reflex.utils.prerequisites.get_app()
+            self.app_module.app._compile()
         self.app_instance = self.app_module.app
-        self.app_instance._compile()
 
     def _start_backend(self):
         if self.app_instance is None:
