@@ -295,7 +295,7 @@ def download_and_extract_fnm_zip():
         console.error(f"An error occurred while downloading fnm package: {e}")
         raise typer.Exit(1) from e
     finally:
-        # Clean up the downloaded zip file
+        # Clean up the downloaded zip file.
         path_ops.rm(fnm_zip_file)
 
 
