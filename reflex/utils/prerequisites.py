@@ -276,7 +276,7 @@ def download_and_extract_fnm_zip():
     url = constants.FNM_INSTALL_URL
     console.debug(f"Downloading {url}")
     fnm_zip_file = os.sep.join([constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip"])
-    # Function to download and extract the FNM zip release
+    # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release
         # TODO: show progress to improve UX
