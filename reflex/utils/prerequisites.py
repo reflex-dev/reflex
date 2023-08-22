@@ -21,7 +21,7 @@ from packaging import version
 from redis import Redis
 
 from reflex import constants, model
-from reflex.config import get_config
+from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
 
@@ -214,21 +214,39 @@ def initialize_web_directory():
     next_config_file = os.path.join(constants.WEB_DIR, constants.NEXT_CONFIG_FILE)
 
     with open(next_config_file, "r") as file:
-        lines = file.readlines()
-        for i, line in enumerate(lines):
-            if "compress:" in line:
-                new_line = line.replace(
-                    "true", "true" if get_config().next_compression else "false"
-                )
-                lines[i] = new_line
+        next_config = file.read()
+        next_config = update_next_config(next_config, get_config())
 
     with open(next_config_file, "w") as file:
-        file.writelines(lines)
+        file.write(next_config)
 
     # Write the current version of distributed reflex package to a REFLEX_JSON."""
     with open(constants.REFLEX_JSON, "w") as f:
         reflex_json = {"version": constants.VERSION}
         json.dump(reflex_json, f, ensure_ascii=False)
+
+
+def update_next_config(next_config: str, config: Config) -> str:
+    """Update Next.js config from Reflex config. Is its own function for testing.
+
+    Args:
+        next_config: Content of next.config.js.
+        config: A reflex Config object.
+
+    Returns:
+        The next_config updated from config.
+    """
+    next_config = re.sub(
+        "compress: (true|false)",
+        f'compress: {"true" if config.next_compression else "false"}',
+        next_config,
+    )
+    next_config = re.sub(
+        'basePath: ".*?"',
+        f'basePath: "{config.frontend_path or ""}"',
+        next_config,
+    )
+    return next_config
 
 
 def remove_existing_bun_installation():
