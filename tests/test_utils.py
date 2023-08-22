@@ -563,13 +563,18 @@ def test_node_install_unix(tmp_path, mocker):
 
     mocker.patch("httpx.stream", return_value=Resp())
     download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    mocker.patch("reflex.utils.processes.new_process")
+    process = mocker.patch("reflex.utils.processes.new_process")
+    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
     mocker.patch("reflex.utils.processes.stream_logs")
 
     prerequisites.install_node()
 
     assert fnm_root_path.exists()
     download.assert_called_once()
+    process.assert_called_with(
+        [fnm_exe, "install", constants.NODE_VERSION, "--fnm-dir", fnm_root_path]
+    )
+    chmod.assert_called_once()
 
 
 def test_bun_install_without_unzip(mocker):
