@@ -30,7 +30,7 @@ from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import format, types
+from reflex.utils import console, format, types
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -831,6 +831,14 @@ class BaseVar(Var, Base):
                 state: The state within which we add the setter function.
                 value: The value to set.
             """
+            if self.type_ in [int, float]:
+                try:
+                    value = self.type_(value)
+                except ValueError:
+                    console.warn(
+                        f"{self.name}: Failed conversion of {value} to '{self.type_.__name__}'. Set to 'None'",
+                    )
+                    value = None
             setattr(state, self.name, value)
 
         setter.__qualname__ = self.get_setter_name()
