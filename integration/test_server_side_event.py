@@ -72,8 +72,6 @@ def ServerSideEvent():
             ),
         )
 
-    app.compile()
-
 
 @pytest.fixture(scope="session")
 def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:

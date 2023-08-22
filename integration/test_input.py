@@ -31,8 +31,6 @@ def FullyControlledInput():
             rx.button("CLEAR", on_click=rx.set_value("on_change_input", "")),
         )
 
-    app.compile()
-
 
 @pytest.fixture()
 def fully_controlled_input(tmp_path) -> Generator[AppHarness, None, None]:

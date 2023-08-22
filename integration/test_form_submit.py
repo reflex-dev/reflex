@@ -44,8 +44,6 @@ def FormSubmit():
             height="100vh",
         )
 
-    app.compile()
-
 
 @pytest.fixture(scope="session")
 def form_submit(tmp_path_factory) -> Generator[AppHarness, None, None]:

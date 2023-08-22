@@ -460,6 +460,13 @@ class App(Base):
             admin.mount_to(self.api)
 
     def compile(self):
+        """Deprecated: Compile the app. Now no-op."""
+        # To be deprecated
+        console.deprecate(
+            "@rx.App.compile is being deprecated. User no longer needs to call this function in their code."
+        )
+
+    def _compile(self):
         """Compile the app and output it to the pages folder."""
         # Create a progress bar.
         progress = Progress(

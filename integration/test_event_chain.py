@@ -158,8 +158,6 @@ def EventChain():
     app.add_page(on_load_return_chain, on_load=State.on_load_return_chain)  # type: ignore
     app.add_page(on_load_yield_chain, on_load=State.on_load_yield_chain)  # type: ignore
 
-    app.compile()
-
 
 @pytest.fixture(scope="session")
 def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:

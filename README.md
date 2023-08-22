@@ -39,7 +39,7 @@ cd my_app_name
 reflex init
 ```
 
-This command initializes a template app in your new directory. 
+This command initializes a template app in your new directory.
 
 You can run this app in development mode:
 
@@ -89,7 +89,7 @@ class State(rx.State):
         response = openai.Image.create(prompt=self.prompt, n=1, size="1024x1024")
         self.image_url = response["data"][0]["url"]
         self.processing, self.complete = False, True
-        
+
 
 def index():
     return rx.center(
@@ -121,7 +121,6 @@ def index():
 # Add state and page to the app.
 app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
-app.compile()
 ```
 
 ## Let's break this down.
@@ -192,7 +191,6 @@ We add a page from the root of the app to the index component. We also add a tit
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 You can create a multi-page app by adding more pages.
@@ -201,7 +199,7 @@ You can create a multi-page app by adding more pages.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;
 
 </div>
 

@@ -136,7 +136,6 @@ def index():
 # 把状态跟页面添加到应用程序。
 app = rx.App(state=State)
 app.add_page(index, title="Reflex:DALL·E")
-app.compile()
 ```
 
 ### **Reflex 中的图形用户接口**
@@ -207,7 +206,6 @@ app = rx.App(state=State)
 
 ```python
 app.add_page(index, title="Reflex:DALL-E")
-app.compile()
 ```
 
 你可以借由通过添加路由来增加更多页面。

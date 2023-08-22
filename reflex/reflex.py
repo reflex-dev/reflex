@@ -9,6 +9,7 @@ import typer
 from alembic.util.exc import CommandError
 
 from reflex import constants, model
+from reflex.app import App
 from reflex.config import get_config
 from reflex.utils import build, console, exec, prerequisites, processes, telemetry
 
@@ -140,6 +141,10 @@ def run(
     # Get the app module.
     console.rule("[bold]Starting Reflex App")
     app = prerequisites.get_app()
+    # Find the attribute of the imported app that is rx.App to run compilation.
+    for app_local in vars(app).values():
+        if isinstance(app_local, App):
+            app_local._compile()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
