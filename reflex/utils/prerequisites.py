@@ -278,7 +278,7 @@ def download_and_extract_fnm_zip():
     fnm_zip_file = os.sep.join([constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip"])
     # Function to download and extract the FNM zip release.
     try:
-        # Download the FNM zip release
+        # Download the FNM zip release.
         # TODO: show progress to improve UX
         with httpx.stream("GET", url, follow_redirects=True) as response:
             response.raise_for_status()
