@@ -50,9 +50,6 @@ class Input(ChakraComponent):
     # "lg" | "md" | "sm" | "xs"
     size: Var[str]
 
-    # Time in milliseconds to wait between end of input and triggering on_change
-    debounce_timeout: Var[int]
-
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
@@ -84,12 +81,14 @@ class Input(ChakraComponent):
         Returns:
             The component.
         """
-        if isinstance(props.get("value"), Var) and props.get("on_change"):
+        if (
+            isinstance(props.get("value"), Var) and props.get("on_change")
+        ) or "debounce_timeout" in props:
+            # Currently default to 50ms, which appears to be a good balance
+            debounce_timeout = props.pop("debounce_timeout", 50)
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(
-                super().create(*children, **props),
-                # Currently default to 50ms, which appears to be a good balance
-                debounce_timeout=props.get("debounce_timeout", 50),
+                super().create(*children, **props), debounce_timeout=debounce_timeout
             )
         return super().create(*children, **props)
 

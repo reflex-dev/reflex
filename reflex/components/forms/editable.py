@@ -2,6 +2,8 @@
 
 from typing import Dict
 
+from reflex.components.component import Component
+from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.event import EVENT_ARG
 from reflex.vars import Var
@@ -35,6 +37,29 @@ class Editable(ChakraComponent):
 
     # The initial value of the Editable in both edit and preview mode.
     default_value: Var[str]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create an Editable component.
+
+        Args:
+            children: The children of the component.
+            props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        if (
+            isinstance(props.get("value"), Var) and props.get("on_change")
+        ) or "debounce_timeout" in props:
+            # Create a debounced input if the user requests full control to avoid typing jank
+            # Currently default to 50ms, which appears to be a good balance
+            debounce_timeout = props.pop("debounce_timeout", 50)
+            return DebounceInput.create(
+                super().create(*children, **props),
+                debounce_timeout=debounce_timeout,
+            )
+        return super().create(*children, **props)
 
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
