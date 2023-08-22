@@ -839,6 +839,8 @@ class BaseVar(Var, Base):
                     console.warn(
                         f"{self.name}: Failed conversion of {value} to '{self.type_.__name__}'. Value not set.",
                     )
+            else:
+                setattr(state, self.name, value)
 
         setter.__qualname__ = self.get_setter_name()
 
