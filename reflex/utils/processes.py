@@ -160,11 +160,17 @@ def run_concurrently(
     # Convert the functions to tuples.
     fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
 
+    # If no functions are provided, yield an empty list and return.
+    if not fns:
+        yield []
+        return
+
     # Run the functions concurrently.
     with futures.ThreadPoolExecutor(max_workers=len(fns)) as executor:
         # Submit the tasks.
         tasks = [executor.submit(*fn) for fn in fns]  # type: ignore
 
+        # Yield control back to the main thread while tasks are running.
         yield tasks
 
         # Get the results in the order completed to check any exceptions.
