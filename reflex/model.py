@@ -43,12 +43,9 @@ def get_engine(url: Optional[str] = None):
         )
     # Print the SQL queries if the log level is INFO or lower.
     echo_db_query = os.environ.get("SQLALCHEMY_ECHO") == "True"
-    return sqlmodel.create_engine(
-        url,
-        echo=echo_db_query,
-        # Needed for the admin dash.
-        connect_args={"check_same_thread": False},
-    )
+    # Needed for the admin dash on sqlite.
+    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+    return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
 
 
 class Model(Base, sqlmodel.SQLModel):
