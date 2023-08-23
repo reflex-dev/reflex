@@ -8,7 +8,7 @@ import os
 import signal
 import subprocess
 from concurrent import futures
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Generator, List, Optional, Tuple, Union
 
 import psutil
 import typer
@@ -145,13 +145,23 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     return fn(args, **kwargs)
 
 
-def run_concurrently(*fns: Union[Callable, Tuple]):
+@contextlib.contextmanager
+def run_concurrently_context(
+    *fns: Union[Callable, Tuple]
+) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
-
 
     Args:
         *fns: The functions to run.
+
+    Yields:
+        The futures for the functions.
     """
+    # If no functions are provided, yield an empty list and return.
+    if not fns:
+        yield []
+        return
+
     # Convert the functions to tuples.
     fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
 
@@ -160,9 +170,22 @@ def run_concurrently(*fns: Union[Callable, Tuple]):
         # Submit the tasks.
         tasks = [executor.submit(*fn) for fn in fns]  # type: ignore
 
+        # Yield control back to the main thread while tasks are running.
+        yield tasks
+
         # Get the results in the order completed to check any exceptions.
         for task in futures.as_completed(tasks):
             task.result()
+
+
+def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
+    """Run functions concurrently in a thread pool.
+
+    Args:
+        *fns: The functions to run.
+    """
+    with run_concurrently_context(*fns):
+        pass
 
 
 def stream_logs(
@@ -247,11 +270,6 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
                     break
 
 
-def catch_keyboard_interrupt(signal, frame):
-    """Display a custom message with the current time when exiting an app.
-
-    Args:
-        signal: The keyboard interrupt signal.
-        frame: The current stack frame.
-    """
+def atexit_handler():
+    """Display a custom message with the current time when exiting an app."""
     console.log("Reflex app stopped.")

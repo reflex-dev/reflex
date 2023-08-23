@@ -1,7 +1,7 @@
 """Reflex CLI to create, run, and deploy apps."""
 
+import atexit
 import os
-import signal
 from pathlib import Path
 
 import httpx
@@ -164,16 +164,18 @@ def run(
     telemetry.send(f"run-{env.value}", config.telemetry_enabled)
 
     # Display custom message when there is a keyboard interrupt.
-    signal.signal(signal.SIGINT, processes.catch_keyboard_interrupt)
+    atexit.register(processes.atexit_handler)
 
     # Run the frontend and backend together.
     commands = []
     if frontend:
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port))
-    if backend:
+    if backend and env == constants.Env.PROD:
         commands.append((backend_cmd, app.__name__, backend_host, backend_port))
-    processes.run_concurrently(*commands)
+    with processes.run_concurrently_context(*commands):
+        if env == constants.Env.DEV:
+            backend_cmd(app.__name__, backend_host, int(backend_port))
 
 
 @cli.command()
