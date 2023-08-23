@@ -260,11 +260,6 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
                     break
 
 
-def catch_keyboard_interrupt(signal, frame):
-    """Display a custom message with the current time when exiting an app.
-
-    Args:
-        signal: The keyboard interrupt signal.
-        frame: The current stack frame.
-    """
+def atexit_handler():
+    """Display a custom message with the current time when exiting an app."""
     console.log("Reflex app stopped.")
