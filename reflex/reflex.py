@@ -173,7 +173,7 @@ def run(
         commands.append((frontend_cmd, Path.cwd(), frontend_port))
     if backend and env == constants.Env.PROD:
         commands.append((backend_cmd, app.__name__, backend_host, backend_port))
-    with processes.run_concurrently(*commands):
+    with processes.run_concurrently_context(*commands):
         if env == constants.Env.DEV:
             backend_cmd(app.__name__, backend_host, int(backend_port))
 

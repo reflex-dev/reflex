@@ -146,7 +146,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
 
 
 @contextlib.contextmanager
-def run_concurrently(
+def run_concurrently_context(
     *fns: Union[Callable, Tuple]
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
@@ -157,13 +157,13 @@ def run_concurrently(
     Yields:
         The futures for the functions.
     """
-    # Convert the functions to tuples.
-    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
-
     # If no functions are provided, yield an empty list and return.
     if not fns:
         yield []
         return
+
+    # Convert the functions to tuples.
+    fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
 
     # Run the functions concurrently.
     with futures.ThreadPoolExecutor(max_workers=len(fns)) as executor:
@@ -176,6 +176,16 @@ def run_concurrently(
         # Get the results in the order completed to check any exceptions.
         for task in futures.as_completed(tasks):
             task.result()
+
+
+def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
+    """Run functions concurrently in a thread pool.
+
+    Args:
+        *fns: The functions to run.
+    """
+    with run_concurrently_context(*fns):
+        pass
 
 
 def stream_logs(
