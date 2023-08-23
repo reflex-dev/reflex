@@ -47,6 +47,7 @@ importlib-metadata = {version = "^6.7.0", python = ">=3.7, <3.8"}
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
 distro = {version = "^1.8.0", platform = "linux"}
+python-engineio = "!=4.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
