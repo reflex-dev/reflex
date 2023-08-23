@@ -107,9 +107,10 @@ class Component(Base, ABC):
             TypeError: If an invalid prop is passed.
         """
         # Set the id and children initially.
+        children = kwargs.get("children", [])
         initial_kwargs = {
             "id": kwargs.get("id"),
-            "children": kwargs.get("children", []),
+            "children": children,
             **{
                 prop: Var.create(kwargs[prop])
                 for prop in self.get_initial_props()
@@ -117,6 +118,8 @@ class Component(Base, ABC):
             },
         }
         super().__init__(**initial_kwargs)
+
+        self._validate_component_children(children)
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
@@ -385,6 +388,7 @@ class Component(Base, ABC):
             else Bare.create(contents=Var.create(child, is_string=True))
             for child in children
         ]
+
         return cls(children=children, **props)
 
     def _add_style(self, style):
@@ -439,33 +443,35 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
-        self._validate_component_children(rendered_dict)
         return rendered_dict
 
-    def _validate_component_children(self, rendered_dict: Dict[str, Any]):
+    def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
 
         Args:
-            rendered_dict: The component's rendered dictionary.
+            children: The children of the component.
 
         Raises:
             ValueError: when an unsupported component is matched.
         """
-        if not self.invalid_children or not self.valid_children:
+        if not self.invalid_children and not self.valid_children:
             return
-        children = rendered_dict["children"]
-        comp_name = rendered_dict["name"]
+        comp_name = type(self).__name__
 
         # check that explicitly stated invalid components are not allowed.
         for child in children:
-            name = child["name"]
+            if not self.invalid_children:
+                break
+            name = type(child).__name__
             if name in self.invalid_children:
                 raise ValueError(
                     f"The component `{comp_name.lower()}` cannot have `{name.lower()}` as a child component"
                 )
         # check that only explicitly stated valid components are allowed.
         for child in children:
-            name = child["name"]
+            if not self.valid_children:
+                break
+            name = type(child).__name__
             if name not in self.valid_children:
                 raise ValueError(
                     f"The component `{comp_name.lower()}` only allows the components: {','.join([f'`{v_child}`' for v_child in self.valid_children])} as children. Got `{name.lower()}` instead."

@@ -475,7 +475,7 @@ def test_unsupported_child_components(component5):
         comp.render()
     assert (
         err.value.args[0]
-        == f"The component `randomcomponent` cannot have `text` as a child component"
+        == f"The component `testcomponent5` cannot have `text` as a child component"
     )
 
 
@@ -491,6 +491,6 @@ def test_component_with_only_valid_children(component5):
         comp.render()
     assert (
         err.value.args[0]
-        == f"The component `randomcomponent` only allows the components: `Text` as children. "
+        == f"The component `testcomponent5` only allows the components: `Text` as children. "
         f"Got `box` instead."
     )
