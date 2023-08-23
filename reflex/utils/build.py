@@ -143,6 +143,7 @@ def _zip(
 
     with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file in files_to_zip:
+            console.debug(f"{target}: {file}")
             progress.advance(task)
             zipf.write(file, os.path.relpath(file, root_dir))
 
