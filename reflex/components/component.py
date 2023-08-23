@@ -456,26 +456,32 @@ class Component(Base, ABC):
         """
         if not self.invalid_children and not self.valid_children:
             return
+
         comp_name = type(self).__name__
 
-        # check that explicitly stated invalid components are not allowed.
-        for child in children:
-            if not self.invalid_children:
-                break
-            name = type(child).__name__
-            if name in self.invalid_children:
+        def validate_invalid_child(child_name):
+            if child_name in self.invalid_children:
                 raise ValueError(
-                    f"The component `{comp_name.lower()}` cannot have `{name.lower()}` as a child component"
+                    f"The component `{comp_name.lower()}` cannot have `{child_name.lower()}` as a child component"
                 )
-        # check that only explicitly stated valid components are allowed.
-        for child in children:
-            if not self.valid_children:
-                break
-            name = type(child).__name__
-            if name not in self.valid_children:
+
+        def validate_valid_child(child_name):
+            if child_name not in self.valid_children:
+                valid_child_list = ", ".join(
+                    [f"`{v_child}`" for v_child in self.valid_children]
+                )
                 raise ValueError(
-                    f"The component `{comp_name.lower()}` only allows the components: {','.join([f'`{v_child}`' for v_child in self.valid_children])} as children. Got `{name.lower()}` instead."
+                    f"The component `{comp_name.lower()}` only allows the components: {valid_child_list} as children. Got `{child_name.lower()}` instead."
                 )
+
+        for child in children:
+            name = type(child).__name__
+
+            if self.invalid_children:
+                validate_invalid_child(name)
+
+            if self.valid_children:
+                validate_valid_child(name)
 
     def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.
