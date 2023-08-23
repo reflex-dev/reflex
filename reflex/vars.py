@@ -1015,6 +1015,16 @@ class ReflexList(list):
         super().append(*args, **kwargs)
         self._reassign_field()
 
+    def insert(self, *args, **kwargs):
+        """Insert.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().insert(*args, **kwargs)
+        self._reassign_field()
+
     def __setitem__(self, *args, **kwargs):
         """Set item.
 
