@@ -451,8 +451,6 @@ class Component(Base, ABC):
         Args:
             children: The children of the component.
 
-        Raises:
-            ValueError: when an unsupported component is matched.
         """
         if not self.invalid_children and not self.valid_children:
             return
