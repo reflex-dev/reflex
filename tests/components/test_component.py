@@ -131,6 +131,38 @@ def component5() -> Type[Component]:
 
 
 @pytest.fixture
+def component6() -> Type[Component]:
+    """A test component.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent6(Component):
+        tag = "RandomComponent"
+
+        invalid_children: List[str] = ["Text"]
+
+    return TestComponent6
+
+
+@pytest.fixture
+def component7() -> Type[Component]:
+    """A test component.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent7(Component):
+        tag = "RandomComponent"
+
+        valid_children: List[str] = ["Text"]
+
+    return TestComponent7
+
+
+@pytest.fixture
 def on_click1() -> EventHandler:
     """A sample on click function.
 
@@ -463,34 +495,40 @@ def test_get_hooks_nested2(component3, component4):
     )
 
 
-def test_unsupported_child_components(component5):
+@pytest.mark.parametrize("fixture", ["component5", "component6"])
+def test_unsupported_child_components(fixture, request):
     """Test that a value error is raised when an unsupported component (a child component found in the
     component's invalid children list) is provided as a child.
 
     Args:
-        component5: the test component
+        fixture: the test component as a fixture.
+        request: Pytest request.
     """
+    component = request.getfixturevalue(fixture)
     with pytest.raises(ValueError) as err:
-        comp = component5.create(rx.text("testing component"))
+        comp = component.create(rx.text("testing component"))
         comp.render()
     assert (
         err.value.args[0]
-        == f"The component `testcomponent5` cannot have `text` as a child component"
+        == f"The component `{component.__name__}` cannot have `Text` as a child component"
     )
 
 
-def test_component_with_only_valid_children(component5):
+@pytest.mark.parametrize("fixture", ["component5", "component7"])
+def test_component_with_only_valid_children(fixture, request):
     """Test that a value error is raised when an unsupported component (a child component not found in the
     component's valid children list) is provided as a child.
 
     Args:
-        component5: the test component
+        fixture: the test component as a fixture.
+        request: Pytest request.
     """
+    component = request.getfixturevalue(fixture)
     with pytest.raises(ValueError) as err:
-        comp = component5.create(rx.box("testing component"))
+        comp = component.create(rx.box("testing component"))
         comp.render()
     assert (
         err.value.args[0]
-        == f"The component `testcomponent5` only allows the components: `Text` as children. "
-        f"Got `box` instead."
+        == f"The component `{component.__name__}` only allows the components: `Text` as children. "
+        f"Got `Box` instead."
     )

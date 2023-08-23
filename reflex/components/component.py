@@ -460,7 +460,7 @@ class Component(Base, ABC):
         def validate_invalid_child(child_name):
             if child_name in self.invalid_children:
                 raise ValueError(
-                    f"The component `{comp_name.lower()}` cannot have `{child_name.lower()}` as a child component"
+                    f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
         def validate_valid_child(child_name):
@@ -469,7 +469,7 @@ class Component(Base, ABC):
                     [f"`{v_child}`" for v_child in self.valid_children]
                 )
                 raise ValueError(
-                    f"The component `{comp_name.lower()}` only allows the components: {valid_child_list} as children. Got `{child_name.lower()}` instead."
+                    f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
                 )
 
         for child in children:
