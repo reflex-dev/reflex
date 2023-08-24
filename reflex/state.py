@@ -1067,6 +1067,9 @@ class StateManager(Base):
                 await pubsub.psubscribe("__keyevent@0__:*")
                 # wait for the lock to be released
                 while True:
+                    if not await self.redis.exists(lock_key):
+                        print("Redis state is UNLOCKED (Raced with another process)")
+                        break  # try to get the lock again
                     message = await pubsub.get_message(ignore_subscribe_messages=True)
                     if message is None:
                         continue
