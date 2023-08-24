@@ -53,7 +53,7 @@ def get_node_version() -> Optional[version.Version]:
         result = processes.new_process([path_ops.get_node_path(), "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         return version.parse(result.stdout)  # type: ignore
-    except FileNotFoundError:
+    except (FileNotFoundError, TypeError):
         return None
 
 
@@ -305,6 +305,7 @@ def install_node():
     """
     if not constants.FNM_FILENAME:
         # fnm only support Linux, macOS and Windows distros.
+        console.debug("")
         return
 
     path_ops.mkdir(constants.FNM_DIR)
