@@ -89,7 +89,7 @@ def test_render_child_props_recursive():
     )
     assert tag.props["forceNotifyOnBlur"].name == "false"
     assert tag.props["forceNotifyByEnter"].name == "false"
-    assert tag.props["debounceTimeout"] == 42
+    assert tag.props["debounceTimeout"].name == "42"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -101,7 +101,7 @@ def test_full_control_implicit_debounce():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"] == 0
+    assert tag.props["debounceTimeout"].name == "50"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -113,7 +113,7 @@ def test_full_control_implicit_debounce_text_area():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"] == 0
+    assert tag.props["debounceTimeout"].name == "50"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""

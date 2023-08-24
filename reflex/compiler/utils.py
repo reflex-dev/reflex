@@ -126,11 +126,6 @@ def compile_state(state: Type[State]) -> Dict:
         initial_state = state().dict()
     except Exception:
         initial_state = state().dict(include_computed=False)
-    initial_state.update(
-        {
-            "files": [],
-        }
-    )
     return format.format_state(initial_state)
 
 
