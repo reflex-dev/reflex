@@ -50,7 +50,7 @@ def get_node_version() -> Optional[version.Version]:
         The version of node.
     """
     try:
-        result = processes.new_process([constants.NODE_PATH, "-v"], run=True)
+        result = processes.new_process([path_ops.get_node_path(), "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
@@ -71,7 +71,7 @@ def get_bun_version() -> Optional[version.Version]:
         return None
 
 
-def get_install_package_manager() -> str:
+def get_install_package_manager() -> Optional[str]:
     """Get the package manager executable for installation.
       Currently on unix systems, bun is used for installation only.
 
@@ -80,20 +80,20 @@ def get_install_package_manager() -> str:
     """
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS:
-        return constants.NPM_PATH
+        return path_ops.get_npm_path()
 
     # On other platforms, we use bun.
     return get_config().bun_path
 
 
-def get_package_manager() -> str:
+def get_package_manager() -> Optional[str]:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
     Returns:
         The path to the package manager.
     """
-    return constants.NPM_PATH
+    return path_ops.get_npm_path()
 
 
 def get_app() -> ModuleType:
@@ -275,7 +275,7 @@ def download_and_extract_fnm_zip():
     # Download the zip file
     url = constants.FNM_INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = os.sep.join([constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip"])
+    fnm_zip_file = os.path.join(constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip")
     # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release.

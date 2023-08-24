@@ -7,6 +7,8 @@ import platform
 import sys
 from pathlib import Path
 
+import typer
+
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
@@ -53,14 +55,31 @@ def run_frontend(
     Args:
         root: The root path of the project.
         port: The port to run the frontend on.
+
+    Raises:
+        Exit: If the package manager is invalid.
     """
     # Start watching asset folder.
     start_watching_assets_folder(root)
+    package_manager = prerequisites.get_package_manager()
+
+    if not package_manager:
+        console.error(
+            "Could not find NPM package manager. Make sure you have node installed."
+        )
+        raise typer.Exit(1)
+
+    if not prerequisites.check_node_version():
+        node_version = prerequisites.get_node_version()
+        console.error(
+            f"Reflex requires node version {constants.NODE_VERSION_MIN} or higher to run, but the detected version is {node_version}",
+        )
+        raise typer.Exit(1)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])
+    run_process_and_launch_url([package_manager, "run", "dev"])
 
 
 def run_frontend_prod(
@@ -72,13 +91,28 @@ def run_frontend_prod(
     Args:
         root: The root path of the project (to keep same API as run_frontend).
         port: The port to run the frontend on.
+
+    Raises:
+        Exit: If the package manager is invalid.
     """
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
+    package_manager = prerequisites.get_package_manager()
+    if not package_manager:
+        console.error(
+            "Could not find NPM package manager. Make sure you have node installed."
+        )
+        raise typer.Exit(1)
 
+    if not prerequisites.check_node_version():
+        node_version = prerequisites.get_node_version()
+        console.error(
+            f"Reflex requires node version {constants.NODE_VERSION_MIN} or higher to run, but the detected version is {node_version}",
+        )
+        raise typer.Exit(1)
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])
+    run_process_and_launch_url([package_manager, "run", "prod"])
 
 
 def run_backend(
@@ -178,7 +212,7 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{constants.NODE_PATH})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
@@ -208,8 +242,8 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"
+        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
     )
-    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")
+    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
