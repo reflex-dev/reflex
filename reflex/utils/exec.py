@@ -97,9 +97,9 @@ def run_process_and_launch_url(
                         last_hash = new_hash
                         kill(process.pid)
                         process = None
-                        break
+                        break  # for line in process.stdout
         if process is not None:
-            break
+            break  # while True
 
 
 def run_frontend(
