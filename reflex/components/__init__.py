@@ -157,6 +157,7 @@ voronoi = Voronoi.create
 box = Box.create
 center = Center.create
 circle = Circle.create
+cond = Cond.create
 container = Container.create
 flex = Flex.create
 foreach = Foreach.create
