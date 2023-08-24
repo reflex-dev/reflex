@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import copy
 import functools
 import inspect
@@ -1004,6 +1005,12 @@ class StateManager(Base):
     # The redis client to use.
     redis: Optional[Redis] = None
 
+    # The mutex ensures the dict of mutexes is updated exclusively
+    _state_manager_lock: asyncio.Lock = asyncio.Lock()
+
+    # The dict of mutexes for each client
+    _states_locks: Dict[str, asyncio.Lock] = {}
+
     def setup(self, state: Type[State]):
         """Set up the state manager.
 
@@ -1013,7 +1020,7 @@ class StateManager(Base):
         self.state = state
         self.redis = prerequisites.get_redis()
 
-    def get_state(self, token: str) -> State:
+    async def get_state(self, token: str) -> State:
         """Get the state for a token.
 
         Args:
@@ -1023,17 +1030,17 @@ class StateManager(Base):
             The state for the token.
         """
         if self.redis is not None:
-            redis_state = self.redis.get(token)
+            redis_state = await self.redis.get(token)
             if redis_state is None:
-                self.set_state(token, self.state())
-                return self.get_state(token)
+                await self.set_state(token, self.state())
+                return await self.get_state(token)
             return cloudpickle.loads(redis_state)
 
         if token not in self.states:
             self.states[token] = self.state()
         return self.states[token]
 
-    def set_state(self, token: str, state: State):
+    async def set_state(self, token: str, state: State):
         """Set the state for a token.
 
         Args:
@@ -1042,7 +1049,67 @@ class StateManager(Base):
         """
         if self.redis is None:
             return
-        self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
+        await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
+
+    @contextlib.asynccontextmanager
+    async def _redis_lock(self, token: str):
+        """Obtain a redis lock for a token.
+
+        Args:
+            token: The token to obtain a lock for.
+        """
+        lock_key = f"{token}_lock".encode()
+        state_is_locked = await self.redis.setnx(lock_key, 1)
+        while not state_is_locked:
+            print("Redis state was LOCKED, waiting for all clear")
+            await self.redis.config_set("notify-keyspace-events", "KEgxe")
+            async with self.redis.pubsub() as pubsub:
+                await pubsub.psubscribe("__keyevent@0__:*")
+                # wait for the lock to be released
+                while True:
+                    message = await pubsub.get_message(ignore_subscribe_messages=True)
+                    if message is None:
+                        continue
+                    print(message)
+                    if (
+                        message["channel"]
+                        in [b"__keyevent@0__:expire", b"__keyevent@0__:del"]
+                        and message["data"] == lock_key
+                    ):
+                        print(f"Redis state is UNLOCKED for {lock_key}")
+                        break
+            state_is_locked = await self.redis.setnx(lock_key, 1)
+        try:
+            yield
+        finally:
+            await self.redis.delete(f"{token}_lock")
+
+    @contextlib.asynccontextmanager
+    async def modify_state(self, token: str):
+        """Modify the state for a token while holding exclusive lock.
+
+        Args:
+            token: The token to modify the state for.
+        """
+        if self.redis is not None:
+            with self._redis_lock(token):
+                state = await self.get_state(token)
+                yield state
+                print(f"Persisting state for {token}")
+                await self.set_state(token, state)
+            return
+
+        if token not in self._states_locks:
+            async with self._state_manager_lock:
+                if token not in self._states_locks:
+                    self._states_locks[token] = asyncio.Lock()
+        else:
+            print(f"modify_state[{token}] -> {self._states_locks[token]}")
+
+        async with self._states_locks[token]:
+            state = await self.get_state(token)
+            yield state
+            await self.set_state(token, state)
 
 
 def _convert_mutable_datatypes(

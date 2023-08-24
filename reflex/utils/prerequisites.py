@@ -18,7 +18,7 @@ import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
-from redis import Redis
+from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.config import get_config

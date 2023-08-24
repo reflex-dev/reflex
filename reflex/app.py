@@ -1,6 +1,7 @@
 """The main Reflex app."""
 
 import asyncio
+import contextlib
 import inspect
 import os
 from multiprocessing.pool import ThreadPool
@@ -538,6 +539,26 @@ class App(Base):
         thread_pool.close()
         thread_pool.join()
 
+    @contextlib.asynccontextmanager
+    async def modify_state(self, token: str) -> State:
+        """Modify the state out of band.
+
+        Args:
+            token: The token to modify the state for.
+
+        Yields:
+            The state to modify.
+        """
+        async with self.state_manager.modify_state(token) as state:
+            yield state
+            update = StateUpdate(delta=state.get_delta())
+            state._clean()
+            await self.event_namespace.emit(
+                str(constants.SocketEvent.EVENT),
+                update.json(),
+                to=state.get_sid(),
+            )
+
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
@@ -554,9 +575,6 @@ async def process(
     Yields:
         The state updates after processing the event.
     """
-    # Get the state for the session.
-    state = app.state_manager.get_state(event.token)
-
     # Add request data to the state.
     router_data = event.router_data
     router_data.update(
@@ -568,31 +586,31 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         }
     )
-    # re-assign only when the value is different
-    if state.router_data != router_data:
-        # assignment will recurse into substates and force recalculation of
-        # dependent ComputedVar (dynamic route variables)
-        state.router_data = router_data
+    # Get the state for the session exclusively.
+    print(f"Processing event: {event.name} for {event.token}")
+    async with app.state_manager.modify_state(event.token) as state:
+        # re-assign only when the value is different
+        if state.router_data != router_data:
+            # assignment will recurse into substates and force recalculation of
+            # dependent ComputedVar (dynamic route variables)
+            state.router_data = router_data
 
-    # Preprocess the event.
-    update = await app.preprocess(state, event)
+        # Preprocess the event.
+        update = await app.preprocess(state, event)
 
-    # If there was an update, yield it.
-    if update is not None:
-        yield update
-
-    # Only process the event if there is no update.
-    else:
-        # Process the event.
-        async for update in state._process(event):
-            # Postprocess the event.
-            update = await app.postprocess(state, event, update)
-
-            # Yield the update.
+        # If there was an update, yield it.
+        if update is not None:
             yield update
 
-    # Set the state for the session.
-    app.state_manager.set_state(event.token, state)
+        # Only process the event if there is no update.
+        else:
+            # Process the event.
+            async for update in state._process(event):
+                # Postprocess the event.
+                update = await app.postprocess(state, event, update)
+
+                # Yield the update.
+                yield update
 
 
 async def ping() -> str:
@@ -629,47 +647,43 @@ def upload(app: App):
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
         # Get the state for the session.
-        state = app.state_manager.get_state(token)
-        # get the current session ID
-        sid = state.get_sid()
-        # get the current state(parent state/substate)
-        path = handler.split(".")[:-1]
-        current_state = state.get_substate(path)
-        handler_upload_param: Tuple = ()
+        async with app.state_manager.modify_state(token) as state:
+            # get the current session ID
+            sid = state.get_sid()
+            # get the current state(parent state/substate)
+            path = handler.split(".")[:-1]
+            current_state = state.get_substate(path)
+            handler_upload_param: Tuple = ()
 
-        # get handler function
-        func = getattr(current_state, handler.split(".")[-1])
+            # get handler function
+            func = getattr(current_state, handler.split(".")[-1])
 
-        # check if there exists any handler args with annotation, List[UploadFile]
-        for k, v in inspect.getfullargspec(
-            func.fn if isinstance(func, EventHandler) else func
-        ).annotations.items():
-            if types.is_generic_alias(v) and types._issubclass(
-                v.__args__[0], UploadFile
-            ):
-                handler_upload_param = (k, v)
-                break
+            # check if there exists any handler args with annotation, List[UploadFile]
+            for k, v in inspect.getfullargspec(
+                func.fn if isinstance(func, EventHandler) else func
+            ).annotations.items():
+                if types.is_generic_alias(v) and types._issubclass(
+                    v.__args__[0], UploadFile
+                ):
+                    handler_upload_param = (k, v)
+                    break
 
-        if not handler_upload_param:
-            raise ValueError(
-                f"`{handler}` handler should have a parameter annotated as List["
-                f"rx.UploadFile]"
+            if not handler_upload_param:
+                raise ValueError(
+                    f"`{handler}` handler should have a parameter annotated as List["
+                    f"rx.UploadFile]"
+                )
+
+            event = Event(
+                token=token,
+                name=handler,
+                payload={handler_upload_param[0]: files},
             )
-
-        event = Event(
-            token=token,
-            name=handler,
-            payload={handler_upload_param[0]: files},
-        )
-        async for update in state._process(event):
-            # Postprocess the event.
-            update = await app.postprocess(state, event, update)
-            # Send update to client
-            await asyncio.create_task(
-                app.event_namespace.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
-            )
-        # Set the state for the session.
-        app.state_manager.set_state(event.token, state)
+            async for update in state._process(event):
+                # Postprocess the event.
+                update = await app.postprocess(state, event, update)
+                # Send update to client
+                await app.event_namespace.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
 
     return upload_file
 
@@ -734,9 +748,7 @@ class EventNamespace(AsyncNamespace):
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):
             # Emit the event.
-            await asyncio.create_task(
-                self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
-            )
+            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.
