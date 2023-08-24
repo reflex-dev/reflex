@@ -1265,6 +1265,12 @@ class ImportVar(Base):
         return hash((self.tag, self.is_default, self.alias))
 
 
+class NoRenderImportVar(ImportVar):
+    """A import that doesn't need to be rendered."""
+
+    ...
+
+
 def get_local_storage(key: Optional[Union[Var, str]] = None) -> BaseVar:
     """Provide a base var as payload to get local storage item(s).
 

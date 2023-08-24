@@ -369,7 +369,7 @@ def install_frontend_packages(packages: List[str]):
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
         )
-        #processes.show_status("Installing custom frontend packages", process)
+        # processes.show_status("Installing custom frontend packages", process)
 
 
 def check_initialized(frontend: bool = True):

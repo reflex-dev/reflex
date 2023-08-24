@@ -21,10 +21,9 @@ from reflex.components.base import (
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.state import State
 from reflex.style import Style
-from reflex.utils import format, imports, path_ops, prerequisites
-from reflex.vars import ImportVar
+from reflex.utils import format, imports, path_ops
+from reflex.vars import ImportVar, NoRenderImportVar
 
-import json
 # To re-export this function.
 merge_imports = imports.merge_imports
 
@@ -40,6 +39,9 @@ def compile_import_statement(fields: Set[ImportVar]) -> Tuple[str, Set[str]]:
         default: default library. When install "import def from library".
         rest: rest of libraries. When install "import {rest1, rest2} from library"
     """
+    # ignore the NoRenderImportVar fields during compilation
+    fields = {field for field in fields if not isinstance(field, NoRenderImportVar)}
+
     # Check for default imports.
     defaults = {field for field in fields if field.is_default}
     assert len(defaults) < 2
@@ -70,7 +72,8 @@ def validate_imports(imports: imports.ImportDict):
                 raise ValueError(
                     f"Can not compile, the tag {import_name} is used multiple time from {lib} and {used_tags[import_name]}"
                 )
-            used_tags[import_name] = lib
+            if import_name is not None:
+                used_tags[import_name] = lib
 
 
 def compile_imports(imports: imports.ImportDict) -> List[dict]:
@@ -85,12 +88,22 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
     import_dicts = []
     for lib, fields in imports.items():
         default, rest = compile_import_statement(fields)
+        # prevent all NoRenderImportVar from being rendered on the page
+        if any({f for f in fields if isinstance(f, NoRenderImportVar)}):  # type: ignore
+            continue
+
         if not lib:
             assert not default, "No default field allowed for empty library."
             assert rest is not None and len(rest) > 0, "No fields to import."
             for module in sorted(rest):
                 import_dicts.append(get_import_dict(module))
             continue
+
+        # remove the version before rendering the package imports
+        if lib.startswith("@") and lib.count("@") == 2:
+            lib = f"@{lib.split('@')[1]}"
+        elif not lib.startswith("@") and lib.count("@") == 1:
+            lib = lib.split("@")[0]
 
         import_dicts.append(get_import_dict(lib, default, rest))
     return import_dicts

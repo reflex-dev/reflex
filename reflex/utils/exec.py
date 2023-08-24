@@ -5,9 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import hashlib
-import psutil
-import json
 from pathlib import Path
 
 import psutil
@@ -103,8 +100,6 @@ def run_process_and_launch_url(
                         break
         if process is not None:
             break
-
-    print("App stopped")
 
 
 def run_frontend(

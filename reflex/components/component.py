@@ -22,7 +22,7 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import format, imports, types
-from reflex.vars import BaseVar, ImportVar, Var
+from reflex.vars import BaseVar, ImportVar, NoRenderImportVar, Var
 
 
 class Component(Base, ABC):
@@ -39,6 +39,9 @@ class Component(Base, ABC):
 
     # The library that the component is based on.
     library: Optional[str] = None
+
+    # List here the non-react dependency needed by `library`
+    lib_dependencies: List[str] = []
 
     # The tag to use when rendering the component.
     tag: Optional[str] = None
@@ -502,9 +505,12 @@ class Component(Base, ABC):
         return code
 
     def _get_imports(self) -> imports.ImportDict:
+        imports = {}
         if self.library is not None and self.tag is not None:
-            return {self.library: {self.import_var}}
-        return {}
+            imports[self.library] = {self.import_var}
+        for dep in self.lib_dependencies:
+            imports[dep] = {NoRenderImportVar()}  # type: ignore
+        return imports
 
     def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
@@ -794,7 +800,12 @@ class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
     def _get_imports(self):
-        return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+        imports = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+
+        for dep in [self.library, *self.lib_dependencies]:
+            imports[dep] = {NoRenderImportVar()}  # type: ignore
+
+        return imports
 
     def _get_custom_code(self) -> str:
         opts_fragment = ", { ssr: false });"

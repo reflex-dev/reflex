@@ -529,8 +529,8 @@ class App(Base):
         thread_pool.close()
         thread_pool.join()
 
-        # install frontend packages
-        self.get_frontend_packages(all_imports)
+        # # install frontend packages
+        # self.get_frontend_packages(all_imports)
 
         # Get the results.
         compile_results = [result.get() for result in compile_results]

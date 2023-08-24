@@ -1,6 +1,6 @@
 """Component for displaying a plotly graph."""
 
-from typing import Dict
+from typing import Dict, List
 
 from plotly.graph_objects import Figure
 
@@ -12,7 +12,9 @@ from reflex.vars import Var
 class PlotlyLib(NoSSRComponent):
     """A component that wraps a plotly lib."""
 
-    library = "react-plotly.js"
+    library = "react-plotly.js@^2.6.0"
+
+    lib_dependencies: List[str] = ["plotly.js@^2.22.0"]
 
 
 class Plotly(PlotlyLib):
