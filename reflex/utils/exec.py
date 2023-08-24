@@ -89,12 +89,14 @@ def run_process_and_launch_url(
                     if first_run:
                         url = line.split("url: ")[-1].strip()
                         console.print(f"App running at: [bold green]{url}")
+                        first_run = False
                     else:
                         console.print(f"New packages detected updating app...")
                 else:
                     console.debug(line)
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
+                        last_hash = new_hash
                         kill(process.pid)
                         process = None
                         break  # for line in process.stdout
