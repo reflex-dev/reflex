@@ -1092,7 +1092,7 @@ class StateManager(Base):
             token: The token to modify the state for.
         """
         if self.redis is not None:
-            with self._redis_lock(token):
+            async with self._redis_lock(token):
                 state = await self.get_state(token)
                 yield state
                 print(f"Persisting state for {token}")
