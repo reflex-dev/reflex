@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 import typer
+import uvicorn
 
 from reflex import constants
 from reflex.config import get_config
@@ -196,7 +197,7 @@ def run_backend_prod(
 
 
 def output_system_info():
-    """Show system informations if the loglevel is in DEBUG."""
+    """Show system information if the loglevel is in DEBUG."""
     if console.LOG_LEVEL > constants.LogLevel.DEBUG:
         return
 
