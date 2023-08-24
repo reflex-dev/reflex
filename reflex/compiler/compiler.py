@@ -6,7 +6,6 @@ from typing import List, Set, Tuple, Type
 from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.route import get_route_args
 from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import ImportVar
@@ -18,6 +17,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="useEffect"),
         ImportVar(tag="useRef"),
         ImportVar(tag="useState"),
+        ImportVar(tag="useContext"),
     },
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
@@ -30,6 +30,10 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getRefValues"),
         ImportVar(tag="getAllLocalStorageItems"),
         ImportVar(tag="useEventLoop"),
+    },
+    "/utils/context.js": {
+        ImportVar(tag="EventLoopContext"),
+        ImportVar(tag="StateContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {
@@ -67,11 +71,25 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
+def _compile_contexts(state: Type[State]) -> str:
+    """Compile the initial state and contexts.
+
+    Args:
+        state: The app state.
+
+    Returns:
+        The compiled context file.
+    """
+    return templates.CONTEXT.render(
+        initial_state=utils.compile_state(state),
+        state_name=state.get_name(),
+    )
+
+
 def _compile_page(
     component: Component,
     state: Type[State],
     connect_error_component,
-    is_dynamic: bool,
 ) -> str:
     """Compile the component given the app state.
 
@@ -79,7 +97,6 @@ def _compile_page(
         component: The component to compile.
         state: The app state.
         connect_error_component: The component to render on sever connection error.
-        is_dynamic: if True, include route change re-hydration logic
 
     Returns:
         The compiled component.
@@ -93,13 +110,10 @@ def _compile_page(
     return templates.PAGE.render(
         imports=imports,
         custom_codes=component.get_custom_code(),
-        initial_state=utils.compile_state(state),
         state_name=state.get_name(),
         hooks=component.get_hooks(),
         render=component.render(),
-        transports=constants.Transports.POLLING_WEBSOCKET.get_transports(),
         err_comp=connect_error_component.render() if connect_error_component else None,
-        is_dynamic=is_dynamic,
     )
 
 
@@ -186,6 +200,23 @@ def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     return output_path, code
 
 
+def compile_contexts(
+    state: Type[State],
+) -> Tuple[str, str]:
+    """Compile the initial state / context.
+
+    Args:
+        state: The app state.
+
+    Returns:
+        The path and code of the compiled context.
+    """
+    # Get the path for the output file.
+    output_path = utils.get_context_path()
+
+    return output_path, _compile_contexts(state)
+
+
 def compile_page(
     path: str,
     component: Component,
@@ -208,7 +239,9 @@ def compile_page(
 
     # Add the style to the component.
     code = _compile_page(
-        component, state, connect_error_component, is_dynamic=bool(get_route_args(path))
+        component,
+        state,
+        connect_error_component,
     )
     return output_path, code
 

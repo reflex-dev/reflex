@@ -76,7 +76,7 @@ export const getToken = () => {
 export const applyDelta = (state, delta) => {
   const new_state = {...state}
   for (const substate in delta) {
-    let s = state;
+    let s = new_state;
     const path = substate.split(".").slice(1);
     while (path.length > 0) {
       s = s[path.shift()];
@@ -193,10 +193,10 @@ export const applyEvent = async (event, socket) => {
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event, state) => {
+export const applyRestEvent = async (event) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(state, event.name);
+    eventSent = await uploadFiles(event.name, event.payload.files);
   }
   return eventSent;
 };
@@ -232,7 +232,7 @@ export const processEvent = async (
   let eventSent = false
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event, currentState);
+    eventSent = await applyRestEvent(event);
   } else {
     eventSent = await applyEvent(event, socket);
   }
@@ -298,9 +298,7 @@ export const connect = async (
  *
  * @returns Whether the files were uploaded.
  */
-export const uploadFiles = async (state, handler) => {
-  const files = state.files;
-
+export const uploadFiles = async (handler, files) => {
   // return if there's no file to upload
   if (files.length == 0) {
     return false;

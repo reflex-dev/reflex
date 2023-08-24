@@ -144,10 +144,10 @@ class App(Base):
         self.sio = AsyncServer(
             async_mode="asgi",
             cors_allowed_origins="*"
-            if config.cors_allowed_origins == constants.CORS_ALLOWED_ORIGINS
+            if config.cors_allowed_origins == ["*"]
             else config.cors_allowed_origins,
-            cors_credentials=config.cors_credentials,
-            max_http_buffer_size=config.polling_max_http_buffer_size,
+            cors_credentials=True,
+            max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
             ping_interval=constants.PING_INTERVAL,
             ping_timeout=constants.PING_TIMEOUT,
         )
@@ -438,13 +438,14 @@ class App(Base):
 
     def setup_admin_dash(self):
         """Setup the admin dash."""
-        # Get the config.
-        config = get_config()
-        if config.admin_dash and config.admin_dash.models:
+        # Get the admin dash.
+        admin_dash = self.admin_dash
+
+        if admin_dash and admin_dash.models:
             # Build the admin dashboard
             admin = (
-                config.admin_dash.admin
-                if config.admin_dash.admin
+                admin_dash.admin
+                if admin_dash.admin
                 else Admin(
                     engine=Model.get_db_engine(),
                     title="Reflex Admin Dashboard",
@@ -452,8 +453,8 @@ class App(Base):
                 )
             )
 
-            for model in config.admin_dash.models:
-                view = config.admin_dash.view_overrides.get(model, ModelView)
+            for model in admin_dash.models:
+                view = admin_dash.view_overrides.get(model, ModelView)
                 admin.add_view(view(model))
 
             admin.mount_to(self.api)
@@ -549,6 +550,9 @@ class App(Base):
 
         # Compile the theme.
         compile_results.append(compiler.compile_theme(self.style))
+
+        # Compile the contexts.
+        compile_results.append(compiler.compile_contexts(self.state))
 
         # Compile the Tailwind config.
         if config.tailwind is not None:
@@ -723,7 +727,7 @@ class EventNamespace(AsyncNamespace):
         self.app = app
 
     def on_connect(self, sid, environ):
-        """Event for when the websocket disconnects.
+        """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.

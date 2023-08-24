@@ -1,4 +1,5 @@
 """A file upload component."""
+from __future__ import annotations
 
 from typing import Dict, List, Optional
 
@@ -8,7 +9,11 @@ from reflex.components.layout.box import Box
 from reflex.event import EventChain
 from reflex.vars import BaseVar, Var
 
-upload_file = BaseVar(name="e => File(e)", type_=EventChain)
+files_state = "const [files, setFiles] = useState([]);"
+upload_file = BaseVar(name="e => setFiles((files) => e)", type_=EventChain)
+
+# Use this var along with the Upload component to render the list of selected files.
+selected_files = BaseVar(name="files.map((f) => f.name)", type_=List[str])
 
 
 class Upload(Component):
@@ -73,7 +78,7 @@ class Upload(Component):
         zone = Box.create(
             upload,
             *children,
-            **{k: v for k, v in props.items() if k not in supported_props}
+            **{k: v for k, v in props.items() if k not in supported_props},
         )
         zone.special_props = {BaseVar(name="{...getRootProps()}", type_=None)}
 
@@ -94,3 +99,6 @@ class Upload(Component):
         out = super()._render()
         out.args = ("getRootProps", "getInputProps")
         return out
+
+    def _get_hooks(self) -> str | None:
+        return (super()._get_hooks() or "") + files_state

@@ -145,11 +145,8 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     # look up the backend state and assert that `on_load` was called for all
     # navigation events
     backend_state = dynamic_route.app_instance.state_manager.states[token]
-    # TODO: navigating to dynamic page initially fires hydrate twice
-    # because the new page re-initializes `useEventLoop`, with the same hydrate event
-    # but routeChangeComplete also still fires.
     time.sleep(0.2)
-    assert backend_state.order[-10:] == [str(ix) for ix in range(10)]
+    assert backend_state.order == [str(ix) for ix in range(10)]
 
 
 def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):

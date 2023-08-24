@@ -69,6 +69,10 @@ class Component(Base, ABC):
 
     # components that cannot be children
     invalid_children: List[str] = []
+
+    # components that are only allowed as children
+    valid_children: List[str] = []
+
     # custom attribute
     custom_attrs: Dict[str, str] = {}
 
@@ -106,9 +110,10 @@ class Component(Base, ABC):
             TypeError: If an invalid prop is passed.
         """
         # Set the id and children initially.
+        children = kwargs.get("children", [])
         initial_kwargs = {
             "id": kwargs.get("id"),
-            "children": kwargs.get("children", []),
+            "children": children,
             **{
                 prop: Var.create(kwargs[prop])
                 for prop in self.get_initial_props()
@@ -116,6 +121,8 @@ class Component(Base, ABC):
             },
         }
         super().__init__(**initial_kwargs)
+
+        self._validate_component_children(children)
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
@@ -163,12 +170,8 @@ class Component(Base, ABC):
 
             # Check if the key is an event trigger.
             if key in triggers:
-                state_name = kwargs["value"].name if kwargs.get("value", False) else ""
                 # Temporarily disable full control for event triggers.
-                full_control = False
-                kwargs["event_triggers"][key] = self._create_event_chain(
-                    key, value, state_name, full_control
-                )
+                kwargs["event_triggers"][key] = self._create_event_chain(key, value)
 
         # Remove any keys that were added as events.
         for key in kwargs["event_triggers"]:
@@ -203,16 +206,12 @@ class Component(Base, ABC):
         value: Union[
             Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
         ],
-        state_name: str = "",
-        full_control: bool = False,
     ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
         Args:
             event_trigger: The event trigger to bind the chain to.
             value: The value to create the event chain from.
-            state_name: The state to be fully controlled.
-            full_control: Whether full controlled or not.
 
         Returns:
             The event chain.
@@ -281,13 +280,8 @@ class Component(Base, ABC):
                 for e in events
             ]
 
-        # set state name when fully controlled input
-        state_name = state_name if full_control else ""
-
         # Return the event chain.
-        return EventChain(
-            events=events, state_name=state_name, full_control=full_control
-        )
+        return EventChain(events=events)
 
     def get_triggers(self) -> Set[str]:
         """Get the event triggers for the component.
@@ -397,6 +391,7 @@ class Component(Base, ABC):
             else Bare.create(contents=Var.create(child, is_string=True))
             for child in children
         ]
+
         return cls(children=children, **props)
 
     def _add_style(self, style):
@@ -451,29 +446,43 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
-        self._validate_component_children(
-            rendered_dict["name"], rendered_dict["children"]
-        )
         return rendered_dict
 
-    def _validate_component_children(self, comp_name: str, children: List[Dict]):
+    def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
 
         Args:
-            comp_name: name of the component.
-            children: list of children components.
+            children: The children of the component.
 
-        Raises:
-            ValueError: when an unsupported component is matched.
         """
-        if not self.invalid_children:
+        if not self.invalid_children and not self.valid_children:
             return
-        for child in children:
-            name = child["name"]
-            if name in self.invalid_children:
+
+        comp_name = type(self).__name__
+
+        def validate_invalid_child(child_name):
+            if child_name in self.invalid_children:
                 raise ValueError(
-                    f"The component `{comp_name.lower()}` cannot have `{name.lower()}` as a child component"
+                    f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
+
+        def validate_valid_child(child_name):
+            if child_name not in self.valid_children:
+                valid_child_list = ", ".join(
+                    [f"`{v_child}`" for v_child in self.valid_children]
+                )
+                raise ValueError(
+                    f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
+                )
+
+        for child in children:
+            name = type(child).__name__
+
+            if self.invalid_children:
+                validate_invalid_child(name)
+
+            if self.valid_children:
+                validate_valid_child(name)
 
     def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.
@@ -606,27 +615,6 @@ class Component(Base, ABC):
             An import var.
         """
         return ImportVar(tag=self.tag, is_default=self.is_default, alias=self.alias)
-
-    def is_full_control(self, kwargs: dict) -> bool:
-        """Return if the component is fully controlled input.
-
-        Args:
-            kwargs: The component kwargs.
-
-        Returns:
-            Whether fully controlled.
-        """
-        value = kwargs.get("value")
-        if value is None or type(value) != BaseVar:
-            return False
-
-        on_change = kwargs.get("on_change")
-        if on_change is None or type(on_change) != EventHandler:
-            return False
-
-        value = value.full_name
-        on_change = on_change.fn.__qualname__
-        return value == on_change.replace(constants.SETTER_PREFIX, "")
 
 
 # Map from component to styling.

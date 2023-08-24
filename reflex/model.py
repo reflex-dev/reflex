@@ -1,5 +1,6 @@
 """Database built into Reflex."""
 
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
@@ -40,14 +41,11 @@ def get_engine(url: Optional[str] = None):
         console.warn(
             "Database is not initialized, run [bold]reflex db init[/bold] first."
         )
-    echo_db_query = False
-    if conf.env == constants.Env.DEV and constants.SQLALCHEMY_ECHO:
-        echo_db_query = True
-    return sqlmodel.create_engine(
-        url,
-        echo=echo_db_query,
-        connect_args={"check_same_thread": False} if conf.admin_dash else {},
-    )
+    # Print the SQL queries if the log level is INFO or lower.
+    echo_db_query = os.environ.get("SQLALCHEMY_ECHO") == "True"
+    # Needed for the admin dash on sqlite.
+    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
+    return sqlmodel.create_engine(url, echo=echo_db_query, connect_args=connect_args)
 
 
 class Model(Base, sqlmodel.SQLModel):

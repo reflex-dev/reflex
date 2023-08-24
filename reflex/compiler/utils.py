@@ -140,11 +140,6 @@ def compile_state(state: Type[State]) -> Dict:
         initial_state = state().dict()
     except Exception:
         initial_state = state().dict(include_computed=False)
-    initial_state.update(
-        {
-            "files": [],
-        }
-    )
     return format.format_state(initial_state)
 
 
@@ -248,6 +243,15 @@ def get_theme_path() -> str:
         The path of the theme style.
     """
     return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
+
+
+def get_context_path() -> str:
+    """Get the path of the context / initial state file.
+
+    Returns:
+        The path of the context module.
+    """
+    return os.path.join(constants.WEB_UTILS_DIR, "context" + constants.JS_EXT)
 
 
 def get_components_path() -> str:

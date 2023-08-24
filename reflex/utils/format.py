@@ -19,7 +19,7 @@ from reflex.utils import types
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import EventChain, EventHandler, EventSpec
+    from reflex.event import EventHandler, EventSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -311,25 +311,6 @@ def format_event(event_spec: EventSpec) -> str:
     return f"E({', '.join(event_args)})"
 
 
-def format_full_control_event(event_chain: EventChain) -> str:
-    """Format a fully controlled input prop.
-
-    Args:
-        event_chain: The event chain for full controlled input.
-
-    Returns:
-        The compiled event.
-    """
-    from reflex.compiler import templates
-
-    event_spec = event_chain.events[0]
-    arg = event_spec.args[0][1] if event_spec.args else None
-    state_name = event_chain.state_name
-    chain = ",".join([format_event(event) for event in event_chain.events])
-    event = templates.FULL_CONTROL(state_name=state_name, arg=arg, chain=chain)
-    return event
-
-
 def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     """Convert back query params name to python-friendly case.
 
@@ -381,7 +362,7 @@ def format_image_data(value: Type) -> str:
     return f"data:image/png;base64,{base64_image}"
 
 
-def format_state(value: Any) -> Dict:
+def format_state(value: Any) -> Any:
     """Recursively format values in the given state.
 
     Args:
@@ -396,6 +377,10 @@ def format_state(value: Any) -> Dict:
     # Handle dicts.
     if isinstance(value, dict):
         return {k: format_state(v) for k, v in value.items()}
+
+    # Handle lists, sets, typles.
+    if isinstance(value, types.StateIterBases):
+        return [format_state(v) for v in value]
 
     # Return state vars as is.
     if isinstance(value, types.StateBases):
@@ -473,10 +458,22 @@ def format_dict(prop: ComponentStyle) -> str:
     # Dump the dict to a string.
     fprop = json_dumps(prop)
 
+    def unescape_double_quotes_in_var(m: re.Match) -> str:
+        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
+        return re.sub('\\\\"', '"', m.group(1))
+
     # This substitution is necessary to unwrap var values.
-    fprop = re.sub('"{', "", fprop)
-    fprop = re.sub('}"', "", fprop)
-    fprop = re.sub('\\\\"', '"', fprop)
+    fprop = re.sub(
+        pattern=r"""
+            (?<!\\)      # must NOT start with a backslash
+            "            # match opening double quote of JSON value
+            {(.*?)}      # extract the value between curly braces (non-greedy)
+            "            # match must end with an unescaped double quote
+        """,
+        repl=unescape_double_quotes_in_var,
+        string=fprop,
+        flags=re.VERBOSE,
+    )
 
     # Return the formatted dict.
     return fprop

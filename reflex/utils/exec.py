@@ -5,13 +5,16 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import platform
+import sys
 from pathlib import Path
 
 import psutil
+import uvicorn
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, prerequisites, processes
+from reflex.utils import console, path_ops, prerequisites, processes
 from reflex.utils.watch import AssetFolderWatch
 
 
@@ -78,8 +81,7 @@ def run_process_and_launch_url(
     while True:
         if process is None:
             process = processes.new_process(
-                run_command,
-                cwd=constants.WEB_DIR,
+                run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
             )
         if process.stdout:
             for line in process.stdout:
@@ -87,14 +89,12 @@ def run_process_and_launch_url(
                     if first_run:
                         url = line.split("url: ")[-1].strip()
                         console.print(f"App running at: [bold green]{url}")
-                        first_run = False
                     else:
                         console.print(f"New packages detected updating app...")
                 else:
                     console.debug(line)
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
-                        last_hash = new_hash
                         kill(process.pid)
                         process = None
                         break  # for line in process.stdout
@@ -117,7 +117,7 @@ def run_frontend(
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
-    os.environ["PORT"] = get_config().frontend_port if port is None else port
+    os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])
 
 
@@ -132,7 +132,7 @@ def run_frontend_prod(
         port: The port to run the frontend on.
     """
     # Set the port.
-    os.environ["PORT"] = get_config().frontend_port if port is None else port
+    os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
 
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
@@ -153,22 +153,13 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    processes.new_process(
-        [
-            "uvicorn",
-            f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--log-level",
-            loglevel.value,
-            "--reload",
-            "--reload-dir",
-            app_name.split(".")[0],
-        ],
-        run=True,
-        show_logs=True,
+    uvicorn.run(
+        app=f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+        host=host,
+        port=port,
+        log_level=loglevel.value,
+        reload=True,
+        reload_dirs=[app_name.split(".")[0]],
     )
 
 
@@ -187,18 +178,21 @@ def run_backend_prod(
         loglevel: The log level.
     """
     num_workers = processes.get_num_workers()
+    config = get_config()
+    RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
+    RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
     command = (
         [
-            *constants.RUN_BACKEND_PROD_WINDOWS,
+            *RUN_BACKEND_PROD_WINDOWS,
             "--host",
             host,
             "--port",
             str(port),
             f"{app_name}:{constants.APP_VAR}",
         ]
-        if prerequisites.IS_WINDOWS
+        if constants.IS_WINDOWS
         else [
-            *constants.RUN_BACKEND_PROD,
+            *RUN_BACKEND_PROD,
             "--bind",
             f"{host}:{port}",
             "--threads",
@@ -214,3 +208,57 @@ def run_backend_prod(
         str(num_workers),
     ]
     processes.new_process(command, run=True, show_logs=True)
+
+
+def output_system_info():
+    """Show system informations if the loglevel is in DEBUG."""
+    if console.LOG_LEVEL > constants.LogLevel.DEBUG:
+        return
+
+    config = get_config()
+    try:
+        config_file = sys.modules[config.__module__].__file__
+    except Exception:
+        config_file = None
+
+    console.rule(f"System Info")
+    console.debug(f"Config file: {config_file!r}")
+    console.debug(f"Config: {config}")
+
+    dependencies = [
+        f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{constants.NODE_PATH})]",
+    ]
+
+    system = platform.system()
+
+    if system != "Windows":
+        dependencies.extend(
+            [
+                f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {config.bun_path})]",
+            ],
+        )
+    else:
+        dependencies.append(
+            f"[FNM {constants.FNM_VERSION} (Expected: {constants.FNM_VERSION}) (PATH: {constants.FNM_EXE})]",
+        )
+
+    if system == "Linux":
+        import distro  # type: ignore
+
+        os_version = distro.name(pretty=True)
+    else:
+        os_version = platform.version()
+
+    dependencies.append(f"[OS {platform.system()} {os_version}]")
+
+    for dep in dependencies:
+        console.debug(f"{dep}")
+
+    console.debug(
+        f"Using package installer at: {prerequisites.get_install_package_manager()}"
+    )
+    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")
+    if system != "Windows":
+        console.debug(f"Unzip path: {path_ops.which('unzip')}")

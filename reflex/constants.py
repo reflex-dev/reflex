@@ -6,7 +6,8 @@ import platform
 import re
 from enum import Enum
 from types import SimpleNamespace
-from typing import Any, Type
+
+from platformdirs import PlatformDirs
 
 # importlib is only available for Python 3.8+ so we need the backport for Python 3.7
 try:
@@ -14,30 +15,7 @@ try:
 except ImportError:
     import importlib_metadata as metadata  # pyright: ignore[reportMissingImports]
 
-
-def get_value(key: str, default: Any = None, type_: Type = str) -> Type:
-    """Get the value for the constant.
-    Obtain os env value and cast non-string types into
-    their original types.
-
-    Args:
-        key: constant name.
-        default: default value if key doesn't exist.
-        type_: the type of the constant.
-
-    Returns:
-        the value of the constant in its designated type
-    """
-    value = os.getenv(key, default)
-    try:
-        if value and type_ != str:
-            value = eval(value)
-    except Exception:
-        pass
-    finally:
-        # Special case for db_url expects None to be a valid input when
-        # user explicitly overrides db_url as None
-        return value if value != "None" else None  # noqa B012
+IS_WINDOWS = platform.system() == "Windows"
 
 
 # App names and versions.
@@ -48,7 +26,17 @@ VERSION = metadata.version(MODULE_NAME)
 
 # Files and directories used to init a new project.
 # The directory to store reflex dependencies.
-REFLEX_DIR = os.path.expandvars(os.path.join("$HOME", f".{MODULE_NAME}"))
+REFLEX_DIR = (
+    # on windows, we use C:/Users/<username>/AppData/Local/reflex.
+    PlatformDirs(MODULE_NAME, False).user_data_dir
+    if IS_WINDOWS
+    else os.path.expandvars(
+        os.path.join(
+            "$HOME",
+            f".{MODULE_NAME}",
+        ),
+    )
+)
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # The name of the assets directory.
@@ -71,37 +59,44 @@ MIN_BUN_VERSION = "0.7.0"
 BUN_ROOT_PATH = os.path.join(REFLEX_DIR, ".bun")
 # Default bun path.
 DEFAULT_BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
-# The bun path.
-BUN_PATH = get_value("BUN_PATH", DEFAULT_BUN_PATH)
 # URL to bun install script.
 BUN_INSTALL_URL = "https://bun.sh/install"
 
 # NVM / Node config.
 # The NVM version.
 NVM_VERSION = "0.39.1"
+# The FNM version.
+FNM_VERSION = "1.35.1"
 # The Node version.
 NODE_VERSION = "18.17.0"
 # The minimum required node version.
 NODE_VERSION_MIN = "16.8.0"
 # The directory to store nvm.
 NVM_DIR = os.path.join(REFLEX_DIR, ".nvm")
+# The directory to store fnm.
+FNM_DIR = os.path.join(REFLEX_DIR, "fnm")
+# The fnm executable binary.
+FNM_EXE = os.path.join(FNM_DIR, "fnm.exe")
 # The nvm path.
 NVM_PATH = os.path.join(NVM_DIR, "nvm.sh")
 # The node bin path.
-NODE_BIN_PATH = os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
+NODE_BIN_PATH = (
+    os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
+    if not IS_WINDOWS
+    else os.path.join(FNM_DIR, "node-versions", f"v{NODE_VERSION}", "installation")
+)
 # The default path where node is installed.
-NODE_PATH = (
-    "node" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "node")
-)
+NODE_PATH = os.path.join(NODE_BIN_PATH, "node.exe" if IS_WINDOWS else "node")
 # The default path where npm is installed.
-NPM_PATH = (
-    "npm" if platform.system() == "Windows" else os.path.join(NODE_BIN_PATH, "npm")
-)
+NPM_PATH = os.path.join(NODE_BIN_PATH, "npm")
 # The URL to the nvm install script.
 NVM_INSTALL_URL = (
     f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
 )
-
+# The URL to the fnm release binary
+FNM_WINDOWS_INSTALL_URL = (
+    f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/fnm-windows.zip"
+)
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.
 WEB_DIR = ".web"
@@ -137,29 +132,6 @@ PACKAGE_LOCK = "package-lock.json"
 REFLEX_JSON = os.path.join(WEB_DIR, "reflex.json")
 # The env json file.
 ENV_JSON = os.path.join(WEB_DIR, "env.json")
-
-# Commands to run the app.
-DOT_ENV_FILE = ".env"
-# The frontend default port.
-FRONTEND_PORT = get_value("FRONTEND_PORT", "3000")
-# The backend default port.
-BACKEND_PORT = get_value("BACKEND_PORT", "8000")
-# The backend api url.
-API_URL = get_value("API_URL", "http://localhost:8000")
-# The deploy url
-DEPLOY_URL = get_value("DEPLOY_URL")
-# Default host in dev mode.
-BACKEND_HOST = get_value("BACKEND_HOST", "0.0.0.0")
-# The default timeout when launching the gunicorn server.
-TIMEOUT = get_value("TIMEOUT", 120, type_=int)
-# The command to run the backend in production mode.
-RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {TIMEOUT} --log-level critical".split()
-RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {TIMEOUT}".split()
-# Socket.IO web server
-PING_INTERVAL = 25
-PING_TIMEOUT = 120
-# flag to make the engine print all the SQL statements it executes
-SQLALCHEMY_ECHO = get_value("SQLALCHEMY_ECHO", False, type_=bool)
 
 # Compiler variables.
 # The extension for compiled Javascript files.
@@ -200,12 +172,6 @@ SETTER_PREFIX = "set_"
 FRONTEND_ZIP = "frontend.zip"
 # The name of the backend zip during deployment.
 BACKEND_ZIP = "backend.zip"
-# The name of the sqlite database.
-DB_NAME = os.getenv("DB_NAME", "reflex.db")
-# The sqlite url.
-DB_URL = get_value("DB_URL", f"sqlite:///{DB_NAME}")
-# The redis url
-REDIS_URL = get_value("REDIS_URL")
 # The default title to show for Reflex apps.
 DEFAULT_TITLE = "Reflex App"
 # The default description to show for Reflex apps.
@@ -229,8 +195,6 @@ OLD_CONFIG_FILE = f"pcconfig{PY_EXT}"
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
 # Token expiration time in seconds.
 TOKEN_EXPIRATION = 60 * 60
-# The event namespace for websocket
-EVENT_NAMESPACE = get_value("EVENT_NAMESPACE")
 
 # Testing variables.
 # Testing os env set by pytest when running a test case.
@@ -328,36 +292,6 @@ class SocketEvent(Enum):
         return str(self.value)
 
 
-class Transports(Enum):
-    """Socket transports used by the reflex backend API."""
-
-    POLLING_WEBSOCKET = "['polling', 'websocket']"
-    WEBSOCKET_POLLING = "['websocket', 'polling']"
-    WEBSOCKET_ONLY = "['websocket']"
-    POLLING_ONLY = "['polling']"
-
-    def __str__(self) -> str:
-        """Get the string representation of the transports.
-
-        Returns:
-            The transports string.
-        """
-        return str(self.value)
-
-    def get_transports(self) -> str:
-        """Get the transports config for the backend.
-
-        Returns:
-            The transports config for the backend.
-        """
-        # Import here to avoid circular imports.
-        from reflex.config import get_config
-
-        # Get the API URL from the config.
-        config = get_config()
-        return str(config.backend_transports)
-
-
 class RouteArgType(SimpleNamespace):
     """Type of dynamic route arg extracted from URI route."""
 
@@ -407,8 +341,9 @@ COLOR_MODE = "colorMode"
 TOGGLE_COLOR_MODE = "toggleColorMode"
 
 # Server socket configuration variables
-CORS_ALLOWED_ORIGINS = get_value("CORS_ALLOWED_ORIGINS", ["*"], list)
 POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000
+PING_INTERVAL = 25
+PING_TIMEOUT = 120
 
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")

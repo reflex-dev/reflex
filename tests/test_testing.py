@@ -1,6 +1,6 @@
 """Unit tests for the included testing tools."""
+from reflex.constants import IS_WINDOWS
 from reflex.testing import AppHarness
-from reflex.utils.prerequisites import IS_WINDOWS
 
 
 def test_app_harness(tmp_path):

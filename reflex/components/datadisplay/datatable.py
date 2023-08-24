@@ -1,6 +1,6 @@
 """Table components."""
 
-from typing import Any, List
+from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.tags import Tag
@@ -40,7 +40,7 @@ class DataTable(Gridjs):
     resizable: Var[bool]
 
     # Enable pagination.
-    pagination: Var[bool]
+    pagination: Var[Union[bool, Dict]]
 
     @classmethod
     def create(cls, *children, **props):
