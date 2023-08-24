@@ -488,11 +488,12 @@ class App(Base):
             MofNCompleteColumn(),
             TimeElapsedColumn(),
         )
-        task = progress.add_task("Compiling: ", total=len(self.pages))
 
-        # TODO: include all work done in progress indicator, not just self.pages
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
+
+        task = progress.add_task("Compiling: ", total=len(self.pages))
+        # TODO: include all work done in progress indicator, not just self.pages
 
         # Get the env mode.
         config = get_config()
@@ -529,9 +530,6 @@ class App(Base):
 
         thread_pool.close()
         thread_pool.join()
-
-        # # install frontend packages
-        # self.get_frontend_packages(all_imports)
 
         # Get the results.
         compile_results = [result.get() for result in compile_results]
