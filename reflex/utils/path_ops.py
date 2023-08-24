@@ -124,7 +124,7 @@ def get_node_bin_path() -> Optional[str]:
     return constants.NODE_BIN_PATH
 
 
-def get_node_path():
+def get_node_path() -> Optional[str]:
     """Get the node binary path.
 
     Returns:
@@ -135,7 +135,7 @@ def get_node_path():
     return constants.NODE_PATH
 
 
-def get_npm_path():
+def get_npm_path() -> Optional[str]:
     """Get npm binary path.
 
     Returns:
