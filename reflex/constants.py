@@ -23,7 +23,7 @@ def get_fnm_name() -> Optional[str]:
     """Get the appropriate fnm executable name based on the current platform.
 
     Returns:
-        str: The fnm executable name for the current platform.
+            The fnm executable name for the current platform.
     """
     platform_os = platform.system()
 
@@ -38,7 +38,7 @@ def get_fnm_name() -> Optional[str]:
         elif machine.startswith("aarch") or machine.startswith("armv8"):
             return "fnm-arm64"
         return "fnm-linux"
-    return
+    return None
 
 
 # App names and versions.
@@ -57,7 +57,7 @@ REFLEX_DIR = (
 )
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# The name of the assets' directory.
+# The name of the assets directory.
 APP_ASSETS_DIR = "assets"
 # The template directory used during reflex init.
 TEMPLATE_DIR = os.path.join(ROOT_DIR, MODULE_NAME, ".templates")
