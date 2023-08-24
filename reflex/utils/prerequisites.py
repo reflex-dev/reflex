@@ -460,11 +460,38 @@ def validate_bun():
             raise typer.Exit(1)
 
 
-def validate_frontend_dependencies():
-    """Validate frontend dependencies to ensure they meet requirements."""
+def validate_frontend_dependencies(init=True):
+    """Validate frontend dependencies to ensure they meet requirements.
+
+    Args:
+        init: whether running `reflex init`
+
+    Raises:
+        Exit: If the package manager is invalid.
+    """
+    if not init:
+        # we only need to validate the package manager when running app.
+        # `reflex init` will install the deps anyway(if applied).
+        package_manager = get_package_manager()
+        if not package_manager:
+            console.error(
+                "Could not find NPM package manager. Make sure you have node installed."
+            )
+            raise typer.Exit(1)
+
+        if not check_node_version():
+            node_version = get_node_version()
+            console.error(
+                f"Reflex requires node version {constants.NODE_VERSION_MIN} or higher to run, but the detected version is {node_version}",
+            )
+            raise typer.Exit(1)
+
     if constants.IS_WINDOWS:
         return
-    return validate_bun()
+
+    if init:
+        # we only need bun for package install on `reflex init`.
+        validate_bun()
 
 
 def initialize_frontend_dependencies():
