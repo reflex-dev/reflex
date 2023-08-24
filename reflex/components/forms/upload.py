@@ -14,7 +14,7 @@ upload_file = BaseVar(name="e => File(e)", type_=EventChain)
 class Upload(Component):
     """A file upload component."""
 
-    library = "react-dropzone"
+    library = "react-dropzone@^14.2.3"
 
     tag = "ReactDropzone"
 
