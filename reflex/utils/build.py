@@ -6,8 +6,12 @@ import json
 import os
 import random
 import subprocess
+import zipfile
+from enum import Enum
 from pathlib import Path
 from typing import Optional, Union
+
+from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
 from reflex.config import get_config
@@ -85,6 +89,65 @@ def generate_sitemap_config(deploy_url: str):
         f.write(templates.SITEMAP_CONFIG(config=config))
 
 
+class _ComponentName(Enum):
+    BACKEND = "Backend"
+    FRONTEND = "Frontend"
+
+
+def _zip(
+    component_name: _ComponentName,
+    target: str,
+    root_dir: str,
+    dirs_to_exclude: set[str] | None = None,
+    files_to_exclude: set[str] | None = None,
+) -> None:
+    """Zip utility function.
+
+    Args:
+        component_name: The name of the component: backend or frontend.
+        target: The target zip file.
+        root_dir: The root directory to zip.
+        dirs_to_exclude: The directories to exclude.
+        files_to_exclude: The files to exclude.
+
+    """
+    dirs_to_exclude = dirs_to_exclude or set()
+    files_to_exclude = files_to_exclude or set()
+    files_to_zip: list[str] = []
+    # Traverse the root directory in a top-down manner. In this traversal order,
+    # we can modify the dirs list in-place to remove directories we don't want to include.
+    for root, dirs, files in os.walk(root_dir, topdown=True):
+        # Modify the dirs in-place so excluded and hidden directories are skipped in next traversal.
+        dirs[:] = [
+            d
+            for d in dirs
+            if (basename := os.path.basename(os.path.normpath(d)))
+            not in dirs_to_exclude
+            and not basename.startswith(".")
+        ]
+        # Modify the files in-place so the hidden files are excluded.
+        files[:] = [f for f in files if not f.startswith(".")]
+        files_to_zip += [
+            os.path.join(root, file) for file in files if file not in files_to_exclude
+        ]
+
+    # Create a progress bar for zipping the component.
+    progress = Progress(
+        *Progress.get_default_columns()[:-1],
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+    )
+    task = progress.add_task(
+        f"Zipping {component_name.value}:", total=len(files_to_zip)
+    )
+
+    with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for file in files_to_zip:
+            console.debug(f"{target}: {file}")
+            progress.advance(task)
+            zipf.write(file, os.path.relpath(file, root_dir))
+
+
 def export(
     backend: bool = True,
     frontend: bool = True,
@@ -132,42 +195,22 @@ def export(
 
     # Zip up the app.
     if zip:
-        if os.name == "posix":
-            posix_export(backend, frontend)
-        if os.name == "nt":
-            nt_export(backend, frontend)
-
-
-def nt_export(backend: bool = True, frontend: bool = True):
-    """Export for nt (Windows) systems.
-
-    Args:
-        backend: Whether to zip up the backend app.
-        frontend: Whether to zip up the frontend app.
-    """
-    cmd = r""
-    if frontend:
-        cmd = r'''powershell -Command "Set-Location .web/_static; Compress-Archive -Path .\* -DestinationPath ..\..\frontend.zip -Force"'''
-        os.system(cmd)
-    if backend:
-        cmd = r'''powershell -Command "Get-ChildItem -File | Where-Object { $_.Name -notin @('.web', 'assets', 'frontend.zip', 'backend.zip') } | Compress-Archive -DestinationPath backend.zip -Update"'''
-        os.system(cmd)
-
-
-def posix_export(backend: bool = True, frontend: bool = True):
-    """Export for posix (Linux, OSX) systems.
-
-    Args:
-        backend: Whether to zip up the backend app.
-        frontend: Whether to zip up the frontend app.
-    """
-    cmd = r""
-    if frontend:
-        cmd = r"cd .web/_static && zip -r ../../frontend.zip ./*"
-        os.system(cmd)
-    if backend:
-        cmd = r"zip -r backend.zip ./* -x .web/\* ./assets\* ./frontend.zip\* ./backend.zip\*"
-        os.system(cmd)
+        files_to_exclude = {constants.FRONTEND_ZIP, constants.BACKEND_ZIP}
+        if frontend:
+            _zip(
+                component_name=_ComponentName.FRONTEND,
+                target=constants.FRONTEND_ZIP,
+                root_dir=".web/_static",
+                files_to_exclude=files_to_exclude,
+            )
+        if backend:
+            _zip(
+                component_name=_ComponentName.BACKEND,
+                target=constants.BACKEND_ZIP,
+                root_dir=".",
+                dirs_to_exclude={"assets", "__pycache__"},
+                files_to_exclude=files_to_exclude,
+            )
 
 
 def setup_frontend(

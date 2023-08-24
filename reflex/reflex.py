@@ -264,17 +264,6 @@ def export(
     # Post a telemetry event.
     telemetry.send("export", config.telemetry_enabled)
 
-    if zipping:
-        console.log(
-            """Backend & Frontend compiled. See [green bold]backend.zip[/green bold]
-            and [green bold]frontend.zip[/green bold]."""
-        )
-    else:
-        console.log(
-            """Backend & Frontend compiled. See [green bold]app[/green bold]
-            and [green bold].web/_static[/green bold] directories."""
-        )
-
 
 db_cli = typer.Typer()
 
