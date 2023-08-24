@@ -38,6 +38,41 @@ if TYPE_CHECKING:
 # Set of unique variable names.
 USED_VARIABLES = set()
 
+# operators supported my all types.
+ALL_OPS = ["==", "!="]
+
+OPERATION_MAPPING = {
+    (int, int): {
+        "+",
+        "-",
+        "/",
+        "//",
+        "*",
+        "%",
+        "**",
+        ">",
+        "<",
+        "<=",
+        ">=",
+        "|",
+        "^",
+        "<<",
+        ">>",
+        "&",
+    },
+    (int, str): {"*"},
+    (int, float): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
+    (int, list): {"*"},
+    (str, str): {"+", ">", "<", "<=", ">="},
+    (str, int): {"*"},
+    (float, float): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
+    (float, int): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
+    (list, list): {"+", ">", "<", "<=", ">="},
+    (list, int): {"*"},
+    (dict, dict): {"|"},
+    (set, set): {"-", "|", "&", "^"},
+}
+
 
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
@@ -407,6 +442,11 @@ class Var(ABC):
             name = f"{op}{self.full_name}"
         else:
             props = (other, self) if flip else (self, other)
+            if op and not self.is_valid_operation(props[0].type_, props[1].type_, op):
+                raise TypeError(
+                    f"Unsupported Operand type(s) for {op}: `{props[0].full_name}` of type {props[0].type_.__name__} and `{props[1].full_name}` of type {props[1].type_.__name__}"
+                )
+
             name = f"{props[0].full_name} {op} {props[1].full_name}"
             if fn is None:
                 name = format.wrap(name, "(")
@@ -417,6 +457,28 @@ class Var(ABC):
             type_=type_,
             is_local=self.is_local,
         )
+
+    @staticmethod
+    def is_valid_operation(
+        operand1_type: Type, operand2_type: Type, operator: str
+    ) -> bool:
+        """Check if an operation between two operands is valid.
+
+        Args:
+            operand1_type: Type of the operand
+            operand2_type: Type of the second operand
+            operator: The operator.
+
+        Returns: whether operation is valid or not
+
+        """
+        if operator in ALL_OPS:
+            return True
+
+        pair = (operand1_type, operand2_type)
+        if pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair]:
+            return True
+        return False
 
     def compare(self, op: str, other: Var) -> Var:
         """Compare two vars with inequalities.
@@ -546,6 +608,8 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
+        print(f"got here : other {other}")
+        # breakpoint()
         return self.operation("+", other)
 
     def __radd__(self, other: Var) -> Var:
