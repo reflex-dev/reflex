@@ -430,6 +430,9 @@ class Var(ABC):
 
         Returns:
             The operation result.
+
+        Raises:
+            TypeError: If the operation between two operands is invalid.
         """
         # Wrap strings in quotes.
         if isinstance(other, str):
@@ -469,7 +472,8 @@ class Var(ABC):
             operand2_type: Type of the second operand
             operator: The operator.
 
-        Returns: whether operation is valid or not
+        Returns:
+            Whether operation is valid or not
 
         """
         if operator in ALL_OPS:
@@ -608,8 +612,6 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
-        print(f"got here : other {other}")
-        # breakpoint()
         return self.operation("+", other)
 
     def __radd__(self, other: Var) -> Var:
