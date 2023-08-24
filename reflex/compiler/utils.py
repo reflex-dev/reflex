@@ -100,10 +100,9 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
             continue
 
         # remove the version before rendering the package imports
-        if lib.startswith("@") and lib.count("@") == 2:
-            lib = f"@{lib.split('@')[1]}"
-        elif not lib.startswith("@") and lib.count("@") == 1:
-            lib = lib.split("@")[0]
+        lib, at, version = lib.rpartition("@")
+        if not lib:
+            lib = at + version
 
         import_dicts.append(get_import_dict(lib, default, rest))
     return import_dicts
