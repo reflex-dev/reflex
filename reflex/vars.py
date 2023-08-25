@@ -39,8 +39,8 @@ if TYPE_CHECKING:
 USED_VARIABLES = set()
 
 # operators supported my all types.
-ALL_OPS = ["==", "!="]
-
+ALL_OPS = ["==", "!=", "!==", "==="]
+DELIMITERS = [","]
 OPERATION_MAPPING = {
     (int, int): {
         "+",
@@ -55,10 +55,12 @@ OPERATION_MAPPING = {
         "<=",
         ">=",
         "|",
+        "||",
         "^",
         "<<",
         ">>",
         "&",
+        "&&",
     },
     (int, str): {"*"},
     (int, float): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
@@ -475,7 +477,7 @@ class Var(ABC):
             Whether operation is valid or not
 
         """
-        if operator in ALL_OPS:
+        if operator in ALL_OPS or operator in DELIMITERS:
             return True
 
         pair = (operand1_type, operand2_type)
