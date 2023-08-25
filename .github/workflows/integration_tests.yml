@@ -106,7 +106,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: reflex-dev/reflex-web
-          ref: reflex-ci
+          ref: 4503225add545b9f38f3268648b86c37ecf00507
+          #ref: reflex-ci
           path: reflex-web
 
       - name: Install Requirements for reflex-web
