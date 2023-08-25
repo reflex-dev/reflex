@@ -193,10 +193,7 @@ def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
         pass
 
 
-def stream_logs(
-    message: str,
-    process: subprocess.Popen,
-):
+def stream_logs(message: str, process: subprocess.Popen):
     """Stream the logs for a process.
 
     Args:
@@ -228,10 +225,7 @@ def stream_logs(
         raise typer.Exit(1)
 
 
-def show_logs(
-    message: str,
-    process: subprocess.Popen,
-):
+def show_logs(message: str, process: subprocess.Popen):
     """Show the logs for a process.
 
     Args:
