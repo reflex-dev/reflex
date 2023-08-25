@@ -25,9 +25,7 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
-def run_process_and_launch_url(
-    run_command: list[str],
-):
+def run_process_and_launch_url(run_command: list[str]):
     """Run the process and launch the URL.
 
     Args:
@@ -37,19 +35,13 @@ def run_process_and_launch_url(
         run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
     )
 
-    if process.stdout:
-        for line in process.stdout:
-            if "ready started server on" in line:
-                url = line.split("url: ")[-1].strip()
-                console.print(f"App running at: [bold green]{url}")
-            else:
-                console.debug(line)
+    for line in processes.stream_logs("Starting frontend", process):
+        if "ready started server on" in line:
+            url = line.split("url: ")[-1].strip()
+            console.print(f"App running at: [bold green]{url}")
 
 
-def run_frontend(
-    root: Path,
-    port: str,
-):
+def run_frontend(root: Path, port: str):
     """Run the frontend.
 
     Args:
@@ -67,10 +59,7 @@ def run_frontend(
     run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])  # type: ignore
 
 
-def run_frontend_prod(
-    root: Path,
-    port: str,
-):
+def run_frontend_prod(root: Path, port: str):
     """Run the frontend.
 
     Args:
