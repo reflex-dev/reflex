@@ -358,3 +358,6 @@ PING_TIMEOUT = 120
 
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
+
+# If this env var is set to "yes", App.compile will be a no-op
+SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
