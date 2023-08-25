@@ -82,7 +82,6 @@ def run_frontend_prod(
 
 
 def run_backend(
-    app_name: str,
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
@@ -91,14 +90,15 @@ def run_backend(
 
     Args:
         host: The app host
-        app_name: The app name.
         port: The app port
         loglevel: The log level.
     """
+    config = get_config()
+    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
     processes.new_process(
         [
             "uvicorn",
-            f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+            f"{app_module}.{constants.API_VAR}",
             "--host",
             host,
             "--port",
@@ -107,7 +107,7 @@ def run_backend(
             loglevel.value,
             "--reload",
             "--reload-dir",
-            app_name.split(".")[0],
+            config.app_name,
         ],
         run=True,
         show_logs=True,
@@ -115,7 +115,6 @@ def run_backend(
 
 
 def run_backend_prod(
-    app_name: str,
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
@@ -124,7 +123,6 @@ def run_backend_prod(
 
     Args:
         host: The app host
-        app_name: The app name.
         port: The app port
         loglevel: The log level.
     """
@@ -132,6 +130,7 @@ def run_backend_prod(
     config = get_config()
     RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
+    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
     command = (
         [
             *RUN_BACKEND_PROD_WINDOWS,
@@ -139,7 +138,7 @@ def run_backend_prod(
             host,
             "--port",
             str(port),
-            f"{app_name}:{constants.APP_VAR}",
+            app_module,
         ]
         if constants.IS_WINDOWS
         else [
@@ -148,7 +147,7 @@ def run_backend_prod(
             f"{host}:{port}",
             "--threads",
             str(num_workers),
-            f"{app_name}:{constants.APP_VAR}()",
+            f"{app_module}()",
         ]
     )
 

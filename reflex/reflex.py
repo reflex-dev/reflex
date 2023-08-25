@@ -137,9 +137,11 @@ def run(
     if backend and processes.is_process_on_port(backend_port):
         backend_port = processes.change_or_terminate_port(backend_port, "backend")
 
-    # Get the app module.
     console.rule("[bold]Starting Reflex App")
-    app = prerequisites.get_app()
+
+    if frontend:
+        # Get the app module.
+        prerequisites.get_app()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -172,7 +174,7 @@ def run(
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port))
     if backend:
-        commands.append((backend_cmd, app.__name__, backend_host, backend_port))
+        commands.append((backend_cmd, backend_host, backend_port))
     processes.run_concurrently(*commands)
 
 
