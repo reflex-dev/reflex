@@ -7,6 +7,8 @@ import platform
 import sys
 from pathlib import Path
 
+import uvicorn
+
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
@@ -95,22 +97,13 @@ def run_backend(
     """
     config = get_config()
     app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
-    processes.new_process(
-        [
-            "uvicorn",
-            f"{app_module}.{constants.API_VAR}",
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--log-level",
-            loglevel.value,
-            "--reload",
-            "--reload-dir",
-            config.app_name,
-        ],
-        run=True,
-        show_logs=True,
+    uvicorn.run(
+        app=f"{app_module}.{constants.API_VAR}",
+        host=host,
+        port=port,
+        log_level=loglevel.value,
+        reload=True,
+        reload_dirs=[config.app_name],
     )
 
 
