@@ -9,6 +9,7 @@
 {% block export %}
 export default function Component() {
   const {{state_name}} = useContext(StateContext)
+  const [{{const.route_not_found}}, {{const.set_route_not_found}}] = useContext(ClientSideRoutingContext)
   const {{const.router}} = useRouter()
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
   const focusRef = useRef();
@@ -22,6 +23,9 @@ export default function Component() {
       focusRef.current.focus();
     }
   })
+
+  // Redirect to the correct page for static exports.
+  useClientSideRouting()
 
   // Route after the initial page hydration.
   useEffect(() => {

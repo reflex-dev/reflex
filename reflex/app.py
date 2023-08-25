@@ -31,6 +31,10 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
+from reflex.components.navigation.client_side_routing import (
+    Default404Page,
+    wait_for_client_redirect,
+)
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -426,8 +430,12 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
+        if component is None:
+            component = Default404Page.create()
         self.add_page(
-            component=component if component else Fragment.create(),
+            component=wait_for_client_redirect(
+                component if isinstance(component, Component) else component(),
+            ),
             route=constants.SLUG_404,
             title=title or constants.TITLE_404,
             image=image or constants.FAVICON_404,
@@ -474,6 +482,10 @@ class App(Base):
         # TODO: include all work done in progress indicator, not just self.pages
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
+
+        # Render a default 404 page if the user didn't supply one
+        if constants.SLUG_404 not in self.pages:
+            self.add_custom_404_page()
 
         # Get the env mode.
         config = get_config()

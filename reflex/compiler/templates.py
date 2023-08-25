@@ -39,6 +39,8 @@ class ReflexJinjaEnvironment(Environment):
             "toggle_color_mode": constants.TOGGLE_COLOR_MODE,
             "use_color_mode": constants.USE_COLOR_MODE,
             "hydrate": constants.HYDRATE,
+            "route_not_found": constants.ROUTE_NOT_FOUND,
+            "set_route_not_found": constants.SET_ROUTE_NOT_FOUND,
         }
 
 

@@ -31,6 +31,10 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getAllLocalStorageItems"),
         ImportVar(tag="useEventLoop"),
     },
+    f"/{constants.CLIENT_SIDE_ROUTING_PATH}": {
+        ImportVar(tag="useClientSideRouting"),
+        ImportVar(tag="ClientSideRoutingContext"),
+    },
     "/utils/context.js": {
         ImportVar(tag="EventLoopContext"),
         ImportVar(tag="StateContext"),
@@ -284,5 +288,5 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    template_files = ["_app.js", "404.js"]
+    template_files = ["_app.js"]
     utils.empty_dir(constants.WEB_PAGES_DIR, keep_files=template_files)

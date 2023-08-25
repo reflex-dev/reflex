@@ -1,7 +1,8 @@
 import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { Global, css } from "@emotion/react";
 import theme from "/utils/theme";
-import { initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
+import { ClientSideRoutingProvider } from "utils/client_side_routing";
+import { initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context";
 import { useEventLoop } from "utils/state";
 
 import '../styles/tailwind.css'
@@ -33,7 +34,9 @@ function MyApp({ Component, pageProps }) {
     <ChakraProvider theme={extendTheme(theme)}>
       <Global styles={GlobalStyles} />
       <EventLoopProvider>
-        <Component {...pageProps} />
+        <ClientSideRoutingProvider>
+          <Component {...pageProps} />
+        </ClientSideRoutingProvider>
       </EventLoopProvider>
     </ChakraProvider>
   );
