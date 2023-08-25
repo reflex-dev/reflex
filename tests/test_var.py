@@ -9,6 +9,7 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.state import State
 from reflex.vars import (
+    ALL_OPS,
     BaseVar,
     ComputedVar,
     ImportVar,
@@ -784,3 +785,55 @@ def test_unsupported_default_contains():
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
     )
+
+
+@pytest.mark.parametrize(
+    "operand1_var,operand2_var,operators",
+    [
+        (
+            Var.create(10),
+            Var.create(5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(5),
+            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(5.5),
+            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+        ),
+        (Var.create("10"), Var.create("5"), ["+", ">", "<", "<=", ">="]),
+        (Var.create([10, 20]), Var.create([5, 6]), ["+", ">", "<", "<=", ">="]),
+        (Var.create([10, 20]), Var.create(5), ["*"]),
+        (
+            Var.create({"key": "value"}),
+            Var.create({"another_key": "another_value"}),
+            ["|"],
+        ),
+    ],
+)
+def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
+    operators.extend(ALL_OPS)
+    for operator in operators:
+        assert operand1_var.operation(op=operator, other=operand2_var)
+        assert operand1_var.operation(op=operator, other=operand2_var, flip=True)

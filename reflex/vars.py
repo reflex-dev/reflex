@@ -70,7 +70,6 @@ OPERATION_MAPPING = {
     (list, list): {"+", ">", "<", "<=", ">="},
     (list, int): {"*"},
     (dict, dict): {"|"},
-    (set, set): {"-", "|", "&", "^"},
 }
 
 
