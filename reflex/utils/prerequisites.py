@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import re
+import stat
 import sys
 import tempfile
 import zipfile
@@ -49,10 +50,10 @@ def get_node_version() -> Optional[version.Version]:
         The version of node.
     """
     try:
-        result = processes.new_process([constants.NODE_PATH, "-v"], run=True)
+        result = processes.new_process([path_ops.get_node_path(), "-v"], run=True)
         # The output will be in the form "vX.Y.Z", but version.parse() can handle it
         return version.parse(result.stdout)  # type: ignore
-    except FileNotFoundError:
+    except (FileNotFoundError, TypeError):
         return None
 
 
@@ -70,29 +71,29 @@ def get_bun_version() -> Optional[version.Version]:
         return None
 
 
-def get_install_package_manager() -> str:
+def get_install_package_manager() -> Optional[str]:
     """Get the package manager executable for installation.
-      currently on unix systems, bun is used for installation only.
+      Currently on unix systems, bun is used for installation only.
 
     Returns:
         The path to the package manager.
     """
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS:
-        return constants.NPM_PATH
+        return path_ops.get_npm_path()
 
     # On other platforms, we use bun.
     return get_config().bun_path
 
 
-def get_package_manager() -> str:
+def get_package_manager() -> Optional[str]:
     """Get the package manager executable for running app.
-      currently on unix systems, npm is used for running the app only.
+      Currently on unix systems, npm is used for running the app only.
 
     Returns:
         The path to the package manager.
     """
-    return constants.NPM_PATH
+    return path_ops.get_npm_path()
 
 
 def get_app() -> ModuleType:
@@ -283,22 +284,19 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     show(f"Installing {url}", process)
 
 
-def download_and_extract_fnm_zip(url: str):
+def download_and_extract_fnm_zip():
     """Download and run a script.
-
-    Args:
-        url: The url of the fnm release zip binary.
 
     Raises:
         Exit: If an error occurs while downloading or extracting the FNM zip.
     """
-    # TODO: make this OS agnostic
     # Download the zip file
+    url = constants.FNM_INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = f"{constants.FNM_DIR}\\fnm_windows.zip"
-    # Function to download and extract the FNM zip release
+    fnm_zip_file = os.path.join(constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip")
+    # Function to download and extract the FNM zip release.
     try:
-        # Download the FNM zip release
+        # Download the FNM zip release.
         # TODO: show progress to improve UX
         with httpx.stream("GET", url, follow_redirects=True) as response:
             response.raise_for_status()
@@ -306,29 +304,34 @@ def download_and_extract_fnm_zip(url: str):
                 for chunk in response.iter_bytes():
                     output_file.write(chunk)
 
-        # Extract the downloaded zip file
+        # Extract the downloaded zip file.
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
             zip_ref.extractall(constants.FNM_DIR)
 
-        console.debug("FNM for Windows downloaded and extracted successfully.")
+        console.debug("FNM package downloaded and extracted successfully.")
     except Exception as e:
         console.error(f"An error occurred while downloading fnm package: {e}")
         raise typer.Exit(1) from e
     finally:
-        # Clean up the downloaded zip file
+        # Clean up the downloaded zip file.
         path_ops.rm(fnm_zip_file)
 
 
 def install_node():
-    """Install nvm and nodejs for use by Reflex.
+    """Install fnm and nodejs for use by Reflex.
     Independent of any existing system installations.
     """
-    if constants.IS_WINDOWS:
-        path_ops.mkdir(constants.FNM_DIR)
-        if not os.path.exists(constants.FNM_EXE):
-            download_and_extract_fnm_zip(constants.FNM_WINDOWS_INSTALL_URL)
+    if not constants.FNM_FILENAME:
+        # fnm only support Linux, macOS and Windows distros.
+        console.debug("")
+        return
 
-        # Install node.
+    path_ops.mkdir(constants.FNM_DIR)
+    if not os.path.exists(constants.FNM_EXE):
+        download_and_extract_fnm_zip()
+
+    if constants.IS_WINDOWS:
+        # Install node
         process = processes.new_process(
             [
                 "powershell",
@@ -336,22 +339,19 @@ def install_node():
                 f'& "{constants.FNM_EXE}" install {constants.NODE_VERSION} --fnm-dir "{constants.FNM_DIR}"',
             ],
         )
-    else:  # All other platforms (Linux, MacOS)
+    else:  # All other platforms (Linux, MacOS).
         # TODO we can skip installation if check_node_version() checks out
-        # Create the nvm directory and install.
-        path_ops.mkdir(constants.NVM_DIR)
-        env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
-        download_and_run(constants.NVM_INSTALL_URL, show_status=True, **env)
-
+        # Add execute permissions to fnm executable.
+        os.chmod(constants.FNM_EXE, stat.S_IXUSR)
         # Install node.
-        # We use bash -c as we need to source nvm.sh to use nvm.
         process = processes.new_process(
             [
-                "bash",
-                "-c",
-                f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
-            ],
-            env=env,
+                constants.FNM_EXE,
+                "install",
+                constants.NODE_VERSION,
+                "--fnm-dir",
+                constants.FNM_DIR,
+            ]
         )
     processes.show_status("Installing node", process)
 
@@ -479,11 +479,38 @@ def validate_bun():
             raise typer.Exit(1)
 
 
-def validate_frontend_dependencies():
-    """Validate frontend dependencies to ensure they meet requirements."""
+def validate_frontend_dependencies(init=True):
+    """Validate frontend dependencies to ensure they meet requirements.
+
+    Args:
+        init: whether running `reflex init`
+
+    Raises:
+        Exit: If the package manager is invalid.
+    """
+    if not init:
+        # we only need to validate the package manager when running app.
+        # `reflex init` will install the deps anyway(if applied).
+        package_manager = get_package_manager()
+        if not package_manager:
+            console.error(
+                "Could not find NPM package manager. Make sure you have node installed."
+            )
+            raise typer.Exit(1)
+
+        if not check_node_version():
+            node_version = get_node_version()
+            console.error(
+                f"Reflex requires node version {constants.NODE_VERSION_MIN} or higher to run, but the detected version is {node_version}",
+            )
+            raise typer.Exit(1)
+
     if constants.IS_WINDOWS:
         return
-    return validate_bun()
+
+    if init:
+        # we only need bun for package install on `reflex init`.
+        validate_bun()
 
 
 def initialize_frontend_dependencies():
@@ -494,7 +521,6 @@ def initialize_frontend_dependencies():
     validate_frontend_dependencies()
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)
-
     # Set up the web directory.
     initialize_web_directory()
 

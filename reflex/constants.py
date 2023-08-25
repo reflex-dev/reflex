@@ -6,6 +6,7 @@ import platform
 import re
 from enum import Enum
 from types import SimpleNamespace
+from typing import Optional
 
 from platformdirs import PlatformDirs
 
@@ -18,6 +19,28 @@ except ImportError:
 IS_WINDOWS = platform.system() == "Windows"
 
 
+def get_fnm_name() -> Optional[str]:
+    """Get the appropriate fnm executable name based on the current platform.
+
+    Returns:
+            The fnm executable name for the current platform.
+    """
+    platform_os = platform.system()
+
+    if platform_os == "Windows":
+        return "fnm-windows"
+    elif platform_os == "Darwin":
+        return "fnm-macos"
+    elif platform_os == "Linux":
+        machine = platform.machine()
+        if machine == "arm" or machine.startswith("armv7"):
+            return "fnm-arm32"
+        elif machine.startswith("aarch") or machine.startswith("armv8"):
+            return "fnm-arm64"
+        return "fnm-linux"
+    return None
+
+
 # App names and versions.
 # The name of the Reflex package.
 MODULE_NAME = "reflex"
@@ -28,14 +51,9 @@ VERSION = metadata.version(MODULE_NAME)
 # The directory to store reflex dependencies.
 REFLEX_DIR = (
     # on windows, we use C:/Users/<username>/AppData/Local/reflex.
+    # on macOS, we use ~/Library/Application Support/reflex.
+    # on linux, we use ~/.local/share/reflex.
     PlatformDirs(MODULE_NAME, False).user_data_dir
-    if IS_WINDOWS
-    else os.path.expandvars(
-        os.path.join(
-            "$HOME",
-            f".{MODULE_NAME}",
-        ),
-    )
 )
 # The root directory of the reflex library.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -56,46 +74,39 @@ BUN_VERSION = "0.7.0"
 # Min Bun Version
 MIN_BUN_VERSION = "0.7.0"
 # The directory to store the bun.
-BUN_ROOT_PATH = os.path.join(REFLEX_DIR, ".bun")
+BUN_ROOT_PATH = os.path.join(REFLEX_DIR, "bun")
 # Default bun path.
 DEFAULT_BUN_PATH = os.path.join(BUN_ROOT_PATH, "bin", "bun")
 # URL to bun install script.
 BUN_INSTALL_URL = "https://bun.sh/install"
 
-# NVM / Node config.
-# The NVM version.
-NVM_VERSION = "0.39.1"
+# FNM / Node config.
 # The FNM version.
 FNM_VERSION = "1.35.1"
 # The Node version.
 NODE_VERSION = "18.17.0"
 # The minimum required node version.
 NODE_VERSION_MIN = "16.8.0"
-# The directory to store nvm.
-NVM_DIR = os.path.join(REFLEX_DIR, ".nvm")
 # The directory to store fnm.
 FNM_DIR = os.path.join(REFLEX_DIR, "fnm")
+FNM_FILENAME = get_fnm_name()
 # The fnm executable binary.
-FNM_EXE = os.path.join(FNM_DIR, "fnm.exe")
-# The nvm path.
-NVM_PATH = os.path.join(NVM_DIR, "nvm.sh")
+FNM_EXE = os.path.join(FNM_DIR, "fnm.exe" if IS_WINDOWS else "fnm")
 # The node bin path.
-NODE_BIN_PATH = (
-    os.path.join(NVM_DIR, "versions", "node", f"v{NODE_VERSION}", "bin")
-    if not IS_WINDOWS
-    else os.path.join(FNM_DIR, "node-versions", f"v{NODE_VERSION}", "installation")
+NODE_BIN_PATH = os.path.join(
+    FNM_DIR,
+    "node-versions",
+    f"v{NODE_VERSION}",
+    "installation",
+    "bin" if not IS_WINDOWS else "",
 )
 # The default path where node is installed.
 NODE_PATH = os.path.join(NODE_BIN_PATH, "node.exe" if IS_WINDOWS else "node")
 # The default path where npm is installed.
 NPM_PATH = os.path.join(NODE_BIN_PATH, "npm")
-# The URL to the nvm install script.
-NVM_INSTALL_URL = (
-    f"https://raw.githubusercontent.com/nvm-sh/nvm/v{NVM_VERSION}/install.sh"
-)
 # The URL to the fnm release binary
-FNM_WINDOWS_INSTALL_URL = (
-    f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/fnm-windows.zip"
+FNM_INSTALL_URL = (
+    f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/{FNM_FILENAME}.zip"
 )
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.

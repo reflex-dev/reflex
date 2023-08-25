@@ -992,9 +992,17 @@ def test_event_handlers_call_other_handlers():
         def set_v2(self, v: int):
             self.set_v(v)
 
+    class SubState(MainState):
+        def set_v3(self, v: int):
+            self.set_v2(v)
+
     ms = MainState()
     ms.set_v2(1)
     assert ms.v == 1
+
+    # ensure handler can be called from substate
+    ms.substates[SubState.get_name()].set_v3(2)
+    assert ms.v == 2
 
 
 def test_computed_var_cached():

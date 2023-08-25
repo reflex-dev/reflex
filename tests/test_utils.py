@@ -550,25 +550,31 @@ def test_node_install_windows(tmp_path, mocker):
 
 
 def test_node_install_unix(tmp_path, mocker):
-    nvm_root_path = tmp_path / ".reflex" / ".nvm"
+    fnm_root_path = tmp_path / "reflex" / "fnm"
+    fnm_exe = fnm_root_path / "fnm"
 
-    mocker.patch("reflex.utils.prerequisites.constants.NVM_DIR", nvm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.FNM_DIR", fnm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.FNM_EXE", fnm_exe)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
 
     class Resp(Base):
         status_code = 200
         text = "test"
 
-    mocker.patch("httpx.get", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_run")
-    mocker.patch("reflex.utils.processes.new_process")
+    mocker.patch("httpx.stream", return_value=Resp())
+    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
+    process = mocker.patch("reflex.utils.processes.new_process")
+    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
     mocker.patch("reflex.utils.processes.stream_logs")
 
     prerequisites.install_node()
 
-    assert nvm_root_path.exists()
-    download.assert_called()
-    download.call_count = 2
+    assert fnm_root_path.exists()
+    download.assert_called_once()
+    process.assert_called_with(
+        [fnm_exe, "install", constants.NODE_VERSION, "--fnm-dir", fnm_root_path]
+    )
+    chmod.assert_called_once()
 
 
 def test_bun_install_without_unzip(mocker):
@@ -597,6 +603,8 @@ def test_create_reflex_dir(mocker, is_windows):
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
     mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
     mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
+    mocker.patch("reflex.utils.processes.run_concurrently")
+    mocker.patch("reflex.utils.prerequisites.validate_bun")
     create_cmd = mocker.patch(
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )
