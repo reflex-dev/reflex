@@ -7,6 +7,8 @@ import platform
 import sys
 from pathlib import Path
 
+import uvicorn
+
 from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
@@ -56,11 +58,13 @@ def run_frontend(
     """
     # Start watching asset folder.
     start_watching_assets_folder(root)
+    # validate dependencies before run
+    prerequisites.validate_frontend_dependencies(init=False)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])  # type: ignore
 
 
 def run_frontend_prod(
@@ -75,10 +79,11 @@ def run_frontend_prod(
     """
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-
+    # validate dependencies before run
+    prerequisites.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])  # type: ignore
 
 
 def run_backend(
@@ -95,22 +100,13 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
-    processes.new_process(
-        [
-            "uvicorn",
-            f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--log-level",
-            loglevel.value,
-            "--reload",
-            "--reload-dir",
-            app_name.split(".")[0],
-        ],
-        run=True,
-        show_logs=True,
+    uvicorn.run(
+        app=f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+        host=host,
+        port=port,
+        log_level=loglevel.value,
+        reload=True,
+        reload_dirs=[app_name.split(".")[0]],
     )
 
 
@@ -162,7 +158,7 @@ def run_backend_prod(
 
 
 def output_system_info():
-    """Show system informations if the loglevel is in DEBUG."""
+    """Show system information if the loglevel is in DEBUG."""
     if console.LOG_LEVEL > constants.LogLevel.DEBUG:
         return
 
@@ -178,7 +174,7 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{constants.NODE_PATH})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
@@ -186,7 +182,7 @@ def output_system_info():
     if system != "Windows":
         dependencies.extend(
             [
-                f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
+                f"[FNM {constants.FNM_VERSION} (Expected: {constants.FNM_VERSION}) (PATH: {constants.FNM_EXE})]",
                 f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {config.bun_path})]",
             ],
         )
@@ -208,8 +204,8 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"
+        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
     )
-    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")
+    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

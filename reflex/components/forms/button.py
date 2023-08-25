@@ -1,4 +1,5 @@
 """A button component."""
+from typing import List
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
@@ -41,6 +42,9 @@ class Button(ChakraComponent):
 
     # The type of button.
     type_: Var[str]
+
+    # Components that are not allowed as children.
+    invalid_children: List[str] = ["Button", "MenuButton"]
 
 
 class ButtonGroup(ChakraComponent):

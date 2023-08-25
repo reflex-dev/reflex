@@ -8,13 +8,12 @@ import os
 import signal
 import subprocess
 from concurrent import futures
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Generator, List, Optional, Tuple, Union
 
 import psutil
 import typer
 
-from reflex import constants
-from reflex.utils import console, prerequisites
+from reflex.utils import console, path_ops, prerequisites
 
 
 def kill(pid):
@@ -126,10 +125,16 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     Returns:
         Execute a child program in a new process.
     """
+    node_bin_path = path_ops.get_node_bin_path()
+    if not node_bin_path:
+        console.warn(
+            "The path to the Node binary could not be found. Please ensure that Node is properly "
+            "installed and added to your system's PATH environment variable."
+        )
     # Add the node bin path to the PATH environment variable.
     env = {
         **os.environ,
-        "PATH": os.pathsep.join([constants.NODE_BIN_PATH, os.environ["PATH"]]),
+        "PATH": os.pathsep.join([node_bin_path if node_bin_path else "", os.environ["PATH"]]),  # type: ignore
         **kwargs.pop("env", {}),
     }
     kwargs = {
@@ -145,13 +150,23 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     return fn(args, **kwargs)
 
 
-def run_concurrently(*fns: Union[Callable, Tuple]):
+@contextlib.contextmanager
+def run_concurrently_context(
+    *fns: Union[Callable, Tuple]
+) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
-
 
     Args:
         *fns: The functions to run.
+
+    Yields:
+        The futures for the functions.
     """
+    # If no functions are provided, yield an empty list and return.
+    if not fns:
+        yield []
+        return
+
     # Convert the functions to tuples.
     fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
 
@@ -160,9 +175,22 @@ def run_concurrently(*fns: Union[Callable, Tuple]):
         # Submit the tasks.
         tasks = [executor.submit(*fn) for fn in fns]  # type: ignore
 
+        # Yield control back to the main thread while tasks are running.
+        yield tasks
+
         # Get the results in the order completed to check any exceptions.
         for task in futures.as_completed(tasks):
             task.result()
+
+
+def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
+    """Run functions concurrently in a thread pool.
+
+    Args:
+        *fns: The functions to run.
+    """
+    with run_concurrently_context(*fns):
+        pass
 
 
 def stream_logs(
@@ -247,11 +275,6 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
                     break
 
 
-def catch_keyboard_interrupt(signal, frame):
-    """Display a custom message with the current time when exiting an app.
-
-    Args:
-        signal: The keyboard interrupt signal.
-        frame: The current stack frame.
-    """
+def atexit_handler():
+    """Display a custom message with the current time when exiting an app."""
     console.log("Reflex app stopped.")
