@@ -212,8 +212,8 @@ Reflex 在 2022 年 12 月推出，当时称为 Pynecone。
 
 截至 2023 年 7 月，我们正处于 **Public Beta** 阶段。
 
--   :white_check_mark **Public Alpha**：任何人都可以安装和使用Reflex，可能会包含问题，但我们正在积极解决它们。
--   :large_orange_diamond **Public Beta** : 对于非商业用途的情况而言，已经相当稳定。
+-   :white_check_mark: **Public Alpha**：任何人都可以安装和使用Reflex，可能会包含问题，但我们正在积极解决它们。
+-   :large_orange_diamond: **Public Beta** : 对于非商业用途的情况而言，已经相当稳定。
 -   **Public Hosting Beta**：_Optionally_, 用于部署和托管您的Reflex！
 -   **Public**：这个版本的Reflex适用于软件产品。
 
