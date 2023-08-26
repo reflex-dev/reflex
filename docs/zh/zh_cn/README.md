@@ -157,7 +157,7 @@ class State(rx.State):
 
 应用程序状态定义了应用程序中所有可更改的变量，以及变更它们的函数（称为 vars）。
 
-这里的状态由 `prompt`` 和 `image_url`` 组成，还有布尔变量 `processing`` 和 `complete`` 用于指示何时显示进度条和图片。
+这里的状态由 `prompt` 和 `image_url` 组成，还有布尔变量 `processing` 和 `complete` 用于指示何时显示进度条和图片。
 
 ### **事件处理程序**
 
