@@ -208,33 +208,24 @@ app.compile()
 
 ## ✅ Reflex 状态
 
-Reflex 於 2022 年 12 月推出，當時名為 Pynecone。
-
-截至 2023 年 7 月，我們處於 **Public Beta** 階段。
-
--   :white_check_mark: **Public Alpha**: 任何人都可以安裝與使用 Reflex，或許包含問題， 但我們正在積極的解決他們。
--   :large_orange_diamond: **Public Beta**: 對於不涉及商業目的使用情境來說足夠穩定。
--   **Public Hosting Beta**: _Optionally_, 部屬跟託管你的 Reflex!
--   **Public**: 這版本的 Reflex 是可用於軟體產品的。
-
-Reflex 每周都有新功能和釋出新版本! 確保你按下 :star: 和 :eyes: watch 這個 repository 來確保知道最新資訊。
-
 Reflex 在 2022 年 12 月推出，当时称为 Pynecone。
 
 截至 2023 年 7 月，我们正处于 **Public Beta** 阶段。
 
-:white_check_mark **Public Alpha**：任何人都可以安装和使用Reflex，可能会包含问题，但我们正在积极解决它们。
-:large_orange_diamond **Public Beta** : 对于非商业用途的情况而言，已经相当稳定。
-**Public Hosting Beta**：可选，用于部署和托管您的Reflex！
-公开版（Public）：这个版本的Reflex适用于软件产品。
-Reflex每周都会推出新功能和版本！请确保您点赞（:star:）和关注（:eyes:）这个存储库 repo 以获取最新信息。
-## 貢獻
+-   :white_check_mark **Public Alpha**：任何人都可以安装和使用Reflex，可能会包含问题，但我们正在积极解决它们。
+-   :large_orange_diamond **Public Beta** : 对于非商业用途的情况而言，已经相当稳定。
+-   **Public Hosting Beta**：_Optionally_, 用于部署和托管您的Reflex！
+-   **Public**：这个版本的Reflex适用于软件产品。
+
+Reflex 每周都会推出新功能和版本！请确保您点赞 :star: 和关注 :eyes: 这个存储库 repo 以获取最新信息。
+## 贡献
 
 我们欢迎任何规模的贡献，以下是加入 Reflex 社区的几种好方法：
+
 -   **加入我们的 Discord 群**: 我们的 [Discord](https://discord.gg/T5WSbC2YtQ) 是帮助您加入Reflex项目、讨论或贡献的最佳地方。
 -   **GitHub Discussions**: 一个地方来讨论您想要添加的功能或需要澄清的事情。
--   **GitHub Issues**: 報告錯誤的絕佳地方，另外你可以試著解決一些 issue 和送出 PR。
 -   **GitHub Issues**: 报告错误的绝佳地方，此外您可以尝试解决一些 issue 并提交 PR（Pull Request）。
+
 我们积极寻找贡献者，与您的技能水平或经验无关。
 
 ## 授權
