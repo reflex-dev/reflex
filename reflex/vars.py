@@ -480,7 +480,10 @@ class Var(ABC):
         if operator in ALL_OPS or operator in DELIMITERS:
             return True
 
-        pair = (operand1_type, operand2_type)
+        pair = (
+            int if operand1_type == bool else operand1_type,
+            int if operand2_type == bool else operand2_type,
+        )
         if pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair]:
             return True
         return False
