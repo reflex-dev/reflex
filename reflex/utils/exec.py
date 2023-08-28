@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 import sys
 from pathlib import Path
 
@@ -39,8 +40,10 @@ def run_process_and_launch_url(
 
     if process.stdout:
         for line in process.stdout:
-            if "ready started server on" in line:
-                url = line.split("url: ")[-1].strip()
+            if (match := re.search("ready started server on ([0-9.:]+)", line)):
+                url = match.group(1)
+                if get_config().frontend_path != "":
+                    url += get_config().frontend_path
                 console.print(f"App running at: [bold green]{url}")
             else:
                 console.debug(line)
