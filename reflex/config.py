@@ -177,10 +177,6 @@ class Config(Base):
     # The event namespace for ws connection
     event_namespace: Optional[str] = None
 
-    # Params to remove eventually.
-    # Additional frontend packages to install. (TODO: these can be inferred from the imports)
-    frontend_packages: List[str] = []
-
     # For rest are for deploy only.
     # The rxdeploy url.
     rxdeploy_url: Optional[str] = None

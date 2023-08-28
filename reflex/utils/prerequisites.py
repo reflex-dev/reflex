@@ -377,16 +377,6 @@ def install_frontend_packages():
     )
     processes.show_status("Installing base frontend packages", process)
 
-    # Install the app packages.
-    packages = get_config().frontend_packages
-    if len(packages) > 0:
-        process = processes.new_process(
-            [get_install_package_manager(), "add", *packages],
-            cwd=constants.WEB_DIR,
-            shell=constants.IS_WINDOWS,
-        )
-        processes.show_status("Installing custom frontend packages", process)
-
 
 def check_initialized(frontend: bool = True):
     """Check that the app is initialized.
