@@ -278,6 +278,7 @@ def test_basic_operations(TestObj):
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
+    assert str(v([1, 2]) + v([3, 4])) == "{spreadArraysOrObjects([1, 2] , [3, 4])}"
 
     # Tests for reverse operation
     assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
