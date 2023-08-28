@@ -311,29 +311,20 @@ def install_node():
     if not os.path.exists(constants.FNM_EXE):
         download_and_extract_fnm_zip()
 
-    if constants.IS_WINDOWS:
-        # Install node
-        process = processes.new_process(
-            [
-                "powershell",
-                "-Command",
-                f'& "{constants.FNM_EXE}" install {constants.NODE_VERSION} --fnm-dir "{constants.FNM_DIR}"',
-            ],
-        )
-    else:  # All other platforms (Linux, MacOS).
-        # TODO we can skip installation if check_node_version() checks out
+    if not constants.IS_WINDOWS:
         # Add execute permissions to fnm executable.
         os.chmod(constants.FNM_EXE, stat.S_IXUSR)
-        # Install node.
-        process = processes.new_process(
-            [
-                constants.FNM_EXE,
-                "install",
-                constants.NODE_VERSION,
-                "--fnm-dir",
-                constants.FNM_DIR,
-            ]
-        )
+
+    process = processes.new_process(
+        [
+            constants.FNM_EXE,
+            "install",
+            constants.NODE_VERSION,
+            "--fnm-dir",
+            constants.FNM_DIR,
+        ],
+    )
+
     processes.show_status("Installing node", process)
 
 
