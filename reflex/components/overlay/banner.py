@@ -1,30 +1,40 @@
 """Banner components."""
+from __future__ import annotations
+
 from typing import Optional
 
 from reflex.components.component import Component
 from reflex.components.layout import Box, Cond, Fragment
 from reflex.components.overlay.modal import Modal
 from reflex.components.typography import Text
-from reflex.config import get_config
 from reflex.vars import Var
 
-connection_error = Var.create(
+connection_error = Var.create_safe(
     value="(connectError !== null) ? connectError.message : ''",
     is_local=False,
     is_string=False,
 )
-has_connection_error = Var.create(
+has_connection_error = Var.create_safe(
     value="connectError !== null",
     is_string=False,
 )
-if has_connection_error is not None:
-    has_connection_error.type_ = bool
-default_connection_error = [
-    "Cannot connect to server: ",
-    connection_error,
-    ". Check if server is reachable at ",
-    get_config().api_url,
-]
+has_connection_error.type_ = bool
+
+
+def default_connection_error() -> list[str | Var]:
+    """Get the default connection error message.
+
+    Returns:
+        The default connection error message.
+    """
+    from reflex.config import get_config
+
+    return [
+        "Cannot connect to server: ",
+        connection_error,
+        ". Check if server is reachable at ",
+        get_config().api_url or "<API_URL not set>",
+    ]
 
 
 class ConnectionBanner(Cond):
@@ -43,7 +53,7 @@ class ConnectionBanner(Cond):
         if not comp:
             comp = Box.create(
                 Text.create(
-                    *default_connection_error,
+                    *default_connection_error(),
                     bg="red",
                     color="white",
                 ),
@@ -67,7 +77,7 @@ class ConnectionModal(Modal):
             The connection banner component.
         """
         if not comp:
-            comp = Text.create(*default_connection_error)
+            comp = Text.create(*default_connection_error())
         return super().create(
             header="Connection Error",
             body=comp,
