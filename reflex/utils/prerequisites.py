@@ -316,9 +316,11 @@ def install_node():
         # Install node
         process = processes.new_process(
             [
-                "powershell",
-                "-Command",
-                f'& "{constants.FNM_EXE}" install {constants.NODE_VERSION} --fnm-dir "{constants.FNM_DIR}"',
+                constants.FNM_EXE,
+                "install",
+                constants.NODE_VERSION,
+                "--fnm-dir",
+                constants.FNM_DIR,
             ],
         )
     else:  # All other platforms (Linux, MacOS).
