@@ -8,9 +8,6 @@ ARG API_URL
 WORKDIR /app
 COPY . .
 
-# Reflex will install bun, nvm, and node to `$HOME/.reflex` (/app/.reflex)
-ENV HOME=/app
-
 # Create virtualenv which will be copied into final container
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -22,9 +19,13 @@ RUN pip install -r requirements.txt
 # Deploy templates and prepare app
 RUN reflex init
 
-# Export static copy of frontend to /app/.web/_static (and pre-install frontend packages)
+# Export static copy of frontend to /app/.web/_static
 RUN reflex export --frontend-only --no-zip
 
+# Copy static files out of /app to save space in backend image
+RUN mv .web/_static /tmp/_static
+RUN rm -rf .web && mkdir .web
+RUN mv /tmp/_static .web/_static
 
 # Stage 2: copy artifacts into slim image 
 FROM python:3.11-slim
@@ -35,4 +36,4 @@ COPY --chown=reflex --from=init /app /app
 USER reflex
 ENV PATH="/app/.venv/bin:$PATH" API_URL=$API_URL
 
-CMD reflex db migrate && reflex run --env prod
+CMD reflex db migrate && reflex run --env prod --backend-only
