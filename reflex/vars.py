@@ -808,6 +808,12 @@ class Var(ABC):
         Returns:
             A var representing the logical or.
         """
+        other_type = other.type_ if isinstance(other, Var) else type(other)
+        if (
+                self.get_outer_container_type(self.type_) == dict
+                and self.get_outer_container_type(other_type) == dict
+        ):
+            return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("||", other, type_=bool)
 
     def __ror__(self, other: Var) -> Var:
@@ -819,6 +825,12 @@ class Var(ABC):
         Returns:
             A var representing the logical or.
         """
+        other_type = other.type_ if isinstance(other, Var) else type(other)
+        if (
+                self.get_outer_container_type(self.type_) == dict
+                and self.get_outer_container_type(other_type) == dict
+        ):
+            return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("||", other, type_=bool, flip=True)
 
     def __contains__(self, _: Any) -> Var:
