@@ -3,7 +3,6 @@
 from jinja2 import Environment, FileSystemLoader, Template
 
 from reflex import constants
-from reflex.utils import path_ops
 from reflex.utils.format import json_dumps
 
 
@@ -40,7 +39,6 @@ class ReflexJinjaEnvironment(Environment):
             "toggle_color_mode": constants.TOGGLE_COLOR_MODE,
             "use_color_mode": constants.USE_COLOR_MODE,
             "hydrate": constants.HYDRATE,
-            "db_url": constants.DB_URL,
         }
 
 
@@ -79,13 +77,3 @@ COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
-
-FULL_CONTROL = path_ops.join(
-    [
-        "{{setState(prev => ({{",
-        "...prev,{state_name}: {arg}",
-        "}}), ",
-        "()=>Event([{chain}])",
-        ")}}",
-    ]
-).format

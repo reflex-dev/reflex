@@ -992,9 +992,17 @@ def test_event_handlers_call_other_handlers():
         def set_v2(self, v: int):
             self.set_v(v)
 
+    class SubState(MainState):
+        def set_v3(self, v: int):
+            self.set_v2(v)
+
     ms = MainState()
     ms.set_v2(1)
     assert ms.v == 1
+
+    # ensure handler can be called from substate
+    ms.substates[SubState.get_name()].set_v3(2)
+    assert ms.v == 2
 
 
 def test_computed_var_cached():
@@ -1204,4 +1212,30 @@ def test_error_on_state_method_shadow():
     assert (
         err.value.args[0]
         == f"The event handler name `reset` shadows a builtin State method; use a different name instead"
+    )
+
+
+def test_state_with_invalid_yield():
+    """Test that an error is thrown when a state yields an invalid value."""
+
+    class StateWithInvalidYield(rx.State):
+        """A state that yields an invalid value."""
+
+        def invalid_handler(self):
+            """Invalid handler.
+
+            Yields:
+                an invalid value.
+            """
+            yield 1
+
+    invalid_state = StateWithInvalidYield()
+    with pytest.raises(TypeError) as err:
+        invalid_state._check_valid(
+            invalid_state.event_handlers["invalid_handler"],
+            rx.event.Event(token="fake_token", name="invalid_handler"),
+        )
+    assert (
+        "must only return/yield: None, Events or other EventHandlers"
+        in err.value.args[0]
     )

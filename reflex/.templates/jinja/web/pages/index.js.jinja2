@@ -13,12 +13,6 @@ export default function Component() {
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
   const focusRef = useRef();
   
-  // Function to add new files to be uploaded.
-  const File = files => {{state_name|react_setter}}(state => ({
-    ...state,
-    files,
-  }))
-
   // Main event loop.
   const [Event, connectError] = useContext(EventLoopContext)
 

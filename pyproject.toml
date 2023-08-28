@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.2.4"
+version = "0.2.6"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -43,10 +43,11 @@ watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
 websockets = "^10.4"
 starlette-admin = "^0.9.0"
-python-dotenv = "^0.13.0"
 importlib-metadata = {version = "^6.7.0", python = ">=3.7, <3.8"}
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
+distro = {version = "^1.8.0", platform = "linux"}
+python-engineio = "!=4.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
