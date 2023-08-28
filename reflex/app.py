@@ -328,7 +328,10 @@ class App(Base):
             raise e
 
         # Wrap the component in a fragment.
-        component = Fragment.create(component)
+        try:
+             component = Fragment.create(*component)
+      except TypeError:
+    component = Fragment.create(component)
 
         # If component is not a Component object, try to unwrap it into a Fragment
         if not isinstance(component, Component):
