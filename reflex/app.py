@@ -333,7 +333,7 @@ class App(Base):
         # If component is not a Component object, try to unwrap it into a Fragment
         if not isinstance(component, Component):
                 with suppress(TypeError):
-                component = Fragment.create(*[i for i in component])
+                component = Fragment.create(*component)
 
 
         # Add meta information to the component.
