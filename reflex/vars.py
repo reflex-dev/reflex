@@ -392,7 +392,7 @@ class Var(ABC):
         if fn is not None:
             name = f"{fn}({name})"
         return BaseVar(
-            name=f"{name}.reverse()",
+            name=name,
             type_=type_,
             is_local=self.is_local,
         )
