@@ -279,13 +279,13 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
 
     # Tests for reverse operation
-    assert str(v([1, 2, 3]).reverse()) == "{[1, 2, 3].reverse()}"
-    assert str(v(["1", "2", "3"]).reverse()) == '{["1", "2", "3"].reverse()}'
+    assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
+    assert str(v(["1", "2", "3"]).reverse()) == '{[...["1", "2", "3"]].reverse()}'
     assert (
         str(BaseVar(name="foo", state="state", type_=list).reverse())
-        == "{state.foo.reverse()}"
+        == "{[...state.foo].reverse()}"
     )
-    assert str(BaseVar(name="foo", type_=list).reverse()) == "{foo.reverse()}"
+    assert str(BaseVar(name="foo", type_=list).reverse()) == "{[...foo].reverse()}"
 
 
 @pytest.mark.parametrize(
@@ -718,6 +718,7 @@ def test_fstrings(out, expected):
         BaseVar(name="var", type_=dict),
         BaseVar(name="var", type_=tuple),
         BaseVar(name="var", type_=set),
+        BaseVar(name="var", type_=None),
     ],
 )
 def test_unsupported_types_for_reverse(var):
@@ -738,6 +739,7 @@ def test_unsupported_types_for_reverse(var):
         BaseVar(name="var", type_=float),
         BaseVar(name="var", type_=bool),
         BaseVar(name="var", type_=set),
+        BaseVar(name="var", type_=None),
     ],
 )
 def test_unsupported_types_for_contains(var):

@@ -707,7 +707,9 @@ class Var(ABC):
         Returns:
             A var representing the contain check.
         """
-        if not (types._issubclass(self.type_, Union[dict, list, tuple, str])):
+        if self.type_ is None or not (
+            types._issubclass(self.type_, Union[dict, list, tuple, str])
+        ):
             raise TypeError(
                 f"Var {self.full_name} of type {self.type_} does not support contains check."
             )
@@ -744,11 +746,11 @@ class Var(ABC):
         Returns:
             A var with the reversed list.
         """
-        if not types._issubclass(self.type_, list):
+        if self.type_ is None or not types._issubclass(self.type_, list):
             raise TypeError(f"Cannot reverse non-list var {self.full_name}.")
 
         return BaseVar(
-            name=f"{self.full_name}.reverse()",
+            name=f"[...{self.full_name}].reverse()",
             type_=self.type_,
             is_local=self.is_local,
         )
