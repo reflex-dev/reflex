@@ -327,15 +327,18 @@ def install_node():
         # Add execute permissions to fnm executable.
         os.chmod(constants.FNM_EXE, stat.S_IXUSR)
         # Install node.
+        # Specify arm64 arch explicitly for M1s and M2s.
+        architecture_arg = (
+            ["--arch=arm64"]
+            if platform.system() == "Darwin" and platform.machine() == "arm64"
+            else []
+        )
+
         process = processes.new_process(
             [
                 constants.FNM_EXE,
                 "install",
-                "--arch=arm64"
-                if platform.system() == "Darwin"
-                and platform.machine()
-                == "arm64"  # specify arm64 arch explicitly for M1/M2
-                else "",
+                *architecture_arg,
                 constants.NODE_VERSION,
                 "--fnm-dir",
                 constants.FNM_DIR,
