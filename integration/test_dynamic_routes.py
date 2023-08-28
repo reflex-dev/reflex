@@ -41,6 +41,7 @@ def DynamicRoute():
             rx.link(
                 "next", href="/page/" + DynamicState.next_page, id="link_page_next"  # type: ignore
             ),
+            rx.link("missing", href="/missing", id="link_missing"),
             rx.list(
                 rx.foreach(DynamicState.order, lambda i: rx.list_item(rx.text(i))),  # type: ignore
             ),
@@ -131,6 +132,8 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     token = dynamic_route.poll_for_value(token_input)
     assert token is not None
 
+    exp_order = [str(ix) for ix in range(10)]
+
     # click the link a few times
     for ix in range(10):
         # wait for navigation, then assert on url
@@ -150,43 +153,52 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     # navigation events
     backend_state = dynamic_route.app_instance.state_manager.states[token]
     time.sleep(0.2)
-    assert backend_state.order == [str(ix) for ix in range(10)]
+    assert backend_state.order == exp_order
 
     # manually load the next page to trigger client side routing in prod mode
+    exp_order += ["10"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/page/10/")
     time.sleep(0.2)
-    assert backend_state.order == [str(ix) for ix in range(11)]
+    assert backend_state.order == exp_order
 
     # make sure internal nav still hydrates after redirect
+    exp_order += ["11"]
     link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
         link.click()
     time.sleep(0.2)
-    assert backend_state.order == [str(ix) for ix in range(12)]
+    assert backend_state.order == exp_order
 
-    # load a page with a query param and make sure it passes through
+    # load same page with a query param and make sure it passes through
+    exp_order += ["11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     time.sleep(0.2)
     assert backend_state.get_query_params()["foo"] == "bar"
-    assert backend_state.order == [str(ix) for ix in range(12)] + ["11"]
+    assert backend_state.order == exp_order
 
     # hit a 404 and ensure we still hydrate
+    exp_order += ["no page id"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/missing")
     time.sleep(0.5)
-    assert backend_state.order == [str(ix) for ix in range(12)] + ["11", "no page id"]
+    assert backend_state.order == exp_order
 
     # browser nav should still trigger hydration
+    exp_order += ["11"]
     with poll_for_navigation(driver):
         driver.back()
     time.sleep(0.2)
-    assert backend_state.order == [str(ix) for ix in range(12)] + [
-        "11",
-        "no page id",
-        "11",
-    ]
+    assert backend_state.order == exp_order
+
+    # next/link to a 404 and ensure we still hydrate
+    exp_order += ["no page id"]
+    link = driver.find_element(By.ID, "link_missing")
+    with poll_for_navigation(driver):
+        link.click()
+    time.sleep(0.5)
+    assert backend_state.order == exp_order
 
 
 def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):
