@@ -1,11 +1,11 @@
 """Banner components."""
 from typing import Optional
 
-from reflex import constants
 from reflex.components.component import Component
 from reflex.components.layout import Box, Cond, Fragment
 from reflex.components.overlay.modal import Modal
 from reflex.components.typography import Text
+from reflex.config import get_config
 from reflex.vars import Var
 
 connection_error = Var.create(
@@ -23,7 +23,7 @@ default_connection_error = [
     "Cannot connect to server: ",
     connection_error,
     ". Check if server is reachable at ",
-    constants.API_URL,
+    get_config().api_url,
 ]
 
 
