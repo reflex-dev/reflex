@@ -348,7 +348,6 @@ TITLE_404 = "404 - Not Found"
 FAVICON_404 = "favicon.ico"
 DESCRIPTION_404 = "The page was not found"
 ROUTE_NOT_FOUND = "routeNotFound"
-SET_ROUTE_NOT_FOUND = "setRouteNotFound"
 
 # Color mode variables
 USE_COLOR_MODE = "useColorMode"
