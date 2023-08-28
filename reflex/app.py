@@ -282,7 +282,6 @@ class App(Base):
         Args:
             component: The component function to call or Component to return as-is.
 
-
         Returns:
             The generated component.
 
