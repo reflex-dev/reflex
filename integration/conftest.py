@@ -65,4 +65,12 @@ def pytest_exception_interact(node, call, report):
     scope="session", params=[AppHarness, AppHarnessProd], ids=["dev", "prod"]
 )
 def app_harness_env(request):
+    """Parametrize the AppHarness class to use for the test, either dev or prod.
+
+    Args:
+        request: The pytest fixture request object.
+
+    Returns:
+        The AppHarness class to use for the test.
+    """
     return request.param

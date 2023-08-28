@@ -1,5 +1,4 @@
-"""
-Handle dynamic routes in static exports via client-side routing.
+"""Handle dynamic routes in static exports via client-side routing.
 
 Works with /utils/client_side_routing.js to handle the redirect and state.
 
@@ -11,10 +10,10 @@ component only after routeNotFound becomes true.
 from __future__ import annotations
 
 from reflex import constants
+
+from ...vars import Var
 from ..component import Component
 from ..layout.cond import Cond
-from ...vars import Var
-
 
 route_not_found = Var.create_safe(constants.ROUTE_NOT_FOUND)
 
@@ -44,4 +43,4 @@ class Default404Page(Component):
     tag = "Error"
     is_default = True
 
-    status_code: Var[int] = 404
+    status_code: Var[int] = 404  # type: ignore

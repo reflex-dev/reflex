@@ -467,11 +467,13 @@ class AppHarness:
 class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
     """SimpleHTTPRequestHandler with custom error page handling."""
 
-    def __init__(self, *args, error_page_map: dict[str, pathlib.Path], **kwargs):
+    def __init__(self, *args, error_page_map: dict[int, pathlib.Path], **kwargs):
         """Initialize the handler.
 
         Args:
             error_page_map: map of error code to error page path
+            *args: passed through to superclass
+            **kwargs: passed through to superclass
         """
         self.error_page_map = error_page_map
         super().__init__(*args, **kwargs)
@@ -509,7 +511,7 @@ class Subdir404TCPServer(socketserver.TCPServer):
         self,
         *args,
         root: pathlib.Path,
-        error_page_map: dict[str, pathlib.Path] | None,
+        error_page_map: dict[int, pathlib.Path] | None,
         **kwargs,
     ):
         """Initialize the server.
@@ -517,19 +519,27 @@ class Subdir404TCPServer(socketserver.TCPServer):
         Args:
             root: the root directory to serve from
             error_page_map: map of error code to error page path
+            *args: passed through to superclass
+            **kwargs: passed through to superclass
         """
         self.root = root
-        self.error_page_map = error_page_map
+        self.error_page_map = error_page_map or {}
         super().__init__(*args, **kwargs)
 
-    def finish_request(self, request, client_address):
-        """Finish one request by instantiating RequestHandlerClass."""
+    def finish_request(self, request: socket.socket, client_address: tuple[str, int]):
+        """Finish one request by instantiating RequestHandlerClass.
+
+        Args:
+            request: the requesting socket
+            client_address: (host, port) referring to the client’s address.
+        """
+        print(client_address, type(client_address))
         self.RequestHandlerClass(
             request,
             client_address,
             self,
-            directory=str(self.root),
-            error_page_map=self.error_page_map,
+            directory=str(self.root),  # type: ignore
+            error_page_map=self.error_page_map,  # type: ignore
         )
 
 
