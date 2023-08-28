@@ -480,6 +480,7 @@ class Var(ABC):
         if operator in ALL_OPS or operator in DELIMITERS:
             return True
 
+        # bools are subclasses of ints
         pair = (
             int if operand1_type == bool else operand1_type,
             int if operand2_type == bool else operand2_type,

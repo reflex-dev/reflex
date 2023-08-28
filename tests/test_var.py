@@ -905,6 +905,17 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         ),
         (
             Var.create(10.5),
+            Var.create(True),
+            [
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create(10.5),
             Var.create(5.5),
             [
                 "|",
@@ -951,6 +962,27 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         (
             Var.create([10, 20]),
             Var.create(5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create([10, 20]),
+            Var.create(True),
             [
                 "+",
                 "-",
@@ -1059,6 +1091,28 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
         (
             Var.create({"key": "value"}),
             Var.create(5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create({"key": "value"}),
+            Var.create(True),
             [
                 "+",
                 "-",
