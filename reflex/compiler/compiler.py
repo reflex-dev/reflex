@@ -24,6 +24,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="E"),
         ImportVar(tag="isTrue"),
+        ImportVar(tag="spreadArraysOrObjects"),
         ImportVar(tag="preventDefault"),
         ImportVar(tag="refs"),
         ImportVar(tag="getRefValue"),

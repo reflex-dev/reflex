@@ -530,3 +530,19 @@ export const getRefValues = (refs) => {
   // getAttribute is used by RangeSlider because it doesn't assign value
   return refs.map((ref) => ref.current.value || ref.current.getAttribute("aria-valuenow"));
 }
+
+/**
+* Spread two arrays or two objects.
+* @param first The first array or object.
+* @param second The second array or object.
+* @returns The final merged array or object.
+*/
+export const spreadArraysOrObjects = (first, second) => {
+  if (Array.isArray(first) && Array.isArray(second)) {
+    return [...first, ...second];
+  } else if (typeof first === 'object' && typeof second === 'object') {
+    return { ...first, ...second };
+  } else {
+    throw new Error('Both parameters must be either arrays or objects.');
+  }
+}

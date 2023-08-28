@@ -446,7 +446,11 @@ class Var(ABC):
             name = f"{op}{self.full_name}"
         else:
             props = (other, self) if flip else (self, other)
-            if op and not self.is_valid_operation(props[0].type_, props[1].type_, op):
+            if op and not self.is_valid_operation(
+                self.get_outer_container_type(props[0].type_),
+                self.get_outer_container_type(props[1].type_),
+                op,
+            ):
                 raise TypeError(
                     f"Unsupported Operand type(s) for {op}: `{props[0].full_name}` of type {props[0].type_.__name__} and `{props[1].full_name}` of type {props[1].type_.__name__}"
                 )
@@ -608,6 +612,22 @@ class Var(ABC):
         """
         return self.compare("<=", other)
 
+    @staticmethod
+    def get_outer_container_type(type_annotation) -> Type:
+        """Get the outer container type of a type annotation.
+
+        Args:
+            type_annotation: The type.
+
+        Returns:
+            The outer container type
+        """
+        return (
+            type_annotation.__origin__
+            if hasattr(type_annotation, "__origin__")
+            else type_annotation
+        )
+
     def __add__(self, other: Var) -> Var:
         """Add two vars.
 
@@ -617,6 +637,12 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
+        other_type = other.type_ if isinstance(other, Var) else type(other)
+        if (
+            self.get_outer_container_type(self.type_) == list
+            and self.get_outer_container_type(other_type) == list
+        ):
+            return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("+", other)
 
     def __radd__(self, other: Var) -> Var:
