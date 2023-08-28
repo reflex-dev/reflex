@@ -8,8 +8,9 @@ export const ClientSideRoutingContext = createContext(null)
 // `useClientSideRouting` hook in a page component.
 export function ClientSideRoutingProvider({ children }) {
   const [routeNotFound, setRouteNotFound] = useState(false);
+  const [didRedirect, setDidRedirect] = useState(false);
   return (
-    <ClientSideRoutingContext.Provider value={[routeNotFound, setRouteNotFound]}>
+    <ClientSideRoutingContext.Provider value={[routeNotFound, setRouteNotFound, setDidRedirect]}>
       {children}
     </ClientSideRoutingContext.Provider>
   )
@@ -19,16 +20,19 @@ export function ClientSideRoutingProvider({ children }) {
 // the 404 page. Also resets the `routeNotFound` state when navigating to a
 // non-404 page.
 export const useClientSideRouting = () => {
-  const [routeNotFound, setRouteNotFound] = useContext(ClientSideRoutingContext)
+  const [routeNotFound, setRouteNotFound, setDidRedirect] = useContext(ClientSideRoutingContext)
   const router = useRouter()
   useEffect(() => {
     if (!routeNotFound) {
       if (router.pathname === "/404" && window.location.pathname !== router.pathname) {
+        setDidRedirect(true)
         router.replace({
             pathname: window.location.pathname,
             query: window.location.search.slice(1),
-        }).catch((e) => {
+        })
+        .catch((e) => {
           setRouteNotFound(true)  // couldn't navigate, show 404
+          setDidRedirect(false)
         })
       }
     } else if (router.pathname !== "/404") {
@@ -46,5 +50,5 @@ export const useClientSideRouting = () => {
       router.events.off('routeChangeComplete', change_complete)
     }
   }, [router])
-  return routeNotFound
+  return [routeNotFound, setDidRedirect]
 }
