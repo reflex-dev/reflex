@@ -85,7 +85,7 @@ jobs:
       fail-fast: false
       matrix:
         # Show OS combos first in GUI
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, windows-latest,windows-2019,macos-latest ]
         python-version: [ "3.10", "3.11" ]
         node-version: [ "16.x" ]
 
