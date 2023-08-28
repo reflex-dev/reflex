@@ -21,7 +21,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Type,
     Union,
 )
@@ -87,7 +86,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # Per-instance copy of backend variable values
     _backend_vars: Dict[str, Any] = {}
 
-    def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
+    def __init__(self, *args, parent_state: State | None = None, **kwargs):
         """Initialize the state.
 
         Args:
@@ -282,7 +281,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     @classmethod
-    def get_skip_vars(cls) -> Set[str]:
+    def get_skip_vars(cls) -> set[str]:
         """Get the vars to skip when serializing.
 
         Returns:
@@ -301,7 +300,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @classmethod
     @functools.lru_cache()
-    def get_parent_state(cls) -> Optional[Type[State]]:
+    def get_parent_state(cls) -> Type[State] | None:
         """Get the parent state.
 
         Returns:
@@ -317,7 +316,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @classmethod
     @functools.lru_cache()
-    def get_substates(cls) -> Set[Type[State]]:
+    def get_substates(cls) -> set[Type[State]]:
         """Get the substates of the state.
 
         Returns:
@@ -488,7 +487,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             field.default = default_value
 
     @staticmethod
-    def _get_base_functions() -> Dict[str, FunctionType]:
+    def _get_base_functions() -> dict[str, FunctionType]:
         """Get all functions of the state class excluding dunder methods.
 
         Returns:
@@ -546,7 +545,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         else:
             return self.router_data.get(constants.RouteVar.PATH, "")
 
-    def get_query_params(self) -> Dict[str, str]:
+    def get_query_params(self) -> dict[str, str]:
         """Obtain the query parameters for the queried page.
 
         The query object contains both the URI parameters and the GET parameters.
@@ -556,7 +555,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         return self.router_data.get(constants.RouteVar.QUERY, {})
 
-    def get_cookies(self) -> Dict[str, str]:
+    def get_cookies(self) -> dict[str, str]:
         """Obtain the cookies of the client stored in the browser.
 
         Returns:
@@ -705,7 +704,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> Optional[State]:
+    def get_substate(self, path: Sequence[str]) -> State | None:
         """Get the substate.
 
         Args:
@@ -805,7 +804,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict
-    ) -> AsyncIterator[Tuple[Optional[List[EventSpec]], bool]]:
+    ) -> AsyncIterator[tuple[list[EventSpec] | None, bool]]:
         """Process event.
 
         Args:
@@ -858,7 +857,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             print(error)
             yield [window_alert("An error occurred. See logs for details.")], True
 
-    def _always_dirty_computed_vars(self) -> Set[str]:
+    def _always_dirty_computed_vars(self) -> set[str]:
         """The set of ComputedVars that always need to be recalculated.
 
         Returns:
@@ -882,7 +881,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 if actual_var:
                     actual_var.mark_dirty(instance=self)
 
-    def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
+    def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
         Args:
@@ -969,7 +968,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         self.dirty_vars = set()
         self.dirty_substates = set()
 
-    def dict(self, include_computed: bool = True, **kwargs) -> Dict[str, Any]:
+    def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
