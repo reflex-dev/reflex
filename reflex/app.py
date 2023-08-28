@@ -31,6 +31,7 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
+from reflex.components.overlay.banner import ConnectionModal
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -93,6 +94,9 @@ class App(Base):
 
     # The async server name space
     event_namespace: Optional[AsyncNamespace] = None
+
+    # A component that is present on every page.
+    overlay_component: Optional[Component] = ConnectionModal.create()
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -326,8 +330,11 @@ class App(Base):
                 ) from e
             raise e
 
-        # Wrap the component in a fragment.
-        component = Fragment.create(component)
+        # Wrap the component in a fragment with optional overlay.
+        if self.overlay_component is not None:
+            component = Fragment.create(self.overlay_component, component)
+        else:
+            component = Fragment.create(component)
 
         # Add meta information to the component.
         compiler_utils.add_meta(
