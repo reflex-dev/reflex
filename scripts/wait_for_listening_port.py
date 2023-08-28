@@ -7,7 +7,6 @@ import argparse
 import socket
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Tuple
 
 # psutil is already a dependency of Reflex itself - so it's OK to use
 import psutil
@@ -22,7 +21,7 @@ def _pid_exists(pid):
     return pid in psutil.pids()
 
 
-def _wait_for_port(port, server_pid, timeout) -> Tuple[bool, str]:
+def _wait_for_port(port, server_pid, timeout) -> tuple[bool, str]:
     start = time.time()
     print(f"Waiting for up to {timeout} seconds for port {port} to start listening.")
     while True:

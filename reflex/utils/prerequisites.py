@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import platform
+import random
 import re
 import stat
 import sys
@@ -14,7 +15,6 @@ import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import List, Optional
 
 import httpx
 import typer
@@ -44,7 +44,7 @@ def check_node_version() -> bool:
     return False
 
 
-def get_node_version() -> Optional[version.Version]:
+def get_node_version() -> version.Version | None:
     """Get the version of node.
 
     Returns:
@@ -58,7 +58,7 @@ def get_node_version() -> Optional[version.Version]:
         return None
 
 
-def get_bun_version() -> Optional[version.Version]:
+def get_bun_version() -> version.Version | None:
     """Get the version of bun.
 
     Returns:
@@ -72,7 +72,7 @@ def get_bun_version() -> Optional[version.Version]:
         return None
 
 
-def get_install_package_manager() -> Optional[str]:
+def get_install_package_manager() -> str | None:
     """Get the package manager executable for installation.
       Currently on unix systems, bun is used for installation only.
 
@@ -87,7 +87,7 @@ def get_install_package_manager() -> Optional[str]:
     return get_config().bun_path
 
 
-def get_package_manager() -> Optional[str]:
+def get_package_manager() -> str | None:
     """Get the package manager executable for running app.
       Currently on unix systems, npm is used for running the app only.
 
@@ -109,7 +109,7 @@ def get_app() -> ModuleType:
     return __import__(module, fromlist=(constants.APP_VAR,))
 
 
-def get_redis() -> Optional[Redis]:
+def get_redis() -> Redis | None:
     """Get the redis client.
 
     Returns:
@@ -227,10 +227,22 @@ def initialize_web_directory():
     with open(next_config_file, "w") as file:
         file.writelines(lines)
 
-    # Write the current version of distributed reflex package to a REFLEX_JSON."""
-    with open(constants.REFLEX_JSON, "w") as f:
-        reflex_json = {"version": constants.VERSION}
-        json.dump(reflex_json, f, ensure_ascii=False)
+    # Initialize the reflex json file.
+    init_reflex_json()
+
+
+def init_reflex_json():
+    """Write the hash of the Reflex project to a REFLEX_JSON."""
+    # Get a random project hash.
+    project_hash = random.getrandbits(128)
+    console.debug(f"Setting project hash to {project_hash}.")
+
+    # Write the hash and version to the reflex json file.
+    reflex_json = {
+        "version": constants.VERSION,
+        "project_hash": project_hash,
+    }
+    path_ops.update_json_file(constants.REFLEX_JSON, reflex_json)
 
 
 def remove_existing_bun_installation():
@@ -376,11 +388,11 @@ def install_bun():
     )
 
 
-def install_frontend_packages(packages: List[str]):
+def install_frontend_packages(packages: list[str]):
     """Installs the base and custom frontend packages.
 
     Args:
-        packages (List[str]): A list of package names to be installed.
+        packages: A list of package names to be installed.
 
     Example:
         >>> install_frontend_packages(["react", "react-dom"])

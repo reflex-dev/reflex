@@ -1,7 +1,7 @@
 """Define the base Reflex class."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 import pydantic
 from pydantic.fields import ModelField
@@ -46,7 +46,7 @@ class Base(pydantic.BaseModel):
         return self
 
     @classmethod
-    def get_fields(cls) -> Dict[str, Any]:
+    def get_fields(cls) -> dict[str, Any]:
         """Get the fields of the object.
 
         Returns:

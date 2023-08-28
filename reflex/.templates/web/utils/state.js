@@ -9,9 +9,9 @@ import Router, { useRouter } from "next/router";
 
 
 // Endpoint URLs.
-const PINGURL = env.pingUrl
-const EVENTURL = env.eventUrl
-const UPLOADURL = env.uploadUrl
+const PINGURL = env.ping
+const EVENTURL = env.event
+const UPLOADURL = env.upload
 
 // Global variable to hold the token.
 let token;

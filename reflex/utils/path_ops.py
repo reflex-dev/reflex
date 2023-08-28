@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from reflex import constants
 
@@ -100,7 +100,7 @@ def ln(src: str, dest: str, overwrite: bool = False) -> bool:
     return True
 
 
-def which(program: str) -> Optional[str]:
+def which(program: str) -> str | None:
     """Find the path to an executable.
 
     Args:
@@ -112,7 +112,7 @@ def which(program: str) -> Optional[str]:
     return shutil.which(program)
 
 
-def get_node_bin_path() -> Optional[str]:
+def get_node_bin_path() -> str | None:
     """Get the node binary dir path.
 
     Returns:
@@ -124,7 +124,7 @@ def get_node_bin_path() -> Optional[str]:
     return constants.NODE_BIN_PATH
 
 
-def get_node_path() -> Optional[str]:
+def get_node_path() -> str | None:
     """Get the node binary path.
 
     Returns:
@@ -135,7 +135,7 @@ def get_node_path() -> Optional[str]:
     return constants.NODE_PATH
 
 
-def get_npm_path() -> Optional[str]:
+def get_npm_path() -> str | None:
     """Get npm binary path.
 
     Returns:
@@ -144,3 +144,32 @@ def get_npm_path() -> Optional[str]:
     if not os.path.exists(constants.NODE_PATH):
         return which("npm")
     return constants.NPM_PATH
+
+
+def update_json_file(file_path: str, update_dict: dict[str, int | str]):
+    """Update the contents of a json file.
+
+    Args:
+        file_path: the path to the JSON file.
+        update_dict: object to update json.
+    """
+    fp = Path(file_path)
+
+    # Create the file if it doesn't exist.
+    fp.touch(exist_ok=True)
+
+    # Create an empty json object if file is empty
+    fp.write_text("{}") if fp.stat().st_size == 0 else None
+
+    # Read the existing json object from the file.
+    json_object = {}
+    if fp.stat().st_size == 0:
+        with open(fp) as f:
+            json_object = json.load(f)
+
+    # Update the json object with the new data.
+    json_object.update(update_dict)
+
+    # Write the updated json object to the file
+    with open(fp, "w") as f:
+        json.dump(json_object, f, ensure_ascii=False)
