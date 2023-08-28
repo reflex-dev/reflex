@@ -5,6 +5,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import platform
 import re
 import stat
 import sys
@@ -330,10 +331,15 @@ def install_node():
             [
                 constants.FNM_EXE,
                 "install",
+                "--arch=arm64"
+                if platform.system() == "Darwin"
+                and platform.machine()
+                == "arm64"  # specify arm64 arch explicitly for M1/M2
+                else "",
                 constants.NODE_VERSION,
                 "--fnm-dir",
                 constants.FNM_DIR,
-            ]
+            ],
         )
     processes.show_status("Installing node", process)
 
