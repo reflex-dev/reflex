@@ -797,7 +797,17 @@ class NoSSRComponent(Component):
 
     def _get_custom_code(self) -> str:
         opts_fragment = ", { ssr: false });"
-        library_import = f"const {self.tag} = dynamic(() => import('{self.library}')"
+
+        # extract the correct import name from library name
+        if self.library is None:
+            raise ValueError("Undefined library for NoSSRComponent")
+
+        import_name_parts = [p for p in self.library.rpartition("@") if p != ""]
+        import_name = (
+            import_name_parts[0] if import_name_parts[0] != "@" else self.library
+        )
+
+        library_import = f"const {self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"
