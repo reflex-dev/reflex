@@ -1,7 +1,7 @@
 """Integration tests for dynamic route page behavior."""
 import time
 from contextlib import contextmanager
-from typing import Generator
+from typing import Generator, Type
 from urllib.parse import urlsplit
 
 import pytest
@@ -50,21 +50,25 @@ def DynamicRoute():
     app.add_page(index)
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
+    app.add_custom_404_page(on_load=DynamicState.on_load)  # type: ignore
     app.compile()
 
 
 @pytest.fixture(scope="session")
-def dynamic_route(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def dynamic_route(
+    app_harness_env: Type[AppHarness], tmp_path_factory
+) -> Generator[AppHarness, None, None]:
     """Start DynamicRoute app at tmp_path via AppHarness.
 
     Args:
+        app_harness_env: either AppHarness (dev) or AppHarnessProd (prod)
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
-        root=tmp_path_factory.mktemp("dynamic_route"),
+    with app_harness_env.create(
+        root=tmp_path_factory.mktemp(f"dynamic_route"),
         app_source=DynamicRoute,  # type: ignore
     ) as harness:
         yield harness
@@ -147,6 +151,42 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     backend_state = dynamic_route.app_instance.state_manager.states[token]
     time.sleep(0.2)
     assert backend_state.order == [str(ix) for ix in range(10)]
+
+    # manually load the next page to trigger client side routing in prod mode
+    with poll_for_navigation(driver):
+        driver.get(f"{dynamic_route.frontend_url}/page/10/")
+    time.sleep(0.2)
+    assert backend_state.order == [str(ix) for ix in range(11)]
+
+    # make sure internal nav still hydrates after redirect
+    link = driver.find_element(By.ID, "link_page_next")
+    with poll_for_navigation(driver):
+        link.click()
+    time.sleep(0.2)
+    assert backend_state.order == [str(ix) for ix in range(12)]
+
+    # load a page with a query param and make sure it passes through
+    with poll_for_navigation(driver):
+        driver.get(f"{driver.current_url}?foo=bar")
+    time.sleep(0.2)
+    assert backend_state.get_query_params()["foo"] == "bar"
+    assert backend_state.order == [str(ix) for ix in range(12)] + ["11"]
+
+    # hit a 404 and ensure we still hydrate
+    with poll_for_navigation(driver):
+        driver.get(f"{dynamic_route.frontend_url}/missing")
+    time.sleep(0.5)
+    assert backend_state.order == [str(ix) for ix in range(12)] + ["11", "no page id"]
+
+    # browser nav should still trigger hydration
+    with poll_for_navigation(driver):
+        driver.back()
+    time.sleep(0.2)
+    assert backend_state.order == [str(ix) for ix in range(12)] + [
+        "11",
+        "no page id",
+        "11",
+    ]
 
 
 def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):
