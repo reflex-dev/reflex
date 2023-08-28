@@ -21,9 +21,9 @@ route_not_found = Var.create_safe(constants.ROUTE_NOT_FOUND)
 
 def wait_for_client_redirect(component) -> Component:
     """Wait for a redirect to occur before rendering a component.
-    
+
     This prevents the 404 page from flashing while the redirect is happening.
-    
+
     Args:
         component: The component to render after the redirect.
 

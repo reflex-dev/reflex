@@ -10,11 +10,13 @@ import platform
 import re
 import signal
 import socket
+import socketserver
 import subprocess
 import textwrap
 import threading
 import time
 import types
+from http.server import SimpleHTTPRequestHandler
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -155,9 +157,9 @@ class AppHarness:
                 )
                 self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
-            # ensure config is reloaded when testing different app
+            # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
-            self.app_module = reflex.utils.prerequisites.get_app()
+            self.app_module = reflex.utils.prerequisites.get_app(reload=True)
         self.app_instance = self.app_module.app
 
     def _start_backend(self):
@@ -460,3 +462,151 @@ class AppHarness:
         ):
             raise TimeoutError("No states were observed while polling.")
         return state_manager.states
+
+
+class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
+    """SimpleHTTPRequestHandler with custom error page handling."""
+
+    def __init__(self, *args, error_page_map: dict[str, pathlib.Path], **kwargs):
+        """Initialize the handler.
+
+        Args:
+            error_page_map: map of error code to error page path
+        """
+        self.error_page_map = error_page_map
+        super().__init__(*args, **kwargs)
+
+    def send_error(
+        self, code: int, message: str | None = None, explain: str | None = None
+    ) -> None:
+        """Send the error page for the given error code.
+
+        If the code matches a custom error page, then message and explain are
+        ignored.
+
+        Args:
+            code: the error code
+            message: the error message
+            explain: the error explanation
+        """
+        error_page = self.error_page_map.get(code)
+        if error_page:
+            self.send_response(code, message)
+            self.send_header("Connection", "close")
+            body = error_page.read_bytes()
+            self.send_header("Content-Type", self.error_content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            super().send_error(code, message, explain)
+
+
+class Subdir404TCPServer(socketserver.TCPServer):
+    """TCPServer for SimpleHTTPRequestHandlerCustomErrors that serves from a subdir."""
+
+    def __init__(
+        self,
+        *args,
+        root: pathlib.Path,
+        error_page_map: dict[str, pathlib.Path] | None,
+        **kwargs,
+    ):
+        """Initialize the server.
+
+        Args:
+            root: the root directory to serve from
+            error_page_map: map of error code to error page path
+        """
+        self.root = root
+        self.error_page_map = error_page_map
+        super().__init__(*args, **kwargs)
+
+    def finish_request(self, request, client_address):
+        """Finish one request by instantiating RequestHandlerClass."""
+        self.RequestHandlerClass(
+            request,
+            client_address,
+            self,
+            directory=str(self.root),
+            error_page_map=self.error_page_map,
+        )
+
+
+class AppHarnessProd(AppHarness):
+    """AppHarnessProd executes a reflex app in-process for testing.
+
+    In prod mode, instead of running `next dev` the app is exported as static
+    files and served via the builtin python http.server with custom 404 redirect
+    handling. Additionally, the backend runs in multi-worker mode.
+    """
+
+    frontend_thread: Optional[threading.Thread] = None
+    frontend_server: Optional[Subdir404TCPServer] = None
+
+    def _run_frontend(self):
+        web_root = self.app_path / reflex.constants.WEB_DIR / "_static"
+        error_page_map = {
+            404: web_root / "404.html",
+        }
+        with Subdir404TCPServer(
+            ("", 0),
+            SimpleHTTPRequestHandlerCustomErrors,
+            root=web_root,
+            error_page_map=error_page_map,
+        ) as self.frontend_server:
+            self.frontend_url = "http://localhost:{1}".format(
+                *self.frontend_server.socket.getsockname()
+            )
+            self.frontend_server.serve_forever()
+
+    def _start_frontend(self):
+        # Set up the frontend.
+        with chdir(self.app_path):
+            config = reflex.config.get_config()
+            config.api_url = "http://{0}:{1}".format(
+                *self._poll_for_servers().getsockname(),
+            )
+            reflex.reflex.export(
+                zipping=False,
+                frontend=True,
+                backend=False,
+                loglevel=reflex.constants.LogLevel.INFO,
+            )
+
+        self.frontend_thread = threading.Thread(target=self._run_frontend)
+        self.frontend_thread.start()
+
+    def _wait_frontend(self):
+        self._poll_for(lambda: self.frontend_server is not None)
+        if self.frontend_server is None or not self.frontend_server.socket.fileno():
+            raise RuntimeError("Frontend did not start")
+
+    def _start_backend(self):
+        if self.app_instance is None:
+            raise RuntimeError("App was not initialized.")
+        os.environ[reflex.constants.SKIP_COMPILE_ENV_VAR] = "yes"
+        self.backend = uvicorn.Server(
+            uvicorn.Config(
+                app=self.app_instance,
+                host="127.0.0.1",
+                port=0,
+                workers=reflex.utils.processes.get_num_workers(),
+            ),
+        )
+        self.backend_thread = threading.Thread(target=self.backend.run)
+        self.backend_thread.start()
+
+    def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
+        try:
+            return super()._poll_for_servers(timeout)
+        finally:
+            os.environ.pop(reflex.constants.SKIP_COMPILE_ENV_VAR, None)
+
+    def stop(self):
+        """Stop the frontend python webserver."""
+        super().stop()
+        if self.frontend_server is not None:
+            self.frontend_server.shutdown()
+        if self.frontend_thread is not None:
+            self.frontend_thread.join()
