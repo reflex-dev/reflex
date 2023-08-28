@@ -46,4 +46,5 @@ export const useClientSideRouting = () => {
       router.events.off('routeChangeComplete', change_complete)
     }
   }, [router])
+  return [routeNotFound, setRouteNotFound]
 }
