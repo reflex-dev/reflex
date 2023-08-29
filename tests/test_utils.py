@@ -549,13 +549,32 @@ def test_node_install_windows(tmp_path, mocker):
     download.assert_called_once()
 
 
-def test_node_install_unix(tmp_path, mocker):
+@pytest.mark.parametrize(
+    "machine, system",
+    [
+        ("x64", "Darwin"),
+        ("arm64", "Darwin"),
+        ("x64", "Windows"),
+        ("arm64", "Windows"),
+        ("armv7", "Linux"),
+        ("armv8-a", "Linux"),
+        ("armv8.1-a", "Linux"),
+        ("armv8.2-a", "Linux"),
+        ("armv8.3-a", "Linux"),
+        ("armv8.4-a", "Linux"),
+        ("aarch64", "Linux"),
+        ("aarch32", "Linux"),
+    ],
+)
+def test_node_install_unix(tmp_path, mocker, machine, system):
     fnm_root_path = tmp_path / "reflex" / "fnm"
     fnm_exe = fnm_root_path / "fnm"
 
     mocker.patch("reflex.utils.prerequisites.constants.FNM_DIR", fnm_root_path)
     mocker.patch("reflex.utils.prerequisites.constants.FNM_EXE", fnm_exe)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
+    mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
+    mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
 
     class Resp(Base):
         status_code = 200
@@ -571,9 +590,21 @@ def test_node_install_unix(tmp_path, mocker):
 
     assert fnm_root_path.exists()
     download.assert_called_once()
-    process.assert_called_with(
-        [fnm_exe, "install", constants.NODE_VERSION, "--fnm-dir", fnm_root_path]
-    )
+    if system == "Darwin" and machine == "arm64":
+        process.assert_called_with(
+            [
+                fnm_exe,
+                "install",
+                "--arch=arm64",
+                constants.NODE_VERSION,
+                "--fnm-dir",
+                fnm_root_path,
+            ]
+        )
+    else:
+        process.assert_called_with(
+            [fnm_exe, "install", constants.NODE_VERSION, "--fnm-dir", fnm_root_path]
+        )
     chmod.assert_called_once()
 
 
