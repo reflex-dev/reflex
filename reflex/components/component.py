@@ -66,6 +66,10 @@ class Component(Base, ABC):
 
     # components that cannot be children
     invalid_children: List[str] = []
+
+    # components that are only allowed as children
+    valid_children: List[str] = []
+
     # custom attribute
     custom_attrs: Dict[str, str] = {}
 
@@ -103,9 +107,10 @@ class Component(Base, ABC):
             TypeError: If an invalid prop is passed.
         """
         # Set the id and children initially.
+        children = kwargs.get("children", [])
         initial_kwargs = {
             "id": kwargs.get("id"),
-            "children": kwargs.get("children", []),
+            "children": children,
             **{
                 prop: Var.create(kwargs[prop])
                 for prop in self.get_initial_props()
@@ -113,6 +118,8 @@ class Component(Base, ABC):
             },
         }
         super().__init__(**initial_kwargs)
+
+        self._validate_component_children(children)
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
@@ -385,6 +392,7 @@ class Component(Base, ABC):
             else Bare.create(contents=Var.create(child, is_string=True))
             for child in children
         ]
+
         return cls(children=children, **props)
 
     def _add_style(self, style):
@@ -439,29 +447,43 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
-        self._validate_component_children(
-            rendered_dict["name"], rendered_dict["children"]
-        )
         return rendered_dict
 
-    def _validate_component_children(self, comp_name: str, children: List[Dict]):
+    def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
 
         Args:
-            comp_name: name of the component.
-            children: list of children components.
+            children: The children of the component.
 
-        Raises:
-            ValueError: when an unsupported component is matched.
         """
-        if not self.invalid_children:
+        if not self.invalid_children and not self.valid_children:
             return
-        for child in children:
-            name = child["name"]
-            if name in self.invalid_children:
+
+        comp_name = type(self).__name__
+
+        def validate_invalid_child(child_name):
+            if child_name in self.invalid_children:
                 raise ValueError(
-                    f"The component `{comp_name.lower()}` cannot have `{name.lower()}` as a child component"
+                    f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
+
+        def validate_valid_child(child_name):
+            if child_name not in self.valid_children:
+                valid_child_list = ", ".join(
+                    [f"`{v_child}`" for v_child in self.valid_children]
+                )
+                raise ValueError(
+                    f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
+                )
+
+        for child in children:
+            name = type(child).__name__
+
+            if self.invalid_children:
+                validate_invalid_child(name)
+
+            if self.valid_children:
+                validate_valid_child(name)
 
     def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.

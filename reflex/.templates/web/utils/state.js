@@ -255,14 +255,14 @@ export const processEvent = async (
  * @param socket The socket object to connect.
  * @param dispatch The function to queue state update
  * @param transports The transports to use.
- * @param setNotConnected The function to update connection state.
+ * @param setConnectError The function to update connection error value.
  * @param initial_events Array of events to seed the queue after connecting.
  */
 export const connect = async (
   socket,
   dispatch,
   transports,
-  setNotConnected,
+  setConnectError,
   initial_events = [],
 ) => {
   // Get backend URL object from the endpoint.
@@ -277,11 +277,11 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     queueEvents(initial_events, socket)
-    setNotConnected(false)
+    setConnectError(null)
   });
 
   socket.current.on('connect_error', (error) => {
-    setNotConnected(true)
+    setConnectError(error)
   });
 
   // On each received message, queue the updates and events.
@@ -362,10 +362,10 @@ export const E = (name, payload = {}, handler = null) => {
  * @param initial_state The initial page state.
  * @param initial_events Array of events to seed the queue after connecting.
  *
- * @returns [state, Event, notConnected] -
+ * @returns [state, Event, connectError] -
  *   state is a reactive dict,
  *   Event is used to queue an event, and
- *   notConnected is a reactive boolean indicating whether the websocket is connected.
+ *   connectError is a reactive js error from the websocket connection (or null if connected).
  */
 export const useEventLoop = (
   initial_state = {},
@@ -374,7 +374,7 @@ export const useEventLoop = (
   const socket = useRef(null)
   const router = useRouter()
   const [state, dispatch] = useReducer(applyDelta, initial_state)
-  const [notConnected, setNotConnected] = useState(false)
+  const [connectError, setConnectError] = useState(null)
   
   // Function to add new events to the event queue.
   const Event = (events, _e) => {
@@ -391,7 +391,7 @@ export const useEventLoop = (
 
     // Initialize the websocket connection.
     if (!socket.current) {
-      connect(socket, dispatch, ['websocket', 'polling'], setNotConnected, initial_events)
+      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, initial_events)
     }
     (async () => {
       // Process all outstanding events.
@@ -400,7 +400,7 @@ export const useEventLoop = (
       }
     })()
   })
-  return [state, Event, notConnected]
+  return [state, Event, connectError]
 }
 
 /***

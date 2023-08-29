@@ -1,6 +1,6 @@
 """Menu components."""
 
-from typing import Set
+from typing import List, Set
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -99,6 +99,9 @@ class MenuButton(ChakraComponent):
 
     # The variant of the menu button.
     variant: Var[str]
+
+    # Components that are not allowed as children.
+    invalid_children: List[str] = ["Button", "MenuButton"]
 
     # The tag to use for the menu button.
     as_: Var[str]
