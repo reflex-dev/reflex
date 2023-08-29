@@ -16,12 +16,12 @@ const GlobalStyles = css`
 `;
 
 function EventLoopProvider({ children }) {
-  const [state, Event, notConnected] = useEventLoop(
+  const [state, Event, connectError] = useEventLoop(
     initialState,
     initialEvents,
   )
   return (
-    <EventLoopContext.Provider value={[Event, notConnected]}>
+    <EventLoopContext.Provider value={[Event, connectError]}>
       <StateContext.Provider value={state}>
         {children}
       </StateContext.Provider>
