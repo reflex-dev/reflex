@@ -329,14 +329,9 @@ class App(Base):
 
         # Wrap the component in a fragment.
         try:
-             component = Fragment.create(*component)
-      except TypeError:
-    component = Fragment.create(component)
-
-        # If component is not a Component object, try to unwrap it into a Fragment
-        if not isinstance(component, Component):
-                with suppress(TypeError):
-                component = Fragment.create(*component)
+            component = Fragment.create(*component)
+        except TypeError:
+            component = Fragment.create(component)
 
 
         # Add meta information to the component.
