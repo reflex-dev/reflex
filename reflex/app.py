@@ -1,4 +1,5 @@
 """The main Reflex app."""
+from __future__ import annotations
 
 import asyncio
 import inspect
@@ -29,6 +30,7 @@ from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
+from reflex.components import connection_modal
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
 from reflex.config import get_config
@@ -88,11 +90,11 @@ class App(Base):
     # Admin dashboard
     admin_dash: Optional[AdminDash] = None
 
-    # The component to render if there is a connection error to the server.
-    connect_error_component: Optional[Component] = None
-
     # The async server name space
     event_namespace: Optional[AsyncNamespace] = None
+
+    # A component that is present on every page.
+    overlay_component: Optional[Union[Component, ComponentCallable]] = connection_modal
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -106,6 +108,10 @@ class App(Base):
                         Also, if there are multiple client subclasses of rx.State(Subclasses of rx.State should consist
                         of the DefaultState and the client app state).
         """
+        if "connect_error_component" in kwargs:
+            raise ValueError(
+                "`connect_error_component` is deprecated, use `overlay_component` instead"
+            )
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
         inferred_state = state_subclasses[-1]
@@ -144,10 +150,10 @@ class App(Base):
         self.sio = AsyncServer(
             async_mode="asgi",
             cors_allowed_origins="*"
-            if config.cors_allowed_origins == constants.CORS_ALLOWED_ORIGINS
+            if config.cors_allowed_origins == ["*"]
             else config.cors_allowed_origins,
-            cors_credentials=config.cors_credentials,
-            max_http_buffer_size=config.polling_max_http_buffer_size,
+            cors_credentials=True,
+            max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
             ping_interval=constants.PING_INTERVAL,
             ping_timeout=constants.PING_TIMEOUT,
         )
@@ -269,6 +275,31 @@ class App(Base):
         else:
             self.middleware.insert(index, middleware)
 
+    @staticmethod
+    def _generate_component(component: Component | ComponentCallable) -> Component:
+        """Generate a component from a callable.
+
+        Args:
+            component: The component function to call or Component to return as-is.
+
+        Returns:
+            The generated component.
+
+        Raises:
+            TypeError: When an invalid component function is passed.
+        """
+        try:
+            return component if isinstance(component, Component) else component()
+        except TypeError as e:
+            message = str(e)
+            if "BaseVar" in message or "ComputedVar" in message:
+                raise TypeError(
+                    "You may be trying to use an invalid Python function on a state var. "
+                    "When referencing a var inside your render code, only limited var operations are supported. "
+                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
+                ) from e
+            raise e
+
     def add_page(
         self,
         component: Union[Component, ComponentCallable],
@@ -296,9 +327,6 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
-
-        Raises:
-            TypeError: If an invalid var operation is used.
         """
         # If the route is not set, get it from the callable.
         if route is None:
@@ -314,20 +342,16 @@ class App(Base):
         self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
-        try:
-            component = component if isinstance(component, Component) else component()
-        except TypeError as e:
-            message = str(e)
-            if "BaseVar" in message or "ComputedVar" in message:
-                raise TypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://pynecone.io/docs/state/vars "
-                ) from e
-            raise e
+        component = self._generate_component(component)
 
-        # Wrap the component in a fragment.
-        component = Fragment.create(component)
+        # Wrap the component in a fragment with optional overlay.
+        if self.overlay_component is not None:
+            component = Fragment.create(
+                self._generate_component(self.overlay_component),
+                component,
+            )
+        else:
+            component = Fragment.create(component)
 
         # Add meta information to the component.
         compiler_utils.add_meta(
@@ -404,11 +428,14 @@ class App(Base):
 
     def add_custom_404_page(
         self,
-        component,
-        title=None,
-        image=None,
-        description=None,
-        meta=constants.DEFAULT_META_LIST,
+        component: Optional[Union[Component, ComponentCallable]] = None,
+        title: str = constants.TITLE_404,
+        image: str = constants.FAVICON_404,
+        description: str = constants.DESCRIPTION_404,
+        on_load: Optional[
+            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
+        ] = None,
+        meta: List[Dict] = constants.DEFAULT_META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
@@ -420,49 +447,46 @@ class App(Base):
             title: The title of the page.
             description: The description of the page.
             image: The image to display on the page.
+            on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
-        title = title or constants.TITLE_404
-        image = image or constants.FAVICON_404
-        description = description or constants.DESCRIPTION_404
-
-        component = component if isinstance(component, Component) else component()
-
-        compiler_utils.add_meta(
-            component,
-            title=title,
-            image=image,
-            description=description,
+        self.add_page(
+            component=component if component else Fragment.create(),
+            route=constants.SLUG_404,
+            title=title or constants.TITLE_404,
+            image=image or constants.FAVICON_404,
+            description=description or constants.DESCRIPTION_404,
+            on_load=on_load,
             meta=meta,
         )
 
-        froute = format.format_route
-        self.pages[froute(constants.SLUG_404)] = component
-
     def setup_admin_dash(self):
         """Setup the admin dash."""
-        # Get the config.
-        config = get_config()
-        if config.admin_dash and config.admin_dash.models:
+        # Get the admin dash.
+        admin_dash = self.admin_dash
+
+        if admin_dash and admin_dash.models:
             # Build the admin dashboard
             admin = (
-                config.admin_dash.admin
-                if config.admin_dash.admin
+                admin_dash.admin
+                if admin_dash.admin
                 else Admin(
                     engine=Model.get_db_engine(),
                     title="Reflex Admin Dashboard",
-                    logo_url="https://pynecone.io/logo.png",
+                    logo_url="https://reflex.dev/Reflex.svg",
                 )
             )
 
-            for model in config.admin_dash.models:
-                view = config.admin_dash.view_overrides.get(model, ModelView)
+            for model in admin_dash.models:
+                view = admin_dash.view_overrides.get(model, ModelView)
                 admin.add_view(view(model))
 
             admin.mount_to(self.api)
 
     def compile(self):
         """Compile the app and output it to the pages folder."""
+        if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
+            return
         # Create a progress bar.
         progress = Progress(
             *Progress.get_default_columns()[:-1],
@@ -497,7 +521,6 @@ class App(Base):
                             route,
                             component,
                             self.state,
-                            self.connect_error_component,
                         ),
                     )
                 )
@@ -519,6 +542,9 @@ class App(Base):
 
         # Compile the theme.
         compile_results.append(compiler.compile_theme(self.style))
+
+        # Compile the contexts.
+        compile_results.append(compiler.compile_contexts(self.state))
 
         # Compile the Tailwind config.
         if config.tailwind is not None:
@@ -690,7 +716,7 @@ class EventNamespace(AsyncNamespace):
         self.app = app
 
     def on_connect(self, sid, environ):
-        """Event for when the websocket disconnects.
+        """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.

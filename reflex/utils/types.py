@@ -14,6 +14,7 @@ GenericType = Union[Type, _GenericAlias]
 # Valid state var types.
 PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
+StateIterVar = Union[list, set, tuple]
 
 
 def get_args(alias: _GenericAlias) -> Tuple[Type, ...]:
@@ -198,3 +199,4 @@ def is_backend_variable(name: str) -> bool:
 
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
+StateIterBases = get_base_class(StateIterVar)

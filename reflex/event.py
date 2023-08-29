@@ -64,6 +64,8 @@ class EventHandler(Base):
                 return EventSpec(
                     handler=self,
                     client_handler_name="uploadFiles",
+                    # `files` is defined in the Upload component's _use_hooks
+                    args=((Var.create_safe("files"), Var.create_safe("files")),),
                 )
 
             # Otherwise, convert to JSON.
@@ -106,12 +108,6 @@ class EventChain(Base):
     """Container for a chain of events that will be executed in order."""
 
     events: List[EventSpec]
-
-    # Whether events are in fully controlled input.
-    full_control: bool = False
-
-    # State name when fully controlled.
-    state_name: str = ""
 
 
 class Target(Base):

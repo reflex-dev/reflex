@@ -10,7 +10,7 @@ from reflex.constants import IS_HYDRATED, RouteVar
 from reflex.event import Event, EventHandler
 from reflex.state import State
 from reflex.utils import format
-from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList
+from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
 
 
 class Object(Base):
@@ -498,7 +498,7 @@ def test_set_dirty_var(test_state):
     assert test_state.dirty_vars == {"num1", "num2", "sum"}
 
     # Cleaning the state should remove all dirty vars.
-    test_state.clean()
+    test_state._clean()
     assert test_state.dirty_vars == set()
 
 
@@ -524,7 +524,7 @@ def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_st
     assert child_state.dirty_substates == set()
 
     # Cleaning the parent state should remove the dirty substate.
-    test_state.clean()
+    test_state._clean()
     assert test_state.dirty_substates == set()
     assert child_state.dirty_vars == set()
 
@@ -534,7 +534,7 @@ def test_set_dirty_substate(test_state, child_state, child_state2, grandchild_st
     assert test_state.dirty_substates == {"child_state"}
 
     # Cleaning the middle state should keep the parent state dirty.
-    child_state.clean()
+    child_state._clean()
     assert test_state.dirty_substates == {"child_state"}
     assert child_state.dirty_substates == set()
     assert grandchild_state.dirty_vars == set()
@@ -626,7 +626,7 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
         "test_state": {"sum": 3.14, "upper": ""},
         "test_state.child_state": {"value": "HI", "count": 24},
     }
-    test_state.clean()
+    test_state._clean()
 
     # Test with the granchild state.
     assert grandchild_state.value2 == ""
@@ -992,9 +992,17 @@ def test_event_handlers_call_other_handlers():
         def set_v2(self, v: int):
             self.set_v(v)
 
+    class SubState(MainState):
+        def set_v3(self, v: int):
+            self.set_v2(v)
+
     ms = MainState()
     ms.set_v2(1)
     assert ms.v == 1
+
+    # ensure handler can be called from substate
+    ms.substates[SubState.get_name()].set_v3(2)
+    assert ms.v == 2
 
 
 def test_computed_var_cached():
@@ -1044,23 +1052,23 @@ def test_computed_var_cached_depends_on_non_cached():
     cs = ComputedState()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 0, "dep_v": 0}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
     assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
     assert cs.get_delta() == {
         cs.get_name(): {"v": 1, "no_cache_v": 1, "dep_v": 1, "comp_v": 1}
     }
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
     assert cs.get_delta() == {cs.get_name(): {"no_cache_v": 1, "dep_v": 1}}
-    cs.clean()
+    cs._clean()
     assert cs.dirty_vars == set()
 
 
@@ -1164,6 +1172,7 @@ def test_setattr_of_mutable_types(mutable_state):
     """
     array = mutable_state.array
     hashmap = mutable_state.hashmap
+    test_set = mutable_state.test_set
 
     assert isinstance(array, ReflexList)
     assert isinstance(array[1], ReflexList)
@@ -1173,10 +1182,14 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(hashmap["key"], ReflexList)
     assert isinstance(hashmap["third_key"], ReflexDict)
 
+    assert isinstance(test_set, set)
+
     mutable_state.reassign_mutables()
 
     array = mutable_state.array
     hashmap = mutable_state.hashmap
+    test_set = mutable_state.test_set
+
     assert isinstance(array, ReflexList)
     assert isinstance(array[1], ReflexList)
     assert isinstance(array[2], ReflexDict)
@@ -1184,3 +1197,45 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(hashmap, ReflexDict)
     assert isinstance(hashmap["mod_key"], ReflexList)
     assert isinstance(hashmap["mod_third_key"], ReflexDict)
+
+    assert isinstance(test_set, ReflexSet)
+
+
+def test_error_on_state_method_shadow():
+    """Test that an error is thrown when an event handler shadows a state method."""
+    with pytest.raises(NameError) as err:
+
+        class InvalidTest(rx.State):
+            def reset(self):
+                pass
+
+    assert (
+        err.value.args[0]
+        == f"The event handler name `reset` shadows a builtin State method; use a different name instead"
+    )
+
+
+def test_state_with_invalid_yield():
+    """Test that an error is thrown when a state yields an invalid value."""
+
+    class StateWithInvalidYield(rx.State):
+        """A state that yields an invalid value."""
+
+        def invalid_handler(self):
+            """Invalid handler.
+
+            Yields:
+                an invalid value.
+            """
+            yield 1
+
+    invalid_state = StateWithInvalidYield()
+    with pytest.raises(TypeError) as err:
+        invalid_state._check_valid(
+            invalid_state.event_handlers["invalid_handler"],
+            rx.event.Event(token="fake_token", name="invalid_handler"),
+        )
+    assert (
+        "must only return/yield: None, Events or other EventHandlers"
+        in err.value.args[0]
+    )

@@ -1,10 +1,11 @@
 """A range slider component."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.event import EVENT_ARG
+from reflex.utils import format
 from reflex.vars import Var
 
 
@@ -55,6 +56,26 @@ class RangeSlider(ChakraComponent):
             "on_change_start": EVENT_ARG,
         }
 
+    def get_ref(self):
+        """Get the ref of the component.
+
+        Returns:
+            The ref of the component.
+        """
+        return None
+
+    def _get_hooks(self) -> Optional[str]:
+        """Override the base get_hooks to handle array refs.
+
+        Returns:
+            The overrided hooks.
+        """
+        if self.id:
+            ref = format.format_array_ref(self.id, None)
+            if ref:
+                return f"const {ref} = Array.from({{length:2}}, () => useRef(null));"
+            return super()._get_hooks()
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a RangeSlider component.
@@ -69,13 +90,23 @@ class RangeSlider(ChakraComponent):
             The RangeSlider component.
         """
         if len(children) == 0:
-            children = [
-                RangeSliderTrack.create(
-                    RangeSliderFilledTrack.create(),
-                ),
-                RangeSliderThumb.create(index=0),
-                RangeSliderThumb.create(index=1),
-            ]
+            _id = props.get("id", None)
+            if _id:
+                children = [
+                    RangeSliderTrack.create(
+                        RangeSliderFilledTrack.create(),
+                    ),
+                    RangeSliderThumb.create(index=0, id=_id),
+                    RangeSliderThumb.create(index=1, id=_id),
+                ]
+            else:
+                children = [
+                    RangeSliderTrack.create(
+                        RangeSliderFilledTrack.create(),
+                    ),
+                    RangeSliderThumb.create(index=0),
+                    RangeSliderThumb.create(index=1),
+                ]
         return super().create(*children, **props)
 
 
@@ -98,3 +129,16 @@ class RangeSliderThumb(ChakraComponent):
 
     # The position of the thumb.
     index: Var[int]
+
+    def _get_hooks(self) -> Optional[str]:
+        # hook is None because RangeSlider is handling it.
+        return None
+
+    def get_ref(self):
+        """Get an array ref for the range slider thumb.
+
+        Returns:
+            The array ref.
+        """
+        if self.id:
+            return format.format_array_ref(self.id, self.index)

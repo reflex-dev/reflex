@@ -30,7 +30,7 @@ from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import format, types
+from reflex.utils import console, format, types
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -166,7 +166,7 @@ class Var(ABC):
         Returns:
             The stringified var.
         """
-        return self.operation(fn="JSON.stringify")
+        return self.operation(fn="JSON.stringify", type_=str)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -187,6 +187,19 @@ class Var(ABC):
             out = format.format_string(out)
         return out
 
+    def __format__(self, format_spec: str) -> str:
+        """Format the var into a Javascript equivalent to an f-string.
+
+        Args:
+            format_spec: The format specifier (Ignored for now).
+
+        Returns:
+            The formatted var.
+        """
+        if self.is_local:
+            return str(self)
+        return f"${str(self)}"
+
     def __getitem__(self, i: Any) -> Var:
         """Index into a var.
 
@@ -206,8 +219,8 @@ class Var(ABC):
         ):
             if self.type_ == Any:
                 raise TypeError(
-                    f"Could not index into var of type Any. (If you are trying to index into a state var, "
-                    f"add the correct type annotation to the var.)"
+                    "Could not index into var of type Any. (If you are trying to index into a state var, "
+                    "add the correct type annotation to the var.)"
                 )
             raise TypeError(
                 f"Var {self.name} of type {self.type_} does not support indexing."
@@ -241,6 +254,7 @@ class Var(ABC):
                     name=f"{self.name}.slice({start}, {stop})",
                     type_=self.type_,
                     state=self.state,
+                    is_local=self.is_local,
                 )
 
             # Get the type of the indexed var.
@@ -255,6 +269,7 @@ class Var(ABC):
                 name=f"{self.name}.at({i})",
                 type_=type_,
                 state=self.state,
+                is_local=self.is_local,
             )
 
         # Dictionary / dataframe indexing.
@@ -281,6 +296,7 @@ class Var(ABC):
             name=f"{self.name}[{i}]",
             type_=type_,
             state=self.state,
+            is_local=self.is_local,
         )
 
     def __getattribute__(self, name: str) -> Var:
@@ -313,6 +329,7 @@ class Var(ABC):
                         name=f"{self.name}.{name}",
                         type_=type_,
                         state=self.state,
+                        is_local=self.is_local,
                     )
             raise AttributeError(
                 f"The State var `{self.full_name}` has no attribute '{name}' or may have been annotated "
@@ -359,6 +376,7 @@ class Var(ABC):
         return BaseVar(
             name=name,
             type_=type_,
+            is_local=self.is_local,
         )
 
     def compare(self, op: str, other: Var) -> Var:
@@ -411,6 +429,7 @@ class Var(ABC):
         return BaseVar(
             name=f"{self.full_name}.length",
             type_=int,
+            is_local=self.is_local,
         )
 
     def __eq__(self, other: Var) -> Var:
@@ -631,7 +650,7 @@ class Var(ABC):
         Returns:
             A var representing the logical and.
         """
-        return self.operation("&&", other)
+        return self.operation("&&", other, type_=bool)
 
     def __rand__(self, other: Var) -> Var:
         """Perform a logical and.
@@ -642,7 +661,7 @@ class Var(ABC):
         Returns:
             A var representing the logical and.
         """
-        return self.operation("&&", other, flip=True)
+        return self.operation("&&", other, type_=bool, flip=True)
 
     def __or__(self, other: Var) -> Var:
         """Perform a logical or.
@@ -653,7 +672,7 @@ class Var(ABC):
         Returns:
             A var representing the logical or.
         """
-        return self.operation("||", other)
+        return self.operation("||", other, type_=bool)
 
     def __ror__(self, other: Var) -> Var:
         """Perform a logical or.
@@ -664,7 +683,77 @@ class Var(ABC):
         Returns:
             A var representing the logical or.
         """
-        return self.operation("||", other, flip=True)
+        return self.operation("||", other, type_=bool, flip=True)
+
+    def __contains__(self, _: Any) -> Var:
+        """Override the 'in' operator to alert the user that it is not supported.
+
+        Raises:
+            TypeError: the operation is not supported
+        """
+        raise TypeError(
+            "'in' operator not supported for Var types, use Var.contains() instead."
+        )
+
+    def contains(self, other: Any) -> Var:
+        """Check if a var contains the object `other`.
+
+        Args:
+            other: The object to check.
+
+        Raises:
+            TypeError: If the var is not a valid type: dict, list, tuple or str.
+
+        Returns:
+            A var representing the contain check.
+        """
+        if self.type_ is None or not (
+            types._issubclass(self.type_, Union[dict, list, tuple, str])
+        ):
+            raise TypeError(
+                f"Var {self.full_name} of type {self.type_} does not support contains check."
+            )
+        if isinstance(other, str):
+            other = Var.create(json.dumps(other), is_string=True)
+        elif not isinstance(other, Var):
+            other = Var.create(other)
+        if types._issubclass(self.type_, Dict):
+            return BaseVar(
+                name=f"{self.full_name}.has({other.full_name})",
+                type_=bool,
+                is_local=self.is_local,
+            )
+        else:  # str, list, tuple
+            # For strings, the left operand must be a string.
+            if types._issubclass(self.type_, str) and not types._issubclass(
+                other.type_, str
+            ):
+                raise TypeError(
+                    f"'in <string>' requires string as left operand, not {other.type_}"
+                )
+            return BaseVar(
+                name=f"{self.full_name}.includes({other.full_name})",
+                type_=bool,
+                is_local=self.is_local,
+            )
+
+    def reverse(self) -> Var:
+        """Reverse a list var.
+
+        Raises:
+            TypeError: If the var is not a list.
+
+        Returns:
+            A var with the reversed list.
+        """
+        if self.type_ is None or not types._issubclass(self.type_, list):
+            raise TypeError(f"Cannot reverse non-list var {self.full_name}.")
+
+        return BaseVar(
+            name=f"[...{self.full_name}].reverse()",
+            type_=self.type_,
+            is_local=self.is_local,
+        )
 
     def foreach(self, fn: Callable) -> Var:
         """Return a list of components. after doing a foreach on this var.
@@ -682,6 +771,7 @@ class Var(ABC):
         return BaseVar(
             name=f"{self.full_name}.map(({arg.name}, i) => {fn(arg, key='i')})",
             type_=self.type_,
+            is_local=self.is_local,
         )
 
     def to(self, type_: Type) -> Var:
@@ -811,7 +901,16 @@ class BaseVar(Var, Base):
                 state: The state within which we add the setter function.
                 value: The value to set.
             """
-            setattr(state, self.name, value)
+            if self.type_ in [int, float]:
+                try:
+                    value = self.type_(value)
+                    setattr(state, self.name, value)
+                except ValueError:
+                    console.warn(
+                        f"{self.name}: Failed conversion of {value} to '{self.type_.__name__}'. Value not set.",
+                    )
+            else:
+                setattr(state, self.name, value)
 
         setter.__qualname__ = self.get_setter_name()
 
@@ -986,6 +1085,16 @@ class ReflexList(list):
         super().append(*args, **kwargs)
         self._reassign_field()
 
+    def insert(self, *args, **kwargs):
+        """Insert.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().insert(*args, **kwargs)
+        self._reassign_field()
+
     def __setitem__(self, *args, **kwargs):
         """Set item.
 
@@ -1127,6 +1236,91 @@ class ReflexDict(dict):
             kwargs: The kwargs passed.
         """
         super().__delitem__(*args, **kwargs)
+        self._reassign_field()
+
+
+class ReflexSet(set):
+    """A custom set that reflex can detect its mutation."""
+
+    def __init__(
+        self,
+        original_set: Set,
+        reassign_field: Callable = lambda _field_name: None,
+        field_name: str = "",
+    ):
+        """Initialize ReflexSet.
+
+        Args:
+            original_set (Set): The original set
+            reassign_field (Callable):
+                The method in the parent state to reassign the field.
+                Default to be a no-op function
+            field_name (str): the name of field in the parent state
+        """
+        self._reassign_field = lambda: reassign_field(field_name)
+
+        super().__init__(original_set)
+
+    def add(self, *args, **kwargs):
+        """Add an element to set.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().add(*args, **kwargs)
+        self._reassign_field()
+
+    def remove(self, *args, **kwargs):
+        """Remove an element.
+        Raise key error if element not found.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().remove(*args, **kwargs)
+        self._reassign_field()
+
+    def discard(self, *args, **kwargs):
+        """Remove an element.
+        Does not raise key error if element not found.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().discard(*args, **kwargs)
+        self._reassign_field()
+
+    def pop(self, *args, **kwargs):
+        """Remove an element.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().pop(*args, **kwargs)
+        self._reassign_field()
+
+    def clear(self, *args, **kwargs):
+        """Remove all elements from the set.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().clear(*args, **kwargs)
+        self._reassign_field()
+
+    def update(self, *args, **kwargs):
+        """Adds elements from an iterable to the set.
+
+        Args:
+            args: The args passed.
+            kwargs: The kwargs passed.
+        """
+        super().update(*args, **kwargs)
         self._reassign_field()
 
 

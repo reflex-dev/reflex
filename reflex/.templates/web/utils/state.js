@@ -4,6 +4,8 @@ import io from "socket.io-client";
 import JSON5 from "json5";
 import env from "env.json";
 import Cookies from "universal-cookie";
+import { useEffect, useReducer, useRef, useState } from "react";
+import Router, { useRouter } from "next/router";
 
 
 // Endpoint URLs.
@@ -22,6 +24,11 @@ const cookies = new Cookies();
 
 // Dictionary holding component references.
 export const refs = {};
+
+// Flag ensures that only one event is processing on the backend concurrently.
+let event_processing = false
+// Array holding pending events to be processed.
+const event_queue = [];
 
 /**
  * Generate a UUID (Used for session tokens).
@@ -67,8 +74,9 @@ export const getToken = () => {
  * @param delta The delta to apply.
  */
 export const applyDelta = (state, delta) => {
+  const new_state = {...state}
   for (const substate in delta) {
-    let s = state;
+    let s = new_state;
     const path = substate.split(".").slice(1);
     while (path.length > 0) {
       s = s[path.shift()];
@@ -77,6 +85,7 @@ export const applyDelta = (state, delta) => {
       s[key] = delta[substate][key];
     }
   }
+  return new_state
 };
 
 
@@ -97,17 +106,16 @@ export const getAllLocalStorageItems = () => {
 
 
 /**
- * Send an event to the server.
+ * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
- * @param router The router object.
  * @param socket The socket object to send the event on.
  *
  * @returns True if the event was sent, false if it was handled locally.
  */
-export const applyEvent = async (event, router, socket) => {
+export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
-    router.push(event.payload.path);
+    Router.push(event.payload.path);
     return false;
   }
 
@@ -168,7 +176,7 @@ export const applyEvent = async (event, router, socket) => {
 
   // Send the event to the server.
   event.token = getToken();
-  event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(router);
+  event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router);
 
   if (socket) {
     socket.emit("event", JSON.stringify(event));
@@ -179,87 +187,80 @@ export const applyEvent = async (event, router, socket) => {
 };
 
 /**
- * Process an event off the event queue.
- * @param event The current event
+ * Send an event to the server via REST.
+ * @param event The current event.
  * @param state The state with the event queue.
- * @param setResult The function to set the result.
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event, state, setResult) => {
+export const applyRestEvent = async (event) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(state, setResult, event.name);
+    eventSent = await uploadFiles(event.name, event.payload.files);
   }
   return eventSent;
 };
 
 /**
+ * Queue events to be processed and trigger processing of queue.
+ * @param events Array of events to queue.
+ * @param socket The socket object to send the event on.
+ */
+export const queueEvents = async (events, socket) => {
+  event_queue.push(...events)
+  await processEvent(socket.current)
+}
+
+/**
  * Process an event off the event queue.
- * @param state The state with the event queue.
- * @param setState The function to set the state.
- * @param result The current result.
- * @param setResult The function to set the result.
- * @param router The router object.
  * @param socket The socket object to send the event on.
  */
 export const processEvent = async (
-  state,
-  setState,
-  result,
-  setResult,
-  router,
   socket
 ) => {
-  // If we are already processing an event, or there are no events to process, return.
-  if (result.processing || state.events.length == 0) {
+  // Only proceed if we're not already processing an event.
+  if (event_queue.length === 0 || event_processing) {
     return;
   }
 
   // Set processing to true to block other events from being processed.
-  setResult({ ...result, processing: true });
+  event_processing = true
 
   // Apply the next event in the queue.
-  const event = state.events.shift();
+  const event = event_queue.shift();
 
-  // Set new events to avoid reprocessing the same event.
-  setState(currentState => ({ ...currentState, events: state.events }));
-
+  let eventSent = false
   // Process events with handlers via REST and all others via websockets.
-  let eventSent = false;
   if (event.handler) {
-    eventSent = await applyRestEvent(event, state, setResult);
+    eventSent = await applyRestEvent(event);
   } else {
-    eventSent = await applyEvent(event, router, socket);
+    eventSent = await applyEvent(event, socket);
   }
-
   // If no event was sent, set processing to false.
   if (!eventSent) {
-    setResult({ ...result, final: true, processing: false });
+    event_processing = false;
+    // recursively call processEvent to drain the queue, since there is
+    // no state update to trigger the useEffect event loop.
+    await processEvent(socket)
   }
-};
+}
 
 /**
  * Connect to a websocket and set the handlers.
  * @param socket The socket object to connect.
- * @param state The state object to apply the deltas to.
- * @param setState The function to set the state.
- * @param result The current result.
- * @param setResult The function to set the result.
- * @param endpoint The endpoint to connect to.
+ * @param dispatch The function to queue state update
  * @param transports The transports to use.
+ * @param setConnectError The function to update connection error value.
+ * @param initial_events Array of events to seed the queue after connecting.
  */
 export const connect = async (
   socket,
-  state,
-  setState,
-  result,
-  setResult,
-  router,
+  dispatch,
   transports,
-  setNotConnected
+  setConnectError,
+  initial_events = [],
 ) => {
-  // Get backend URL object from the endpoint
+  // Get backend URL object from the endpoint.
   const endpoint = new URL(EVENTURL);
   // Create the socket.
   socket.current = io(EVENTURL, {
@@ -270,24 +271,22 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    processEvent(state, setState, result, setResult, router, socket.current);
-    setNotConnected(false)
+    queueEvents(initial_events, socket)
+    setConnectError(null)
   });
 
   socket.current.on('connect_error', (error) => {
-    setNotConnected(true)
+    setConnectError(error)
   });
 
-  // On each received message, apply the delta and set the result.
-  socket.current.on("event", update => {
-    update = JSON5.parse(update);
-    applyDelta(state, update.delta);
-    setResult(result => ({
-      state: state,
-      events: [...result.events, ...update.events],
-      final: update.final,
-      processing: true,
-    }));
+  // On each received message, queue the updates and events.
+  socket.current.on("event", message => {
+    const update = JSON5.parse(message)
+    dispatch(update.delta)
+    event_processing = !update.final
+    if (update.events) {
+      queueEvents(update.events, socket)
+    }
   });
 };
 
@@ -295,15 +294,11 @@ export const connect = async (
  * Upload files to the server.
  *
  * @param state The state to apply the delta to.
- * @param setResult The function to set the result.
  * @param handler The handler to use.
- * @param endpoint The endpoint to upload to.
  *
  * @returns Whether the files were uploaded.
  */
-export const uploadFiles = async (state, setResult, handler) => {
-  const files = state.files;
-
+export const uploadFiles = async (handler, files) => {
   // return if there's no file to upload
   if (files.length == 0) {
     return false;
@@ -350,13 +345,58 @@ export const uploadFiles = async (state, setResult, handler) => {
  * Create an event object.
  * @param name The name of the event.
  * @param payload The payload of the event.
- * @param use_websocket Whether the event uses websocket.
  * @param handler The client handler to process event.
  * @returns The event object.
  */
 export const E = (name, payload = {}, handler = null) => {
   return { name, payload, handler };
 };
+
+/**
+ * Establish websocket event loop for a NextJS page.
+ * @param initial_state The initial page state.
+ * @param initial_events Array of events to seed the queue after connecting.
+ *
+ * @returns [state, Event, connectError] -
+ *   state is a reactive dict,
+ *   Event is used to queue an event, and
+ *   connectError is a reactive js error from the websocket connection (or null if connected).
+ */
+export const useEventLoop = (
+  initial_state = {},
+  initial_events = [],
+) => {
+  const socket = useRef(null)
+  const router = useRouter()
+  const [state, dispatch] = useReducer(applyDelta, initial_state)
+  const [connectError, setConnectError] = useState(null)
+  
+  // Function to add new events to the event queue.
+  const Event = (events, _e) => {
+      preventDefault(_e);
+      queueEvents(events, socket)
+  }
+
+  // Main event loop.
+  useEffect(() => {
+    // Skip if the router is not ready.
+    if (!router.isReady) {
+      return;
+    }
+
+    // Initialize the websocket connection.
+    if (!socket.current) {
+      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, initial_events)
+    }
+    (async () => {
+      // Process all outstanding events.
+      while (event_queue.length > 0 && !event_processing) {
+        await processEvent(socket.current)
+      }
+    })()
+  })
+  return [state, Event, connectError]
+}
 
 /***
  * Check if a value is truthy in python.
@@ -383,12 +423,26 @@ export const preventDefault = (event) => {
  * @returns The value.
  */
 export const getRefValue = (ref) => {
-  if (!ref || !ref.current){
+  if (!ref || !ref.current) {
     return;
   }
   if (ref.current.type == "checkbox") {
     return ref.current.checked;
   } else {
-    return ref.current.value;
+    //querySelector(":checked") is needed to get value from radio_group
+    return ref.current.value || (ref.current.querySelector(':checked') && ref.current.querySelector(':checked').value);
   }
+}
+
+/**
+ * Get the values from a ref array.
+ * @param refs The refs to get the values from.
+ * @returns The values array.
+ */
+export const getRefValues = (refs) => {
+  if (!refs) {
+    return;
+  }
+  // getAttribute is used by RangeSlider because it doesn't assign value
+  return refs.map((ref) => ref.current.value || ref.current.getAttribute("aria-valuenow"));
 }

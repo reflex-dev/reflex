@@ -7,9 +7,16 @@ import pytest
 import typer
 from packaging import version
 
-from reflex import Env, constants
+from reflex import constants
 from reflex.base import Base
-from reflex.utils import build, format, imports, prerequisites, types
+from reflex.utils import (
+    build,
+    format,
+    imports,
+    prerequisites,
+    types,
+)
+from reflex.utils import exec as utils_exec
 from reflex.vars import Var
 
 
@@ -255,36 +262,38 @@ def test_format_route(route: str, expected: bool):
     assert format.format_route(route) == expected
 
 
-@pytest.mark.parametrize(
-    "bun_version,is_valid, prompt_input",
-    [
-        (V055, False, "yes"),
-        (V059, True, None),
-        (VMAXPLUS1, False, "yes"),
-    ],
-)
-def test_initialize_bun(mocker, bun_version, is_valid, prompt_input):
-    """Test that the bun version on host system is validated properly. Also test that
-    the required bun version is installed should the user opt for it.
+def test_validate_invalid_bun_path(mocker):
+    """Test that an error is thrown when a custom specified bun path is not valid
+    or does not exist.
 
     Args:
         mocker: Pytest mocker object.
-        bun_version: The bun version.
-        is_valid: Whether bun version is valid for running reflex.
-        prompt_input: The input from user on whether to install bun.
     """
-    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=bun_version)
-    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
+    mock = mocker.Mock()
+    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
+    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
 
-    bun_install = mocker.patch("reflex.utils.prerequisites.install_bun")
-    remove_existing_bun_installation = mocker.patch(
-        "reflex.utils.prerequisites.remove_existing_bun_installation"
+    with pytest.raises(typer.Exit):
+        prerequisites.validate_bun()
+
+
+def test_validate_bun_path_incompatible_version(mocker):
+    """Test that an error is thrown when the bun version does not meet minimum requirements.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+    mock = mocker.Mock()
+    mocker.patch.object(mock, "bun_path", return_value="/mock/path")
+    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mocker.patch(
+        "reflex.utils.prerequisites.get_bun_version",
+        return_value=version.parse("0.6.5"),
     )
 
-    prerequisites.initialize_bun()
-    if not is_valid:
-        remove_existing_bun_installation.assert_called_once()
-    bun_install.assert_called_once()
+    with pytest.raises(typer.Exit):
+        prerequisites.validate_bun()
 
 
 def test_remove_existing_bun_installation(mocker):
@@ -314,7 +323,7 @@ def test_setup_frontend(tmp_path, mocker):
     (assets / "favicon.ico").touch()
 
     mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
-    mocker.patch("reflex.utils.build.set_environment_variables")
+    mocker.patch("reflex.utils.build.set_env_json")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
     assert web_public_folder.exists()
@@ -412,8 +421,6 @@ def test_create_config_e2e(tmp_working_dir):
     exec((tmp_working_dir / constants.CONFIG_FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
-    assert config.db_url == constants.DB_URL
-    assert config.env == Env.DEV
 
 
 @pytest.mark.parametrize(
@@ -481,7 +488,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     if gitignore_exists:
         gitignore_file.touch()
         gitignore_file.write_text(
-            """reflex.db
+            """*.db
         __pycache__/
         """
         )
@@ -511,39 +518,63 @@ def test_app_default_name(tmp_path, mocker):
         prerequisites.get_default_app_name()
 
 
-def test_node_install_windows(mocker):
+def test_node_install_windows(tmp_path, mocker):
     """Require user to install node manually for windows if node is not installed.
 
     Args:
+        tmp_path: Test working dir.
         mocker: Pytest mocker object.
     """
-    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", True)
-    mocker.patch("reflex.utils.prerequisites.check_node_version", return_value=False)
+    fnm_root_path = tmp_path / "reflex" / "fnm"
+    fnm_exe = fnm_root_path / "fnm.exe"
 
-    with pytest.raises(typer.Exit):
-        prerequisites.initialize_node()
-
-
-def test_node_install_unix(tmp_path, mocker):
-    nvm_root_path = tmp_path / ".reflex" / ".nvm"
-
-    mocker.patch("reflex.utils.prerequisites.constants.NVM_DIR", nvm_root_path)
-    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
+    mocker.patch("reflex.utils.prerequisites.constants.FNM_DIR", fnm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.FNM_EXE", fnm_exe)
+    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
+    mocker.patch("reflex.utils.processes.new_process")
+    mocker.patch("reflex.utils.processes.stream_logs")
 
     class Resp(Base):
         status_code = 200
         text = "test"
 
-    mocker.patch("httpx.get", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_run")
-    mocker.patch("reflex.utils.processes.new_process")
+    mocker.patch("httpx.stream", return_value=Resp())
+    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
+    mocker.patch("reflex.utils.prerequisites.zipfile.ZipFile")
+    mocker.patch("reflex.utils.prerequisites.path_ops.rm")
+
+    prerequisites.install_node()
+
+    assert fnm_root_path.exists()
+    download.assert_called_once()
+
+
+def test_node_install_unix(tmp_path, mocker):
+    fnm_root_path = tmp_path / "reflex" / "fnm"
+    fnm_exe = fnm_root_path / "fnm"
+
+    mocker.patch("reflex.utils.prerequisites.constants.FNM_DIR", fnm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.FNM_EXE", fnm_exe)
+    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
+
+    class Resp(Base):
+        status_code = 200
+        text = "test"
+
+    mocker.patch("httpx.stream", return_value=Resp())
+    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
+    process = mocker.patch("reflex.utils.processes.new_process")
+    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
     mocker.patch("reflex.utils.processes.stream_logs")
 
     prerequisites.install_node()
 
-    assert nvm_root_path.exists()
-    download.assert_called()
-    download.call_count = 2
+    assert fnm_root_path.exists()
+    download.assert_called_once()
+    process.assert_called_with(
+        [fnm_exe, "install", constants.NODE_VERSION, "--fnm-dir", fnm_root_path]
+    )
+    chmod.assert_called_once()
 
 
 def test_bun_install_without_unzip(mocker):
@@ -554,13 +585,12 @@ def test_bun_install_without_unzip(mocker):
     """
     mocker.patch("reflex.utils.path_ops.which", return_value=None)
     mocker.patch("os.path.exists", return_value=False)
-    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", False)
+    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
 
     with pytest.raises(FileNotFoundError):
         prerequisites.install_bun()
 
 
-# from
 @pytest.mark.parametrize("is_windows", [True, False])
 def test_create_reflex_dir(mocker, is_windows):
     """Test that a reflex directory is created on initializing frontend
@@ -570,16 +600,28 @@ def test_create_reflex_dir(mocker, is_windows):
         mocker: Pytest mocker object.
         is_windows: Whether platform is windows.
     """
-    mocker.patch("reflex.utils.prerequisites.IS_WINDOWS", is_windows)
+    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
     mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
     mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
+    mocker.patch("reflex.utils.processes.run_concurrently")
+    mocker.patch("reflex.utils.prerequisites.validate_bun")
     create_cmd = mocker.patch(
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )
 
     prerequisites.initialize_frontend_dependencies()
 
-    if is_windows:
-        assert not create_cmd.called
-    else:
-        assert create_cmd.called
+    assert create_cmd.called
+
+
+def test_output_system_info(mocker):
+    """Make sure reflex does not crash dumping system info.
+
+    Args:
+        mocker: Pytest mocker object.
+
+    This test makes no assertions about the output, other than it executes
+    without crashing.
+    """
+    mocker.patch("reflex.utils.console.LOG_LEVEL", constants.LogLevel.DEBUG)
+    utils_exec.output_system_info()

@@ -3,12 +3,11 @@ import contextlib
 import os
 import platform
 from pathlib import Path
-from typing import Dict, Generator, List, Union
+from typing import Dict, Generator, List, Set, Union
 
 import pytest
 
 import reflex as rx
-from reflex import constants
 from reflex.app import App
 from reflex.event import EventSpec
 
@@ -23,7 +22,7 @@ def app() -> App:
     return App()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def windows_platform() -> Generator:
     """Check if system is windows.
 
@@ -392,7 +391,7 @@ def base_config_values() -> Dict:
     Returns:
         Dictionary of base config values
     """
-    return {"app_name": "app", "db_url": constants.DB_URL, "env": rx.Env.DEV}
+    return {"app_name": "app"}
 
 
 @pytest.fixture
@@ -561,6 +560,7 @@ def mutable_state():
             "another_key": "another_value",
             "third_key": {"key": "value"},
         }
+        test_set: Set[Union[str, int]] = {1, 2, 3, 4, "five"}
 
         def reassign_mutables(self):
             self.array = ["modified_value", [1, 2, 3], {"mod_key": "mod_value"}]
@@ -569,5 +569,6 @@ def mutable_state():
                 "mod_another_key": "another_value",
                 "mod_third_key": {"key": "value"},
             }
+            self.test_set = {1, 2, 3, 4, "five"}
 
     return MutableTestState()

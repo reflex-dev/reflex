@@ -73,20 +73,13 @@ class Tag(Base):
                 if not prop.is_local or prop.is_string:
                     return str(prop)
                 if types._issubclass(prop.type_, str):
-                    return format.json_dumps(prop.full_name)
+                    return format.format_string(prop.full_name)
                 prop = prop.full_name
 
             # Handle event props.
             elif isinstance(prop, EventChain):
-                if prop.full_control:
-                    # Full control component events.
-                    event = format.format_full_control_event(prop)
-                else:
-                    # All other events.
-                    chain = ",".join(
-                        [format.format_event(event) for event in prop.events]
-                    )
-                    event = f"Event([{chain}], {EVENT_ARG})"
+                chain = ",".join([format.format_event(event) for event in prop.events])
+                event = f"Event([{chain}], {EVENT_ARG})"
                 prop = f"{EVENT_ARG} => {event}"
 
             # Handle other types.

@@ -1,6 +1,5 @@
 """A link component."""
 
-from typing import Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -33,12 +32,11 @@ class Link(ChakraComponent):
         return {**super()._get_imports(), **NextLink.create()._get_imports()}
 
     @classmethod
-    def create(cls, *children, href: Optional[Var] = None, **props) -> Component:
+    def create(cls, *children, **props) -> Component:
         """Create a Link component.
 
         Args:
             *children: The children of the component.
-            href: The href attribute of the link.
             **props: The props of the component.
 
         Raises:
@@ -47,11 +45,10 @@ class Link(ChakraComponent):
         Returns:
             Component: The link component
         """
-        if href and not len(children):
-            raise ValueError("Link without a child will not display")
-        elif href is None and len(children):
+        if props.get("href"):
+            if not len(children):
+                raise ValueError("Link without a child will not display")
+        else:
             # Don't use a NextLink if there is no href.
             props["as_"] = ""
-        if href:
-            props["href"] = href
         return super().create(*children, **props)

@@ -5,10 +5,11 @@ from __future__ import annotations
 import glob
 import json
 import os
-import platform
 import re
+import stat
 import sys
 import tempfile
+import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
@@ -24,8 +25,6 @@ from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import console, path_ops, processes
 
-IS_WINDOWS = platform.system() == "Windows"
-
 
 def check_node_version() -> bool:
     """Check the version of Node.js.
@@ -33,20 +32,29 @@ def check_node_version() -> bool:
     Returns:
         Whether the version of Node.js is valid.
     """
-    try:
-        # Run the node -v command and capture the output.
-        result = processes.new_process([constants.NODE_PATH, "-v"], run=True)
-    except FileNotFoundError:
-        return False
+    current_version = get_node_version()
+    if current_version:
+        # Compare the version numbers
+        return (
+            current_version >= version.parse(constants.NODE_VERSION_MIN)
+            if constants.IS_WINDOWS
+            else current_version == version.parse(constants.NODE_VERSION)
+        )
+    return False
 
-    # The output will be in the form "vX.Y.Z", but version.parse() can handle it
-    current_version = version.parse(result.stdout)  # type: ignore
-    # Compare the version numbers
-    return (
-        current_version >= version.parse(constants.NODE_VERSION_MIN)
-        if IS_WINDOWS
-        else current_version == version.parse(constants.NODE_VERSION)
-    )
+
+def get_node_version() -> Optional[version.Version]:
+    """Get the version of node.
+
+    Returns:
+        The version of node.
+    """
+    try:
+        result = processes.new_process([path_ops.get_node_path(), "-v"], run=True)
+        # The output will be in the form "vX.Y.Z", but version.parse() can handle it
+        return version.parse(result.stdout)  # type: ignore
+    except (FileNotFoundError, TypeError):
+        return None
 
 
 def get_bun_version() -> Optional[version.Version]:
@@ -57,56 +65,35 @@ def get_bun_version() -> Optional[version.Version]:
     """
     try:
         # Run the bun -v command and capture the output
-        result = processes.new_process([constants.BUN_PATH, "-v"], run=True)
+        result = processes.new_process([get_config().bun_path, "-v"], run=True)
         return version.parse(result.stdout)  # type: ignore
     except FileNotFoundError:
         return None
 
 
-def get_windows_package_manager() -> str:
-    """Get the package manager for windows.
-
-    Returns:
-        The path to the package manager for windows.
-
-    Raises:
-        FileNotFoundError: If bun or npm is not installed.
-    """
-    npm_path = path_ops.which("npm")
-    if npm_path is None:
-        raise FileNotFoundError("Reflex requires npm to be installed on Windows.")
-    return npm_path
-
-
-def get_install_package_manager() -> str:
+def get_install_package_manager() -> Optional[str]:
     """Get the package manager executable for installation.
-      currently on unix systems, bun is used for installation only.
+      Currently on unix systems, bun is used for installation only.
 
     Returns:
         The path to the package manager.
     """
-    get_config()
-
     # On Windows, we use npm instead of bun.
-    if IS_WINDOWS:
-        return get_windows_package_manager()
+    if constants.IS_WINDOWS:
+        return path_ops.get_npm_path()
 
     # On other platforms, we use bun.
-    return constants.BUN_PATH
+    return get_config().bun_path
 
 
-def get_package_manager() -> str:
+def get_package_manager() -> Optional[str]:
     """Get the package manager executable for running app.
-      currently on unix systems, npm is used for running the app only.
+      Currently on unix systems, npm is used for running the app only.
 
     Returns:
         The path to the package manager.
     """
-    get_config()
-
-    if IS_WINDOWS:
-        return get_windows_package_manager()
-    return constants.NPM_PATH
+    return path_ops.get_npm_path()
 
 
 def get_app() -> ModuleType:
@@ -245,34 +232,11 @@ def initialize_web_directory():
         json.dump(reflex_json, f, ensure_ascii=False)
 
 
-def initialize_bun():
-    """Check that bun requirements are met, and install if not."""
-    if IS_WINDOWS:
-        # Bun is not supported on Windows.
-        console.debug("Skipping bun installation on Windows.")
-        return
-
-    # Check the bun version.
-    bun_version = get_bun_version()
-    if bun_version != version.parse(constants.BUN_VERSION):
-        console.debug(
-            f"Current bun version ({bun_version}) does not match ({constants.BUN_VERSION})."
-        )
-        remove_existing_bun_installation()
-        install_bun()
-
-
 def remove_existing_bun_installation():
     """Remove existing bun installation."""
     console.debug("Removing existing bun installation.")
-    if os.path.exists(constants.BUN_PATH):
+    if os.path.exists(get_config().bun_path):
         path_ops.rm(constants.BUN_ROOT_PATH)
-
-
-def initialize_node():
-    """Validate nodejs have install or not."""
-    if not check_node_version():
-        install_node()
 
 
 def download_and_run(url: str, *args, show_status: bool = False, **env):
@@ -302,42 +266,76 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     show(f"Installing {url}", process)
 
 
-def install_node():
-    """Install nvm and nodejs for use by Reflex.
-       Independent of any existing system installations.
+def download_and_extract_fnm_zip():
+    """Download and run a script.
 
     Raises:
-        Exit: if installation failed
+        Exit: If an error occurs while downloading or extracting the FNM zip.
     """
-    if IS_WINDOWS:
-        # See if existing node is good enough.
-        # On Windows, this must be installed manually, outside of Reflex.
-        if not check_node_version():
-            # We don't currently support auto install of node on Windows
-            # because NVM is not supported there
-            console.error(
-                f"Node.js version {constants.NODE_VERSION} or higher is required to run Reflex."
-            )
-            raise typer.Exit(1)
-        return
-    else:  # All other platforms (Linux, MacOS)
-        # TODO we can skip installation if check_node_version() checks out
-        # Create the nvm directory and install.
-        path_ops.mkdir(constants.NVM_DIR)
-        env = {**os.environ, "NVM_DIR": constants.NVM_DIR}
-        download_and_run(constants.NVM_INSTALL_URL, show_status=True, **env)
+    # Download the zip file
+    url = constants.FNM_INSTALL_URL
+    console.debug(f"Downloading {url}")
+    fnm_zip_file = os.path.join(constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip")
+    # Function to download and extract the FNM zip release.
+    try:
+        # Download the FNM zip release.
+        # TODO: show progress to improve UX
+        with httpx.stream("GET", url, follow_redirects=True) as response:
+            response.raise_for_status()
+            with open(fnm_zip_file, "wb") as output_file:
+                for chunk in response.iter_bytes():
+                    output_file.write(chunk)
 
-        # Install node.
-        # We use bash -c as we need to source nvm.sh to use nvm.
+        # Extract the downloaded zip file.
+        with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
+            zip_ref.extractall(constants.FNM_DIR)
+
+        console.debug("FNM package downloaded and extracted successfully.")
+    except Exception as e:
+        console.error(f"An error occurred while downloading fnm package: {e}")
+        raise typer.Exit(1) from e
+    finally:
+        # Clean up the downloaded zip file.
+        path_ops.rm(fnm_zip_file)
+
+
+def install_node():
+    """Install fnm and nodejs for use by Reflex.
+    Independent of any existing system installations.
+    """
+    if not constants.FNM_FILENAME:
+        # fnm only support Linux, macOS and Windows distros.
+        console.debug("")
+        return
+
+    path_ops.mkdir(constants.FNM_DIR)
+    if not os.path.exists(constants.FNM_EXE):
+        download_and_extract_fnm_zip()
+
+    if constants.IS_WINDOWS:
+        # Install node
         process = processes.new_process(
             [
-                "bash",
-                "-c",
-                f". {constants.NVM_DIR}/nvm.sh && nvm install {constants.NODE_VERSION}",
+                "powershell",
+                "-Command",
+                f'& "{constants.FNM_EXE}" install {constants.NODE_VERSION} --fnm-dir "{constants.FNM_DIR}"',
             ],
-            env=env,
         )
-        processes.show_status("Installing node", process)
+    else:  # All other platforms (Linux, MacOS).
+        # TODO we can skip installation if check_node_version() checks out
+        # Add execute permissions to fnm executable.
+        os.chmod(constants.FNM_EXE, stat.S_IXUSR)
+        # Install node.
+        process = processes.new_process(
+            [
+                constants.FNM_EXE,
+                "install",
+                constants.NODE_VERSION,
+                "--fnm-dir",
+                constants.FNM_DIR,
+            ]
+        )
+    processes.show_status("Installing node", process)
 
 
 def install_bun():
@@ -347,12 +345,12 @@ def install_bun():
         FileNotFoundError: If required packages are not found.
     """
     # Bun is not supported on Windows.
-    if IS_WINDOWS:
+    if constants.IS_WINDOWS:
         console.debug("Skipping bun installation on Windows.")
         return
 
     # Skip if bun is already installed.
-    if os.path.exists(constants.BUN_PATH):
+    if os.path.exists(get_config().bun_path):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
@@ -375,6 +373,7 @@ def install_frontend_packages():
     process = processes.new_process(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
+        shell=constants.IS_WINDOWS,
     )
     processes.show_status("Installing base frontend packages", process)
 
@@ -384,6 +383,7 @@ def install_frontend_packages():
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
+            shell=constants.IS_WINDOWS,
         )
         processes.show_status("Installing custom frontend packages", process)
 
@@ -398,7 +398,7 @@ def check_initialized(frontend: bool = True):
         Exit: If the app is not initialized.
     """
     has_config = os.path.exists(constants.CONFIG_FILE)
-    has_reflex_dir = not frontend or IS_WINDOWS or os.path.exists(constants.REFLEX_DIR)
+    has_reflex_dir = not frontend or os.path.exists(constants.REFLEX_DIR)
     has_web_dir = not frontend or os.path.exists(constants.WEB_DIR)
 
     # Check if the app is initialized.
@@ -416,9 +416,9 @@ def check_initialized(frontend: bool = True):
         raise typer.Exit(1)
 
     # Print a warning for Windows users.
-    if IS_WINDOWS:
+    if constants.IS_WINDOWS:
         console.warn(
-            "We strongly advise using Windows Subsystem for Linux (WSL) for optimal performance with reflex."
+            """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
 
 
@@ -435,34 +435,76 @@ def is_latest_template() -> bool:
     return app_version == constants.VERSION
 
 
+def validate_bun():
+    """Validate bun if a custom bun path is specified to ensure the bun version meets requirements.
+
+    Raises:
+        Exit: If custom specified bun does not exist or does not meet requirements.
+    """
+    # if a custom bun path is provided, make sure its valid
+    # This is specific to non-FHS OS
+    bun_path = get_config().bun_path
+    if bun_path != constants.DEFAULT_BUN_PATH:
+        bun_version = get_bun_version()
+        if not bun_version:
+            console.error(
+                "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
+            )
+            raise typer.Exit(1)
+        elif bun_version < version.parse(constants.MIN_BUN_VERSION):
+            console.error(
+                f"Reflex requires bun version {constants.BUN_VERSION} or higher to run, but the detected version is "
+                f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
+                f"that satisfies the minimum version requirement."
+            )
+
+            raise typer.Exit(1)
+
+
+def validate_frontend_dependencies(init=True):
+    """Validate frontend dependencies to ensure they meet requirements.
+
+    Args:
+        init: whether running `reflex init`
+
+    Raises:
+        Exit: If the package manager is invalid.
+    """
+    if not init:
+        # we only need to validate the package manager when running app.
+        # `reflex init` will install the deps anyway(if applied).
+        package_manager = get_package_manager()
+        if not package_manager:
+            console.error(
+                "Could not find NPM package manager. Make sure you have node installed."
+            )
+            raise typer.Exit(1)
+
+        if not check_node_version():
+            node_version = get_node_version()
+            console.error(
+                f"Reflex requires node version {constants.NODE_VERSION_MIN} or higher to run, but the detected version is {node_version}",
+            )
+            raise typer.Exit(1)
+
+    if constants.IS_WINDOWS:
+        return
+
+    if init:
+        # we only need bun for package install on `reflex init`.
+        validate_bun()
+
+
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
-    if not IS_WINDOWS:
-        path_ops.mkdir(constants.REFLEX_DIR)
-
+    path_ops.mkdir(constants.REFLEX_DIR)
+    # validate dependencies before install
+    validate_frontend_dependencies()
     # Install the frontend dependencies.
     processes.run_concurrently(install_node, install_bun)
-
     # Set up the web directory.
     initialize_web_directory()
-
-
-def check_admin_settings():
-    """Check if admin settings are set and valid for logging in cli app."""
-    admin_dash = get_config().admin_dash
-    if admin_dash:
-        if not admin_dash.models:
-            console.log(
-                f"[yellow][Admin Dashboard][/yellow] :megaphone: Admin dashboard enabled, but no models defined in [bold magenta]rxconfig.py[/bold magenta]."
-            )
-        else:
-            console.log(
-                f"[yellow][Admin Dashboard][/yellow] Admin enabled, building admin dashboard."
-            )
-            console.log(
-                "Admin dashboard running at: [bold green]http://localhost:8000/admin[/bold green]"
-            )
 
 
 def check_db_initialized() -> bool:

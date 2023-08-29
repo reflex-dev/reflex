@@ -40,7 +40,7 @@ class HydrateMiddleware(Middleware):
         setattr(state, constants.IS_HYDRATED, False)
         delta = format.format_state({state.get_name(): state.dict()})
         # since a full dict was captured, clean any dirtiness
-        state.clean()
+        state._clean()
 
         # Get the route for on_load events.
         route = event.router_data.get(constants.RouteVar.PATH, "")

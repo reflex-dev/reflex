@@ -22,12 +22,18 @@ class Form(ChakraComponent):
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         # Send all the input refs to the handler.
-        return {
-            "on_submit": {
-                ref[4:]: Var.create(f"getRefValue({ref})", is_local=False)
-                for ref in self.get_refs()
-            }
-        }
+        form_refs = {}
+        for ref in self.get_refs():
+            # when ref start with refs_ it's an array of refs, so we need different method
+            # to collect data
+            if ref.startswith("refs_"):
+                form_refs[ref[5:-3]] = Var.create(
+                    f"getRefValues({ref[:-3]})", is_local=False
+                )
+            else:
+                form_refs[ref[4:]] = Var.create(f"getRefValue({ref})", is_local=False)
+
+        return {"on_submit": form_refs}
 
 
 class FormControl(ChakraComponent):

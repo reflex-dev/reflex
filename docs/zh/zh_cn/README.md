@@ -5,7 +5,7 @@
 
 **✨ 使用 Python 创建高效且可自订的网页应用程序，几秒钟内即可部署。**
 
-📑 [Docs](https://pynecone.io/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://pynecone.io/docs/library) &nbsp; 🖼️ [Gallery](https://pynecone.io/docs/gallery) &nbsp; 🛸 [Deployment](https://pynecone.io/docs/hosting/deploy)
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)
 
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/build.yml/badge.svg)
@@ -155,8 +155,8 @@ def index():
 我们用不同的组件像是 `center`, `vstack`, `input`, 和 `button` 来创建前端， 组件之间可以相互嵌入，来创建复杂的布局。
 并且你可以使用关键字参数来使用 CSS 的全部功能。
 
-Reflex 拥有 [60+ built-in components](https://pynecone.io/docs/library) 来帮助你开始创建应用程序。
-我们正在积极添加组件， 但是你也可以简单的自己创建一些组件 [create your own components](https://pynecone.io/docs/advanced-guide/wrapping-react)。
+Reflex 拥有 [60+ built-in components](https://reflex.dev/docs/library) 来帮助你开始创建应用程序。
+我们正在积极添加组件， 但是你也可以简单的自己创建一些组件 [create your own components](https://reflex.dev/docs/advanced-guide/wrapping-react)。
 
 ### **状态**
 

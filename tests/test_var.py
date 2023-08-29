@@ -1,3 +1,4 @@
+import json
 import typing
 from typing import Dict, List, Set, Tuple
 
@@ -13,6 +14,7 @@ from reflex.vars import (
     ImportVar,
     ReflexDict,
     ReflexList,
+    ReflexSet,
     Var,
     get_local_storage,
 )
@@ -238,7 +240,11 @@ def test_create_type_error():
 
 
 def v(value) -> Var:
-    val = Var.create(value)
+    val = (
+        Var.create(json.dumps(value), is_string=True, is_local=False)
+        if isinstance(value, str)
+        else Var.create(value, is_local=False)
+    )
     assert val is not None
     return val
 
@@ -271,6 +277,75 @@ def test_basic_operations(TestObj):
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
+
+    # Tests for reverse operation
+    assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
+    assert str(v(["1", "2", "3"]).reverse()) == '{[...["1", "2", "3"]].reverse()}'
+    assert (
+        str(BaseVar(name="foo", state="state", type_=list).reverse())
+        == "{[...state.foo].reverse()}"
+    )
+    assert str(BaseVar(name="foo", type_=list).reverse()) == "{[...foo].reverse()}"
+
+
+@pytest.mark.parametrize(
+    "var, expected",
+    [
+        (v([1, 2, 3]), "[1, 2, 3]"),
+        (v(["1", "2", "3"]), '["1", "2", "3"]'),
+        (BaseVar(name="foo", state="state", type_=list), "state.foo"),
+        (BaseVar(name="foo", type_=list), "foo"),
+        (v((1, 2, 3)), "[1, 2, 3]"),
+        (v(("1", "2", "3")), '["1", "2", "3"]'),
+        (BaseVar(name="foo", state="state", type_=tuple), "state.foo"),
+        (BaseVar(name="foo", type_=tuple), "foo"),
+    ],
+)
+def test_list_tuple_contains(var, expected):
+    assert str(var.contains(1)) == f"{{{expected}.includes(1)}}"
+    assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
+    assert str(var.contains(v(1))) == f"{{{expected}.includes(1)}}"
+    assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
+    other_state_var = BaseVar(name="other", state="state", type_=str)
+    other_var = BaseVar(name="other", type_=str)
+    assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
+    assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
+
+
+@pytest.mark.parametrize(
+    "var, expected",
+    [
+        (v("123"), json.dumps("123")),
+        (BaseVar(name="foo", state="state", type_=str), "state.foo"),
+        (BaseVar(name="foo", type_=str), "foo"),
+    ],
+)
+def test_str_contains(var, expected):
+    assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
+    assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
+    other_state_var = BaseVar(name="other", state="state", type_=str)
+    other_var = BaseVar(name="other", type_=str)
+    assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
+    assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
+
+
+@pytest.mark.parametrize(
+    "var, expected",
+    [
+        (v({"a": 1, "b": 2}), '{"a": 1, "b": 2}'),
+        (BaseVar(name="foo", state="state", type_=dict), "state.foo"),
+        (BaseVar(name="foo", type_=dict), "foo"),
+    ],
+)
+def test_dict_contains(var, expected):
+    assert str(var.contains(1)) == f"{{{expected}.has(1)}}"
+    assert str(var.contains("1")) == f'{{{expected}.has("1")}}'
+    assert str(var.contains(v(1))) == f"{{{expected}.has(1)}}"
+    assert str(var.contains(v("1"))) == f'{{{expected}.has("1")}}'
+    other_state_var = BaseVar(name="other", state="state", type_=str)
+    other_var = BaseVar(name="other", type_=str)
+    assert str(var.contains(other_state_var)) == f"{{{expected}.has(state.other)}}"
+    assert str(var.contains(other_var)) == f"{{{expected}.has(other)}}"
 
 
 @pytest.mark.parametrize(
@@ -532,6 +607,16 @@ def test_pickleable_rx_dict():
     assert cloudpickle.loads(pickled_dict) == rx_dict
 
 
+def test_pickleable_rx_set():
+    """Test that ReflexSet is pickleable."""
+    rx_set = ReflexSet(
+        original_set={1, 2, 3}, reassign_field=lambda x: x, field_name="random"
+    )
+
+    pickled_set = cloudpickle.dumps(rx_set)
+    assert cloudpickle.loads(pickled_set) == rx_set
+
+
 @pytest.mark.parametrize(
     "import_var,expected",
     zip(
@@ -602,4 +687,100 @@ def test_get_local_storage_raise_error(key):
     assert (
         err.value.args[0]
         == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
+    )
+
+
+@pytest.mark.parametrize(
+    "out, expected",
+    [
+        (f"{BaseVar(name='var', type_=str)}", "${var}"),
+        (
+            f"testing f-string with {BaseVar(name='myvar', state='state', type_=int)}",
+            "testing f-string with ${state.myvar}",
+        ),
+        (
+            f"testing local f-string {BaseVar(name='x', is_local=True, type_=str)}",
+            "testing local f-string x",
+        ),
+    ],
+)
+def test_fstrings(out, expected):
+    assert out == expected
+
+
+@pytest.mark.parametrize(
+    "var",
+    [
+        BaseVar(name="var", type_=int),
+        BaseVar(name="var", type_=float),
+        BaseVar(name="var", type_=str),
+        BaseVar(name="var", type_=bool),
+        BaseVar(name="var", type_=dict),
+        BaseVar(name="var", type_=tuple),
+        BaseVar(name="var", type_=set),
+        BaseVar(name="var", type_=None),
+    ],
+)
+def test_unsupported_types_for_reverse(var):
+    """Test that unsupported types for reverse throw a type error.
+
+    Args:
+        var: The base var.
+    """
+    with pytest.raises(TypeError) as err:
+        var.reverse()
+    assert err.value.args[0] == f"Cannot reverse non-list var var."
+
+
+@pytest.mark.parametrize(
+    "var",
+    [
+        BaseVar(name="var", type_=int),
+        BaseVar(name="var", type_=float),
+        BaseVar(name="var", type_=bool),
+        BaseVar(name="var", type_=set),
+        BaseVar(name="var", type_=None),
+    ],
+)
+def test_unsupported_types_for_contains(var):
+    """Test that unsupported types for contains throw a type error.
+
+    Args:
+        var: The base var.
+    """
+    with pytest.raises(TypeError) as err:
+        assert var.contains(1)
+    assert (
+        err.value.args[0]
+        == f"Var var of type {var.type_} does not support contains check."
+    )
+
+
+@pytest.mark.parametrize(
+    "other",
+    [
+        BaseVar(name="other", type_=int),
+        BaseVar(name="other", type_=float),
+        BaseVar(name="other", type_=bool),
+        BaseVar(name="other", type_=list),
+        BaseVar(name="other", type_=dict),
+        BaseVar(name="other", type_=tuple),
+        BaseVar(name="other", type_=set),
+    ],
+)
+def test_unsupported_types_for_string_contains(other):
+    with pytest.raises(TypeError) as err:
+        assert BaseVar(name="var", type_=str).contains(other)
+    assert (
+        err.value.args[0]
+        == f"'in <string>' requires string as left operand, not {other.type_}"
+    )
+
+
+def test_unsupported_default_contains():
+    with pytest.raises(TypeError) as err:
+        assert 1 in BaseVar(name="var", type_=str)
+    assert (
+        err.value.args[0]
+        == "'in' operator not supported for Var types, use Var.contains() instead."
     )

@@ -83,7 +83,7 @@ def redundant_test_state() -> Type[State]:
     return RedundantTestState
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def test_model() -> Type[Model]:
     """A default model.
 
@@ -91,13 +91,13 @@ def test_model() -> Type[Model]:
         A default model.
     """
 
-    class TestModel(Model):
+    class TestModel(Model, table=True):  # type: ignore
         pass
 
     return TestModel
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def test_model_auth() -> Type[Model]:
     """A default model.
 
@@ -105,7 +105,7 @@ def test_model_auth() -> Type[Model]:
         A default model.
     """
 
-    class TestModelAuth(Model):
+    class TestModelAuth(Model, table=True):  # type: ignore
         """A test model with auth."""
 
         pass
