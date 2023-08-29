@@ -94,10 +94,7 @@ class Component(Base, ABC):
             # Set default values for any props.
             if types._issubclass(field.type_, Var):
                 field.required = False
-                try:
-                    field.default = Var.create(field.default)
-                except:
-                    breakpoint()
+                field.default = Var.create(field.default)
 
     def __init__(self, *args, **kwargs):
         """Initialize the component.
