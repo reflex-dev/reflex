@@ -90,14 +90,12 @@ def _compile_contexts(state: Type[State]) -> str:
 def _compile_page(
     component: Component,
     state: Type[State],
-    connect_error_component,
 ) -> str:
     """Compile the component given the app state.
 
     Args:
         component: The component to compile.
         state: The app state.
-        connect_error_component: The component to render on sever connection error.
 
     Returns:
         The compiled component.
@@ -114,7 +112,6 @@ def _compile_page(
         state_name=state.get_name(),
         hooks=component.get_hooks(),
         render=component.render(),
-        err_comp=connect_error_component.render() if connect_error_component else None,
     )
 
 
@@ -222,7 +219,6 @@ def compile_page(
     path: str,
     component: Component,
     state: Type[State],
-    connect_error_component: Component,
 ) -> Tuple[str, str]:
     """Compile a single page.
 
@@ -230,7 +226,6 @@ def compile_page(
         path: The path to compile the page to.
         component: The component to compile.
         state: The app state.
-        connect_error_component: The component to render on sever connection error.
 
     Returns:
         The path and code of the compiled page.
@@ -239,11 +234,7 @@ def compile_page(
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(
-        component,
-        state,
-        connect_error_component,
-    )
+    code = _compile_page(component, state)
     return output_path, code
 
 

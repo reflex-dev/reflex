@@ -106,11 +106,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.get_substates():
             self.substates[substate.get_name()] = substate(parent_state=self)
         # Convert the event handlers to functions.
-        for name, event_handler in self.event_handlers.items():
-            fn = functools.partial(event_handler.fn, self)
-            fn.__module__ = event_handler.fn.__module__  # type: ignore
-            fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
-            setattr(self, name, fn)
+        self._init_event_handlers()
 
         # Initialize computed vars dependencies.
         inherited_vars = set(self.inherited_vars).union(
@@ -154,6 +150,29 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 setattr(self, field.name, value_in_rx_data)
 
         self._clean()
+
+    def _init_event_handlers(self, state: State | None = None):
+        """Initialize event handlers.
+
+        Allow event handlers to be called directly on the instance. This is
+        called recursively for all parent states.
+
+        Args:
+            state: The state to initialize the event handlers on.
+        """
+        if state is None:
+            state = self
+
+        # Convert the event handlers to functions.
+        for name, event_handler in state.event_handlers.items():
+            fn = functools.partial(event_handler.fn, self)
+            fn.__module__ = event_handler.fn.__module__  # type: ignore
+            fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
+            setattr(self, name, fn)
+
+        # Also allow direct calling of parent state event handlers
+        if state.parent_state is not None:
+            self._init_event_handlers(state.parent_state)
 
     def _reassign_field(self, field_name: str):
         """Reassign the given field.

@@ -43,9 +43,6 @@ class TextArea(ChakraComponent):
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[str]
 
-    # Time in milliseconds to wait between end of input and triggering on_change
-    debounce_timeout: Var[int]
-
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -71,11 +68,13 @@ class TextArea(ChakraComponent):
         Returns:
             The component.
         """
-        if isinstance(props.get("value"), Var) and props.get("on_change"):
+        if (
+            isinstance(props.get("value"), Var) and props.get("on_change")
+        ) or "debounce_timeout" in props:
+            # Currently default to 50ms, which appears to be a good balance
+            debounce_timeout = props.pop("debounce_timeout", 50)
             # create a debounced input if the user requests full control to avoid typing jank
             return DebounceInput.create(
-                super().create(*children, **props),
-                # Currently default to 50ms, which appears to be a good balance
-                debounce_timeout=props.get("debounce_timeout", 50),
+                super().create(*children, **props), debounce_timeout=debounce_timeout
             )
         return super().create(*children, **props)

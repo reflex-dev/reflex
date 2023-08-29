@@ -13,14 +13,8 @@ export default function Component() {
   const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
   const focusRef = useRef();
   
-  // Function to add new files to be uploaded.
-  const File = files => {{state_name|react_setter}}(state => ({
-    ...state,
-    files,
-  }))
-
   // Main event loop.
-  const [Event, notConnected] = useContext(EventLoopContext)
+  const [Event, connectError] = useContext(EventLoopContext)
 
   // Set focus to the specified element.
   useEffect(() => {
@@ -43,12 +37,7 @@ export default function Component() {
   {% endfor %}
 
   return (
-  <Fragment>
-      {%- if err_comp -%}
-            {{ utils.render(err_comp, indent_width=1) }}
-       {%- endif -%}
     {{utils.render(render, indent_width=0)}}
-    </Fragment>
   )
 }
 {% endblock %}
