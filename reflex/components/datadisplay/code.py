@@ -53,7 +53,7 @@ class CodeBlock(Component):
         return merged_imports
 
     @classmethod
-    def create(cls, *children, can_copy=False, copy_button=None, **props):
+    def create(cls, *children, can_copy=False, copy_button=None, **props) -> Component:
         """Create a text component.
 
         Args:

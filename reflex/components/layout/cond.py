@@ -1,5 +1,4 @@
 """Create a list of components from an iterable."""
-from __future__ import annotations
 
 from typing import Any, Dict, Optional
 

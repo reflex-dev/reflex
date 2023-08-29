@@ -1,7 +1,6 @@
 """Wrapper around react-debounce-input."""
-from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict, Tuple
 
 from reflex.components import Component
 from reflex.components.tags import Tag
@@ -68,7 +67,7 @@ class DebounceInput(Component):
         return tag
 
 
-def props_not_none(c: Component) -> dict[str, Any]:
+def props_not_none(c: Component) -> Dict[str, Any]:
     """Get all properties of the component that are not None.
 
     Args:
@@ -81,7 +80,7 @@ def props_not_none(c: Component) -> dict[str, Any]:
     return cdict
 
 
-def _collect_first_child_and_props(c: Component) -> tuple[Component, dict[str, Any]]:
+def _collect_first_child_and_props(c: Component) -> Tuple[Component, Dict[str, Any]]:
     """Recursively find the first child of a different type than `c` with props.
 
     This function is used to collapse nested DebounceInput components by

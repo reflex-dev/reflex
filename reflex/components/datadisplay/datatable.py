@@ -41,7 +41,7 @@ class DataTable(Gridjs):
     pagination: Var[Union[bool, Dict]]
 
     @classmethod
-    def create(cls, *children, **props):
+    def create(cls, *children, **props) -> Component:
         """Create a datatable component.
 
         Args:

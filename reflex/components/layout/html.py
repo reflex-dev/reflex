@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from reflex.components.component import Component
 from reflex.components.layout.box import Box
 
 
@@ -16,7 +17,7 @@ class Html(Box):
     dangerouslySetInnerHTML: Any
 
     @classmethod
-    def create(cls, *children, **props):
+    def create(cls, *children, **props) -> Component:
         """Create a html component.
 
         Args:

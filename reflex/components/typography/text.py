@@ -1,5 +1,4 @@
 """A text component."""
-from __future__ import annotations
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var

@@ -14,9 +14,7 @@ rx.text(
 )
 ```
 """
-from __future__ import annotations
-
-from typing import Any
+from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.layout.cond import Cond, cond
@@ -32,7 +30,7 @@ DEFAULT_LIGHT_ICON = Icon.create(tag="sun")
 DEFAULT_DARK_ICON = Icon.create(tag="moon")
 
 
-def color_mode_cond(light: Any, dark: Any = None) -> BaseVar | Component:
+def color_mode_cond(light: Any, dark: Any = None) -> Union[BaseVar, Component]:
     """Create a component or Prop based on color_mode.
 
     Args:
@@ -55,8 +53,8 @@ class ColorModeIcon(Cond):
     @classmethod
     def create(
         cls,
-        light_component: Component | None = None,
-        dark_component: Component | None = None,
+        light_component: Optional[Component] = None,
+        dark_component: Optional[Component] = None,
     ):
         """Create an icon component based on color_mode.
 

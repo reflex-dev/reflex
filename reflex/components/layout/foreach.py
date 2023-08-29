@@ -1,5 +1,4 @@
 """Create a list of components from an iterable."""
-from __future__ import annotations
 
 from typing import Any, Callable, Iterable
 
@@ -19,7 +18,7 @@ class Foreach(Component):
     render_fn: Callable = Fragment.create
 
     @classmethod
-    def create(cls, iterable: Var[Iterable], render_fn: Callable, **props) -> Foreach:
+    def create(cls, iterable: Var[Iterable], render_fn: Callable, **props) -> Component:
         """Create a foreach component.
 
         Args:
