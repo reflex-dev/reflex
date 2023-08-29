@@ -25,9 +25,7 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
-def run_process_and_launch_url(
-    run_command: list[str],
-):
+def run_process_and_launch_url(run_command: list[str]):
     """Run the process and launch the URL.
 
     Args:
@@ -37,19 +35,13 @@ def run_process_and_launch_url(
         run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
     )
 
-    if process.stdout:
-        for line in process.stdout:
-            if "ready started server on" in line:
-                url = line.split("url: ")[-1].strip()
-                console.print(f"App running at: [bold green]{url}")
-            else:
-                console.debug(line)
+    for line in processes.stream_logs("Starting frontend", process):
+        if "ready started server on" in line:
+            url = line.split("url: ")[-1].strip()
+            console.print(f"App running at: [bold green]{url}")
 
 
-def run_frontend(
-    root: Path,
-    port: str,
-):
+def run_frontend(root: Path, port: str):
     """Run the frontend.
 
     Args:
@@ -58,17 +50,16 @@ def run_frontend(
     """
     # Start watching asset folder.
     start_watching_assets_folder(root)
+    # validate dependencies before run
+    prerequisites.validate_frontend_dependencies(init=False)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])  # type: ignore
 
 
-def run_frontend_prod(
-    root: Path,
-    port: str,
-):
+def run_frontend_prod(root: Path, port: str):
     """Run the frontend.
 
     Args:
@@ -77,14 +68,14 @@ def run_frontend_prod(
     """
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-
+    # validate dependencies before run
+    prerequisites.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])  # type: ignore
 
 
 def run_backend(
-    app_name: str,
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
@@ -93,22 +84,22 @@ def run_backend(
 
     Args:
         host: The app host
-        app_name: The app name.
         port: The app port
         loglevel: The log level.
     """
+    config = get_config()
+    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
     uvicorn.run(
-        app=f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+        app=f"{app_module}.{constants.API_VAR}",
         host=host,
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=[app_name.split(".")[0]],
+        reload_dirs=[config.app_name],
     )
 
 
 def run_backend_prod(
-    app_name: str,
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
@@ -117,7 +108,6 @@ def run_backend_prod(
 
     Args:
         host: The app host
-        app_name: The app name.
         port: The app port
         loglevel: The log level.
     """
@@ -125,6 +115,7 @@ def run_backend_prod(
     config = get_config()
     RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
+    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
     command = (
         [
             *RUN_BACKEND_PROD_WINDOWS,
@@ -132,7 +123,7 @@ def run_backend_prod(
             host,
             "--port",
             str(port),
-            f"{app_name}:{constants.APP_VAR}",
+            app_module,
         ]
         if constants.IS_WINDOWS
         else [
@@ -141,7 +132,7 @@ def run_backend_prod(
             f"{host}:{port}",
             "--threads",
             str(num_workers),
-            f"{app_name}:{constants.APP_VAR}()",
+            f"{app_module}()",
         ]
     )
 
@@ -151,11 +142,16 @@ def run_backend_prod(
         "--workers",
         str(num_workers),
     ]
-    processes.new_process(command, run=True, show_logs=True)
+    processes.new_process(
+        command,
+        run=True,
+        show_logs=True,
+        env={constants.SKIP_COMPILE_ENV_VAR: "yes"},  # skip compile for prod backend
+    )
 
 
 def output_system_info():
-    """Show system informations if the loglevel is in DEBUG."""
+    """Show system information if the loglevel is in DEBUG."""
     if console.LOG_LEVEL > constants.LogLevel.DEBUG:
         return
 
@@ -171,7 +167,7 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{constants.NODE_PATH})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
@@ -179,7 +175,7 @@ def output_system_info():
     if system != "Windows":
         dependencies.extend(
             [
-                f"[NVM {constants.NVM_VERSION} (Expected: {constants.NVM_VERSION}) (PATH: {constants.NVM_PATH})]",
+                f"[FNM {constants.FNM_VERSION} (Expected: {constants.FNM_VERSION}) (PATH: {constants.FNM_EXE})]",
                 f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {config.bun_path})]",
             ],
         )
@@ -201,8 +197,8 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"
+        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
     )
-    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")
+    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

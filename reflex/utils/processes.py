@@ -13,8 +13,7 @@ from typing import Callable, Generator, List, Optional, Tuple, Union
 import psutil
 import typer
 
-from reflex import constants
-from reflex.utils import console, prerequisites
+from reflex.utils import console, path_ops, prerequisites
 
 
 def kill(pid):
@@ -126,10 +125,16 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     Returns:
         Execute a child program in a new process.
     """
+    node_bin_path = path_ops.get_node_bin_path()
+    if not node_bin_path:
+        console.warn(
+            "The path to the Node binary could not be found. Please ensure that Node is properly "
+            "installed and added to your system's PATH environment variable."
+        )
     # Add the node bin path to the PATH environment variable.
     env = {
         **os.environ,
-        "PATH": os.pathsep.join([constants.NODE_BIN_PATH, os.environ["PATH"]]),
+        "PATH": os.pathsep.join([node_bin_path if node_bin_path else "", os.environ["PATH"]]),  # type: ignore
         **kwargs.pop("env", {}),
     }
     kwargs = {
@@ -188,10 +193,7 @@ def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
         pass
 
 
-def stream_logs(
-    message: str,
-    process: subprocess.Popen,
-):
+def stream_logs(message: str, process: subprocess.Popen):
     """Stream the logs for a process.
 
     Args:
@@ -223,10 +225,7 @@ def stream_logs(
         raise typer.Exit(1)
 
 
-def show_logs(
-    message: str,
-    process: subprocess.Popen,
-):
+def show_logs(message: str, process: subprocess.Popen):
     """Show the logs for a process.
 
     Args:
