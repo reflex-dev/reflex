@@ -170,13 +170,20 @@ def run(
 
     # Run the frontend and backend together.
     commands = []
+
+    # Run the frontend on a separate thread.
     if frontend:
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port))
+
+    # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
         commands.append((backend_cmd, backend_host, backend_port))
+
+    # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
-        if env == constants.Env.DEV:
+        # In dev mode, run the backend on the main thread.
+        if backend and env == constants.Env.DEV:
             backend_cmd(backend_host, int(backend_port))
 
 
