@@ -654,6 +654,12 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
+        other_type = other.type_ if isinstance(other, Var) else type(other)
+        if (
+            self.get_outer_container_type(self.type_) == list
+            and self.get_outer_container_type(other_type) == list
+        ):
+            return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("+", other, flip=True)
 
     def __sub__(self, other: Var) -> Var:
@@ -810,8 +816,8 @@ class Var(ABC):
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
-                self.get_outer_container_type(self.type_) == dict
-                and self.get_outer_container_type(other_type) == dict
+            self.get_outer_container_type(self.type_) == dict
+            and self.get_outer_container_type(other_type) == dict
         ):
             return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("||", other, type_=bool)
@@ -827,8 +833,8 @@ class Var(ABC):
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
-                self.get_outer_container_type(self.type_) == dict
-                and self.get_outer_container_type(other_type) == dict
+            self.get_outer_container_type(self.type_) == dict
+            and self.get_outer_container_type(other_type) == dict
         ):
             return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("||", other, type_=bool, flip=True)
