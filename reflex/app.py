@@ -94,7 +94,7 @@ class App(Base):
     event_namespace: Optional[AsyncNamespace] = None
 
     # A component that is present on every page.
-    overlay_component: Optional[Component | ComponentCallable] = connection_modal
+    overlay_component: Optional[Union[Component, ComponentCallable]] = connection_modal
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
