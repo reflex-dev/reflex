@@ -65,7 +65,7 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
         env_var: The environment variable name.
         value: The environment variable value.
     """
-    monkeypatch.setenv(env_var, value)
+    monkeypatch.setenv(env_var, str(value))
     assert os.environ.get(env_var) == str(value)
     config = rx.Config(**base_config_values)
     assert getattr(config, env_var.lower()) == value
