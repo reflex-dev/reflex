@@ -254,7 +254,7 @@ class Template(str, Enum):
 class Endpoint(Enum):
     """Endpoints for the reflex backend API."""
 
-    PING = "_ping"
+    PING = "ping"
     EVENT = "_event"
     UPLOAD = "_upload"
 
