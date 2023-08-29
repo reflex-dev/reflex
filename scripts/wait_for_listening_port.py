@@ -3,6 +3,8 @@
 Replaces logic previously implemented in a shell script that needed
 tools that are not available on Windows.
 """
+from __future__ import annotations
+
 import argparse
 import socket
 import time
