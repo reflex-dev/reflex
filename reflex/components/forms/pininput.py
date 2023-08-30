@@ -76,8 +76,8 @@ class PinInput(ChakraComponent):
         """
         return None
 
-    def _get_hooks(self) -> Optional[str]:
-        """Override the base get_hooks to handle array refs.
+    def _get_ref_hook(self) -> Optional[str]:
+        """Override the base _get_ref_hook to handle array refs.
 
         Returns:
             The overrided hooks.
@@ -86,7 +86,7 @@ class PinInput(ChakraComponent):
             ref = format.format_array_ref(self.id, None)
             if ref:
                 return f"const {ref} = Array.from({{length:{self.length}}}, () => useRef(null));"
-            return super()._get_hooks()
+            return super()._get_ref_hook()
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -130,7 +130,7 @@ class PinInputField(ChakraComponent):
     # Default to None because it is assigned by PinInput when created.
     index: Optional[Var[int]] = None
 
-    def _get_hooks(self) -> Optional[str]:
+    def _get_ref_hook(self) -> Optional[str]:
         return None
 
     def get_ref(self):

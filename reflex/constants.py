@@ -359,5 +359,9 @@ PING_TIMEOUT = 120
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
 
+# Names of event handlers on all components mapped to useEffect
+ON_MOUNT = "on_mount"
+ON_UNMOUNT = "on_unmount"
+
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
