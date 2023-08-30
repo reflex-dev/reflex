@@ -1,4 +1,5 @@
 """The main Reflex app."""
+from __future__ import annotations
 
 import asyncio
 import inspect
@@ -29,6 +30,7 @@ from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
+from reflex.components import connection_modal
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
 from reflex.config import get_config
@@ -88,11 +90,11 @@ class App(Base):
     # Admin dashboard
     admin_dash: Optional[AdminDash] = None
 
-    # The component to render if there is a connection error to the server.
-    connect_error_component: Optional[Component] = None
-
     # The async server name space
     event_namespace: Optional[AsyncNamespace] = None
+
+    # A component that is present on every page.
+    overlay_component: Optional[Union[Component, ComponentCallable]] = connection_modal
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -106,6 +108,10 @@ class App(Base):
                         Also, if there are multiple client subclasses of rx.State(Subclasses of rx.State should consist
                         of the DefaultState and the client app state).
         """
+        if "connect_error_component" in kwargs:
+            raise ValueError(
+                "`connect_error_component` is deprecated, use `overlay_component` instead"
+            )
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
         inferred_state = state_subclasses[-1]
@@ -269,6 +275,31 @@ class App(Base):
         else:
             self.middleware.insert(index, middleware)
 
+    @staticmethod
+    def _generate_component(component: Component | ComponentCallable) -> Component:
+        """Generate a component from a callable.
+
+        Args:
+            component: The component function to call or Component to return as-is.
+
+        Returns:
+            The generated component.
+
+        Raises:
+            TypeError: When an invalid component function is passed.
+        """
+        try:
+            return component if isinstance(component, Component) else component()
+        except TypeError as e:
+            message = str(e)
+            if "BaseVar" in message or "ComputedVar" in message:
+                raise TypeError(
+                    "You may be trying to use an invalid Python function on a state var. "
+                    "When referencing a var inside your render code, only limited var operations are supported. "
+                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
+                ) from e
+            raise e
+
     def add_page(
         self,
         component: Union[Component, ComponentCallable],
@@ -296,9 +327,6 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
-
-        Raises:
-            TypeError: If an invalid var operation is used.
         """
         # If the route is not set, get it from the callable.
         if route is None:
@@ -314,20 +342,16 @@ class App(Base):
         self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
-        try:
-            component = component if isinstance(component, Component) else component()
-        except TypeError as e:
-            message = str(e)
-            if "BaseVar" in message or "ComputedVar" in message:
-                raise TypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
-                ) from e
-            raise e
+        component = self._generate_component(component)
 
-        # Wrap the component in a fragment.
-        component = Fragment.create(component)
+        # Wrap the component in a fragment with optional overlay.
+        if self.overlay_component is not None:
+            component = Fragment.create(
+                self._generate_component(self.overlay_component),
+                component,
+            )
+        else:
+            component = Fragment.create(component)
 
         # Add meta information to the component.
         compiler_utils.add_meta(
@@ -497,7 +521,6 @@ class App(Base):
                             route,
                             component,
                             self.state,
-                            self.connect_error_component,
                         ),
                     )
                 )
