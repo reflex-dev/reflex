@@ -136,6 +136,7 @@ class PyiGenerator:
                 or inspect.getmodule(obj) == self.current_module
             )
             and not inspect.isclass(obj)
+            and not inspect.isfunction(obj)
         ]
 
         class_names = [
