@@ -361,7 +361,7 @@ class AppHarness:
             raise RuntimeError("App is not running.")
         event_ns: EventNamespace = cast(
             EventNamespace,
-            self.app_instance.sio.namespace_handlers["/event"],
+            self.app_instance.event_namespace,
         )
         pending: list[Coroutine[Any, Any, Any]] = []
         for state in self.app_instance.state_manager.states.values():

@@ -255,8 +255,8 @@ class Endpoint(Enum):
     """Endpoints for the reflex backend API."""
 
     PING = "ping"
-    EVENT = "event"
-    UPLOAD = "upload"
+    EVENT = "_event"
+    UPLOAD = "_upload"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
