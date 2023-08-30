@@ -56,7 +56,7 @@ class PyiGenerator:
             if inspect.getmodule(base) != self.current_module
         }
         return [
-            "from typing import overload, Optional, Any, Union",
+            "from typing import overload, Optional, Any, Union, List",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var",
             "from reflex.event import EventChain",
@@ -91,12 +91,9 @@ class PyiGenerator:
         return [f"{_name} = {_var}"]
 
     def _generate_function(self, _name, _func):
-        sig = inspect.signature(_func)
-        param = "".join(str(sig).rpartition(" -> ")[0])
-        return_hint = _get_type_hint(
-            sig.return_annotation, top_level=False, no_union=True
-        )
-        return [f"def {_name}{param} -> {return_hint}: ", "    ..."]
+        definition = "".join(inspect.getsource(_func).split(":\n")[0].split("\n"))
+        print(definition)
+        return [f"{definition}:", "    ..."]
 
     def _write_pyi_file(self, variables, functions, classes):
         pyi_content = [
