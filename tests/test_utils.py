@@ -257,6 +257,7 @@ def test_is_generic_alias(cls: type, expected: bool):
         ("custom-route", "custom-route"),
         ("custom-route/", "custom-route"),
         ("/custom-route", "custom-route"),
+        ("/custom_route", "custom_route"),
     ],
 )
 def test_format_route(route: str, expected: bool):

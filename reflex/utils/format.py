@@ -213,7 +213,7 @@ def format_route(route: str) -> str:
     """
     # Strip the route.
     route = route.strip("/")
-    route = to_snake_case(route).replace("_", "-")
+    route = to_snake_case(route)
 
     # If the route is empty, return the index route.
     if route == "":
