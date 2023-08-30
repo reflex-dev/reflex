@@ -265,13 +265,13 @@ def format_prop(
     """Format a prop.
 
     Args:
-    prop: The prop to format.
+        prop: The prop to format.
 
     Returns:
-    The formatted prop to display within a tag.
+        The formatted prop to display within a tag.
 
     Raises:
-    TypeError: If the prop is not a valid type.
+        TypeError: If the prop is not a valid type.
     """
     # import here to avoid circular import.
     from reflex.event import EVENT_ARG, EventChain
