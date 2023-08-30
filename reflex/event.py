@@ -26,6 +26,28 @@ class Event(Base):
     payload: Dict[str, Any] = {}
 
 
+BACKGROUND_TASK_MARKER = "_reflex_background_task"
+
+
+def background(fn):
+    """Decorator to mark event handler as running in the background.
+
+    Args:
+        fn: The function to decorate.
+
+    Returns:
+        The same function, but with a marker set.
+
+
+    Raises:
+        TypeError: If the function is not a coroutine function or async generator.
+    """
+    if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
+        raise TypeError("Background task must be async function or generator.")
+    setattr(fn, BACKGROUND_TASK_MARKER, True)
+    return fn
+
+
 class EventHandler(Base):
     """An event handler responds to an event to update the state."""
 
@@ -37,6 +59,15 @@ class EventHandler(Base):
 
         # Needed to allow serialization of Callable.
         frozen = True
+
+    @property
+    def is_background(self) -> bool:
+        """Whether the event handler is a background task.
+
+        Returns:
+            True if the event handler is marked as a background task.
+        """
+        return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
     def __call__(self, *args: Var) -> EventSpec:
         """Pass arguments to the handler to get an event spec.
