@@ -86,7 +86,12 @@ class PyiGenerator:
         lines.append(definition)
         return lines
 
-    def _write_pyi_file(self, classes):
+    def _generate_pyi_variable(self, _name, _var):
+        # print(_name)
+        # print(type(_var), inspect.getsource(_var))
+        return [f"{_name} = {_var}"]
+
+    def _write_pyi_file(self, variables, classes):
         pyi_content = [
             f'"""Stub file for {self.current_module_path}.py"""',
             "# ------------------- DO NOT EDIT ----------------------",
@@ -95,6 +100,9 @@ class PyiGenerator:
             "",
         ]
         pyi_content.extend(self._generate_imports(classes))
+
+        for _name, _var in variables:
+            pyi_content.extend(self._generate_pyi_variable(_name, _var))
 
         for _, _class in classes:
             pyi_content.extend(self._generate_pyi_class(_class))
@@ -119,6 +127,17 @@ class PyiGenerator:
 
         self.current_module = importlib.import_module(module_import)
 
+        local_variables = [
+            (name, obj)
+            for name, obj in vars(self.current_module).items()
+            if not name.startswith("__")
+            and (
+                not inspect.getmodule(obj)
+                or inspect.getmodule(obj) == self.current_module
+            )
+            and not inspect.isclass(obj)
+        ]
+
         class_names = [
             (name, obj)
             for name, obj in vars(self.current_module).items()
@@ -130,7 +149,7 @@ class PyiGenerator:
         if not class_names:
             return
         print(f"Parsed {file}: Found {[n for n,_ in class_names]}")
-        self._write_pyi_file(class_names)
+        self._write_pyi_file(local_variables, class_names)
 
     def _scan_folder(self, folder):
         for root, _, files in os.walk(folder):
