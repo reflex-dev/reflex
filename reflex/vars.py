@@ -38,9 +38,11 @@ if TYPE_CHECKING:
 # Set of unique variable names.
 USED_VARIABLES = set()
 
-# operators supported my all types.
+# Supported operators for all types.
 ALL_OPS = ["==", "!=", "!==", "==="]
+# Delimiters used between function args or operands.
 DELIMITERS = [","]
+# Mapping of valid operations for different type combinations.
 OPERATION_MAPPING = {
     (int, int): {
         "+",
@@ -447,8 +449,8 @@ class Var(ABC):
         else:
             props = (other, self) if flip else (self, other)
             if op and not self.is_valid_operation(
-                self.get_outer_container_type(props[0].type_),
-                self.get_outer_container_type(props[1].type_),
+                types.get_base_class(props[0].type_),
+                types.get_base_class(props[1].type_),
                 op,
             ):
                 raise TypeError(
@@ -489,9 +491,7 @@ class Var(ABC):
             int if operand1_type == bool else operand1_type,
             int if operand2_type == bool else operand2_type,
         )
-        if pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair]:
-            return True
-        return False
+        return bool(pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair])
 
     def compare(self, op: str, other: Var) -> Var:
         """Compare two vars with inequalities.
@@ -612,22 +612,6 @@ class Var(ABC):
         """
         return self.compare("<=", other)
 
-    @staticmethod
-    def get_outer_container_type(type_annotation) -> Type:
-        """Get the outer container type of a type annotation.
-
-        Args:
-            type_annotation: The type.
-
-        Returns:
-            The outer container type
-        """
-        return (
-            type_annotation.__origin__
-            if hasattr(type_annotation, "__origin__")
-            else type_annotation
-        )
-
     def __add__(self, other: Var) -> Var:
         """Add two vars.
 
@@ -639,8 +623,8 @@ class Var(ABC):
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
-            self.get_outer_container_type(self.type_) == list
-            and self.get_outer_container_type(other_type) == list
+            types.get_base_class(self.type_) == list
+            and types.get_base_class(other_type) == list
         ):
             return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("+", other)
@@ -656,8 +640,8 @@ class Var(ABC):
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
-            self.get_outer_container_type(self.type_) == list
-            and self.get_outer_container_type(other_type) == list
+            types.get_base_class(self.type_) == list
+            and types.get_base_class(other_type) == list
         ):
             return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("+", other, flip=True)
@@ -816,8 +800,8 @@ class Var(ABC):
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
-            self.get_outer_container_type(self.type_) == dict
-            and self.get_outer_container_type(other_type) == dict
+            types.get_base_class(self.type_) == dict
+            and types.get_base_class(other_type) == dict
         ):
             return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("||", other, type_=bool)
@@ -833,8 +817,8 @@ class Var(ABC):
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
-            self.get_outer_container_type(self.type_) == dict
-            and self.get_outer_container_type(other_type) == dict
+            types.get_base_class(self.type_) == dict
+            and types.get_base_class(other_type) == dict
         ):
             return self.operation(",", other, fn="spreadArraysOrObjects")
         return self.operation("||", other, type_=bool, flip=True)
