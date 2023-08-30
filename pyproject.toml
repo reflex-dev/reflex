@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.2.5"
+version = "0.2.6"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -65,7 +65,7 @@ pandas = [
 ]
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
-selenium = "^4.10.0"
+selenium = "^4.11.0"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"

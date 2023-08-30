@@ -36,8 +36,21 @@ class HydrateMiddleware(Middleware):
         if event.name != get_hydrate_event(state):
             return None
 
-        # Get the initial state.
+        # Clear client storage, to respect clearing cookies
+        state._reset_client_storage()
+
+        # Mark state as not hydrated (until on_loads are complete)
         setattr(state, constants.IS_HYDRATED, False)
+
+        # Apply client side storage values to state
+        for storage_type in (constants.COOKIES, constants.LOCAL_STORAGE):
+            if storage_type in event.payload:
+                for key, value in event.payload[storage_type].items():
+                    state_name, _, var_name = key.rpartition(".")
+                    var_state = state.get_substate(state_name.split("."))
+                    setattr(var_state, var_name, value)
+
+        # Get the initial state.
         delta = format.format_state({state.get_name(): state.dict()})
         # since a full dict was captured, clean any dirtiness
         state._clean()

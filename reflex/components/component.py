@@ -66,6 +66,10 @@ class Component(Base, ABC):
 
     # components that cannot be children
     invalid_children: List[str] = []
+
+    # components that are only allowed as children
+    valid_children: List[str] = []
+
     # custom attribute
     custom_attrs: Dict[str, str] = {}
 
@@ -103,9 +107,10 @@ class Component(Base, ABC):
             TypeError: If an invalid prop is passed.
         """
         # Set the id and children initially.
+        children = kwargs.get("children", [])
         initial_kwargs = {
             "id": kwargs.get("id"),
-            "children": kwargs.get("children", []),
+            "children": children,
             **{
                 prop: Var.create(kwargs[prop])
                 for prop in self.get_initial_props()
@@ -113,6 +118,8 @@ class Component(Base, ABC):
             },
         }
         super().__init__(**initial_kwargs)
+
+        self._validate_component_children(children)
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
@@ -279,7 +286,11 @@ class Component(Base, ABC):
         Returns:
             The event triggers.
         """
-        return EVENT_TRIGGERS | set(self.get_controlled_triggers())
+        return (
+            EVENT_TRIGGERS
+            | set(self.get_controlled_triggers())
+            | set((constants.ON_MOUNT, constants.ON_UNMOUNT))
+        )
 
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
@@ -381,6 +392,7 @@ class Component(Base, ABC):
             else Bare.create(contents=Var.create(child, is_string=True))
             for child in children
         ]
+
         return cls(children=children, **props)
 
     def _add_style(self, style):
@@ -435,29 +447,43 @@ class Component(Base, ABC):
             ),
             autofocus=self.autofocus,
         )
-        self._validate_component_children(
-            rendered_dict["name"], rendered_dict["children"]
-        )
         return rendered_dict
 
-    def _validate_component_children(self, comp_name: str, children: List[Dict]):
+    def _validate_component_children(self, children: List[Component]):
         """Validate the children components.
 
         Args:
-            comp_name: name of the component.
-            children: list of children components.
+            children: The children of the component.
 
-        Raises:
-            ValueError: when an unsupported component is matched.
         """
-        if not self.invalid_children:
+        if not self.invalid_children and not self.valid_children:
             return
-        for child in children:
-            name = child["name"]
-            if name in self.invalid_children:
+
+        comp_name = type(self).__name__
+
+        def validate_invalid_child(child_name):
+            if child_name in self.invalid_children:
                 raise ValueError(
-                    f"The component `{comp_name.lower()}` cannot have `{name.lower()}` as a child component"
+                    f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
+
+        def validate_valid_child(child_name):
+            if child_name not in self.valid_children:
+                valid_child_list = ", ".join(
+                    [f"`{v_child}`" for v_child in self.valid_children]
+                )
+                raise ValueError(
+                    f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
+                )
+
+        for child in children:
+            name = type(child).__name__
+
+            if self.invalid_children:
+                validate_invalid_child(name)
+
+            if self.valid_children:
+                validate_valid_child(name)
 
     def _get_custom_code(self) -> Optional[str]:
         """Get custom code for the component.
@@ -503,16 +529,63 @@ class Component(Base, ABC):
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
-    def _get_hooks(self) -> Optional[str]:
-        """Get the React hooks for this component.
+    def _get_mount_lifecycle_hook(self) -> str | None:
+        """Generate the component lifecycle hook.
 
         Returns:
-            The hooks for just this component.
+            The useEffect hook for managing `on_mount` and `on_unmount` events.
+        """
+        # pop on_mount and on_unmount from event_triggers since these are handled by
+        # hooks, not as actually props in the component
+        on_mount = self.event_triggers.pop(constants.ON_MOUNT, None)
+        on_unmount = self.event_triggers.pop(constants.ON_UNMOUNT, None)
+        if on_mount:
+            on_mount = format.format_event_chain(on_mount)
+        if on_unmount:
+            on_unmount = format.format_event_chain(on_unmount)
+        if on_mount or on_unmount:
+            return f"""
+                useEffect(() => {{
+                    {on_mount or ""}
+                    return () => {{
+                        {on_unmount or ""}
+                    }}
+                }}, []);"""
+
+    def _get_ref_hook(self) -> str | None:
+        """Generate the ref hook for the component.
+
+        Returns:
+            The useRef hook for managing refs.
         """
         ref = self.get_ref()
         if ref is not None:
             return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
-        return None
+
+    def _get_hooks_internal(self) -> Set[str]:
+        """Get the React hooks for this component managed by the framework.
+
+        Downstream components should NOT override this method to avoid breaking
+        framework functionality.
+
+        Returns:
+            Set of internally managed hooks.
+        """
+        return set(
+            hook
+            for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
+            if hook
+        )
+
+    def _get_hooks(self) -> Optional[str]:
+        """Get the React hooks for this component.
+
+        Downstream components should override this method to add their own hooks.
+
+        Returns:
+            The hooks for just this component.
+        """
+        return
 
     def get_hooks(self) -> Set[str]:
         """Get the React hooks for this component and its children.
@@ -521,7 +594,7 @@ class Component(Base, ABC):
             The code that should appear just before returning the rendered component.
         """
         # Store the code in a set to avoid duplicates.
-        code = set()
+        code = self._get_hooks_internal()
 
         # Add the hook code for this component.
         hooks = self._get_hooks()

@@ -3,7 +3,8 @@ import os
 import pytest
 
 import reflex as rx
-from reflex.config import get_config
+import reflex.config
+from reflex.constants import Endpoint
 
 
 def test_requires_app_name():
@@ -64,7 +65,7 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
         env_var: The environment variable name.
         value: The environment variable value.
     """
-    monkeypatch.setenv(env_var, value)
+    monkeypatch.setenv(env_var, str(value))
     assert os.environ.get(env_var) == str(value)
     config = rx.Config(**base_config_values)
     assert getattr(config, env_var.lower()) == value
@@ -73,11 +74,20 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
 @pytest.mark.parametrize(
     "kwargs, expected",
     [
-        ({"app_name": "test_app", "api_url": "http://example.com"}, "/event"),
-        ({"app_name": "test_app", "api_url": "http://example.com/api"}, "/api/event"),
-        ({"app_name": "test_app", "event_namespace": "/event"}, "/event"),
-        ({"app_name": "test_app", "event_namespace": "event"}, "/event"),
-        ({"app_name": "test_app", "event_namespace": "event/"}, "/event"),
+        (
+            {"app_name": "test_app", "api_url": "http://example.com"},
+            f"{Endpoint.EVENT}",
+        ),
+        (
+            {"app_name": "test_app", "api_url": "http://example.com/api"},
+            f"/api{Endpoint.EVENT}",
+        ),
+        ({"app_name": "test_app", "event_namespace": "/event"}, f"/event"),
+        ({"app_name": "test_app", "event_namespace": "event"}, f"/event"),
+        ({"app_name": "test_app", "event_namespace": "event/"}, f"/event"),
+        ({"app_name": "test_app", "event_namespace": "/_event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "_event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "_event/"}, f"{Endpoint.EVENT}"),
     ],
 )
 def test_event_namespace(mocker, kwargs, expected):
@@ -91,5 +101,6 @@ def test_event_namespace(mocker, kwargs, expected):
     conf = rx.Config(**kwargs)
     mocker.patch("reflex.config.get_config", return_value=conf)
 
-    config = get_config()
+    config = reflex.config.get_config()
+    assert conf == config
     assert config.get_event_namespace() == expected

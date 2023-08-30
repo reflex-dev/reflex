@@ -16,10 +16,11 @@ from plotly.io import to_json
 
 from reflex import constants
 from reflex.utils import types
+from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import EventHandler, EventSpec
+    from reflex.event import EventChain, EventHandler, EventSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -182,6 +183,24 @@ def format_string(string: str) -> str:
     return string
 
 
+def format_var(var: Var) -> str:
+    """Format the given Var as a javascript value.
+
+    Args:
+        var: The Var to format.
+
+    Returns:
+        The formatted Var.
+    """
+    if not var.is_local or var.is_string:
+        return str(var)
+    if types._issubclass(var.type_, str):
+        return format_string(var.full_name)
+    if is_wrapped(var.full_name, "{"):
+        return var.full_name
+    return json_dumps(var.full_name)
+
+
 def format_route(route: str) -> str:
     """Format the given route.
 
@@ -309,6 +328,46 @@ def format_event(event_spec: EventSpec) -> str:
     if event_spec.client_handler_name:
         event_args.append(wrap(event_spec.client_handler_name, '"'))
     return f"E({', '.join(event_args)})"
+
+
+def format_event_chain(
+    event_chain: EventChain | Var[EventChain],
+    event_arg: Var | None = None,
+) -> str:
+    """Format an event chain as a javascript invocation.
+
+    Args:
+        event_chain: The event chain to queue on the frontend.
+        event_arg: The browser-native event (only used to preventDefault).
+
+    Returns:
+        Compiled javascript code to queue the given event chain on the frontend.
+
+    Raises:
+        ValueError: When the given event chain is not a valid event chain.
+    """
+    if isinstance(event_chain, Var):
+        from reflex.event import EventChain
+
+        if event_chain.type_ is not EventChain:
+            raise ValueError(f"Invalid event chain: {event_chain}")
+        return "".join(
+            [
+                "(() => {",
+                format_var(event_chain),
+                f"; preventDefault({format_var(event_arg)})" if event_arg else "",
+                "})()",
+            ]
+        )
+
+    chain = ",".join([format_event(event) for event in event_chain.events])
+    return "".join(
+        [
+            f"Event([{chain}]",
+            f", {format_var(event_arg)}" if event_arg else "",
+            ")",
+        ]
+    )
 
 
 def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:

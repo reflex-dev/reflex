@@ -5,6 +5,7 @@ import pytest
 import reflex as rx
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
+from reflex.constants import ON_MOUNT, ON_UNMOUNT
 from reflex.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
 from reflex.state import State
 from reflex.style import Style
@@ -121,11 +122,45 @@ def component5() -> Type[Component]:
     """
 
     class TestComponent5(Component):
-        tag = "Tag"
+        tag = "RandomComponent"
 
         invalid_children: List[str] = ["Text"]
 
+        valid_children: List[str] = ["Text"]
+
     return TestComponent5
+
+
+@pytest.fixture
+def component6() -> Type[Component]:
+    """A test component.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent6(Component):
+        tag = "RandomComponent"
+
+        invalid_children: List[str] = ["Text"]
+
+    return TestComponent6
+
+
+@pytest.fixture
+def component7() -> Type[Component]:
+    """A test component.
+
+    Returns:
+        A test component.
+    """
+
+    class TestComponent7(Component):
+        tag = "RandomComponent"
+
+        valid_children: List[str] = ["Text"]
+
+    return TestComponent7
 
 
 @pytest.fixture
@@ -343,8 +378,9 @@ def test_get_triggers(component1, component2):
         component1: A test component.
         component2: A test component.
     """
-    assert component1().get_triggers() == EVENT_TRIGGERS
-    assert component2().get_triggers() == {"on_open", "on_close"} | EVENT_TRIGGERS
+    default_triggers = {ON_MOUNT, ON_UNMOUNT} | EVENT_TRIGGERS
+    assert component1().get_triggers() == default_triggers
+    assert component2().get_triggers() == {"on_open", "on_close"} | default_triggers
 
 
 def test_create_custom_component(my_component):
@@ -461,16 +497,40 @@ def test_get_hooks_nested2(component3, component4):
     )
 
 
-def test_unsupported_child_components(component5):
-    """Test that a value error is raised when an unsupported component is provided as a child.
+@pytest.mark.parametrize("fixture", ["component5", "component6"])
+def test_unsupported_child_components(fixture, request):
+    """Test that a value error is raised when an unsupported component (a child component found in the
+    component's invalid children list) is provided as a child.
 
     Args:
-        component5: the test component
+        fixture: the test component as a fixture.
+        request: Pytest request.
     """
+    component = request.getfixturevalue(fixture)
     with pytest.raises(ValueError) as err:
-        comp = component5.create(rx.text("testing component"))
+        comp = component.create(rx.text("testing component"))
         comp.render()
     assert (
         err.value.args[0]
-        == f"The component `tag` cannot have `text` as a child component"
+        == f"The component `{component.__name__}` cannot have `Text` as a child component"
+    )
+
+
+@pytest.mark.parametrize("fixture", ["component5", "component7"])
+def test_component_with_only_valid_children(fixture, request):
+    """Test that a value error is raised when an unsupported component (a child component not found in the
+    component's valid children list) is provided as a child.
+
+    Args:
+        fixture: the test component as a fixture.
+        request: Pytest request.
+    """
+    component = request.getfixturevalue(fixture)
+    with pytest.raises(ValueError) as err:
+        comp = component.create(rx.box("testing component"))
+        comp.render()
+    assert (
+        err.value.args[0]
+        == f"The component `{component.__name__}` only allows the components: `Text` as children. "
+        f"Got `Box` instead."
     )

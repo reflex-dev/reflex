@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import os
 import shutil
+from pathlib import Path
 from typing import Optional
+
+from reflex import constants
 
 # Shorthand for join.
 join = os.linesep.join
@@ -107,3 +110,37 @@ def which(program: str) -> Optional[str]:
         The path to the executable.
     """
     return shutil.which(program)
+
+
+def get_node_bin_path() -> Optional[str]:
+    """Get the node binary dir path.
+
+    Returns:
+        The path to the node bin folder.
+    """
+    if not os.path.exists(constants.NODE_BIN_PATH):
+        str_path = which("node")
+        return str(Path(str_path).parent) if str_path else str_path
+    return constants.NODE_BIN_PATH
+
+
+def get_node_path() -> Optional[str]:
+    """Get the node binary path.
+
+    Returns:
+        The path to the node binary file.
+    """
+    if not os.path.exists(constants.NODE_PATH):
+        return which("node")
+    return constants.NODE_PATH
+
+
+def get_npm_path() -> Optional[str]:
+    """Get npm binary path.
+
+    Returns:
+        The path to the npm binary file.
+    """
+    if not os.path.exists(constants.NODE_PATH):
+        return which("npm")
+    return constants.NPM_PATH
