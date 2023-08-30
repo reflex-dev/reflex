@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import os
+import sys
 from inspect import getfullargspec
 from pathlib import Path
 from typing import Any, get_args
@@ -10,6 +11,8 @@ from typing import Any, get_args
 import black
 
 from reflex.components.component import Component
+
+EXCLUDED_FILES = ["__init__.py", "component.py", "bare.py", "foreach.py", "cond.py"]
 
 
 def _get_type_hint(value, top_level=True):
@@ -108,48 +111,52 @@ class PyiGenerator:
             write_back=black.WriteBack.YES,
         )
 
-    def for_folders(self, folders):
-        """Scan all subfolders for the given folders list and generate the .pyi files.
+    def _scan_file(self, file):
+        self.current_module_path = os.path.splitext(file)[0]
+        module_import = os.path.splitext(os.path.join(self.root, file))[0].replace(
+            "/", "."
+        )
+
+        self.current_module = importlib.import_module(module_import)
+
+        class_names = [
+            (name, obj)
+            for name, obj in vars(self.current_module).items()
+            if inspect.isclass(obj)
+            and issubclass(obj, Component)
+            and obj != Component
+            and inspect.getmodule(obj) == self.current_module
+        ]
+        if not class_names:
+            return
+        print(f"Parsed {file}: Found {[n for n,_ in class_names]}")
+        self._write_pyi_file(class_names)
+
+    def _scan_folder(self, folder):
+        for root, _, files in os.walk(folder):
+            self.root = root
+            for file in files:
+                if file in EXCLUDED_FILES:
+                    continue
+                if file.endswith(".py"):
+                    self._scan_file(file)
+
+    def scan_all(self, targets):
+        """Scan all targets for class inheriting Component and generate the .pyi files.
 
         Args:
-            folders: the list of folders to scan.
+            targets: the list of file/folders to scan.
         """
-        for folder in folders:
-            for root, _, files in os.walk(folder):
-                self.root = root
-                for file in files:
-                    if file in [
-                        "__init__.py",
-                        "component.py",
-                        "bare.py",
-                        "foreach.py",
-                        "cond.py",
-                    ]:
-                        continue
-                    if file.endswith(".py"):
-                        self.current_module_path = os.path.splitext(file)[0]
-                        module_import = os.path.splitext(os.path.join(root, file))[
-                            0
-                        ].replace("/", ".")
-
-                        self.current_module = importlib.import_module(module_import)
-
-                        class_names = [
-                            (name, obj)
-                            for name, obj in vars(self.current_module).items()
-                            if inspect.isclass(obj)
-                            and issubclass(obj, Component)
-                            and obj != Component
-                            and inspect.getmodule(obj) == self.current_module
-                        ]
-                        if not class_names:
-                            continue
-                        print(f"Parsed {file}: Found {[n for n,_ in class_names]}")
-                        self._write_pyi_file(class_names)
+        for target in targets:
+            if target.endswith(".py"):
+                self.root, _, file = target.rpartition("/")
+                self._scan_file(file)
+            else:
+                self._scan_folder(target)
 
 
 if __name__ == "__main__":
-    target_folders = ["reflex/components"]
-    print(f"Running .pyi generator for {target_folders}")
+    targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
+    print(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
-    gen.for_folders(target_folders)
+    gen.scan_all(targets)
