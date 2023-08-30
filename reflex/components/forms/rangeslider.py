@@ -64,8 +64,8 @@ class RangeSlider(ChakraComponent):
         """
         return None
 
-    def _get_hooks(self) -> Optional[str]:
-        """Override the base get_hooks to handle array refs.
+    def _get_ref_hook(self) -> Optional[str]:
+        """Override the base _get_ref_hook to handle array refs.
 
         Returns:
             The overrided hooks.
@@ -74,7 +74,7 @@ class RangeSlider(ChakraComponent):
             ref = format.format_array_ref(self.id, None)
             if ref:
                 return f"const {ref} = Array.from({{length:2}}, () => useRef(null));"
-            return super()._get_hooks()
+            return super()._get_ref_hook()
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -130,7 +130,7 @@ class RangeSliderThumb(ChakraComponent):
     # The position of the thumb.
     index: Var[int]
 
-    def _get_hooks(self) -> Optional[str]:
+    def _get_ref_hook(self) -> Optional[str]:
         # hook is None because RangeSlider is handling it.
         return None
 
