@@ -198,8 +198,7 @@ def get_image(self):
 app = rx.App()
 ```
 
-We add a page from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
-添加从应用程序根目录到 index 组件的路由.我们还添加了一个在页面预览或浏览器标签中显示的标题.
+我们添加从应用程序根目录到 index 组件的路由.我们还添加了一个在页面预览或浏览器标签中显示的标题.
 
 ```python
 app.add_page(index, title="DALL-E")
