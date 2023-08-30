@@ -5,21 +5,32 @@ import inspect
 import os
 from inspect import getfullargspec
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import black
 
 from reflex.components.component import Component
 
 
-def _get_type_hint(value):
+def _get_type_hint(value, rec=False):
     res = ""
-    if hasattr(value, "_name") and value._name == "Optional":
-        res = value.__args__[0].__name__
+    args = get_args(value)
+    if args:
+        res = f"{value.__name__}[{', '.join([_get_type_hint(arg, rec=True) for arg in args if arg is not type(None)])}]"
+
+        if value.__name__ == "Var":
+            types = [res] + [
+                _get_type_hint(arg, rec=True) for arg in args if arg is not type(None)
+            ]
+            if len(types) > 1:
+                res = ", ".join(types)
+                res = f"Union[{res}]"
     elif isinstance(value, str):
         res = value
     else:
         res = value.__name__
+    if not rec and not res.startswith("Optional"):
+        res = f"Optional[{res}]"
     return res
 
 
@@ -40,7 +51,7 @@ class PyiGenerator:
             if inspect.getmodule(base) != self.current_module
         }
         return [
-            "from typing import overload, Optional, Any",
+            "from typing import overload, Optional, Any, Union",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var",
         ]
@@ -55,16 +66,14 @@ class PyiGenerator:
 
         for kwarg in create_spec.kwonlyargs:
             if kwarg in create_spec.annotations:
-                definition += (
-                    f"{kwarg}: {_get_type_hint(create_spec.annotations[kwarg])}, "
-                )
+                definition += f"{kwarg}: {_get_type_hint(create_spec.annotations[kwarg])} = None, "
             else:
                 definition += f"{kwarg}, "
 
         for name, value in _class.__annotations__.items():
             if name in create_spec.kwonlyargs:
                 continue
-            definition += f"{name}: {_get_type_hint(value)}, "
+            definition += f"{name}: {_get_type_hint(value)} = None, "
 
         definition = definition.rstrip(", ")
         definition += f", **props) -> '{_class.__name__}': ... # type: ignore"

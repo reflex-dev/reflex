@@ -1,6 +1,6 @@
 """A code component."""
 
-from typing import Dict
+from typing import Dict, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.forms import Button
@@ -53,7 +53,13 @@ class CodeBlock(Component):
         return merged_imports
 
     @classmethod
-    def create(cls, *children, can_copy=False, copy_button=None, **props):
+    def create(
+        cls,
+        *children,
+        can_copy: Optional[bool] = False,
+        copy_button: Optional[Union[bool, Component]] = None,
+        **props
+    ):
         """Create a text component.
 
         Args:
@@ -70,7 +76,7 @@ class CodeBlock(Component):
 
         if can_copy:
             code = children[0]
-            copy_button = (
+            copy_button = (  # type: ignore
                 copy_button
                 if copy_button is not None
                 else Button.create(

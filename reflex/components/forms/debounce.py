@@ -1,7 +1,7 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Union
 
 from reflex.components import Component
 from reflex.components.tags import Tag
@@ -23,7 +23,7 @@ class DebounceInput(Component):
     min_length: Var[int]
 
     # Time to wait between end of input and triggering on_change
-    debounce_timeout: Var[int]
+    debounce_timeout: Union[Var[int], int]
 
     # If true, notify when Enter key is pressed
     force_notify_by_enter: Var[bool]
