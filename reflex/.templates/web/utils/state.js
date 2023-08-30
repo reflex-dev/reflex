@@ -125,12 +125,12 @@ export const applyEvent = async (event, socket) => {
   }
 
   if (event.name == "_set_cookie") {
-    cookies.set(event.payload.key, event.payload.value);
+    cookies.set(event.payload.key, event.payload.value, { path: "/" });
     return false;
   }
 
   if (event.name == "_remove_cookie") {
-    cookies.remove(event.payload.key, event.payload.options)
+    cookies.remove(event.payload.key, { path: "/", ...event.payload.options })
     return false;
   }
 
@@ -257,6 +257,7 @@ export const processEvent = async (
  * @param transports The transports to use.
  * @param setConnectError The function to update connection error value.
  * @param initial_events Array of events to seed the queue after connecting.
+ * @param client_storage The client storage object from context.js
  */
 export const connect = async (
   socket,
@@ -264,6 +265,7 @@ export const connect = async (
   transports,
   setConnectError,
   initial_events = [],
+  client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(EVENTURL);
@@ -288,6 +290,7 @@ export const connect = async (
   socket.current.on("event", message => {
     const update = JSON5.parse(message)
     dispatch(update.delta)
+    applyClientStorageDelta(client_storage, update.delta)
     event_processing = !update.final
     if (update.events) {
       queueEvents(update.events, socket)
@@ -358,9 +361,76 @@ export const E = (name, payload = {}, handler = null) => {
 };
 
 /**
+ * Package client-side storage values as payload to send to the
+ * backend with the hydrate event
+ * @param client_storage The client storage object from context.js
+ * @returns payload dict of client storage values
+ */
+export const hydrateClientStorage = (client_storage) => {
+  const client_storage_values = {
+    "cookies": {},
+    "local_storage": {}
+  }
+  if (client_storage.cookies) {
+    for (const state_key in client_storage.cookies) {
+      const cookie_options = client_storage.cookies[state_key]
+      const cookie_name = cookie_options.name || state_key
+      client_storage_values.cookies[state_key] = cookies.get(cookie_name)
+    }
+  }
+  if (client_storage.local_storage && (typeof window !== 'undefined')) {
+    for (const state_key in client_storage.local_storage) {
+      const options = client_storage.local_storage[state_key]
+      const local_storage_value = localStorage.getItem(options.name || state_key)
+      if (local_storage_value !== null) {
+        client_storage_values.local_storage[state_key] = local_storage_value
+      }
+    }
+  }
+  if (client_storage.cookies || client_storage.local_storage) {
+    return client_storage_values
+  }
+  return {}
+};
+
+/**
+ * Update client storage values based on backend state delta.
+ * @param client_storage The client storage object from context.js
+ * @param delta The state update from the backend
+ */
+const applyClientStorageDelta = (client_storage, delta) => {
+  // find the main state and check for is_hydrated
+  const unqualified_states = Object.keys(delta).filter((key) => key.split(".").length === 1);
+  if (unqualified_states.length === 1) {
+    const main_state = delta[unqualified_states[0]]
+    if (main_state.is_hydrated !== undefined && !main_state.is_hydrated) {
+      // skip if the state is not hydrated yet, since all client storage
+      // values are sent in the hydrate event
+      return;
+    }
+  }
+  // Save known client storage values to cookies and localStorage.
+  for (const substate in delta) {
+    for (const key in delta[substate]) {
+      const state_key = `${substate}.${key}`
+      if (client_storage.cookies && state_key in client_storage.cookies) {
+        const cookie_options = client_storage.cookies[state_key]
+        const cookie_name = cookie_options.name || state_key
+        delete cookie_options.name  // name is not a valid cookie option
+        cookies.set(cookie_name, delta[substate][key], cookie_options);
+      } else if (client_storage.local_storage && state_key in client_storage.local_storage && (typeof window !== 'undefined')) {
+        const options = client_storage.local_storage[state_key]
+        localStorage.setItem(options.name || state_key, delta[substate][key]);
+      }
+    }
+  }
+}
+
+/**
  * Establish websocket event loop for a NextJS page.
  * @param initial_state The initial page state.
  * @param initial_events Array of events to seed the queue after connecting.
+ * @param client_storage The client storage object from context.js
  *
  * @returns [state, Event, connectError] -
  *   state is a reactive dict,
@@ -370,6 +440,7 @@ export const E = (name, payload = {}, handler = null) => {
 export const useEventLoop = (
   initial_state = {},
   initial_events = [],
+  client_storage = {},
 ) => {
   const socket = useRef(null)
   const router = useRouter()
@@ -391,7 +462,7 @@ export const useEventLoop = (
 
     // Initialize the websocket connection.
     if (!socket.current) {
-      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, initial_events)
+      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, initial_events, client_storage)
     }
     (async () => {
       // Process all outstanding events.

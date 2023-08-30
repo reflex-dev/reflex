@@ -359,6 +359,10 @@ PING_TIMEOUT = 120
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
 
+# Keys in the client_side_storage dict
+COOKIES = "cookies"
+LOCAL_STORAGE = "local_storage"
+
 # Names of event handlers on all components mapped to useEffect
 ON_MOUNT = "on_mount"
 ON_UNMOUNT = "on_unmount"
