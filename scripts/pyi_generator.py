@@ -12,15 +12,17 @@ import black
 from reflex.components.component import Component
 
 
-def _get_type_hint(value, rec=False):
+def _get_type_hint(value, top_level=True):
     res = ""
     args = get_args(value)
     if args:
-        res = f"{value.__name__}[{', '.join([_get_type_hint(arg, rec=True) for arg in args if arg is not type(None)])}]"
+        res = f"{value.__name__}[{', '.join([_get_type_hint(arg, top_level=False) for arg in args if arg is not type(None)])}]"
 
         if value.__name__ == "Var":
             types = [res] + [
-                _get_type_hint(arg, rec=True) for arg in args if arg is not type(None)
+                _get_type_hint(arg, top_level=False)
+                for arg in args
+                if arg is not type(None)
             ]
             if len(types) > 1:
                 res = ", ".join(types)
@@ -29,7 +31,7 @@ def _get_type_hint(value, rec=False):
         res = value
     else:
         res = value.__name__
-    if not rec and not res.startswith("Optional"):
+    if top_level and not res.startswith("Optional"):
         res = f"Optional[{res}]"
     return res
 
