@@ -9,7 +9,8 @@ import os
 import os.path as op
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Type, Union
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Type
 
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
@@ -505,6 +506,10 @@ def format_state(value: Any) -> Any:
     # Convert plotly figures to JSON.
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]  # type: ignore
+
+    # Convert datetime object to str.
+    if isinstance(value, datetime):
+        return str(value)
 
     # Convert pandas dataframes to JSON.
     if types.is_dataframe(type(value)):

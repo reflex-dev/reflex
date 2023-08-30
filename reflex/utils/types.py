@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import typing
+from datetime import datetime
 from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
@@ -12,7 +13,7 @@ from reflex.base import Base
 GenericType = Union[Type, _GenericAlias]
 
 # Valid state var types.
-PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
+PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple, datetime]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
