@@ -15,7 +15,7 @@ from reflex.components.component import Component
 EXCLUDED_FILES = ["__init__.py", "component.py", "bare.py", "foreach.py", "cond.py"]
 
 
-def _get_type_hint(value, top_level=True):
+def _get_type_hint(value, top_level=True, no_union=False):
     res = ""
     args = get_args(value)
     if args:
@@ -27,7 +27,7 @@ def _get_type_hint(value, top_level=True):
                 for arg in args
                 if arg is not type(None)
             ]
-            if len(types) > 1:
+            if len(types) > 1 and not no_union:
                 res = ", ".join(types)
                 res = f"Union[{res}]"
     elif isinstance(value, str):
@@ -59,6 +59,7 @@ class PyiGenerator:
             "from typing import overload, Optional, Any, Union",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var",
+            "from reflex.event import EventChain",
         ]
 
     def _generate_pyi_class(self, _class):
@@ -87,11 +88,17 @@ class PyiGenerator:
         return lines
 
     def _generate_pyi_variable(self, _name, _var):
-        # print(_name)
-        # print(type(_var), inspect.getsource(_var))
         return [f"{_name} = {_var}"]
 
-    def _write_pyi_file(self, variables, classes):
+    def _generate_function(self, _name, _func):
+        sig = inspect.signature(_func)
+        param = "".join(str(sig).rpartition(" -> ")[0])
+        return_hint = _get_type_hint(
+            sig.return_annotation, top_level=False, no_union=True
+        )
+        return [f"def {_name}{param} -> {return_hint}: ", "    ..."]
+
+    def _write_pyi_file(self, variables, functions, classes):
         pyi_content = [
             f'"""Stub file for {self.current_module_path}.py"""',
             "# ------------------- DO NOT EDIT ----------------------",
@@ -103,6 +110,9 @@ class PyiGenerator:
 
         for _name, _var in variables:
             pyi_content.extend(self._generate_pyi_variable(_name, _var))
+
+        for _fname, _func in functions:
+            pyi_content.extend(self._generate_function(_fname, _func))
 
         for _, _class in classes:
             pyi_content.extend(self._generate_pyi_class(_class))
@@ -139,6 +149,18 @@ class PyiGenerator:
             and not inspect.isfunction(obj)
         ]
 
+        functions = [
+            (name, obj)
+            for name, obj in vars(self.current_module).items()
+            if not name.startswith("__")
+            and (
+                not inspect.getmodule(obj)
+                or inspect.getmodule(obj) == self.current_module
+            )
+            and inspect.isfunction(obj)
+        ]
+        print(functions)
+
         class_names = [
             (name, obj)
             for name, obj in vars(self.current_module).items()
@@ -150,7 +172,7 @@ class PyiGenerator:
         if not class_names:
             return
         print(f"Parsed {file}: Found {[n for n,_ in class_names]}")
-        self._write_pyi_file(local_variables, class_names)
+        self._write_pyi_file(local_variables, functions, class_names)
 
     def _scan_folder(self, folder):
         for root, _, files in os.walk(folder):
