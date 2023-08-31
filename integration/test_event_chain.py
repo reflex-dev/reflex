@@ -31,6 +31,9 @@ def EventChain():
         def event_arg(self, arg):
             self.event_order.append(f"event_arg:{arg}")
 
+        def event_arg_repr_type(self, arg):
+            self.event_order.append(f"event_arg_repr:{arg!r}_{type(arg).__name__}")
+
         def event_nested_1(self):
             self.event_order.append("event_nested_1")
             yield State.event_nested_2
@@ -100,6 +103,14 @@ def EventChain():
             self.event_order.append("redirect_yield_chain")
             yield rx.redirect("/on-load-yield-chain")
 
+        def click_return_int_type(self):
+            self.event_order.append("click_return_int_type")
+            return State.event_arg_repr_type(1)  # type: ignore
+
+        def click_return_dict_type(self):
+            self.event_order.append("click_return_dict_type")
+            return State.event_arg_repr_type({"a": 1})  # type: ignore
+
     app = rx.App(state=State)
 
     @app.add_page
@@ -140,6 +151,26 @@ def EventChain():
                 "Redirect Return Chain",
                 id="redirect_return_chain",
                 on_click=State.redirect_return_chain,
+            ),
+            rx.button(
+                "Click Int Type",
+                id="click_int_type",
+                on_click=lambda: State.event_arg_repr_type(1),  # type: ignore
+            ),
+            rx.button(
+                "Click Dict Type",
+                id="click_dict_type",
+                on_click=lambda: State.event_arg_repr_type({"a": 1}),  # type: ignore
+            ),
+            rx.button(
+                "Return Chain Int Type",
+                id="return_int_type",
+                on_click=State.click_return_int_type,
+            ),
+            rx.button(
+                "Return Chain Dict Type",
+                id="return_dict_type",
+                on_click=State.click_return_dict_type,
             ),
         )
 
@@ -286,6 +317,22 @@ def driver(event_chain: AppHarness):
                 "event_arg:6",
             ],
         ),
+        (
+            "click_int_type",
+            ["event_arg_repr:1_int"],
+        ),
+        (
+            "click_dict_type",
+            ["event_arg_repr:{'a': 1}_dict"],
+        ),
+        (
+            "return_int_type",
+            ["click_return_int_type", "event_arg_repr:1_int"],
+        ),
+        (
+            "return_dict_type",
+            ["click_return_dict_type", "event_arg_repr:{'a': 1}_dict"],
+        ),
     ],
 )
 def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
@@ -356,6 +403,7 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
 
     time.sleep(0.5)
     backend_state = event_chain.app_instance.state_manager.states[token]
+    assert backend_state.is_hydrated is True
     assert backend_state.event_order == exp_event_order
 
 

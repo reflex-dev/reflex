@@ -17,7 +17,7 @@ def exp_is_hydrated(state: State) -> Dict[str, Any]:
     Returns:
         dict similar to that returned by `State.get_delta` with IS_HYDRATED: True
     """
-    return {state.get_name(): {IS_HYDRATED: "true"}}
+    return {state.get_name(): {IS_HYDRATED: True}}
 
 
 class TestState(State):

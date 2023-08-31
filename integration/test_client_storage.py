@@ -238,9 +238,6 @@ def test_client_side_state(
     state_var_input.send_keys("c2")
     input_value_input.send_keys("c2 value")
     set_sub_state_button.click()
-    state_var_input.send_keys("c3")
-    input_value_input.send_keys("c3 value")
-    set_sub_state_button.click()
     state_var_input.send_keys("c4")
     input_value_input.send_keys("c4 value")
     set_sub_state_button.click()
@@ -293,17 +290,6 @@ def test_client_side_state(
         "secure": False,
         "value": "c2%20value",
     }
-    c3_cookie = cookies.pop("client_side_state.client_side_sub_state.c3")
-    assert c3_cookie.pop("expiry") is not None
-    assert c3_cookie == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.c3",
-        "path": "/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c3%20value",
-    }
     assert cookies.pop("client_side_state.client_side_sub_state.c4") == {
         "domain": "localhost",
         "httpOnly": False,
@@ -344,6 +330,23 @@ def test_client_side_state(
     }
     # assert all cookies have been popped for this page
     assert not cookies
+
+    # Test cookie with expiry by itself to avoid timing flakiness
+    state_var_input.send_keys("c3")
+    input_value_input.send_keys("c3 value")
+    set_sub_state_button.click()
+    cookies = {cookie_info["name"]: cookie_info for cookie_info in driver.get_cookies()}
+    c3_cookie = cookies["client_side_state.client_side_sub_state.c3"]
+    assert c3_cookie.pop("expiry") is not None
+    assert c3_cookie == {
+        "domain": "localhost",
+        "httpOnly": False,
+        "name": "client_side_state.client_side_sub_state.c3",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": False,
+        "value": "c3%20value",
+    }
     time.sleep(2)  # wait for c3 to expire
     assert "client_side_state.client_side_sub_state.c3" not in {
         cookie_info["name"] for cookie_info in driver.get_cookies()
