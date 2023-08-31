@@ -22,7 +22,7 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import format, imports, types
-from reflex.vars import BaseVar, ImportVar, Var
+from reflex.vars import BaseVar, ImportVar, NoRenderImportVar, Var
 
 
 class Component(Base, ABC):
@@ -39,6 +39,9 @@ class Component(Base, ABC):
 
     # The library that the component is based on.
     library: Optional[str] = None
+
+    # List here the non-react dependency needed by `library`
+    lib_dependencies: List[str] = []
 
     # The tag to use when rendering the component.
     tag: Optional[str] = None
@@ -515,9 +518,12 @@ class Component(Base, ABC):
         return code
 
     def _get_imports(self) -> imports.ImportDict:
+        imports = {}
         if self.library is not None and self.tag is not None:
-            return {self.library: {self.import_var}}
-        return {}
+            imports[self.library] = {self.import_var}
+        for dep in self.lib_dependencies:
+            imports[dep] = {NoRenderImportVar()}  # type: ignore
+        return imports
 
     def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
@@ -833,11 +839,26 @@ class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
     def _get_imports(self):
-        return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+        imports = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+
+        for dep in [self.library, *self.lib_dependencies]:
+            imports[dep] = {NoRenderImportVar()}  # type: ignore
+
+        return imports
 
     def _get_custom_code(self) -> str:
         opts_fragment = ", { ssr: false });"
-        library_import = f"const {self.tag} = dynamic(() => import('{self.library}')"
+
+        # extract the correct import name from library name
+        if self.library is None:
+            raise ValueError("Undefined library for NoSSRComponent")
+
+        import_name_parts = [p for p in self.library.rpartition("@") if p != ""]
+        import_name = (
+            import_name_parts[0] if import_name_parts[0] != "@" else self.library
+        )
+
+        library_import = f"const {self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"
