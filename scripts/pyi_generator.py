@@ -14,7 +14,7 @@ from reflex.components.component import Component
 
 EXCLUDED_FILES = ["__init__.py", "component.py", "bare.py", "foreach.py", "cond.py"]
 
-DEFAULT_TYPING_IMPORTS = {"overload", "Optional", "Any", "Union"}
+DEFAULT_TYPING_IMPORTS = {"overload", "Optional", "Union"}
 
 
 def _get_type_hint(value, top_level=True, no_union=False):
