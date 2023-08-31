@@ -401,7 +401,7 @@ def install_frontend_packages(packages: List[str]):
             cwd=constants.WEB_DIR,
             shell=constants.IS_WINDOWS,
         )
-        # processes.show_status("Installing custom frontend packages", process)
+        processes.show_status("Installing frontend packages for components", process)
 
 
 def check_initialized(frontend: bool = True):
