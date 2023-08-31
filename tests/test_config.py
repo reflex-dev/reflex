@@ -54,6 +54,8 @@ def test_deprecated_params(base_config_values, param):
         ("DB_URL", "postgresql://user:pass@localhost:5432/db"),
         ("REDIS_URL", "redis://localhost:6379"),
         ("TIMEOUT", 600),
+        ("TELEMETRY_ENABLED", False),
+        ("TELEMETRY_ENABLED", True),
     ],
 )
 def test_update_from_env(base_config_values, monkeypatch, env_var, value):
