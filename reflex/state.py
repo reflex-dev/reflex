@@ -127,27 +127,32 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                             parent_state.parent_state,
                         )
 
-        # Initialize the mutable fields.
-        self._init_mutable_fields()
-
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(self.backend_vars)
+
+        # Initialize the mutable fields.
+        self._init_mutable_fields()
 
     def _init_mutable_fields(self):
         """Initialize mutable fields.
 
-        So that mutation to them can be detected by the app:
-        * list
+        Allow mutation to dict, list, and set to be detected by the app.
         """
         for field in self.base_vars.values():
             value = getattr(self, field.name)
 
-            value_in_rx_data = _convert_mutable_datatypes(
-                value, self._reassign_field, field.name
-            )
-
-            if types._issubclass(field.type_, Union[List, Dict]):
+            if types._issubclass(field.type_, Union[List, Dict, Set]):
+                value_in_rx_data = _convert_mutable_datatypes(
+                    value, self._reassign_field, field.name
+                )
                 setattr(self, field.name, value_in_rx_data)
+
+        for field_name, value in self._backend_vars.items():
+            if isinstance(value, Union[List, Dict, Set]):
+                value_in_rx_data = _convert_mutable_datatypes(
+                    value, self._reassign_field, field_name
+                )
+                self._backend_vars[field_name] = value_in_rx_data
 
         self._clean()
 
@@ -651,15 +656,17 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
+        # Make sure lists and dicts are converted to ReflexList, ReflexDict and ReflexSet.
+        if name in (*self.base_vars, *self.backend_vars) and types._isinstance(
+            value, Union[List, Dict, Set]
+        ):
+            value = _convert_mutable_datatypes(value, self._reassign_field, name)
+
         if types.is_backend_variable(name) and name != "_backend_vars":
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
             return
-
-        # Make sure lists and dicts are converted to ReflexList, ReflexDict and ReflexSet.
-        if name in self.vars and types._isinstance(value, Union[List, Dict, Set]):
-            value = _convert_mutable_datatypes(value, self._reassign_field, name)
 
         # Set the attribute.
         super().__setattr__(name, value)
