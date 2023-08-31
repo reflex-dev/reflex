@@ -52,6 +52,14 @@ def _get_typing_import(_module):
     return set()
 
 
+def _get_var_definition(_module, _var_name):
+    return [
+        line.split(" = ")[0]
+        for line in inspect.getsource(_module).splitlines()
+        if line.startswith(_var_name)
+    ]
+
+
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
     generate the approriate stub.
@@ -108,10 +116,11 @@ class PyiGenerator:
         return lines
 
     def _generate_pyi_variable(self, _name, _var):
-        if isinstance(_var, str):
-            return [f'{_name} = "{str(_var)}"']
-        else:
-            return [f"{_name} = {str(_var)}"]
+        return _get_var_definition(self.current_module, _name)
+        # if isinstance(_var, str):
+        #     return [f'{_name} = "{str(_var)}"']
+        # else:
+        #     return [f"{_name} = {str(_var)}"]
 
     def _generate_function(self, _name, _func):
         definition = "".join(inspect.getsource(_func).split(":\n")[0].split("\n"))
