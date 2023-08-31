@@ -1,6 +1,5 @@
 """Integration tests for dynamic route page behavior."""
 import time
-from contextlib import contextmanager
 from typing import Generator, Type
 from urllib.parse import urlsplit
 
@@ -8,6 +7,8 @@ import pytest
 from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
+
+from .utils import poll_for_navigation
 
 
 def DynamicRoute():
@@ -92,27 +93,6 @@ def driver(dynamic_route: AppHarness):
         yield driver
     finally:
         driver.quit()
-
-
-@contextmanager
-def poll_for_navigation(driver, timeout: int = 5) -> Generator[None, None, None]:
-    """Wait for driver url to change.
-
-    Use as a contextmanager, and apply the navigation event inside the context
-    block, polling will occur after the context block exits.
-
-    Args:
-        driver: WebDriver instance.
-        timeout: Time to wait for url to change.
-
-    Yields:
-        None
-    """
-    prev_url = driver.current_url
-
-    yield
-
-    AppHarness._poll_for(lambda: prev_url != driver.current_url, timeout=timeout)
 
 
 def test_on_load_navigate(dynamic_route: AppHarness, driver):

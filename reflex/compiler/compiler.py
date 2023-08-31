@@ -86,6 +86,7 @@ def _compile_contexts(state: Type[State]) -> str:
     return templates.CONTEXT.render(
         initial_state=utils.compile_state(state),
         state_name=state.get_name(),
+        client_storage=utils.compile_client_storage(state),
     )
 
 

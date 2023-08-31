@@ -3,7 +3,7 @@ import json
 import pytest
 
 from reflex import event
-from reflex.event import Event, EventHandler, EventSpec
+from reflex.event import Event, EventHandler, EventSpec, fix_events
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -85,6 +85,35 @@ def test_call_event_handler():
     handler = EventHandler(fn=test_fn_with_args)
     with pytest.raises(TypeError):
         handler(test_fn)  # type: ignore
+
+
+@pytest.mark.parametrize(
+    ("arg1", "arg2"),
+    (
+        (1, 2),
+        (1, "2"),
+        ({"a": 1}, {"b": 2}),
+    ),
+)
+def test_fix_events(arg1, arg2):
+    """Test that chaining an event handler with args formats the payload correctly.
+
+    Args:
+        arg1: The first arg passed to the handler.
+        arg2: The second arg passed to the handler.
+    """
+
+    def test_fn_with_args(_, arg1, arg2):
+        pass
+
+    test_fn_with_args.__qualname__ = "test_fn_with_args"
+
+    handler = EventHandler(fn=test_fn_with_args)
+    event_spec = handler(arg1, arg2)
+    event = fix_events([event_spec], token="foo")[0]
+    assert event.name == test_fn_with_args.__qualname__
+    assert event.token == "foo"
+    assert event.payload == {"arg1": arg1, "arg2": arg2}
 
 
 def test_event_redirect():

@@ -2,7 +2,7 @@ import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { Global, css } from "@emotion/react";
 import theme from "/utils/theme";
 import { ClientSideRoutingProvider } from "utils/client_side_routing";
-import { initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context";
+import { clientStorage, initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
 import { useEventLoop } from "utils/state";
 
 import '../styles/tailwind.css'
@@ -19,6 +19,7 @@ function EventLoopProvider({ children }) {
   const [state, Event, connectError] = useEventLoop(
     initialState,
     initialEvents,
+    clientStorage,
   )
   return (
     <EventLoopContext.Provider value={[Event, connectError]}>
