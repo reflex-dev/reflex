@@ -148,7 +148,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 setattr(self, field.name, value_in_rx_data)
 
         for field_name, value in self._backend_vars.items():
-            if isinstance(value, Union[List, Dict, Set]):
+            if isinstance(value, (list, dict, set)):
                 value_in_rx_data = _convert_mutable_datatypes(
                     value, self._reassign_field, field_name
                 )
