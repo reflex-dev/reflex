@@ -42,8 +42,6 @@ def run_process_and_launch_url(run_command: list[str]):
             if get_config().frontend_path != "":
                 url += get_config().frontend_path
             console.print(f"App running at: [bold green]{url}")
-        else:
-            console.debug(line)
 
 
 def run_frontend(root: Path, port: str):
