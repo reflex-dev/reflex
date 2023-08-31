@@ -1158,8 +1158,8 @@ def test_computed_var_dependencies():
         v: int = 0
         w: int = 0
         x: int = 0
-        y: list[int] = [1, 2, 3]
-        _z: list[int] = [1, 2, 3]
+        y: List[int] = [1, 2, 3]
+        _z: List[int] = [1, 2, 3]
 
         @rx.cached_var
         def comp_v(self) -> int:
@@ -1193,7 +1193,7 @@ def test_computed_var_dependencies():
             return _
 
         @rx.cached_var
-        def comp_y(self) -> list[int]:
+        def comp_y(self) -> List[int]:
             """Comprehension iterating over attribute.
 
             Returns:
@@ -1202,7 +1202,7 @@ def test_computed_var_dependencies():
             return [round(y) for y in self.y]
 
         @rx.cached_var
-        def comp_z(self) -> list[bool]:
+        def comp_z(self) -> List[bool]:
             """Comprehension accesses attribute.
 
             Returns:
