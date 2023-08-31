@@ -34,7 +34,7 @@ def DynamicRoute():
 
     def index():
         return rx.fragment(
-            rx.input(value=DynamicState.token, is_read_only=True, id="token"),
+            rx.input(value=DynamicState.token, is_read_only=True, id="token"),  # type: ignore
             rx.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
             rx.link("index", href="/", id="link_index"),
             rx.link("page_X", href="/static/x", id="link_page_x"),

@@ -6,16 +6,23 @@ import os
 import sys
 from inspect import getfullargspec
 from pathlib import Path
-from typing import Any, get_args
+from typing import Any, Dict, List, Optional, get_args
 
 import black
 
 from reflex.components.component import Component
 from reflex.vars import Var
 
-ruff_dont_remove = [Var]
+ruff_dont_remove = [Var, Optional, Dict, List]
 
-EXCLUDED_FILES = ["__init__.py", "component.py", "bare.py", "foreach.py", "cond.py"]
+EXCLUDED_FILES = [
+    "__init__.py",
+    "component.py",
+    "bare.py",
+    "foreach.py",
+    "cond.py",
+    "multiselect.py",
+]
 
 DEFAULT_TYPING_IMPORTS = {"overload", "Optional", "Union"}
 
@@ -91,7 +98,7 @@ class PyiGenerator:
         return [
             f"from typing import {','.join(typing_imports)}",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
-            "from reflex.vars import Var, BaseVar",
+            "from reflex.vars import Var, BaseVar, ComputedVar",
             "from reflex.event import EventChain",
         ]
 
