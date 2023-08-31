@@ -13,7 +13,7 @@ from reflex.utils import imports
 from reflex.vars import ImportVar, Var
 
 # Path to the prism styles.
-PRISM_STYLES_PATH = "/styles/code/prism"
+PRISM_STYLES_PATH: str = "/styles/code/prism"
 
 
 class CodeBlock(Component):
