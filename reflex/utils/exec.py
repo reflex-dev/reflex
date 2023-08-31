@@ -7,6 +7,7 @@ import platform
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urljoin
 
 import uvicorn
 
@@ -37,10 +38,11 @@ def run_process_and_launch_url(run_command: list[str]):
     )
 
     for line in processes.stream_logs("Starting frontend", process):
-        if match := re.search("ready started server on ([0-9.:]+)", line):
-            url = match.group(1)
+        match = re.search("ready started server on ([0-9.:]+)", line)
+        if match:
+            url = f"http://{match.group(1)}"
             if get_config().frontend_path != "":
-                url += get_config().frontend_path
+                url = urljoin(url, get_config().frontend_path)
             console.print(f"App running at: [bold green]{url}")
 
 
