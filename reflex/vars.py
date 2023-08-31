@@ -1375,8 +1375,6 @@ class ImportVar(Base):
 class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
 
-    ...
-
 
 def get_local_storage(key: Var | str | None = None) -> BaseVar:
     """Provide a base var as payload to get local storage item(s).
