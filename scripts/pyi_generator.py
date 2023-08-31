@@ -74,9 +74,6 @@ class PyiGenerator:
         variables_imports = {
             type(_var) for _, _var in variables if isinstance(_var, Component)
         }
-        # for _name, _var in variables:
-        #     if isinstance(_var, Component):
-        # print(_name, type(_var).__module__, type(_var).__name__)
         bases = {
             base
             for _, _class in classes
