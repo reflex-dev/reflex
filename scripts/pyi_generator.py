@@ -70,23 +70,27 @@ class PyiGenerator:
     current_module: Any = {}
     default_typing_imports: set = DEFAULT_TYPING_IMPORTS
 
-    def _generate_imports(self, classes):
+    def _generate_imports(self, variables, classes):
+        variables_imports = {
+            type(_var) for _, _var in variables if isinstance(_var, Component)
+        }
+        # for _name, _var in variables:
+        #     if isinstance(_var, Component):
+        # print(_name, type(_var).__module__, type(_var).__name__)
         bases = {
             base
             for _, _class in classes
             for base in _class.__bases__
             if inspect.getmodule(base) != self.current_module
-        }
-
+        } | variables_imports
+        bases.add(Component)
         typing_imports = self.default_typing_imports | _get_typing_import(
             self.current_module
         )
-        typing_imports = ", ".join(typing_imports)
-        typing_imports = f"from typing import {typing_imports}"
         return [
-            typing_imports,
+            f"from typing import {','.join(typing_imports)}",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
-            "from reflex.vars import Var",
+            "from reflex.vars import Var, BaseVar",
             "from reflex.event import EventChain",
         ]
 
@@ -117,10 +121,6 @@ class PyiGenerator:
 
     def _generate_pyi_variable(self, _name, _var):
         return _get_var_definition(self.current_module, _name)
-        # if isinstance(_var, str):
-        #     return [f'{_name} = "{str(_var)}"']
-        # else:
-        #     return [f"{_name} = {str(_var)}"]
 
     def _generate_function(self, _name, _func):
         definition = "".join(inspect.getsource(_func).split(":\n")[0].split("\n"))
@@ -134,7 +134,7 @@ class PyiGenerator:
             "# ------------------------------------------------------",
             "",
         ]
-        pyi_content.extend(self._generate_imports(classes))
+        pyi_content.extend(self._generate_imports(variables, classes))
 
         for _name, _var in variables:
             pyi_content.extend(self._generate_pyi_variable(_name, _var))
@@ -169,12 +169,11 @@ class PyiGenerator:
             (name, obj)
             for name, obj in vars(self.current_module).items()
             if not name.startswith("__")
-            and (
-                not inspect.getmodule(obj)
-                or inspect.getmodule(obj) == self.current_module
-            )
-            and not inspect.isclass(obj)
-            and not inspect.isfunction(obj)
+            # and (
+            #     not inspect.getmodule(obj)
+            #     or inspect.getmodule(obj) == self.current_module
+            # )
+            and not inspect.isclass(obj) and not inspect.isfunction(obj)
         ]
 
         functions = [
