@@ -40,7 +40,7 @@ def run_process_and_launch_url(
 
     if process.stdout:
         for line in process.stdout:
-            if (match := re.search("ready started server on ([0-9.:]+)", line)):
+            if match := re.search("ready started server on ([0-9.:]+)", line):
                 url = match.group(1)
                 if get_config().frontend_path != "":
                     url += get_config().frontend_path
