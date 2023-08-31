@@ -22,14 +22,13 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Type,
     Union,
 )
 
 import cloudpickle
 import pydantic
-from redis import Redis
+from redis.asyncio import Redis
 
 from reflex import constants
 from reflex.base import Base
@@ -164,9 +163,34 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if state is None:
             state = self
 
+        def no_chain_background_task(name, fn):
+            call = f"{type(state or self).__name__}.{name}"
+            if inspect.iscoroutinefunction(fn):
+
+                async def _no_chain_background_task_co(*args, **kwargs):
+                    raise RuntimeError(
+                        f"Cannot directly call background task {name!r}, use `yield {call}` or `return {call}` instead."
+                    )
+
+                return _no_chain_background_task_co
+            if inspect.isasyncgenfunction(fn):
+
+                async def _no_chain_background_task_gen(*args, **kwargs):
+                    yield
+                    raise RuntimeError(
+                        f"Cannot directly call background task {name!r}, use `yield {call}` or `return {call}` instead."
+                    )
+
+                return _no_chain_background_task_gen
+
+            raise TypeError(f"{fn} is marked as a background task, but is not async.")
+
         # Convert the event handlers to functions.
         for name, event_handler in state.event_handlers.items():
-            fn = functools.partial(event_handler.fn, self)
+            if event_handler.is_background:
+                fn = no_chain_background_task(name, event_handler.fn)
+            else:
+                fn = functools.partial(event_handler.fn, self)
             fn.__module__ = event_handler.fn.__module__  # type: ignore
             fn.__qualname__ = event_handler.fn.__qualname__  # type: ignore
             setattr(self, name, fn)
@@ -728,6 +752,37 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             raise ValueError(f"Invalid path: {path}")
         return self.substates[path[0]].get_substate(path[1:])
 
+    def _get_event_handler(
+        self, event: Event
+    ) -> tuple[Union[State, StateProxy], EventHandler]:
+        """Get the event handler for the given event.
+
+        Args:
+            event: The event to get the handler for.
+
+
+        Returns:
+            The event handler.
+
+        Raises:
+            ValueError: If the event handler or substate is not found.
+        """
+        # Get the event handler.
+        path = event.name.split(".")
+        path, name = path[:-1], path[-1]
+        substate = self.get_substate(path)
+        if not substate:
+            raise ValueError(
+                "The value of state cannot be None when processing an event."
+            )
+        handler = substate.event_handlers[name]
+
+        # For background tasks, proxy the state
+        if handler.is_background:
+            substate = StateProxy(substate)
+
+        return substate, handler
+
     async def _process(self, event: Event) -> AsyncIterator[StateUpdate]:
         """Obtain event info and process event.
 
@@ -736,44 +791,17 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         Yields:
             The state update after processing the event.
-
-        Raises:
-            ValueError: If the state value is None.
         """
         # Get the event handler.
-        path = event.name.split(".")
-        path, name = path[:-1], path[-1]
-        substate = self.get_substate(path)
-        handler = substate.event_handlers[name]  # type: ignore
+        substate, handler = self._get_event_handler(event)
 
-        if not substate:
-            raise ValueError(
-                "The value of state cannot be None when processing an event."
-            )
-
-        # Get the event generator.
-        event_iter = self._process_event(
+        # Run the event generator and yield state updates.
+        async for update in self._process_event(
             handler=handler,
             state=substate,
             payload=event.payload,
-        )
-
-        # Clean the state before processing the event.
-        self._clean()
-
-        # Run the event generator and return state updates.
-        async for events, final in event_iter:
-            # Fix the returned events.
-            events = fix_events(events, event.token)  # type: ignore
-
-            # Get the delta after processing the event.
-            delta = self.get_delta()
-
-            # Yield the state update.
-            yield StateUpdate(delta=delta, events=events, final=final)
-
-            # Clean the state to prepare for the next event.
-            self._clean()
+        ):
+            yield update
 
     def _check_valid(self, handler: EventHandler, events: Any) -> Any:
         """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
@@ -805,8 +833,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     async def _process_event(
-        self, handler: EventHandler, state: State, payload: Dict
-    ) -> AsyncIterator[Tuple[Optional[List[EventSpec]], bool]]:
+        self, handler: EventHandler, state: Union[State, StateProxy], payload: Dict
+    ) -> AsyncIterator[StateUpdate]:
         """Process event.
 
         Args:
@@ -815,12 +843,29 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             payload: The event payload.
 
         Yields:
-            Tuple containing:
-                0: The state update after processing the event.
-                1: Whether the event is the final event.
+            StateUpdate object
         """
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
+
+        token = self.get_token()
+
+        def as_state_update(events, final) -> StateUpdate:
+            # Fix the returned events.
+            events = fix_events(self._check_valid(handler, events), token)  # type: ignore
+
+            # Get the delta after processing the event.
+            delta = self.get_delta()
+            self._clean()
+
+            return StateUpdate(
+                delta=delta,
+                events=events,
+                final=final if not handler.is_background else True,
+            )
+
+        # Clean the state before processing the event.
+        self._clean()
 
         # Wrap the function in a try/except block.
         try:
@@ -834,30 +879,32 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
-                    yield self._check_valid(handler, event), False
-                yield None, True
+                    yield as_state_update(event, final=False)
+                yield as_state_update(events=None, final=True)
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
                 try:
                     while True:
-                        yield self._check_valid(handler, next(events)), False
+                        yield as_state_update(next(events), final=False)
                 except StopIteration as si:
                     # the "return" value of the generator is not available
                     # in the loop, we must catch StopIteration to access it
                     if si.value is not None:
-                        yield self._check_valid(handler, si.value), False
-                yield None, True
+                        yield as_state_update(si.value, final=False)
+                yield as_state_update(events=None, final=True)
 
             # Handle regular event chains.
             else:
-                yield self._check_valid(handler, events), True
+                yield as_state_update(events, final=True)
 
         # If an error occurs, throw a window alert.
         except Exception:
             error = traceback.format_exc()
             print(error)
-            yield [window_alert("An error occurred. See logs for details.")], True
+            yield as_state_update(
+                window_alert("An error occurred. See logs for details."), True
+            )
 
     def _always_dirty_computed_vars(self) -> Set[str]:
         """The set of ComputedVars that always need to be recalculated.
@@ -1007,6 +1054,140 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         return {k: variables[k] for k in sorted(variables)}
 
 
+class ImmutableStateError(AttributeError):
+    """Raised when a background task attempts to modify state outside of context."""
+
+    pass
+
+
+class StateProxy:
+    """Proxy of a state instance to control mutability of vars for a background task.
+
+    Since a background task runs against a state instance without holding the
+    state_manager lock for the token, the reference may become stale if the same
+    state is modified by another event handler.
+
+    The proxy object ensures that writes to the state are blocked unless
+    explicitly entering a context which refreshes the state from state_manager
+    and holds the lock for the token until exiting the context. After exiting
+    the context, a StateUpdate may be emitted to the frontend to notify the
+    client of the state change.
+
+    A background task will be passed the `StateProxy` as `self`, so mutability
+    can be safely performed inside an `async with self` block.
+
+        class State(rx.State):
+            counter: int = 0
+
+            @rx.background
+            async def bg_increment(self):
+                await asyncio.sleep(1)
+                async with self:
+                    self.counter += 1
+    """
+
+    __internal_attributes = set(
+        ["_actx", "_app", "_mutable", "_state_instance", "_substate_path"],
+    )
+
+    def __init__(self, state_instance):
+        """Create a proxy for a state instance.
+
+        Args:
+            state_instance: The state instance to proxy.
+        """
+        self._app = getattr(prerequisites.get_app(), constants.APP_VAR)
+        self._state_instance = state_instance
+        self._substate_path = state_instance.get_full_name().split(".")
+        self._actx = None
+        self._mutable = False
+
+    async def __aenter__(self) -> StateProxy:
+        """Enter the async context manager protocol.
+
+        Sets mutability to True and enters the `App.modify_state` async context,
+        which refreshes the state from state_manager and holds the lock for the
+        given state token until exiting the context.
+
+        Background tasks should avoid blocking calls while inside the context.
+
+        Returns:
+            This StateProxy instance in mutable mode.
+        """
+        self._actx = self._app.modify_state(self._state_instance.get_token())
+        mutable_state = await self._actx.__aenter__()
+        self._state_instance = mutable_state.get_substate(self._substate_path)
+        self._mutable = True
+        return self
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        """Exit the async context manager protocol.
+
+        Sets proxy mutability to False and persists any state changes.
+
+        Args:
+            exc_info: The exception info tuple.
+        """
+        if self._actx is None:
+            return
+        self._mutable = False
+        await self._actx.__aexit__(*exc_info)
+
+    def __enter__(self):
+        """Enter the regular context manager protocol.
+
+        This is not supported for background tasks, and exists only to raise a more useful exception
+        when the StateProxy is used incorrectly.
+
+        Raises:
+            TypeError: always, because only async contextmanager protocol is supported.
+        """
+        raise TypeError("Background task must use `async with self` to modify state.")
+
+    def __exit__(self, *exc_info: Any) -> None:
+        """Exit the regular context manager protocol.
+
+
+        Args:
+            exc_info: The exception info tuple.
+        """
+        pass
+
+    def __getattr__(self, name: str) -> Any:
+        """Get the attribute from the underlying state instance.
+
+        Args:
+            name: The name of the attribute.
+
+        Returns:
+            The value of the attribute.
+        """
+        return getattr(self._state_instance, name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set the attribute on the underlying state instance.
+
+        If the attribute is internal, set it on the proxy instance instead.
+
+        Args:
+            name: The name of the attribute.
+            value: The value of the attribute.
+
+        Raises:
+            ImmutableStateError: If the state is not in mutable mode.
+        """
+        if name in self.__internal_attributes:
+            # allow proxy internal attributes to be set
+            super().__setattr__(name, value)
+            return
+        if not self._mutable:
+            raise ImmutableStateError(
+                "Background task StateProxy is immutable outside of a context "
+                "manager. Use `async with self` to modify state."
+            )
+        setattr(self._state_instance, name, value)
+
+
 class DefaultState(State):
     """The default empty state."""
 
@@ -1093,29 +1274,34 @@ class StateManager(Base):
 
         Args:
             token: The token to obtain a lock for.
+
+        Yields:
+            None when the lock is held
+
+        Raises:
+            RuntimeError: If redis is not configured.
         """
+        if self.redis is None:
+            raise RuntimeError("Redis is not configured")
         lock_key = f"{token}_lock".encode()
+        # TODO: set key expiry
         state_is_locked = await self.redis.setnx(lock_key, 1)
         while not state_is_locked:
-            print("Redis state was LOCKED, waiting for all clear")
             await self.redis.config_set("notify-keyspace-events", "KEgxe")
             async with self.redis.pubsub() as pubsub:
                 await pubsub.psubscribe("__keyevent@0__:*")
                 # wait for the lock to be released
                 while True:
                     if not await self.redis.exists(lock_key):
-                        print("Redis state is UNLOCKED (Raced with another process)")
                         break  # try to get the lock again
                     message = await pubsub.get_message(ignore_subscribe_messages=True)
                     if message is None:
                         continue
-                    print(message)
                     if (
                         message["channel"]
                         in [b"__keyevent@0__:expire", b"__keyevent@0__:del"]
                         and message["data"] == lock_key
                     ):
-                        print(f"Redis state is UNLOCKED for {lock_key}")
                         break
             state_is_locked = await self.redis.setnx(lock_key, 1)
         try:
@@ -1124,17 +1310,19 @@ class StateManager(Base):
             await self.redis.delete(f"{token}_lock")
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str):
+    async def modify_state(self, token: str) -> AsyncIterator[State]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
             token: The token to modify the state for.
+
+        Yields:
+            The state for the token.
         """
         if self.redis is not None:
             async with self._redis_lock(token):
                 state = await self.get_state(token)
                 yield state
-                print(f"Persisting state for {token}")
                 await self.set_state(token, state)
             return
 
@@ -1142,8 +1330,6 @@ class StateManager(Base):
             async with self._state_manager_lock:
                 if token not in self._states_locks:
                     self._states_locks[token] = asyncio.Lock()
-        else:
-            print(f"modify_state[{token}] -> {self._states_locks[token]}")
 
         async with self._states_locks[token]:
             state = await self.get_state(token)

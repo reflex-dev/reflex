@@ -14,6 +14,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
@@ -96,6 +97,9 @@ class App(Base):
 
     # A component that is present on every page.
     overlay_component: Optional[Union[Component, ComponentCallable]] = connection_modal
+
+    # Background tasks that are currently running
+    background_tasks: Set[asyncio.Task] = set()
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -565,7 +569,7 @@ class App(Base):
         thread_pool.join()
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> State:
+    async def modify_state(self, token: str) -> AsyncIterator[State]:
         """Modify the state out of band.
 
         Args:
@@ -573,16 +577,61 @@ class App(Base):
 
         Yields:
             The state to modify.
+
+        Raises:
+            RuntimeError: If the app has not been initialized yet.
         """
+        if self.event_namespace is None:
+            raise RuntimeError("App has not been initialized yet.")
         async with self.state_manager.modify_state(token) as state:
             yield state
-            update = StateUpdate(delta=state.get_delta())
-            state._clean()
-            await self.event_namespace.emit(
-                str(constants.SocketEvent.EVENT),
-                update.json(),
-                to=state.get_sid(),
-            )
+            delta = state.get_delta()
+            if delta:
+                state._clean()
+                await self.event_namespace.emit(
+                    str(constants.SocketEvent.EVENT),
+                    StateUpdate(delta=delta).json(),
+                    to=state.get_sid(),
+                )
+
+    def _process_background(
+        self, state: State, event: Event
+    ) -> Union[asyncio.Task, bool]:
+        """Process an event in the background and emit updates as they arrive.
+
+        Args:
+            state: The state to process the event for.
+            event: The event to process.
+
+        Returns:
+            Task if the event was backgroundable, otherwise False
+        """
+        substate, handler = state._get_event_handler(event)
+        if not handler.is_background:
+            return False
+
+        async def _coro():
+            if self.event_namespace is None:
+                raise RuntimeError("App has not been initialized yet.")
+
+            # Process the event.
+            async for update in state._process_event(
+                handler=handler, state=substate, payload=event.payload
+            ):
+                # Postprocess the event.
+                update = await self.postprocess(state, event, update)
+
+                # Send the update to the client.
+                await self.event_namespace.emit(
+                    str(constants.SocketEvent.EVENT),
+                    update.json(),
+                    to=state.get_sid(),
+                )
+
+        task = asyncio.create_task(_coro())
+        self.background_tasks.add(task)
+        task.add_done_callback(self.background_tasks.discard)
+        return task
 
 
 async def process(
@@ -612,7 +661,6 @@ async def process(
         }
     )
     # Get the state for the session exclusively.
-    print(f"Processing event: {event.name} for {event.token}")
     async with app.state_manager.modify_state(event.token) as state:
         # re-assign only when the value is different
         if state.router_data != router_data:
@@ -629,7 +677,13 @@ async def process(
 
         # Only process the event if there is no update.
         else:
-            # Process the event.
+            if app._process_background(state, event):
+                yield StateUpdate(
+                    final=True
+                )  # let the client send more events immediately
+                return
+
+            # Process the event synchronously.
             async for update in state._process(event):
                 # Postprocess the event.
                 update = await app.postprocess(state, event, update)

@@ -304,7 +304,8 @@ def test_initialize_admin_dashboard_with_view_overrides(test_model):
     assert app.admin_dash.view_overrides[test_model] == TestModelView
 
 
-def test_initialize_with_state(test_state):
+@pytest.mark.asyncio
+async def test_initialize_with_state(test_state):
     """Test setting the state of an app.
 
     Args:
@@ -315,12 +316,13 @@ def test_initialize_with_state(test_state):
 
     # Get a state for a given token.
     token = "token"
-    state = app.state_manager.get_state(token)
+    state = await app.state_manager.get_state(token)
     assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
 
-def test_set_and_get_state(test_state):
+@pytest.mark.asyncio
+async def test_set_and_get_state(test_state):
     """Test setting and getting the state of an app with different tokens.
 
     Args:
@@ -333,20 +335,20 @@ def test_set_and_get_state(test_state):
     token2 = "token2"
 
     # Get the default state for each token.
-    state1 = app.state_manager.get_state(token1)
-    state2 = app.state_manager.get_state(token2)
+    state1 = await app.state_manager.get_state(token1)
+    state2 = await app.state_manager.get_state(token2)
     assert state1.var == 0  # type: ignore
     assert state2.var == 0  # type: ignore
 
     # Set the vars to different values.
     state1.var = 1
     state2.var = 2
-    app.state_manager.set_state(token1, state1)
-    app.state_manager.set_state(token2, state2)
+    await app.state_manager.set_state(token1, state1)
+    await app.state_manager.set_state(token2, state2)
 
     # Get the states again and check the values.
-    state1 = app.state_manager.get_state(token1)
-    state2 = app.state_manager.get_state(token2)
+    state1 = await app.state_manager.get_state(token1)
+    state2 = await app.state_manager.get_state(token2)
     assert state1.var == 1  # type: ignore
     assert state2.var == 2  # type: ignore
 
@@ -653,7 +655,7 @@ async def test_upload_file(fixture, request, delta):
     """
     app = App(state=request.getfixturevalue(fixture))
     app.event_namespace.emit = AsyncMock()  # type: ignore
-    current_state = app.state_manager.get_state("token")
+    current_state = await app.state_manager.get_state("token")
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
@@ -675,7 +677,7 @@ async def test_upload_file(fixture, request, delta):
     app.event_namespace.emit.assert_called_with(  # type: ignore
         "event", state_update.json(), to=current_state.get_sid()
     )
-    assert app.state_manager.get_state("token").dict()["img_list"] == [
+    assert (await app.state_manager.get_state("token")).dict()["img_list"] == [
         "image1.jpg",
         "image2.jpg",
     ]
@@ -786,7 +788,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     token = "mock_token"
     sid = "mock_sid"
     client_ip = "127.0.0.1"
-    state = app.state_manager.get_state(token)
+    state = await app.state_manager.get_state(token)
     assert state.dynamic == ""
     exp_vals = ["foo", "foobar", "baz"]
 
