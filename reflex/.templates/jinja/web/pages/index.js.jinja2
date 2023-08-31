@@ -26,12 +26,16 @@ export default function Component() {
 
   // Route after the initial page hydration.
   useEffect(() => {
-    const change_complete = () => setDidRedirect((didRedirect) => {
-      if (!didRedirect) {
-        Event([E('{{state_name}}.{{const.hydrate}}', {})])
-      }
-      return false
-    })
+    const change_complete = () => {
+      let sent_hydrate = false
+      setDidRedirect((didRedirect) => {
+        if (!didRedirect && !sent_hydrate) {
+          Event([E('{{state_name}}.{{const.hydrate}}', {})])
+          sent_hydrate = true
+        }
+        return false;
+      })
+    }
     {{const.router}}.events.on('routeChangeComplete', change_complete)
     return () => {
       {{const.router}}.events.off('routeChangeComplete', change_complete)
