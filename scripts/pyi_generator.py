@@ -14,6 +14,8 @@ from reflex.components.component import Component
 
 EXCLUDED_FILES = ["__init__.py", "component.py", "bare.py", "foreach.py", "cond.py"]
 
+DEFAULT_TYPING_IMPORTS = {"overload", "Optional", "Any", "Union"}
+
 
 def _get_type_hint(value, top_level=True, no_union=False):
     res = ""
@@ -39,6 +41,17 @@ def _get_type_hint(value, top_level=True, no_union=False):
     return res
 
 
+def _get_typing_import(_module):
+    src = [
+        line
+        for line in inspect.getsource(_module).split("\n")
+        if line.startswith("from typing")
+    ]
+    if len(src):
+        return set(src[0].rpartition("from typing import ")[-1].split(", "))
+    return set()
+
+
 class PyiGenerator:
     """A .pyi file generator that will scan all defined Component in Reflex and
     generate the approriate stub.
@@ -47,6 +60,7 @@ class PyiGenerator:
     modules: list = []
     root: str = ""
     current_module: Any = {}
+    default_typing_imports: set = DEFAULT_TYPING_IMPORTS
 
     def _generate_imports(self, classes):
         bases = {
@@ -55,8 +69,14 @@ class PyiGenerator:
             for base in _class.__bases__
             if inspect.getmodule(base) != self.current_module
         }
+
+        typing_imports = self.default_typing_imports | _get_typing_import(
+            self.current_module
+        )
+        typing_imports = ", ".join(typing_imports)
+        typing_imports = f"from typing import {typing_imports}"
         return [
-            "from typing import overload, Optional, Any, Union, List",
+            typing_imports,
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var",
             "from reflex.event import EventChain",
@@ -88,11 +108,13 @@ class PyiGenerator:
         return lines
 
     def _generate_pyi_variable(self, _name, _var):
-        return [f"{_name} = {_var}"]
+        if isinstance(_var, str):
+            return [f'{_name} = "{str(_var)}"']
+        else:
+            return [f"{_name} = {str(_var)}"]
 
     def _generate_function(self, _name, _func):
         definition = "".join(inspect.getsource(_func).split(":\n")[0].split("\n"))
-        print(definition)
         return [f"{definition}:", "    ..."]
 
     def _write_pyi_file(self, variables, functions, classes):
@@ -156,7 +178,6 @@ class PyiGenerator:
             )
             and inspect.isfunction(obj)
         ]
-        print(functions)
 
         class_names = [
             (name, obj)
