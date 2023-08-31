@@ -33,7 +33,8 @@ def _get_type_hint(value, top_level=True, no_union=False):
                 res = ", ".join(types)
                 res = f"Union[{res}]"
     elif isinstance(value, str):
-        res = value
+        ev = eval(value)
+        res = _get_type_hint(ev, top_level=False) if ev.__name__ == "Var" else value
     else:
         res = value.__name__
     if top_level and not res.startswith("Optional"):
