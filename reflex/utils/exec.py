@@ -28,7 +28,7 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
-def detect_package_change(json_file_path: str):
+def detect_package_change(json_file_path: str) -> str:
     """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
 
     Args:

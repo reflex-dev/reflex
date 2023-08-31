@@ -487,7 +487,7 @@ class App(Base):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
 
         Args:
-            imports (Dict[str, str]): A dictionary containing the imports used in the current page.
+            imports: A dictionary containing the imports used in the current page.
 
         Example:
             >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
