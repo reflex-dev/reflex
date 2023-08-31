@@ -11,6 +11,9 @@ from typing import Any, get_args
 import black
 
 from reflex.components.component import Component
+from reflex.vars import Var
+
+ruff_dont_remove = [Var]
 
 EXCLUDED_FILES = ["__init__.py", "component.py", "bare.py", "foreach.py", "cond.py"]
 
