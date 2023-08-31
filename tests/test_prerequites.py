@@ -10,10 +10,10 @@ from reflex.utils.prerequisites import update_next_config
         (
             """
                 module.exports = {
-                basePath: "",
-                compress: true,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
             Config(
@@ -21,20 +21,20 @@ from reflex.utils.prerequisites import update_next_config
             ),
             """
                 module.exports = {
-                basePath: "",
-                compress: true,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
         ),
         (
             """
                 module.exports = {
-                basePath: "",
-                compress: true,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
             Config(
@@ -43,20 +43,20 @@ from reflex.utils.prerequisites import update_next_config
             ),
             """
                 module.exports = {
-                basePath: "",
-                compress: false,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "",
+                    compress: false,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
         ),
         (
             """
                 module.exports = {
-                basePath: "",
-                compress: true,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
             Config(
@@ -65,20 +65,20 @@ from reflex.utils.prerequisites import update_next_config
             ),
             """
                 module.exports = {
-                basePath: "/test",
-                compress: true,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "/test",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
         ),
         (
             """
                 module.exports = {
-                basePath: "",
-                compress: true,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
             Config(
@@ -88,10 +88,10 @@ from reflex.utils.prerequisites import update_next_config
             ),
             """
                 module.exports = {
-                basePath: "/test",
-                compress: false,
-                reactStrictMode: true,
-                trailingSlash: true,
+                    basePath: "/test",
+                    compress: false,
+                    reactStrictMode: true,
+                    trailingSlash: true,
                 };
             """,
         ),
