@@ -403,6 +403,7 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
 
     time.sleep(0.5)
     backend_state = event_chain.app_instance.state_manager.states[token]
+    assert backend_state.is_hydrated is True
     assert backend_state.event_order == exp_event_order
 
 
