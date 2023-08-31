@@ -144,6 +144,24 @@ class Var(ABC):
         """
         return _GenericAlias(cls, type_)
 
+    def _decode(self) -> Any:
+        """Decode Var as a python value.
+
+        Note that Var with state set cannot be decoded python-side and will be
+        returned as full_name.
+
+        Returns:
+            The decoded value or the Var name.
+        """
+        if self.state:
+            return self.full_name
+        if self.is_string or self.type_ is Figure:
+            return self.name
+        try:
+            return json.loads(self.name)
+        except ValueError:
+            return self.name
+
     def equals(self, other: Var) -> bool:
         """Check if two vars are equal.
 
