@@ -31,6 +31,9 @@ def EventChain():
         def event_arg(self, arg):
             self.event_order.append(f"event_arg:{arg}")
 
+        def event_arg_repr_type(self, arg):
+            self.event_order.append(f"event_arg_repr:{arg!r}_{type(arg).__name__}")
+
         def event_nested_1(self):
             self.event_order.append("event_nested_1")
             yield State.event_nested_2
@@ -100,6 +103,14 @@ def EventChain():
             self.event_order.append("redirect_yield_chain")
             yield rx.redirect("/on-load-yield-chain")
 
+        def click_return_int_type(self):
+            self.event_order.append("click_return_int_type")
+            return State.event_arg_repr_type(1)  # type: ignore
+
+        def click_return_dict_type(self):
+            self.event_order.append("click_return_dict_type")
+            return State.event_arg_repr_type({"a": 1})  # type: ignore
+
     app = rx.App(state=State)
 
     @app.add_page
@@ -141,6 +152,26 @@ def EventChain():
                 id="redirect_return_chain",
                 on_click=State.redirect_return_chain,
             ),
+            rx.button(
+                "Click Int Type",
+                id="click_int_type",
+                on_click=lambda: State.event_arg_repr_type(1),  # type: ignore
+            ),
+            rx.button(
+                "Click Dict Type",
+                id="click_dict_type",
+                on_click=lambda: State.event_arg_repr_type({"a": 1}),  # type: ignore
+            ),
+            rx.button(
+                "Return Chain Int Type",
+                id="return_int_type",
+                on_click=State.click_return_int_type,
+            ),
+            rx.button(
+                "Return Chain Dict Type",
+                id="return_dict_type",
+                on_click=State.click_return_dict_type,
+            ),
         )
 
     def on_load_return_chain():
@@ -155,8 +186,35 @@ def EventChain():
             rx.input(value=State.token, readonly=True, id="token"),
         )
 
+    def on_mount_return_chain():
+        return rx.fragment(
+            rx.text(
+                "return",
+                on_mount=State.on_load_return_chain,
+                on_unmount=lambda: State.event_arg("unmount"),  # type: ignore
+            ),
+            rx.input(value=State.token, readonly=True, id="token"),
+            rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
+        )
+
+    def on_mount_yield_chain():
+        return rx.fragment(
+            rx.text(
+                "yield",
+                on_mount=[
+                    State.on_load_yield_chain,
+                    lambda: State.event_arg("mount"),  # type: ignore
+                ],
+                on_unmount=State.event_no_args,
+            ),
+            rx.input(value=State.token, readonly=True, id="token"),
+            rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
+        )
+
     app.add_page(on_load_return_chain, on_load=State.on_load_return_chain)  # type: ignore
     app.add_page(on_load_yield_chain, on_load=State.on_load_yield_chain)  # type: ignore
+    app.add_page(on_mount_return_chain)
+    app.add_page(on_mount_yield_chain)
 
     app.compile()
 
@@ -259,6 +317,22 @@ def driver(event_chain: AppHarness):
                 "event_arg:6",
             ],
         ),
+        (
+            "click_int_type",
+            ["event_arg_repr:1_int"],
+        ),
+        (
+            "click_dict_type",
+            ["event_arg_repr:{'a': 1}_dict"],
+        ),
+        (
+            "return_int_type",
+            ["click_return_int_type", "event_arg_repr:1_int"],
+        ),
+        (
+            "return_dict_type",
+            ["click_return_dict_type", "event_arg_repr:{'a': 1}_dict"],
+        ),
     ],
 )
 def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
@@ -328,5 +402,72 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
     token = event_chain.poll_for_value(token_input)
 
     time.sleep(0.5)
+    backend_state = event_chain.app_instance.state_manager.states[token]
+    assert backend_state.is_hydrated is True
+    assert backend_state.event_order == exp_event_order
+
+
+@pytest.mark.parametrize(
+    ("uri", "exp_event_order"),
+    [
+        (
+            "/on-mount-return-chain",
+            [
+                "on_load_return_chain",
+                "event_arg:unmount",
+                "on_load_return_chain",
+                "event_arg:1",
+                "event_arg:2",
+                "event_arg:3",
+                "event_arg:1",
+                "event_arg:2",
+                "event_arg:3",
+                "event_arg:unmount",
+            ],
+        ),
+        (
+            "/on-mount-yield-chain",
+            [
+                "on_load_yield_chain",
+                "event_arg:mount",
+                "event_no_args",
+                "on_load_yield_chain",
+                "event_arg:mount",
+                "event_arg:4",
+                "event_arg:5",
+                "event_arg:6",
+                "event_arg:4",
+                "event_arg:5",
+                "event_arg:6",
+                "event_no_args",
+            ],
+        ),
+    ],
+)
+def test_event_chain_on_mount(event_chain, driver, uri, exp_event_order):
+    """Load the URI, assert that the events are handled in the correct order.
+
+    These pages use `on_mount` and `on_unmount`, which get fired twice in dev mode
+    due to react StrictMode being used.
+
+    In prod mode, these events are only fired once.
+
+    Args:
+        event_chain: AppHarness for the event_chain app
+        driver: selenium WebDriver open to the app
+        uri: the page to load
+        exp_event_order: the expected events recorded in the State
+    """
+    driver.get(event_chain.frontend_url + uri)
+    token_input = driver.find_element(By.ID, "token")
+    assert token_input
+
+    token = event_chain.poll_for_value(token_input)
+
+    unmount_button = driver.find_element(By.ID, "unmount")
+    assert unmount_button
+    unmount_button.click()
+
+    time.sleep(1)
     backend_state = event_chain.app_instance.state_manager.states[token]
     assert backend_state.event_order == exp_event_order
