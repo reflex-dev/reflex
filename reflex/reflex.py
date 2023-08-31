@@ -127,6 +127,9 @@ def run(
         frontend = True
         backend = True
 
+    if not frontend and backend:
+        _skip_compile()
+
     # Check that the app is initialized.
     prerequisites.check_initialized(frontend=frontend)
 

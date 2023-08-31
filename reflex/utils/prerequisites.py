@@ -15,7 +15,7 @@ import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+from typing import List, Optional
 
 import httpx
 import typer
@@ -383,25 +383,32 @@ def install_bun():
     )
 
 
-def install_frontend_packages():
-    """Installs the base and custom frontend packages."""
+def install_frontend_packages(packages: List[str]):
+    """Installs the base and custom frontend packages.
+
+    Args:
+        packages (List[str]): A list of package names to be installed.
+
+    Example:
+        >>> install_frontend_packages(["react", "react-dom"])
+    """
     # Install the base packages.
     process = processes.new_process(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.WEB_DIR,
         shell=constants.IS_WINDOWS,
     )
+
     processes.show_status("Installing base frontend packages", process)
 
-    # Install the app packages.
-    packages = get_config().frontend_packages
+    # Install the custom packages, if any.
     if len(packages) > 0:
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing custom frontend packages", process)
+        processes.show_status("Installing frontend packages for components", process)
 
 
 def check_initialized(frontend: bool = True):

@@ -51,7 +51,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
-from reflex.utils import console, format, types
+from reflex.utils import console, format, prerequisites, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -491,6 +491,27 @@ class App(Base):
 
             admin.mount_to(self.api)
 
+    def get_frontend_packages(self, imports: Dict[str, str]):
+        """Gets the frontend packages to be installed and filters out the unnecessary ones.
+
+        Args:
+            imports: A dictionary containing the imports used in the current page.
+
+        Example:
+            >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
+        """
+        page_imports = [
+            i
+            for i in imports
+            if i not in compiler.DEFAULT_IMPORTS.keys()
+            and i != "focus-visible/dist/focus-visible"
+            and "next" not in i
+            and not i.startswith("/")
+            and i != ""
+        ]
+        page_imports.extend(get_config().frontend_packages)
+        prerequisites.install_frontend_packages(page_imports)
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
         if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
@@ -501,15 +522,16 @@ class App(Base):
             MofNCompleteColumn(),
             TimeElapsedColumn(),
         )
-        task = progress.add_task("Compiling: ", total=len(self.pages))
 
-        # TODO: include all work done in progress indicator, not just self.pages
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
 
         # Render a default 404 page if the user didn't supply one
         if constants.SLUG_404 not in self.pages:
             self.add_custom_404_page()
+
+        task = progress.add_task("Compiling: ", total=len(self.pages))
+        # TODO: include all work done in progress indicator, not just self.pages
 
         # Get the env mode.
         config = get_config()
@@ -521,6 +543,7 @@ class App(Base):
         custom_components = set()
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
+        all_imports = {}
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
@@ -536,8 +559,12 @@ class App(Base):
                         ),
                     )
                 )
+                # add component.get_imports() to all_imports
+                all_imports.update(component.get_imports())
+
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
+
         thread_pool.close()
         thread_pool.join()
 
@@ -549,7 +576,11 @@ class App(Base):
         # Compile the custom components.
         compile_results.append(compiler.compile_components(custom_components))
 
-        # Compile the root document with base styles and fonts.
+        # Iterate through all the custom components and add their imports to the all_imports
+        for component in custom_components:
+            all_imports.update(component.get_imports())
+
+        # Compile the root document with base styles and fonts
         compile_results.append(compiler.compile_document_root(self.stylesheets))
 
         # Compile the theme.
@@ -567,6 +598,9 @@ class App(Base):
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
+
+        # install frontend packages
+        self.get_frontend_packages(all_imports)
 
         # Write the pages at the end to trigger the NextJS hot reload only once.
         thread_pool = ThreadPool()
