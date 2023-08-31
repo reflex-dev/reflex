@@ -701,9 +701,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             ):
                 setattr(self, prop_name, field.default)
 
-        # Recursively reset the substates.
+        # Recursively reset the substate client storage.
         for substate in self.substates.values():
-            substate.reset()
+            substate._reset_client_storage()
 
     def get_substate(self, path: Sequence[str]) -> Optional[State]:
         """Get the substate.
