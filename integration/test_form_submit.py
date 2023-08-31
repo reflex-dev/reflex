@@ -36,6 +36,11 @@ def FormSubmit():
                     rx.radio_group(["option1", "option2"], id="radio_input"),
                     rx.select(["option1", "option2"], id="select_input"),
                     rx.text_area(id="text_area_input"),
+                    rx.input(
+                        id="debounce_input",
+                        debounce_timeout=0,
+                        on_change=rx.console_log,
+                    ),
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
@@ -119,6 +124,9 @@ def test_submit(driver, form_submit: AppHarness):
     textarea_input = driver.find_element(By.CLASS_NAME, "chakra-textarea")
     textarea_input.send_keys("Some", Keys.ENTER, "Text")
 
+    debounce_input = driver.find_element(By.ID, "debounce_input")
+    debounce_input.send_keys("bar baz")
+
     time.sleep(1)
 
     submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
@@ -139,3 +147,4 @@ def test_submit(driver, form_submit: AppHarness):
     assert backend_state.form_data["radio_input"] == "option2"
     assert backend_state.form_data["select_input"] == "option1"
     assert backend_state.form_data["text_area_input"] == "Some\nText"
+    assert backend_state.form_data["debounce_input"] == "bar baz"

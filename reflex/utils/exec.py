@@ -26,9 +26,7 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
-def run_process_and_launch_url(
-    run_command: list[str],
-):
+def run_process_and_launch_url(run_command: list[str]):
     """Run the process and launch the URL.
 
     Args:
@@ -38,21 +36,17 @@ def run_process_and_launch_url(
         run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
     )
 
-    if process.stdout:
-        for line in process.stdout:
-            if match := re.search("ready started server on ([0-9.:]+)", line):
-                url = match.group(1)
-                if get_config().frontend_path != "":
-                    url += get_config().frontend_path
-                console.print(f"App running at: [bold green]{url}")
-            else:
-                console.debug(line)
+    for line in processes.stream_logs("Starting frontend", process):
+        if match := re.search("ready started server on ([0-9.:]+)", line):
+            url = match.group(1)
+            if get_config().frontend_path != "":
+                url += get_config().frontend_path
+            console.print(f"App running at: [bold green]{url}")
+        else:
+            console.debug(line)
 
 
-def run_frontend(
-    root: Path,
-    port: str,
-):
+def run_frontend(root: Path, port: str):
     """Run the frontend.
 
     Args:
@@ -70,10 +64,7 @@ def run_frontend(
     run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])  # type: ignore
 
 
-def run_frontend_prod(
-    root: Path,
-    port: str,
-):
+def run_frontend_prod(root: Path, port: str):
     """Run the frontend.
 
     Args:
@@ -90,7 +81,6 @@ def run_frontend_prod(
 
 
 def run_backend(
-    app_name: str,
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
@@ -99,22 +89,22 @@ def run_backend(
 
     Args:
         host: The app host
-        app_name: The app name.
         port: The app port
         loglevel: The log level.
     """
+    config = get_config()
+    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
     uvicorn.run(
-        app=f"{app_name}:{constants.APP_VAR}.{constants.API_VAR}",
+        app=f"{app_module}.{constants.API_VAR}",
         host=host,
         port=port,
         log_level=loglevel.value,
         reload=True,
-        reload_dirs=[app_name.split(".")[0]],
+        reload_dirs=[config.app_name],
     )
 
 
 def run_backend_prod(
-    app_name: str,
     host: str,
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
@@ -123,7 +113,6 @@ def run_backend_prod(
 
     Args:
         host: The app host
-        app_name: The app name.
         port: The app port
         loglevel: The log level.
     """
@@ -131,6 +120,7 @@ def run_backend_prod(
     config = get_config()
     RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
+    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
     command = (
         [
             *RUN_BACKEND_PROD_WINDOWS,
@@ -138,7 +128,7 @@ def run_backend_prod(
             host,
             "--port",
             str(port),
-            f"{app_name}:{constants.APP_VAR}",
+            app_module,
         ]
         if constants.IS_WINDOWS
         else [
@@ -147,7 +137,7 @@ def run_backend_prod(
             f"{host}:{port}",
             "--threads",
             str(num_workers),
-            f"{app_name}:{constants.APP_VAR}()",
+            f"{app_module}()",
         ]
     )
 
@@ -157,7 +147,12 @@ def run_backend_prod(
         "--workers",
         str(num_workers),
     ]
-    processes.new_process(command, run=True, show_logs=True)
+    processes.new_process(
+        command,
+        run=True,
+        show_logs=True,
+        env={constants.SKIP_COMPILE_ENV_VAR: "yes"},  # skip compile for prod backend
+    )
 
 
 def output_system_info():

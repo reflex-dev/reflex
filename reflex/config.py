@@ -241,9 +241,10 @@ class Config(Base):
 
             # If the env var is set, override the config value.
             if env_var is not None:
-                console.info(
-                    f"Overriding config value {key} with env var {key.upper()}={env_var}"
-                )
+                if key.upper() != "DB_URL":
+                    console.info(
+                        f"Overriding config value {key} with env var {key.upper()}={env_var}"
+                    )
 
                 # Convert the env var to the expected type.
                 try:
