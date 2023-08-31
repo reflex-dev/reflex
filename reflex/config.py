@@ -245,7 +245,11 @@ class Config(Base):
 
                 # Convert the env var to the expected type.
                 try:
-                    env_var = field.type_(env_var)
+                    if issubclass(field.type_, bool):
+                        # special handling for bool values
+                        env_var = env_var.lower() in ["true", "1", "yes"]
+                    else:
+                        env_var = field.type_(env_var)
                 except ValueError:
                     console.error(
                         f"Could not convert {key.upper()}={env_var} to type {field.type_}"
