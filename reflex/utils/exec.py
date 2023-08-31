@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import platform
 import re
@@ -9,6 +11,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urljoin
 
+import psutil
 import uvicorn
 
 from reflex import constants
@@ -27,23 +30,80 @@ def start_watching_assets_folder(root):
     asset_watch.start()
 
 
+def detect_package_change(json_file_path: str) -> str:
+    """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
+
+    Args:
+        json_file_path (str): The path to the JSON file to be hashed.
+
+    Returns:
+        str: The SHA-256 hash of the JSON file as a hexadecimal string.
+
+    Example:
+        >>> detect_package_change("package.json")
+        'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'
+    """
+    with open(json_file_path, "r") as file:
+        json_data = json.load(file)
+
+    # Calculate the hash
+    json_string = json.dumps(json_data, sort_keys=True)
+    hash_object = hashlib.sha256(json_string.encode())
+    return hash_object.hexdigest()
+
+
+def kill(proc_pid: int):
+    """Kills a process and all its child processes.
+
+    Args:
+        proc_pid (int): The process ID of the process to be killed.
+
+    Example:
+        >>> kill(1234)
+    """
+    process = psutil.Process(proc_pid)
+    for proc in process.children(recursive=True):
+        proc.kill()
+    process.kill()
+
+
 def run_process_and_launch_url(run_command: list[str]):
     """Run the process and launch the URL.
 
     Args:
         run_command: The command to run.
     """
-    process = processes.new_process(
-        run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
-    )
+    json_file_path = os.path.join(constants.WEB_DIR, "package.json")
+    last_hash = detect_package_change(json_file_path)
+    process = None
+    first_run = True
 
-    for line in processes.stream_logs("Starting frontend", process):
-        match = re.search("ready started server on ([0-9.:]+)", line)
-        if match:
-            url = f"http://{match.group(1)}"
-            if get_config().frontend_path != "":
-                url = urljoin(url, get_config().frontend_path)
-            console.print(f"App running at: [bold green]{url}")
+    while True:
+        if process is None:
+            process = processes.new_process(
+                run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
+            )
+        if process.stdout:
+            for line in processes.stream_logs("Starting frontend", process):
+                match = re.search("ready started server on ([0-9.:]+)", line)
+                if match:
+                    if first_run:
+                        url = f"http://{match.group(1)}"
+                        if get_config().frontend_path != "":
+                            url = urljoin(url, get_config().frontend_path)
+                        console.print(f"App running at: [bold green]{url}")
+                    else:
+                        console.print("New packages detected updating app...")
+                else:
+                    console.debug(line)
+                    new_hash = detect_package_change(json_file_path)
+                    if new_hash != last_hash:
+                        last_hash = new_hash
+                        kill(process.pid)
+                        process = None
+                        break  # for line in process.stdout
+        if process is not None:
+            break  # while True
 
 
 def run_frontend(root: Path, port: str):

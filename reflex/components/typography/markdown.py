@@ -32,7 +32,14 @@ components_by_tag: Dict[str, Callable] = {
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown"
+    library = "react-markdown@^8.0.7"
+
+    lib_dependencies: List[str] = [
+        "rehype-katex@^6.0.3",
+        "remark-math@^5.1.1",
+        "rehype-raw@^6.1.1",
+        "remark-gfm@^3.0.1",
+    ]
 
     tag = "ReactMarkdown"
 

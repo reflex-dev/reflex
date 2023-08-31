@@ -9,12 +9,12 @@ from reflex.components.overlay.modal import Modal
 from reflex.components.typography import Text
 from reflex.vars import Var
 
-connection_error = Var.create_safe(
+connection_error: Var = Var.create_safe(
     value="(connectError !== null) ? connectError.message : ''",
     is_local=False,
     is_string=False,
 )
-has_connection_error = Var.create_safe(
+has_connection_error: Var = Var.create_safe(
     value="connectError !== null",
     is_string=False,
 )

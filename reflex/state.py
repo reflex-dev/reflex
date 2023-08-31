@@ -607,7 +607,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            func.fget.__name__ = param  # to allow passing as a prop
+            func.fget.__name__ = param  # to allow passing as a prop # type: ignore
             cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
@@ -701,9 +701,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             ):
                 setattr(self, prop_name, field.default)
 
-        # Recursively reset the substates.
+        # Recursively reset the substate client storage.
         for substate in self.substates.values():
-            substate.reset()
+            substate._reset_client_storage()
 
     def get_substate(self, path: Sequence[str]) -> Optional[State]:
         """Get the substate.

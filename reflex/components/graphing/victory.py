@@ -334,7 +334,7 @@ def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
 class Victory(Component):
     """A component that wraps a victory lib."""
 
-    library = "victory"
+    library = "victory@^36.6.8"
 
     # The data to display.
     data: Var[List[Dict]]
