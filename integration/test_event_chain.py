@@ -153,6 +153,16 @@ def EventChain():
                 on_click=State.redirect_return_chain,
             ),
             rx.button(
+                "Click Int Type",
+                id="click_int_type",
+                on_click=lambda: State.event_arg_repr_type(1),  # type: ignore
+            ),
+            rx.button(
+                "Click Dict Type",
+                id="click_dict_type",
+                on_click=lambda: State.event_arg_repr_type({"a": 1}),  # type: ignore
+            ),
+            rx.button(
                 "Return Chain Int Type",
                 id="return_int_type",
                 on_click=State.click_return_int_type,
@@ -306,6 +316,14 @@ def driver(event_chain: AppHarness):
                 "event_arg:5",
                 "event_arg:6",
             ],
+        ),
+        (
+            "click_int_type",
+            ["event_arg_repr:1_int"],
+        ),
+        (
+            "click_dict_type",
+            ["event_arg_repr:{'a': 1}_dict"],
         ),
         (
             "return_int_type",
