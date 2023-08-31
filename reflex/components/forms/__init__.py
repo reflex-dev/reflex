@@ -46,11 +46,12 @@ from .select import Option, Select
 from .slider import Slider, SliderFilledTrack, SliderMark, SliderThumb, SliderTrack
 from .switch import Switch
 from .textarea import TextArea
-from .upload import Upload, selected_files
+from .upload import Upload, clear_selected_files, selected_files
 
 helpers = [
     "color_mode_cond",
     "selected_files",
+    "clear_selected_files",
 ]
 
 __all__ = [f for f in dir() if f[0].isupper()] + helpers  # type: ignore

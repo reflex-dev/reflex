@@ -15,6 +15,8 @@ upload_file = BaseVar(name="e => setFiles((files) => e)", type_=EventChain)
 # Use this var along with the Upload component to render the list of selected files.
 selected_files = BaseVar(name="files.map((f) => f.name)", type_=List[str])
 
+clear_selected_files = BaseVar(name="_e => setFiles((files) => [])", type_=EventChain)
+
 
 class Upload(Component):
     """A file upload component."""

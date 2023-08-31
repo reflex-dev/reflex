@@ -46,6 +46,7 @@ class DebounceInput(Component):
 
         Raises:
             RuntimeError: unless exactly one child element is provided.
+            ValueError: if the child element does not have an on_change handler.
         """
         child, props = _collect_first_child_and_props(self)
         if isinstance(child, type(self)) or len(self.children) > 1:
@@ -53,6 +54,11 @@ class DebounceInput(Component):
                 "Provide a single child for DebounceInput, such as rx.input() or "
                 "rx.text_area()",
             )
+        if "on_change" not in child.event_triggers:
+            raise ValueError("DebounceInput child requires an on_change handler")
+        child_ref = child.get_ref()
+        if child_ref and not props.get("ref"):
+            props["input_ref"] = Var.create(child_ref, is_local=False)
         self.children = []
         tag = super()._render()
         tag.add_props(

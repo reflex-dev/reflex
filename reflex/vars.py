@@ -144,6 +144,24 @@ class Var(ABC):
         """
         return _GenericAlias(cls, type_)
 
+    def _decode(self) -> Any:
+        """Decode Var as a python value.
+
+        Note that Var with state set cannot be decoded python-side and will be
+        returned as full_name.
+
+        Returns:
+            The decoded value or the Var name.
+        """
+        if self.state:
+            return self.full_name
+        if self.is_string or self.type_ is Figure:
+            return self.name
+        try:
+            return json.loads(self.name)
+        except ValueError:
+            return self.name
+
     def equals(self, other: Var) -> bool:
         """Check if two vars are equal.
 
@@ -684,6 +702,76 @@ class Var(ABC):
             A var representing the logical or.
         """
         return self.operation("||", other, type_=bool, flip=True)
+
+    def __contains__(self, _: Any) -> Var:
+        """Override the 'in' operator to alert the user that it is not supported.
+
+        Raises:
+            TypeError: the operation is not supported
+        """
+        raise TypeError(
+            "'in' operator not supported for Var types, use Var.contains() instead."
+        )
+
+    def contains(self, other: Any) -> Var:
+        """Check if a var contains the object `other`.
+
+        Args:
+            other: The object to check.
+
+        Raises:
+            TypeError: If the var is not a valid type: dict, list, tuple or str.
+
+        Returns:
+            A var representing the contain check.
+        """
+        if self.type_ is None or not (
+            types._issubclass(self.type_, Union[dict, list, tuple, str])
+        ):
+            raise TypeError(
+                f"Var {self.full_name} of type {self.type_} does not support contains check."
+            )
+        if isinstance(other, str):
+            other = Var.create(json.dumps(other), is_string=True)
+        elif not isinstance(other, Var):
+            other = Var.create(other)
+        if types._issubclass(self.type_, Dict):
+            return BaseVar(
+                name=f"{self.full_name}.has({other.full_name})",
+                type_=bool,
+                is_local=self.is_local,
+            )
+        else:  # str, list, tuple
+            # For strings, the left operand must be a string.
+            if types._issubclass(self.type_, str) and not types._issubclass(
+                other.type_, str
+            ):
+                raise TypeError(
+                    f"'in <string>' requires string as left operand, not {other.type_}"
+                )
+            return BaseVar(
+                name=f"{self.full_name}.includes({other.full_name})",
+                type_=bool,
+                is_local=self.is_local,
+            )
+
+    def reverse(self) -> Var:
+        """Reverse a list var.
+
+        Raises:
+            TypeError: If the var is not a list.
+
+        Returns:
+            A var with the reversed list.
+        """
+        if self.type_ is None or not types._issubclass(self.type_, list):
+            raise TypeError(f"Cannot reverse non-list var {self.full_name}.")
+
+        return BaseVar(
+            name=f"[...{self.full_name}].reverse()",
+            type_=self.type_,
+            is_local=self.is_local,
+        )
 
     def foreach(self, fn: Callable) -> Var:
         """Return a list of components. after doing a foreach on this var.
