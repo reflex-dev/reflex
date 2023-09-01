@@ -6,7 +6,6 @@ import platform
 import re
 from enum import Enum
 from types import SimpleNamespace
-from typing import Optional
 
 from platformdirs import PlatformDirs
 
@@ -19,7 +18,7 @@ except ImportError:
 IS_WINDOWS = platform.system() == "Windows"
 
 
-def get_fnm_name() -> Optional[str]:
+def get_fnm_name() -> str | None:
     """Get the appropriate fnm executable name based on the current platform.
 
     Returns:

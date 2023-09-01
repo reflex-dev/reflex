@@ -1,6 +1,6 @@
 """Handle styling."""
 
-from typing import Optional
+from __future__ import annotations
 
 from reflex import constants
 from reflex.event import EventChain
@@ -35,7 +35,7 @@ def convert(style_dict):
 class Style(dict):
     """A style dictionary."""
 
-    def __init__(self, style_dict: Optional[dict] = None):
+    def __init__(self, style_dict: dict | None = None):
         """Initialize the style.
 
         Args:
