@@ -1,6 +1,8 @@
 """Display the title of the current page."""
 
-from typing import Dict, Optional
+from __future__ import annotations
+
+from typing import Optional
 
 from reflex.components.base.bare import Bare
 from reflex.components.component import Component
@@ -11,7 +13,7 @@ class Title(Component):
 
     tag = "title"
 
-    def render(self) -> Dict:
+    def render(self) -> dict:
         """Render the title component.
 
         Returns:

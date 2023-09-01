@@ -9,9 +9,10 @@ import os
 import os.path as op
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Type, Union
 
 import plotly.graph_objects as go
+from plotly.graph_objects import Figure
 from plotly.io import to_json
 
 from reflex import constants
@@ -33,7 +34,7 @@ WRAP_MAP = {
 }
 
 
-def get_close_char(open: str, close: Optional[str] = None) -> str:
+def get_close_char(open: str, close: str | None = None) -> str:
     """Check if the given character is a valid brace.
 
     Args:
@@ -53,7 +54,7 @@ def get_close_char(open: str, close: Optional[str] = None) -> str:
     return WRAP_MAP[open]
 
 
-def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
+def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
     """Check if the given text is wrapped in the given open and close characters.
 
     Args:
@@ -71,7 +72,7 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 def wrap(
     text: str,
     open: str,
-    close: Optional[str] = None,
+    close: str | None = None,
     check_first: bool = True,
     num: int = 1,
 ) -> str:
@@ -258,7 +259,63 @@ def format_cond(
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
 
 
-def get_event_handler_parts(handler: EventHandler) -> Tuple[str, str]:
+def format_prop(
+    prop: Union[Var, EventChain, ComponentStyle, str],
+) -> Union[int, float, str]:
+    """Format a prop.
+
+    Args:
+        prop: The prop to format.
+
+    Returns:
+        The formatted prop to display within a tag.
+
+    Raises:
+        TypeError: If the prop is not a valid type.
+    """
+    # import here to avoid circular import.
+    from reflex.event import EVENT_ARG, EventChain
+
+    try:
+        # Handle var props.
+        if isinstance(prop, Var):
+            if not prop.is_local or prop.is_string:
+                return str(prop)
+            if types._issubclass(prop.type_, str):
+                return format_string(prop.full_name)
+            prop = prop.full_name
+
+        # Handle event props.
+        elif isinstance(prop, EventChain):
+            chain = ",".join([format_event(event) for event in prop.events])
+            event = f"Event([{chain}], {EVENT_ARG})"
+            prop = f"{EVENT_ARG} => {event}"
+
+        # Handle other types.
+        elif isinstance(prop, str):
+            if is_wrapped(prop, "{"):
+                return prop
+            return json_dumps(prop)
+
+        elif isinstance(prop, Figure):
+            prop = json.loads(to_json(prop))["data"]  # type: ignore
+
+        # For dictionaries, convert any properties to strings.
+        elif isinstance(prop, dict):
+            prop = format_dict(prop)
+
+        else:
+            # Dump the prop as JSON.
+            prop = json_dumps(prop)
+    except TypeError as e:
+        raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
+
+    # Wrap the variable in braces.
+    assert isinstance(prop, str), "The prop must be a string."
+    return wrap(prop, "{", check_first=False)
+
+
+def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     """Get the state and function name of an event handler.
 
     Args:
@@ -370,7 +427,7 @@ def format_event_chain(
     )
 
 
-def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
+def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """Convert back query params name to python-friendly case.
 
     Args:
@@ -383,7 +440,7 @@ def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_dataframe_values(value: Type) -> List[Any]:
+def format_dataframe_values(value: Type) -> list[Any]:
     """Format dataframe values.
 
     Args:

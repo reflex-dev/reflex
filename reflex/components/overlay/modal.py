@@ -1,6 +1,6 @@
 """Modal components."""
 
-from typing import Set
+from typing import Optional, Set, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -67,7 +67,13 @@ class Modal(ChakraComponent):
 
     @classmethod
     def create(
-        cls, *children, header=None, body=None, footer=None, close_button=None, **props
+        cls,
+        *children,
+        header: Optional[Union[Component, str]] = None,
+        body: Optional[Union[Component, str]] = None,
+        footer: Optional[Union[Component, str]] = None,
+        close_button: Optional[Component] = None,
+        **props
     ) -> Component:
         """Create a modal component.
 
