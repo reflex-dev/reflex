@@ -20,7 +20,14 @@ def DynamicRoute():
         page_id: str = ""
 
         def on_load(self):
-            self.order.append(self.page_id or "no page id")
+            self.order.append(
+                f"{self.get_current_page()}-{self.page_id or 'no page id'}"
+            )
+
+        def on_load_redir(self):
+            query_params = self.get_query_params()
+            self.order.append(f"on_load_redir-{query_params}")
+            return rx.redirect(f"/page/{query_params['to_page']}")
 
         @rx.var
         def next_page(self) -> str:
@@ -47,6 +54,10 @@ def DynamicRoute():
                 rx.foreach(DynamicState.order, lambda i: rx.list_item(rx.text(i))),  # type: ignore
             ),
         )
+
+    @rx.page(route="/redirect-page", on_load=DynamicState.on_load_redir)  # type: ignore
+    def redirect_page():
+        return rx.fragment(rx.text("redirecting..."))
 
     app = rx.App(state=DynamicState)
     app.add_page(index)
@@ -112,7 +123,7 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     token = dynamic_route.poll_for_value(token_input)
     assert token is not None
 
-    exp_order = [str(ix) for ix in range(10)]
+    exp_order = [f"/page/[page-id]-{ix}" for ix in range(10)]
 
     # click the link a few times
     for ix in range(10):
@@ -136,14 +147,14 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     assert backend_state.order == exp_order
 
     # manually load the next page to trigger client side routing in prod mode
-    exp_order += ["10"]
+    exp_order += ["/page/[page-id]-10"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/page/10/")
     time.sleep(0.2)
     assert backend_state.order == exp_order
 
     # make sure internal nav still hydrates after redirect
-    exp_order += ["11"]
+    exp_order += ["/page/[page-id]-11"]
     link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
         link.click()
@@ -151,7 +162,7 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     assert backend_state.order == exp_order
 
     # load same page with a query param and make sure it passes through
-    exp_order += ["11"]
+    exp_order += ["/page/[page-id]-11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     time.sleep(0.2)
@@ -159,31 +170,39 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     assert backend_state.order == exp_order
 
     # hit a 404 and ensure we still hydrate
-    exp_order += ["no page id"]
+    exp_order += ["/404-no page id"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/missing")
     time.sleep(0.5)
     assert backend_state.order == exp_order
 
     # browser nav should still trigger hydration
-    exp_order += ["11"]
+    exp_order += ["/page/[page-id]-11"]
     with poll_for_navigation(driver):
         driver.back()
     time.sleep(0.2)
     assert backend_state.order == exp_order
 
     # next/link to a 404 and ensure we still hydrate
-    exp_order += ["no page id"]
+    exp_order += ["/404-no page id"]
     link = driver.find_element(By.ID, "link_missing")
     with poll_for_navigation(driver):
         link.click()
     time.sleep(0.5)
     assert backend_state.order == exp_order
 
+    # hit a page that redirects back to dynamic page
+    exp_order += ["on_load_redir-{'foo': 'bar', 'to_page': '0'}", "/page/[page-id]-0"]
+    with poll_for_navigation(driver):
+        driver.get(f"{dynamic_route.frontend_url}/redirect-page?foo=bar&to_page=0")
+    time.sleep(0.5)
+    assert backend_state.order == exp_order
+    # should have redirected back to page 0
+    assert urlsplit(driver.current_url).path == "/page/0/"
+
 
 def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):
     """Click links to navigate between static pages with on_load event.
-
 
     Args:
         dynamic_route: harness for DynamicRoute app.
@@ -206,7 +225,7 @@ def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):
     # look up the backend state and assert that `on_load` was called once
     backend_state = dynamic_route.app_instance.state_manager.states[token]
     time.sleep(0.2)
-    assert backend_state.order == ["no page id"]
+    assert backend_state.order == ["/static/x-no page id"]
 
     # go back to the index and navigate back to the static route
     link = driver.find_element(By.ID, "link_index")
@@ -219,4 +238,4 @@ def test_on_load_navigate_non_dynamic(dynamic_route: AppHarness, driver):
         link.click()
     assert urlsplit(driver.current_url).path == "/static/x/"
     time.sleep(0.2)
-    assert backend_state.order == ["no page id", "no page id"]
+    assert backend_state.order == ["/static/x-no page id", "/static/x-no page id"]
