@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, AppHarnessProd
 
 from .utils import poll_for_navigation
 
@@ -27,7 +27,7 @@ def DynamicRoute():
         def on_load_redir(self):
             query_params = self.get_query_params()
             self.order.append(f"on_load_redir-{query_params}")
-            return rx.redirect(f"/page/{query_params['to_page']}")
+            return rx.redirect(f"/page/{query_params['page_id']}")
 
         @rx.var
         def next_page(self) -> str:
@@ -55,7 +55,7 @@ def DynamicRoute():
             ),
         )
 
-    @rx.page(route="/redirect-page", on_load=DynamicState.on_load_redir)  # type: ignore
+    @rx.page(route="/redirect-page/[page_id]", on_load=DynamicState.on_load_redir)  # type: ignore
     def redirect_page():
         return rx.fragment(rx.text("redirecting..."))
 
@@ -114,6 +114,7 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
         driver: WebDriver instance.
     """
     assert dynamic_route.app_instance is not None
+    is_prod = isinstance(dynamic_route, AppHarnessProd)
     token_input = driver.find_element(By.ID, "token")
     link = driver.find_element(By.ID, "link_page_next")
     assert token_input
@@ -147,6 +148,8 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     assert backend_state.order == exp_order
 
     # manually load the next page to trigger client side routing in prod mode
+    if is_prod:
+        exp_order += ["/404-no page id"]
     exp_order += ["/page/[page-id]-10"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/page/10/")
@@ -162,6 +165,8 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     assert backend_state.order == exp_order
 
     # load same page with a query param and make sure it passes through
+    if is_prod:
+        exp_order += ["/404-no page id"]
     exp_order += ["/page/[page-id]-11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
@@ -177,6 +182,8 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     assert backend_state.order == exp_order
 
     # browser nav should still trigger hydration
+    if is_prod:
+        exp_order += ["/404-no page id"]
     exp_order += ["/page/[page-id]-11"]
     with poll_for_navigation(driver):
         driver.back()
@@ -192,9 +199,11 @@ def test_on_load_navigate(dynamic_route: AppHarness, driver):
     assert backend_state.order == exp_order
 
     # hit a page that redirects back to dynamic page
-    exp_order += ["on_load_redir-{'foo': 'bar', 'to_page': '0'}", "/page/[page-id]-0"]
+    if is_prod:
+        exp_order += ["/404-no page id"]
+    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page-id]-0"]
     with poll_for_navigation(driver):
-        driver.get(f"{dynamic_route.frontend_url}/redirect-page?foo=bar&to_page=0")
+        driver.get(f"{dynamic_route.frontend_url}/redirect-page/0/?foo=bar")
     time.sleep(0.5)
     assert backend_state.order == exp_order
     # should have redirected back to page 0
