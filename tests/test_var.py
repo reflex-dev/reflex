@@ -279,11 +279,6 @@ def test_basic_operations(TestObj):
     assert str(abs(v(1))) == "{Math.abs(1)}"
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
     assert str(v([1, 2]) + v([3, 4])) == "{spreadArraysOrObjects([1, 2] , [3, 4])}"
-    assert (
-        str(v({"key": "value"}) | v({"another_key": "another_value"}))
-        == '{spreadArraysOrObjects({"key": "value"} '
-        ', {"another_key": "another_value"})}'
-    )
 
     # Tests for reverse operation
     assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
@@ -860,11 +855,6 @@ def test_unsupported_default_contains():
         (Var.create([10, 20]), Var.create(5), ["*"]),
         (Var.create([10, 20]), Var.create(True), ["*"]),
         (
-            Var.create({"key": "value"}),
-            Var.create({"another_key": "another_value"}),
-            ["|"],
-        ),
-        (
             Var.create(True),
             Var.create(True),
             [
@@ -1088,6 +1078,7 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
                 "<",
                 "<=",
                 ">=",
+                "|",
                 "^",
                 "<<",
                 ">>",

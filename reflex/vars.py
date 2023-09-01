@@ -73,7 +73,6 @@ OPERATION_MAPPING = {
     (float, int): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
     (list, list): {"+", ">", "<", "<=", ">="},
     (list, int): {"*"},
-    (dict, dict): {"|"},
 }
 
 
@@ -797,13 +796,18 @@ class Var(ABC):
 
         Returns:
             A var representing the logical or.
+
+        Raises:
+            TypeError: the operation is not supported
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
             types.get_base_class(self.type_) == dict
             and types.get_base_class(other_type) == dict
         ):
-            return self.operation(",", other, fn="spreadArraysOrObjects")
+            raise TypeError(
+                "'|' operator not supported for Var types, use Var.update() instead."
+            )
         return self.operation("||", other, type_=bool)
 
     def __ror__(self, other: Var) -> Var:
@@ -814,13 +818,18 @@ class Var(ABC):
 
         Returns:
             A var representing the logical or.
+
+        Raises:
+            TypeError: the operation is not supported
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
             types.get_base_class(self.type_) == dict
             and types.get_base_class(other_type) == dict
         ):
-            return self.operation(",", other, fn="spreadArraysOrObjects")
+            raise TypeError(
+                "'|' operator not supported for Var types, use Var.update() instead."
+            )
         return self.operation("||", other, type_=bool, flip=True)
 
     def __contains__(self, _: Any) -> Var:
