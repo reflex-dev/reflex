@@ -204,13 +204,16 @@ export const applyRestEvent = async (event) => {
  */
 export const queueEvents = async (events, socket) => {
   event_queue.push(...events.map((ev) => {
-    // update token and router_data (if needed) for events at queue time
+    // Copy the event and set the token.
     const new_event = {...ev, token: getToken()}
+    // Do NOT overwrite router_data if the event already has it set.
     if (ev.router_data === undefined || Object.keys(ev.router_data).length === 0) {
       new_event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router)
     }
     return new_event
   }))
+
+  // Drain the queue.
   await processEvent(socket.current)
 }
 
