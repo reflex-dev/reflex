@@ -178,7 +178,7 @@ class Config(Base):
     event_namespace: Optional[str] = None
 
     # Params to remove eventually.
-    # Additional frontend packages to install. (TODO: deprecate
+    # Additional frontend packages to install. (TODO: remove after 0.2.8)
     frontend_packages: List[str] = []
 
     # For rest are for deploy only.

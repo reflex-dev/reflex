@@ -414,15 +414,6 @@ def install_frontend_packages(packages: list[str]):
             shell=constants.IS_WINDOWS,
         )
         processes.show_status("Installing tailwind packages", process)
-    # # Install the app packages.
-    # packages = get_config().frontend_packages
-    # if len(packages) > 0:
-    #     process = processes.new_process(
-    #         [get_install_package_manager(), "add", *packages],
-    #         cwd=constants.WEB_DIR,
-    #         shell=constants.IS_WINDOWS,
-    #     )
-    #     processes.show_status("Installing custom frontend packages", process)
 
 
 def check_initialized(frontend: bool = True):
