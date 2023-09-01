@@ -175,9 +175,6 @@ export const applyEvent = async (event, socket) => {
   }
 
   // Send the event to the server.
-  event.token = getToken();
-  event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router);
-
   if (socket) {
     socket.emit("event", JSON.stringify(event));
     return true;
@@ -207,7 +204,14 @@ export const applyRestEvent = async (event) => {
  * @param socket The socket object to send the event on.
  */
 export const queueEvents = async (events, socket) => {
-  event_queue.push(...events)
+  event_queue.push(...events.map((ev) => {
+    // update token and router_data (if needed) for events at queue time
+    const new_event = {...ev, token: getToken()}
+    if (ev.router_data === undefined || Object.keys(ev.router_data).length === 0) {
+      new_event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router)
+    }
+    return new_event
+  }))
   await processEvent(socket.current)
 }
 
@@ -256,7 +260,6 @@ export const processEvent = async (
  * @param dispatch The function to queue state update
  * @param transports The transports to use.
  * @param setConnectError The function to update connection error value.
- * @param initial_events Array of events to seed the queue after connecting.
  * @param client_storage The client storage object from context.js
  */
 export const connect = async (
@@ -264,7 +267,6 @@ export const connect = async (
   dispatch,
   transports,
   setConnectError,
-  initial_events = [],
   client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
@@ -278,7 +280,6 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    queueEvents(initial_events, socket)
     setConnectError(null)
   });
 
@@ -429,7 +430,6 @@ const applyClientStorageDelta = (client_storage, delta) => {
 /**
  * Establish websocket event loop for a NextJS page.
  * @param initial_state The initial page state.
- * @param initial_events Array of events to seed the queue after connecting.
  * @param client_storage The client storage object from context.js
  *
  * @returns [state, Event, connectError] -
@@ -439,7 +439,6 @@ const applyClientStorageDelta = (client_storage, delta) => {
  */
 export const useEventLoop = (
   initial_state = {},
-  initial_events = [],
   client_storage = {},
 ) => {
   const socket = useRef(null)
@@ -462,7 +461,7 @@ export const useEventLoop = (
 
     // Initialize the websocket connection.
     if (!socket.current) {
-      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, initial_events, client_storage)
+      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
     }
     (async () => {
       // Process all outstanding events.
