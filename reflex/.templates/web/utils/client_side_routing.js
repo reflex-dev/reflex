@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { initialEvents, EventLoopContext } from "/utils/context";
 
@@ -26,11 +26,11 @@ export function ClientSideRoutingProvider({ children }) {
   const [routeNotFound, setRouteNotFound] = useState(false);
   const [Event] = useContext(EventLoopContext)
   const router = useRouter()
-  let sent_hydrate = false;  // Avoid double-hydrate due to React strict-mode
+  const sentHydrate = useRef(false);  // Avoid double-hydrate due to React strict-mode
   useEffect(() => {
-    if (router.isReady && !sent_hydrate) {
-      Event(initialEvents)
-      sent_hydrate = true
+    if (router.isReady && !sentHydrate.current) {
+      Event(initialEvents.map((e) => ({...e})))
+      sentHydrate.current = true
     }
   }, [router.isReady])
 
@@ -81,7 +81,8 @@ export const useClientSideRouting = () => {
 
   useEffect(() => {  // Effect handles re-hydration on route change
     const change_complete = () => {
-      Event(initialEvents)  // re-hydrate when navigating between pages
+      // re-hydrate when navigating between pages
+      Event(initialEvents.map((e) => ({...e})))
       if (routeNotFound && router.pathname !== "/404") {
         setRouteNotFound(false)  // non-404 page, route _was_ found (via navigation)
       }

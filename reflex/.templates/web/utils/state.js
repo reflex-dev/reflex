@@ -173,6 +173,12 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
+  // Update token and router data (if missing).
+  event.token = getToken()
+  if (event.router_data === undefined || Object.keys(event.router_data).length === 0) {
+    event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router)
+  }
+
   // Send the event to the server.
   if (socket) {
     socket.emit("event", JSON.stringify(event));
@@ -203,17 +209,7 @@ export const applyRestEvent = async (event) => {
  * @param socket The socket object to send the event on.
  */
 export const queueEvents = async (events, socket) => {
-  event_queue.push(...events.map((ev) => {
-    // Copy the event and set the token.
-    const new_event = {...ev, token: getToken()}
-    // Do NOT overwrite router_data if the event already has it set.
-    if (ev.router_data === undefined || Object.keys(ev.router_data).length === 0) {
-      new_event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router)
-    }
-    return new_event
-  }))
-
-  // Drain the queue.
+  event_queue.push(...events)
   await processEvent(socket.current)
 }
 
