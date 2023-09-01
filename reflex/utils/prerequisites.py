@@ -388,7 +388,7 @@ def install_bun():
     )
 
 
-def install_frontend_packages(packages: list[str]):
+def install_frontend_packages(packages: set[str]):
     """Installs the base and custom frontend packages.
 
     Args:
@@ -414,6 +414,17 @@ def install_frontend_packages(packages: list[str]):
             shell=constants.IS_WINDOWS,
         )
         processes.show_status("Installing tailwind packages", process)
+
+    # Install custom packages defined in frontend_packages
+    if len(packages) > 0:
+        process = processes.new_process(
+            [get_install_package_manager(), "add", *packages],
+            cwd=constants.WEB_DIR,
+            shell=constants.IS_WINDOWS,
+        )
+        processes.show_status(
+            "Installing frontend packages from config and components", process
+        )
 
 
 def check_initialized(frontend: bool = True):

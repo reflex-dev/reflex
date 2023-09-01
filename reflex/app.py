@@ -493,7 +493,7 @@ class App(Base):
         Example:
             >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
         """
-        page_imports = [
+        page_imports = {
             i
             for i in imports
             if i not in compiler.DEFAULT_IMPORTS.keys()
@@ -501,8 +501,22 @@ class App(Base):
             and "next" not in i
             and not i.startswith("/")
             and i != ""
-        ]
-        page_imports.extend(get_config().frontend_packages)
+        }
+        frontend_packages = get_config().frontend_packages
+        _frontend_packages = []
+        for package in frontend_packages:
+            if package in get_config().tailwind.get("plugins", []):  # type: ignore
+                console.warn(
+                    f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
+                )
+                continue
+            if package in page_imports:
+                console.warn(
+                    f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
+                )
+                continue
+            _frontend_packages.append(package)
+        page_imports.update(_frontend_packages)
         prerequisites.install_frontend_packages(page_imports)
 
     def compile(self):

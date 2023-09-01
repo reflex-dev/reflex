@@ -177,10 +177,10 @@ class Config(Base):
     # The event namespace for ws connection
     event_namespace: Optional[str] = None
 
-    # Params to remove eventually.
-    # Additional frontend packages to install. (TODO: remove after 0.2.8)
+    # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
+    # Params to remove eventually.
     # For rest are for deploy only.
     # The rxdeploy url.
     rxdeploy_url: Optional[str] = None
@@ -222,10 +222,6 @@ class Config(Base):
         if "env_path" in kwargs:
             raise ValueError(
                 "env_path is deprecated - use environment variables instead"
-            )
-        if "frontend_package" in kwargs:
-            raise ValueError(
-                "frontend_packages is deprecated - use the lib_dependencies attribute of Component to specify dependencies"
             )
 
     def update_from_env(self):
