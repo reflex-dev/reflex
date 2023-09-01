@@ -1,6 +1,6 @@
 import pytest
 
-from reflex.route import get_route_args
+from reflex.route import get_route_args, catchall_in_route
 from reflex import constants
 
 
@@ -28,3 +28,17 @@ def test_route_args(route_name, expected):
 def test_invalid_route_args(route_name):
     with pytest.raises(ValueError):
         get_route_args(route_name)
+
+
+@pytest.mark.parametrize(
+    "route_name,expected",
+    [
+        ("/events/[year]/[month]/[...slug]", "[...slug]"),
+        ("pages/shop/[[...slug]]", "[[...slug]]")
+
+    ]
+)
+def test_catchall_in_route(route_name, expected):
+    assert catchall_in_route(route_name) == expected
+
+
