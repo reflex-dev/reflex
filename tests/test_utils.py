@@ -9,6 +9,9 @@ from packaging import version
 
 from reflex import constants
 from reflex.base import Base
+from reflex.components.tags import Tag
+from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.style import Style
 from reflex.utils import (
     build,
     format,
@@ -17,7 +20,11 @@ from reflex.utils import (
     types,
 )
 from reflex.utils import exec as utils_exec
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var
+
+
+def mock_event(arg):
+    pass
 
 
 def get_above_max_version():
@@ -260,6 +267,79 @@ def test_format_route(route: str, expected: bool):
         expected: The expected formatted route.
     """
     assert format.format_route(route) == expected
+
+
+@pytest.mark.parametrize(
+    "prop,formatted",
+    [
+        ("string", '"string"'),
+        ("{wrapped_string}", "{wrapped_string}"),
+        (True, "{true}"),
+        (False, "{false}"),
+        (123, "{123}"),
+        (3.14, "{3.14}"),
+        ([1, 2, 3], "{[1, 2, 3]}"),
+        (["a", "b", "c"], '{["a", "b", "c"]}'),
+        ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
+        ({"a": 'foo "bar" baz'}, r'{{"a": "foo \"bar\" baz"}}'),
+        (
+            {
+                "a": 'foo "{ "bar" }" baz',
+                "b": BaseVar(name="val", type_="str"),
+            },
+            r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
+        ),
+        (
+            EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
+            '{_e => Event([E("mock_event", {})], _e)}',
+        ),
+        (
+            EventChain(
+                events=[
+                    EventSpec(
+                        handler=EventHandler(fn=mock_event),
+                        args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
+                    )
+                ]
+            ),
+            '{_e => Event([E("mock_event", {arg:_e.target.value})], _e)}',
+        ),
+        ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
+        (BaseVar(name="var", type_="int"), "{var}"),
+        (
+            BaseVar(
+                name="_",
+                type_=Any,
+                state="",
+                is_local=True,
+                is_string=False,
+            ),
+            "{_}",
+        ),
+        (BaseVar(name='state.colors["a"]', type_="str"), '{state.colors["a"]}'),
+        ({"a": BaseVar(name="val", type_="str")}, '{{"a": val}}'),
+        ({"a": BaseVar(name='"val"', type_="str")}, '{{"a": "val"}}'),
+        (
+            {"a": BaseVar(name='state.colors["val"]', type_="str")},
+            '{{"a": state.colors["val"]}}',
+        ),
+        # tricky real-world case from markdown component
+        (
+            {
+                "h1": f"{{({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />}}"
+            },
+            '{{"h1": ({node, ...props}) => <Heading {...props} as={`h1`} />}}',
+        ),
+    ],
+)
+def test_format_prop(prop: Var, formatted: str):
+    """Test that the formatted value of an prop is correct.
+
+    Args:
+        prop: The prop to test.
+        formatted: The expected formatted value.
+    """
+    assert format.format_prop(prop) == formatted
 
 
 def test_validate_invalid_bun_path(mocker):
