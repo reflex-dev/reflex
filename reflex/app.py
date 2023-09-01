@@ -458,9 +458,7 @@ class App(Base):
         if component is None:
             component = Default404Page.create()
         self.add_page(
-            component=wait_for_client_redirect(
-                component if isinstance(component, Component) else component(),
-            ),
+            component=wait_for_client_redirect(self._generate_component(component)),
             route=constants.SLUG_404,
             title=title or constants.TITLE_404,
             image=image or constants.FAVICON_404,
