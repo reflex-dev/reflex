@@ -63,7 +63,7 @@ class ConnectionBanner(Cond):
         return super().create(has_connection_error, comp, Fragment.create())  # type: ignore
 
 
-class ConnectionModal(Modal):
+class ConnectionModal(Cond):
     """A connection status modal window."""
 
     @classmethod
@@ -79,7 +79,11 @@ class ConnectionModal(Modal):
         if not comp:
             comp = Text.create(*default_connection_error())
         return super().create(
-            header="Connection Error",
-            body=comp,
-            is_open=has_connection_error,
+            has_connection_error,
+            Modal.create(
+                header="Connection Error",
+                body=comp,
+                is_open=has_connection_error,
+            ),
+            Fragment.create(),
         )
