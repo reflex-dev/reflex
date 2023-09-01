@@ -24,7 +24,10 @@ class Cond(Component):
 
     @classmethod
     def create(
-        cls, cond: Var, comp1: Component, comp2: Optional[Component]
+        cls,
+        cond: Var,
+        comp1: Component,
+        comp2: Optional[Component] = None,
     ) -> Component:
         """Create a conditional component.
 
