@@ -33,20 +33,22 @@ export const useClientSideRouting = () => {
   const [routeNotFound, setRouteNotFound, Event] = useContext(ClientSideRoutingContext)
   const router = useRouter()
   useEffect(() => {
-    if (!routeNotFound) {
-      if (router.pathname === "/404" && window.location.pathname !== router.pathname) {
-        router.replace({
-            pathname: window.location.pathname,
-            query: window.location.search.slice(1),
-        })
-        .catch((e) => {
-          setRouteNotFound(true)  // couldn't navigate, show 404
-        })
+    if (router.isReady) {
+      if (!routeNotFound) {
+        if (router.pathname === "/404" && window.location.pathname !== router.pathname) {
+          router.replace({
+              pathname: window.location.pathname,
+              query: window.location.search.slice(1),
+          })
+          .catch((e) => {
+            setRouteNotFound(true)  // couldn't navigate, show 404
+          })
+        }
+      } else if (router.pathname !== "/404") {
+        setRouteNotFound(false)  // non-404 page, route _was_ found
       }
-    } else if (router.pathname !== "/404") {
-      setRouteNotFound(false)  // non-404 page, route _was_ found
     }
-  }, []);
+  }, [router.isReady]);
   useEffect(() => {
     const change_complete = () => {
       Event(initialEvents)
