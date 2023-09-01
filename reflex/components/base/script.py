@@ -2,7 +2,7 @@
 
 https://nextjs.org/docs/app/api-reference/components/script
 """
-from typing import Set
+from __future__ import annotations
 
 from reflex.components.component import Component
 from reflex.event import EventChain
@@ -57,7 +57,7 @@ class Script(Component):
             raise ValueError("Must provide inline script or `src` prop.")
         return super().create(*children, **props)
 
-    def get_triggers(self) -> Set[str]:
+    def get_triggers(self) -> set[str]:
         """Get the event triggers for the component.
 
         Returns:

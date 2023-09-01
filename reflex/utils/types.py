@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import typing
-from typing import Any, Callable, Tuple, Type, Union, _GenericAlias  # type: ignore
+from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
 
@@ -17,7 +17,7 @@ StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
 
-def get_args(alias: _GenericAlias) -> Tuple[Type, ...]:
+def get_args(alias: _GenericAlias) -> tuple[Type, ...]:
     """Get the arguments of a type alias.
 
     Args:

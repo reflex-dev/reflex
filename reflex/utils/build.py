@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import json
 import os
-import random
 import subprocess
 import zipfile
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
@@ -18,42 +16,11 @@ from reflex.config import get_config
 from reflex.utils import console, path_ops, prerequisites, processes
 
 
-def update_json_file(file_path: str, update_dict: dict[str, Union[int, str]]):
-    """Update the contents of a json file.
-
-    Args:
-        file_path: the path to the JSON file.
-        update_dict: object to update json.
-    """
-    fp = Path(file_path)
-    # create file if it doesn't exist
-    fp.touch(exist_ok=True)
-    # create an empty json object if file is empty
-    fp.write_text("{}") if fp.stat().st_size == 0 else None
-
-    with open(fp) as f:  # type: ignore
-        json_object: dict = json.load(f)
-        json_object.update(update_dict)
-    with open(fp, "w") as f:
-        json.dump(json_object, f, ensure_ascii=False)
-
-
-def set_reflex_project_hash():
-    """Write the hash of the Reflex project to a REFLEX_JSON."""
-    project_hash = random.getrandbits(128)
-    console.debug(f"Setting project hash to {project_hash}.")
-    update_json_file(constants.REFLEX_JSON, {"project_hash": project_hash})
-
-
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
-    update_json_file(
+    path_ops.update_json_file(
         constants.ENV_JSON,
-        {
-            "uploadUrl": constants.Endpoint.UPLOAD.get_url(),
-            "eventUrl": constants.Endpoint.EVENT.get_url(),
-            "pingUrl": constants.Endpoint.PING.get_url(),
-        },
+        {endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
     )
 
 
@@ -152,7 +119,7 @@ def export(
     backend: bool = True,
     frontend: bool = True,
     zip: bool = False,
-    deploy_url: Optional[str] = None,
+    deploy_url: str | None = None,
 ):
     """Export the app for deployment.
 

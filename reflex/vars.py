@@ -73,7 +73,7 @@ class Var(ABC):
     @classmethod
     def create(
         cls, value: Any, is_local: bool = True, is_string: bool = False
-    ) -> Optional[Var]:
+    ) -> Var | None:
         """Create a var from a value.
 
         Args:
@@ -358,10 +358,10 @@ class Var(ABC):
     def operation(
         self,
         op: str = "",
-        other: Optional[Var] = None,
-        type_: Optional[Type] = None,
+        other: Var | None = None,
+        type_: Type | None = None,
         flip: bool = False,
-        fn: Optional[str] = None,
+        fn: str | None = None,
     ) -> Var:
         """Perform an operation on a var.
 
@@ -983,8 +983,8 @@ class ComputedVar(Var, property):
     def deps(
         self,
         objclass: Type,
-        obj: Optional[FunctionType] = None,
-    ) -> Set[str]:
+        obj: FunctionType | None = None,
+    ) -> set[str]:
         """Determine var dependencies of this ComputedVar.
 
         Save references to attributes accessed on "self".  Recursively called
@@ -1375,10 +1375,8 @@ class ImportVar(Base):
 class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
 
-    ...
 
-
-def get_local_storage(key: Optional[Union[Var, str]] = None) -> BaseVar:
+def get_local_storage(key: Var | str | None = None) -> BaseVar:
     """Provide a base var as payload to get local storage item(s).
 
     Args:
