@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from reflex.components.component import Component
-from reflex.components.layout import Box, Cond, Fragment
+from reflex.components.layout import Box, Cond
 from reflex.components.overlay.modal import Modal
 from reflex.components.typography import Text
 from reflex.vars import Var
@@ -37,7 +37,7 @@ def default_connection_error() -> list[str | Var]:
     ]
 
 
-class ConnectionBanner(Cond):
+class ConnectionBanner(Component):
     """A connection banner component."""
 
     @classmethod
@@ -60,10 +60,10 @@ class ConnectionBanner(Cond):
                 textAlign="center",
             )
 
-        return super().create(has_connection_error, comp, Fragment.create())  # type: ignore
+        return Cond.create(has_connection_error, comp)
 
 
-class ConnectionModal(Cond):
+class ConnectionModal(Component):
     """A connection status modal window."""
 
     @classmethod
@@ -78,12 +78,11 @@ class ConnectionModal(Cond):
         """
         if not comp:
             comp = Text.create(*default_connection_error())
-        return super().create(
+        return Cond.create(
             has_connection_error,
             Modal.create(
                 header="Connection Error",
                 body=comp,
                 is_open=has_connection_error,
             ),
-            Fragment.create(),
         )

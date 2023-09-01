@@ -16,12 +16,12 @@ has_connection_error.type_
 
 def default_connection_error() -> list[str | Var]: ...
 
-class ConnectionBanner(Cond):
+class ConnectionBanner(Component):
     @overload
     @classmethod
     def create(cls, *children, **props) -> "ConnectionBanner": ...  # type: ignore
 
-class ConnectionModal(Modal):
+class ConnectionModal(Component):
     @overload
     @classmethod
     def create(cls, *children, **props) -> "ConnectionModal": ...  # type: ignore
