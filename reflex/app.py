@@ -13,7 +13,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Tuple,
     Type,
     Union,
 )
@@ -210,7 +209,7 @@ class App(Base):
             allow_origins=["*"],
         )
 
-    async def preprocess(self, state: State, event: Event) -> Optional[StateUpdate]:
+    async def preprocess(self, state: State, event: Event) -> StateUpdate | None:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -263,7 +262,7 @@ class App(Base):
                 return out  # type: ignore
         return update
 
-    def add_middleware(self, middleware: Middleware, index: Optional[int] = None):
+    def add_middleware(self, middleware: Middleware, index: int | None = None):
         """Add middleware to the app.
 
         Args:
@@ -302,16 +301,17 @@ class App(Base):
 
     def add_page(
         self,
-        component: Union[Component, ComponentCallable],
-        route: Optional[str] = None,
+        component: Component | ComponentCallable,
+        route: str | None = None,
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
-        on_load: Optional[
-            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
-        ] = None,
-        meta: List[Dict] = constants.DEFAULT_META_LIST,
-        script_tags: Optional[List[Component]] = None,
+        on_load: EventHandler
+        | EventSpec
+        | list[EventHandler | EventSpec]
+        | None = None,
+        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
+        script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
 
@@ -379,7 +379,7 @@ class App(Base):
                 on_load = [on_load]
             self.load_events[route] = on_load
 
-    def get_load_events(self, route: str) -> List[Union[EventHandler, EventSpec]]:
+    def get_load_events(self, route: str) -> list[EventHandler | EventSpec]:
         """Get the load events for a route.
 
         Args:
@@ -428,14 +428,15 @@ class App(Base):
 
     def add_custom_404_page(
         self,
-        component: Optional[Union[Component, ComponentCallable]] = None,
+        component: Component | ComponentCallable | None = None,
         title: str = constants.TITLE_404,
         image: str = constants.FAVICON_404,
         description: str = constants.DESCRIPTION_404,
-        on_load: Optional[
-            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
-        ] = None,
-        meta: List[Dict] = constants.DEFAULT_META_LIST,
+        on_load: EventHandler
+        | EventSpec
+        | list[EventHandler | EventSpec]
+        | None = None,
+        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
@@ -694,7 +695,7 @@ def upload(app: App):
         # get the current state(parent state/substate)
         path = handler.split(".")[:-1]
         current_state = state.get_substate(path)
-        handler_upload_param: Tuple = ()
+        handler_upload_param = ()
 
         # get handler function
         func = getattr(current_state, handler.split(".")[-1])

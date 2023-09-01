@@ -81,7 +81,6 @@ def init(
     if not os.path.exists(constants.CONFIG_FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
-        build.set_reflex_project_hash()
         telemetry.send("init", config.telemetry_enabled)
     else:
         telemetry.send("reinit", config.telemetry_enabled)
