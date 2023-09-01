@@ -355,9 +355,10 @@ class App(Base):
             assert isinstance(
                 component, Callable
             ), "Route must be set if component is not a callable."
-            route = component.__name__
             # Format the route.
-            route = format.format_route(route)
+            route = format.format_route(component.__name__)
+        else:
+            route = format.format_route(route, format_case=False)
 
         # Check if the route given is valid
         verify_route_validity(route)
@@ -389,7 +390,6 @@ class App(Base):
         # Add script tags if given
         if script_tags:
             component.children.extend(script_tags)
-
 
         # Add the page.
         self._check_routes_conflict(route)

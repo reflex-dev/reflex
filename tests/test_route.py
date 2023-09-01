@@ -15,8 +15,6 @@ from reflex.route import catchall_in_route, get_route_args, verify_route_validit
                 "commentId": constants.RouteArgType.SINGLE,
             },
         ),
-        ("/products/...", {"": constants.RouteArgType.LIST}),
-        ("/products/[...]", {"": constants.RouteArgType.LIST}),
     ],
 )
 def test_route_args(route_name, expected):

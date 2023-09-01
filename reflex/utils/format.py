@@ -202,7 +202,7 @@ def format_var(var: Var) -> str:
     return json_dumps(var.full_name)
 
 
-def format_route(route: str) -> str:
+def format_route(route: str, format_case=True) -> str:
     """Format the given route.
 
     Args:
@@ -211,8 +211,10 @@ def format_route(route: str) -> str:
     Returns:
         The formatted route.
     """
+    route = route.strip("/")
     # Strip the route and format casing.
-    route = to_snake_case(route.strip("/"))
+    if format_case:
+        route = to_snake_case(route)
 
     # If the route is empty, return the index route.
     if route == "":
