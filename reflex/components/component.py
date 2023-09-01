@@ -22,7 +22,7 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import format, imports, types
-from reflex.vars import BaseVar, ImportVar, Var
+from reflex.vars import BaseVar, ImportVar, NoRenderImportVar, Var
 
 
 class Component(Base, ABC):
@@ -39,6 +39,9 @@ class Component(Base, ABC):
 
     # The library that the component is based on.
     library: Optional[str] = None
+
+    # List here the non-react dependency needed by `library`
+    lib_dependencies: List[str] = []
 
     # The tag to use when rendering the component.
     tag: Optional[str] = None
@@ -286,7 +289,11 @@ class Component(Base, ABC):
         Returns:
             The event triggers.
         """
-        return EVENT_TRIGGERS | set(self.get_controlled_triggers())
+        return (
+            EVENT_TRIGGERS
+            | set(self.get_controlled_triggers())
+            | set((constants.ON_MOUNT, constants.ON_UNMOUNT))
+        )
 
     def get_controlled_triggers(self) -> Dict[str, Var]:
         """Get the event triggers that pass the component's value to the handler.
@@ -511,9 +518,12 @@ class Component(Base, ABC):
         return code
 
     def _get_imports(self) -> imports.ImportDict:
+        imports = {}
         if self.library is not None and self.tag is not None:
-            return {self.library: {self.import_var}}
-        return {}
+            imports[self.library] = {self.import_var}
+        for dep in self.lib_dependencies:
+            imports[dep] = {NoRenderImportVar()}  # type: ignore
+        return imports
 
     def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
@@ -525,16 +535,63 @@ class Component(Base, ABC):
             self._get_imports(), *[child.get_imports() for child in self.children]
         )
 
-    def _get_hooks(self) -> Optional[str]:
-        """Get the React hooks for this component.
+    def _get_mount_lifecycle_hook(self) -> str | None:
+        """Generate the component lifecycle hook.
 
         Returns:
-            The hooks for just this component.
+            The useEffect hook for managing `on_mount` and `on_unmount` events.
+        """
+        # pop on_mount and on_unmount from event_triggers since these are handled by
+        # hooks, not as actually props in the component
+        on_mount = self.event_triggers.pop(constants.ON_MOUNT, None)
+        on_unmount = self.event_triggers.pop(constants.ON_UNMOUNT, None)
+        if on_mount:
+            on_mount = format.format_event_chain(on_mount)
+        if on_unmount:
+            on_unmount = format.format_event_chain(on_unmount)
+        if on_mount or on_unmount:
+            return f"""
+                useEffect(() => {{
+                    {on_mount or ""}
+                    return () => {{
+                        {on_unmount or ""}
+                    }}
+                }}, []);"""
+
+    def _get_ref_hook(self) -> str | None:
+        """Generate the ref hook for the component.
+
+        Returns:
+            The useRef hook for managing refs.
         """
         ref = self.get_ref()
         if ref is not None:
             return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
-        return None
+
+    def _get_hooks_internal(self) -> Set[str]:
+        """Get the React hooks for this component managed by the framework.
+
+        Downstream components should NOT override this method to avoid breaking
+        framework functionality.
+
+        Returns:
+            Set of internally managed hooks.
+        """
+        return set(
+            hook
+            for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
+            if hook
+        )
+
+    def _get_hooks(self) -> Optional[str]:
+        """Get the React hooks for this component.
+
+        Downstream components should override this method to add their own hooks.
+
+        Returns:
+            The hooks for just this component.
+        """
+        return
 
     def get_hooks(self) -> Set[str]:
         """Get the React hooks for this component and its children.
@@ -543,7 +600,7 @@ class Component(Base, ABC):
             The code that should appear just before returning the rendered component.
         """
         # Store the code in a set to avoid duplicates.
-        code = set()
+        code = self._get_hooks_internal()
 
         # Add the hook code for this component.
         hooks = self._get_hooks()
@@ -782,11 +839,26 @@ class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
     def _get_imports(self):
-        return {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+        imports = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+
+        for dep in [self.library, *self.lib_dependencies]:
+            imports[dep] = {NoRenderImportVar()}  # type: ignore
+
+        return imports
 
     def _get_custom_code(self) -> str:
         opts_fragment = ", { ssr: false });"
-        library_import = f"const {self.tag} = dynamic(() => import('{self.library}')"
+
+        # extract the correct import name from library name
+        if self.library is None:
+            raise ValueError("Undefined library for NoSSRComponent")
+
+        import_name_parts = [p for p in self.library.rpartition("@") if p != ""]
+        import_name = (
+            import_name_parts[0] if import_name_parts[0] != "@" else self.library
+        )
+
+        library_import = f"const {self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"

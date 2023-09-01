@@ -833,7 +833,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 _dynamic_state_event(name="on_load", val=exp_val, router_data={}),
                 _dynamic_state_event(
                     name="set_is_hydrated",
-                    payload={"value": "true"},
+                    payload={"value": True},
                     val=exp_val,
                     router_data={},
                 ),

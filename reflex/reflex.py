@@ -81,7 +81,6 @@ def init(
     if not os.path.exists(constants.CONFIG_FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
-        build.set_reflex_project_hash()
         telemetry.send("init", config.telemetry_enabled)
     else:
         telemetry.send("reinit", config.telemetry_enabled)
@@ -127,6 +126,9 @@ def run(
         frontend = True
         backend = True
 
+    if not frontend and backend:
+        _skip_compile()
+
     # Check that the app is initialized.
     prerequisites.check_initialized(frontend=frontend)
 
@@ -170,13 +172,20 @@ def run(
 
     # Run the frontend and backend together.
     commands = []
+
+    # Run the frontend on a separate thread.
     if frontend:
         setup_frontend(Path.cwd())
         commands.append((frontend_cmd, Path.cwd(), frontend_port))
+
+    # In prod mode, run the backend on a separate thread.
     if backend and env == constants.Env.PROD:
         commands.append((backend_cmd, backend_host, backend_port))
+
+    # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
-        if env == constants.Env.DEV:
+        # In dev mode, run the backend on the main thread.
+        if backend and env == constants.Env.DEV:
             backend_cmd(backend_host, int(backend_port))
 
 

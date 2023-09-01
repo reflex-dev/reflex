@@ -14,7 +14,7 @@ export default function Component() {
   const focusRef = useRef();
   
   // Main event loop.
-  const [Event, notConnected] = useContext(EventLoopContext)
+  const [Event, connectError] = useContext(EventLoopContext)
 
   // Set focus to the specified element.
   useEffect(() => {
@@ -37,12 +37,7 @@ export default function Component() {
   {% endfor %}
 
   return (
-  <Fragment>
-      {%- if err_comp -%}
-            {{ utils.render(err_comp, indent_width=1) }}
-       {%- endif -%}
     {{utils.render(render, indent_width=0)}}
-    </Fragment>
   )
 }
 {% endblock %}

@@ -9,9 +9,8 @@ import Router, { useRouter } from "next/router";
 
 
 // Endpoint URLs.
-const PINGURL = env.pingUrl
-const EVENTURL = env.eventUrl
-const UPLOADURL = env.uploadUrl
+const EVENTURL = env.EVENT
+const UPLOADURL = env.UPLOAD
 
 // Global variable to hold the token.
 let token;
@@ -125,12 +124,12 @@ export const applyEvent = async (event, socket) => {
   }
 
   if (event.name == "_set_cookie") {
-    cookies.set(event.payload.key, event.payload.value);
+    cookies.set(event.payload.key, event.payload.value, { path: "/" });
     return false;
   }
 
   if (event.name == "_remove_cookie") {
-    cookies.remove(event.payload.key, event.payload.options)
+    cookies.remove(event.payload.key, { path: "/", ...event.payload.options })
     return false;
   }
 
@@ -218,6 +217,11 @@ export const queueEvents = async (events, socket) => {
 export const processEvent = async (
   socket
 ) => {
+  // Only proceed if the socket is up, otherwise we throw the event into the void
+  if (!socket) {
+    return;
+  }
+
   // Only proceed if we're not already processing an event.
   if (event_queue.length === 0 || event_processing) {
     return;
@@ -250,15 +254,17 @@ export const processEvent = async (
  * @param socket The socket object to connect.
  * @param dispatch The function to queue state update
  * @param transports The transports to use.
- * @param setNotConnected The function to update connection state.
+ * @param setConnectError The function to update connection error value.
  * @param initial_events Array of events to seed the queue after connecting.
+ * @param client_storage The client storage object from context.js
  */
 export const connect = async (
   socket,
   dispatch,
   transports,
-  setNotConnected,
+  setConnectError,
   initial_events = [],
+  client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(EVENTURL);
@@ -272,17 +278,18 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
     queueEvents(initial_events, socket)
-    setNotConnected(false)
+    setConnectError(null)
   });
 
   socket.current.on('connect_error', (error) => {
-    setNotConnected(true)
+    setConnectError(error)
   });
 
   // On each received message, queue the updates and events.
   socket.current.on("event", message => {
     const update = JSON5.parse(message)
     dispatch(update.delta)
+    applyClientStorageDelta(client_storage, update.delta)
     event_processing = !update.final
     if (update.events) {
       queueEvents(update.events, socket)
@@ -353,23 +360,91 @@ export const E = (name, payload = {}, handler = null) => {
 };
 
 /**
+ * Package client-side storage values as payload to send to the
+ * backend with the hydrate event
+ * @param client_storage The client storage object from context.js
+ * @returns payload dict of client storage values
+ */
+export const hydrateClientStorage = (client_storage) => {
+  const client_storage_values = {
+    "cookies": {},
+    "local_storage": {}
+  }
+  if (client_storage.cookies) {
+    for (const state_key in client_storage.cookies) {
+      const cookie_options = client_storage.cookies[state_key]
+      const cookie_name = cookie_options.name || state_key
+      client_storage_values.cookies[state_key] = cookies.get(cookie_name)
+    }
+  }
+  if (client_storage.local_storage && (typeof window !== 'undefined')) {
+    for (const state_key in client_storage.local_storage) {
+      const options = client_storage.local_storage[state_key]
+      const local_storage_value = localStorage.getItem(options.name || state_key)
+      if (local_storage_value !== null) {
+        client_storage_values.local_storage[state_key] = local_storage_value
+      }
+    }
+  }
+  if (client_storage.cookies || client_storage.local_storage) {
+    return client_storage_values
+  }
+  return {}
+};
+
+/**
+ * Update client storage values based on backend state delta.
+ * @param client_storage The client storage object from context.js
+ * @param delta The state update from the backend
+ */
+const applyClientStorageDelta = (client_storage, delta) => {
+  // find the main state and check for is_hydrated
+  const unqualified_states = Object.keys(delta).filter((key) => key.split(".").length === 1);
+  if (unqualified_states.length === 1) {
+    const main_state = delta[unqualified_states[0]]
+    if (main_state.is_hydrated !== undefined && !main_state.is_hydrated) {
+      // skip if the state is not hydrated yet, since all client storage
+      // values are sent in the hydrate event
+      return;
+    }
+  }
+  // Save known client storage values to cookies and localStorage.
+  for (const substate in delta) {
+    for (const key in delta[substate]) {
+      const state_key = `${substate}.${key}`
+      if (client_storage.cookies && state_key in client_storage.cookies) {
+        const cookie_options = client_storage.cookies[state_key]
+        const cookie_name = cookie_options.name || state_key
+        delete cookie_options.name  // name is not a valid cookie option
+        cookies.set(cookie_name, delta[substate][key], cookie_options);
+      } else if (client_storage.local_storage && state_key in client_storage.local_storage && (typeof window !== 'undefined')) {
+        const options = client_storage.local_storage[state_key]
+        localStorage.setItem(options.name || state_key, delta[substate][key]);
+      }
+    }
+  }
+}
+
+/**
  * Establish websocket event loop for a NextJS page.
  * @param initial_state The initial page state.
  * @param initial_events Array of events to seed the queue after connecting.
+ * @param client_storage The client storage object from context.js
  *
- * @returns [state, Event, notConnected] -
+ * @returns [state, Event, connectError] -
  *   state is a reactive dict,
  *   Event is used to queue an event, and
- *   notConnected is a reactive boolean indicating whether the websocket is connected.
+ *   connectError is a reactive js error from the websocket connection (or null if connected).
  */
 export const useEventLoop = (
   initial_state = {},
   initial_events = [],
+  client_storage = {},
 ) => {
   const socket = useRef(null)
   const router = useRouter()
   const [state, dispatch] = useReducer(applyDelta, initial_state)
-  const [notConnected, setNotConnected] = useState(false)
+  const [connectError, setConnectError] = useState(null)
   
   // Function to add new events to the event queue.
   const Event = (events, _e) => {
@@ -386,7 +461,7 @@ export const useEventLoop = (
 
     // Initialize the websocket connection.
     if (!socket.current) {
-      connect(socket, dispatch, ['websocket', 'polling'], setNotConnected, initial_events)
+      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, initial_events, client_storage)
     }
     (async () => {
       // Process all outstanding events.
@@ -395,7 +470,7 @@ export const useEventLoop = (
       }
     })()
   })
-  return [state, Event, notConnected]
+  return [state, Event, connectError]
 }
 
 /***

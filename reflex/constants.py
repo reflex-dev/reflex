@@ -6,7 +6,6 @@ import platform
 import re
 from enum import Enum
 from types import SimpleNamespace
-from typing import Optional
 
 from platformdirs import PlatformDirs
 
@@ -19,7 +18,7 @@ except ImportError:
 IS_WINDOWS = platform.system() == "Windows"
 
 
-def get_fnm_name() -> Optional[str]:
+def get_fnm_name() -> str | None:
     """Get the appropriate fnm executable name based on the current platform.
 
     Returns:
@@ -255,8 +254,8 @@ class Endpoint(Enum):
     """Endpoints for the reflex backend API."""
 
     PING = "ping"
-    EVENT = "event"
-    UPLOAD = "upload"
+    EVENT = "_event"
+    UPLOAD = "_upload"
 
     def __str__(self) -> str:
         """Get the string representation of the endpoint.
@@ -358,6 +357,14 @@ PING_TIMEOUT = 120
 
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
+
+# Keys in the client_side_storage dict
+COOKIES = "cookies"
+LOCAL_STORAGE = "local_storage"
+
+# Names of event handlers on all components mapped to useEffect
+ON_MOUNT = "on_mount"
+ON_UNMOUNT = "on_unmount"
 
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"

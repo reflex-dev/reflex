@@ -21,7 +21,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Type,
     Union,
 )
@@ -87,7 +86,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # Per-instance copy of backend variable values
     _backend_vars: Dict[str, Any] = {}
 
-    def __init__(self, *args, parent_state: Optional[State] = None, **kwargs):
+    def __init__(self, *args, parent_state: State | None = None, **kwargs):
         """Initialize the state.
 
         Args:
@@ -127,27 +126,32 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                             parent_state.parent_state,
                         )
 
-        # Initialize the mutable fields.
-        self._init_mutable_fields()
-
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(self.backend_vars)
+
+        # Initialize the mutable fields.
+        self._init_mutable_fields()
 
     def _init_mutable_fields(self):
         """Initialize mutable fields.
 
-        So that mutation to them can be detected by the app:
-        * list
+        Allow mutation to dict, list, and set to be detected by the app.
         """
         for field in self.base_vars.values():
             value = getattr(self, field.name)
 
-            value_in_rx_data = _convert_mutable_datatypes(
-                value, self._reassign_field, field.name
-            )
-
-            if types._issubclass(field.type_, Union[List, Dict]):
+            if types._issubclass(field.type_, Union[List, Dict, Set]):
+                value_in_rx_data = _convert_mutable_datatypes(
+                    value, self._reassign_field, field.name
+                )
                 setattr(self, field.name, value_in_rx_data)
+
+        for field_name, value in self._backend_vars.items():
+            if isinstance(value, (list, dict, set)):
+                value_in_rx_data = _convert_mutable_datatypes(
+                    value, self._reassign_field, field_name
+                )
+                self._backend_vars[field_name] = value_in_rx_data
 
         self._clean()
 
@@ -282,7 +286,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             )
 
     @classmethod
-    def get_skip_vars(cls) -> Set[str]:
+    def get_skip_vars(cls) -> set[str]:
         """Get the vars to skip when serializing.
 
         Returns:
@@ -301,7 +305,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @classmethod
     @functools.lru_cache()
-    def get_parent_state(cls) -> Optional[Type[State]]:
+    def get_parent_state(cls) -> Type[State] | None:
         """Get the parent state.
 
         Returns:
@@ -317,7 +321,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @classmethod
     @functools.lru_cache()
-    def get_substates(cls) -> Set[Type[State]]:
+    def get_substates(cls) -> set[Type[State]]:
         """Get the substates of the state.
 
         Returns:
@@ -488,7 +492,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             field.default = default_value
 
     @staticmethod
-    def _get_base_functions() -> Dict[str, FunctionType]:
+    def _get_base_functions() -> dict[str, FunctionType]:
         """Get all functions of the state class excluding dunder methods.
 
         Returns:
@@ -546,7 +550,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         else:
             return self.router_data.get(constants.RouteVar.PATH, "")
 
-    def get_query_params(self) -> Dict[str, str]:
+    def get_query_params(self) -> dict[str, str]:
         """Obtain the query parameters for the queried page.
 
         The query object contains both the URI parameters and the GET parameters.
@@ -556,7 +560,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         return self.router_data.get(constants.RouteVar.QUERY, {})
 
-    def get_cookies(self) -> Dict[str, str]:
+    def get_cookies(self) -> dict[str, str]:
         """Obtain the cookies of the client stored in the browser.
 
         Returns:
@@ -607,7 +611,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            func.fget.__name__ = param  # to allow passing as a prop
+            func.fget.__name__ = param  # to allow passing as a prop # type: ignore
             cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
@@ -651,15 +655,17 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
+        # Make sure lists and dicts are converted to ReflexList, ReflexDict and ReflexSet.
+        if name in (*self.base_vars, *self.backend_vars) and types._isinstance(
+            value, Union[List, Dict, Set]
+        ):
+            value = _convert_mutable_datatypes(value, self._reassign_field, name)
+
         if types.is_backend_variable(name) and name != "_backend_vars":
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
             return
-
-        # Make sure lists and dicts are converted to ReflexList, ReflexDict and ReflexSet.
-        if name in self.vars and types._isinstance(value, Union[List, Dict, Set]):
-            value = _convert_mutable_datatypes(value, self._reassign_field, name)
 
         # Set the attribute.
         super().__setattr__(name, value)
@@ -688,7 +694,24 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate.reset()
 
-    def get_substate(self, path: Sequence[str]) -> Optional[State]:
+    def _reset_client_storage(self):
+        """Reset client storage base vars to their default values."""
+        # Client-side storage is reset during hydrate so that clearing cookies
+        # on the browser also resets the values on the backend.
+        fields = self.get_fields()
+        for prop_name in self.base_vars:
+            field = fields[prop_name]
+            if isinstance(field.default, ClientStorageBase) or (
+                isinstance(field.type_, type)
+                and issubclass(field.type_, ClientStorageBase)
+            ):
+                setattr(self, prop_name, field.default)
+
+        # Recursively reset the substate client storage.
+        for substate in self.substates.values():
+            substate._reset_client_storage()
+
+    def get_substate(self, path: Sequence[str]) -> State | None:
         """Get the substate.
 
         Args:
@@ -788,7 +811,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     async def _process_event(
         self, handler: EventHandler, state: State, payload: Dict
-    ) -> AsyncIterator[Tuple[Optional[List[EventSpec]], bool]]:
+    ) -> AsyncIterator[tuple[list[EventSpec] | None, bool]]:
         """Process event.
 
         Args:
@@ -841,7 +864,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             print(error)
             yield [window_alert("An error occurred. See logs for details.")], True
 
-    def _always_dirty_computed_vars(self) -> Set[str]:
+    def _always_dirty_computed_vars(self) -> set[str]:
         """The set of ComputedVars that always need to be recalculated.
 
         Returns:
@@ -865,7 +888,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 if actual_var:
                     actual_var.mark_dirty(instance=self)
 
-    def _dirty_computed_vars(self, from_vars: Optional[Set[str]] = None) -> Set[str]:
+    def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the given vars.
 
         Args:
@@ -952,7 +975,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         self.dirty_vars = set()
         self.dirty_substates = set()
 
-    def dict(self, include_computed: bool = True, **kwargs) -> Dict[str, Any]:
+    def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
@@ -1110,3 +1133,104 @@ def _convert_mutable_datatypes(
         )
 
     return field_value
+
+
+class ClientStorageBase:
+    """Base class for client-side storage."""
+
+    def options(self) -> dict[str, Any]:
+        """Get the options for the storage.
+
+        Returns:
+            All set options for the storage (not None).
+        """
+        return {
+            format.to_camel_case(k): v for k, v in vars(self).items() if v is not None
+        }
+
+
+class Cookie(ClientStorageBase, str):
+    """Represents a state Var that is stored as a cookie in the browser."""
+
+    name: str | None
+    path: str
+    max_age: int | None
+    domain: str | None
+    secure: bool | None
+    same_site: str
+
+    def __new__(
+        cls,
+        object: Any = "",
+        encoding: str | None = None,
+        errors: str | None = None,
+        /,
+        name: str | None = None,
+        path: str = "/",
+        max_age: int | None = None,
+        domain: str | None = None,
+        secure: bool | None = None,
+        same_site: str = "lax",
+    ):
+        """Create a client-side Cookie (str).
+
+        Args:
+            object: The initial object.
+            encoding: The encoding to use.
+            errors: The error handling scheme to use.
+            name: The name of the cookie on the client side.
+            path: Cookie path. Use / as the path if the cookie should be accessible on all pages.
+            max_age: Relative max age of the cookie in seconds from when the client receives it.
+            domain: Domain for the cookie (sub.domain.com or .allsubdomains.com).
+            secure: Is the cookie only accessible through HTTPS?
+            same_site: Whether the cookie is sent with third party requests.
+                One of (true|false|none|lax|strict)
+
+        Returns:
+            The client-side Cookie object.
+
+        Note: expires (absolute Date) is not supported at this time.
+        """
+        if encoding or errors:
+            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
+        else:
+            inst = super().__new__(cls, object)
+        inst.name = name
+        inst.path = path
+        inst.max_age = max_age
+        inst.domain = domain
+        inst.secure = secure
+        inst.same_site = same_site
+        return inst
+
+
+class LocalStorage(ClientStorageBase, str):
+    """Represents a state Var that is stored in localStorage in the browser."""
+
+    name: str | None
+
+    def __new__(
+        cls,
+        object: Any = "",
+        encoding: str | None = None,
+        errors: str | None = None,
+        /,
+        name: str | None = None,
+    ) -> "LocalStorage":
+        """Create a client-side localStorage (str).
+
+        Args:
+            object: The initial object.
+            encoding: The encoding to use.
+            errors: The error handling scheme to use.
+            name: The name of the storage key on the client side.
+
+        Returns:
+            The client-side localStorage object.
+        """
+        if encoding or errors:
+            inst = super().__new__(cls, object, encoding or "utf-8", errors or "strict")
+        else:
+            inst = super().__new__(cls, object)
+        inst.name = name
+        return inst

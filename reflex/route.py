@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional, Union
 
 from reflex import constants
 from reflex.event import EventHandler
@@ -12,11 +11,11 @@ from reflex.utils.console import deprecate
 
 
 def route(
-    route: Optional[str] = None,
-    title: Optional[str] = None,
-    image: Optional[str] = None,
-    description: Optional[str] = None,
-    on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
+    route: str | None = None,
+    title: str | None = None,
+    image: str | None = None,
+    description: str | None = None,
+    on_load: EventHandler | list[EventHandler] | None = None,
 ):
     """Decorate a function as a page.
 
@@ -62,7 +61,7 @@ def verify_route_validity(route: str) -> None:
         raise ValueError(f"Catch-all must be the last part of the URL: {route}")
 
 
-def get_route_args(route: str) -> Dict[str, str]:
+def get_route_args(route: str) -> dict[str, str]:
     """Get the dynamic arguments for the given route.
 
     Args:

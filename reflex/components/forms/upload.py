@@ -9,17 +9,21 @@ from reflex.components.layout.box import Box
 from reflex.event import EventChain
 from reflex.vars import BaseVar, Var
 
-files_state = "const [files, setFiles] = useState([]);"
-upload_file = BaseVar(name="e => setFiles((files) => e)", type_=EventChain)
+files_state: str = "const [files, setFiles] = useState([]);"
+upload_file: BaseVar = BaseVar(name="e => setFiles((files) => e)", type_=EventChain)
 
 # Use this var along with the Upload component to render the list of selected files.
-selected_files = BaseVar(name="files.map((f) => f.name)", type_=List[str])
+selected_files: BaseVar = BaseVar(name="files.map((f) => f.name)", type_=List[str])
+
+clear_selected_files: BaseVar = BaseVar(
+    name="_e => setFiles((files) => [])", type_=EventChain
+)
 
 
 class Upload(Component):
     """A file upload component."""
 
-    library = "react-dropzone"
+    library = "react-dropzone@^14.2.3"
 
     tag = "ReactDropzone"
 

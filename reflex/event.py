@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple
 
 from reflex import constants
 from reflex.base import Base
@@ -162,7 +162,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
-def redirect(path: Union[str, Var[str]]) -> EventSpec:
+def redirect(path: str | Var[str]) -> EventSpec:
     """Redirect to a new path.
 
     Args:
@@ -174,7 +174,7 @@ def redirect(path: Union[str, Var[str]]) -> EventSpec:
     return server_side("_redirect", get_fn_signature(redirect), path=path)
 
 
-def console_log(message: Union[str, Var[str]]) -> EventSpec:
+def console_log(message: str | Var[str]) -> EventSpec:
     """Do a console.log on the browser.
 
     Args:
@@ -186,7 +186,7 @@ def console_log(message: Union[str, Var[str]]) -> EventSpec:
     return server_side("_console", get_fn_signature(console_log), message=message)
 
 
-def window_alert(message: Union[str, Var[str]]) -> EventSpec:
+def window_alert(message: str | Var[str]) -> EventSpec:
     """Create a window alert on the browser.
 
     Args:
@@ -250,7 +250,7 @@ def set_cookie(key: str, value: str) -> EventSpec:
     )
 
 
-def remove_cookie(key: str, options: Dict[str, Any] = {}) -> EventSpec:  # noqa: B006
+def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa: B006
     """Remove a cookie on the frontend.
 
     Args:
@@ -378,7 +378,7 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
     return event_handler(arg)
 
 
-def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
+def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
     """Call a function to a list of event specs.
 
     The function should return either a single EventSpec or a list of EventSpecs.
@@ -434,7 +434,7 @@ def call_event_fn(fn: Callable, arg: Var) -> List[EventSpec]:
     return events
 
 
-def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], ...]:
+def get_handler_args(event_spec: EventSpec, arg: Var) -> tuple[tuple[Var, Var], ...]:
     """Get the handler args for the given event spec.
 
     Args:
@@ -449,9 +449,7 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> Tuple[Tuple[Var, Var], 
     return event_spec.args if len(args) > 1 else tuple()
 
 
-def fix_events(
-    events: Optional[List[Union[EventHandler, EventSpec]]], token: str
-) -> List[Event]:
+def fix_events(events: list[EventHandler | EventSpec], token: str) -> list[Event]:
     """Fix a list of events returned by an event handler.
 
     Args:
@@ -479,7 +477,7 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        payload = {k.name: v.name for k, v in e.args}
+        payload = {k.name: v._decode() for k, v in e.args}  # type: ignore
 
         # Create an event and append it to the list.
         out.append(
@@ -510,7 +508,7 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
 
 
 # A set of common event triggers.
-EVENT_TRIGGERS: Set[str] = {
+EVENT_TRIGGERS: set[str] = {
     "on_focus",
     "on_blur",
     "on_click",

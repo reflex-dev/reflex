@@ -9,17 +9,18 @@ import os
 import os.path as op
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Type
 
 import plotly.graph_objects as go
 from plotly.io import to_json
 
 from reflex import constants
 from reflex.utils import types
+from reflex.vars import Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
-    from reflex.event import EventHandler, EventSpec
+    from reflex.event import EventChain, EventHandler, EventSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -32,7 +33,7 @@ WRAP_MAP = {
 }
 
 
-def get_close_char(open: str, close: Optional[str] = None) -> str:
+def get_close_char(open: str, close: str | None = None) -> str:
     """Check if the given character is a valid brace.
 
     Args:
@@ -52,7 +53,7 @@ def get_close_char(open: str, close: Optional[str] = None) -> str:
     return WRAP_MAP[open]
 
 
-def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
+def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
     """Check if the given text is wrapped in the given open and close characters.
 
     Args:
@@ -70,7 +71,7 @@ def is_wrapped(text: str, open: str, close: Optional[str] = None) -> bool:
 def wrap(
     text: str,
     open: str,
-    close: Optional[str] = None,
+    close: str | None = None,
     check_first: bool = True,
     num: int = 1,
 ) -> str:
@@ -182,6 +183,24 @@ def format_string(string: str) -> str:
     return string
 
 
+def format_var(var: Var) -> str:
+    """Format the given Var as a javascript value.
+
+    Args:
+        var: The Var to format.
+
+    Returns:
+        The formatted Var.
+    """
+    if not var.is_local or var.is_string:
+        return str(var)
+    if types._issubclass(var.type_, str):
+        return format_string(var.full_name)
+    if is_wrapped(var.full_name, "{"):
+        return var.full_name
+    return json_dumps(var.full_name)
+
+
 def format_route(route: str) -> str:
     """Format the given route.
 
@@ -239,7 +258,7 @@ def format_cond(
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
 
 
-def get_event_handler_parts(handler: EventHandler) -> Tuple[str, str]:
+def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     """Get the state and function name of an event handler.
 
     Args:
@@ -311,7 +330,47 @@ def format_event(event_spec: EventSpec) -> str:
     return f"E({', '.join(event_args)})"
 
 
-def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
+def format_event_chain(
+    event_chain: EventChain | Var[EventChain],
+    event_arg: Var | None = None,
+) -> str:
+    """Format an event chain as a javascript invocation.
+
+    Args:
+        event_chain: The event chain to queue on the frontend.
+        event_arg: The browser-native event (only used to preventDefault).
+
+    Returns:
+        Compiled javascript code to queue the given event chain on the frontend.
+
+    Raises:
+        ValueError: When the given event chain is not a valid event chain.
+    """
+    if isinstance(event_chain, Var):
+        from reflex.event import EventChain
+
+        if event_chain.type_ is not EventChain:
+            raise ValueError(f"Invalid event chain: {event_chain}")
+        return "".join(
+            [
+                "(() => {",
+                format_var(event_chain),
+                f"; preventDefault({format_var(event_arg)})" if event_arg else "",
+                "})()",
+            ]
+        )
+
+    chain = ",".join([format_event(event) for event in event_chain.events])
+    return "".join(
+        [
+            f"Event([{chain}]",
+            f", {format_var(event_arg)}" if event_arg else "",
+            ")",
+        ]
+    )
+
+
+def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """Convert back query params name to python-friendly case.
 
     Args:
@@ -324,7 +383,7 @@ def format_query_params(router_data: Dict[str, Any]) -> Dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_dataframe_values(value: Type) -> List[Any]:
+def format_dataframe_values(value: Type) -> list[Any]:
     """Format dataframe values.
 
     Args:

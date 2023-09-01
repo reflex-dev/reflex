@@ -1,5 +1,7 @@
 """Database built into Reflex."""
 
+from __future__ import annotations
+
 import os
 from collections import defaultdict
 from pathlib import Path
@@ -21,7 +23,7 @@ from reflex.config import get_config
 from reflex.utils import console
 
 
-def get_engine(url: Optional[str] = None):
+def get_engine(url: str | None = None):
     """Get the database engine.
 
     Args:
@@ -142,7 +144,7 @@ class Model(Base, sqlmodel.SQLModel):
     def alembic_autogenerate(
         cls,
         connection: sqlalchemy.engine.Connection,
-        message: Optional[str] = None,
+        message: str | None = None,
         write_migration_scripts: bool = True,
     ) -> bool:
         """Generate migration scripts for alembic-detectable changes.
@@ -233,7 +235,7 @@ class Model(Base, sqlmodel.SQLModel):
             env.run_migrations()
 
     @classmethod
-    def migrate(cls, autogenerate: bool = False) -> Optional[bool]:
+    def migrate(cls, autogenerate: bool = False) -> bool | None:
         """Execute alembic migrations for all sqlmodel Model classes.
 
         If alembic is not installed or has not been initialized for the project,
@@ -277,7 +279,7 @@ class Model(Base, sqlmodel.SQLModel):
         return sqlmodel.select(cls)
 
 
-def session(url: Optional[str] = None) -> sqlmodel.Session:
+def session(url: str | None = None) -> sqlmodel.Session:
     """Get a session to interact with the database.
 
     Args:

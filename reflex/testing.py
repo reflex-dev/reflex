@@ -141,6 +141,7 @@ class AppHarness:
         )
 
     def _initialize_app(self):
+        os.environ["TELEMETRY_ENABLED"] = ""  # disable telemetry reporting for tests
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             # get the source from a function or module object
@@ -361,7 +362,7 @@ class AppHarness:
             raise RuntimeError("App is not running.")
         event_ns: EventNamespace = cast(
             EventNamespace,
-            self.app_instance.sio.namespace_handlers["/event"],
+            self.app_instance.event_namespace,
         )
         pending: list[Coroutine[Any, Any, Any]] = []
         for state in self.app_instance.state_manager.states.values():

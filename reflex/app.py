@@ -1,4 +1,5 @@
 """The main Reflex app."""
+from __future__ import annotations
 
 import asyncio
 import inspect
@@ -12,7 +13,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Tuple,
     Type,
     Union,
 )
@@ -29,6 +29,7 @@ from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
+from reflex.components import connection_modal
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
 from reflex.config import get_config
@@ -45,7 +46,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
-from reflex.utils import console, format, types
+from reflex.utils import console, format, prerequisites, types
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -88,11 +89,11 @@ class App(Base):
     # Admin dashboard
     admin_dash: Optional[AdminDash] = None
 
-    # The component to render if there is a connection error to the server.
-    connect_error_component: Optional[Component] = None
-
     # The async server name space
     event_namespace: Optional[AsyncNamespace] = None
+
+    # A component that is present on every page.
+    overlay_component: Optional[Union[Component, ComponentCallable]] = connection_modal
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -106,6 +107,10 @@ class App(Base):
                         Also, if there are multiple client subclasses of rx.State(Subclasses of rx.State should consist
                         of the DefaultState and the client app state).
         """
+        if "connect_error_component" in kwargs:
+            raise ValueError(
+                "`connect_error_component` is deprecated, use `overlay_component` instead"
+            )
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
         inferred_state = state_subclasses[-1]
@@ -204,7 +209,7 @@ class App(Base):
             allow_origins=["*"],
         )
 
-    async def preprocess(self, state: State, event: Event) -> Optional[StateUpdate]:
+    async def preprocess(self, state: State, event: Event) -> StateUpdate | None:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -257,7 +262,7 @@ class App(Base):
                 return out  # type: ignore
         return update
 
-    def add_middleware(self, middleware: Middleware, index: Optional[int] = None):
+    def add_middleware(self, middleware: Middleware, index: int | None = None):
         """Add middleware to the app.
 
         Args:
@@ -269,18 +274,44 @@ class App(Base):
         else:
             self.middleware.insert(index, middleware)
 
+    @staticmethod
+    def _generate_component(component: Component | ComponentCallable) -> Component:
+        """Generate a component from a callable.
+
+        Args:
+            component: The component function to call or Component to return as-is.
+
+        Returns:
+            The generated component.
+
+        Raises:
+            TypeError: When an invalid component function is passed.
+        """
+        try:
+            return component if isinstance(component, Component) else component()
+        except TypeError as e:
+            message = str(e)
+            if "BaseVar" in message or "ComputedVar" in message:
+                raise TypeError(
+                    "You may be trying to use an invalid Python function on a state var. "
+                    "When referencing a var inside your render code, only limited var operations are supported. "
+                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
+                ) from e
+            raise e
+
     def add_page(
         self,
-        component: Union[Component, ComponentCallable],
-        route: Optional[str] = None,
+        component: Component | ComponentCallable,
+        route: str | None = None,
         title: str = constants.DEFAULT_TITLE,
         description: str = constants.DEFAULT_DESCRIPTION,
         image=constants.DEFAULT_IMAGE,
-        on_load: Optional[
-            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
-        ] = None,
-        meta: List[Dict] = constants.DEFAULT_META_LIST,
-        script_tags: Optional[List[Component]] = None,
+        on_load: EventHandler
+        | EventSpec
+        | list[EventHandler | EventSpec]
+        | None = None,
+        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
+        script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
 
@@ -296,9 +327,6 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
-
-        Raises:
-            TypeError: If an invalid var operation is used.
         """
         # If the route is not set, get it from the callable.
         if route is None:
@@ -314,20 +342,16 @@ class App(Base):
         self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
-        try:
-            component = component if isinstance(component, Component) else component()
-        except TypeError as e:
-            message = str(e)
-            if "BaseVar" in message or "ComputedVar" in message:
-                raise TypeError(
-                    "You may be trying to use an invalid Python function on a state var. "
-                    "When referencing a var inside your render code, only limited var operations are supported. "
-                    "See the var operation docs here: https://reflex.dev/docs/state/vars/#var-operations"
-                ) from e
-            raise e
+        component = self._generate_component(component)
 
-        # Wrap the component in a fragment.
-        component = Fragment.create(component)
+        # Wrap the component in a fragment with optional overlay.
+        if self.overlay_component is not None:
+            component = Fragment.create(
+                self._generate_component(self.overlay_component),
+                component,
+            )
+        else:
+            component = Fragment.create(component)
 
         # Add meta information to the component.
         compiler_utils.add_meta(
@@ -355,7 +379,7 @@ class App(Base):
                 on_load = [on_load]
             self.load_events[route] = on_load
 
-    def get_load_events(self, route: str) -> List[Union[EventHandler, EventSpec]]:
+    def get_load_events(self, route: str) -> list[EventHandler | EventSpec]:
         """Get the load events for a route.
 
         Args:
@@ -404,14 +428,15 @@ class App(Base):
 
     def add_custom_404_page(
         self,
-        component: Optional[Union[Component, ComponentCallable]] = None,
+        component: Component | ComponentCallable | None = None,
         title: str = constants.TITLE_404,
         image: str = constants.FAVICON_404,
         description: str = constants.DESCRIPTION_404,
-        on_load: Optional[
-            Union[EventHandler, EventSpec, List[Union[EventHandler, EventSpec]]]
-        ] = None,
-        meta: List[Dict] = constants.DEFAULT_META_LIST,
+        on_load: EventHandler
+        | EventSpec
+        | list[EventHandler | EventSpec]
+        | None = None,
+        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
@@ -459,6 +484,27 @@ class App(Base):
 
             admin.mount_to(self.api)
 
+    def get_frontend_packages(self, imports: Dict[str, str]):
+        """Gets the frontend packages to be installed and filters out the unnecessary ones.
+
+        Args:
+            imports: A dictionary containing the imports used in the current page.
+
+        Example:
+            >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
+        """
+        page_imports = [
+            i
+            for i in imports
+            if i not in compiler.DEFAULT_IMPORTS.keys()
+            and i != "focus-visible/dist/focus-visible"
+            and "next" not in i
+            and not i.startswith("/")
+            and i != ""
+        ]
+        page_imports.extend(get_config().frontend_packages)
+        prerequisites.install_frontend_packages(page_imports)
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
         if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
@@ -469,11 +515,12 @@ class App(Base):
             MofNCompleteColumn(),
             TimeElapsedColumn(),
         )
-        task = progress.add_task("Compiling: ", total=len(self.pages))
 
-        # TODO: include all work done in progress indicator, not just self.pages
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
+
+        task = progress.add_task("Compiling: ", total=len(self.pages))
+        # TODO: include all work done in progress indicator, not just self.pages
 
         # Get the env mode.
         config = get_config()
@@ -485,6 +532,7 @@ class App(Base):
         custom_components = set()
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
+        all_imports = {}
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
@@ -497,12 +545,15 @@ class App(Base):
                             route,
                             component,
                             self.state,
-                            self.connect_error_component,
                         ),
                     )
                 )
+                # add component.get_imports() to all_imports
+                all_imports.update(component.get_imports())
+
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
+
         thread_pool.close()
         thread_pool.join()
 
@@ -514,7 +565,11 @@ class App(Base):
         # Compile the custom components.
         compile_results.append(compiler.compile_components(custom_components))
 
-        # Compile the root document with base styles and fonts.
+        # Iterate through all the custom components and add their imports to the all_imports
+        for component in custom_components:
+            all_imports.update(component.get_imports())
+
+        # Compile the root document with base styles and fonts
         compile_results.append(compiler.compile_document_root(self.stylesheets))
 
         # Compile the theme.
@@ -532,6 +587,9 @@ class App(Base):
 
         # Empty the .web pages directory
         compiler.purge_web_pages_dir()
+
+        # install frontend packages
+        self.get_frontend_packages(all_imports)
 
         # Write the pages at the end to trigger the NextJS hot reload only once.
         thread_pool = ThreadPool()
@@ -637,7 +695,7 @@ def upload(app: App):
         # get the current state(parent state/substate)
         path = handler.split(".")[:-1]
         current_state = state.get_substate(path)
-        handler_upload_param: Tuple = ()
+        handler_upload_param = ()
 
         # get handler function
         func = getattr(current_state, handler.split(".")[-1])
