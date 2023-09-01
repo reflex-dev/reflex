@@ -459,6 +459,7 @@ def fix_events(
     Args:
         events: The events to fix.
         token: The user token.
+        router_data: The optional router data to set in the event.
 
     Returns:
         The fixed events.
