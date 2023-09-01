@@ -809,17 +809,17 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
 
     for exp_index, exp_val in enumerate(exp_vals):
-        p_event = _event(name=get_hydrate_event(state), val=exp_val)
+        hydrate_event = _event(name=get_hydrate_event(state), val=exp_val)
         exp_router_data = {
             "headers": {},
             "ip": client_ip,
             "sid": sid,
             "token": token,
-            **p_event.router_data,
+            **hydrate_event.router_data,
         }
         update = await process(
             app,
-            event=_event(name=get_hydrate_event(state), val=exp_val),
+            event=hydrate_event,
             sid=sid,
             headers={},
             client_ip=client_ip,
