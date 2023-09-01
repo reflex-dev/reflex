@@ -9,7 +9,7 @@ import os
 import os.path as op
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Type, Union
 
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
