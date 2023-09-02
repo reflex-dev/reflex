@@ -6,8 +6,10 @@ import hashlib
 import json
 import os
 import platform
+import re
 import sys
 from pathlib import Path
+from urllib.parse import urljoin
 
 import psutil
 import uvicorn
@@ -83,13 +85,15 @@ def run_process_and_launch_url(run_command: list[str]):
             )
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
-                if "ready started server on" in line:
+                match = re.search("ready started server on ([0-9.:]+)", line)
+                if match:
                     if first_run:
-                        url = line.split("url: ")[-1].strip()
+                        url = f"http://{match.group(1)}"
+                        if get_config().frontend_path != "":
+                            url = urljoin(url, get_config().frontend_path)
                         console.print(f"App running at: [bold green]{url}")
-                        first_run = False
                     else:
-                        console.print(f"New packages detected updating app...")
+                        console.print("New packages detected updating app...")
                 else:
                     console.debug(line)
                     new_hash = detect_package_change(json_file_path)

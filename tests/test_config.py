@@ -47,6 +47,7 @@ def test_deprecated_params(base_config_values, param):
     [
         ("APP_NAME", "my_test_app"),
         ("FRONTEND_PORT", 3001),
+        ("FRONTEND_PATH", "/test"),
         ("BACKEND_PORT", 8001),
         ("API_URL", "https://mybackend.com:8000"),
         ("DEPLOY_URL", "https://myfrontend.com"),

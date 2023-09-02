@@ -9,9 +9,10 @@ import os
 import os.path as op
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Type, Union
 
 import plotly.graph_objects as go
+from plotly.graph_objects import Figure
 from plotly.io import to_json
 
 from reflex import constants
@@ -256,6 +257,62 @@ def format_cond(
 
     # Format component conds.
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
+
+
+def format_prop(
+    prop: Union[Var, EventChain, ComponentStyle, str],
+) -> Union[int, float, str]:
+    """Format a prop.
+
+    Args:
+        prop: The prop to format.
+
+    Returns:
+        The formatted prop to display within a tag.
+
+    Raises:
+        TypeError: If the prop is not a valid type.
+    """
+    # import here to avoid circular import.
+    from reflex.event import EVENT_ARG, EventChain
+
+    try:
+        # Handle var props.
+        if isinstance(prop, Var):
+            if not prop.is_local or prop.is_string:
+                return str(prop)
+            if types._issubclass(prop.type_, str):
+                return format_string(prop.full_name)
+            prop = prop.full_name
+
+        # Handle event props.
+        elif isinstance(prop, EventChain):
+            chain = ",".join([format_event(event) for event in prop.events])
+            event = f"Event([{chain}], {EVENT_ARG})"
+            prop = f"{EVENT_ARG} => {event}"
+
+        # Handle other types.
+        elif isinstance(prop, str):
+            if is_wrapped(prop, "{"):
+                return prop
+            return json_dumps(prop)
+
+        elif isinstance(prop, Figure):
+            prop = json.loads(to_json(prop))["data"]  # type: ignore
+
+        # For dictionaries, convert any properties to strings.
+        elif isinstance(prop, dict):
+            prop = format_dict(prop)
+
+        else:
+            # Dump the prop as JSON.
+            prop = json_dumps(prop)
+    except TypeError as e:
+        raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
+
+    # Wrap the variable in braces.
+    assert isinstance(prop, str), "The prop must be a string."
+    return wrap(prop, "{", check_first=False)
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:

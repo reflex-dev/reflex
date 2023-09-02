@@ -2,19 +2,12 @@
 
 from __future__ import annotations
 
-import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
-
-from plotly.graph_objects import Figure
-from plotly.io import to_json
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from reflex.base import Base
-from reflex.event import EVENT_ARG, EventChain
+from reflex.event import EventChain
 from reflex.utils import format, types
 from reflex.vars import Var
-
-if TYPE_CHECKING:
-    from reflex.components.component import ComponentStyle
 
 
 class Tag(Base):
@@ -52,61 +45,6 @@ class Tag(Base):
             }
         super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def format_prop(
-        prop: Union[Var, EventChain, ComponentStyle, str],
-    ) -> Union[int, float, str]:
-        """Format a prop.
-
-        Args:
-            prop: The prop to format.
-
-        Returns:
-            The formatted prop to display within a tag.
-
-        Raises:
-            TypeError: If the prop is not a valid type.
-        """
-        try:
-            # Handle var props.
-            if isinstance(prop, Var):
-                if not prop.is_local or prop.is_string:
-                    return str(prop)
-                if types._issubclass(prop.type_, str):
-                    return format.format_string(prop.full_name)
-                prop = prop.full_name
-
-            # Handle event props.
-            elif isinstance(prop, EventChain):
-                chain = ",".join([format.format_event(event) for event in prop.events])
-                event = f"Event([{chain}], {EVENT_ARG})"
-                prop = f"{EVENT_ARG} => {event}"
-
-            # Handle other types.
-            elif isinstance(prop, str):
-                if format.is_wrapped(prop, "{"):
-                    return prop
-                return format.json_dumps(prop)
-
-            elif isinstance(prop, Figure):
-                prop = json.loads(to_json(prop))["data"]  # type: ignore
-
-            # For dictionaries, convert any properties to strings.
-            elif isinstance(prop, dict):
-                prop = format.format_dict(prop)
-
-            else:
-                # Dump the prop as JSON.
-                prop = format.json_dumps(prop)
-        except TypeError as e:
-            raise TypeError(
-                f"Could not format prop: {prop} of type {type(prop)}"
-            ) from e
-
-        # Wrap the variable in braces.
-        assert isinstance(prop, str), "The prop must be a string."
-        return format.wrap(prop, "{", check_first=False)
-
     def format_props(self) -> List:
         """Format the tag's props.
 
@@ -119,7 +57,7 @@ class Tag(Base):
 
         # Format all the props.
         return [
-            f"{name}={self.format_prop(prop)}"
+            f"{name}={format.format_prop(prop)}"
             for name, prop in sorted(self.props.items())
             if prop is not None
         ] + [str(prop) for prop in self.special_props]
