@@ -71,10 +71,6 @@ export const useClientSideRouting = () => {
             setRouteNotFound(true)
           })
         }
-      } else if (router.pathname !== "/404") {
-        // When routeNotFound is already set, but the loaded page is not /404, unset it,
-        // because we landed on a page that was actually found.
-        setRouteNotFound(false)
       }
     }
   }, [router.isReady]);
@@ -83,9 +79,6 @@ export const useClientSideRouting = () => {
     const change_complete = () => {
       // re-hydrate when navigating between pages
       Event(initialEvents.map((e) => ({...e})))
-      if (routeNotFound && router.pathname !== "/404") {
-        setRouteNotFound(false)  // non-404 page, route _was_ found (via navigation)
-      }
     }
     router.events.on('routeChangeComplete', change_complete)
     return () => {
