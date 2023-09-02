@@ -1,5 +1,4 @@
 """Integration tests for dynamic route page behavior."""
-import time
 from typing import Callable, Generator, Type
 from urllib.parse import urlsplit
 
@@ -89,7 +88,7 @@ def dynamic_route(
 
 
 @pytest.fixture
-def driver(dynamic_route: AppHarness) -> WebDriver:
+def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
     """Get an instance of the browser open to the dynamic_route app.
 
     Args:
@@ -133,7 +132,7 @@ def backend_state(dynamic_route: AppHarness, driver: WebDriver) -> State:
 @pytest.fixture()
 def poll_for_order(
     dynamic_route: AppHarness, backend_state: State
-) -> Callable[[list[str]], bool]:
+) -> Callable[[list[str]], None]:
     """Poll for the order list to match the expected order.
 
     Args:
@@ -144,7 +143,7 @@ def poll_for_order(
         A function that polls for the order list to match the expected order.
     """
 
-    def _poll_for_order(exp_order: list[str]) -> bool:
+    def _poll_for_order(exp_order: list[str]):
         dynamic_route._poll_for(lambda: backend_state.order == exp_order)
         assert backend_state.order == exp_order
 
@@ -155,7 +154,7 @@ def test_on_load_navigate(
     dynamic_route: AppHarness,
     driver: WebDriver,
     backend_state: State,
-    poll_for_order: Callable[[list[str]], bool],
+    poll_for_order: Callable[[list[str]], None],
 ):
     """Click links to navigate between dynamic pages with on_load event.
 
@@ -247,7 +246,7 @@ def test_on_load_navigate(
 def test_on_load_navigate_non_dynamic(
     dynamic_route: AppHarness,
     driver: WebDriver,
-    poll_for_order: Callable[[list[str]], bool],
+    poll_for_order: Callable[[list[str]], None],
 ):
     """Click links to navigate between static pages with on_load event.
 
