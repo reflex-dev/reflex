@@ -56,35 +56,23 @@ export const useClientSideRouting = () => {
   const [routeNotFound, setRouteNotFound, Event] = useContext(ClientSideRoutingContext)
   const router = useRouter()
   useEffect(() => {  // Effect performs the actual redirection
-    if (router.isReady) {
-      if (!routeNotFound) {  // have not tried redirecting yet
-        if (router.pathname === "/404" && window.location.pathname !== router.pathname) {
-          // The 404 page is being loaded, but the browser path is not /404, so
-          // attempt to redirect to the browser page once.
-          router.replace({
-              pathname: window.location.pathname,
-              query: window.location.search.slice(1),
-          })
-          .catch((e) => {
-            // When navigation fails, set routeNotFound to true to avoid redirecting again,
-            // which causes the "Hard Navigate" invariant error.
-            setRouteNotFound(true)
-          })
-        }
-      }
+    if (
+      router.isReady &&
+      !routeNotFound &&  // have not tried redirecting yet
+      router.pathname === "/404"  // but have landed on the 404 page
+    ) {
+      // attempt to redirect to the route in the browser address bar once
+      router.replace({
+          pathname: window.location.pathname,
+          query: window.location.search.slice(1),
+      })
+      .catch((e) => {
+        // When navigation fails, set routeNotFound to true to avoid redirecting again,
+        // which avoids hitting the "Hard Navigate" invariant error.
+        setRouteNotFound(true)
+      })
     }
   }, [router.isReady]);
-
-  useEffect(() => {  // Effect handles re-hydration on route change
-    const change_complete = () => {
-      // re-hydrate when navigating between pages
-      Event(initialEvents.map((e) => ({...e})))
-    }
-    router.events.on('routeChangeComplete', change_complete)
-    return () => {
-      router.events.off('routeChangeComplete', change_complete)
-    }
-  }, [router])
 
   // Return the reactive bool, so we can avoid flashing 404 page until we know
   // for sure the route is not found.

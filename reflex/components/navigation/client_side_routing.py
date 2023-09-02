@@ -18,6 +18,29 @@ from ..layout.cond import Cond
 route_not_found = Var.create_safe(constants.ROUTE_NOT_FOUND)
 
 
+class ClientSideRouting(Component):
+    """The client-side routing component."""
+
+    library = "/utils/client_side_routing"
+    tag = "useClientSideRouting"
+
+    def _get_hooks(self) -> str:
+        """Get the hooks to render.
+
+        Returns:
+            The hooks to render.
+        """
+        return f"const {constants.ROUTE_NOT_FOUND} = {self.tag}()"
+
+    def render(self) -> str:
+        """Render the component.
+
+        Returns:
+            The rendered component.
+        """
+        return ""
+
+
 def wait_for_client_redirect(component) -> Component:
     """Wait for a redirect to occur before rendering a component.
 
@@ -32,7 +55,7 @@ def wait_for_client_redirect(component) -> Component:
     return Cond.create(
         cond=route_not_found,
         comp1=component,
-        comp2=None,
+        comp2=ClientSideRouting.create(),
     )
 
 
