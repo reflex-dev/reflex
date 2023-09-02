@@ -138,6 +138,9 @@ class Config(Base):
     # The port to run the frontend on.
     frontend_port: int = 3000
 
+    # The path to run the frontend on.
+    frontend_path: str = ""
+
     # The port to run the backend on.
     backend_port: int = 8000
 
