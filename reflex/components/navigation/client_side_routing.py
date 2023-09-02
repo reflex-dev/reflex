@@ -3,9 +3,9 @@
 Works with /utils/client_side_routing.js to handle the redirect and state.
 
 When the user hits a 404 accessing a route, redirect them to the same page,
-setting set a top-level reactive state var "routeNotFound" to true if the
-redirect fails.  The `wait_for_client_redirect` function will render the
-component only after routeNotFound becomes true.
+setting a reactive state var "routeNotFound" to true if the redirect fails.  The
+`wait_for_client_redirect` function will render the component only after
+routeNotFound becomes true.
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ class ClientSideRouting(Component):
         """Get the hooks to render.
 
         Returns:
-            The hooks to render.
+            The useClientSideRouting hook.
         """
         return f"const {constants.ROUTE_NOT_FOUND} = {self.tag}()"
 
@@ -36,7 +36,7 @@ class ClientSideRouting(Component):
         """Render the component.
 
         Returns:
-            The rendered component.
+            Empty string, because this component is only used for its hooks.
         """
         return ""
 
