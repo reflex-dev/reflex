@@ -116,8 +116,6 @@ UTILS_DIR = "utils"
 STATIC_DIR = "_static"
 # The name of the state file.
 STATE_PATH = "/".join([UTILS_DIR, "state"])
-# The name of the client-side routing file.
-CLIENT_SIDE_ROUTING_PATH = "/".join([UTILS_DIR, "client_side_routing"])
 # The name of the components file.
 COMPONENTS_PATH = "/".join([UTILS_DIR, "components"])
 # The directory where the app pages are compiled to.

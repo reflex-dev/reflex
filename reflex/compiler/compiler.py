@@ -31,9 +31,6 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getAllLocalStorageItems"),
         ImportVar(tag="useEventLoop"),
     },
-    f"/{constants.CLIENT_SIDE_ROUTING_PATH}": {
-        ImportVar(tag="useClientSideRouting"),
-    },
     "/utils/context.js": {
         ImportVar(tag="EventLoopContext"),
         ImportVar(tag="StateContext"),
