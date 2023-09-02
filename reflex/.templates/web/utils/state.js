@@ -427,7 +427,8 @@ const applyClientStorageDelta = (client_storage, delta) => {
 
 /**
  * Establish websocket event loop for a NextJS page.
- * @param initial_state The initial page state.
+ * @param initial_state The initial app state.
+ * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
  *
  * @returns [state, Event, connectError] -
@@ -437,6 +438,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
  */
 export const useEventLoop = (
   initial_state = {},
+  initial_events = [],
   client_storage = {},
 ) => {
   const socket = useRef(null)
@@ -449,6 +451,15 @@ export const useEventLoop = (
       preventDefault(_e);
       queueEvents(events, socket)
   }
+
+  const sentHydrate = useRef(false);  // Avoid double-hydrate due to React strict-mode
+  // initial state hydrate
+  useEffect(() => {
+    if (router.isReady && !sentHydrate.current) {
+      Event(initial_events.map((e) => ({...e})))
+      sentHydrate.current = true
+    }
+  }, [router.isReady])
 
   // Main event loop.
   useEffect(() => {
