@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import typing
-from datetime import datetime
 from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
@@ -13,7 +12,7 @@ from reflex.base import Base
 GenericType = Union[Type, _GenericAlias]
 
 # Valid state var types.
-PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple, datetime]
+PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
@@ -169,6 +168,18 @@ def is_figure(value: Type) -> bool:
     return value.__name__ == "Figure"
 
 
+def is_datetime(var: Type) -> bool:
+    """Check if the value is from the datetime module.
+
+    Args:
+        var: The value to check.
+
+    Returns:
+        Whether the value is a valid prop type.
+    """
+    return var.__module__ == "datetime"
+
+
 def is_valid_var_type(var: Type) -> bool:
     """Check if the given value is a valid prop type.
 
@@ -183,6 +194,7 @@ def is_valid_var_type(var: Type) -> bool:
         or is_dataframe(var)
         or is_figure(var)
         or is_image(var)
+        or is_datetime(var)
     )
 
 
