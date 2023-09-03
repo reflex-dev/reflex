@@ -9,6 +9,7 @@ import os
 import os.path as op
 import re
 import sys
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Type, Union
 
 import plotly.graph_objects as go
@@ -512,6 +513,10 @@ def format_state(value: Any) -> Any:
             "columns": value.columns.tolist(),
             "data": format_dataframe_values(value),
         }
+
+    # Convert datetime objects to str.
+    if isinstance(value, (date, datetime, timedelta)):
+        return str(value)
 
     # Convert Image objects to base64.
     if types.is_image(type(value)):
