@@ -53,6 +53,15 @@ ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
 
+def default_overlay_component() -> Component:
+    """Default overlay_component attribute for App.
+
+    Returns:
+        The default overlay_component, which is a connection_modal.
+    """
+    return connection_modal()
+
+
 class App(Base):
     """A Reflex application."""
 
@@ -93,7 +102,9 @@ class App(Base):
     event_namespace: Optional[AsyncNamespace] = None
 
     # A component that is present on every page.
-    overlay_component: Optional[Union[Component, ComponentCallable]] = connection_modal
+    overlay_component: Optional[
+        Union[Component, ComponentCallable]
+    ] = default_overlay_component
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -174,6 +185,13 @@ class App(Base):
 
         # Set up the admin dash.
         self.setup_admin_dash()
+
+        # If a State is not used and no overlay_component is specified, do not render the connection modal
+        if (
+            self.state is DefaultState
+            and self.overlay_component is default_overlay_component
+        ):
+            self.overlay_component = None
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
