@@ -167,6 +167,7 @@ def is_figure(value: Type) -> bool:
     """
     return value.__name__ == "Figure"
 
+
 def is_datetime(value: Type) -> bool:
     """Check if the given value is a datetime object.
     Args:
@@ -176,6 +177,7 @@ def is_datetime(value: Type) -> bool:
         Whether the value is a figure.
     """
     return value.__module__ == "datetime"
+
 
 def is_valid_var_type(var: Type) -> bool:
     """Check if the given value is a valid prop type.

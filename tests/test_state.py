@@ -1,5 +1,5 @@
-import functools
 import datetime
+import functools
 from typing import Dict, List
 
 import pytest
@@ -267,6 +267,7 @@ def test_dict(test_state):
         == set(test_state.base_vars) | substates
     )
 
+
 def test_format_state(test_state):
     """Test that the format state is correct.
 
@@ -295,6 +296,7 @@ def test_format_state(test_state):
         "upper": "",
     }
     assert formatted_state == exp_formatted_state
+
 
 def test_default_setters(test_state):
     """Test that we can set default values.
