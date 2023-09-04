@@ -405,7 +405,7 @@ class Victory(Component):
         )
 
     def _add_style(self, style):
-        self.custom_style = self.custom_style or {}
+        self.custom_style = self.custom_style or {}  # type: ignore
         self.custom_style.update(style)  # type: ignore
 
     def _render(self):
