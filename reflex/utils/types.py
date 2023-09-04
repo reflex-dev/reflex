@@ -170,6 +170,7 @@ def is_figure(value: Type) -> bool:
 
 def is_datetime(value: Type) -> bool:
     """Check if the given value is a datetime object.
+    
     Args:
         value: The value to check.
 
