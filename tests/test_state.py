@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 from typing import Dict, List
 
@@ -1147,6 +1149,73 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
     s.handler()
     assert s.cached_x_side_effect == 2
     assert s.x == 45
+
+
+def test_computed_var_dependencies():
+    """Test that a ComputedVar correctly tracks its dependencies."""
+
+    class ComputedState(State):
+        v: int = 0
+        w: int = 0
+        x: int = 0
+        y: List[int] = [1, 2, 3]
+        _z: List[int] = [1, 2, 3]
+
+        @rx.cached_var
+        def comp_v(self) -> int:
+            """Direct access.
+
+            Returns:
+                The value of self.v.
+            """
+            return self.v
+
+        @rx.cached_var
+        def comp_w(self):
+            """Nested lambda.
+
+            Returns:
+                A lambda that returns the value of self.w.
+            """
+            return lambda: self.w
+
+        @rx.cached_var
+        def comp_x(self):
+            """Nested function.
+
+            Returns:
+                A function that returns the value of self.x.
+            """
+
+            def _():
+                return self.x
+
+            return _
+
+        @rx.cached_var
+        def comp_y(self) -> List[int]:
+            """Comprehension iterating over attribute.
+
+            Returns:
+                A list of the values of self.y.
+            """
+            return [round(y) for y in self.y]
+
+        @rx.cached_var
+        def comp_z(self) -> List[bool]:
+            """Comprehension accesses attribute.
+
+            Returns:
+                A list of whether the values 0-4 are in self._z.
+            """
+            return [z in self._z for z in range(5)]
+
+    cs = ComputedState()
+    assert cs.computed_var_dependencies["v"] == {"comp_v"}
+    assert cs.computed_var_dependencies["w"] == {"comp_w"}
+    assert cs.computed_var_dependencies["x"] == {"comp_x"}
+    assert cs.computed_var_dependencies["y"] == {"comp_y"}
+    assert cs.computed_var_dependencies["_z"] == {"comp_z"}
 
 
 def test_backend_method():
