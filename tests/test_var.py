@@ -204,8 +204,8 @@ def test_get_setter(prop, expected):
         (3.14, BaseVar(name="3.14", type_=float, is_local=True)),
         ([1, 2, 3], BaseVar(name="[1, 2, 3]", type_=list, is_local=True)),
         (
-            {"a": 1, "b": 2},
-            BaseVar(name='{"a": 1, "b": 2}', type_=dict, is_local=True),
+                {"a": 1, "b": 2},
+                BaseVar(name='{"a": 1, "b": 2}', type_=dict, is_local=True),
         ),
     ],
 )
@@ -235,8 +235,8 @@ def test_create_type_error():
         Var.create(value)
 
     assert (
-        exception.value.args[0]
-        == f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
+            exception.value.args[0]
+            == f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
     )
 
 
@@ -274,7 +274,7 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
     assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
     assert (
-        str(BaseVar(name="foo", state="state", type_=TestObj).bar) == "{state.foo.bar}"
+            str(BaseVar(name="foo", state="state", type_=TestObj).bar) == "{state.foo.bar}"
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
@@ -284,8 +284,8 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
     assert str(v(["1", "2", "3"]).reverse()) == '{[...["1", "2", "3"]].reverse()}'
     assert (
-        str(BaseVar(name="foo", state="state", type_=list).reverse())
-        == "{[...state.foo].reverse()}"
+            str(BaseVar(name="foo", state="state", type_=list).reverse())
+            == "{[...state.foo].reverse()}"
     )
     assert str(BaseVar(name="foo", type_=list).reverse()) == "{[...foo].reverse()}"
 
@@ -379,24 +379,24 @@ def test_var_indexing_lists(var):
         (BaseVar(name="lst", type_=List[int]), {"name": "dict"}),
         (BaseVar(name="lst", type_=List[int]), {"set"}),
         (
-            BaseVar(name="lst", type_=List[int]),
-            (
-                1,
-                2,
-            ),
+                BaseVar(name="lst", type_=List[int]),
+                (
+                        1,
+                        2,
+                ),
         ),
         (BaseVar(name="lst", type_=List[int]), 1.5),
         (BaseVar(name="lst", type_=List[int]), "str"),
         (BaseVar(name="lst", type_=List[int]), BaseVar(name="string_var", type_=str)),
         (BaseVar(name="lst", type_=List[int]), BaseVar(name="float_var", type_=float)),
         (
-            BaseVar(name="lst", type_=List[int]),
-            BaseVar(name="list_var", type_=List[int]),
+                BaseVar(name="lst", type_=List[int]),
+                BaseVar(name="list_var", type_=List[int]),
         ),
         (BaseVar(name="lst", type_=List[int]), BaseVar(name="set_var", type_=Set[str])),
         (
-            BaseVar(name="lst", type_=List[int]),
-            BaseVar(name="dict_var", type_=Dict[str, str]),
+                BaseVar(name="lst", type_=List[int]),
+                BaseVar(name="dict_var", type_=Dict[str, str]),
         ),
         (BaseVar(name="str", type_=str), [1, 2]),
         (BaseVar(name="lst", type_=str), {"name": "dict"}),
@@ -453,66 +453,66 @@ def test_dict_indexing():
     "var, index",
     [
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
-            [1, 2],
+                BaseVar(name="dict", type_=Dict[str, str]),
+                [1, 2],
         ),
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
-            {"name": "dict"},
+                BaseVar(name="dict", type_=Dict[str, str]),
+                {"name": "dict"},
         ),
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
-            {"set"},
+                BaseVar(name="dict", type_=Dict[str, str]),
+                {"set"},
         ),
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
-            (
-                1,
-                2,
-            ),
+                BaseVar(name="dict", type_=Dict[str, str]),
+                (
+                        1,
+                        2,
+                ),
         ),
         (
-            BaseVar(name="lst", type_=Dict[str, str]),
-            BaseVar(name="list_var", type_=List[int]),
+                BaseVar(name="lst", type_=Dict[str, str]),
+                BaseVar(name="list_var", type_=List[int]),
         ),
         (
-            BaseVar(name="lst", type_=Dict[str, str]),
-            BaseVar(name="set_var", type_=Set[str]),
+                BaseVar(name="lst", type_=Dict[str, str]),
+                BaseVar(name="set_var", type_=Set[str]),
         ),
         (
-            BaseVar(name="lst", type_=Dict[str, str]),
-            BaseVar(name="dict_var", type_=Dict[str, str]),
+                BaseVar(name="lst", type_=Dict[str, str]),
+                BaseVar(name="dict_var", type_=Dict[str, str]),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            [1, 2],
+                BaseVar(name="df", type_=DataFrame),
+                [1, 2],
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            {"name": "dict"},
+                BaseVar(name="df", type_=DataFrame),
+                {"name": "dict"},
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            {"set"},
+                BaseVar(name="df", type_=DataFrame),
+                {"set"},
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            (
-                1,
-                2,
-            ),
+                BaseVar(name="df", type_=DataFrame),
+                (
+                        1,
+                        2,
+                ),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="list_var", type_=List[int]),
+                BaseVar(name="df", type_=DataFrame),
+                BaseVar(name="list_var", type_=List[int]),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="set_var", type_=Set[str]),
+                BaseVar(name="df", type_=DataFrame),
+                BaseVar(name="set_var", type_=Set[str]),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="dict_var", type_=Dict[str, str]),
+                BaseVar(name="df", type_=DataFrame),
+                BaseVar(name="dict_var", type_=Dict[str, str]),
         ),
     ],
 )
@@ -533,8 +533,8 @@ def test_var_unsupported_indexing_dicts(var, index):
         ("ParentState", "parent_state.var_without_annotation"),
         ("ChildState", "parent_state.child_state.var_without_annotation"),
         (
-            "GrandChildState",
-            "parent_state.child_state.grand_child_state.var_without_annotation",
+                "GrandChildState",
+                "parent_state.child_state.grand_child_state.var_without_annotation",
         ),
         ("StateWithAnyVar", "state_with_any_var.var_without_annotation"),
     ],
@@ -552,8 +552,8 @@ def test_computed_var_without_annotation_error(request, fixture, full_name):
         state = request.getfixturevalue(fixture)
         state.var_without_annotation.foo
     assert (
-        err.value.args[0]
-        == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
+            err.value.args[0]
+            == f"You must provide an annotation for the state var `{full_name}`. Annotation cannot be `typing.Any`"
     )
 
 
@@ -561,12 +561,12 @@ def test_computed_var_without_annotation_error(request, fixture, full_name):
     "fixture,full_name",
     [
         (
-            "StateWithCorrectVarAnnotation",
-            "state_with_correct_var_annotation.var_with_annotation",
+                "StateWithCorrectVarAnnotation",
+                "state_with_correct_var_annotation.var_with_annotation",
         ),
         (
-            "StateWithWrongVarAnnotation",
-            "state_with_wrong_var_annotation.var_with_annotation",
+                "StateWithWrongVarAnnotation",
+                "state_with_wrong_var_annotation.var_with_annotation",
         ),
     ],
 )
@@ -583,9 +583,9 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         state = request.getfixturevalue(fixture)
         state.var_with_annotation.foo
     assert (
-        err.value.args[0]
-        == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly.\n"
-        f"original message: 'ComputedVar' object has no attribute 'foo'"
+            err.value.args[0]
+            == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly.\n"
+               f"original message: 'ComputedVar' object has no attribute 'foo'"
     )
 
 
@@ -644,12 +644,12 @@ def test_import_var(import_var, expected):
     [
         ("test_key", BaseVar(name="localStorage.getItem('test_key')", type_=str)),
         (
-            BaseVar(name="key_var", type_=str),
-            BaseVar(name="localStorage.getItem(key_var)", type_=str),
+                BaseVar(name="key_var", type_=str),
+                BaseVar(name="localStorage.getItem(key_var)", type_=str),
         ),
         (
-            BaseState.val,
-            BaseVar(name="localStorage.getItem(base_state.val)", type_=str),
+                BaseState.val,
+                BaseVar(name="localStorage.getItem(base_state.val)", type_=str),
         ),
         (None, BaseVar(name="getAllLocalStorageItems()", type_=Dict)),
     ],
@@ -687,8 +687,8 @@ def test_get_local_storage_raise_error(key):
         get_local_storage(key)
     type_ = type(key) if not isinstance(key, Var) else key.type_
     assert (
-        err.value.args[0]
-        == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
+            err.value.args[0]
+            == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
     )
 
 
@@ -697,12 +697,12 @@ def test_get_local_storage_raise_error(key):
     [
         (f"{BaseVar(name='var', type_=str)}", "${var}"),
         (
-            f"testing f-string with {BaseVar(name='myvar', state='state', type_=int)}",
-            "testing f-string with ${state.myvar}",
+                f"testing f-string with {BaseVar(name='myvar', state='state', type_=int)}",
+                "testing f-string with ${state.myvar}",
         ),
         (
-            f"testing local f-string {BaseVar(name='x', is_local=True, type_=str)}",
-            "testing local f-string x",
+                f"testing local f-string {BaseVar(name='x', is_local=True, type_=str)}",
+                "testing local f-string x",
         ),
     ],
 )
@@ -753,8 +753,8 @@ def test_unsupported_types_for_contains(var):
     with pytest.raises(TypeError) as err:
         assert var.contains(1)
     assert (
-        err.value.args[0]
-        == f"Var var of type {var.type_} does not support contains check."
+            err.value.args[0]
+            == f"Var var of type {var.type_} does not support contains check."
     )
 
 
@@ -774,8 +774,8 @@ def test_unsupported_types_for_string_contains(other):
     with pytest.raises(TypeError) as err:
         assert BaseVar(name="var", type_=str).contains(other)
     assert (
-        err.value.args[0]
-        == f"'in <string>' requires string as left operand, not {other.type_}"
+            err.value.args[0]
+            == f"'in <string>' requires string as left operand, not {other.type_}"
     )
 
 
@@ -783,8 +783,8 @@ def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
         assert 1 in BaseVar(name="var", type_=str)
     assert (
-        err.value.args[0]
-        == "'in' operator not supported for Var types, use Var.contains() instead."
+            err.value.args[0]
+            == "'in' operator not supported for Var types, use Var.contains() instead."
     )
 
 
@@ -792,89 +792,89 @@ def test_unsupported_default_contains():
     "operand1_var,operand2_var,operators",
     [
         (
-            Var.create(10),
-            Var.create(5),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create(10),
+                Var.create(5),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5),
-            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+                Var.create(10.5),
+                Var.create(5),
+                ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
         (
-            Var.create(5),
-            Var.create(True),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create(5),
+                Var.create(True),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5.5),
-            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+                Var.create(10.5),
+                Var.create(5.5),
+                ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
         (
-            Var.create(10.5),
-            Var.create(True),
-            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+                Var.create(10.5),
+                Var.create(True),
+                ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
         ),
         (Var.create("10"), Var.create("5"), ["+", ">", "<", "<=", ">="]),
         (Var.create([10, 20]), Var.create([5, 6]), ["+", ">", "<", "<=", ">="]),
         (Var.create([10, 20]), Var.create(5), ["*"]),
         (Var.create([10, 20]), Var.create(True), ["*"]),
         (
-            Var.create(True),
-            Var.create(True),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create(True),
+                Var.create(True),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
     ],
 )
@@ -889,289 +889,289 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
     "operand1_var,operand2_var,operators",
     [
         (
-            Var.create(10.5),
-            Var.create(5),
-            [
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create(10.5),
+                Var.create(5),
+                [
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create(10.5),
-            Var.create(True),
-            [
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create(10.5),
+                Var.create(True),
+                [
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create(10.5),
-            Var.create(5.5),
-            [
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create(10.5),
+                Var.create(5.5),
+                [
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create("10"),
-            Var.create("5"),
-            [
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create("10"),
+                Var.create("5"),
+                [
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create([5, 6]),
-            [
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create([10, 20]),
+                Var.create([5, 6]),
+                [
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(5),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create([10, 20]),
+                Var.create(5),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(True),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create([10, 20]),
+                Var.create(True),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create("5"),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create([10, 20]),
+                Var.create("5"),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create({"key": "value"}),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create([10, 20]),
+                Var.create({"key": "value"}),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create([10, 20]),
-            Var.create(5.5),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create([10, 20]),
+                Var.create(5.5),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create({"another_key": "another_value"}),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create({"key": "value"}),
+                Var.create({"another_key": "another_value"}),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(5),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create({"key": "value"}),
+                Var.create(5),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(True),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create({"key": "value"}),
+                Var.create(True),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create(5.5),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create({"key": "value"}),
+                Var.create(5.5),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
         (
-            Var.create({"key": "value"}),
-            Var.create("5"),
-            [
-                "+",
-                "-",
-                "/",
-                "//",
-                "*",
-                "%",
-                "**",
-                ">",
-                "<",
-                "<=",
-                ">=",
-                "|",
-                "^",
-                "<<",
-                ">>",
-                "&",
-            ],
+                Var.create({"key": "value"}),
+                Var.create("5"),
+                [
+                    "+",
+                    "-",
+                    "/",
+                    "//",
+                    "*",
+                    "%",
+                    "**",
+                    ">",
+                    "<",
+                    "<=",
+                    ">=",
+                    "|",
+                    "^",
+                    "<<",
+                    ">>",
+                    "&",
+                ],
         ),
     ],
 )
@@ -1182,3 +1182,10 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
 
         with pytest.raises(TypeError):
             operand1_var.operation(op=operator, other=operand2_var, flip=True)
+
+
+def test_disallow_bool_operations_on_vars():
+    with pytest.raises(TypeError) as err:
+        bool(v(True))
+
+    assert err.value.args[0] == "bool operation is not supported for Var types"
