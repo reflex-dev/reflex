@@ -628,9 +628,7 @@ class App(Base):
                     to=state.get_sid(),
                 )
 
-    def _process_background(
-        self, state: State, event: Event
-    ) -> Union[asyncio.Task, bool]:
+    def _process_background(self, state: State, event: Event) -> asyncio.Task | None:
         """Process an event in the background and emit updates as they arrive.
 
         Args:
@@ -638,11 +636,11 @@ class App(Base):
             event: The event to process.
 
         Returns:
-            Task if the event was backgroundable, otherwise False
+            Task if the event was backgroundable, otherwise None
         """
         substate, handler = state._get_event_handler(event)
         if not handler.is_background:
-            return False
+            return None
 
         async def _coro():
             if self.event_namespace is None:
@@ -711,10 +709,9 @@ async def process(
 
         # Only process the event if there is no update.
         else:
-            if app._process_background(state, event):
-                yield StateUpdate(
-                    final=True
-                )  # let the client send more events immediately
+            if app._process_background(state, event) is not None:
+                # let the client send more events immediately
+                yield StateUpdate(final=True)
                 return
 
             # Process the event synchronously.
