@@ -408,18 +408,18 @@ def test_get_class_substate():
 
 def test_get_class_var():
     """Test getting the var of a class."""
-    assert TestState.get_class_var(("num1",)) == TestState.num1
-    assert TestState.get_class_var(("num2",)) == TestState.num2
-    assert ChildState.get_class_var(("value",)) == ChildState.value
-    assert GrandchildState.get_class_var(("value2",)) == GrandchildState.value2
-    assert TestState.get_class_var(("child_state", "value")) == ChildState.value
-    assert (
-        TestState.get_class_var(("child_state", "grandchild_state", "value2"))
-        == GrandchildState.value2
+    assert TestState.get_class_var(("num1",)).equals(TestState.num1)
+    assert TestState.get_class_var(("num2",)).equals(TestState.num2)
+    assert ChildState.get_class_var(("value",)).equals(ChildState.value)
+    assert GrandchildState.get_class_var(("value2",)).equals(GrandchildState.value2)
+    assert TestState.get_class_var(("child_state", "value")).equals(ChildState.value)
+    assert TestState.get_class_var(
+        ("child_state", "grandchild_state", "value2")
+    ).equals(
+        GrandchildState.value2,
     )
-    assert (
-        ChildState.get_class_var(("grandchild_state", "value2"))
-        == GrandchildState.value2
+    assert ChildState.get_class_var(("grandchild_state", "value2")).equals(
+        GrandchildState.value2,
     )
     with pytest.raises(ValueError):
         TestState.get_class_var(("invalid_var",))
@@ -837,21 +837,32 @@ def test_get_query_params(test_state):
     assert test_state.get_query_params() == params
 
 
-def test_add_var(test_state):
-    test_state.add_var("dynamic_int", int, 42)
-    assert test_state.dynamic_int == 42
+def test_add_var():
+    class DynamicState(State):
+        pass
 
-    test_state.add_var("dynamic_list", List[int], [5, 10])
-    assert test_state.dynamic_list == [5, 10]
-    assert test_state.dynamic_list == [5, 10]
+    ds1 = DynamicState()
+    assert "dynamic_int" not in ds1.__dict__
+    assert not hasattr(ds1, "dynamic_int")
+    ds1.add_var("dynamic_int", int, 42)
+    # Existing instances get the BaseVar
+    assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # type: ignore
+    # New instances get an actual value with the default
+    assert DynamicState().dynamic_int == 42
 
-    # how to test that one?
-    # test_state.dynamic_list.append(15)
-    # assert test_state.dynamic_list == [5, 10, 15]
+    ds1.add_var("dynamic_list", List[int], [5, 10])
+    assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # type: ignore
+    ds2 = DynamicState()
+    assert ds2.dynamic_list == [5, 10]
+    ds2.dynamic_list.append(15)
+    assert ds2.dynamic_list == [5, 10, 15]
+    assert DynamicState().dynamic_list == [5, 10]
 
-    test_state.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
-    assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
-    assert test_state.dynamic_dict == {"k1": 5, "k2": 10}
+    ds1.add_var("dynamic_dict", Dict[str, int], {"k1": 5, "k2": 10})
+    assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # type: ignore
+    assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # type: ignore
+    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
+    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}
 
 
 def test_add_var_default_handlers(test_state):

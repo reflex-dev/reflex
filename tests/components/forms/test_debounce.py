@@ -50,8 +50,8 @@ def test_render_child_props():
         )
     )._render()
     assert tag.props["sx"] == {"foo": "bar", "baz": "quuc"}
-    assert tag.props["value"] == BaseVar(
-        name="real", type_=str, is_local=True, is_string=False
+    assert tag.props["value"].equals(
+        BaseVar(name="real", type_=str, is_local=True, is_string=False)
     )
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
@@ -75,6 +75,7 @@ def test_render_child_props_recursive():
                         on_change=S.on_change,
                     ),
                     value="inner",
+                    debounce_timeout=666,
                     force_notify_on_blur=False,
                 ),
                 debounce_timeout=42,
@@ -84,8 +85,8 @@ def test_render_child_props_recursive():
         force_notify_by_enter=False,
     )._render()
     assert tag.props["sx"] == {"foo": "bar", "baz": "quuc"}
-    assert tag.props["value"] == BaseVar(
-        name="real", type_=str, is_local=True, is_string=False
+    assert tag.props["value"].equals(
+        BaseVar(name="outer", type_=str, is_local=True, is_string=False)
     )
     assert tag.props["forceNotifyOnBlur"].name == "false"
     assert tag.props["forceNotifyByEnter"].name == "false"

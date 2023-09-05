@@ -52,8 +52,8 @@ def test_is_valid_prop(prop: Var, valid: bool):
 def test_add_props():
     """Test that the props are added."""
     tag = Tag().add_props(key="value", key2=42, invalid=None, invalid2={})
-    assert tag.props["key"] == Var.create("value")
-    assert tag.props["key2"] == Var.create(42)
+    assert tag.props["key"].equals(Var.create("value"))
+    assert tag.props["key2"].equals(Var.create(42))
     assert "invalid" not in tag.props
     assert "invalid2" not in tag.props
 
@@ -100,7 +100,8 @@ def test_format_tag(tag: Tag, expected: Dict):
     tag_dict = dict(tag)
     assert tag_dict["name"] == expected["name"]
     assert tag_dict["contents"] == expected["contents"]
-    assert tag_dict["props"] == expected["props"]
+    for prop, prop_value in tag_dict["props"].items():
+        assert prop_value.equals(Var.create_safe(expected["props"][prop]))
 
 
 def test_format_cond_tag():
@@ -116,7 +117,8 @@ def test_format_cond_tag():
         tag_dict["true_value"],
         tag_dict["false_value"],
     )
-    assert cond == "logged_in"
+    assert cond.name == "logged_in"
+    assert cond.type_ == bool
 
     assert true_value["name"] == "h1"
     assert true_value["contents"] == "True content"

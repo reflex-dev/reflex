@@ -329,8 +329,8 @@ def test_valid_props(component1, text: str, number: int):
         number: A test number.
     """
     c = component1.create(text=text, number=number)
-    assert c.text == text
-    assert c.number == number
+    assert c.text._decode() == text
+    assert c.number._decode() == number
 
 
 @pytest.mark.parametrize(
@@ -357,7 +357,7 @@ def test_var_props(component1, test_state):
         test_state: A test state.
     """
     c1 = component1.create(text="hello", number=test_state.num)
-    assert c1.number == test_state.num
+    assert c1.number.equals(test_state.num)
 
 
 def test_get_controlled_triggers(component1, component2):

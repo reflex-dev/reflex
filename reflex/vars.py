@@ -205,6 +205,27 @@ class Var(ABC):
             out = format.format_string(out)
         return out
 
+    def __bool__(self) -> bool:
+        """Raise exception if using Var in a boolean context.
+
+        Raises:
+            TypeError: when attempting to bool-ify the Var.
+        """
+        raise TypeError(
+            f"Cannot convert Var {self.full_name!r} to bool for use with `if`, `and`, `or`, and `not`. "
+            "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
+        )
+
+    def __iter__(self) -> Any:
+        """Raise exception if using Var in an iterable context.
+
+        Raises:
+            TypeError: when attempting to iterate over the Var.
+        """
+        raise TypeError(
+            f"Cannot iterate over Var {self.full_name!r}. Instead use `rx.foreach`."
+        )
+
     def __format__(self, format_spec: str) -> str:
         """Format the var into a Javascript equivalent to an f-string.
 
@@ -1414,7 +1435,7 @@ def get_local_storage(key: Var | str | None = None) -> BaseVar:
     Raises:
         TypeError:  if the wrong key type is provided.
     """
-    if key:
+    if key is not None:
         if not (isinstance(key, Var) and key.type_ == str) and not isinstance(key, str):
             type_ = type(key) if not isinstance(key, Var) else key.type_
             raise TypeError(

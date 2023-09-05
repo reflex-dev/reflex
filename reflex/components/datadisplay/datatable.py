@@ -66,7 +66,11 @@ class DataTable(Gridjs):
                 "Annotation of the computed var assigned to the data field should be provided."
             )
 
-        if columns and isinstance(columns, ComputedVar) and columns.type_ == Any:
+        if (
+            columns is not None
+            and isinstance(columns, ComputedVar)
+            and columns.type_ == Any
+        ):
             raise ValueError(
                 "Annotation of the computed var assigned to the column field should be provided."
             )
@@ -75,7 +79,7 @@ class DataTable(Gridjs):
         if (
             types.is_dataframe(type(data))
             or (isinstance(data, Var) and types.is_dataframe(data.type_))
-        ) and props.get("columns"):
+        ) and columns is not None:
             raise ValueError(
                 "Cannot pass in both a pandas dataframe and columns to the data_table component."
             )
@@ -84,7 +88,7 @@ class DataTable(Gridjs):
         if (
             (isinstance(data, Var) and types._issubclass(data.type_, List))
             or issubclass(type(data), List)
-        ) and not props.get("columns"):
+        ) and columns is None:
             raise ValueError(
                 "column field should be specified when the data field is a list type"
             )
