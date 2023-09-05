@@ -6,7 +6,7 @@
 {% filter indent(width=indent_width) %}
   {%- if component is not mapping %}
     {{- component }}
-  {%- elif component.iterable %}
+  {%- elif "iterable" in component %}
     {{- render_iterable_tag(component) }}
   {%- elif "cond" in component %}
     {{- render_condition_tag(component) }}
