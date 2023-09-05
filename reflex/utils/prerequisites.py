@@ -406,7 +406,7 @@ def install_bun():
     )
 
 
-def install_frontend_packages(packages: list[str]):
+def install_frontend_packages(packages: set[str]):
     """Installs the base and custom frontend packages.
 
     Args:
@@ -424,14 +424,25 @@ def install_frontend_packages(packages: list[str]):
 
     processes.show_status("Installing base frontend packages", process)
 
-    # Install the custom packages, if any.
+    config = get_config()
+    if config.tailwind is not None and "plugins" in config.tailwind:
+        process = processes.new_process(
+            [get_install_package_manager(), "add", *config.tailwind["plugins"]],
+            cwd=constants.WEB_DIR,
+            shell=constants.IS_WINDOWS,
+        )
+        processes.show_status("Installing tailwind packages", process)
+
+    # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing frontend packages for components", process)
+        processes.show_status(
+            "Installing frontend packages from config and components", process
+        )
 
 
 def check_initialized(frontend: bool = True):
