@@ -7,7 +7,7 @@ import json
 import random
 import string
 from abc import ABC
-from types import FunctionType
+from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -73,7 +73,7 @@ class Var(ABC):
     @classmethod
     def create(
         cls, value: Any, is_local: bool = True, is_string: bool = False
-    ) -> Optional[Var]:
+    ) -> Var | None:
         """Create a var from a value.
 
         Args:
@@ -143,6 +143,24 @@ class Var(ABC):
             The var class item.
         """
         return _GenericAlias(cls, type_)
+
+    def _decode(self) -> Any:
+        """Decode Var as a python value.
+
+        Note that Var with state set cannot be decoded python-side and will be
+        returned as full_name.
+
+        Returns:
+            The decoded value or the Var name.
+        """
+        if self.state:
+            return self.full_name
+        if self.is_string or self.type_ is Figure:
+            return self.name
+        try:
+            return json.loads(self.name)
+        except ValueError:
+            return self.name
 
     def equals(self, other: Var) -> bool:
         """Check if two vars are equal.
@@ -340,10 +358,10 @@ class Var(ABC):
     def operation(
         self,
         op: str = "",
-        other: Optional[Var] = None,
-        type_: Optional[Type] = None,
+        other: Var | None = None,
+        type_: Type | None = None,
         flip: bool = False,
-        fn: Optional[str] = None,
+        fn: str | None = None,
     ) -> Var:
         """Perform an operation on a var.
 
@@ -965,16 +983,19 @@ class ComputedVar(Var, property):
     def deps(
         self,
         objclass: Type,
-        obj: Optional[FunctionType] = None,
-    ) -> Set[str]:
+        obj: FunctionType | CodeType | None = None,
+        self_name: Optional[str] = None,
+    ) -> set[str]:
         """Determine var dependencies of this ComputedVar.
 
         Save references to attributes accessed on "self".  Recursively called
-        when the function makes a method call on "self".
+        when the function makes a method call on "self" or define comprehensions
+        or nested functions that may reference "self".
 
         Args:
             objclass: the class obj this ComputedVar is attached to.
             obj: the object to disassemble (defaults to the fget function).
+            self_name: if specified, look for this name in LOAD_FAST and LOAD_DEREF instructions.
 
         Returns:
             A set of variable names accessed by the given obj.
@@ -992,23 +1013,46 @@ class ComputedVar(Var, property):
             # unbox EventHandler
             obj = cast(FunctionType, obj.fn)  # type: ignore
 
-        try:
-            self_name = obj.__code__.co_varnames[0]
-        except (AttributeError, IndexError):
-            # cannot reference self if method takes no args
+        if self_name is None and isinstance(obj, FunctionType):
+            try:
+                # the first argument to the function is the name of "self" arg
+                self_name = obj.__code__.co_varnames[0]
+            except (AttributeError, IndexError):
+                self_name = None
+        if self_name is None:
+            # cannot reference attributes on self if method takes no args
             return set()
         self_is_top_of_stack = False
         for instruction in dis.get_instructions(obj):
-            if instruction.opname == "LOAD_FAST" and instruction.argval == self_name:
+            if (
+                instruction.opname in ("LOAD_FAST", "LOAD_DEREF")
+                and instruction.argval == self_name
+            ):
+                # bytecode loaded the class instance to the top of stack, next load instruction
+                # is referencing an attribute on self
                 self_is_top_of_stack = True
                 continue
             if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
+                # direct attribute access
                 d.add(instruction.argval)
             elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
+                # method call on self
                 d.update(
                     self.deps(
                         objclass=objclass,
                         obj=getattr(objclass, instruction.argval),
+                    )
+                )
+            elif instruction.opname == "LOAD_CONST" and isinstance(
+                instruction.argval, CodeType
+            ):
+                # recurse into nested functions / comprehensions, which can reference
+                # instance attributes from the outer scope
+                d.update(
+                    self.deps(
+                        objclass=objclass,
+                        obj=instruction.argval,
+                        self_name=self_name,
                     )
                 )
             self_is_top_of_stack = False
@@ -1354,7 +1398,11 @@ class ImportVar(Base):
         return hash((self.tag, self.is_default, self.alias))
 
 
-def get_local_storage(key: Optional[Union[Var, str]] = None) -> BaseVar:
+class NoRenderImportVar(ImportVar):
+    """A import that doesn't need to be rendered."""
+
+
+def get_local_storage(key: Var | str | None = None) -> BaseVar:
     """Provide a base var as payload to get local storage item(s).
 
     Args:

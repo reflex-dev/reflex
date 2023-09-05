@@ -28,9 +28,9 @@ class DBConfig(Base):
         cls,
         database: str,
         username: str,
-        password: Optional[str] = None,
-        host: Optional[str] = None,
-        port: Optional[int] = 5432,
+        password: str | None = None,
+        host: str | None = None,
+        port: int | None = 5432,
     ) -> DBConfig:
         """Create an instance with postgresql engine.
 
@@ -58,9 +58,9 @@ class DBConfig(Base):
         cls,
         database: str,
         username: str,
-        password: Optional[str] = None,
-        host: Optional[str] = None,
-        port: Optional[int] = 5432,
+        password: str | None = None,
+        host: str | None = None,
+        port: int | None = 5432,
     ) -> DBConfig:
         """Create an instance with postgresql+psycopg2 engine.
 
@@ -137,6 +137,9 @@ class Config(Base):
 
     # The port to run the frontend on.
     frontend_port: int = 3000
+
+    # The path to run the frontend on.
+    frontend_path: str = ""
 
     # The port to run the backend on.
     backend_port: int = 8000
@@ -245,7 +248,11 @@ class Config(Base):
 
                 # Convert the env var to the expected type.
                 try:
-                    env_var = field.type_(env_var)
+                    if issubclass(field.type_, bool):
+                        # special handling for bool values
+                        env_var = env_var.lower() in ["true", "1", "yes"]
+                    else:
+                        env_var = field.type_(env_var)
                 except ValueError:
                     console.error(
                         f"Could not convert {key.upper()}={env_var} to type {field.type_}"
@@ -255,7 +262,7 @@ class Config(Base):
                 # Set the value.
                 setattr(self, key, env_var)
 
-    def get_event_namespace(self) -> Optional[str]:
+    def get_event_namespace(self) -> str | None:
         """Get the websocket event namespace.
 
         Returns:

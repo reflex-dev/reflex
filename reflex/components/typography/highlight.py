@@ -1,10 +1,10 @@
 """A highlight component."""
 
-from typing import List
+from typing import Dict, List
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
-from reflex.vars import Dict, Var
+from reflex.vars import Var
 
 
 class Highlight(ChakraComponent):

@@ -11,7 +11,7 @@ class ReactPlayerComponent(NoSSRComponent):
     reference: https://github.com/cookpete/react-player.
     """
 
-    library = "react-player/lazy"
+    library = "react-player@^2.12.0"
 
     tag = "ReactPlayer"
 

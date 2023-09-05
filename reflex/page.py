@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Union
-
 from reflex.components.component import Component
 from reflex.event import EventHandler
 
@@ -11,13 +9,13 @@ DECORATED_PAGES = []
 
 
 def page(
-    route: Optional[str] = None,
-    title: Optional[str] = None,
-    image: Optional[str] = None,
-    description: Optional[str] = None,
-    meta: Optional[str] = None,
-    script_tags: Optional[List[Component]] = None,
-    on_load: Optional[Union[EventHandler, List[EventHandler]]] = None,
+    route: str | None = None,
+    title: str | None = None,
+    image: str | None = None,
+    description: str | None = None,
+    meta: str | None = None,
+    script_tags: list[Component] | None = None,
+    on_load: EventHandler | list[EventHandler] | None = None,
 ):
     """Decorate a function as a page.
 
@@ -40,7 +38,6 @@ def page(
     Returns:
         The decorated function.
     """
-    ...
 
     def decorator(render_fn):
         kwargs = {}

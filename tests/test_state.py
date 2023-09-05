@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import datetime
 import functools
 from typing import Dict, List
 
@@ -35,6 +38,7 @@ class TestState(State):
     obj: Object = Object()
     complex: Dict[int, Object] = {1: Object(), 2: Object()}
     fig: Figure = Figure()
+    dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
 
     @ComputedVar
     def sum(self) -> float:
@@ -200,6 +204,7 @@ def test_class_vars(test_state):
         "sum",
         "upper",
         "fig",
+        "dt",
     }
 
 
@@ -263,6 +268,58 @@ def test_dict(test_state):
         set(test_state.dict(include_computed=False).keys())
         == set(test_state.base_vars) | substates
     )
+
+
+def test_format_state(test_state):
+    """Test that the format state is correct.
+
+    Args:
+        test_state: A state.
+    """
+    formatted_state = format.format_state(test_state.dict())
+    exp_formatted_state = {
+        "array": [1, 2, 3.14],
+        "child_state": {"count": 23, "grandchild_state": {"value2": ""}, "value": ""},
+        "child_state2": {"value": ""},
+        "complex": {
+            1: {"prop1": 42, "prop2": "hello"},
+            2: {"prop1": 42, "prop2": "hello"},
+        },
+        "dt": "1989-11-09 18:53:00+01:00",
+        "fig": [],
+        "is_hydrated": False,
+        "key": "",
+        "map_key": "a",
+        "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
+        "num1": 0,
+        "num2": 3.14,
+        "obj": {"prop1": 42, "prop2": "hello"},
+        "sum": 3.14,
+        "upper": "",
+    }
+    assert formatted_state == exp_formatted_state
+
+
+def test_format_state_datetime():
+    """Test that the format state is correct for datetime classes."""
+
+    class DateTimeState(State):
+        d: datetime.date = datetime.date.fromisoformat("1989-11-09")
+        dt: datetime.datetime = datetime.datetime.fromisoformat(
+            "1989-11-09T18:53:00+01:00"
+        )
+        t: datetime.time = datetime.time.fromisoformat("18:53:00+01:00")
+        td: datetime.timedelta = datetime.timedelta(days=11, minutes=11)
+
+    formatted_state = format.format_state(DateTimeState().dict())
+    exp_formatted_state = {
+        "d": "1989-11-09",
+        "dt": "1989-11-09 18:53:00+01:00",
+        "is_hydrated": False,
+        "t": "18:53:00+01:00",
+        "td": "11 days, 0:11:00",
+    }
+    assert formatted_state == exp_formatted_state
 
 
 def test_default_setters(test_state):
@@ -573,6 +630,7 @@ def test_reset(test_state, child_state):
         "array",
         "map_key",
         "mapping",
+        "dt",
     }
 
     # The dirty vars should be reset.
@@ -1147,6 +1205,73 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
     s.handler()
     assert s.cached_x_side_effect == 2
     assert s.x == 45
+
+
+def test_computed_var_dependencies():
+    """Test that a ComputedVar correctly tracks its dependencies."""
+
+    class ComputedState(State):
+        v: int = 0
+        w: int = 0
+        x: int = 0
+        y: List[int] = [1, 2, 3]
+        _z: List[int] = [1, 2, 3]
+
+        @rx.cached_var
+        def comp_v(self) -> int:
+            """Direct access.
+
+            Returns:
+                The value of self.v.
+            """
+            return self.v
+
+        @rx.cached_var
+        def comp_w(self):
+            """Nested lambda.
+
+            Returns:
+                A lambda that returns the value of self.w.
+            """
+            return lambda: self.w
+
+        @rx.cached_var
+        def comp_x(self):
+            """Nested function.
+
+            Returns:
+                A function that returns the value of self.x.
+            """
+
+            def _():
+                return self.x
+
+            return _
+
+        @rx.cached_var
+        def comp_y(self) -> List[int]:
+            """Comprehension iterating over attribute.
+
+            Returns:
+                A list of the values of self.y.
+            """
+            return [round(y) for y in self.y]
+
+        @rx.cached_var
+        def comp_z(self) -> List[bool]:
+            """Comprehension accesses attribute.
+
+            Returns:
+                A list of whether the values 0-4 are in self._z.
+            """
+            return [z in self._z for z in range(5)]
+
+    cs = ComputedState()
+    assert cs.computed_var_dependencies["v"] == {"comp_v"}
+    assert cs.computed_var_dependencies["w"] == {"comp_w"}
+    assert cs.computed_var_dependencies["x"] == {"comp_x"}
+    assert cs.computed_var_dependencies["y"] == {"comp_y"}
+    assert cs.computed_var_dependencies["_z"] == {"comp_z"}
 
 
 def test_backend_method():
