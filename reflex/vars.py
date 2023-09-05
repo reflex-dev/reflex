@@ -832,15 +832,6 @@ class Var(ABC):
             )
         return self.operation("||", other, type_=bool, flip=True)
 
-    def __bool__(self) -> bool:
-        """Raise a TypeError to indicate that the 'bool' operation is not supported for Vars.
-
-        Raises:
-            TypeError: The 'bool' operation is not supported for Var instances.
-
-        """
-        raise TypeError("bool operation is not supported for Var types")
-
     def __contains__(self, _: Any) -> Var:
         """Override the 'in' operator to alert the user that it is not supported.
 
