@@ -163,14 +163,14 @@ class AppHarness:
             self.app_module = reflex.utils.prerequisites.get_app(reload=True)
         self.app_instance = self.app_module.app
 
-    def _start_backend(self):
+    def _start_backend(self, port=0):
         if self.app_instance is None:
             raise RuntimeError("App was not initialized.")
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_instance.api,
                 host="127.0.0.1",
-                port=0,
+                port=port,
             )
         )
         self.backend_thread = threading.Thread(target=self.backend.run)
