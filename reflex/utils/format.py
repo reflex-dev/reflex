@@ -9,7 +9,8 @@ import os
 import os.path as op
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Type, Union
+import types as builtin_types
+from typing import TYPE_CHECKING, Any, Callable, Type, Union
 
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
@@ -308,6 +309,8 @@ def format_prop(
             # Dump the prop as JSON.
             prop = json_dumps(prop)
     except TypeError as e:
+        if "The style prop" in str(e):
+            raise
         raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
 
     # Wrap the variable in braces.
@@ -564,15 +567,28 @@ def format_dict(prop: ComponentStyle) -> str:
 
     Returns:
         The formatted dict.
+
+    Raises:
+        TypeError: If a style prop has a callable value
     """
     # Import here to avoid circular imports.
+    from reflex.event import EventHandler
     from reflex.vars import Var
 
+    prop_dict = {}
+
     # Convert any var keys to strings.
-    prop = {key: str(val) if isinstance(val, Var) else val for key, val in prop.items()}
+    for key, value in prop.items():
+        if issubclass(type(value), Callable):
+            raise TypeError(
+                f"The style prop `{to_snake_case(key)}` cannot have "  # type: ignore
+                f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
+                f"an event handler or callable as its value"
+            )
+        prop_dict[key] = str(value) if isinstance(value, Var) else value
 
     # Dump the dict to a string.
-    fprop = json_dumps(prop)
+    fprop = json_dumps(prop_dict)
 
     def unescape_double_quotes_in_var(m: re.Match) -> str:
         # Since the outer quotes are removed, the inner escaped quotes must be unescaped.

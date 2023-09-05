@@ -11,6 +11,7 @@ from reflex import constants
 from reflex.base import Base
 from reflex.components.tags import Tag
 from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.state import State
 from reflex.style import Style
 from reflex.utils import (
     build,
@@ -43,6 +44,18 @@ V055 = version.parse("0.5.5")
 V059 = version.parse("0.5.9")
 V056 = version.parse("0.5.6")
 VMAXPLUS1 = version.parse(get_above_max_version())
+
+
+class ExampleTestState(State):
+    """Test state class."""
+
+    def test_event_handler(self):
+        """Test event handler."""
+        pass
+
+
+def test_func():
+    pass
 
 
 @pytest.mark.parametrize(
@@ -736,3 +749,24 @@ def test_output_system_info(mocker):
     """
     mocker.patch("reflex.utils.console.LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
+
+
+@pytest.mark.parametrize(
+    "callable", [ExampleTestState.test_event_handler, test_func, lambda x: x]
+)
+def test_style_prop_with_event_handler_value(callable):
+    """Test that a type error is thrown when a style prop has a
+    callable as value.
+
+    Args:
+        callable: The callable function or event handler.
+
+    """
+    style = {
+        "color": EventHandler(fn=callable)
+        if type(callable) != EventHandler
+        else callable
+    }
+
+    with pytest.raises(TypeError):
+        format.format_dict(style)  # type: ignore
