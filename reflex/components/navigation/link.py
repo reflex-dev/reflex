@@ -45,7 +45,7 @@ class Link(ChakraComponent):
         Returns:
             Component: The link component
         """
-        if props.get("href"):
+        if props.get("href") is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
         else:
