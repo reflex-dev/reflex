@@ -7,12 +7,8 @@ handle @backend_routes {
 	reverse_proxy app:8000
 }
 
+root * /srv
 route {
-	try_files {path} {path}.html
-	file_server {
-		root /srv
-		pass_thru
-	}
-	# proxy dynamic routes to nextjs server
-	reverse_proxy app:3000
+	try_files {path} {path}/ /404.html
+	file_server
 }

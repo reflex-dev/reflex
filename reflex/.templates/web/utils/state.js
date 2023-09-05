@@ -173,10 +173,13 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  // Send the event to the server.
-  event.token = getToken();
-  event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router);
+  // Update token and router data (if missing).
+  event.token = getToken()
+  if (event.router_data === undefined || Object.keys(event.router_data).length === 0) {
+    event.router_data = (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(Router)
+  }
 
+  // Send the event to the server.
   if (socket) {
     socket.emit("event", JSON.stringify(event));
     return true;
@@ -255,7 +258,6 @@ export const processEvent = async (
  * @param dispatch The function to queue state update
  * @param transports The transports to use.
  * @param setConnectError The function to update connection error value.
- * @param initial_events Array of events to seed the queue after connecting.
  * @param client_storage The client storage object from context.js
  */
 export const connect = async (
@@ -263,7 +265,6 @@ export const connect = async (
   dispatch,
   transports,
   setConnectError,
-  initial_events = [],
   client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
@@ -277,7 +278,6 @@ export const connect = async (
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", () => {
-    queueEvents(initial_events, socket)
     setConnectError(null)
   });
 
@@ -427,8 +427,8 @@ const applyClientStorageDelta = (client_storage, delta) => {
 
 /**
  * Establish websocket event loop for a NextJS page.
- * @param initial_state The initial page state.
- * @param initial_events Array of events to seed the queue after connecting.
+ * @param initial_state The initial app state.
+ * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
  *
  * @returns [state, Event, connectError] -
@@ -452,6 +452,15 @@ export const useEventLoop = (
       queueEvents(events, socket)
   }
 
+  const sentHydrate = useRef(false);  // Avoid double-hydrate due to React strict-mode
+  // initial state hydrate
+  useEffect(() => {
+    if (router.isReady && !sentHydrate.current) {
+      Event(initial_events.map((e) => ({...e})))
+      sentHydrate.current = true
+    }
+  }, [router.isReady])
+
   // Main event loop.
   useEffect(() => {
     // Skip if the router is not ready.
@@ -461,7 +470,7 @@ export const useEventLoop = (
 
     // Initialize the websocket connection.
     if (!socket.current) {
-      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, initial_events, client_storage)
+      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
     }
     (async () => {
       // Process all outstanding events.
