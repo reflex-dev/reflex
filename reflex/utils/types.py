@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import typing
+from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
@@ -168,6 +169,18 @@ def is_figure(value: Type) -> bool:
     return value.__name__ == "Figure"
 
 
+def is_datetime(value: Type) -> bool:
+    """Check if the given value is a datetime object.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is a date, datetime, time, or timedelta.
+    """
+    return issubclass(value, (date, datetime, time, timedelta))
+
+
 def is_valid_var_type(var: Type) -> bool:
     """Check if the given value is a valid prop type.
 
@@ -182,6 +195,7 @@ def is_valid_var_type(var: Type) -> bool:
         or is_dataframe(var)
         or is_figure(var)
         or is_image(var)
+        or is_datetime(var)
     )
 
 

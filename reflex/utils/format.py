@@ -513,6 +513,10 @@ def format_state(value: Any) -> Any:
             "data": format_dataframe_values(value),
         }
 
+    # Convert datetime objects to str.
+    if types.is_datetime(type(value)):
+        return str(value)
+
     # Convert Image objects to base64.
     if types.is_image(type(value)):
         return format_image_data(value)  # type: ignore
