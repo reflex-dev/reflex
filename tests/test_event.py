@@ -55,7 +55,10 @@ def test_call_event_handler():
 
     # Test passing vars as args.
     assert event_spec.handler == handler
-    assert event_spec.args == (("arg1", "first"), ("arg2", "second"))
+    assert event_spec.args[0][0].equals(Var.create_safe("arg1"))
+    assert event_spec.args[0][1].equals(Var.create_safe("first"))
+    assert event_spec.args[1][0].equals(Var.create_safe("arg2"))
+    assert event_spec.args[1][1].equals(Var.create_safe("second"))
     assert (
         format.format_event(event_spec)
         == 'E("test_fn_with_args", {arg1:first,arg2:second})'
@@ -77,10 +80,10 @@ def test_call_event_handler():
     )
 
     assert event_spec.handler == handler
-    assert event_spec.args == (
-        ("arg1", format.json_dumps(first)),
-        ("arg2", format.json_dumps(second)),
-    )
+    assert event_spec.args[0][0].equals(Var.create_safe("arg1"))
+    assert event_spec.args[0][1].equals(Var.create_safe(first))
+    assert event_spec.args[1][0].equals(Var.create_safe("arg2"))
+    assert event_spec.args[1][1].equals(Var.create_safe(second))
 
     handler = EventHandler(fn=test_fn_with_args)
     with pytest.raises(TypeError):
@@ -121,7 +124,8 @@ def test_event_redirect():
     spec = event.redirect("/path")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_redirect"
-    assert spec.args == (("path", "/path"),)
+    assert spec.args[0][0].equals(Var.create_safe("path"))
+    assert spec.args[0][1].equals(Var.create_safe("/path"))
     assert format.format_event(spec) == 'E("_redirect", {path:"/path"})'
     spec = event.redirect(Var.create_safe("path"))
     assert format.format_event(spec) == 'E("_redirect", {path:path})'
@@ -132,7 +136,8 @@ def test_event_console_log():
     spec = event.console_log("message")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_console"
-    assert spec.args == (("message", "message"),)
+    assert spec.args[0][0].equals(Var.create_safe("message"))
+    assert spec.args[0][1].equals(Var.create_safe("message"))
     assert format.format_event(spec) == 'E("_console", {message:"message"})'
     spec = event.console_log(Var.create_safe("message"))
     assert format.format_event(spec) == 'E("_console", {message:message})'
@@ -143,7 +148,8 @@ def test_event_window_alert():
     spec = event.window_alert("message")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_alert"
-    assert spec.args == (("message", "message"),)
+    assert spec.args[0][0].equals(Var.create_safe("message"))
+    assert spec.args[0][1].equals(Var.create_safe("message"))
     assert format.format_event(spec) == 'E("_alert", {message:"message"})'
     spec = event.window_alert(Var.create_safe("message"))
     assert format.format_event(spec) == 'E("_alert", {message:message})'
@@ -154,7 +160,8 @@ def test_set_focus():
     spec = event.set_focus("input1")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_focus"
-    assert spec.args == (("ref", Var.create_safe("ref_input1")),)
+    assert spec.args[0][0].equals(Var.create_safe("ref"))
+    assert spec.args[0][1].equals(Var.create_safe("ref_input1"))
     assert format.format_event(spec) == 'E("_set_focus", {ref:ref_input1})'
     spec = event.set_focus("input1")
     assert format.format_event(spec) == 'E("_set_focus", {ref:ref_input1})'
@@ -165,10 +172,10 @@ def test_set_value():
     spec = event.set_value("input1", "")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_value"
-    assert spec.args == (
-        ("ref", Var.create_safe("ref_input1")),
-        ("value", ""),
-    )
+    assert spec.args[0][0].equals(Var.create_safe("ref"))
+    assert spec.args[0][1].equals(Var.create_safe("ref_input1"))
+    assert spec.args[1][0].equals(Var.create_safe("value"))
+    assert spec.args[1][1].equals(Var.create_safe(""))
     assert format.format_event(spec) == 'E("_set_value", {ref:ref_input1,value:""})'
     spec = event.set_value("input1", Var.create_safe("message"))
     assert (
@@ -181,10 +188,10 @@ def test_set_cookie():
     spec = event.set_cookie("testkey", "testvalue")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_cookie"
-    assert spec.args == (
-        ("key", "testkey"),
-        ("value", "testvalue"),
-    )
+    assert spec.args[0][0].equals(Var.create_safe("key"))
+    assert spec.args[0][1].equals(Var.create_safe("testkey"))
+    assert spec.args[1][0].equals(Var.create_safe("value"))
+    assert spec.args[1][1].equals(Var.create_safe("testvalue"))
     assert (
         format.format_event(spec)
         == 'E("_set_cookie", {key:"testkey",value:"testvalue"})'
@@ -196,7 +203,10 @@ def test_remove_cookie():
     spec = event.remove_cookie("testkey")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_remove_cookie"
-    assert spec.args == (("key", "testkey"), ("options", {}))
+    assert spec.args[0][0].equals(Var.create_safe("key"))
+    assert spec.args[0][1].equals(Var.create_safe("testkey"))
+    assert spec.args[1][0].equals(Var.create_safe("options"))
+    assert spec.args[1][1].equals(Var.create_safe({}))
     assert (
         format.format_event(spec) == 'E("_remove_cookie", {key:"testkey",options:{}})'
     )
@@ -213,7 +223,10 @@ def test_remove_cookie_with_options():
     spec = event.remove_cookie("testkey", options)
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_remove_cookie"
-    assert spec.args == (("key", "testkey"), ("options", options))
+    assert spec.args[0][0].equals(Var.create_safe("key"))
+    assert spec.args[0][1].equals(Var.create_safe("testkey"))
+    assert spec.args[1][0].equals(Var.create_safe("options"))
+    assert spec.args[1][1].equals(Var.create_safe(options))
     assert (
         format.format_event(spec)
         == f'E("_remove_cookie", {{key:"testkey",options:{json.dumps(options)}}})'
@@ -225,10 +238,10 @@ def test_set_local_storage():
     spec = event.set_local_storage("testkey", "testvalue")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_local_storage"
-    assert spec.args == (
-        ("key", "testkey"),
-        ("value", "testvalue"),
-    )
+    assert spec.args[0][0].equals(Var.create_safe("key"))
+    assert spec.args[0][1].equals(Var.create_safe("testkey"))
+    assert spec.args[1][0].equals(Var.create_safe("value"))
+    assert spec.args[1][1].equals(Var.create_safe("testvalue"))
     assert (
         format.format_event(spec)
         == 'E("_set_local_storage", {key:"testkey",value:"testvalue"})'
@@ -249,5 +262,6 @@ def test_remove_local_storage():
     spec = event.remove_local_storage("testkey")
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_remove_local_storage"
-    assert spec.args == (("key", "testkey"),)
+    assert spec.args[0][0].equals(Var.create_safe("key"))
+    assert spec.args[0][1].equals(Var.create_safe("testkey"))
     assert format.format_event(spec) == 'E("_remove_local_storage", {key:"testkey"})'

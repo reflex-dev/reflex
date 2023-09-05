@@ -8,7 +8,7 @@
     {{- component }}
   {%- elif component.iterable %}
     {{- render_iterable_tag(component) }}
-  {%- elif component.cond %}
+  {%- elif "cond" in component %}
     {{- render_condition_tag(component) }}
   {%- elif component.children|length %}
     {{- render_tag(component) }}

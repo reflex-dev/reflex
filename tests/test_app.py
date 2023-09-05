@@ -930,5 +930,6 @@ async def test_process_events(gen_state, mocker):
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
-    assert gen_state.value == 5
+
+    assert app.state_manager.get_state("token").value == 5
     assert app.postprocess.call_count == 6
