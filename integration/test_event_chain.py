@@ -411,7 +411,7 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
     ("uri", "exp_event_order"),
     [
         (
-            "/on-mount-return-chain",
+            "/on_mount_return_chain",
             [
                 "on_load_return_chain",
                 "event_arg:unmount",
@@ -426,7 +426,7 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
             ],
         ),
         (
-            "/on-mount-yield-chain",
+            "/on_mount_yield_chain",
             [
                 "on_load_yield_chain",
                 "event_arg:mount",
