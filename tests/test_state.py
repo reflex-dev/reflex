@@ -300,6 +300,28 @@ def test_format_state(test_state):
     assert formatted_state == exp_formatted_state
 
 
+def test_format_state_datetime():
+    """Test that the format state is correct for datetime classes."""
+
+    class DateTimeState(State):
+        d: datetime.date = datetime.date.fromisoformat("1989-11-09")
+        dt: datetime.datetime = datetime.datetime.fromisoformat(
+            "1989-11-09T18:53:00+01:00"
+        )
+        t: datetime.time = datetime.time.fromisoformat("18:53:00+01:00")
+        td: datetime.timedelta = datetime.timedelta(days=11, minutes=11)
+
+    formatted_state = format.format_state(DateTimeState().dict())
+    exp_formatted_state = {
+        "d": "1989-11-09",
+        "dt": "1989-11-09 18:53:00+01:00",
+        "is_hydrated": False,
+        "t": "18:53:00+01:00",
+        "td": "11 days, 0:11:00",
+    }
+    assert formatted_state == exp_formatted_state
+
+
 def test_default_setters(test_state):
     """Test that we can set default values.
 
