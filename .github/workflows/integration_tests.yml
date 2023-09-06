@@ -35,6 +35,12 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         python-version: [ "3.8.10", "3.9.13", "3.10.11", "3.11.4" ]
         node-version: [ "16.x" ]
+        exclude:
+          - os: ubuntu-latest
+            python-version: "3.8.10" # windows wants 3.8.10
+        include:
+          - os: ubuntu-latest
+            python-version: "3.8.12" # but ubuntu 22.04 needs >=3.8.12
 
     runs-on: ${{ matrix.os }}
     steps:
