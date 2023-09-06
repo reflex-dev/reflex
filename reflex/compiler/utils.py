@@ -18,7 +18,6 @@ from reflex.components.base import (
     Main,
     Meta,
     NextScript,
-    RawLink,
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
@@ -257,18 +256,14 @@ def compile_custom_component(
     )
 
 
-def create_document_root(stylesheets: List[str]) -> Component:
+def create_document_root() -> Component:
     """Create the document root.
-
-    Args:
-        stylesheets: The list of stylesheets to include in the document root.
 
     Returns:
         The document root.
     """
-    sheets = [RawLink.create(rel="stylesheet", href=href) for href in stylesheets]
     return Html.create(
-        DocumentHead.create(*sheets),
+        DocumentHead.create(),
         Body.create(
             ColorModeScript.create(),
             Main.create(),
@@ -322,6 +317,15 @@ def get_theme_path() -> str:
         The path of the theme style.
     """
     return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
+
+
+def get_app_root_path() -> str:
+    """Get the path of the app root file.
+
+    Returns:
+        The path of the app root file.
+    """
+    return os.path.join(constants.WEB_PAGES_DIR, constants.APP_ROOT + constants.JS_EXT)
 
 
 def get_context_path() -> str:

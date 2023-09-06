@@ -172,6 +172,8 @@ HYDRATE = "hydrate"
 IS_HYDRATED = "is_hydrated"
 # The name of the index page.
 INDEX_ROUTE = "index"
+# The name of the app root page.
+APP_ROOT = "_app"
 # The name of the document root page.
 DOCUMENT_ROOT = "_document"
 # The name of the theme page.

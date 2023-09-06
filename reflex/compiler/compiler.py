@@ -44,6 +44,32 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     },
 }
 
+_APP_IMPORTS: imports.ImportDict = {
+    "@chakra-ui/react": {
+        ImportVar(tag="ChakraProvider"),
+        ImportVar(tag="extendTheme"),
+    },
+    "@emotion/react": {
+        ImportVar(tag="Global"),
+        ImportVar(tag="css"),
+    },
+    "/utils/theme": {
+        ImportVar(tag="theme", is_default=True),
+    },
+    "/utils/context": {
+        ImportVar(tag="clientStorage"),
+        ImportVar(tag="initialEvents"),
+        ImportVar(tag="initialState"),
+        ImportVar(tag="StateContext"),
+        ImportVar(tag="EventLoopContext"),
+        ImportVar(tag="StateContext"),
+    },
+    "/utils/state": {
+        ImportVar(tag="useEventLoop"),
+    },
+    "": {ImportVar(tag="../styles/tailwind.css")},
+}
+
 
 def _compile_document_root(root: Component) -> str:
     """Compile the document root.
@@ -116,6 +142,43 @@ def _compile_page(
     )
 
 
+def compile_app_root(stylesheets: List[str]) -> Tuple[str, str]:
+    """Compile the app root.
+
+    Args:
+        stylesheets: The stylesheets to include in the app root.
+
+    Returns:
+        The path and code of the compiled app root.
+    """
+    output_path = utils.get_app_root_path()
+
+    code = _compile_app_root(stylesheets)
+
+    return output_path, code
+
+
+def _compile_app_root(stylesheets: List[str]) -> str:
+    """Compile the document root.
+
+    Args:
+        stylesheets: The stylesheets to include in the app root.
+
+    Returns:
+        The compiled app root.
+    """
+    imports_ = {
+        "": {
+            ImportVar(tag="/".join(["/public", sheet.strip("/")]))
+            for sheet in stylesheets
+        }
+    }
+    imports_ = utils.merge_imports(_APP_IMPORTS, imports_)
+    utils.validate_imports(imports_)
+    imports_ = utils.compile_imports(imports_)
+    return templates.APP.render(imports=imports_)
+
+
 def _compile_components(components: Set[CustomComponent]) -> str:
     """Compile the components.
 
@@ -160,11 +223,8 @@ def _compile_tailwind(
     )
 
 
-def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
+def compile_document_root() -> Tuple[str, str]:
     """Compile the document root.
-
-    Args:
-        stylesheets: The stylesheets to include in the document root.
 
     Returns:
         The path and code of the compiled document root.
@@ -173,8 +233,7 @@ def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     output_path = utils.get_page_path(constants.DOCUMENT_ROOT)
 
     # Create the document root.
-    document_root = utils.create_document_root(stylesheets)
-
+    document_root = utils.create_document_root()
     # Compile the document root.
     code = _compile_document_root(document_root)
     return output_path, code
@@ -277,5 +336,5 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    template_files = ["_app.js"]
+    template_files = ["404.js"]
     utils.empty_dir(constants.WEB_PAGES_DIR, keep_files=template_files)
