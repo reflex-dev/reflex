@@ -44,6 +44,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     },
 }
 
+# Imports to be included to the nextJs root app.
 _APP_IMPORTS: imports.ImportDict = {
     "@chakra-ui/react": {
         ImportVar(tag="ChakraProvider"),
