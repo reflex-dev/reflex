@@ -24,7 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         # TODO consider bringing back 3.7. Note Windows x 3.7 fails from some sqlalchemy related problem
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8.18", "3.9.18", "3.10.13", "3.11.5"]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
