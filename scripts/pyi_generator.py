@@ -122,7 +122,7 @@ class PyiGenerator:
             definition += f"{name}: {_get_type_hint(value)} = None, "
 
         for trigger in _class().get_triggers():
-            definition += f"{trigger}: Union[EventHandler, EventSpec, List] = None, "
+            definition += f"{trigger}: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, "
 
         definition = definition.rstrip(", ")
         definition += f", **props) -> '{_class.__name__}': ... # type: ignore"
