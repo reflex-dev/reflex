@@ -71,7 +71,7 @@ JINJA_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "jinja")
 # The Bun version.
 BUN_VERSION = "0.7.3"
 # Min Bun Version
-MIN_BUN_VERSION = "0.7.3"
+MIN_BUN_VERSION = "0.7.0"
 # The directory to store the bun.
 BUN_ROOT_PATH = os.path.join(REFLEX_DIR, "bun")
 # Default bun path.
