@@ -36,7 +36,12 @@ def route(
     Returns:
         The decorated function.
     """
-    deprecate("@rx.route is deprecated and is being replaced by @rx.page instead")
+    deprecate(
+        feature_name="@rx.route",
+        deprecation_version="0.2.3",
+        reason="and is being replaced by @rx.page due to enhanced routing features.",
+        removal_version="0.2.8",
+    )
 
     return page(
         route=route,
