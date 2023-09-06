@@ -122,7 +122,7 @@ class PyiGenerator:
                 continue
             definition += f"{name}: {_get_type_hint(value)} = None, "
 
-        for trigger in _class().get_triggers():
+        for trigger in sorted(_class().get_triggers()):
             definition += f"{trigger}: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, "
 
         definition = definition.rstrip(", ")
