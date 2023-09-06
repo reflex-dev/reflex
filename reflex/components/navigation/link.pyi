@@ -4,12 +4,12 @@
 # ------------------------------------------------------
 
 from typing import Union, overload, Optional
-from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.component import Component
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var, BaseVar, ComputedVar
-from reflex.event import EventChain
+from reflex.event import EventHandler, EventChain, EventSpec
 
 class Link(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, rel: Optional[Union[Var[str], str]] = None, href: Optional[Union[Var[str], str]] = None, text: Optional[Union[Var[str], str]] = None, as_: Optional[Union[Var[str], str]] = None, is_external: Optional[Union[Var[bool], bool]] = None, **props) -> "Link": ...  # type: ignore
+    def create(cls, *children, rel: Optional[Union[Var[str], str]] = None, href: Optional[Union[Var[str], str]] = None, text: Optional[Union[Var[str], str]] = None, as_: Optional[Union[Var[str], str]] = None, is_external: Optional[Union[Var[bool], bool]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, **props) -> "Link": ...  # type: ignore

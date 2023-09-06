@@ -8,24 +8,24 @@ from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.navigation.link import Link
 from reflex.vars import Var, BaseVar, ComputedVar
-from reflex.event import EventChain
+from reflex.event import EventHandler, EventChain, EventSpec
 
 class Breadcrumb(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, items, separator: Optional[Union[Var[str], str]] = None, separator_margin: Optional[Union[Var[str], str]] = None, **props) -> "Breadcrumb": ...  # type: ignore
+    def create(cls, *children, items, separator: Optional[Union[Var[str], str]] = None, separator_margin: Optional[Union[Var[str], str]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, **props) -> "Breadcrumb": ...  # type: ignore
 
 class BreadcrumbItem(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, label, href, is_current_page: Optional[Union[Var[bool], bool]] = None, is_last_child: Optional[Union[Var[bool], bool]] = None, separator: Optional[Union[Var[str], str]] = None, spacing: Optional[Union[Var[str], str]] = None, **props) -> "BreadcrumbItem": ...  # type: ignore
+    def create(cls, *children, label, href, is_current_page: Optional[Union[Var[bool], bool]] = None, is_last_child: Optional[Union[Var[bool], bool]] = None, separator: Optional[Union[Var[str], str]] = None, spacing: Optional[Union[Var[str], str]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, **props) -> "BreadcrumbItem": ...  # type: ignore
 
 class BreadcrumbSeparator(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, **props) -> "BreadcrumbSeparator": ...  # type: ignore
+    def create(cls, *children, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, **props) -> "BreadcrumbSeparator": ...  # type: ignore
 
 class BreadcrumbLink(Link):
     @overload
     @classmethod
-    def create(cls, *children, is_current_page: Optional[Union[Var[bool], bool]] = None, **props) -> "BreadcrumbLink": ...  # type: ignore
+    def create(cls, *children, is_current_page: Optional[Union[Var[bool], bool]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, **props) -> "BreadcrumbLink": ...  # type: ignore
