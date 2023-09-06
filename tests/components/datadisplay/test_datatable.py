@@ -30,10 +30,12 @@ def test_validate_data_table(data_table_state: rx.Var, expected):
         expected: expected var name.
 
     """
-    props = {"data": data_table_state.data}
     if not types.is_dataframe(data_table_state.data.type_):
-        props["columns"] = data_table_state.columns
-    data_table_component = data_table(**props)  # type: ignore
+        data_table_component = data_table(
+            data=data_table_state.data, columns=data_table_state.columns
+        )
+    else:
+        data_table_component = data_table(data=data_table_state.data)
 
     data_table_dict = data_table_component.render()
 
