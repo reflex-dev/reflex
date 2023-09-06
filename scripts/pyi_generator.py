@@ -99,10 +99,10 @@ class PyiGenerator:
             f"from typing import {','.join(typing_imports)}",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var, BaseVar, ComputedVar",
-            "from reflex.event import EventChain",
+            "from reflex.event import EventHandler, EventChain, EventSpec",
         ]
 
-    def _generate_pyi_class(self, _class):
+    def _generate_pyi_class(self, _class: type[Component]):
         create_spec = getfullargspec(_class.create)
         lines = [
             "",
@@ -120,6 +120,9 @@ class PyiGenerator:
             if name in create_spec.kwonlyargs:
                 continue
             definition += f"{name}: {_get_type_hint(value)} = None, "
+
+        for trigger in _class().get_triggers():
+            definition += f"{trigger}: Union[EventHandler, EventSpec] = None, "
 
         definition = definition.rstrip(", ")
         definition += f", **props) -> '{_class.__name__}': ... # type: ignore"
