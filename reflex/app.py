@@ -249,9 +249,9 @@ class App(Base):
         """
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.preprocess):
-                out = await middleware.preprocess(app=self, state=state, event=event)
+                out = await middleware.preprocess(app=self, state=state, event=event)  # type: ignore
             else:
-                out = middleware.preprocess(app=self, state=state, event=event)
+                out = middleware.preprocess(app=self, state=state, event=event)  # type: ignore
             if out is not None:
                 return out  # type: ignore
 
@@ -274,11 +274,11 @@ class App(Base):
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
-                    app=self, state=state, event=event, update=update
+                    app=self, state=state, event=event, update=update  # type: ignore
                 )
             else:
                 out = middleware.postprocess(
-                    app=self, state=state, event=event, update=update
+                    app=self, state=state, event=event, update=update  # type: ignore
                 )
             if out is not None:
                 return out  # type: ignore

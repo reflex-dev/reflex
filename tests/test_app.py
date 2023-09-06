@@ -832,7 +832,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()
+        ).__anext__()  # type: ignore
 
         # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
@@ -867,7 +867,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()
+        ).__anext__()  # type: ignore
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -887,7 +887,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()
+        ).__anext__()  # type: ignore
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -907,7 +907,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()
+        ).__anext__()  # type: ignore
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -949,7 +949,7 @@ async def test_process_events(gen_state, mocker):
         token="token", name="gen_state.go", payload={"c": 5}, router_data=router_data
     )
 
-    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
+    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):  # type: ignore
         pass
 
     assert app.state_manager.get_state("token").value == 5
@@ -985,7 +985,7 @@ def test_overlay_component(
         assert app.overlay_component is None
     elif isinstance(exp_page_child, Fragment):
         assert app.overlay_component is not None
-        generated_component = app._generate_component(app.overlay_component)
+        generated_component = app._generate_component(app.overlay_component)  # type: ignore
         assert isinstance(generated_component, Fragment)
         assert isinstance(
             generated_component.children[0],
@@ -994,7 +994,7 @@ def test_overlay_component(
     else:
         assert app.overlay_component is not None
         assert isinstance(
-            app._generate_component(app.overlay_component),
+            app._generate_component(app.overlay_component),  # type: ignore
             exp_page_child,
         )
 
