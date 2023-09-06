@@ -529,7 +529,7 @@ class App(Base):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in get_config().tailwind.get("plugins", []):  # type: ignore
+            if package in (get_config().tailwind or {}).get("plugins", []):  # type: ignore
                 console.warn(
                     f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
                 )
