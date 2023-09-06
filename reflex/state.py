@@ -9,6 +9,7 @@ import inspect
 import json
 import traceback
 import urllib.parse
+import uuid
 from abc import ABC
 from collections import defaultdict
 from types import FunctionType
@@ -1214,6 +1215,10 @@ class StateUpdate(Base):
     final: bool = True
 
 
+class LockExpiredError(Exception):
+    """Raised when the state lock expires while an event is being processed."""
+
+
 class StateManager(Base):
     """A class to manage many client states."""
 
@@ -1226,8 +1231,27 @@ class StateManager(Base):
     # The token expiration time (s).
     token_expiration: int = constants.TOKEN_EXPIRATION
 
+    # The maximum time to hold a lock (s).
+    lock_expiration: int = constants.LOCK_EXPIRATION
+
     # The redis client to use.
     redis: Optional[Redis] = None
+
+    # The keyspace subscription string when redis is waiting for lock to be released
+    _redis_notify_keyspace_events: str = (
+        "K"  # Enable keyspace notifications (target a particular key)
+        "g"  # For generic commands (DEL, EXPIRE, etc)
+        "x"  # For expired events
+        "e"  # For evicted events (i.e. maxmemory exceeded)
+    )
+
+    # These events indicate that a lock is no longer held
+    _redis_keyspace_lock_release_events: set[bytes] = {
+        b"del",
+        b"expire",
+        b"expired",
+        b"evicted",
+    }
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock: asyncio.Lock = asyncio.Lock()
@@ -1264,15 +1288,28 @@ class StateManager(Base):
             self.states[token] = self.state()
         return self.states[token]
 
-    async def set_state(self, token: str, state: State):
+    async def set_state(self, token: str, state: State, lock_id: bytes | None = None):
         """Set the state for a token.
 
         Args:
             token: The token to set the state for.
             state: The state to set.
+            lock_id: If provided, the lock_key must be set to this value to set the state.
+
+        Raises:
+            LockExpiredError: If lock_id is provided and the lock for the token is not held by that ID.
         """
         if self.redis is None:
             return
+        if lock_id is not None:
+            lock_key = f"{token}_lock".encode()
+            # check that we're holding the lock
+            if await self.redis.get(lock_key) != lock_id:
+                raise LockExpiredError(
+                    f"Lock expired for token {token} while processing. Consider increasing "
+                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+                    "or use `@rx.background` decorator for long-running tasks."
+                )
         await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
 
     @contextlib.asynccontextmanager
@@ -1283,38 +1320,55 @@ class StateManager(Base):
             token: The token to obtain a lock for.
 
         Yields:
-            None when the lock is held
+            The ID of the lock (to be passed to set_state).
 
         Raises:
             RuntimeError: If redis is not configured.
+            LockExpiredError: If the lock has expired while processing the event.
         """
         if self.redis is None:
             raise RuntimeError("Redis is not configured")
         lock_key = f"{token}_lock".encode()
-        # TODO: set key expiry
-        state_is_locked = await self.redis.setnx(lock_key, 1)
+        lock_id = uuid.uuid4().hex.encode()
+        lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
+
+        def try_get_lock():
+            return self.redis.set(  # pyright: ignore [reportOptionalMemberAccess]
+                lock_key,
+                lock_id,
+                ex=self.lock_expiration,
+                nx=True,  # only set if it doesn't exist
+            )
+
+        state_is_locked = await try_get_lock()
         while not state_is_locked:
-            await self.redis.config_set("notify-keyspace-events", "KEgxe")
+            await self.redis.config_set(
+                "notify-keyspace-events", self._redis_notify_keyspace_events
+            )
             async with self.redis.pubsub() as pubsub:
-                await pubsub.psubscribe("__keyevent@0__:*")
+                await pubsub.psubscribe(lock_key_channel)
                 # wait for the lock to be released
                 while True:
                     if not await self.redis.exists(lock_key):
-                        break  # try to get the lock again
-                    message = await pubsub.get_message(ignore_subscribe_messages=True)
+                        break  # key was removed, try to get the lock again
+                    message = await pubsub.get_message(
+                        ignore_subscribe_messages=True,
+                        timeout=self.lock_expiration,
+                    )
                     if message is None:
                         continue
-                    if (
-                        message["channel"]
-                        in [b"__keyevent@0__:expire", b"__keyevent@0__:del"]
-                        and message["data"] == lock_key
-                    ):
+                    if message["data"] in self._redis_keyspace_lock_release_events:
                         break
-            state_is_locked = await self.redis.setnx(lock_key, 1)
+            state_is_locked = await try_get_lock()
         try:
-            yield
+            yield lock_id
+        except LockExpiredError:
+            state_is_locked = False
+            raise
         finally:
-            await self.redis.delete(f"{token}_lock")
+            if state_is_locked:
+                # only delete our lock
+                await self.redis.delete(lock_key)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[State]:
@@ -1327,10 +1381,10 @@ class StateManager(Base):
             The state for the token.
         """
         if self.redis is not None:
-            async with self._redis_lock(token):
+            async with self._redis_lock(token) as lock_id:
                 state = await self.get_state(token)
                 yield state
-                await self.set_state(token, state)
+                await self.set_state(token, state, lock_id)
             return
 
         if token not in self._states_locks:
