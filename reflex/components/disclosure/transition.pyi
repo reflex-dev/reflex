@@ -4,37 +4,37 @@
 # ------------------------------------------------------
 
 from typing import Union, overload, Optional
-from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.component import Component
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var, BaseVar, ComputedVar
-from reflex.event import EventChain
+from reflex.event import EventHandler, EventChain, EventSpec
 
 class Transition(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, in_: Optional[Union[Var[bool], bool]] = None, unmount_on_exit: Optional[Union[Var[bool], bool]] = None, **props) -> "Transition": ...  # type: ignore
+    def create(cls, *children, in_: Optional[Union[Var[bool], bool]] = None, unmount_on_exit: Optional[Union[Var[bool], bool]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, **props) -> "Transition": ...  # type: ignore
 
 class Fade(Transition):
     @overload
     @classmethod
-    def create(cls, *children, **props) -> "Fade": ...  # type: ignore
+    def create(cls, *children, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, **props) -> "Fade": ...  # type: ignore
 
 class ScaleFade(Transition):
     @overload
     @classmethod
-    def create(cls, *children, initial_scale: Optional[Union[Var[float], float]] = None, reverse: Optional[Union[Var[bool], bool]] = None, **props) -> "ScaleFade": ...  # type: ignore
+    def create(cls, *children, initial_scale: Optional[Union[Var[float], float]] = None, reverse: Optional[Union[Var[bool], bool]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, **props) -> "ScaleFade": ...  # type: ignore
 
 class Slide(Transition):
     @overload
     @classmethod
-    def create(cls, *children, direction: Optional[Union[Var[str], str]] = None, **props) -> "Slide": ...  # type: ignore
+    def create(cls, *children, direction: Optional[Union[Var[str], str]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, **props) -> "Slide": ...  # type: ignore
 
 class SlideFade(Transition):
     @overload
     @classmethod
-    def create(cls, *children, offsetX: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, offsetY: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, reverse: Optional[Union[Var[bool], bool]] = None, **props) -> "SlideFade": ...  # type: ignore
+    def create(cls, *children, offsetX: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, offsetY: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, reverse: Optional[Union[Var[bool], bool]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, **props) -> "SlideFade": ...  # type: ignore
 
 class Collapse(Transition):
     @overload
     @classmethod
-    def create(cls, *children, animateOpacity: Optional[Union[Var[bool], bool]] = None, endingHeight: Optional[Union[Var[str], str]] = None, startingHeight: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, **props) -> "Collapse": ...  # type: ignore
+    def create(cls, *children, animateOpacity: Optional[Union[Var[bool], bool]] = None, endingHeight: Optional[Union[Var[str], str]] = None, startingHeight: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, **props) -> "Collapse": ...  # type: ignore
