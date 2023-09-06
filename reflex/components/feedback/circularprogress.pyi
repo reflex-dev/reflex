@@ -4,17 +4,17 @@
 # ------------------------------------------------------
 
 from typing import Union, overload, Optional
-from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.component import Component
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var, BaseVar, ComputedVar
-from reflex.event import EventChain
+from reflex.event import EventHandler, EventChain, EventSpec
 
 class CircularProgress(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, label, cap_is_round: Optional[Union[Var[bool], bool]] = None, is_indeterminate: Optional[Union[Var[bool], bool]] = None, max_: Optional[Union[Var[int], int]] = None, min_: Optional[Union[Var[int], int]] = None, thickness: Optional[Union[Var[int], int]] = None, track_color: Optional[Union[Var[str], str]] = None, value: Optional[Union[Var[int], int]] = None, value_text: Optional[Union[Var[str], str]] = None, color: Optional[Union[Var[str], str]] = None, **props) -> "CircularProgress": ...  # type: ignore
+    def create(cls, *children, label, cap_is_round: Optional[Union[Var[bool], bool]] = None, is_indeterminate: Optional[Union[Var[bool], bool]] = None, max_: Optional[Union[Var[int], int]] = None, min_: Optional[Union[Var[int], int]] = None, thickness: Optional[Union[Var[int], int]] = None, track_color: Optional[Union[Var[str], str]] = None, value: Optional[Union[Var[int], int]] = None, value_text: Optional[Union[Var[str], str]] = None, color: Optional[Union[Var[str], str]] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, **props) -> "CircularProgress": ...  # type: ignore
 
 class CircularProgressLabel(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, **props) -> "CircularProgressLabel": ...  # type: ignore
+    def create(cls, *children, on_double_click: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, **props) -> "CircularProgressLabel": ...  # type: ignore

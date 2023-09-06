@@ -4,22 +4,22 @@
 # ------------------------------------------------------
 
 from typing import Union, overload, Optional
-from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.component import Component
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var, BaseVar, ComputedVar
-from reflex.event import EventChain
+from reflex.event import EventHandler, EventChain, EventSpec
 
 class Skeleton(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, end_color: Optional[Union[Var[str], str]] = None, fade_duration: Optional[Union[Var[float], float]] = None, is_loaded: Optional[Union[Var[bool], bool]] = None, speed: Optional[Union[Var[float], float]] = None, start_color: Optional[Union[Var[str], str]] = None, **props) -> "Skeleton": ...  # type: ignore
+    def create(cls, *children, end_color: Optional[Union[Var[str], str]] = None, fade_duration: Optional[Union[Var[float], float]] = None, is_loaded: Optional[Union[Var[bool], bool]] = None, speed: Optional[Union[Var[float], float]] = None, start_color: Optional[Union[Var[str], str]] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, **props) -> "Skeleton": ...  # type: ignore
 
 class SkeletonCircle(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, end_color: Optional[Union[Var[str], str]] = None, fade_duration: Optional[Union[Var[float], float]] = None, is_loaded: Optional[Union[Var[bool], bool]] = None, speed: Optional[Union[Var[float], float]] = None, start_color: Optional[Union[Var[str], str]] = None, **props) -> "SkeletonCircle": ...  # type: ignore
+    def create(cls, *children, end_color: Optional[Union[Var[str], str]] = None, fade_duration: Optional[Union[Var[float], float]] = None, is_loaded: Optional[Union[Var[bool], bool]] = None, speed: Optional[Union[Var[float], float]] = None, start_color: Optional[Union[Var[str], str]] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, **props) -> "SkeletonCircle": ...  # type: ignore
 
 class SkeletonText(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, end_color: Optional[Union[Var[str], str]] = None, fade_duration: Optional[Union[Var[float], float]] = None, is_loaded: Optional[Union[Var[bool], bool]] = None, speed: Optional[Union[Var[float], float]] = None, start_color: Optional[Union[Var[str], str]] = None, no_of_lines: Optional[Union[Var[int], int]] = None, **props) -> "SkeletonText": ...  # type: ignore
+    def create(cls, *children, end_color: Optional[Union[Var[str], str]] = None, fade_duration: Optional[Union[Var[float], float]] = None, is_loaded: Optional[Union[Var[bool], bool]] = None, speed: Optional[Union[Var[float], float]] = None, start_color: Optional[Union[Var[str], str]] = None, no_of_lines: Optional[Union[Var[int], int]] = None, on_double_click: Union[EventHandler, EventSpec] = None, on_click: Union[EventHandler, EventSpec] = None, on_mouse_move: Union[EventHandler, EventSpec] = None, on_mount: Union[EventHandler, EventSpec] = None, on_mouse_down: Union[EventHandler, EventSpec] = None, on_mouse_up: Union[EventHandler, EventSpec] = None, on_mouse_enter: Union[EventHandler, EventSpec] = None, on_context_menu: Union[EventHandler, EventSpec] = None, on_mouse_over: Union[EventHandler, EventSpec] = None, on_mouse_out: Union[EventHandler, EventSpec] = None, on_unmount: Union[EventHandler, EventSpec] = None, on_blur: Union[EventHandler, EventSpec] = None, on_scroll: Union[EventHandler, EventSpec] = None, on_mouse_leave: Union[EventHandler, EventSpec] = None, on_focus: Union[EventHandler, EventSpec] = None, **props) -> "SkeletonText": ...  # type: ignore
