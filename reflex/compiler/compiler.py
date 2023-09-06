@@ -33,6 +33,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     },
     "/utils/context.js": {
         ImportVar(tag="EventLoopContext"),
+        ImportVar(tag="initialEvents"),
         ImportVar(tag="StateContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
