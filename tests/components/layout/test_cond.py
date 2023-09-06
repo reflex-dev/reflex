@@ -104,7 +104,7 @@ def test_cond_no_else():
     assert isinstance(comp, Fragment)
     comp = comp.children[0]
     assert isinstance(comp, Cond)
-    assert comp.cond == True  # noqa
+    assert comp.cond._decode() is True  # type: ignore
     assert comp.comp1 == Fragment.create(Text.create("hello"))
     assert comp.comp2 == Fragment.create()
 

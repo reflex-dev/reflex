@@ -935,7 +935,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 self.dirty_vars.add(cvar)
                 dirty_vars.add(cvar)
                 actual_var = self.computed_vars.get(cvar)
-                if actual_var:
+                if actual_var is not None:
                     actual_var.mark_dirty(instance=self)
 
     def _dirty_computed_vars(self, from_vars: set[str] | None = None) -> set[str]:

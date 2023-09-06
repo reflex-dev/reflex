@@ -60,7 +60,7 @@ class HydrateMiddleware(Middleware):
 
         # Add the on_load events and set is_hydrated to True.
         events = [*app.get_load_events(route), type(state).set_is_hydrated(True)]  # type: ignore
-        events = fix_events(events, event.token)
+        events = fix_events(events, event.token, router_data=event.router_data)
 
         # Return the state update.
         return StateUpdate(delta=delta, events=events)

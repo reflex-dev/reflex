@@ -33,6 +33,10 @@ from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
+from reflex.components.navigation.client_side_routing import (
+    Default404Page,
+    wait_for_client_redirect,
+)
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -52,6 +56,15 @@ from reflex.utils import console, format, prerequisites, types
 # Define custom types.
 ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
+
+
+def default_overlay_component() -> Component:
+    """Default overlay_component attribute for App.
+
+    Returns:
+        The default overlay_component, which is a connection_modal.
+    """
+    return connection_modal()
 
 
 class App(Base):
@@ -94,7 +107,9 @@ class App(Base):
     event_namespace: Optional[AsyncNamespace] = None
 
     # A component that is present on every page.
-    overlay_component: Optional[Union[Component, ComponentCallable]] = connection_modal
+    overlay_component: Optional[
+        Union[Component, ComponentCallable]
+    ] = default_overlay_component
 
     # Background tasks that are currently running
     background_tasks: set[asyncio.Task] = set()
@@ -178,6 +193,13 @@ class App(Base):
 
         # Set up the admin dash.
         self.setup_admin_dash()
+
+        # If a State is not used and no overlay_component is specified, do not render the connection modal
+        if (
+            self.state is DefaultState
+            and self.overlay_component is default_overlay_component
+        ):
+            self.overlay_component = None
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
@@ -455,8 +477,10 @@ class App(Base):
             on_load: The event handler(s) that will be called each time the page load.
             meta: The metadata of the page.
         """
+        if component is None:
+            component = Default404Page.create()
         self.add_page(
-            component=component if component else Fragment.create(),
+            component=wait_for_client_redirect(self._generate_component(component)),
             route=constants.SLUG_404,
             title=title or constants.TITLE_404,
             image=image or constants.FAVICON_404,
@@ -497,7 +521,7 @@ class App(Base):
         Example:
             >>> get_frontend_packages({"react": "16.14.0", "react-dom": "16.14.0"})
         """
-        page_imports = [
+        page_imports = {
             i
             for i in imports
             if i not in compiler.DEFAULT_IMPORTS.keys()
@@ -505,8 +529,22 @@ class App(Base):
             and "next" not in i
             and not i.startswith("/")
             and i != ""
-        ]
-        page_imports.extend(get_config().frontend_packages)
+        }
+        frontend_packages = get_config().frontend_packages
+        _frontend_packages = []
+        for package in frontend_packages:
+            if package in get_config().tailwind.get("plugins", []):  # type: ignore
+                console.warn(
+                    f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
+                )
+                continue
+            if package in page_imports:
+                console.warn(
+                    f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
+                )
+                continue
+            _frontend_packages.append(package)
+        page_imports.update(_frontend_packages)
         prerequisites.install_frontend_packages(page_imports)
 
     def compile(self):
@@ -522,6 +560,10 @@ class App(Base):
 
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
+
+        # Render a default 404 page if the user didn't supply one
+        if constants.SLUG_404 not in self.pages:
+            self.add_custom_404_page()
 
         task = progress.add_task("Compiling: ", total=len(self.pages))
         # TODO: include all work done in progress indicator, not just self.pages

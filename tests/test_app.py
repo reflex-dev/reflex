@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import os.path
 import sys
@@ -16,8 +18,15 @@ from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
 from reflex import AdminDash, constants
-from reflex.app import App, DefaultState, process, upload
-from reflex.components import Box
+from reflex.app import (
+    App,
+    ComponentCallable,
+    DefaultState,
+    default_overlay_component,
+    process,
+    upload,
+)
+from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
@@ -811,9 +820,17 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
 
     for exp_index, exp_val in enumerate(exp_vals):
+        hydrate_event = _event(name=get_hydrate_event(state), val=exp_val)
+        exp_router_data = {
+            "headers": {},
+            "ip": client_ip,
+            "sid": sid,
+            "token": token,
+            **hydrate_event.router_data,
+        }
         update = await process(
             app,
-            event=_event(name=get_hydrate_event(state), val=exp_val),
+            event=hydrate_event,
             sid=sid,
             headers={},
             client_ip=client_ip,
@@ -832,12 +849,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 }
             },
             events=[
-                _dynamic_state_event(name="on_load", val=exp_val, router_data={}),
+                _dynamic_state_event(
+                    name="on_load",
+                    val=exp_val,
+                    router_data=exp_router_data,
+                ),
                 _dynamic_state_event(
                     name="set_is_hydrated",
                     payload={"value": True},
                     val=exp_val,
-                    router_data={},
+                    router_data=exp_router_data,
                 ),
             ],
         )
@@ -932,5 +953,58 @@ async def test_process_events(gen_state, mocker):
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
-    assert gen_state.value == 5
+
+    assert app.state_manager.get_state("token").value == 5
     assert app.postprocess.call_count == 6
+
+
+@pytest.mark.parametrize(
+    ("state", "overlay_component", "exp_page_child"),
+    [
+        (DefaultState, default_overlay_component, None),
+        (DefaultState, None, None),
+        (DefaultState, Text.create("foo"), Text),
+        (State, default_overlay_component, Fragment),
+        (State, None, None),
+        (State, Text.create("foo"), Text),
+        (State, lambda: Text.create("foo"), Text),
+    ],
+)
+def test_overlay_component(
+    state: State | None,
+    overlay_component: Component | ComponentCallable | None,
+    exp_page_child: Type[Component] | None,
+):
+    """Test that the overlay component is set correctly.
+
+    Args:
+        state: The state class to pass to App.
+        overlay_component: The overlay_component to pass to App.
+        exp_page_child: The type of the expected child in the page fragment.
+    """
+    app = App(state=state, overlay_component=overlay_component)
+    if exp_page_child is None:
+        assert app.overlay_component is None
+    elif isinstance(exp_page_child, Fragment):
+        assert app.overlay_component is not None
+        generated_component = app._generate_component(app.overlay_component)
+        assert isinstance(generated_component, Fragment)
+        assert isinstance(
+            generated_component.children[0],
+            Cond,  # ConnectionModal is a Cond under the hood
+        )
+    else:
+        assert app.overlay_component is not None
+        assert isinstance(
+            app._generate_component(app.overlay_component),
+            exp_page_child,
+        )
+
+    app.add_page(Box.create("Index"), route="/test")
+    page = app.pages["test"]
+    if exp_page_child is not None:
+        assert len(page.children) == 3
+        children_types = (type(child) for child in page.children)
+        assert exp_page_child in children_types
+    else:
+        assert len(page.children) == 2

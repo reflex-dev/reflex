@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import glob
+import importlib
 import json
 import os
 import platform
@@ -97,8 +98,11 @@ def get_package_manager() -> str | None:
     return path_ops.get_npm_path()
 
 
-def get_app() -> ModuleType:
+def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
+
+    Args:
+        reload: Re-import the app module from disk
 
     Returns:
         The app based on the default config.
@@ -106,7 +110,10 @@ def get_app() -> ModuleType:
     config = get_config()
     module = ".".join([config.app_name, config.app_name])
     sys.path.insert(0, os.getcwd())
-    return __import__(module, fromlist=(constants.APP_VAR,))
+    app = __import__(module, fromlist=(constants.APP_VAR,))
+    if reload:
+        importlib.reload(app)
+    return app
 
 
 def get_redis() -> Redis | None:
@@ -406,7 +413,7 @@ def install_bun():
     )
 
 
-def install_frontend_packages(packages: list[str]):
+def install_frontend_packages(packages: set[str]):
     """Installs the base and custom frontend packages.
 
     Args:
@@ -424,14 +431,25 @@ def install_frontend_packages(packages: list[str]):
 
     processes.show_status("Installing base frontend packages", process)
 
-    # Install the custom packages, if any.
+    config = get_config()
+    if config.tailwind is not None and "plugins" in config.tailwind:
+        process = processes.new_process(
+            [get_install_package_manager(), "add", *config.tailwind["plugins"]],
+            cwd=constants.WEB_DIR,
+            shell=constants.IS_WINDOWS,
+        )
+        processes.show_status("Installing tailwind packages", process)
+
+    # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
             cwd=constants.WEB_DIR,
             shell=constants.IS_WINDOWS,
         )
-        processes.show_status("Installing frontend packages for components", process)
+        processes.show_status(
+            "Installing frontend packages from config and components", process
+        )
 
 
 def check_initialized(frontend: bool = True):

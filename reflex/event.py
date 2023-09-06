@@ -480,12 +480,17 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> tuple[tuple[Var, Var], 
     return event_spec.args if len(args) > 1 else tuple()
 
 
-def fix_events(events: list[EventHandler | EventSpec], token: str) -> list[Event]:
+def fix_events(
+    events: list[EventHandler | EventSpec],
+    token: str,
+    router_data: dict[str, Any] | None = None,
+) -> list[Event]:
     """Fix a list of events returned by an event handler.
 
     Args:
         events: The events to fix.
         token: The user token.
+        router_data: The optional router data to set in the event.
 
     Returns:
         The fixed events.
@@ -516,6 +521,7 @@ def fix_events(events: list[EventHandler | EventSpec], token: str) -> list[Event
                 token=token,
                 name=name,
                 payload=payload,
+                router_data=router_data or {},
             )
         )
 

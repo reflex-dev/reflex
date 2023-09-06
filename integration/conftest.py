@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from reflex.testing import AppHarness, AppHarnessProd
+
 DISPLAY = None
 XVFB_DIMENSIONS = (800, 600)
 
@@ -57,3 +59,18 @@ def pytest_exception_interact(node, call, report):
         )
     except Exception as e:
         print(f"Failed to take screenshot for {node}: {e}")
+
+
+@pytest.fixture(
+    scope="session", params=[AppHarness, AppHarnessProd], ids=["dev", "prod"]
+)
+def app_harness_env(request):
+    """Parametrize the AppHarness class to use for the test, either dev or prod.
+
+    Args:
+        request: The pytest fixture request object.
+
+    Returns:
+        The AppHarness class to use for the test.
+    """
+    return request.param
