@@ -1,5 +1,7 @@
 """Tab components."""
 
+from typing import List, Optional, Tuple
+
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
@@ -35,7 +37,9 @@ class Tabs(ChakraComponent):
     variant: Var[str]
 
     @classmethod
-    def create(cls, *children, items=None, **props) -> Component:
+    def create(
+        cls, *children, items: Optional[List[Tuple[str, str]]] = None, **props
+    ) -> Component:
         """Create a tab component.
 
         Args:

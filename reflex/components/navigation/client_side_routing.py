@@ -15,7 +15,7 @@ from ...vars import Var
 from ..component import Component
 from ..layout.cond import Cond
 
-route_not_found = Var.create_safe(constants.ROUTE_NOT_FOUND)
+route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND)
 
 
 class ClientSideRouting(Component):
