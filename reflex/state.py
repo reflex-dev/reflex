@@ -354,6 +354,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             and isinstance(fn, Callable)
             and not isinstance(fn, EventHandler)
         }
+        if parent_state is None:
+            events.update(cls._builtin_event_handlers())
         for name, fn in events.items():
             handler = EventHandler(fn=fn)
             cls.event_handlers[name] = handler
@@ -1016,7 +1018,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
 
         def _is_valid_type(events: Any) -> bool:
-            return isinstance(events, (EventHandler, EventSpec))
+            return isinstance(events, (Event, EventHandler, EventSpec))
 
         if events is None or _is_valid_type(events):
             return events
@@ -1281,6 +1283,31 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         ]:
             d.update(substate_d)
         return d
+
+    @classmethod
+    def _builtin_event_handlers(cls):
+        """Establish builtin event handlers on first subclass of State."""
+
+        def on_load_internal(self) -> dict[str, FunctionType]:
+            """Queue on_load handlers for the current page."""
+            app = getattr(prerequisites.get_app(), constants.APP_VAR)
+            self.is_hydrated = False
+            return [
+                *fix_events(
+                    app.get_load_events(self.get_current_page()),
+                    self.get_token(),
+                    router_data=self.router_data,
+                ),
+                cls.set_is_hydrated(True),
+            ]
+
+        def _process_handler(handler: FunctionType) -> tuple[str, FunctionType]:
+            """Set module and qualname for handler."""
+            handler.__module__ = cls.__module__
+            handler.__qualname__ = ".".join((cls.__qualname__, handler.__name__))
+            return handler.__name__, handler
+
+        return dict(_process_handler(handler) for handler in [on_load_internal])
 
     async def __aenter__(self) -> BaseState:
         """Enter the async context manager protocol.

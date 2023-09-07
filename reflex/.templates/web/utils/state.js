@@ -529,6 +529,17 @@ export const useEventLoop = (
   }
 
   const sentHydrate = useRef(false);  // Avoid double-hydrate due to React strict-mode
+//  useEffect(() => {
+//    if (router.isReady && !sentHydrate.current) {
+//      Event(initial_events.map((e) => (
+//        {
+//          ...e,
+//          router_data: (({ pathname, query, asPath }) => ({ pathname, query, asPath }))(router)
+//        }
+//      )))
+//      sentHydrate.current = true
+//    }
+//  }, [router.isReady])
   // initial state hydrate
   useEffect(() => {
     if (router.isReady && !sentHydrate.current) {

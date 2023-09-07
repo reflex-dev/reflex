@@ -826,6 +826,10 @@ def fix_events(
     # Fix the events created by the handler.
     out = []
     for e in events:
+        if isinstance(e, Event):
+            # If the event is already an event, append it to the list.
+            out.append(e)
+            continue
         if not isinstance(e, (EventHandler, EventSpec)):
             e = EventHandler(fn=e)
         # Otherwise, create an event from the event spec.
@@ -835,13 +839,19 @@ def fix_events(
         name = format.format_event_handler(e.handler)
         payload = {k._var_name: v._decode() for k, v in e.args}  # type: ignore
 
+        # Filter router_data to reduce payload size
+        event_router_data = {
+            k: v
+            for k, v in (router_data or {}).items()
+            if k in constants.ROUTER_DATA_INCLUDE
+        }
         # Create an event and append it to the list.
         out.append(
             Event(
                 token=token,
                 name=name,
                 payload=payload,
-                router_data=router_data or {},
+                router_data=event_router_data,
             )
         )
 

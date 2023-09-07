@@ -40,6 +40,7 @@ class ReflexJinjaEnvironment(Environment):
             "toggle_color_mode": constants.ColorMode.TOGGLE,
             "use_color_mode": constants.ColorMode.USE,
             "hydrate": constants.CompileVars.HYDRATE,
+            "on_load_internal": constants.CompileVars.ON_LOAD_INTERNAL,
         }
 
 

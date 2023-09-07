@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from reflex import constants
-from reflex.event import Event, fix_events, get_hydrate_event
+from reflex.event import Event, get_hydrate_event
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, StateUpdate
 from reflex.utils import format
@@ -52,11 +52,5 @@ class HydrateMiddleware(Middleware):
         # since a full dict was captured, clean any dirtiness
         state._clean()
 
-        # Get the route for on_load events.
-        route = event.router_data.get(constants.RouteVar.PATH, "")
-        # Add the on_load events and set is_hydrated to True.
-        events = [*app.get_load_events(route), type(state).set_is_hydrated(True)]  # type: ignore
-        events = fix_events(events, event.token, router_data=event.router_data)
-
         # Return the state update.
-        return StateUpdate(delta=delta, events=events)
+        return StateUpdate(delta=delta, events=[])
