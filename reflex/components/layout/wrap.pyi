@@ -4,17 +4,41 @@
 # ------------------------------------------------------
 
 from typing import Union, overload, Optional
-from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.component import Component
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var, BaseVar, ComputedVar
-from reflex.event import EventChain
+from reflex.event import EventHandler, EventChain, EventSpec
 
 class Wrap(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, items, align: Optional[Union[Var[str], str]] = None, direction: Optional[Union[Var[str], str]] = None, justify: Optional[Union[Var[str], str]] = None, should_wrap_children: Optional[Union[Var[bool], bool]] = None, spacing: Optional[Union[Var[str], str]] = None, spacing_x: Optional[Union[Var[str], str]] = None, spacing_y: Optional[Union[Var[str], str]] = None, **props) -> "Wrap": ...  # type: ignore
+    def create(cls, *children, items, align: Optional[Union[Var[str], str]] = None, direction: Optional[Union[Var[str], str]] = None, justify: Optional[Union[Var[str], str]] = None, should_wrap_children: Optional[Union[Var[bool], bool]] = None, spacing: Optional[Union[Var[str], str]] = None, spacing_x: Optional[Union[Var[str], str]] = None, spacing_y: Optional[Union[Var[str], str]] = None, on_blur: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_context_menu: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_double_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_focus: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_down: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_up: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_scroll: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_unmount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Wrap":  # type: ignore
+        """Return a wrap component.
+
+        Args:
+            children: The children of the component.
+            items (list): The items of the wrap component.
+            props: The properties of the component.
+
+        Returns:
+            The wrap component.
+        """
+        ...
 
 class WrapItem(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, **props) -> "WrapItem": ...  # type: ignore
+    def create(cls, *children, on_blur: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_context_menu: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_double_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_focus: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_down: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_up: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_scroll: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_unmount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "WrapItem":  # type: ignore
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
+        """
+        ...

@@ -1,7 +1,7 @@
 ### All Submissions:
 
-- [ ] Have you followed the guidelines stated in [CONTRIBUTING.md](https://github.com/pynecone-io/pynecone/blob/main/CONTRIBUTING.md) file?
-- [ ] Have you checked to ensure there aren't any other open [Pull Requests](https://github.com/pynecone-io/pynecone/pulls ) for the desired changed?
+- [ ] Have you followed the guidelines stated in [CONTRIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md) file?
+- [ ] Have you checked to ensure there aren't any other open [Pull Requests](https://github.com/reflex-dev/reflex/pulls ) for the desired changed?
 
 <!-- You can erase any parts of this template not applicable to your Pull Request. -->
 

@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict
 
 import pytest
 
@@ -10,7 +11,7 @@ from reflex.constants import Endpoint
 def test_requires_app_name():
     """Test that a config requires an app_name."""
     with pytest.raises(ValueError):
-        rx.Config()
+        rx.Config()  # type: ignore
 
 
 def test_set_app_name(base_config_values):
@@ -31,7 +32,7 @@ def test_set_app_name(base_config_values):
         "env_path",
     ],
 )
-def test_deprecated_params(base_config_values, param):
+def test_deprecated_params(base_config_values: Dict[str, Any], param):
     """Test that deprecated params are removed from the config.
 
     Args:
@@ -39,7 +40,7 @@ def test_deprecated_params(base_config_values, param):
         param: The deprecated param.
     """
     with pytest.raises(ValueError):
-        rx.Config(**base_config_values, **{param: "test"})
+        rx.Config(**base_config_values, **{param: "test"})  # type: ignore
 
 
 @pytest.mark.parametrize(

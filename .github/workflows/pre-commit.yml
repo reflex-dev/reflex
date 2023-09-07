@@ -18,7 +18,7 @@ jobs:
         with:
           # running vs. one version of Python is OK
           # i.e. ruff, black, etc.
-          python-version: 3.11
+          python-version: 3.11.5
           run-poetry-install: true
           shell: bash
           create-venv-at-path: .venv
