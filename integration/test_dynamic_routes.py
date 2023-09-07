@@ -69,7 +69,7 @@ def DynamicRoute():
 
 @pytest.fixture(scope="session")
 def dynamic_route(
-    app_harness_env: Type[AppHarness], tmp_path_factory
+        app_harness_env: Type[AppHarness], tmp_path_factory
 ) -> Generator[AppHarness, None, None]:
     """Start DynamicRoute app at tmp_path via AppHarness.
 
@@ -81,8 +81,8 @@ def dynamic_route(
         running AppHarness instance
     """
     with app_harness_env.create(
-        root=tmp_path_factory.mktemp(f"dynamic_route"),
-        app_source=DynamicRoute,  # type: ignore
+            root=tmp_path_factory.mktemp(f"dynamic_route"),
+            app_source=DynamicRoute,  # type: ignore
     ) as harness:
         yield harness
 
@@ -131,7 +131,7 @@ def backend_state(dynamic_route: AppHarness, driver: WebDriver) -> State:
 
 @pytest.fixture()
 def poll_for_order(
-    dynamic_route: AppHarness, backend_state: State
+        dynamic_route: AppHarness, backend_state: State
 ) -> Callable[[list[str]], None]:
     """Poll for the order list to match the expected order.
 
@@ -151,10 +151,10 @@ def poll_for_order(
 
 
 def test_on_load_navigate(
-    dynamic_route: AppHarness,
-    driver: WebDriver,
-    backend_state: State,
-    poll_for_order: Callable[[list[str]], None],
+        dynamic_route: AppHarness,
+        driver: WebDriver,
+        backend_state: State,
+        poll_for_order: Callable[[list[str]], None],
 ):
     """Click links to navigate between dynamic pages with on_load event.
 
@@ -169,8 +169,7 @@ def test_on_load_navigate(
     link = driver.find_element(By.ID, "link_page_next")
     assert link
 
-    exp_order = [f"/page/[page-id]-{ix}" for ix in range(10)]
-
+    exp_order = [f"/page/[page_id]-{ix}" for ix in range(10)]
     # click the link a few times
     for ix in range(10):
         # wait for navigation, then assert on url
@@ -190,13 +189,13 @@ def test_on_load_navigate(
     # manually load the next page to trigger client side routing in prod mode
     if is_prod:
         exp_order += ["/404-no page id"]
-    exp_order += ["/page/[page-id]-10"]
+    exp_order += ["/page/[page_id]-10"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/page/10/")
     poll_for_order(exp_order)
 
     # make sure internal nav still hydrates after redirect
-    exp_order += ["/page/[page-id]-11"]
+    exp_order += ["/page/[page_id]-11"]
     link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
         link.click()
@@ -205,7 +204,7 @@ def test_on_load_navigate(
     # load same page with a query param and make sure it passes through
     if is_prod:
         exp_order += ["/404-no page id"]
-    exp_order += ["/page/[page-id]-11"]
+    exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     poll_for_order(exp_order)
@@ -220,7 +219,7 @@ def test_on_load_navigate(
     # browser nav should still trigger hydration
     if is_prod:
         exp_order += ["/404-no page id"]
-    exp_order += ["/page/[page-id]-11"]
+    exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.back()
     poll_for_order(exp_order)
@@ -235,7 +234,7 @@ def test_on_load_navigate(
     # hit a page that redirects back to dynamic page
     if is_prod:
         exp_order += ["/404-no page id"]
-    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page-id]-0"]
+    exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/redirect-page/0/?foo=bar")
     poll_for_order(exp_order)
@@ -244,9 +243,9 @@ def test_on_load_navigate(
 
 
 def test_on_load_navigate_non_dynamic(
-    dynamic_route: AppHarness,
-    driver: WebDriver,
-    poll_for_order: Callable[[list[str]], None],
+        dynamic_route: AppHarness,
+        driver: WebDriver,
+        poll_for_order: Callable[[list[str]], None],
 ):
     """Click links to navigate between static pages with on_load event.
 
