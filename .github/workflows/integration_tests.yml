@@ -52,7 +52,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
@@ -64,7 +64,7 @@ jobs:
           create-venv-at-path: .venv
 
       - name: Clone Reflex Examples Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-examples
           path: reflex-examples
@@ -105,7 +105,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
@@ -117,7 +117,7 @@ jobs:
           create-venv-at-path: .venv
 
       - name: Clone Reflex Website Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: reflex-dev/reflex-web
           ref: reflex-ci
