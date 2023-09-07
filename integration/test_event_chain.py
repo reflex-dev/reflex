@@ -97,11 +97,11 @@ def EventChain():
 
         def redirect_return_chain(self):
             self.event_order.append("redirect_return_chain")
-            yield rx.redirect("/on_load_return_chain")
+            yield rx.redirect("/on-load-return-chain")
 
         def redirect_yield_chain(self):
             self.event_order.append("redirect_yield_chain")
-            yield rx.redirect("/on_load_yield_chain")
+            yield rx.redirect("/on-load-yield-chain")
 
         def click_return_int_type(self):
             self.event_order.append("click_return_int_type")
@@ -367,7 +367,7 @@ def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
     ("uri", "exp_event_order"),
     [
         (
-            "/on_load_return_chain",
+            "/on-load-return-chain",
             [
                 "on_load_return_chain",
                 "event_arg:1",
@@ -376,7 +376,7 @@ def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
             ],
         ),
         (
-            "/on_load_yield_chain",
+            "/on-load-yield-chain",
             [
                 "on_load_yield_chain",
                 "event_arg:4",
@@ -411,7 +411,7 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
     ("uri", "exp_event_order"),
     [
         (
-            "/on_mount_return_chain",
+            "/on-mount-return-chain",
             [
                 "on_load_return_chain",
                 "event_arg:unmount",
@@ -426,7 +426,7 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
             ],
         ),
         (
-            "/on_mount_yield_chain",
+            "/on-mount-yield-chain",
             [
                 "on_load_yield_chain",
                 "event_arg:mount",

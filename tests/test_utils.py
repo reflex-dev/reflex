@@ -260,9 +260,9 @@ def test_is_generic_alias(cls: type, expected: bool):
         ("custom-route/", False, "custom-route"),
         ("/custom-route", True, "custom-route"),
         ("/custom-route", False, "custom-route"),
-        ("/custom_route", True, "custom_route"),
+        ("/custom_route", True, "custom-route"),
         ("/custom_route", False, "custom_route"),
-        ("/CUSTOM_route", True, "custom_route"),
+        ("/CUSTOM_route", True, "custom-route"),
         ("/CUSTOM_route", False, "CUSTOM_route"),
     ],
 )

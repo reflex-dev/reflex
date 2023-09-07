@@ -164,6 +164,21 @@ def to_title_case(text: str) -> str:
     return "".join(word.capitalize() for word in text.split("_"))
 
 
+def to_kebab_case(text: str) -> str:
+    """Convert a string to kebab case.
+
+    The words in the text are converted to lowercase and
+    separated by hyphens.
+
+    Args:
+        text: The string to convert.
+
+    Returns:
+        The title case string.
+    """
+    return to_snake_case(text).replace("_", "-")
+
+
 def format_string(string: str) -> str:
     """Format the given string as a JS string literal..
 
@@ -207,6 +222,7 @@ def format_route(route: str, format_case=True) -> str:
 
     Args:
         route: The route to format.
+        format_case: whether to format case to kebab case.
 
     Returns:
         The formatted route.
@@ -214,7 +230,7 @@ def format_route(route: str, format_case=True) -> str:
     route = route.strip("/")
     # Strip the route and format casing.
     if format_case:
-        route = to_snake_case(route)
+        route = to_kebab_case(route)
 
     # If the route is empty, return the index route.
     if route == "":
