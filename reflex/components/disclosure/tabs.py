@@ -43,9 +43,9 @@ class Tabs(ChakraComponent):
         """Create a tab component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             items: The items for the tabs component, a list of tuple (label, panel)
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The tab component

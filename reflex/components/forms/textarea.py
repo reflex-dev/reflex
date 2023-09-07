@@ -62,8 +62,8 @@ class TextArea(ChakraComponent):
         """Create an Input component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
+            **props: The properties of the component.
 
         Returns:
             The component.

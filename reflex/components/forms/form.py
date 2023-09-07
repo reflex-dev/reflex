@@ -69,12 +69,12 @@ class FormControl(ChakraComponent):
         """Create a form control component.
 
         Args:
-            children: The children of the form control.
+            *children: The children of the form control.
             label: The label of the form control.
             input: The input of the form control.
             help_text: The help text of the form control.
             error_message: The error message of the form control.
-            props: The properties of the form control.
+            **props: The properties of the form control.
 
         Raises:
             AttributeError: raise an error if missing required kwargs.

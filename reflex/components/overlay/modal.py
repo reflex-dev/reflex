@@ -78,12 +78,12 @@ class Modal(ChakraComponent):
         """Create a modal component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             header: The header of the modal.
             body: The body of the modal.
             footer: The footer of the modal.
             close_button: The close button of the modal.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Raises:
             AttributeError: error that occurs if conflicting props are passed
