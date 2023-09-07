@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple, _GenericAlias
 
 from reflex import constants
 from reflex.base import Base
@@ -37,6 +37,19 @@ class EventHandler(Base):
 
         # Needed to allow serialization of Callable.
         frozen = True
+
+    @classmethod
+    def __class_getitem__(cls, arg: Var) -> _GenericAlias:
+        """Get a typed EventHandler.
+
+        Args:
+            arg: How to transform the EVENT_ARG as an input to the function.
+
+        Returns:
+            A typed EventHandler.
+        """
+        a = _GenericAlias(cls, arg)
+        return a
 
     def __call__(self, *args: Var) -> EventSpec:
         """Pass arguments to the handler to get an event spec.

@@ -90,6 +90,10 @@ class Component(Base, ABC):
 
         # Convert fields to props, setting default values.
         for field in cls.get_fields().values():
+            # Don't require event handlers.
+            if types._issubclass(field.type_, EventHandler):
+                field.required = False
+
             # If the field is not a component prop, skip it.
             if field.name not in props:
                 continue
@@ -170,7 +174,6 @@ class Component(Base, ABC):
 
             # Check if the key is an event trigger.
             if key in triggers:
-                # Temporarily disable full control for event triggers.
                 kwargs["event_triggers"][key] = self._create_event_chain(key, value)
 
         # Remove any keys that were added as events.
@@ -301,7 +304,12 @@ class Component(Base, ABC):
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {}
+        # Filter for only event handlers.
+        return {
+            name: field.type_
+            for name, field in self.get_fields().items()
+            if types._issubclass(field.type_, EventHandler)
+        }
 
     def __repr__(self) -> str:
         """Represent the component in React.
@@ -346,12 +354,13 @@ class Component(Base, ABC):
 
     @classmethod
     def get_props(cls) -> Set[str]:
-        """Get the unique fields for the component.
+        """Get the props for the component.
 
         Returns:
-            The unique fields.
+            The props for the component.
         """
-        return set(cls.get_fields()) - set(Component.get_fields())
+        # Filter out event handlers.
+        return [name for name, field in cls.get_fields().items() if name not in Component.get_fields() and not types._issubclass(field.type_, EventHandler)]
 
     @classmethod
     def get_initial_props(cls) -> Set[str]:

@@ -5,6 +5,7 @@ from typing import Dict
 from reflex.components.component import EVENT_ARG, Component
 from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.event import EventHandler
 from reflex.utils import imports
 from reflex.vars import ImportVar, Var
 
@@ -50,25 +51,28 @@ class Input(ChakraComponent):
     # "lg" | "md" | "sm" | "xs"
     size: Var[str]
 
+    # Called when the input value changes.
+    on_change: EventHandler[EVENT_ARG.target.value]
+
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
             {"/utils/state": {ImportVar(tag="set_val")}},
         )
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
-        """Get the event triggers that pass the component's value to the handler.
+    # def get_controlled_triggers(self) -> Dict[str, Var]:
+    #     """Get the event triggers that pass the component's value to the handler.
 
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {
-            "on_change": EVENT_ARG.target.value,
-            "on_focus": EVENT_ARG.target.value,
-            "on_blur": EVENT_ARG.target.value,
-            "on_key_down": EVENT_ARG.key,
-            "on_key_up": EVENT_ARG.key,
-        }
+    #     Returns:
+    #         A dict mapping the event trigger to the var that is passed to the handler.
+    #     """
+    #     return {
+    #         "on_change": EVENT_ARG.target.value,
+    #         "on_focus": EVENT_ARG.target.value,
+    #         "on_blur": EVENT_ARG.target.value,
+    #         "on_key_down": EVENT_ARG.key,
+    #         "on_key_up": EVENT_ARG.key,
+    #     }
 
     @classmethod
     def create(cls, *children, **props) -> Component:
