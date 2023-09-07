@@ -1,16 +1,28 @@
 """Reflex CLI to create, run, and deploy apps."""
 
 import atexit
+import json
 import os
+import webbrowser
+from http import HTTPStatus
 from pathlib import Path
 
-import httpx
+import requests
 import typer
 from alembic.util.exc import CommandError
+from tabulate import tabulate
 
 from reflex import constants, model
 from reflex.config import get_config
-from reflex.utils import build, console, exec, prerequisites, processes, telemetry
+from reflex.utils import (
+    build,
+    console,
+    exec,
+    hosting,
+    prerequisites,
+    processes,
+    telemetry,
+)
 
 # Create the app.
 cli = typer.Typer(add_completion=False)
@@ -189,8 +201,20 @@ def run(
             backend_cmd(backend_host, int(backend_port))
 
 
+# TODO: alternatively, we can combine all requests into one to CP and send the files in the body
+# then CP uploads files to S3 without needing resigned urls
+# question: 1) if we need multipart upload https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi
+# 2) if CP machine has enough disk space to store the files
 @cli.command()
 def deploy(
+    instance_name: str = typer.Option(
+        ..., "-n", "--instance-name", help="The name of the instance to deploy."
+    ),
+    project_name: str = typer.Option(
+        ..., "-p", "--project-name", help="The name of the project to deploy under."
+    ),
+    # TODO: make this in a list of choices
+    initial_region: str = typer.Option(..., help="The initial region to deploy to."),
     dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
     loglevel: constants.LogLevel = typer.Option(
         console.LOG_LEVEL, help="The log level to use."
@@ -200,12 +224,18 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Show system info
-    exec.output_system_info()
-
     # Check if the deploy url is set.
-    if config.rxdeploy_url is None:
-        console.info("This feature is coming soon!")
+    if not hosting.is_set_up():
+        return
+    cp_backend_url = config.cp_backend_url or ""
+
+    # Check if the user is authenticated
+    token = hosting.get_existing_access_token()
+    if not token:
+        console.error("Please authenticate using `reflex login` first.")
+        return
+    if not hosting.validate_token(token):
+        console.error("Access denied, exiting.")
         return
 
     # Compile the app in production mode.
@@ -215,19 +245,109 @@ def deploy(
     if dry_run:
         return
 
-    # Deploy the app.
-    data = {"userId": config.username, "projectId": config.app_name}
-    original_response = httpx.get(config.rxdeploy_url, params=data)
-    response = original_response.json()
-    frontend = response["frontend_resources_url"]
-    backend = response["backend_resources_url"]
-
     # Upload the frontend and backend.
-    with open(constants.FRONTEND_ZIP, "rb") as f:
-        httpx.put(frontend, data=f)  # type: ignore
+    params = hosting.PresignedUrlPostParam(
+        file_name="frontend.zip",
+        instance_name=instance_name,
+    )
+    response = requests.post(
+        f"{cp_backend_url}/presigned-url",
+        headers=hosting.authorization_header(token),
+        json=params.dict(exclude_none=True),
+        timeout=config.http_request_timeout,
+    )
 
-    with open(constants.BACKEND_ZIP, "rb") as f:
-        httpx.put(backend, data=f)  # type: ignore
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+            console.debug(f"Reason: {response.content}")
+            console.error("Internal server error. Please contact support.")
+        else:
+            console.error(f"Unable to deploy due to {response.reason}.")
+        return
+
+    frontend_presign_response = response.json()
+    if not frontend_presign_response:
+        console.error(
+            "Unable to get presigned url for frontend upload. Please contact support."
+        )
+        return
+    console.debug(f"Frontend upload presign response: {frontend_presign_response}")
+    try:
+        frontend_file_name = constants.FRONTEND_ZIP
+        with open(frontend_file_name, "rb") as object_file:
+            files = {"file": (frontend_file_name, object_file)}
+            response = requests.post(
+                frontend_presign_response["url"],
+                data=frontend_presign_response["fields"],
+                files=files,
+            )
+        response.raise_for_status()
+    except Exception as ex:
+        console.error(f"Unable to upload frontend zip due to {ex}")
+        return
+
+    params = hosting.PresignedUrlPostParam(
+        file_name="backend.zip",
+        instance_name=instance_name,
+    )
+    response = requests.post(
+        f"{config.cp_backend_url}/presigned-url",
+        headers=hosting.authorization_header(token),
+        json=params.dict(exclude_none=True),
+        timeout=config.http_request_timeout,
+        # TODO: fix me
+        verify=False,
+    )
+    backend_presign_response = response.json()
+    if not backend_presign_response:
+        console.error(
+            "Unable to get presigned url for backend upload. Please contact support."
+        )
+        return
+    console.debug(f"Backend archive url: {backend_presign_response}")
+    try:
+        backend_file_name = constants.BACKEND_ZIP
+        with open(backend_file_name, "rb") as object_file:
+            files = {"file": (backend_file_name, object_file)}
+            response = requests.post(
+                backend_presign_response["url"],
+                data=backend_presign_response["fields"],
+                files=files,
+            )
+        response.raise_for_status()
+    except Exception as ex:
+        console.error(f"Unable to upload backend zip due to {ex}")
+        return
+
+    # Create a deployment with the control plane.
+    post_params = hosting.HostedInstancePostParam(
+        key=instance_name,
+        project_name=project_name,
+        backend_initial_region=initial_region,
+        backend_file_name=backend_file_name,
+        frontend_file_name=frontend_file_name,
+    )
+    response = requests.post(
+        f"{config.cp_backend_url}/hosted-instances",
+        headers=hosting.authorization_header(token),
+        json=post_params.dict(exclude_none=True),
+    )
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+            console.debug(f"Reason: {response.content}")
+            console.error("Internal server error. Please contact support.")
+        else:
+            console.error(f"Unable to deploy due to {response.reason}.")
+        return
+    except requests.exceptions.Timeout:
+        console.error("Unable to deploy due to request timeout.")
+        return
+
+    console.print(f"Successfully deployed {instance_name} to {initial_region}.")
 
 
 @cli.command()
@@ -274,6 +394,76 @@ def export(
 
     # Post a telemetry event.
     telemetry.send("export", config.telemetry_enabled)
+
+
+@cli.command()
+def login(
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+):
+    """Authenticate with Reflex control plane."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
+    # Check if feature is enabled:
+    if not hosting.is_set_up():
+        return
+
+    # Check if the user is already logged in.
+    token = hosting.get_existing_access_token()
+    if not token:
+        # If not already logged in, open a browser window/tab to the login page.
+        print(f"Opening {config.cp_web_url} ...")
+        if not webbrowser.open(config.cp_web_url or ""):
+            console.warn(
+                f'Unable to open the browser. Please open the "{config.cp_web_url}" manually.'
+            )
+
+        """
+        with yaspin() as sp:
+            sp.text = "Waiting for session"
+            max_tries = 30
+            for _ in range(max_tries):
+                token = (
+                    requests.get(config.cp_url)
+                    .cookies.get_dict()
+                    .get("__clerk_db_jwt", None)
+                )
+                console.info(f"Fetching token: {token}")
+                if token:
+                    break
+                else:
+                    time.sleep(2)
+        """
+        token = input("Enter the token: ")
+        if not token:
+            console.error("Entered token is empty.")
+            return
+
+    if not hosting.validate_token(token):
+        console.error("Access denied.")
+        return
+
+    hosting_config = {}
+
+    if os.path.exists(constants.HOSTING_JSON):
+        try:
+            with open(constants.HOSTING_JSON, "r") as config_file:
+                hosting_config = json.load(config_file)
+        except Exception as ex:
+            console.debug(f"Unable to parse the hosting config file due to {ex}")
+            console.warn("Config file is corrupted. Creating a new one.")
+
+    hosting_config["access_token"] = token
+    try:
+        with open(constants.HOSTING_JSON, "w") as config_file:
+            json.dump(hosting_config, config_file)
+    except Exception as ex:
+        console.error(f"Unable to write to the hosting config file due to {ex}")
+        return
+    # TODO: do not show this message if the user is already logged in.
+    console.print("Successfully logged in.")
 
 
 db_cli = typer.Typer()
@@ -342,7 +532,152 @@ def makemigrations(
             )
 
 
+project_cli = typer.Typer()
+
+
+@project_cli.command()
+def create(
+    project_name: str = typer.Option(
+        None,
+        "-p",
+        "--project-name",
+        help="The name of the project to create. Only alphanumeric characters and hyphens are allowed.",
+    ),
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+):
+    """Create a new Reflex project for hosting."""  # Set the log level.
+    console.set_log_level(loglevel)
+
+    # Check if the control plane url is set.
+    if not hosting.is_set_up():
+        return
+
+    if not project_name:
+        console.error("Please provide a name for the project.")
+        return
+
+    # Check if the user is authenticated
+    if not (token := hosting.authenticated_token()):
+        return
+
+    project_params = hosting.ProjectPostParam(name=project_name)
+    response = requests.post(
+        f"{config.cp_backend_url}/projects",
+        headers=hosting.authorization_header(token),
+        json=project_params.dict(exclude_none=True),
+        timeout=config.http_request_timeout,
+    )
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+            console.debug(f"Reason: {response.content}")
+            console.error("Internal server error. Please contact support.")
+    except requests.exceptions.Timeout:
+        console.error("Unable to create project due to request timeout.")
+    else:
+        console.print(f"New project created (not deployed yet): {project_name}")
+
+
+@project_cli.command(name="list")
+def list_projects(
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+):
+    """List all the projects for the authenticated user."""
+    console.set_log_level(loglevel)
+
+    if not hosting.is_set_up():
+        return
+
+    # Check if the user is authenticated
+    if not (token := hosting.authenticated_token()):
+        return
+
+    response = requests.get(
+        f"{config.cp_backend_url}/projects",
+        headers=hosting.authorization_header(token),
+    )
+    if response.status_code != 200:
+        console.error(f"Unable to list projects due to {response.reason}.")
+        return
+
+    try:
+        for project in response.json():
+            print(project["name"])
+    except Exception as ex:
+        console.debug(f"Unable to parse the response due to {ex}.")
+        console.error("Unable to list projects due to internal errors.")
+
+
+instance_cli = typer.Typer()
+
+
+@instance_cli.command(name="list")
+def list_instances(
+    project_name: str = typer.Option(
+        "-p",
+        "--project-name",
+        help="The name of the project to list instances for.",
+    ),
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+):
+    """List all the hosted instances for the specified project."""
+    console.set_log_level(loglevel)
+
+    if not hosting.is_set_up():
+        return
+
+    if not (token := hosting.authenticated_token()):
+        return
+
+    params = hosting.HostedInstanceGetParam(project_name=project_name)
+    response = requests.get(
+        f"{config.cp_backend_url}/hosted-instances",
+        headers=hosting.authorization_header(token),
+        json=params.dict(exclude_none=True),
+    )
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+            console.debug(f"Reason: {response.content}")
+            console.error("Internal server error. Please contact support.")
+        else:
+            console.error(f"Unable to list hosted instances due to {response.reason}.")
+        return
+    except requests.exceptions.Timeout:
+        console.error("Unable to list hosted instances due to request timeout.")
+        return
+
+    try:
+        # TODO: add project name to the column if project_name not specified
+        fields_to_show = ["key", "backend_initial_region"]
+        field_to_header = {"key": "name", "backend_initial_region": "region"}
+        table = [[instance[k] for k in fields_to_show] for instance in response.json()]
+        print(tabulate(table, headers=list(field_to_header.values())))
+
+    except Exception as ex:
+        console.debug(f"Unable to parse the response due to {ex}.")
+        console.error("Unable to list hosted instances due to internal errors.")
+
+
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
+cli.add_typer(
+    project_cli,
+    name="projects",
+    help="Subcommands for managing the projects for hosting.",
+)
+cli.add_typer(
+    instance_cli,
+    name="instances",
+    help="Subcommands for managing the hosted instance.",
+)
 
 if __name__ == "__main__":
     cli()

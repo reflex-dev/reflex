@@ -188,6 +188,12 @@ class Config(Base):
     # The rxdeploy url.
     rxdeploy_url: Optional[str] = None
 
+    # The Control Plane url for hosting (include the ports).
+    cp_web_url: Optional[str] = None
+    cp_backend_url: Optional[str] = None
+    # TODO: change this back to 1 second
+    http_request_timeout: int = 15  # seconds
+
     # The username.
     username: Optional[str] = None
 

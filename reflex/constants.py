@@ -142,6 +142,9 @@ PACKAGE_LOCK = "package-lock.json"
 REFLEX_JSON = os.path.join(WEB_DIR, "reflex.json")
 # The env json file.
 ENV_JSON = os.path.join(WEB_DIR, "env.json")
+# The hosting config json file
+HOSTING_JSON = os.path.join(REFLEX_DIR, "config.json")
+
 
 # Compiler variables.
 # The extension for compiled Javascript files.
