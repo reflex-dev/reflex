@@ -1,3 +1,4 @@
+from typing import Optional
 from unittest import mock
 
 import pytest
@@ -20,7 +21,7 @@ def model_default_primary() -> Model:
     class ChildModel(Model):
         name: str
 
-    return ChildModel(name="name")  # type: ignore
+    return ChildModel(name="name")
 
 
 @pytest.fixture
@@ -32,10 +33,10 @@ def model_custom_primary() -> Model:
     """
 
     class ChildModel(Model):
-        custom_id: int = sqlmodel.Field(default=None, primary_key=True)
+        custom_id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
         name: str
 
-    return ChildModel(name="name")  # type: ignore
+    return ChildModel(name="name")
 
 
 def test_default_primary_key(model_default_primary):

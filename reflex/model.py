@@ -54,7 +54,7 @@ class Model(Base, sqlmodel.SQLModel):
     """Base class to define a table in the database."""
 
     # The primary key for the table.
-    id: Optional[int] = sqlmodel.Field(primary_key=True)
+    id: Optional[int] = sqlmodel.Field(default=None, primary_key=True)
 
     def __init_subclass__(cls):
         """Drop the default primary key field if any primary key field is defined."""
