@@ -69,7 +69,7 @@ def DynamicRoute():
 
 @pytest.fixture(scope="session")
 def dynamic_route(
-        app_harness_env: Type[AppHarness], tmp_path_factory
+    app_harness_env: Type[AppHarness], tmp_path_factory
 ) -> Generator[AppHarness, None, None]:
     """Start DynamicRoute app at tmp_path via AppHarness.
 
@@ -81,8 +81,8 @@ def dynamic_route(
         running AppHarness instance
     """
     with app_harness_env.create(
-            root=tmp_path_factory.mktemp(f"dynamic_route"),
-            app_source=DynamicRoute,  # type: ignore
+        root=tmp_path_factory.mktemp(f"dynamic_route"),
+        app_source=DynamicRoute,  # type: ignore
     ) as harness:
         yield harness
 
@@ -131,7 +131,7 @@ def backend_state(dynamic_route: AppHarness, driver: WebDriver) -> State:
 
 @pytest.fixture()
 def poll_for_order(
-        dynamic_route: AppHarness, backend_state: State
+    dynamic_route: AppHarness, backend_state: State
 ) -> Callable[[list[str]], None]:
     """Poll for the order list to match the expected order.
 
@@ -151,10 +151,10 @@ def poll_for_order(
 
 
 def test_on_load_navigate(
-        dynamic_route: AppHarness,
-        driver: WebDriver,
-        backend_state: State,
-        poll_for_order: Callable[[list[str]], None],
+    dynamic_route: AppHarness,
+    driver: WebDriver,
+    backend_state: State,
+    poll_for_order: Callable[[list[str]], None],
 ):
     """Click links to navigate between dynamic pages with on_load event.
 
@@ -243,9 +243,9 @@ def test_on_load_navigate(
 
 
 def test_on_load_navigate_non_dynamic(
-        dynamic_route: AppHarness,
-        driver: WebDriver,
-        poll_for_order: Callable[[list[str]], None],
+    dynamic_route: AppHarness,
+    driver: WebDriver,
+    poll_for_order: Callable[[list[str]], None],
 ):
     """Click links to navigate between static pages with on_load event.
 
