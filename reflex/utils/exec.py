@@ -96,7 +96,6 @@ def run_process_and_launch_url(run_command: list[str]):
                     else:
                         console.print("New packages detected: Updating app...")
                 else:
-                    console.debug(line)
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
                         last_hash = new_hash
