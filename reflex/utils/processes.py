@@ -218,7 +218,7 @@ def stream_logs(message: str, process: subprocess.Popen):
             yield line
 
     # Check if the process failed (not printing the logs for SIGINT).
-    if process.returncode not in [0, 2]:
+    if process.returncode not in [0, -2]:
         console.error(f"{message} failed with exit code {process.returncode}")
         for line in logs:
             console.error(line, end="")
