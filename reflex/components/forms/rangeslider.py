@@ -83,8 +83,8 @@ class RangeSlider(ChakraComponent):
         If no children are provided, a default RangeSlider will be created.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
+            **props: The properties of the component.
 
         Returns:
             The RangeSlider component.

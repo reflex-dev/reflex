@@ -83,8 +83,8 @@ class Slider(ChakraComponent):
         If no children are provided, a default slider will be created.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
+            **props: The properties of the component.
 
         Returns:
             The slider component.

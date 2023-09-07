@@ -17,12 +17,12 @@ class Stat(ChakraComponent):
         """Create a stat component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             label: A label for the stat component.
             number: The value of the stat component.
             help_text: A text added to the stat component.
             arrow_type: The type of the arrow ("increase", "decrease", None)
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The stat component.

@@ -73,10 +73,10 @@ class Menu(ChakraComponent):
         """Create a menu component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             button: the button that open the menu.
             items (list): The items of the menu.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The menu component.

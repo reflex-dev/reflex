@@ -72,12 +72,12 @@ class AlertDialog(ChakraComponent):
         """Create an alert dialog component.
 
         Args:
-            children: The children of the alert dialog component.
+            *children: The children of the alert dialog component.
             header: The header of the alert dialog.
             body: The body of the alert dialog.
             footer: The footer of the alert dialog.
             close_button: The close button of the alert dialog.
-            props: The properties of the alert dialog component.
+            **props: The properties of the alert dialog component.
 
         Raises:
             AttributeError: if there is a conflict between the props used.

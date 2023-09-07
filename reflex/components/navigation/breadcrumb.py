@@ -25,9 +25,9 @@ class Breadcrumb(ChakraComponent):
         If the kw-args `items` is provided and is a list, they will be added as children.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             items (list): The items of the breadcrumb: (label, link)
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The breadcrumb component.
@@ -70,10 +70,10 @@ class BreadcrumbItem(ChakraComponent):
         """Create a Breadcrumb Item component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             label: The label used in the link. Defaults to None.
             href: The URL of the link. Defaults to None.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The BreadcrumbItem component

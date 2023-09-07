@@ -78,12 +78,12 @@ class Drawer(ChakraComponent):
         """Create a drawer component.
 
         Args:
-            children: The children of the drawer component.
+            *children: The children of the drawer component.
             header: The header of the drawer.
             body: The body of the drawer.
             footer: The footer of the drawer.
             close_button: The close button of the drawer.
-            props: The properties of the drawer component.
+            **props: The properties of the drawer component.
 
         Raises:
             AttributeError: error that occurs if conflicting props are passed

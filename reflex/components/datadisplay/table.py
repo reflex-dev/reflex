@@ -31,12 +31,12 @@ class Table(ChakraComponent):
         """Create a table component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             caption: The caption of the table component.
             headers: The headers of the table component.
             rows: The rows of the table component.
             footers: The footers of the table component.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The table component.
@@ -71,9 +71,9 @@ class Thead(ChakraComponent):
         """Create a table header component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
             headers (list, optional): List of headers. Defaults to None.
+            **props: The properties of the component.
 
         Returns:
             The table header component.
@@ -96,9 +96,9 @@ class Tbody(ChakraComponent):
         """Create a table body component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
             rows (list[list], optional): The rows of the table body. Defaults to None.
+            **props: The properties of the component.
 
         Returns:
             Component: _description_
@@ -130,9 +130,9 @@ class Tfoot(ChakraComponent):
         """Create a table footer component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
             footers (list, optional): List of footers. Defaults to None.
+            **props: The properties of the component.
 
         Returns:
             The table footer component.
@@ -155,10 +155,10 @@ class Tr(ChakraComponent):
         """Create a table row component.
 
         Args:
-            children: The children of the component.
-            props: The properties of the component.
+            *children: The children of the component.
             cell_type: the type of cells in this table row. "header" or "data". Defaults to None.
             cells: The cells value to add in the table row. Defaults to None.
+            **props: The properties of the component.
 
         Returns:
             The table row component

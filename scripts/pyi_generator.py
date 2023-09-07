@@ -96,8 +96,9 @@ class PyiGenerator:
         typing_imports = self.default_typing_imports | _get_typing_import(
             self.current_module
         )
+        bases = sorted(bases, key=lambda base: base.__name__)
         return [
-            f"from typing import {','.join(typing_imports)}",
+            f"from typing import {','.join(sorted(typing_imports))}",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var, BaseVar, ComputedVar",
             "from reflex.event import EventHandler, EventChain, EventSpec",

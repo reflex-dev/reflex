@@ -23,8 +23,8 @@ class Icon(ChakraIconComponent):
         Run some additional checks on Icon component.
 
         Args:
-            children: The positional arguments
-            props: The keyword arguments
+            *children: The positional arguments
+            **props: The keyword arguments
 
         Raises:
             AttributeError: The errors tied to bad usage of the Icon component.

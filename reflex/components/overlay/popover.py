@@ -97,13 +97,13 @@ class Popover(ChakraComponent):
         """Create a popover component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             trigger: The trigger that opens the popover.
             header: The header of the popover.
             body: The body of the popover.
             footer: The footer of the popover.
             use_close_button: Whether to add a close button on the popover.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The popover component.

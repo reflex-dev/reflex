@@ -36,9 +36,9 @@ class Wrap(ChakraComponent):
         """Return a wrap component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             items (list): The items of the wrap component.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The wrap component.
