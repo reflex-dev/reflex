@@ -109,6 +109,7 @@ def _compile_page(
     # Compile the code to render the component.
     return templates.PAGE.render(
         imports=imports,
+        dynamic_imports=component.get_dynamic_imports(),
         custom_codes=component.get_custom_code(),
         state_name=state.get_name(),
         hooks=component.get_hooks(),
