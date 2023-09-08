@@ -24,5 +24,9 @@ jobs:
           run-poetry-install: true
           create-venv-at-path: .venv
       - run: |
-          poetry run python scripts/pyi_generator.py reflex/components
-          git diff
+          poetry run python scripts/pyi_generator.py
+          if git diff; then
+            echo "No diffs - AOK!"
+          else
+            echo "ERROR: pyi_generator.py output is out of date. Please run scripts/pyi_generator.py and commit the changes."
+          fi
