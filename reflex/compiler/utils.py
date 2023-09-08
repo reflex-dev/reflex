@@ -93,7 +93,6 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
         default, rest = compile_import_statement(fields)
         # prevent lib from being rendered on the page if all imports are NoRenderImportVar
         if all({isinstance(f, NoRenderImportVar) for f in fields}):  # type: ignore
-            print(f"skip {lib} : {fields}")
             continue
 
         if not lib:
