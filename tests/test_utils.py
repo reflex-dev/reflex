@@ -250,23 +250,31 @@ def test_is_generic_alias(cls: type, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "route,expected",
+    "route,format_case,expected",
     [
-        ("", "index"),
-        ("/", "index"),
-        ("custom-route", "custom-route"),
-        ("custom-route/", "custom-route"),
-        ("/custom-route", "custom-route"),
+        ("", True, "index"),
+        ("/", True, "index"),
+        ("custom-route", True, "custom-route"),
+        ("custom-route", False, "custom-route"),
+        ("custom-route/", True, "custom-route"),
+        ("custom-route/", False, "custom-route"),
+        ("/custom-route", True, "custom-route"),
+        ("/custom-route", False, "custom-route"),
+        ("/custom_route", True, "custom-route"),
+        ("/custom_route", False, "custom_route"),
+        ("/CUSTOM_route", True, "custom-route"),
+        ("/CUSTOM_route", False, "CUSTOM_route"),
     ],
 )
-def test_format_route(route: str, expected: bool):
+def test_format_route(route: str, format_case: bool, expected: bool):
     """Test formatting a route.
 
     Args:
         route: The route to format.
+        format_case: Whether to change casing to snake_case.
         expected: The expected formatted route.
     """
-    assert format.format_route(route) == expected
+    assert format.format_route(route, format_case=format_case) == expected
 
 
 @pytest.mark.parametrize(
