@@ -28,6 +28,7 @@ def VarOperations():
     def index():
         return rx.vstack(
             # INT INT
+            # INT INT
             rx.text(
                 VarOperationState.int_var1 + VarOperationState.int_var2,
                 id="int_add_int",
@@ -65,6 +66,7 @@ def VarOperations():
             rx.text(VarOperationState.int_var1 << VarOperationState.int_var2, id="int_lshift_int"),
             rx.text(VarOperationState.int_var1 >> VarOperationState.int_var2, id="int_rshift_int"),
             rx.text(VarOperationState.int_var1 & VarOperationState.int_var2, id="int_and_int"),
+            rx.text((VarOperationState.int_var1 | VarOperationState.int_var2).to_string(), id="int_or_int"),
             rx.text((VarOperationState.int_var1 == VarOperationState.int_var2).to_string(), id="int_eq_int"),
             rx.text((VarOperationState.int_var1 != VarOperationState.int_var2).to_string(), id="int_neq_int"),
 
@@ -100,6 +102,8 @@ def VarOperations():
             rx.text((VarOperationState.float_var1 <= VarOperationState.int_var2).to_string(), id="float_lte_int"),
             rx.text((VarOperationState.float_var1 == VarOperationState.int_var2).to_string(), id="float_eq_int"),
             rx.text((VarOperationState.float_var1 != VarOperationState.int_var2).to_string(), id="float_neq_int"),
+            rx.text((VarOperationState.float_var1 & VarOperationState.int_var2).to_string(), id="float_and_int"),
+            rx.text((VarOperationState.float_var1 | VarOperationState.int_var2).to_string(), id="float_or_int"),
 
             # FLOAT FLOAT
             rx.text(
@@ -133,6 +137,8 @@ def VarOperations():
             rx.text((VarOperationState.float_var1 <= VarOperationState.float_var2).to_string(), id="float_lte_float"),
             rx.text((VarOperationState.float_var1 == VarOperationState.float_var2).to_string(), id="float_eq_float"),
             rx.text((VarOperationState.float_var1 != VarOperationState.float_var2).to_string(), id="float_neq_float"),
+            rx.text((VarOperationState.int_var1 & VarOperationState.int_var2).to_string(), id="float_or_float"),
+            rx.text((VarOperationState.int_var1 | VarOperationState.int_var2).to_string(), id="float_or_float"),
 
             # STR STR
             rx.text(
