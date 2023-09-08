@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 USED_VARIABLES = set()
 
 # Supported operators for all types.
-ALL_OPS = ["==", "!=", "!==", "==="]
+ALL_OPS = ["==", "!=", "!==", "===", "&&", "||"]
 # Delimiters used between function args or operands.
 DELIMITERS = [","]
 # Mapping of valid operations for different type combinations.
@@ -57,12 +57,10 @@ OPERATION_MAPPING = {
         "<=",
         ">=",
         "|",
-        "||",
         "^",
         "<<",
         ">>",
         "&",
-        "&&",
     },
     (int, str): {"*"},
     (int, float): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
@@ -832,6 +830,14 @@ class Var(ABC):
             )
         return self.operation("||", other, type_=bool, flip=True)
 
+    def __xor__(self, other: Var) -> Var:
+        return self.operation("^", other)
+
+    def __lshift__(self, other: Var) -> Var:
+        return self.operation("<<", other)
+
+    def __rshift__(self, other: Var) -> Var:
+        return self.operation(">>", other)
     def __contains__(self, _: Any) -> Var:
         """Override the 'in' operator to alert the user that it is not supported.
 
