@@ -36,6 +36,9 @@ class Tabs(ChakraComponent):
     # "line" | "enclosed" | "enclosed-colored" | "soft-rounded" | "solid-rounded" | "unstyled"
     variant: Var[str]
 
+    # The color scheme of the tabs. (e.g. "blue", "green", "red", etc.)
+    color_scheme: Var[str]
+
     @classmethod
     def create(
         cls, *children, items: Optional[List[Tuple[str, str]]] = None, **props
