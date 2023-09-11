@@ -14,6 +14,13 @@ from typing import TYPE_CHECKING, Any, Type, Union
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
 from plotly.io import to_json
+import mpld3
+
+import matplotlib
+import altair as alt
+
+import bokeh.plotting._figure as figure
+from bokeh.embed import components
 
 from reflex import constants
 from reflex.utils import types
@@ -164,21 +171,6 @@ def to_title_case(text: str) -> str:
     return "".join(word.capitalize() for word in text.split("_"))
 
 
-def to_kebab_case(text: str) -> str:
-    """Convert a string to kebab case.
-
-    The words in the text are converted to lowercase and
-    separated by hyphens.
-
-    Args:
-        text: The string to convert.
-
-    Returns:
-        The title case string.
-    """
-    return to_snake_case(text).replace("_", "-")
-
-
 def format_string(string: str) -> str:
     """Format the given string as a JS string literal..
 
@@ -217,20 +209,18 @@ def format_var(var: Var) -> str:
     return json_dumps(var.full_name)
 
 
-def format_route(route: str, format_case=True) -> str:
+def format_route(route: str) -> str:
     """Format the given route.
 
     Args:
         route: The route to format.
-        format_case: whether to format case to kebab case.
 
     Returns:
         The formatted route.
     """
+    # Strip the route.
     route = route.strip("/")
-    # Strip the route and format casing.
-    if format_case:
-        route = to_kebab_case(route)
+    route = to_snake_case(route).replace("_", "-")
 
     # If the route is empty, return the index route.
     if route == "":
@@ -523,6 +513,19 @@ def format_state(value: Any) -> Any:
     if isinstance(value, go.Figure):
         return json.loads(to_json(value))["data"]  # type: ignore
 
+
+    if isinstance(value, matplotlib.figure.Figure):
+        html_str = mpld3.fig_to_html(value)
+        return html_str  # type: ignore
+    
+    if isinstance(value, alt.Chart):
+        return value.to_html()  # type: ignore
+    
+    if isinstance(value, figure.figure):
+        script, div = components(value)
+        html = f"{script}\n{div}"
+        return components(html) 
+    
     # Convert pandas dataframes to JSON.
     if types.is_dataframe(type(value)):
         return {

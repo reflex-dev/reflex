@@ -140,7 +140,7 @@ def is_dataframe(value: Type) -> bool:
     """
     if is_generic_alias(value) or value == typing.Any:
         return False
-    return value.__name__ == "DataFrame"
+    return value.__name__ == "DataFrame" or value.__name__ == "Chart"
 
 
 def is_image(value: Type) -> bool:

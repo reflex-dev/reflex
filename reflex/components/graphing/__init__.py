@@ -17,5 +17,8 @@ from .victory import (
     Scatter,
     Voronoi,
 )
+from .bokeh import Bokeh
+from .altair import Altair
+from .matplotlib import Pyplot
 
 __all__ = [f for f in dir() if f[0].isupper()]  # type: ignore
