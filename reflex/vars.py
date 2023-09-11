@@ -437,6 +437,7 @@ class Var(ABC):
 
         Raises:
             TypeError: If the operation between two operands is invalid.
+            ValueError: If flip is set to true and value of other is not provided
         """
         # Wrap strings in quotes.
         if isinstance(other, str):

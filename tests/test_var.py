@@ -884,9 +884,9 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
     """Test that operations do not raise a TypeError.
 
     Args:
-    operand1_var: left operand.
-    operand2_var: right operand.
-    operators: list of supported operators.
+        operand1_var: left operand.
+        operand2_var: right operand.
+        operators: list of supported operators.
     """
     for operator in operators:
         operand1_var.operation(op=operator, other=operand2_var)

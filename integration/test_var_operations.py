@@ -545,10 +545,10 @@ def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 @pytest.fixture
 def driver(var_operations: AppHarness):
-    """GEt an instance of the browser open to the form_submit app.
+    """GEt an instance of the browser open to the var operations app.
 
     Args:
-        form_submit: harness for ServerSideEvent app
+        var_operations: harness for VarOperations app
 
     Yields:
         WebDriver instance.
