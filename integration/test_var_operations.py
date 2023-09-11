@@ -6,6 +6,8 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
 
+# pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false
+
 
 def VarOperations():
     """App with var operations."""
@@ -560,6 +562,12 @@ def driver(var_operations: AppHarness):
 
 
 def test_var_operations(driver, var_operations: AppHarness):
+    """Test that the var operations produce the right results.
+
+    Args:
+        driver: selenium WebDriver open to the app
+        var_operations: AppHarness for the var operations app
+    """
     assert var_operations.app_instance is not None, "app is not running"
     # INT INT
     assert driver.find_element(By.ID, "int_add_int").text == "15"

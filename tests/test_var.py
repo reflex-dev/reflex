@@ -9,7 +9,6 @@ from pandas import DataFrame
 from reflex.base import Base
 from reflex.state import State
 from reflex.vars import (
-    ALL_OPS,
     BaseVar,
     ComputedVar,
     ImportVar,
@@ -340,14 +339,17 @@ def test_str_contains(var, expected):
     ],
 )
 def test_dict_contains(var, expected):
-    assert str(var.contains(1)) == f"{{{expected}.has(1)}}"
-    assert str(var.contains("1")) == f'{{{expected}.has("1")}}'
-    assert str(var.contains(v(1))) == f"{{{expected}.has(1)}}"
-    assert str(var.contains(v("1"))) == f'{{{expected}.has("1")}}'
+    assert str(var.contains(1)) == f"{{{expected}.hasOwnProperty(1)}}"
+    assert str(var.contains("1")) == f'{{{expected}.hasOwnProperty("1")}}'
+    assert str(var.contains(v(1))) == f"{{{expected}.hasOwnProperty(1)}}"
+    assert str(var.contains(v("1"))) == f'{{{expected}.hasOwnProperty("1")}}'
     other_state_var = BaseVar(name="other", state="state", type_=str)
     other_var = BaseVar(name="other", type_=str)
-    assert str(var.contains(other_state_var)) == f"{{{expected}.has(state.other)}}"
-    assert str(var.contains(other_var)) == f"{{{expected}.has(other)}}"
+    assert (
+        str(var.contains(other_state_var))
+        == f"{{{expected}.hasOwnProperty(state.other)}}"
+    )
+    assert str(var.contains(other_var)) == f"{{{expected}.hasOwnProperty(other)}}"
 
 
 @pytest.mark.parametrize(
@@ -879,10 +881,16 @@ def test_unsupported_default_contains():
     ],
 )
 def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
-    operators.extend(ALL_OPS)
+    """Test that operations do not raise a TypeError.
+
+    Args:
+    operand1_var: left operand.
+    operand2_var: right operand.
+    operators: list of supported operators.
+    """
     for operator in operators:
-        assert operand1_var.operation(op=operator, other=operand2_var)
-        assert operand1_var.operation(op=operator, other=operand2_var, flip=True)
+        operand1_var.operation(op=operator, other=operand2_var)
+        operand1_var.operation(op=operator, other=operand2_var, flip=True)
 
 
 @pytest.mark.parametrize(

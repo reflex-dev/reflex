@@ -247,6 +247,7 @@ class Var(ABC):
         Raises:
             TypeError: when attempting to bool-ify the Var.
         """
+        print(self)
         raise TypeError(
             f"Cannot convert Var {self.full_name!r} to bool for use with `if`, `and`, `or`, and `not`. "
             "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
@@ -449,27 +450,27 @@ class Var(ABC):
                 "flip cannot be set to True if value of other is not provided"
             )
 
-        props = (other, self) if flip else (self, other)
+        props = (other, self) if flip else (self, other)  # type: ignore
         if other is not None:
             if op and not self.is_valid_operation(
-                types.get_base_class(props[0].type_),
-                types.get_base_class(props[1].type_),
+                types.get_base_class(props[0].type_),  # type: ignore
+                types.get_base_class(props[1].type_),  # type: ignore
                 op,
             ):
                 raise TypeError(
-                    f"Unsupported Operand type(s) for {op}: `{props[0].full_name}` of type {props[0].type_.__name__} and `{props[1].full_name}` of type {props[1].type_.__name__}"
+                    f"Unsupported Operand type(s) for {op}: `{props[0].full_name}` of type {props[0].type_.__name__} and `{props[1].full_name}` of type {props[1].type_.__name__}"  # type: ignore
                 )
             if fn is not None:
                 if invoke_fn:
-                    name = f"{props[0].full_name}.{fn}({props[1].full_name})"
+                    name = f"{props[0].full_name}.{fn}({props[1].full_name})"  # type: ignore
                 else:
-                    name = f"{props[0].full_name} {op} {props[1].full_name}"
+                    name = f"{props[0].full_name} {op} {props[1].full_name}"  # type: ignore
                     name = f"{fn}({name})"
             else:
-                name = f"{props[0].full_name} {op} {props[1].full_name}"
+                name = f"{props[0].full_name} {op} {props[1].full_name}"  # type: ignore
                 name = format.wrap(name, "(")
         else:
-            name = f"{op}{self.full_name}"
+            name = f"{op}{self.full_name}"  # type: ignore
             if fn is not None and not invoke_fn:
                 name = f"{fn}({name})"
             else:
