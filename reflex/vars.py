@@ -71,6 +71,7 @@ OPERATION_MAPPING = {
     (float, int): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
     (list, list): {"+", ">", "<", "<=", ">="},
     (list, int): {"*"},
+    # (dict, dict): {"||", }
 }
 
 
@@ -418,6 +419,7 @@ class Var(ABC):
         type_: Type | None = None,
         flip: bool = False,
         fn: str | None = None,
+        invoke_fn: bool = False,
     ) -> Var:
         """Perform an operation on a var.
 
@@ -427,6 +429,7 @@ class Var(ABC):
             type_: The type of the operation result.
             flip: Whether to flip the order of the operation.
             fn: A function to apply to the operation.
+            invoke_fn: whether to invoke the function.
 
         Returns:
             The operation result.
@@ -439,12 +442,15 @@ class Var(ABC):
             other = Var.create(json.dumps(other))
         else:
             other = Var.create(other)
-        if type_ is None:
-            type_ = self.type_
-        if other is None:
-            name = f"{op}{self.full_name}"
-        else:
-            props = (other, self) if flip else (self, other)
+        type_ = type_ or self.type_
+
+        if other is None and flip:
+            raise ValueError(
+                "flip cannot be set to True if value of other is not provided"
+            )
+
+        props = (other, self) if flip else (self, other)
+        if other is not None:
             if op and not self.is_valid_operation(
                 types.get_base_class(props[0].type_),
                 types.get_base_class(props[1].type_),
@@ -453,12 +459,22 @@ class Var(ABC):
                 raise TypeError(
                     f"Unsupported Operand type(s) for {op}: `{props[0].full_name}` of type {props[0].type_.__name__} and `{props[1].full_name}` of type {props[1].type_.__name__}"
                 )
-
-            name = f"{props[0].full_name} {op} {props[1].full_name}"
-            if fn is None:
+            if fn is not None:
+                if invoke_fn:
+                    name = f"{props[0].full_name}.{fn}({props[1].full_name})"
+                else:
+                    name = f"{props[0].full_name} {op} {props[1].full_name}"
+                    name = f"{fn}({name})"
+            else:
+                name = f"{props[0].full_name} {op} {props[1].full_name}"
                 name = format.wrap(name, "(")
-        if fn is not None:
-            name = f"{fn}({name})"
+        else:
+            name = f"{op}{self.full_name}"
+            if fn is not None and not invoke_fn:
+                name = f"{fn}({name})"
+            else:
+                name = f"{self.full_name}.{fn}()"
+
         return BaseVar(
             name=name,
             type_=type_,
@@ -488,7 +504,7 @@ class Var(ABC):
             int if operand1_type == bool else operand1_type,
             int if operand2_type == bool else operand2_type,
         )
-        return bool(pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair])
+        return pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair]
 
     def compare(self, op: str, other: Var) -> Var:
         """Compare two vars with inequalities.
@@ -674,6 +690,25 @@ class Var(ABC):
         Returns:
             A var representing the product.
         """
+        other_type = other.type_ if isinstance(other, Var) else type(other)
+        if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
+            (int, str),
+            (str, int),
+        ]:
+            return self.operation(other=other, fn="repeat", invoke_fn=True)
+
+        if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
+            (int, list),
+            (list, int),
+        ]:
+            other_name = other.full_name if isinstance(other, Var) else other
+            name = f"Array({other_name}).fill().map(() => {self.full_name}).flat()"
+            return BaseVar(
+                name=name,
+                type_=str,
+                is_local=self.is_local,
+            )
+
         return self.operation("*", other)
 
     def __rmul__(self, other: Var) -> Var:
@@ -831,13 +866,38 @@ class Var(ABC):
         return self.operation("||", other, type_=bool, flip=True)
 
     def __xor__(self, other: Var) -> Var:
+        """Perform a bitwise XOR.
+
+        Args:
+            other: The other var to perform the XOR with.
+
+        Returns:
+            A var representing the result of the XOR operation.
+        """
         return self.operation("^", other)
 
     def __lshift__(self, other: Var) -> Var:
+        """Perform a bitwise left shift.
+
+        Args:
+            other: The number of positions to shift the bits to the left.
+
+        Returns:
+            A var representing the result of the left shift operation.
+        """
         return self.operation("<<", other)
 
     def __rshift__(self, other: Var) -> Var:
+        """Perform a bitwise right shift.
+
+        Args:
+            other: The number of positions to shift the bits to the right.
+
+        Returns:
+            A var representing the result of the right shift operation.
+        """
         return self.operation(">>", other)
+
     def __contains__(self, _: Any) -> Var:
         """Override the 'in' operator to alert the user that it is not supported.
 
@@ -866,13 +926,16 @@ class Var(ABC):
             raise TypeError(
                 f"Var {self.full_name} of type {self.type_} does not support contains check."
             )
+        method = (
+            "hasOwnProperty" if types.get_base_class(self.type_) == dict else "includes"
+        )
         if isinstance(other, str):
             other = Var.create(json.dumps(other), is_string=True)
         elif not isinstance(other, Var):
             other = Var.create(other)
         if types._issubclass(self.type_, Dict):
             return BaseVar(
-                name=f"{self.full_name}.has({other.full_name})",
+                name=f"{self.full_name}.{method}({other.full_name})",
                 type_=bool,
                 is_local=self.is_local,
             )
