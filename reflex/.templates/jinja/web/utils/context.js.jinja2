@@ -1,5 +1,5 @@
 import { createContext, useState } from "react"
-import { Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -26,17 +26,27 @@ export const initialEvents = () => []
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
 
-export function EventLoopProvider({ children }) {
-  const [state, addEvents, connectError] = useEventLoop(
-    initialState,
+function EventLoopProvider({ dispatch, children }) {
+  const [Event, connectError] = useEventLoop(
+    dispatch,
     initialEvents,
     clientStorage,
   )
   return (
-    <EventLoopContext.Provider value={[addEvents, connectError]}>
-      <StateContext.Provider value={state}>
-        {children}
-      </StateContext.Provider>
+    <EventLoopContext.Provider value={[Event, connectError]}>
+      {children}
     </EventLoopContext.Provider>
+  )
+}
+
+function StateProvider({ children }) {
+  const [state, dispatch] = useReducer(applyDelta, initialState)
+
+  return (
+    <StateContext.Provider value={state}>
+      <EventLoopProvider dispatch={dispatch}>
+        {children}
+      </EventLoopProvider>
+    </StateContext.Provider>
   )
 }

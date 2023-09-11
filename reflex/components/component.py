@@ -538,7 +538,7 @@ class Component(Base, ABC):
         """
         return None
 
-    def _render_out_of_band(self, base_state) -> str | None:
+    def _render_out_of_band(self, base_state, events: bool = False) -> str | None:
         from reflex.compiler.templates import REACTIVE_COMPONENT
 
         def _render() -> Tag:
@@ -552,7 +552,7 @@ class Component(Base, ABC):
 
         tag_name = "Comp" + str(random.randint(0, 1024))
         code = REACTIVE_COMPONENT.render(
-            tag_name=tag_name, component=self, state_name=base_state
+            tag_name=tag_name, component=self, state_name=base_state, events=events,
         )
         self.tag = tag_name
         self._render = _render
@@ -569,9 +569,23 @@ class Component(Base, ABC):
 
         # check if any props are state vars
         js_func = None
+        base_state = None
+        events = False
         from reflex.components.base.bare import Bare
 
         if not isinstance(self, Bare):
+            for trigger, event_chain in self.event_triggers.items():
+                if isinstance(event_chain, Var):
+                    continue
+                for spec in event_chain.events:
+                    state, _ = format.get_event_handler_parts(spec.handler)
+                    if state:
+                        print("Component {} has event trigger {} referencing {}.".format(
+                            type(self).__name__, trigger, state
+                        ))
+                        events = True
+                        break
+
             for prop in self.get_props():
                 prop_var = getattr(self, prop)
                 if isinstance(prop_var, Var) and prop_var.state:
@@ -580,12 +594,18 @@ class Component(Base, ABC):
                             type(self).__name__, prop_var
                         )
                     )
-                    js_func = self._render_out_of_band(
-                        base_state=prop_var.state.partition(".")[0],
-                    )
-                    if js_func:
+                    base_state = prop_var.state.partition(".")[0]
+                    if base_state:
                         break
-        if js_func is None:
+
+        if events or base_state:
+            js_func = self._render_out_of_band(
+                base_state=base_state,
+                events=events,
+            )
+            if events:
+                self.event_triggers = {}  # clear them out so they do not render
+        else:
             for child in self.children:
                 if isinstance(child, Bare):
                     child = child.contents
