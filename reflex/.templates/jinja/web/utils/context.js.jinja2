@@ -8,6 +8,7 @@ export const initialState = {}
 {% endif %}
 
 export const ColorModeContext = createContext(null);
+export const DispatchContext = createContext(null);
 export const StateContext = createContext(null);
 export const EventLoopContext = createContext(null);
 {% if client_storage %}
@@ -26,7 +27,8 @@ export const initialEvents = () => []
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
 
-function EventLoopProvider({ dispatch, children }) {
+function EventLoopProvider({ children }) {
+  const dispatch = useContext(DispatchContext)
   const [Event, connectError] = useEventLoop(
     dispatch,
     initialEvents,
@@ -44,9 +46,9 @@ function StateProvider({ children }) {
 
   return (
     <StateContext.Provider value={state}>
-      <EventLoopProvider dispatch={dispatch}>
+      <DispatchContext.Provider value={dispatch}>
         {children}
-      </EventLoopProvider>
+      </DispatchContext.Provider>
     </StateContext.Provider>
   )
 }

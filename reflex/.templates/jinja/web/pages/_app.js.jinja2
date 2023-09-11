@@ -1,7 +1,7 @@
 {% extends "web/pages/base_page.js.jinja2" %}
 
 {% block declaration %}
-import { StateProvider } from "/utils/context.js";
+import { EventLoopProvider, StateProvider } from "/utils/context.js";
 import { ThemeProvider } from 'next-themes'
 
 {% for custom_code in custom_codes %}
@@ -26,7 +26,9 @@ export default function MyApp({ Component, pageProps }) {
     <ThemeProvider defaultTheme="light" storageKey="chakra-ui-color-mode" attribute="class">
       <AppWrap>
         <StateProvider>
-          <Component {...pageProps} />
+          <EventLoopProvider>
+            <Component {...pageProps} />
+          </EventLoopProvider>
         </StateProvider>
       </AppWrap>
     </ThemeProvider>
