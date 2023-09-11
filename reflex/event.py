@@ -330,6 +330,29 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
+def download(url: str, filename: str) -> EventSpec:
+    """Download the file at a given path.
+
+    Args:
+        url : The URL to the file to download.
+        filename : The name that the file should be saved as after download.
+
+    Raises:
+        ValueError: If the URL provided is invalid.
+
+    Returns:
+        EventSpec: An event to download the associated file.
+    """
+    if not url.startswith("/"):
+        raise ValueError("The URL argument should start with a /")
+    return server_side(
+        "_download",
+        get_fn_signature(download),
+        url=url,
+        filename=filename,
+    )
+
+
 def get_event(state, event):
     """Get the event from the given state.
 

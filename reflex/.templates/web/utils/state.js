@@ -73,7 +73,7 @@ export const getToken = () => {
  * @param delta The delta to apply.
  */
 export const applyDelta = (state, delta) => {
-  const new_state = {...state}
+  const new_state = { ...state }
   for (const substate in delta) {
     let s = new_state;
     const path = substate.split(".").slice(1);
@@ -151,6 +151,24 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_set_clipboard") {
     const content = event.payload.content;
     navigator.clipboard.writeText(content);
+    return false;
+  }
+  if (event.name == "_download") {
+    const url = event.payload.url;
+    const filename = event.payload.filename;
+
+    // create a hidden 'a' object that will trigger the download
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(error => console.error('Error downloading file:', error));
     return false;
   }
 
@@ -413,7 +431,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`
       if (client_storage.cookies && state_key in client_storage.cookies) {
-        const cookie_options = {...client_storage.cookies[state_key]}
+        const cookie_options = { ...client_storage.cookies[state_key] }
         const cookie_name = cookie_options.name || state_key
         delete cookie_options.name  // name is not a valid cookie option
         cookies.set(cookie_name, delta[substate][key], cookie_options);
@@ -445,18 +463,18 @@ export const useEventLoop = (
   const router = useRouter()
   const [state, dispatch] = useReducer(applyDelta, initial_state)
   const [connectError, setConnectError] = useState(null)
-  
+
   // Function to add new events to the event queue.
   const Event = (events, _e) => {
-      preventDefault(_e);
-      queueEvents(events, socket)
+    preventDefault(_e);
+    queueEvents(events, socket)
   }
 
   const sentHydrate = useRef(false);  // Avoid double-hydrate due to React strict-mode
   // initial state hydrate
   useEffect(() => {
     if (router.isReady && !sentHydrate.current) {
-      Event(initial_events.map((e) => ({...e})))
+      Event(initial_events.map((e) => ({ ...e })))
       sentHydrate.current = true
     }
   }, [router.isReady])
