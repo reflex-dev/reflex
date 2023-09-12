@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import datetime
 import functools
 from typing import Dict, List
@@ -1405,7 +1406,6 @@ def state_manager(request):
 async def test_state_manager_modify_state(state_manager):
     """Test that the state manager can modify a state exclusively.
 
-
     Args:
         state_manager: A state manager instance.
     """
@@ -1429,3 +1429,36 @@ async def test_state_manager_modify_state(state_manager):
     assert not sm2._states_locks
     if state_manager._states_locks:
         assert sm2._states_locks != state_manager._states_locks
+
+
+@pytest.mark.asyncio
+async def test_state_manager_contend(state_manager):
+    """Multiple coroutines attempting to access the same state.
+
+    Args:
+        state_manager: A state manager instance.
+    """
+    token = "token"
+    n_coroutines = 10
+    exp_num1 = 10
+
+    async with state_manager.modify_state(token) as state:
+        state.num1 = 0
+
+    async def _coro():
+        async with state_manager.modify_state(token) as state:
+            await asyncio.sleep(0.01)
+            state.num1 += 1
+
+    tasks = [asyncio.create_task(_coro()) for _ in range(n_coroutines)]
+
+    for f in asyncio.as_completed(tasks):
+        await f
+
+    assert (await state_manager.get_state(token)).num1 == exp_num1
+
+    if state_manager.redis is None:
+        assert token in state_manager._states_locks
+        assert not state_manager._states_locks[token].locked()
+    else:
+        assert (await state_manager.redis.get(f"{token}_lock")) is None
