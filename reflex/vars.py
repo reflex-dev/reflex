@@ -414,8 +414,8 @@ class Var(ABC):
 
     def operation(
         self,
-        operator: str = "",
-        other_operand: Var | None = None,
+        op: str = "",
+        other: Var | None = None,
         type_: Type | None = None,
         flip: bool = False,
         fn: str | None = None,
@@ -424,8 +424,8 @@ class Var(ABC):
         """Perform an operation on a var.
 
         Args:
-            operator: The operation to perform.
-            other_operand: The other var to perform the operation on.
+            op: The operation to perform.
+            other: The other var to perform the operation on.
             type_: The type of the operation result.
             flip: Whether to flip the order of the operation.
             fn: A function to apply to the operation.
@@ -438,31 +438,29 @@ class Var(ABC):
             TypeError: If the operation between two operands is invalid.
             ValueError: If flip is set to true and value of operand is not provided
         """
-        if isinstance(other_operand, str):
-            other_operand = Var.create(json.dumps(other_operand))
+        if isinstance(other, str):
+            other = Var.create(json.dumps(other))
         else:
-            other_operand = Var.create(other_operand)
+            other = Var.create(other)
 
         type_ = type_ or self.type_
 
-        if other_operand is None and flip:
+        if other is None and flip:
             raise ValueError(
                 "flip_operands cannot be set to True if the value of operand is not provided"
             )
 
-        left_operand, right_operand = (
-            (other_operand, self) if flip else (self, other_operand)
-        )
+        left_operand, right_operand = (other, self) if flip else (self, other)
 
-        if other_operand is not None:
+        if other is not None:
             # check if the operation between operands is valid.
-            if operator and not self.is_valid_operation(
+            if op and not self.is_valid_operation(
                 types.get_base_class(left_operand.type_),  # type: ignore
                 types.get_base_class(right_operand.type_),  # type: ignore
-                operator,
+                op,
             ):
                 raise TypeError(
-                    f"Unsupported Operand type(s) for {operator}: `{left_operand.full_name}` of type {left_operand.type_.__name__} and `{right_operand.full_name}` of type {right_operand.type_.__name__}"  # type: ignore
+                    f"Unsupported Operand type(s) for {op}: `{left_operand.full_name}` of type {left_operand.type_.__name__} and `{right_operand.full_name}` of type {right_operand.type_.__name__}"  # type: ignore
                 )
 
             # apply function to operands
@@ -470,13 +468,13 @@ class Var(ABC):
                 if invoke_fn:
                     operation_name = f"{left_operand.full_name}.{fn}({right_operand.full_name})"  # type: ignore
                 else:
-                    operation_name = f"{left_operand.full_name} {operator} {right_operand.full_name}"  # type: ignore
+                    operation_name = f"{left_operand.full_name} {op} {right_operand.full_name}"  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
-                operation_name = f"{left_operand.full_name} {operator} {right_operand.full_name}"  # type: ignore
+                operation_name = f"{left_operand.full_name} {op} {right_operand.full_name}"  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
-            operation_name = f"{operator}{self.full_name}"
+            operation_name = f"{op}{self.full_name}"
             # apply function to operands
             if fn is not None:
                 operation_name = (
@@ -709,7 +707,7 @@ class Var(ABC):
             (int, str),
             (str, int),
         ]:
-            return self.operation(other_operand=other, fn="repeat", invoke_fn=True)
+            return self.operation(other=other, fn="repeat", invoke_fn=True)
 
         # For list-int multiplication, we use the Array function.
         # i.e
