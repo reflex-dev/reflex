@@ -809,9 +809,6 @@ def test_unsupported_default_contains():
                 "<=",
                 ">=",
                 "|",
-                "^",
-                "<<",
-                ">>",
                 "&",
             ],
         ),
@@ -836,9 +833,6 @@ def test_unsupported_default_contains():
                 "<=",
                 ">=",
                 "|",
-                "^",
-                "<<",
-                ">>",
                 "&",
             ],
         ),
@@ -872,9 +866,6 @@ def test_unsupported_default_contains():
                 "<=",
                 ">=",
                 "|",
-                "^",
-                "<<",
-                ">>",
                 "&",
             ],
         ),
@@ -896,6 +887,15 @@ def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[s
 @pytest.mark.parametrize(
     "operand1_var,operand2_var,operators",
     [
+        (
+            Var.create(10),
+            Var.create(5),
+            [
+                "^",
+                "<<",
+                ">>",
+            ],
+        ),
         (
             Var.create(10.5),
             Var.create(5),
