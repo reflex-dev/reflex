@@ -504,7 +504,10 @@ def VarOperations():
             ),
             #
             # # DICT, DICT
-            rx.text((VarOperationState.dict1 | VarOperationState.dict2).to_string(), id="dict_or_dict"),
+            rx.text(
+                (VarOperationState.dict1 | VarOperationState.dict2).to_string(),
+                id="dict_or_dict",
+            ),
             rx.text(
                 (VarOperationState.dict1 & VarOperationState.dict2).to_string(),
                 id="dict_and_dict",
