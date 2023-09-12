@@ -443,7 +443,7 @@ class Var(ABC):
 
         if other is None and flip:
             raise ValueError(
-                "flip_operands cannot be set to True if the value of operand is not provided"
+                "flip_operands cannot be set to True if the value of 'other' operand is not provided"
             )
 
         left_operand, right_operand = (other, self) if flip else (self, other)
@@ -462,14 +462,18 @@ class Var(ABC):
             # apply function to operands
             if fn is not None:
                 if invoke_fn:
+                    # invoke the function on left operand.
                     operation_name = f"{left_operand.full_name}.{fn}({right_operand.full_name})"  # type: ignore
                 else:
+                    # pass the operands as arguments to the function.
                     operation_name = f"{left_operand.full_name} {op} {right_operand.full_name}"  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
+                # apply operator to operands (left operand <operator> right_operand)
                 operation_name = f"{left_operand.full_name} {op} {right_operand.full_name}"  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
+            # apply operator to left operand (<operator> left_operand)
             operation_name = f"{op}{self.full_name}"
             # apply function to operands
             if fn is not None:
@@ -644,8 +648,10 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
-        #
         other_type = other.type_ if isinstance(other, Var) else type(other)
+        # For list-list addition, javascript concatenates the content of the lists instead of
+        # merging the list, and for that reason we use the spread operator available through spreadArraysOrObjects
+        # utility function
         if (
             types.get_base_class(self.type_) == list
             and types.get_base_class(other_type) == list
