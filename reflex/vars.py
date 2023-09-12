@@ -63,15 +63,11 @@ OPERATION_MAPPING = {
         "&",
     },
     (int, str): {"*"},
-    (int, float): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
     (int, list): {"*"},
     (str, str): {"+", ">", "<", "<=", ">="},
-    (str, int): {"*"},
     (float, float): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
     (float, int): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
     (list, list): {"+", ">", "<", "<=", ">="},
-    (list, int): {"*"},
-    # (dict, dict): {"||", }
 }
 
 
@@ -508,9 +504,14 @@ class Var(ABC):
             return True
 
         # bools are subclasses of ints
-        pair = (
-            int if operand1_type == bool else operand1_type,
-            int if operand2_type == bool else operand2_type,
+        pair = tuple(
+            sorted(
+                [
+                    int if operand1_type == bool else operand1_type,
+                    int if operand2_type == bool else operand2_type,
+                ],
+                key=lambda x: x.__name__,
+            )
         )
         return pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair]
 
@@ -844,19 +845,7 @@ class Var(ABC):
 
         Returns:
             A var representing the logical or.
-
-        Raises:
-            TypeError: the operation is not supported
         """
-        other_type = other.type_ if isinstance(other, Var) else type(other)
-
-        if (
-            types.get_base_class(self.type_) == dict
-            and types.get_base_class(other_type) == dict
-        ):
-            raise TypeError(
-                "'|' operator not supported for Var types, use Var.update() instead."
-            )
         return self.operation("||", other, type_=bool)
 
     def __ror__(self, other: Var) -> Var:
