@@ -277,6 +277,7 @@ def test_basic_operations(TestObj):
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
+    assert str(v([1, 2]) + v([3, 4])) == "{spreadArraysOrObjects([1, 2] , [3, 4])}"
 
     # Tests for reverse operation
     assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
@@ -338,14 +339,17 @@ def test_str_contains(var, expected):
     ],
 )
 def test_dict_contains(var, expected):
-    assert str(var.contains(1)) == f"{{{expected}.has(1)}}"
-    assert str(var.contains("1")) == f'{{{expected}.has("1")}}'
-    assert str(var.contains(v(1))) == f"{{{expected}.has(1)}}"
-    assert str(var.contains(v("1"))) == f'{{{expected}.has("1")}}'
+    assert str(var.contains(1)) == f"{{{expected}.hasOwnProperty(1)}}"
+    assert str(var.contains("1")) == f'{{{expected}.hasOwnProperty("1")}}'
+    assert str(var.contains(v(1))) == f"{{{expected}.hasOwnProperty(1)}}"
+    assert str(var.contains(v("1"))) == f'{{{expected}.hasOwnProperty("1")}}'
     other_state_var = BaseVar(name="other", state="state", type_=str)
     other_var = BaseVar(name="other", type_=str)
-    assert str(var.contains(other_state_var)) == f"{{{expected}.has(state.other)}}"
-    assert str(var.contains(other_var)) == f"{{{expected}.has(other)}}"
+    assert (
+        str(var.contains(other_state_var))
+        == f"{{{expected}.hasOwnProperty(state.other)}}"
+    )
+    assert str(var.contains(other_var)) == f"{{{expected}.hasOwnProperty(other)}}"
 
 
 @pytest.mark.parametrize(
@@ -784,3 +788,405 @@ def test_unsupported_default_contains():
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."
     )
+
+
+@pytest.mark.parametrize(
+    "operand1_var,operand2_var,operators",
+    [
+        (
+            Var.create(10),
+            Var.create(5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "&",
+            ],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(5),
+            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+        ),
+        (
+            Var.create(5),
+            Var.create(True),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "&",
+            ],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(5.5),
+            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(True),
+            ["+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="],
+        ),
+        (Var.create("10"), Var.create("5"), ["+", ">", "<", "<=", ">="]),
+        (Var.create([10, 20]), Var.create([5, 6]), ["+", ">", "<", "<=", ">="]),
+        (Var.create([10, 20]), Var.create(5), ["*"]),
+        (Var.create([10, 20]), Var.create(True), ["*"]),
+        (
+            Var.create(True),
+            Var.create(True),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "&",
+            ],
+        ),
+    ],
+)
+def test_valid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
+    """Test that operations do not raise a TypeError.
+
+    Args:
+        operand1_var: left operand.
+        operand2_var: right operand.
+        operators: list of supported operators.
+    """
+    for operator in operators:
+        operand1_var.operation(op=operator, other=operand2_var)
+        operand1_var.operation(op=operator, other=operand2_var, flip=True)
+
+
+@pytest.mark.parametrize(
+    "operand1_var,operand2_var,operators",
+    [
+        (
+            Var.create(10),
+            Var.create(5),
+            [
+                "^",
+                "<<",
+                ">>",
+            ],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(5),
+            [
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(True),
+            [
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create(10.5),
+            Var.create(5.5),
+            [
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create("10"),
+            Var.create("5"),
+            [
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create([10, 20]),
+            Var.create([5, 6]),
+            [
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create([10, 20]),
+            Var.create(5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create([10, 20]),
+            Var.create(True),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create([10, 20]),
+            Var.create("5"),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create([10, 20]),
+            Var.create({"key": "value"}),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create([10, 20]),
+            Var.create(5.5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create({"key": "value"}),
+            Var.create({"another_key": "another_value"}),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create({"key": "value"}),
+            Var.create(5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create({"key": "value"}),
+            Var.create(True),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create({"key": "value"}),
+            Var.create(5.5),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+        (
+            Var.create({"key": "value"}),
+            Var.create("5"),
+            [
+                "+",
+                "-",
+                "/",
+                "//",
+                "*",
+                "%",
+                "**",
+                ">",
+                "<",
+                "<=",
+                ">=",
+                "|",
+                "^",
+                "<<",
+                ">>",
+                "&",
+            ],
+        ),
+    ],
+)
+def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List[str]):
+    for operator in operators:
+        with pytest.raises(TypeError):
+            operand1_var.operation(op=operator, other=operand2_var)
+
+        with pytest.raises(TypeError):
+            operand1_var.operation(op=operator, other=operand2_var, flip=True)
