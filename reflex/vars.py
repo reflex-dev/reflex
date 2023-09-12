@@ -634,11 +634,12 @@ class Var(ABC):
         """
         return self.compare("<=", other)
 
-    def __add__(self, other: Var) -> Var:
+    def __add__(self, other: Var, flip=False) -> Var:
         """Add two vars.
 
         Args:
             other: The other var to add.
+            flip: Whether to flip operands.
 
         Returns:
             A var representing the sum.
@@ -649,8 +650,8 @@ class Var(ABC):
             types.get_base_class(self.type_) == list
             and types.get_base_class(other_type) == list
         ):
-            return self.operation(",", other, fn="spreadArraysOrObjects")
-        return self.operation("+", other)
+            return self.operation(",", other, fn="spreadArraysOrObjects", flip=flip)
+        return self.operation("+", other, flip=flip)
 
     def __radd__(self, other: Var) -> Var:
         """Add two vars.
@@ -661,13 +662,7 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
-        other_type = other.type_ if isinstance(other, Var) else type(other)
-        if (
-            types.get_base_class(self.type_) == list
-            and types.get_base_class(other_type) == list
-        ):
-            return self.operation(",", other, fn="spreadArraysOrObjects")
-        return self.operation("+", other, flip=True)
+        return self.__add__(other=other, flip=True)
 
     def __sub__(self, other: Var) -> Var:
         """Subtract two vars.
@@ -691,19 +686,19 @@ class Var(ABC):
         """
         return self.operation("-", other, flip=True)
 
-    def __mul__(self, other: Var) -> Var:
+    def __mul__(self, other: Var, flip=True) -> Var:
         """Multiply two vars.
 
         Args:
             other: The other var to multiply.
+            flip: Whether to flip operands
 
         Returns:
             A var representing the product.
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
         # For str-int multiplication, we use the repeat function.
-        # i.e
-        # "hello" * 2 is equivalent to "hello".repeat(2) in js.
+        # i.e "hello" * 2 is equivalent to "hello".repeat(2) in js.
         if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
             (int, str),
             (str, int),
@@ -711,8 +706,7 @@ class Var(ABC):
             return self.operation(other=other, fn="repeat", invoke_fn=True)
 
         # For list-int multiplication, we use the Array function.
-        # i.e
-        # ["hello"] * 2 is equivalent to Array(2).fill().map(() => ["hello"]).flat() in js.
+        # i.e ["hello"] * 2 is equivalent to Array(2).fill().map(() => ["hello"]).flat() in js.
         if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
             (int, list),
             (list, int),
@@ -736,7 +730,7 @@ class Var(ABC):
         Returns:
             A var representing the product.
         """
-        return self.operation("*", other, flip=True)
+        return self.__mul__(other=other, flip=True)
 
     def __pow__(self, other: Var) -> Var:
         """Raise a var to a power.
@@ -819,10 +813,29 @@ class Var(ABC):
         """Perform a logical and.
 
         Args:
-            other: The other var to perform the logical and with.
+            other: The other var to perform the logical AND with.
 
         Returns:
-            A var representing the logical and.
+            A var representing the logical AND.
+
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '&&' operator) of a logical AND operation.
+            In JavaScript, the
+            logical OR operator '&&' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical AND 'and' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely.
+            Therefore, this method leverages the
+            bitwise AND '__and__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 & var2
+        >>> print(js_code.full_name)
+        '(true && false)'
         """
         return self.operation("&&", other, type_=bool)
 
@@ -830,10 +843,29 @@ class Var(ABC):
         """Perform a logical and.
 
         Args:
-            other: The other var to perform the logical and with.
+            other: The other var to perform the logical AND with.
 
         Returns:
-            A var representing the logical and.
+            A var representing the logical AND.
+
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '&&' operator) of a logical AND operation.
+            In JavaScript, the
+            logical OR operator '&&' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical AND 'and' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely.
+            Therefore, this method leverages the
+            bitwise AND '__rand__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 & var2
+        >>> print(js_code.full_name)
+        '(false && true)'
         """
         return self.operation("&&", other, type_=bool, flip=True)
 
@@ -845,6 +877,23 @@ class Var(ABC):
 
         Returns:
             A var representing the logical or.
+
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '||' operator) of a logical OR operation. In JavaScript, the
+            logical OR operator '||' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical OR 'or' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely. Therefore, this method leverages the
+            bitwise OR '__or__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 | var2
+        >>> print(js_code.full_name)
+        '(true || false)'
         """
         return self.operation("||", other, type_=bool)
 
@@ -857,17 +906,23 @@ class Var(ABC):
         Returns:
             A var representing the logical or.
 
-        Raises:
-            TypeError: the operation is not supported
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '||' operator) of a logical OR operation. In JavaScript, the
+            logical OR operator '||' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical OR 'or' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely. Therefore, this method leverages the
+            bitwise OR '__or__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 | var2
+        >>> print(js_code)
+        'false || true'
         """
-        other_type = other.type_ if isinstance(other, Var) else type(other)
-        if (
-            types.get_base_class(self.type_) == dict
-            and types.get_base_class(other_type) == dict
-        ):
-            raise TypeError(
-                "'|' operator not supported for Var types, use Var.update() instead."
-            )
         return self.operation("||", other, type_=bool, flip=True)
 
     def __xor__(self, other: Var) -> Var:
