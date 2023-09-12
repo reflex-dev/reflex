@@ -928,17 +928,6 @@ class Var(ABC):
         """
         return self.operation("||", other, type_=bool, flip=True)
 
-    def __xor__(self, other: Var) -> Var:
-        """Perform a bitwise XOR.
-
-        Args:
-            other: The other var to perform the XOR with.
-
-        Returns:
-            A var representing the result of the XOR operation.
-        """
-        return self.operation("^", other)
-
     def __contains__(self, _: Any) -> Var:
         """Override the 'in' operator to alert the user that it is not supported.
 
