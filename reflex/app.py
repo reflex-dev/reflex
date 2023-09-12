@@ -254,9 +254,9 @@ class App(Base):
         """
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.preprocess):
-                out = await middleware.preprocess(app=self, state=state, event=event)
+                out = await middleware.preprocess(app=self, state=state, event=event)  # type: ignore
             else:
-                out = middleware.preprocess(app=self, state=state, event=event)
+                out = middleware.preprocess(app=self, state=state, event=event)  # type: ignore
             if out is not None:
                 return out  # type: ignore
 
@@ -279,11 +279,11 @@ class App(Base):
         for middleware in self.middleware:
             if asyncio.iscoroutinefunction(middleware.postprocess):
                 out = await middleware.postprocess(
-                    app=self, state=state, event=event, update=update
+                    app=self, state=state, event=event, update=update  # type: ignore
                 )
             else:
                 out = middleware.postprocess(
-                    app=self, state=state, event=event, update=update
+                    app=self, state=state, event=event, update=update  # type: ignore
                 )
             if out is not None:
                 return out  # type: ignore
@@ -360,7 +360,10 @@ class App(Base):
             assert isinstance(
                 component, Callable
             ), "Route must be set if component is not a callable."
-            route = component.__name__
+            # Format the route.
+            route = format.format_route(component.__name__)
+        else:
+            route = format.format_route(route, format_case=False)
 
         # Check if the route given is valid
         verify_route_validity(route)
@@ -392,9 +395,6 @@ class App(Base):
         # Add script tags if given
         if script_tags:
             component.children.extend(script_tags)
-
-        # Format the route.
-        route = format.format_route(route)
 
         # Add the page.
         self._check_routes_conflict(route)
@@ -534,7 +534,7 @@ class App(Base):
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
         for package in frontend_packages:
-            if package in get_config().tailwind.get("plugins", []):  # type: ignore
+            if package in (get_config().tailwind or {}).get("plugins", []):  # type: ignore
                 console.warn(
                     f"Tailwind packages are inferred from 'plugins', remove `{package}` from `frontend_packages`"
                 )

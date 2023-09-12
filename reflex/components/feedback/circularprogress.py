@@ -42,9 +42,9 @@ class CircularProgress(ChakraComponent):
         """Create a circular progress component.
 
         Args:
-            children: the children of the component.
+            *children: the children of the component.
             label: A label to add in the circular progress. Defaults to None.
-            props: the props of the component.
+            **props: the props of the component.
 
         Returns:
             The circular progress component.

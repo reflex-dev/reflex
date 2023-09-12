@@ -40,12 +40,12 @@ class Accordion(ChakraComponent):
         """Create an accordion component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             items: The items of the accordion component: list of tuples (label,panel)
             icon_pos: The position of the arrow icon of the accordion. "right", "left" or None
             allow_multiple: The allow_multiple property of the accordion. (True or False)
             allow_toggle: The allow_toggle property of the accordion. (True or False)
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The accordion component

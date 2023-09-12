@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import os
+import re
 import sys
 from inspect import getfullargspec
 from pathlib import Path
@@ -95,14 +96,15 @@ class PyiGenerator:
         typing_imports = self.default_typing_imports | _get_typing_import(
             self.current_module
         )
+        bases = sorted(bases, key=lambda base: base.__name__)
         return [
-            f"from typing import {','.join(typing_imports)}",
+            f"from typing import {','.join(sorted(typing_imports))}",
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var, BaseVar, ComputedVar",
-            "from reflex.event import EventChain",
+            "from reflex.event import EventHandler, EventChain, EventSpec",
         ]
 
-    def _generate_pyi_class(self, _class):
+    def _generate_pyi_class(self, _class: type[Component]):
         create_spec = getfullargspec(_class.create)
         lines = [
             "",
@@ -121,11 +123,59 @@ class PyiGenerator:
                 continue
             definition += f"{name}: {_get_type_hint(value)} = None, "
 
-        definition = definition.rstrip(", ")
-        definition += f", **props) -> '{_class.__name__}': ... # type: ignore"
+        for trigger in sorted(_class().get_triggers()):
+            definition += f"{trigger}: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, "
 
+        definition = definition.rstrip(", ")
+        definition += f", **props) -> '{_class.__name__}': # type: ignore\n"
+
+        definition += self._generate_docstrings(_class, _class.__annotations__.keys())
         lines.append(definition)
+        lines.append("        ...")
         return lines
+
+    def _generate_docstrings(self, _class, _props):
+        props_comments = {}
+        comments = []
+        for _i, line in enumerate(inspect.getsource(_class).splitlines()):
+            reached_functions = re.search("def ", line)
+            if reached_functions:
+                # We've reached the functions, so stop.
+                break
+
+            # Get comments for prop
+            if line.strip().startswith("#"):
+                comments.append(line)
+                continue
+
+            # Check if this line has a prop.
+            match = re.search("\\w+:", line)
+            if match is None:
+                # This line doesn't have a var, so continue.
+                continue
+
+            # Get the prop.
+            prop = match.group(0).strip(":")
+            if prop in _props:
+                # This isn't a prop, so continue.
+                props_comments[prop] = "\n".join(
+                    [comment.strip().strip("#") for comment in comments]
+                )
+                comments.clear()
+                continue
+        new_docstring = []
+        for i, line in enumerate(_class.create.__doc__.splitlines()):
+            if i == 0:
+                new_docstring.append(" " * 8 + '"""' + line)
+            else:
+                new_docstring.append(line)
+            if "*children" in line:
+                for nline in [
+                    f"{line.split('*')[0]}{n}:{c}" for n, c in props_comments.items()
+                ]:
+                    new_docstring.append(nline)
+        new_docstring += ['"""']
+        return "\n".join(new_docstring)
 
     def _generate_pyi_variable(self, _name, _var):
         return _get_var_definition(self.current_module, _name)
@@ -177,11 +227,8 @@ class PyiGenerator:
             (name, obj)
             for name, obj in vars(self.current_module).items()
             if not name.startswith("__")
-            # and (
-            #     not inspect.getmodule(obj)
-            #     or inspect.getmodule(obj) == self.current_module
-            # )
-            and not inspect.isclass(obj) and not inspect.isfunction(obj)
+            and not inspect.isclass(obj)
+            and not inspect.isfunction(obj)
         ]
 
         functions = [

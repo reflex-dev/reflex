@@ -92,10 +92,10 @@ def run_process_and_launch_url(run_command: list[str]):
                         if get_config().frontend_path != "":
                             url = urljoin(url, get_config().frontend_path)
                         console.print(f"App running at: [bold green]{url}")
+                        first_run = False
                     else:
-                        console.print("New packages detected updating app...")
+                        console.print("New packages detected: Updating app...")
                 else:
-                    console.debug(line)
                     new_hash = detect_package_change(json_file_path)
                     if new_hash != last_hash:
                         last_hash = new_hash

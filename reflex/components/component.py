@@ -517,6 +517,35 @@ class Component(Base, ABC):
         # Return the code.
         return code
 
+    def _get_dynamic_imports(self) -> Optional[str]:
+        """Get dynamic import for the component.
+
+        Returns:
+            The dynamic import.
+        """
+        return None
+
+    def get_dynamic_imports(self) -> Set[str]:
+        """Get dynamic imports for the component and its children.
+
+        Returns:
+            The dynamic imports.
+        """
+        # Store the import in a set to avoid duplicates.
+        dynamic_imports = set()
+
+        # Get dynamic import for this component.
+        dynamic_import = self._get_dynamic_imports()
+        if dynamic_import:
+            dynamic_imports.add(dynamic_import)
+
+        # Get the dynamic imports from children
+        for child in self.children:
+            dynamic_imports |= child.get_dynamic_imports()
+
+        # Return the dynamic imports
+        return dynamic_imports
+
     def _get_imports(self) -> imports.ImportDict:
         imports = {}
         if self.library is not None and self.tag is not None:
@@ -846,7 +875,7 @@ class NoSSRComponent(Component):
 
         return imports
 
-    def _get_custom_code(self) -> str:
+    def _get_dynamic_imports(self) -> str:
         opts_fragment = ", { ssr: false });"
 
         # extract the correct import name from library name

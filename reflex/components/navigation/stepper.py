@@ -33,9 +33,9 @@ class Stepper(ChakraComponent):
         If the kw-args `items` is provided and is a list, they will be added as children.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             items (list): The child components for each step.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The stepper component.

@@ -25,9 +25,9 @@ class List(ChakraComponent):
         """Create a list component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             items: A list of items to add to the list.
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The list component.

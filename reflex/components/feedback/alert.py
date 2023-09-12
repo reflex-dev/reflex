@@ -23,11 +23,11 @@ class Alert(ChakraComponent):
         """Create an alert component.
 
         Args:
-            children: The children of the component.
+            *children: The children of the component.
             icon: The icon of the alert.
             title: The title of the alert.
             desc: The description of the alert
-            props: The properties of the component.
+            **props: The properties of the component.
 
         Returns:
             The alert component.

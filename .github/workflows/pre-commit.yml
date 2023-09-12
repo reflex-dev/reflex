@@ -13,12 +13,12 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
           # running vs. one version of Python is OK
           # i.e. ruff, black, etc.
-          python-version: 3.11
+          python-version: 3.11.5
           run-poetry-install: true
           shell: bash
           create-venv-at-path: .venv

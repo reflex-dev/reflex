@@ -413,7 +413,7 @@ const applyClientStorageDelta = (client_storage, delta) => {
     for (const key in delta[substate]) {
       const state_key = `${substate}.${key}`
       if (client_storage.cookies && state_key in client_storage.cookies) {
-        const cookie_options = client_storage.cookies[state_key]
+        const cookie_options = {...client_storage.cookies[state_key]}
         const cookie_name = cookie_options.name || state_key
         delete cookie_options.name  // name is not a valid cookie option
         cookies.set(cookie_name, delta[substate][key], cookie_options);

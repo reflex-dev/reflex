@@ -33,6 +33,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     },
     "/utils/context.js": {
         ImportVar(tag="EventLoopContext"),
+        ImportVar(tag="initialEvents"),
         ImportVar(tag="StateContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
@@ -108,6 +109,7 @@ def _compile_page(
     # Compile the code to render the component.
     return templates.PAGE.render(
         imports=imports,
+        dynamic_imports=component.get_dynamic_imports(),
         custom_codes=component.get_custom_code(),
         state_name=state.get_name(),
         hooks=component.get_hooks(),
