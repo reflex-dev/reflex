@@ -516,7 +516,7 @@ def VarOperations():
 
 @pytest.fixture(scope="session")
 def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
-    """Start FormSubmit app at tmp_path via AppHarness.
+    """Start VarOperations app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
