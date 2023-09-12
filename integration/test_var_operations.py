@@ -534,7 +534,7 @@ def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 @pytest.fixture
 def driver(var_operations: AppHarness):
-    """GEt an instance of the browser open to the var operations app.
+    """Get an instance of the browser open to the var operations app.
 
     Args:
         var_operations: harness for VarOperations app
