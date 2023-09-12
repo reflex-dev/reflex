@@ -11,7 +11,7 @@ import reflex as rx
 from reflex.base import Base
 from reflex.constants import IS_HYDRATED, RouteVar
 from reflex.event import Event, EventHandler
-from reflex.state import State
+from reflex.state import State, StateManager
 from reflex.utils import format
 from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
 
@@ -1375,3 +1375,57 @@ def test_state_with_invalid_yield():
         "must only return/yield: None, Events or other EventHandlers"
         in err.value.args[0]
     )
+
+
+@pytest.fixture(scope="function", params=["in_process", "redis"])
+def state_manager(request):
+    """Instance of state manager parametrized for redis and in-process.
+
+    Args:
+        request: pytest request object.
+
+    Returns:
+        A state manager instance
+    """
+    state_manager = StateManager()
+    state_manager.setup(TestState)
+    assert not state_manager._states_locks
+
+    if request.param == "redis":
+        if state_manager.redis is None:
+            pytest.skip("Test requires redis")
+    else:
+        # explicitly NOT using redis
+        state_manager.redis = None
+
+    return state_manager
+
+
+@pytest.mark.asyncio
+async def test_state_manager_modify_state(state_manager):
+    """Test that the state manager can modify a state exclusively.
+
+
+    Args:
+        state_manager: A state manager instance.
+    """
+    token = "token"
+
+    async with state_manager.modify_state(token):
+        if state_manager.redis is None:
+            assert token in state_manager._states_locks
+            assert state_manager._states_locks[token].locked()
+        else:
+            assert await state_manager.redis.get(f"{token}_lock")
+    # lock should be dropped after exiting the context
+    if state_manager.redis is None:
+        assert not state_manager._states_locks[token].locked()
+    else:
+        assert (await state_manager.redis.get(f"{token}_lock")) is None
+
+    # separate instances should NOT share locks
+    sm2 = StateManager()
+    assert sm2._state_manager_lock != state_manager._state_manager_lock
+    assert not sm2._states_locks
+    if state_manager._states_locks:
+        assert sm2._states_locks != state_manager._states_locks
