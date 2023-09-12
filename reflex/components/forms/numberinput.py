@@ -90,7 +90,9 @@ class NumberInput(ChakraComponent):
         if len(children) == 0:
             _id = props.pop("id", None)
             children = [
-                NumberInputField.create(id=_id) if _id else NumberInputField.create(),
+                NumberInputField.create(id=_id)
+                if _id is not None
+                else NumberInputField.create(),
                 NumberInputStepper.create(
                     NumberIncrementStepper.create(),
                     NumberDecrementStepper.create(),
