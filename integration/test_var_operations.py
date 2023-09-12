@@ -504,7 +504,7 @@ def VarOperations():
             ),
             #
             # # DICT, DICT
-            # rx.text(VarOperationState.dict1 | VarOperationState.dict2, id="dict_or_dict"),
+            rx.text((VarOperationState.dict1 | VarOperationState.dict2).to_string(), id="dict_or_dict"),
             rx.text(
                 (VarOperationState.dict1 & VarOperationState.dict2).to_string(),
                 id="dict_and_dict",
@@ -708,7 +708,7 @@ def test_var_operations(driver, var_operations: AppHarness):
     assert driver.find_element(By.ID, "list_neq_dict").text == "true"
 
     # DICT, DICT
-    # assert driver.find_element(By.ID, "int_and_int").text == "{3:4}"
+    assert driver.find_element(By.ID, "dict_or_dict").text == '{"1":2}'
     assert driver.find_element(By.ID, "dict_and_dict").text == '{"3":4}'
     assert driver.find_element(By.ID, "dict_eq_dict").text == "false"
     assert driver.find_element(By.ID, "dict_neq_dict").text == "true"
