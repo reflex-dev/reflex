@@ -942,28 +942,6 @@ class Var(ABC):
         """
         return self.operation("^", other)
 
-    def __lshift__(self, other: Var) -> Var:
-        """Perform a bitwise left shift.
-
-        Args:
-            other: The number of positions to shift the bits to the left.
-
-        Returns:
-            A var representing the result of the left shift operation.
-        """
-        return self.operation("<<", other)
-
-    def __rshift__(self, other: Var) -> Var:
-        """Perform a bitwise right shift.
-
-        Args:
-            other: The number of positions to shift the bits to the right.
-
-        Returns:
-            A var representing the result of the right shift operation.
-        """
-        return self.operation(">>", other)
-
     def __contains__(self, _: Any) -> Var:
         """Override the 'in' operator to alert the user that it is not supported.
 

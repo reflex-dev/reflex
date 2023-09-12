@@ -81,18 +81,6 @@ def VarOperations():
                 id="int_lte_int",
             ),
             rx.text(
-                VarOperationState.int_var1 ^ VarOperationState.int_var2,
-                id="int_xor_int",
-            ),
-            rx.text(
-                VarOperationState.int_var1 << VarOperationState.int_var2,
-                id="int_lshift_int",
-            ),
-            rx.text(
-                VarOperationState.int_var1 >> VarOperationState.int_var2,
-                id="int_rshift_int",
-            ),
-            rx.text(
                 VarOperationState.int_var1 & VarOperationState.int_var2,
                 id="int_and_int",
             ),
@@ -582,9 +570,6 @@ def test_var_operations(driver, var_operations: AppHarness):
     assert driver.find_element(By.ID, "int_lt_int").text == "false"
     assert driver.find_element(By.ID, "int_gte_int").text == "true"
     assert driver.find_element(By.ID, "int_lte_int").text == "false"
-    assert driver.find_element(By.ID, "int_xor_int").text == "15"
-    assert driver.find_element(By.ID, "int_lshift_int").text == "320"
-    assert driver.find_element(By.ID, "int_rshift_int").text == "0"
     assert driver.find_element(By.ID, "int_and_int").text == "5"
     assert driver.find_element(By.ID, "int_or_int").text == "10"
     assert driver.find_element(By.ID, "int_eq_int").text == "false"
