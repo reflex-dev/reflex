@@ -154,21 +154,12 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
   if (event.name == "_download") {
-    const url = event.payload.url;
-    const filename = event.payload.filename;
-
-    // create a hidden 'a' object that will trigger the download
-    fetch(url)
-      .then(response => response.blob())
-      .then(blob => {
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(blobUrl);
-      })
-      .catch(error => console.error('Error downloading file:', error));
+    const a = document.createElement('a');
+    a.hidden = true;
+    a.href = event.payload.url;
+    a.download = event.payload.filename;
+    a.click();
+    a.remove();
     return false;
   }
 
