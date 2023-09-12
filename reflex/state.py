@@ -1246,7 +1246,7 @@ class StateManager(Base):
     )
 
     # These events indicate that a lock is no longer held
-    _redis_keyspace_lock_release_events: set[bytes] = {
+    _redis_keyspace_lock_release_events: Set[bytes] = {
         b"del",
         b"expire",
         b"expired",

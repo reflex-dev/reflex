@@ -14,6 +14,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Set,
     Type,
     Union,
 )
@@ -112,7 +113,7 @@ class App(Base):
     ] = default_overlay_component
 
     # Background tasks that are currently running
-    background_tasks: set[asyncio.Task] = set()
+    background_tasks: Set[asyncio.Task] = set()
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
