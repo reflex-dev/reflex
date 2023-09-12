@@ -592,7 +592,7 @@ def test_var_operations(driver, var_operations: AppHarness):
     assert driver.find_element(By.ID, "float_and_int").text == "5"
     assert driver.find_element(By.ID, "float_or_int").text == "10.5"
 
-    # INT, DICT X
+    # INT, DICT
     assert driver.find_element(By.ID, "int_or_dict").text == "10"
     assert driver.find_element(By.ID, "int_and_dict").text == '{"1":2}'
     assert driver.find_element(By.ID, "int_eq_dict").text == "false"
@@ -615,7 +615,7 @@ def test_var_operations(driver, var_operations: AppHarness):
     assert driver.find_element(By.ID, "float_and_float").text == "5.5"
     assert driver.find_element(By.ID, "float_or_float").text == "10.5"
 
-    # FLOAT STR X
+    # FLOAT STR
     assert driver.find_element(By.ID, "float_or_str").text == "10.5"
     assert driver.find_element(By.ID, "float_and_str").text == "first"
     assert driver.find_element(By.ID, "float_eq_str").text == "false"
@@ -660,7 +660,7 @@ def test_var_operations(driver, var_operations: AppHarness):
     assert driver.find_element(By.ID, "str_eq_list").text == "false"
     assert driver.find_element(By.ID, "str_neq_list").text == "true"
 
-    # STR, DICT X
+    # STR, DICT
 
     assert driver.find_element(By.ID, "str_or_dict").text == "first"
     assert driver.find_element(By.ID, "str_and_dict").text == '{"1":2}'
