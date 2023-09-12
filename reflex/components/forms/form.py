@@ -28,13 +28,11 @@ class Form(ChakraComponent):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
-                form_refs[ref[5:-3]] = Var.create(
-                    f"getRefValues({ref[:-3]})", _var_is_local=False
+                form_refs[ref[5:-6]] = Var.create(
+                    f"getRefValues(refs[`{ref}`])", _var_is_local=False
                 )
             else:
-                form_refs[ref[4:]] = Var.create(
-                    f"getRefValue({ref})", _var_is_local=False
-                )
+                form_refs[ref[4:]] = Var.create(f"getRefValue(refs[`{ref}`])", _var_is_local=False)
 
         return {
             **super().get_event_triggers(),

@@ -59,7 +59,7 @@ class DebounceInput(Component):
         child_ref = child.get_ref()
         if child_ref and not props.get("ref"):
             props["input_ref"] = Var.create(child_ref, _var_is_local=False)
-        self.children = []
+        #self.children = []
         tag = super()._render()
         tag.add_props(
             **props,
@@ -76,6 +76,18 @@ class DebounceInput(Component):
         # do NOT render the child, DebounceInput will create it
         object.__setattr__(child, "render", lambda: "")
         return tag
+
+    def _get_memoized(self) -> str | None:
+        base_state = None
+        if self.value and self.value.state:
+            base_state = self.value.state.partition(".")[0]
+        elif len(self.children) == 1:
+            child = self.children[0]
+            for prop in child.get_props():
+                prop_var = getattr(child, prop)
+                if isinstance(prop_var, Var) and prop_var.state:
+                    base_state = prop_var.state.partition(".")[0]
+        return self._render_out_of_band(base_state=base_state, events=True)
 
 
 def props_not_none(c: Component) -> dict[str, Any]:

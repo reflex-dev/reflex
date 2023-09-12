@@ -54,6 +54,18 @@ class Foreach(Component):
             **props,
         )
 
+    def _render_out_of_band(self, base_state, events: bool = False) -> str | None:
+        frag = Fragment.create(self)
+        code = frag._render_out_of_band(base_state, events)
+        self.render = frag.render
+        return code
+
+    def _get_memoized(self) -> str | None:
+        base_state = self.iterable.state.partition(".")[0] if self.iterable.state else None
+        events = "connectError" in str(self.iterable)
+        if base_state or events:
+            return self._render_out_of_band(base_state=base_state, events=events)
+
     def _render(self) -> IterTag:
         return IterTag(iterable=self.iterable, render_fn=self.render_fn)
 

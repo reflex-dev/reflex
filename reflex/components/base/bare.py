@@ -24,7 +24,7 @@ class Bare(Component):
         Returns:
             The component.
         """
-        if isinstance(contents, Var) and contents.state:
+        if isinstance(contents, Var) and contents._var_state:
             contents = contents.to(str)
         else:
             contents = str(contents)

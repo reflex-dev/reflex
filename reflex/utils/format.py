@@ -546,7 +546,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
-        idx._var_is_local = True
+        idx._var_is_local = False
         return f"refs_{clean_ref}[{idx}]"
     return f"refs_{clean_ref}"
 

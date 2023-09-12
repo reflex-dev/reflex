@@ -53,6 +53,18 @@ class Cond(Component):
             )
         )
 
+    def _render_out_of_band(self, base_state, events: bool = False) -> str | None:
+        frag = Fragment.create(self)
+        code = frag._render_out_of_band(base_state, events)
+        self.render = frag.render
+        return code
+
+    def _get_memoized(self) -> Optional[str]:
+        base_state = self.cond._var_state.partition(".")[0] if self.cond._var_state else None
+        events = bool("connectError" in str(self.cond))
+        if base_state or events:
+            return self._render_out_of_band(base_state=base_state, events=events)
+
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,
@@ -125,4 +137,5 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             is_prop=True,
         ),
         _var_type=c1._var_type if isinstance(c1, BaseVar) else type(c1),
+        _var_state=cond_var._var_state,
     )

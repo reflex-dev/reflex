@@ -110,6 +110,9 @@ class Var:
     # Whether the var is a string literal.
     _var_is_string: bool
 
+    # The qualified name of the var.
+    _full_name: str = ""
+
     @classmethod
     def create(
         cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
@@ -521,6 +524,7 @@ class Var:
         return BaseVar(
             _var_name=operation_name,
             _var_type=type_,
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -604,6 +608,7 @@ class Var:
         return BaseVar(
             _var_name=f"{self._var_full_name}.length",
             _var_type=int,
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -1005,6 +1010,7 @@ class Var:
             return BaseVar(
                 _var_name=f"{self._var_full_name}.{method}({other._var_full_name})",
                 _var_type=bool,
+                _var_state=self._var_state,
                 _var_is_local=self._var_is_local,
             )
         else:  # str, list, tuple
@@ -1018,6 +1024,7 @@ class Var:
             return BaseVar(
                 _var_name=f"{self._var_full_name}.includes({other._var_full_name})",
                 _var_type=bool,
+                _var_state=self._var_state,
                 _var_is_local=self._var_is_local,
             )
 
@@ -1036,6 +1043,7 @@ class Var:
         return BaseVar(
             _var_name=f"[...{self._var_full_name}].reverse()",
             _var_type=self._var_type,
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -1056,6 +1064,7 @@ class Var:
         return BaseVar(
             _var_name=f"{self._var_full_name}.toLowerCase()",
             _var_type=str,
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -1076,6 +1085,7 @@ class Var:
         return BaseVar(
             _var_name=f"{self._var_full_name}.toUpperCase()",
             _var_type=str,
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -1099,6 +1109,7 @@ class Var:
         return BaseVar(
             _var_name=f"{self._var_full_name}.split({other._var_full_name})",
             _var_type=list[str],
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -1127,6 +1138,7 @@ class Var:
         return BaseVar(
             _var_name=f"{self._var_full_name}.join({other._var_full_name})",
             _var_type=str,
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -1146,6 +1158,7 @@ class Var:
         return BaseVar(
             _var_name=f"{self._var_full_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
             _var_type=self._var_type,
+            _var_state=self._var_state,
             _var_is_local=self._var_is_local,
         )
 
@@ -1163,6 +1176,7 @@ class Var:
             _var_type=type_,
             _var_state=self._var_state,
             _var_is_local=self._var_is_local,
+            _full_name=self._full_name,
         )
 
     @property
@@ -1172,11 +1186,7 @@ class Var:
         Returns:
             The full name of the var.
         """
-        return (
-            self._var_name
-            if self._var_state == ""
-            else ".".join([self._var_state, self._var_name])
-        )
+        return self._full_name if self._full_name else self._var_name
 
     def _var_set_state(self, state: Type[State]) -> Any:
         """Set the state of the var.
@@ -1188,6 +1198,7 @@ class Var:
             The var with the set state.
         """
         self._var_state = state.get_full_name()
+        self._full_name = self._var_name if self._var_state == "" else ".".join([self._var_state, self._var_name])
         return self
 
 

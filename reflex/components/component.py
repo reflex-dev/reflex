@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import random
 import typing
 from abc import ABC
 from functools import wraps
+from hashlib import md5
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from reflex.base import Base
@@ -370,7 +370,7 @@ class Component(Base, ABC):
         # Add ref to element if `id` is not None.
         ref = self.get_ref()
         if ref is not None:
-            props["ref"] = Var.create(ref, _var_is_local=False)
+            props["ref"] = Var.create(f"refs['{ref}']", _var_is_local=False)
 
         return tag.add_props(**props)
 
@@ -541,22 +541,62 @@ class Component(Base, ABC):
     def _render_out_of_band(self, base_state, events: bool = False) -> str | None:
         from reflex.compiler.templates import REACTIVE_COMPONENT
 
-        def _render() -> Tag:
+        def render() -> dict:
             """Define how to render the component in React.
 
             Returns:
                 The tag to render.
             """
-            self.children = []
-            return Tag(name=self.tag)
+            return dict(Tag(name=self.tag))
 
-        tag_name = "Comp" + str(random.randint(0, 1024))
+        rendered_code = self.render()
+        code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
+        tag_name = f"{self.tag or 'Comp'}_{code_hash}"
         code = REACTIVE_COMPONENT.render(
             tag_name=tag_name, component=self, state_name=base_state, events=events,
         )
         self.tag = tag_name
-        self._render = _render
+        self.render = render
         return code
+
+    def _get_memoized(self) -> Optional[str]:
+        """Get memoized code for the component.
+
+        Returns:
+            The memoized code.
+        """
+        js_func = None
+        base_state = None
+        events = False
+        from reflex.components.base.bare import Bare
+
+        if not isinstance(self, Bare):
+            if self.event_triggers:
+                events = True
+
+            for prop in self.get_props():
+                prop_var = getattr(self, prop)
+                if isinstance(prop_var, Var):
+                    if prop_var._var_state:
+                        base_state = prop_var._var_state.partition(".")[0]
+                    if "connectError" in str(prop_var):
+                        events = True
+
+        if events or base_state:
+            js_func = self._render_out_of_band(
+                base_state=base_state,
+                events=events,
+            )
+        else:
+           for child in self.children:
+                if isinstance(child, Bare):
+                    child = child.contents
+                if isinstance(child, Var) and child._var_state:
+                    js_func = self._render_out_of_band(
+                        base_state=child._var_state.partition(".")[0],
+                    )
+                    break
+        return js_func
 
     def get_custom_code(self) -> Set[str]:
         """Get custom code for the component and its children.
@@ -567,65 +607,18 @@ class Component(Base, ABC):
         # Store the code in a set to avoid duplicates.
         code = set()
 
-        # check if any props are state vars
-        js_func = None
-        base_state = None
-        events = False
-        from reflex.components.base.bare import Bare
+        # Add the custom code for the children (dfs).
+        for child in self.children:
+            code |= child.get_custom_code()
 
-        if not isinstance(self, Bare):
-            for trigger, event_chain in self.event_triggers.items():
-                if isinstance(event_chain, Var):
-                    continue
-                for spec in event_chain.events:
-                    state, _ = format.get_event_handler_parts(spec.handler)
-                    if state:
-                        print("Component {} has event trigger {} referencing {}.".format(
-                            type(self).__name__, trigger, state
-                        ))
-                        events = True
-                        break
-
-            for prop in self.get_props():
-                prop_var = getattr(self, prop)
-                if isinstance(prop_var, Var) and prop_var.state:
-                    print(
-                        "Component {} has Var prop {}".format(
-                            type(self).__name__, prop_var
-                        )
-                    )
-                    base_state = prop_var.state.partition(".")[0]
-                    if base_state:
-                        break
-
-        if events or base_state:
-            js_func = self._render_out_of_band(
-                base_state=base_state,
-                events=events,
-            )
-            if events:
-                self.event_triggers = {}  # clear them out so they do not render
-        else:
-            for child in self.children:
-                if isinstance(child, Bare):
-                    child = child.contents
-                if isinstance(child, Var) and child.state:
-                    js_func = self._render_out_of_band(
-                        base_state=child.state.partition(".")[0],
-                    )
-                    if js_func:
-                        break
-        if js_func:
-            code.add(js_func)
+        memoized_component = self._get_memoized()
+        if memoized_component:
+            code.add(memoized_component)
 
         # Add the custom code for this component.
         custom_code = self._get_custom_code()
         if custom_code is not None:
             code.add(custom_code)
-
-        # Add the custom code for the children.
-        for child in self.children:
-            code |= child.get_custom_code()
 
         # Return the code.
         return code
@@ -711,7 +704,7 @@ class Component(Base, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
+            return f"refs[`{ref}`] = useRef(null);"
 
     def _get_hooks_internal(self) -> Set[str]:
         """Get the React hooks for this component managed by the framework.
