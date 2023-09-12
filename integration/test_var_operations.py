@@ -406,7 +406,7 @@ def VarOperations():
                 (VarOperationState.str_var1 != VarOperationState.list1).to_string(),
                 id="str_neq_list",
             ),
-            # # STR, DICT
+            # STR, DICT
             rx.text(
                 VarOperationState.str_var1 | VarOperationState.dict1, id="str_or_dict"
             ),
@@ -422,7 +422,6 @@ def VarOperations():
                 (VarOperationState.str_var1 != VarOperationState.dict1).to_string(),
                 id="str_neq_dict",
             ),
-            #
             # LIST, LIST
             rx.text(
                 (VarOperationState.list1 + VarOperationState.list2).to_string(),
@@ -485,7 +484,7 @@ def VarOperations():
                 (VarOperationState.list1 != VarOperationState.int_var1).to_string(),
                 id="list_neq_int",
             ),
-            # # LIST, DICT
+            # LIST, DICT
             rx.text(
                 (VarOperationState.list1 | VarOperationState.dict1).to_string(),
                 id="list_or_dict",
@@ -502,8 +501,7 @@ def VarOperations():
                 (VarOperationState.list1 != VarOperationState.dict1).to_string(),
                 id="list_neq_dict",
             ),
-            #
-            # # DICT, DICT
+            # DICT, DICT
             rx.text(
                 (VarOperationState.dict1 | VarOperationState.dict2).to_string(),
                 id="dict_or_dict",
