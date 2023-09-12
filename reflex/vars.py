@@ -472,11 +472,8 @@ class Var(ABC):
                 name = format.wrap(name, "(")
         else:
             name = f"{op}{self.full_name}"  # type: ignore
-            if fn is not None and not invoke_fn:
-                name = f"{fn}({name})"
-            else:
-                name = f"{self.full_name}.{fn}()"
-
+            if fn is not None:
+                name = f"{fn}({name})" if not invoke_fn else f"{self.full_name}.{fn}()"
         return BaseVar(
             name=name,
             type_=type_,
