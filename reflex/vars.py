@@ -247,7 +247,6 @@ class Var(ABC):
         Raises:
             TypeError: when attempting to bool-ify the Var.
         """
-        print(self)
         raise TypeError(
             f"Cannot convert Var {self.full_name!r} to bool for use with `if`, `and`, `or`, and `not`. "
             "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
@@ -415,8 +414,8 @@ class Var(ABC):
 
     def operation(
         self,
-        op: str = "",
-        other: Var | None = None,
+        operator: str = "",
+        other_operand: Var | None = None,
         type_: Type | None = None,
         flip: bool = False,
         fn: str | None = None,
@@ -425,57 +424,69 @@ class Var(ABC):
         """Perform an operation on a var.
 
         Args:
-            op: The operation to perform.
-            other: The other var to perform the operation on.
+            operator: The operation to perform.
+            other_operand: The other var to perform the operation on.
             type_: The type of the operation result.
             flip: Whether to flip the order of the operation.
             fn: A function to apply to the operation.
-            invoke_fn: whether to invoke the function.
+            invoke_fn: Whether to invoke the function.
 
         Returns:
             The operation result.
 
         Raises:
             TypeError: If the operation between two operands is invalid.
-            ValueError: If flip is set to true and value of other is not provided
+            ValueError: If flip is set to true and value of operand is not provided
         """
-        # Wrap strings in quotes.
-        if isinstance(other, str):
-            other = Var.create(json.dumps(other))
+        if isinstance(other_operand, str):
+            other_operand = Var.create(json.dumps(other_operand))
         else:
-            other = Var.create(other)
+            other_operand = Var.create(other_operand)
+
         type_ = type_ or self.type_
 
-        if other is None and flip:
+        if other_operand is None and flip:
             raise ValueError(
-                "flip cannot be set to True if value of other is not provided"
+                "flip_operands cannot be set to True if the value of operand is not provided"
             )
 
-        props = (other, self) if flip else (self, other)  # type: ignore
-        if other is not None:
-            if op and not self.is_valid_operation(
-                types.get_base_class(props[0].type_),  # type: ignore
-                types.get_base_class(props[1].type_),  # type: ignore
-                op,
+        left_operand, right_operand = (
+            (other_operand, self) if flip else (self, other_operand)
+        )
+
+        if other_operand is not None:
+            # check if the operation between operands is valid.
+            if operator and not self.is_valid_operation(
+                types.get_base_class(left_operand.type_),  # type: ignore
+                types.get_base_class(right_operand.type_),  # type: ignore
+                operator,
             ):
                 raise TypeError(
-                    f"Unsupported Operand type(s) for {op}: `{props[0].full_name}` of type {props[0].type_.__name__} and `{props[1].full_name}` of type {props[1].type_.__name__}"  # type: ignore
+                    f"Unsupported Operand type(s) for {operator}: `{left_operand.full_name}` of type {left_operand.type_.__name__} and `{right_operand.full_name}` of type {right_operand.type_.__name__}"  # type: ignore
                 )
+
+            # apply function to operands
             if fn is not None:
                 if invoke_fn:
-                    name = f"{props[0].full_name}.{fn}({props[1].full_name})"  # type: ignore
+                    operation_name = f"{left_operand.full_name}.{fn}({right_operand.full_name})"  # type: ignore
                 else:
-                    name = f"{props[0].full_name} {op} {props[1].full_name}"  # type: ignore
-                    name = f"{fn}({name})"
+                    operation_name = f"{left_operand.full_name} {operator} {right_operand.full_name}"  # type: ignore
+                    operation_name = f"{fn}({operation_name})"
             else:
-                name = f"{props[0].full_name} {op} {props[1].full_name}"  # type: ignore
-                name = format.wrap(name, "(")
+                operation_name = f"{left_operand.full_name} {operator} {right_operand.full_name}"  # type: ignore
+                operation_name = format.wrap(operation_name, "(")
         else:
-            name = f"{op}{self.full_name}"  # type: ignore
+            operation_name = f"{operator}{self.full_name}"
+            # apply function to operands
             if fn is not None:
-                name = f"{fn}({name})" if not invoke_fn else f"{self.full_name}.{fn}()"
+                operation_name = (
+                    f"{fn}({operation_name})"
+                    if not invoke_fn
+                    else f"{self.full_name}.{fn}()"
+                )
+
         return BaseVar(
-            name=name,
+            name=operation_name,
             type_=type_,
             is_local=self.is_local,
         )
@@ -633,6 +644,7 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
+        #
         other_type = other.type_ if isinstance(other, Var) else type(other)
         if (
             types.get_base_class(self.type_) == list
@@ -690,12 +702,18 @@ class Var(ABC):
             A var representing the product.
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
+        # For str-int multiplication, we use the repeat function.
+        # i.e
+        # "hello" * 2 is equivalent to "hello".repeat(2) in js.
         if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
             (int, str),
             (str, int),
         ]:
-            return self.operation(other=other, fn="repeat", invoke_fn=True)
+            return self.operation(other_operand=other, fn="repeat", invoke_fn=True)
 
+        # For list-int multiplication, we use the Array function.
+        # i.e
+        # ["hello"] * 2 is equivalent to Array(2).fill().map(() => ["hello"]).flat() in js.
         if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
             (int, list),
             (list, int),
@@ -833,6 +851,7 @@ class Var(ABC):
             TypeError: the operation is not supported
         """
         other_type = other.type_ if isinstance(other, Var) else type(other)
+
         if (
             types.get_base_class(self.type_) == dict
             and types.get_base_class(other_type) == dict
