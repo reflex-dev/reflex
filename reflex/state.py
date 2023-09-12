@@ -1231,7 +1231,7 @@ class StateManager(Base):
     # The token expiration time (s).
     token_expiration: int = constants.TOKEN_EXPIRATION
 
-    # The maximum time to hold a lock (s).
+    # The maximum time to hold a lock (ms).
     lock_expiration: int = constants.LOCK_EXPIRATION
 
     # The redis client to use.
@@ -1338,7 +1338,7 @@ class StateManager(Base):
             return self.redis.set(  # pyright: ignore [reportOptionalMemberAccess]
                 lock_key,
                 lock_id,
-                ex=self.lock_expiration,
+                px=self.lock_expiration,
                 nx=True,  # only set if it doesn't exist
             )
 
