@@ -13,10 +13,6 @@ import sys
 import types as builtin_types
 from typing import TYPE_CHECKING, Any, Callable, Type, Union
 
-import plotly.graph_objects as go
-from plotly.graph_objects import Figure
-from plotly.io import to_json
-
 from reflex import constants
 from reflex.utils import exceptions, types
 from reflex.vars import Var
@@ -526,8 +522,9 @@ def format_state(value: Any) -> Any:
         return value
 
     # Convert plotly figures to JSON.
-    if isinstance(value, go.Figure):
-        return json.loads(to_json(value))["data"]  # type: ignore
+    serializer = SERIALIZERS.get(type(value))
+    if serializer is not None:
+        return serializer(value)
 
     # Convert pandas dataframes to JSON.
     if types.is_dataframe(type(value)):
