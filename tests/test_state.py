@@ -12,7 +12,7 @@ import reflex as rx
 from reflex.base import Base
 from reflex.constants import IS_HYDRATED, RouteVar
 from reflex.event import Event, EventHandler
-from reflex.state import State, StateManager
+from reflex.state import LockExpiredError, State, StateManager
 from reflex.utils import format
 from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
 
@@ -1462,3 +1462,63 @@ async def test_state_manager_contend(state_manager):
         assert not state_manager._states_locks[token].locked()
     else:
         assert (await state_manager.redis.get(f"{token}_lock")) is None
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_expire():
+    """Test that the state manager lock expires and raises exception exiting context."""
+    token = "token"
+
+    state_manager = StateManager()
+    state_manager.setup(TestState)
+    if state_manager.redis is None:
+        pytest.skip("Test requires redis")
+    state_manager.lock_expiration = 50
+
+    async with state_manager.modify_state(token):
+        await asyncio.sleep(0.01)
+
+    with pytest.raises(LockExpiredError):
+        async with state_manager.modify_state(token):
+            await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_expire_contend():
+    """Test that the state manager lock expires and queued waiters proceed."""
+    token = "token"
+    exp_num1 = 4252
+    unexp_num1 = 666
+
+    state_manager = StateManager()
+    state_manager.setup(TestState)
+    if state_manager.redis is None:
+        pytest.skip("Test requires redis")
+    state_manager.lock_expiration = 50
+
+    order = []
+
+    async def _coro_blocker():
+        async with state_manager.modify_state(token) as state:
+            order.append("blocker")
+            await asyncio.sleep(0.1)
+            state.num1 = unexp_num1
+
+    async def _coro_waiter():
+        while "blocker" not in order:
+            await asyncio.sleep(0.005)
+        async with state_manager.modify_state(token) as state:
+            order.append("waiter")
+            assert state.num1 != unexp_num1
+            state.num1 = exp_num1
+
+    tasks = [
+        asyncio.create_task(_coro_blocker()),
+        asyncio.create_task(_coro_waiter()),
+    ]
+    with pytest.raises(LockExpiredError):
+        await tasks[0]
+    await tasks[1]
+
+    assert order == ["blocker", "waiter"]
+    assert (await state_manager.get_state(token)).num1 == exp_num1
