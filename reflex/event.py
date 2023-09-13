@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from reflex import constants
 from reflex.base import Base
@@ -330,7 +330,7 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
-def download(url: str, filename: str) -> EventSpec:
+def download(url: str, filename: Optional[str] = None) -> EventSpec:
     """Download the file at a given path.
 
     Args:
@@ -345,6 +345,11 @@ def download(url: str, filename: str) -> EventSpec:
     """
     if not url.startswith("/"):
         raise ValueError("The URL argument should start with a /")
+
+    # if filename is not provided, infer it from url
+    if filename is None:
+        filename = url.rpartition("/")[-1]
+
     return server_side(
         "_download",
         get_fn_signature(download),
