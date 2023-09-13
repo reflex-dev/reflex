@@ -25,7 +25,6 @@ from typing import (
 )
 
 from plotly.graph_objects import Figure
-from plotly.io import to_json
 from pydantic.fields import ModelField
 
 from reflex import constants
@@ -126,10 +125,9 @@ class Var(ABC):
 
         type_ = type(value)
 
-        # Special case for plotly figures.
-        if isinstance(value, Figure):
-            value = json.loads(to_json(value))["data"]  # type: ignore
-            type_ = Figure
+        serializer = format.SERIALIZERS.get(type_)
+        if serializer is not None:
+            value = serializer(value)
 
         if isinstance(value, dict):
             value = format.format_dict(value)

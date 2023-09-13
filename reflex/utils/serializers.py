@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-import inspect
 import io
 import json
 import os
@@ -34,10 +33,6 @@ WRAP_MAP = {
     "'": "'",
     "`": "`",
 }
-
-
-# Var serializers.
-SERIALIZERS = {}
 
 
 def get_close_char(open: str, close: str | None = None) -> str:
@@ -320,6 +315,9 @@ def format_prop(
             if is_wrapped(prop, "{"):
                 return prop
             return json_dumps(prop)
+
+        elif isinstance(prop, Figure):
+            prop = json.loads(to_json(prop))["data"]  # type: ignore
 
         # For dictionaries, convert any properties to strings.
         elif isinstance(prop, dict):
@@ -662,31 +660,3 @@ def json_dumps(obj: Any) -> str:
         A string
     """
     return json.dumps(obj, ensure_ascii=False, default=list)
-
-
-def serializer(fn: Callable) -> Callable:
-    """Decorator to add a serializer for a given type."""
-    # Get the global serializers.
-    global SERIALIZERS
-
-    # Inspect the function to get the type of the argument.
-    argspec = inspect.getfullargspec(fn)
-    args = argspec.args
-
-    # Make sure the function takes a single argument.
-    if len(args) != 1:
-        raise ValueError("Serializer must take a single argument.")
-
-    # Get the type of the argument.
-    type_ = argspec.annotations[args[0]]
-
-    # Make sure the type is not already registered.
-    registered_fn = SERIALIZERS.get(type_)
-    if registered_fn is not None and registered_fn != fn:
-        raise ValueError(f"Serializer for type {type_} is already registered as {registered_fn}.")
-
-    # Register the serializer.
-    SERIALIZERS[type_] = fn
-
-    # Return the function.
-    return fn

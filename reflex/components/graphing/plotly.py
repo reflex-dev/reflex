@@ -1,11 +1,14 @@
 """Component for displaying a plotly graph."""
 
+import json
 from typing import Dict, List
 
 from plotly.graph_objects import Figure
+from plotly.io import to_json
 
 from reflex.components.component import NoSSRComponent
 from reflex.components.tags import Tag
+from reflex.utils.format import serializer
 from reflex.vars import Var
 
 
@@ -50,3 +53,9 @@ class Plotly(PlotlyLib):
             self.layout = layout
 
         return super()._render()
+
+
+@serializer
+def serialize_figure(figure: Figure) -> str:
+    """Serialize a plotly figure."""
+    return json.loads(to_json(figure))["data"]
