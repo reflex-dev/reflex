@@ -4,7 +4,7 @@ import theme from "/utils/theme";
 import { clientStorage, initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
 import { useEventLoop } from "utils/state";
 
-import '../styles/tailwind.css'
+import '../styles/styles.css'
 
 const GlobalStyles = css`
   /* Hide the blue border around Chakra components. */

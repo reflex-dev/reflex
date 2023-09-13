@@ -78,5 +78,5 @@ COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
 
-# Template for NextJs App root file.
-APP = get_template("web/pages/_app.js.jinja2")
+# Code to render the root stylesheet.
+STYLE = get_template("web/styles/styles.css.jinja2")

@@ -1,7 +1,10 @@
 """Compiler for the reflex apps."""
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import List, Set, Tuple, Type
+from urllib.parse import urlparse
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -42,33 +45,6 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="Box"),
         ImportVar(tag="Text"),
     },
-}
-
-# Imports to be included to the nextJs root app.
-_APP_IMPORTS: imports.ImportDict = {
-    "@chakra-ui/react": {
-        ImportVar(tag="ChakraProvider"),
-        ImportVar(tag="extendTheme"),
-    },
-    "@emotion/react": {
-        ImportVar(tag="Global"),
-        ImportVar(tag="css"),
-    },
-    "/utils/theme": {
-        ImportVar(tag="theme", is_default=True),
-    },
-    "/utils/context": {
-        ImportVar(tag="clientStorage"),
-        ImportVar(tag="initialEvents"),
-        ImportVar(tag="initialState"),
-        ImportVar(tag="StateContext"),
-        ImportVar(tag="EventLoopContext"),
-        ImportVar(tag="StateContext"),
-    },
-    "/utils/state": {
-        ImportVar(tag="useEventLoop"),
-    },
-    "": {ImportVar(tag="../styles/tailwind.css")},
 }
 
 
@@ -143,41 +119,54 @@ def _compile_page(
     )
 
 
-def compile_app_root(stylesheets: List[str]) -> Tuple[str, str]:
-    """Compile the app root.
+def compile_root_stylesheet(stylesheets: List[str]) -> Tuple[str, str]:
+    """Compile the root stylesheet.
 
     Args:
-        stylesheets: The stylesheets to include in the app root.
+        stylesheets: The stylesheets to include in the root stylesheet.
 
     Returns:
-        The path and code of the compiled app root.
+        The path and code of the compiled root stylesheet.
     """
-    output_path = utils.get_app_root_path()
+    output_path = utils.get_root_stylesheet_path()
 
-    code = _compile_app_root(stylesheets)
+    code = _compile_root_stylesheet(stylesheets)
 
     return output_path, code
 
 
-def _compile_app_root(stylesheets: List[str]) -> str:
-    """Compile the document root.
+def _compile_root_stylesheet(stylesheets: List[str]) -> str:
+    """Compile the root stylesheet.
 
     Args:
-        stylesheets: The stylesheets to include in the app root.
+        stylesheets: The stylesheets to include in the root stylesheet.
 
     Returns:
-        The compiled app root.
+        The compiled root stylesheet.
+
+    Raises:
+        FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    imports_ = {
-        "": {
-            ImportVar(tag="/".join(["/public", sheet.strip("/")]))
-            for sheet in stylesheets
-        }
-    }
-    imports_ = utils.merge_imports(_APP_IMPORTS, imports_)
-    utils.validate_imports(imports_)
-    imports_ = utils.compile_imports(imports_)
-    return templates.APP.render(imports=imports_)
+
+    def is_valid_url(url):
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+
+    sheets = set()
+    for stylesheet in stylesheets:
+        if not is_valid_url(stylesheet):
+            # check if stylesheet provided exists.
+            if not os.path.exists(
+                Path.cwd() / constants.APP_ASSETS_DIR / stylesheet.strip("/")
+            ):
+                raise FileNotFoundError(
+                    f"The stylesheet file {constants.APP_ASSETS_DIR}/{stylesheet} does not exist."
+                )
+            stylesheet = "/".join(["../public", stylesheet.strip("/")])
+        sheets.add(stylesheet)
+    # import tailwind first
+    sheets = [constants.TAILWIND_ROOT_STYLE_PATH] + list(sheets)
+    return templates.STYLE.render(stylesheets=sheets)
 
 
 def _compile_components(components: Set[CustomComponent]) -> str:
@@ -337,4 +326,4 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    utils.empty_dir(constants.WEB_PAGES_DIR)
+    utils.empty_dir(constants.WEB_PAGES_DIR, keep_files=["_app.js"])

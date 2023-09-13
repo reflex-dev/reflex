@@ -611,8 +611,8 @@ class App(Base):
         for component in custom_components:
             all_imports.update(component.get_imports())
 
-        # Compile the root app with base styles.
-        compile_results.append(compiler.compile_app_root(self.stylesheets))
+        # Compile the root stylesheet with base styles.
+        compile_results.append(compiler.compile_root_stylesheet(self.stylesheets))
 
         # Compile the root document.
         compile_results.append(compiler.compile_document_root())

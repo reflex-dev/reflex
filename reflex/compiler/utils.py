@@ -319,13 +319,15 @@ def get_theme_path() -> str:
     return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
 
 
-def get_app_root_path() -> str:
+def get_root_stylesheet_path() -> str:
     """Get the path of the app root file.
 
     Returns:
         The path of the app root file.
     """
-    return os.path.join(constants.WEB_PAGES_DIR, constants.APP_ROOT + constants.JS_EXT)
+    return os.path.join(
+        constants.STYLES_DIR, constants.STYLESHEET_ROOT + constants.CSS_EXT
+    )
 
 
 def get_context_path() -> str:
