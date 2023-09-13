@@ -116,7 +116,7 @@ def run_frontend(root: Path, port: str):
     # Start watching asset folder.
     start_watching_assets_folder(root)
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies(init=False)
+    prerequisites.validate_frontend_dependencies()
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
@@ -134,7 +134,7 @@ def run_frontend_prod(root: Path, port: str):
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies(init=False)
+    prerequisites.validate_frontend_dependencies()
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])  # type: ignore
@@ -261,9 +261,6 @@ def output_system_info():
     for dep in dependencies:
         console.debug(f"{dep}")
 
-    console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
-    )
     console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")
