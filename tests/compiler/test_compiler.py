@@ -12,28 +12,28 @@ from reflex.vars import ImportVar
     "fields,test_default,test_rest",
     [
         (
-                {ImportVar(tag="axios", is_default=True)},
-                "axios",
-                set(),
+            {ImportVar(tag="axios", is_default=True)},
+            "axios",
+            set(),
         ),
         (
-                {ImportVar(tag="foo"), ImportVar(tag="bar")},
-                "",
-                {"foo", "bar"},
+            {ImportVar(tag="foo"), ImportVar(tag="bar")},
+            "",
+            {"foo", "bar"},
         ),
         (
-                {
-                    ImportVar(tag="axios", is_default=True),
-                    ImportVar(tag="foo"),
-                    ImportVar(tag="bar"),
-                },
-                "axios",
-                {"foo", "bar"},
+            {
+                ImportVar(tag="axios", is_default=True),
+                ImportVar(tag="foo"),
+                ImportVar(tag="bar"),
+            },
+            "axios",
+            {"foo", "bar"},
         ),
     ],
 )
 def test_compile_import_statement(
-        fields: Set[ImportVar], test_default: str, test_rest: str
+    fields: Set[ImportVar], test_default: str, test_rest: str
 ):
     """Test the compile_import_statement function.
 
@@ -52,44 +52,44 @@ def test_compile_import_statement(
     [
         ({}, []),
         (
-                {"axios": {ImportVar(tag="axios", is_default=True)}},
-                [{"lib": "axios", "default": "axios", "rest": set()}],
+            {"axios": {ImportVar(tag="axios", is_default=True)}},
+            [{"lib": "axios", "default": "axios", "rest": set()}],
         ),
         (
-                {"axios": {ImportVar(tag="foo"), ImportVar(tag="bar")}},
-                [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}],
+            {"axios": {ImportVar(tag="foo"), ImportVar(tag="bar")}},
+            [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}],
         ),
         (
-                {
-                    "axios": {
-                        ImportVar(tag="axios", is_default=True),
-                        ImportVar(tag="foo"),
-                        ImportVar(tag="bar"),
-                    },
-                    "react": {ImportVar(tag="react", is_default=True)},
+            {
+                "axios": {
+                    ImportVar(tag="axios", is_default=True),
+                    ImportVar(tag="foo"),
+                    ImportVar(tag="bar"),
                 },
-                [
-                    {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
-                    {"lib": "react", "default": "react", "rest": set()},
-                ],
+                "react": {ImportVar(tag="react", is_default=True)},
+            },
+            [
+                {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
+                {"lib": "react", "default": "react", "rest": set()},
+            ],
         ),
         (
-                {"": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")}},
-                [
-                    {"lib": "lib1.js", "default": "", "rest": set()},
-                    {"lib": "lib2.js", "default": "", "rest": set()},
-                ],
+            {"": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")}},
+            [
+                {"lib": "lib1.js", "default": "", "rest": set()},
+                {"lib": "lib2.js", "default": "", "rest": set()},
+            ],
         ),
         (
-                {
-                    "": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")},
-                    "axios": {ImportVar(tag="axios", is_default=True)},
-                },
-                [
-                    {"lib": "lib1.js", "default": "", "rest": set()},
-                    {"lib": "lib2.js", "default": "", "rest": set()},
-                    {"lib": "axios", "default": "axios", "rest": set()},
-                ],
+            {
+                "": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")},
+                "axios": {ImportVar(tag="axios", is_default=True)},
+            },
+            [
+                {"lib": "lib1.js", "default": "", "rest": set()},
+                {"lib": "lib2.js", "default": "", "rest": set()},
+                {"lib": "axios", "default": "axios", "rest": set()},
+            ],
         ),
     ],
 )
