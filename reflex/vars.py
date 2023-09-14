@@ -24,7 +24,6 @@ from typing import (
     get_type_hints,
 )
 
-from plotly.graph_objects import Figure
 from pydantic.fields import ModelField
 
 from reflex import constants
@@ -182,7 +181,7 @@ class Var(ABC):
         """
         if self.state:
             return self.full_name
-        if self.is_string or self.type_ is Figure:
+        if self.is_string:
             return self.name
         try:
             return json.loads(self.name)
