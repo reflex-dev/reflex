@@ -1,9 +1,8 @@
 """Serializers used to convert Var types to JSON strings."""
 
-from __future__ import annotations
+from typing import get_type_hints, Any, Callable, Type
 
-import inspect
-from typing import Any, Callable, Type
+from reflex.utils import types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON string.
@@ -23,16 +22,16 @@ def serializer(fn: Serializer) -> Serializer:
     # Get the global serializers.
     global SERIALIZERS
 
-    # Inspect the function to get the type of the argument.
-    argspec = inspect.getfullargspec(fn)
-    args = argspec.args
+    # Check the type hints to get the type of the argument.
+    type_hints = get_type_hints(fn)
+    args = [arg for arg in type_hints if arg != "return"]
 
     # Make sure the function takes a single argument.
     if len(args) != 1:
         raise ValueError("Serializer must take a single argument.")
 
     # Get the type of the argument.
-    type_ = argspec.annotations[args[0]]
+    type_ = type_hints[args[0]]
 
     # Make sure the type is not already registered.
     registered_fn = SERIALIZERS.get(type_)
@@ -57,7 +56,7 @@ def serialize(value: Any) -> str | None:
     global SERIALIZERS
 
     # Get the serializer for the type.
-    serializer = SERIALIZERS.get(type(value))
+    serializer = get_serializer(type(value))
 
     # If there is no serializer, return None.
     if serializer is None:
@@ -65,6 +64,31 @@ def serialize(value: Any) -> str | None:
     
     # Serialize the value.
     return serializer(value)
+
+
+def get_serializer(type_: Type) -> Serializer | None:
+    """Get the serializer for the type.
+    
+    Args:
+        type_: The type to get the serializer for.
+
+    Returns:
+        The serializer for the type, or None if there is no serializer.
+    """
+    global SERIALIZERS
+
+    # First, check if the type is registered.
+    serializer = SERIALIZERS.get(type_)
+    if serializer is not None:
+        return serializer
+    
+    # If the type is not registered, check if it is a subclass of a registered type.
+    for registered_type, serializer in SERIALIZERS.items():
+        if issubclass(type_, registered_type):
+            return serializer
+        
+    # If there is no serializer, return None.
+    return None
 
 
 def has_serializer(type_: Type) -> bool:
@@ -76,6 +100,4 @@ def has_serializer(type_: Type) -> bool:
     Returns:
         Whether there is a serializer for the type.
     """
-    global SERIALIZERS
-
-    return type_ in SERIALIZERS
+    return get_serializer(type_) is not None

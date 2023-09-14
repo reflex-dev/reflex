@@ -183,7 +183,6 @@ def is_valid_var_type(type_: Type) -> bool:
         _issubclass(type_, StateVar)
         or serializers.has_serializer(type_)
         or is_dataframe(type_)
-        or is_image(type_)
         or is_datetime(type_)
     )
 

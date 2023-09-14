@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import base64
 import io
-from typing import Any, Optional, Set
+from typing import Any
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
-from reflex.utils import format, types
+from reflex.utils import types
 from reflex.utils.serializers import serializer, serialize
 from reflex.vars import Var
 
@@ -22,7 +22,7 @@ class Image(ChakraComponent):
     align: Var[str]
 
     # Fallback Reflex component to show if image is loading or image fails.
-    fallback: Optional[Component] = None
+    fallback: Component | None = None
 
     # Fallback image src to show if image is loading or image fails.
     fallback_src: Var[str]
@@ -54,7 +54,7 @@ class Image(ChakraComponent):
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)_
     src_set: Var[str]
 
-    def get_triggers(self) -> Set[str]:
+    def get_triggers(self) -> set[str]:
         """Get the event triggers for the component.
 
         Returns:
@@ -70,7 +70,7 @@ class Image(ChakraComponent):
         # Render the table.
         return super()._render()
 
-from PIL import Image as Img
+from PIL.Image import Image as Img
 
 @serializer
 def serialize_image(image: Img) -> str:
