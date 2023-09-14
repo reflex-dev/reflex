@@ -2,10 +2,9 @@
 
 import re
 from datetime import datetime
-from typing import get_type_hints, Any, Callable, Type
+from typing import Any, Callable, Type, get_type_hints
 
 from reflex.utils import exceptions, types
-
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON string.
@@ -15,11 +14,11 @@ SERIALIZERS: dict[Type, Serializer] = {}
 
 def serializer(fn: Serializer) -> Serializer:
     """Decorator to add a serializer for a given type.
-    
+
     Args:
         fn: The function to decorate.
 
-    returns:
+    Returns:
         The decorated function.
     """
     # Get the global serializers.
@@ -39,7 +38,9 @@ def serializer(fn: Serializer) -> Serializer:
     # Make sure the type is not already registered.
     registered_fn = SERIALIZERS.get(type_)
     if registered_fn is not None and registered_fn != fn:
-        raise ValueError(f"Serializer for type {type_} is already registered as {registered_fn}.")
+        raise ValueError(
+            f"Serializer for type {type_} is already registered as {registered_fn}."
+        )
 
     # Register the serializer.
     SERIALIZERS[type_] = fn
@@ -47,9 +48,10 @@ def serializer(fn: Serializer) -> Serializer:
     # Return the function.
     return fn
 
+
 def serialize(value: Any) -> str | None:
     """Serialize the value to a JSON string.
-    
+
     Args:
         value: The value to serialize.
 
@@ -64,14 +66,14 @@ def serialize(value: Any) -> str | None:
     # If there is no serializer, return None.
     if serializer is None:
         return None
-    
+
     # Serialize the value.
     return serializer(value)
 
 
 def get_serializer(type_: Type) -> Serializer | None:
     """Get the serializer for the type.
-    
+
     Args:
         type_: The type to get the serializer for.
 
@@ -84,19 +86,19 @@ def get_serializer(type_: Type) -> Serializer | None:
     serializer = SERIALIZERS.get(type_)
     if serializer is not None:
         return serializer
-    
+
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in SERIALIZERS.items():
         if types._issubclass(type_, registered_type):
             return serializer
-        
+
     # If there is no serializer, return None.
     return None
 
 
 def has_serializer(type_: Type) -> bool:
     """Check if there is a serializer for the type.
-    
+
     Args:
         type_: The type to check.
 
@@ -109,17 +111,17 @@ def has_serializer(type_: Type) -> bool:
 @serializer
 def serialize_dict(prop: dict[str, Any]) -> str:
     """Serialize a dictionary to a JSON string.
-    
+
     Args:
         prop: The dictionary to serialize.
 
     Returns:
         The serialized dictionary.
     """
-        # Import here to avoid circular imports.
+    # Import here to avoid circular imports.
     from reflex.event import EventHandler
+    from reflex.utils.format import builtin_types, json_dumps, to_snake_case
     from reflex.vars import Var
-    from reflex.utils.format import json_dumps
 
     prop_dict = {}
 
@@ -156,10 +158,11 @@ def serialize_dict(prop: dict[str, Any]) -> str:
     # Return the formatted dict.
     return fprop
 
+
 @serializer
 def serialize_datetime(dt: datetime) -> str:
     """Serialize a datetime to a JSON string.
-    
+
     Args:
         dt: The datetime to serialize.
 

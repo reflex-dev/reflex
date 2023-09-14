@@ -9,7 +9,7 @@ from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
 from reflex.utils import types
-from reflex.utils.serializers import serializer, serialize
+from reflex.utils.serializers import serialize, serializer
 from reflex.vars import Var
 
 
@@ -70,7 +70,9 @@ class Image(ChakraComponent):
         # Render the table.
         return super()._render()
 
+
 from PIL.Image import Image as Img
+
 
 @serializer
 def serialize_image(image: Img) -> str:
