@@ -40,6 +40,20 @@ jobs:
           - os: windows-latest
             python-version: "3.8.10"
     runs-on: ${{ matrix.os }}
+    # Service containers to run with `runner-job`
+    services:
+      # Label used to access the service container
+      redis:
+        image: ${{ matrix.os == 'ubuntu-latest' && 'redis' || '' }}
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/setup_build_env
@@ -50,5 +64,11 @@ jobs:
     - name: Run unit tests
       run: |
         export PYTHONUNBUFFERED=1
+        poetry run pytest tests --cov --no-cov-on-fail --cov-report=
+    - name: Run unit tests w/ redis
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: |
+        export PYTHONUNBUFFERED=1
+        export REDIS_URL=localhost:6379
         poetry run pytest tests --cov --no-cov-on-fail --cov-report=
     - run: poetry run coverage html
