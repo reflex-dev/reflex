@@ -261,6 +261,6 @@ def output_system_info():
     for dep in dependencies:
         console.debug(f"{dep}")
 
-    console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
+    console.debug(f"Using package executer at: {prerequisites.get_package_manager(raise_exception=False)}")  # type: ignore
     if system != "Windows":
         console.debug(f"Unzip path: {path_ops.which('unzip')}")

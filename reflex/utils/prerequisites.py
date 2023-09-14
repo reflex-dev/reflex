@@ -54,19 +54,26 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_package_manager() -> str | None:
-    """Get the package manager executable for installation.
-      Currently on unix systems, bun is used for installation only.
+def get_package_manager(raise_exception=True) -> str | None:
+    """Get the package manager executable.
+
+    Args:
+        raise_exception: whether to raise exception if npm path is not found.
 
     Returns:
         The path to the package manager.
     """
-    # On Windows, we use npm instead of bun.
-    if constants.IS_WINDOWS:
-        return path_ops.get_npm_path()
+    # On Linux and Mac, we use bun.
+    if constants.IS_LINUX_OR_MAC:
+        return get_config().bun_path
 
-    # On other platforms, we use bun.
-    return get_config().bun_path
+    # On other platforms, we use npm.
+    npm_path = path_ops.get_npm_path()
+    if not npm_path and raise_exception:
+        console.error(
+            "Could not find the npm executable path. Make sure node is installed."
+        )
+    return npm_path
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -497,8 +504,8 @@ def validate_bun():
 
 def validate_frontend_dependencies():
     """Validate frontend dependencies to ensure they meet requirements."""
-    # Check node version validity for windows and bun version validity for other OS
-    validate_node() if constants.IS_WINDOWS else validate_bun()
+    # Bun only supports linux and Mac. For Non-linux-or-mac, we use node.
+    validate_bun() if constants.IS_LINUX_OR_MAC else validate_node()
 
 
 def initialize_frontend_dependencies():

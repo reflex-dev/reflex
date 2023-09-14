@@ -16,7 +16,7 @@ except ImportError:
     import importlib_metadata as metadata  # pyright: ignore[reportMissingImports]
 
 IS_WINDOWS = platform.system() == "Windows"
-
+IS_LINUX_OR_MAC = platform.system() in ["Linux", "Darwin"]
 # App names and versions.
 # The name of the Reflex package.
 MODULE_NAME = "reflex"
