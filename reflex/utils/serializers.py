@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, Type, get_type_hints
+from typing import Any, Callable, Dict, Type, Union, get_type_hints
 
 from reflex.utils import exceptions, types
 
@@ -114,7 +114,7 @@ def has_serializer(type_: Type) -> bool:
 
 
 @serializer
-def serialize_dict(prop: dict[str, Any]) -> str:
+def serialize_dict(prop: Dict[str, Any]) -> str:
     """Serialize a dictionary to a JSON string.
 
     Args:
@@ -168,7 +168,7 @@ def serialize_dict(prop: dict[str, Any]) -> str:
 
 
 @serializer
-def serialize_datetime(dt: date | datetime | time | timedelta) -> str:
+def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
     """Serialize a datetime to a JSON string.
 
     Args:

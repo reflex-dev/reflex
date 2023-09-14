@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import base64
 import io
-from typing import Any
+from typing import Any, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -22,7 +22,7 @@ class Image(ChakraComponent):
     align: Var[str]
 
     # Fallback Reflex component to show if image is loading or image fails.
-    fallback: Component | None = None
+    fallback: Optional[Component] = None
 
     # Fallback image src to show if image is loading or image fails.
     fallback_src: Var[str]
