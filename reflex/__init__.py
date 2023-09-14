@@ -36,7 +36,6 @@ from .middleware import Middleware as Middleware
 from .model import Model as Model
 from .model import session as session
 from .page import page as page
-from .route import route as route
 from .state import ComputedVar as var
 from .state import Cookie as Cookie
 from .state import LocalStorage as LocalStorage
