@@ -1,12 +1,15 @@
 """An image component."""
 from __future__ import annotations
 
+import base64
+import io
 from typing import Any, Optional, Set
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
 from reflex.utils import format, types
+from reflex.utils.serializers import serializer, serialize
 from reflex.vars import Var
 
 
@@ -62,7 +65,18 @@ class Image(ChakraComponent):
     def _render(self) -> Tag:
         # If the src is an image, convert it to a base64 string.
         if types.is_image(type(self.src)):
-            self.src = Var.create(format.format_image_data(self.src))  # type: ignore
+            self.src = Var.create(serialize(self.src))  # type: ignore
 
         # Render the table.
         return super()._render()
+
+from PIL import Image as Img
+
+@serializer
+def serialize_image(image: Img) -> str:
+    """Serialize a plotly figure."""
+    buff = io.BytesIO()
+    image.save(buff, format="PNG")
+    image_bytes = buff.getvalue()
+    base64_image = base64.b64encode(image_bytes).decode("utf-8")
+    return f"data:image/png;base64,{base64_image}"

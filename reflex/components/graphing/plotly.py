@@ -8,7 +8,7 @@ from plotly.io import to_json
 
 from reflex.components.component import NoSSRComponent
 from reflex.components.tags import Tag
-from reflex.utils.format import serializer
+from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
 

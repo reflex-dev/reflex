@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import base64
-import inspect
-import io
 import json
 import os
 import os.path as op
@@ -15,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Type, Union
 
 from reflex import constants
 from reflex.utils import exceptions, types
+from reflex.utils.serializers import serialize
 from reflex.vars import Var
 
 if TYPE_CHECKING:
@@ -30,10 +28,6 @@ WRAP_MAP = {
     "'": "'",
     "`": "`",
 }
-
-
-# Var serializers.
-SERIALIZERS = {}
 
 
 def get_close_char(open: str, close: str | None = None) -> str:
@@ -481,22 +475,6 @@ def format_dataframe_values(value: Type) -> list[Any]:
     return format_data
 
 
-def format_image_data(value: Type) -> str:
-    """Format image data.
-
-    Args:
-        value: The value to format.
-
-    Returns:
-        Format data
-    """
-    buff = io.BytesIO()
-    value.save(buff, format="PNG")
-    image_bytes = buff.getvalue()
-    base64_image = base64.b64encode(image_bytes).decode("utf-8")
-    return f"data:image/png;base64,{base64_image}"
-
-
 def format_state(value: Any) -> Any:
     """Recursively format values in the given state.
 
@@ -521,10 +499,10 @@ def format_state(value: Any) -> Any:
     if isinstance(value, types.StateBases):
         return value
 
-    # Convert plotly figures to JSON.
-    serializer = SERIALIZERS.get(type(value))
-    if serializer is not None:
-        return serializer(value)
+    # Serialize the value.
+    serialized = serialize(value)
+    if serialized is not None:
+        return serialized
 
     # Convert pandas dataframes to JSON.
     if types.is_dataframe(type(value)):
@@ -536,10 +514,6 @@ def format_state(value: Any) -> Any:
     # Convert datetime objects to str.
     if types.is_datetime(type(value)):
         return str(value)
-
-    # Convert Image objects to base64.
-    if types.is_image(type(value)):
-        return format_image_data(value)  # type: ignore
 
     raise TypeError(
         "State vars must be primitive Python types, "
@@ -660,30 +634,3 @@ def json_dumps(obj: Any) -> str:
     """
     return json.dumps(obj, ensure_ascii=False, default=list)
 
-
-def serializer(fn: Callable) -> Callable:
-    """Decorator to add a serializer for a given type."""
-    # Get the global serializers.
-    global SERIALIZERS
-
-    # Inspect the function to get the type of the argument.
-    argspec = inspect.getfullargspec(fn)
-    args = argspec.args
-
-    # Make sure the function takes a single argument.
-    if len(args) != 1:
-        raise ValueError("Serializer must take a single argument.")
-
-    # Get the type of the argument.
-    type_ = argspec.annotations[args[0]]
-
-    # Make sure the type is not already registered.
-    registered_fn = SERIALIZERS.get(type_)
-    if registered_fn is not None and registered_fn != fn:
-        raise ValueError(f"Serializer for type {type_} is already registered as {registered_fn}.")
-
-    # Register the serializer.
-    SERIALIZERS[type_] = fn
-
-    # Return the function.
-    return fn

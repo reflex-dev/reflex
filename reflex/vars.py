@@ -29,6 +29,7 @@ from pydantic.fields import ModelField
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, types
+from reflex.utils.serializers import serialize
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -124,9 +125,10 @@ class Var(ABC):
 
         type_ = type(value)
 
-        serializer = format.SERIALIZERS.get(type_)
-        if serializer is not None:
-            value = serializer(value)
+        # Try to serialize the value.
+        serialized = serialize(value)
+        if serialized is not None:
+            value = serialized
 
         if isinstance(value, dict):
             value = format.format_dict(value)

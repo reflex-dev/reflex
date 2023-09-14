@@ -8,6 +8,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
+from reflex.utils import serializers
 
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
@@ -157,18 +158,6 @@ def is_image(value: Type) -> bool:
     return "PIL" in value.__module__
 
 
-def is_figure(value: Type) -> bool:
-    """Check if the given value is a figure.
-
-    Args:
-        value: The value to check.
-
-    Returns:
-        Whether the value is a figure.
-    """
-    return value.__name__ == "Figure"
-
-
 def is_datetime(value: Type) -> bool:
     """Check if the given value is a datetime object.
 
@@ -181,21 +170,21 @@ def is_datetime(value: Type) -> bool:
     return issubclass(value, (date, datetime, time, timedelta))
 
 
-def is_valid_var_type(var: Type) -> bool:
-    """Check if the given value is a valid prop type.
+def is_valid_var_type(type_: Type) -> bool:
+    """Check if the given type is a valid prop type.
 
     Args:
-        var: The value to check.
+        type_: The type to check.
 
     Returns:
-        Whether the value is a valid prop type.
+        Whether the type is a valid prop type.
     """
     return (
-        _issubclass(var, StateVar)
-        or is_dataframe(var)
-        or is_figure(var)
-        or is_image(var)
-        or is_datetime(var)
+        _issubclass(type_, StateVar)
+        or serializers.has_serializer(type_)
+        or is_dataframe(type_)
+        or is_image(type_)
+        or is_datetime(type_)
     )
 
 
