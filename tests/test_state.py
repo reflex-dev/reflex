@@ -1472,14 +1472,14 @@ async def test_state_manager_lock_expire(token):
     state_manager.setup(TestState)
     if state_manager.redis is None:
         pytest.skip("Test requires redis")
-    state_manager.lock_expiration = 100
+    state_manager.lock_expiration = 300
 
     async with state_manager.modify_state(token):
         await asyncio.sleep(0.01)
 
     with pytest.raises(LockExpiredError):
         async with state_manager.modify_state(token):
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.5)
 
 
 @pytest.mark.asyncio
@@ -1496,14 +1496,14 @@ async def test_state_manager_lock_expire_contend(token: str):
     state_manager.setup(TestState)
     if state_manager.redis is None:
         pytest.skip("Test requires redis")
-    state_manager.lock_expiration = 100
+    state_manager.lock_expiration = 300
 
     order = []
 
     async def _coro_blocker():
         async with state_manager.modify_state(token) as state:
             order.append("blocker")
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.5)
             state.num1 = unexp_num1
 
     async def _coro_waiter():
