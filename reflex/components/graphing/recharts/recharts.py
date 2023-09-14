@@ -9,4 +9,4 @@ class Recharts(Component):
 
     library = "recharts"
 
-    lib_dependencies: List[str] = ["recharts"]
+    lib_dependencies: List[str] = ["recharts@^1.8.5"]

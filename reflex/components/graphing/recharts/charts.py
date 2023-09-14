@@ -12,16 +12,16 @@ class ChartBase(Recharts):
     data: Var[List[Dict[str, Any]]]    
 
     # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position tooltip, and the start_index, end_index of Brush.
-    sync_id = Var[str]
+    sync_id: Var[str]
 
     # When sync_id is provided, allows customisation of how the charts will synchronize tooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-    sync_method = Var[str]
+    sync_method: Var[str]
 
-    # The width of chart container.
-    width: Var[str]
+    # The width of chart container. String or Integer
+    width: Var[Union[str, int]]
 
     # The height of chart container.
-    height: Var[str]
+    height: Var[Union[str, int]]
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
     layout: Var[str]

@@ -23,6 +23,39 @@ class Cartesian(Recharts):
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'optional
     legend_type: Var[str]
 
+class XAxis(Cartesian):
+
+    tag = "XAxis"
+    
+    # The key of data displayed in the axis.
+    data_key: Var[str]
+
+class YAxis(Cartesian):
+
+    tag = "YAxis"
+
+    # The key of data displayed in the axis.
+    data_key: Var[str]
+
+class ZAxis(Cartesian):
+
+    tag = "ZAxis"
+
+    # The key of data displayed in the axis.
+    data_key: Var[str]
+
 class Area(Cartesian):
 
     tag = "Area"
+
+    stroke: Var[str]
+
+    fill: Var[str]
+
+class Line(Cartesian):
+
+    tag = "Line"
+
+    stroke: Var[str]
+
+    stoke_width: Var[int]

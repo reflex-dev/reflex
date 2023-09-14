@@ -132,6 +132,8 @@ upload = Upload.create
 
 area_chart = AreaChart.create
 area = Area.create
+x_axis = XAxis.create
+y_axis = YAxis.create
 
 
 box = Box.create
