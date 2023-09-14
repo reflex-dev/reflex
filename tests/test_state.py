@@ -5,16 +5,24 @@ import datetime
 import functools
 import os
 from typing import Dict, List
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
 from reflex.base import Base
-from reflex.constants import IS_HYDRATED, RouteVar
+from reflex.constants import APP_VAR, IS_HYDRATED, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.state import LockExpiredError, State, StateManager
-from reflex.utils import format
+from reflex.state import (
+    ImmutableStateError,
+    LockExpiredError,
+    State,
+    StateManager,
+    StateProxy,
+    StateUpdate,
+)
+from reflex.utils import format, prerequisites
 from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
 
 from .states import GenState
@@ -1529,3 +1537,99 @@ async def test_state_manager_lock_expire_contend(token: str):
 
     assert order == ["blocker", "waiter"]
     assert (await state_manager.get_state(token)).num1 == exp_num1
+
+
+@pytest.fixture(scope="function")
+def mock_app(monkeypatch, app: rx.App, state_manager: StateManager) -> rx.App:
+    """Mock app fixture.
+
+    Args:
+        monkeypatch: Pytest monkeypatch object.
+        app: An app.
+        state_manager: A state manager.
+
+    Returns:
+        The app, after mocking out prerequisites.get_app()
+    """
+    app_module = Mock()
+    setattr(app_module, APP_VAR, app)
+    app.state = TestState
+    app.state_manager = state_manager
+    assert app.event_namespace is not None
+    app.event_namespace.emit = AsyncMock()
+    monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
+    """Test that the state proxy works.
+
+    Args:
+        grandchild_state: A grandchild state.
+        mock_app: An app that will be returned by `get_app()`
+    """
+    child_state = grandchild_state.parent_state
+    assert child_state is not None
+    parent_state = child_state.parent_state
+    assert parent_state is not None
+    if mock_app.state_manager.redis is None:
+        mock_app.state_manager.states[parent_state.get_token()] = parent_state
+
+    sp = StateProxy(grandchild_state)
+    assert sp._state_instance == grandchild_state
+    assert sp._substate_path == grandchild_state.get_full_name().split(".")
+    assert sp._app is mock_app
+    assert not sp._mutable
+    assert sp._actx is None
+
+    # cannot use normal contextmanager protocol
+    with pytest.raises(TypeError), sp:
+        pass
+
+    with pytest.raises(ImmutableStateError):
+        # cannot directly modify state proxy outside of async context
+        sp.value2 = 16
+
+    async with sp:
+        assert sp._actx is not None
+        assert sp._mutable  # proxy is mutable inside context
+        if mock_app.state_manager.redis is None:
+            # For in-process store, only one instance of the state exists
+            assert sp._state_instance is grandchild_state
+        else:
+            # When redis is used, a new+updated instance is assigned to the proxy
+            assert sp._state_instance is not grandchild_state
+        sp.value2 = 42
+    assert not sp._mutable  # proxy is not mutable after exiting context
+    assert sp._actx is None
+    assert sp.value2 == 42
+
+    # Get the state from the state manager directly and check that the value is updated
+    gotten_state = await mock_app.state_manager.get_state(grandchild_state.get_token())
+    if mock_app.state_manager.redis is None:
+        # For in-process store, only one instance of the state exists
+        assert gotten_state is parent_state
+    else:
+        assert gotten_state is not parent_state
+    gotten_grandchild_state = gotten_state.get_substate(sp._substate_path)
+    assert gotten_grandchild_state is not None
+    assert gotten_grandchild_state.value2 == 42
+
+    # ensure state update was emitted
+    assert mock_app.event_namespace is not None
+    mock_app.event_namespace.emit.assert_called_once_with(
+        str(SocketEvent.EVENT),
+        StateUpdate(
+            delta={
+                parent_state.get_full_name(): {
+                    "upper": "",
+                    "sum": 3.14,
+                },
+                grandchild_state.get_full_name(): {
+                    "value2": 42,
+                },
+            }
+        ).json(),
+        to=grandchild_state.get_sid(),
+    )

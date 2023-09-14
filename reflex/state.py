@@ -1140,6 +1140,7 @@ class StateProxy:
             return
         self._mutable = False
         await self._actx.__aexit__(*exc_info)
+        self._actx = None
 
     def __enter__(self):
         """Enter the regular context manager protocol.
