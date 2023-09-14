@@ -16,6 +16,8 @@ from reflex.state import LockExpiredError, State, StateManager
 from reflex.utils import format
 from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
 
+from .states import GenState
+
 
 class Object(Base):
     """A test object fixture."""
@@ -703,13 +705,9 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
 
 
 @pytest.mark.asyncio
-async def test_process_event_generator(gen_state):
-    """Test event handlers that generate multiple updates.
-
-    Args:
-        gen_state: A state.
-    """
-    gen_state = gen_state()
+async def test_process_event_generator():
+    """Test event handlers that generate multiple updates."""
+    gen_state = GenState()  # type: ignore
     event = Event(
         token="t",
         name="go",
@@ -1403,14 +1401,13 @@ def state_manager(request):
 
 
 @pytest.mark.asyncio
-async def test_state_manager_modify_state(state_manager):
+async def test_state_manager_modify_state(state_manager: StateManager, token: str):
     """Test that the state manager can modify a state exclusively.
 
     Args:
         state_manager: A state manager instance.
+        token: A token.
     """
-    token = "token"
-
     async with state_manager.modify_state(token):
         if state_manager.redis is None:
             assert token in state_manager._states_locks
@@ -1432,13 +1429,13 @@ async def test_state_manager_modify_state(state_manager):
 
 
 @pytest.mark.asyncio
-async def test_state_manager_contend(state_manager):
+async def test_state_manager_contend(state_manager: StateManager, token: str):
     """Multiple coroutines attempting to access the same state.
 
     Args:
         state_manager: A state manager instance.
+        token: A token.
     """
-    token = "token"
     n_coroutines = 10
     exp_num1 = 10
 
@@ -1465,28 +1462,33 @@ async def test_state_manager_contend(state_manager):
 
 
 @pytest.mark.asyncio
-async def test_state_manager_lock_expire():
-    """Test that the state manager lock expires and raises exception exiting context."""
-    token = "token"
+async def test_state_manager_lock_expire(token):
+    """Test that the state manager lock expires and raises exception exiting context.
 
+    Args:
+        token: A token.
+    """
     state_manager = StateManager()
     state_manager.setup(TestState)
     if state_manager.redis is None:
         pytest.skip("Test requires redis")
-    state_manager.lock_expiration = 50
+    state_manager.lock_expiration = 100
 
     async with state_manager.modify_state(token):
         await asyncio.sleep(0.01)
 
     with pytest.raises(LockExpiredError):
         async with state_manager.modify_state(token):
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.2)
 
 
 @pytest.mark.asyncio
-async def test_state_manager_lock_expire_contend():
-    """Test that the state manager lock expires and queued waiters proceed."""
-    token = "token"
+async def test_state_manager_lock_expire_contend(token: str):
+    """Test that the state manager lock expires and queued waiters proceed.
+
+    Args:
+        token: A token.
+    """
     exp_num1 = 4252
     unexp_num1 = 666
 
@@ -1494,14 +1496,14 @@ async def test_state_manager_lock_expire_contend():
     state_manager.setup(TestState)
     if state_manager.redis is None:
         pytest.skip("Test requires redis")
-    state_manager.lock_expiration = 50
+    state_manager.lock_expiration = 100
 
     order = []
 
     async def _coro_blocker():
         async with state_manager.modify_state(token) as state:
             order.append("blocker")
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.2)
             state.num1 = unexp_num1
 
     async def _coro_waiter():

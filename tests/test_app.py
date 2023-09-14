@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os.path
 import sys
+import uuid
 from typing import List, Tuple, Type
 
 if sys.version_info.major >= 3 and sys.version_info.minor > 7:
@@ -35,6 +36,13 @@ from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
 
+from .states import (
+    ChildFileUploadState,
+    FileUploadState,
+    GenState,
+    GrandChildFileUploadState,
+)
+
 
 @pytest.fixture
 def index_page():
@@ -64,6 +72,12 @@ def about_page():
     return about
 
 
+class ATestState(State):
+    """A simple state for testing."""
+
+    var: int
+
+
 @pytest.fixture()
 def test_state() -> Type[State]:
     """A default state.
@@ -71,11 +85,7 @@ def test_state() -> Type[State]:
     Returns:
         A default state.
     """
-
-    class TestState(State):
-        var: int
-
-    return TestState
+    return ATestState
 
 
 @pytest.fixture()
@@ -314,17 +324,17 @@ def test_initialize_admin_dashboard_with_view_overrides(test_model):
 
 
 @pytest.mark.asyncio
-async def test_initialize_with_state(test_state):
+async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     """Test setting the state of an app.
 
     Args:
         test_state: The default state.
+        token: a Token.
     """
     app = App(state=test_state)
     assert app.state == test_state
 
     # Get a state for a given token.
-    token = "token"
     state = await app.state_manager.get_state(token)
     assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
@@ -340,8 +350,8 @@ async def test_set_and_get_state(test_state):
     app = App(state=test_state)
 
     # Create two tokens.
-    token1 = "token1"
-    token2 = "token2"
+    token1 = str(uuid.uuid4())
+    token2 = str(uuid.uuid4())
 
     # Get the default state for each token.
     state1 = await app.state_manager.get_state(token1)
@@ -363,24 +373,25 @@ async def test_set_and_get_state(test_state):
 
 
 @pytest.mark.asyncio
-async def test_dynamic_var_event(test_state):
+async def test_dynamic_var_event(test_state: Type[ATestState], token: str):
     """Test that the default handler of a dynamic generated var
     works as expected.
 
     Args:
         test_state: State Fixture.
+        token: a Token.
     """
-    test_state = test_state()
-    test_state.add_var("int_val", int, 0)
-    result = await test_state._process(
+    state = test_state()  # type: ignore
+    state.add_var("int_val", int, 0)
+    result = await state._process(
         Event(
-            token="fake-token",
-            name="test_state.set_int_val",
+            token=token,
+            name=f"{test_state.get_name()}.set_int_val",
             router_data={"pathname": "/", "query": {}},
             payload={"value": 50},
         )
     ).__anext__()
-    assert result.delta == {"test_state": {"int_val": 50}}
+    assert result.delta == {test_state.get_name(): {"int_val": 50}}
 
 
 @pytest.mark.asyncio
@@ -390,12 +401,20 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                    "test_state.make_friend",
-                    {"test_state": {"plain_friends": ["Tommy", "another-fd"]}},
+                    "list_mutation_test_state.make_friend",
+                    {
+                        "list_mutation_test_state": {
+                            "plain_friends": ["Tommy", "another-fd"]
+                        }
+                    },
                 ),
                 (
-                    "test_state.change_first_friend",
-                    {"test_state": {"plain_friends": ["Jenny", "another-fd"]}},
+                    "list_mutation_test_state.change_first_friend",
+                    {
+                        "list_mutation_test_state": {
+                            "plain_friends": ["Jenny", "another-fd"]
+                        }
+                    },
                 ),
             ],
             id="append then __setitem__",
@@ -403,12 +422,12 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                    "test_state.unfriend_first_friend",
-                    {"test_state": {"plain_friends": []}},
+                    "list_mutation_test_state.unfriend_first_friend",
+                    {"list_mutation_test_state": {"plain_friends": []}},
                 ),
                 (
-                    "test_state.make_friend",
-                    {"test_state": {"plain_friends": ["another-fd"]}},
+                    "list_mutation_test_state.make_friend",
+                    {"list_mutation_test_state": {"plain_friends": ["another-fd"]}},
                 ),
             ],
             id="delitem then append",
@@ -416,20 +435,24 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                    "test_state.make_friends_with_colleagues",
-                    {"test_state": {"plain_friends": ["Tommy", "Peter", "Jimmy"]}},
+                    "list_mutation_test_state.make_friends_with_colleagues",
+                    {
+                        "list_mutation_test_state": {
+                            "plain_friends": ["Tommy", "Peter", "Jimmy"]
+                        }
+                    },
                 ),
                 (
-                    "test_state.remove_tommy",
-                    {"test_state": {"plain_friends": ["Peter", "Jimmy"]}},
+                    "list_mutation_test_state.remove_tommy",
+                    {"list_mutation_test_state": {"plain_friends": ["Peter", "Jimmy"]}},
                 ),
                 (
-                    "test_state.remove_last_friend",
-                    {"test_state": {"plain_friends": ["Peter"]}},
+                    "list_mutation_test_state.remove_last_friend",
+                    {"list_mutation_test_state": {"plain_friends": ["Peter"]}},
                 ),
                 (
-                    "test_state.unfriend_all_friends",
-                    {"test_state": {"plain_friends": []}},
+                    "list_mutation_test_state.unfriend_all_friends",
+                    {"list_mutation_test_state": {"plain_friends": []}},
                 ),
             ],
             id="extend, remove, pop, clear",
@@ -437,24 +460,28 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                    "test_state.add_jimmy_to_second_group",
+                    "list_mutation_test_state.add_jimmy_to_second_group",
                     {
-                        "test_state": {
+                        "list_mutation_test_state": {
                             "friends_in_nested_list": [["Tommy"], ["Jenny", "Jimmy"]]
                         }
                     },
                 ),
                 (
-                    "test_state.remove_first_person_from_first_group",
+                    "list_mutation_test_state.remove_first_person_from_first_group",
                     {
-                        "test_state": {
+                        "list_mutation_test_state": {
                             "friends_in_nested_list": [[], ["Jenny", "Jimmy"]]
                         }
                     },
                 ),
                 (
-                    "test_state.remove_first_group",
-                    {"test_state": {"friends_in_nested_list": [["Jenny", "Jimmy"]]}},
+                    "list_mutation_test_state.remove_first_group",
+                    {
+                        "list_mutation_test_state": {
+                            "friends_in_nested_list": [["Jenny", "Jimmy"]]
+                        }
+                    },
                 ),
             ],
             id="nested list",
@@ -462,16 +489,24 @@ async def test_dynamic_var_event(test_state):
         pytest.param(
             [
                 (
-                    "test_state.add_jimmy_to_tommy_friends",
-                    {"test_state": {"friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}}},
+                    "list_mutation_test_state.add_jimmy_to_tommy_friends",
+                    {
+                        "list_mutation_test_state": {
+                            "friends_in_dict": {"Tommy": ["Jenny", "Jimmy"]}
+                        }
+                    },
                 ),
                 (
-                    "test_state.remove_jenny_from_tommy",
-                    {"test_state": {"friends_in_dict": {"Tommy": ["Jimmy"]}}},
+                    "list_mutation_test_state.remove_jenny_from_tommy",
+                    {
+                        "list_mutation_test_state": {
+                            "friends_in_dict": {"Tommy": ["Jimmy"]}
+                        }
+                    },
                 ),
                 (
-                    "test_state.tommy_has_no_fds",
-                    {"test_state": {"friends_in_dict": {"Tommy": []}}},
+                    "list_mutation_test_state.tommy_has_no_fds",
+                    {"list_mutation_test_state": {"friends_in_dict": {"Tommy": []}}},
                 ),
             ],
             id="list in dict",
@@ -479,7 +514,9 @@ async def test_dynamic_var_event(test_state):
     ],
 )
 async def test_list_mutation_detection__plain_list(
-    event_tuples: List[Tuple[str, List[str]]], list_mutation_state: State
+    event_tuples: List[Tuple[str, List[str]]],
+    list_mutation_state: State,
+    token: str,
 ):
     """Test list mutation detection
     when reassignment is not explicitly included in the logic.
@@ -487,11 +524,12 @@ async def test_list_mutation_detection__plain_list(
     Args:
         event_tuples: From parametrization.
         list_mutation_state: A state with list mutation features.
+        token: a Token.
     """
     for event_name, expected_delta in event_tuples:
         result = await list_mutation_state._process(
             Event(
-                token="fake-token",
+                token=token,
                 name=event_name,
                 router_data={"pathname": "/", "query": {}},
                 payload={},
@@ -508,16 +546,24 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "test_state.add_age",
-                    {"test_state": {"details": {"name": "Tommy", "age": 20}}},
+                    "dict_mutation_test_state.add_age",
+                    {
+                        "dict_mutation_test_state": {
+                            "details": {"name": "Tommy", "age": 20}
+                        }
+                    },
                 ),
                 (
-                    "test_state.change_name",
-                    {"test_state": {"details": {"name": "Jenny", "age": 20}}},
+                    "dict_mutation_test_state.change_name",
+                    {
+                        "dict_mutation_test_state": {
+                            "details": {"name": "Jenny", "age": 20}
+                        }
+                    },
                 ),
                 (
-                    "test_state.remove_last_detail",
-                    {"test_state": {"details": {"name": "Jenny"}}},
+                    "dict_mutation_test_state.remove_last_detail",
+                    {"dict_mutation_test_state": {"details": {"name": "Jenny"}}},
                 ),
             ],
             id="update then __setitem__",
@@ -525,12 +571,12 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "test_state.clear_details",
-                    {"test_state": {"details": {}}},
+                    "dict_mutation_test_state.clear_details",
+                    {"dict_mutation_test_state": {"details": {}}},
                 ),
                 (
-                    "test_state.add_age",
-                    {"test_state": {"details": {"age": 20}}},
+                    "dict_mutation_test_state.add_age",
+                    {"dict_mutation_test_state": {"details": {"age": 20}}},
                 ),
             ],
             id="delitem then update",
@@ -538,16 +584,20 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "test_state.add_age",
-                    {"test_state": {"details": {"name": "Tommy", "age": 20}}},
+                    "dict_mutation_test_state.add_age",
+                    {
+                        "dict_mutation_test_state": {
+                            "details": {"name": "Tommy", "age": 20}
+                        }
+                    },
                 ),
                 (
-                    "test_state.remove_name",
-                    {"test_state": {"details": {"age": 20}}},
+                    "dict_mutation_test_state.remove_name",
+                    {"dict_mutation_test_state": {"details": {"age": 20}}},
                 ),
                 (
-                    "test_state.pop_out_age",
-                    {"test_state": {"details": {}}},
+                    "dict_mutation_test_state.pop_out_age",
+                    {"dict_mutation_test_state": {"details": {}}},
                 ),
             ],
             id="add, remove, pop",
@@ -555,13 +605,17 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "test_state.remove_home_address",
-                    {"test_state": {"address": [{}, {"work": "work address"}]}},
+                    "dict_mutation_test_state.remove_home_address",
+                    {
+                        "dict_mutation_test_state": {
+                            "address": [{}, {"work": "work address"}]
+                        }
+                    },
                 ),
                 (
-                    "test_state.add_street_to_home_address",
+                    "dict_mutation_test_state.add_street_to_home_address",
                     {
-                        "test_state": {
+                        "dict_mutation_test_state": {
                             "address": [
                                 {"street": "street address"},
                                 {"work": "work address"},
@@ -575,9 +629,9 @@ async def test_list_mutation_detection__plain_list(
         pytest.param(
             [
                 (
-                    "test_state.change_friend_name",
+                    "dict_mutation_test_state.change_friend_name",
                     {
-                        "test_state": {
+                        "dict_mutation_test_state": {
                             "friend_in_nested_dict": {
                                 "name": "Nikhil",
                                 "friend": {"name": "Tommy"},
@@ -586,9 +640,9 @@ async def test_list_mutation_detection__plain_list(
                     },
                 ),
                 (
-                    "test_state.add_friend_age",
+                    "dict_mutation_test_state.add_friend_age",
                     {
-                        "test_state": {
+                        "dict_mutation_test_state": {
                             "friend_in_nested_dict": {
                                 "name": "Nikhil",
                                 "friend": {"name": "Tommy", "age": 30},
@@ -597,8 +651,12 @@ async def test_list_mutation_detection__plain_list(
                     },
                 ),
                 (
-                    "test_state.remove_friend",
-                    {"test_state": {"friend_in_nested_dict": {"name": "Nikhil"}}},
+                    "dict_mutation_test_state.remove_friend",
+                    {
+                        "dict_mutation_test_state": {
+                            "friend_in_nested_dict": {"name": "Nikhil"}
+                        }
+                    },
                 ),
             ],
             id="nested dict",
@@ -606,7 +664,9 @@ async def test_list_mutation_detection__plain_list(
     ],
 )
 async def test_dict_mutation_detection__plain_list(
-    event_tuples: List[Tuple[str, List[str]]], dict_mutation_state: State
+    event_tuples: List[Tuple[str, List[str]]],
+    dict_mutation_state: State,
+    token: str,
 ):
     """Test dict mutation detection
     when reassignment is not explicitly included in the logic.
@@ -614,11 +674,12 @@ async def test_dict_mutation_detection__plain_list(
     Args:
         event_tuples: From parametrization.
         dict_mutation_state: A state with dict mutation features.
+        token: a Token.
     """
     for event_name, expected_delta in event_tuples:
         result = await dict_mutation_state._process(
             Event(
-                token="fake-token",
+                token=token,
                 name=event_name,
                 router_data={"pathname": "/", "query": {}},
                 payload={},
@@ -630,41 +691,43 @@ async def test_dict_mutation_detection__plain_list(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "fixture, delta",
+    ("state", "delta"),
     [
         (
-            "upload_state",
+            FileUploadState,
             {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
         ),
         (
-            "upload_sub_state",
+            ChildFileUploadState,
             {
-                "file_state.file_upload_state": {
+                "file_state_base1.child_file_upload_state": {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
         (
-            "upload_grand_sub_state",
+            GrandChildFileUploadState,
             {
-                "base_file_state.file_sub_state.file_upload_state": {
+                "file_state_base1.file_state_base2.grand_child_file_upload_state": {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
     ],
 )
-async def test_upload_file(fixture, request, delta):
+async def test_upload_file(tmp_path, state, delta, token: str):
     """Test that file upload works correctly.
 
     Args:
-        fixture: The state.
-        request: Fixture request.
+        tmp_path: Temporary path.
+        state: The state class.
         delta: Expected delta
+        token: a Token.
     """
-    app = App(state=request.getfixturevalue(fixture))
+    state._tmp_path = tmp_path
+    app = App(state=state)
     app.event_namespace.emit = AsyncMock()  # type: ignore
-    current_state = await app.state_manager.get_state("token")
+    current_state = await app.state_manager.get_state(token)
     data = b"This is binary data"
 
     # Create a binary IO object and write data to it
@@ -672,11 +735,11 @@ async def test_upload_file(fixture, request, delta):
     bio.write(data)
 
     file1 = UploadFile(
-        filename="token:file_upload_state.multi_handle_upload:True:image1.jpg",
+        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename="token:file_upload_state.multi_handle_upload:True:image2.jpg",
+        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)
@@ -686,7 +749,7 @@ async def test_upload_file(fixture, request, delta):
     app.event_namespace.emit.assert_called_with(  # type: ignore
         "event", state_update.json(), to=current_state.get_sid()
     )
-    assert (await app.state_manager.get_state("token")).dict()["img_list"] == [
+    assert (await app.state_manager.get_state(token)).dict()["img_list"] == [
         "image1.jpg",
         "image2.jpg",
     ]
@@ -694,14 +757,16 @@ async def test_upload_file(fixture, request, delta):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "fixture", ["upload_state", "upload_sub_state", "upload_grand_sub_state"]
+    "state",
+    [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
 )
-async def test_upload_file_without_annotation(fixture, request):
+async def test_upload_file_without_annotation(state, tmp_path, token):
     """Test that an error is thrown when there's no param annotated with rx.UploadFile or List[UploadFile].
 
     Args:
-        fixture: The state.
-        request: Fixture request.
+        state: The state class.
+        tmp_path: Temporary path.
+        token: a Token.
     """
     data = b"This is binary data"
 
@@ -709,14 +774,15 @@ async def test_upload_file_without_annotation(fixture, request):
     bio = io.BytesIO()
     bio.write(data)
 
-    app = App(state=request.getfixturevalue(fixture))
+    state._tmp_path = tmp_path
+    app = App(state=state)
 
     file1 = UploadFile(
-        filename="token:file_upload_state.handle_upload2:True:image1.jpg",
+        filename=f"{token}:{state.get_name()}.handle_upload2:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename="token:file_upload_state.handle_upload2:True:image2.jpg",
+        filename=f"{token}:{state.get_name()}.handle_upload2:True:image2.jpg",
         file=bio,
     )
     fn = upload(app)
@@ -724,7 +790,7 @@ async def test_upload_file_without_annotation(fixture, request):
         await fn([file1, file2])
     assert (
         err.value.args[0]
-        == "`file_upload_state.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+        == f"`{state.get_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
 
@@ -770,6 +836,7 @@ class DynamicState(State):
 async def test_dynamic_route_var_route_change_completed_on_load(
     index_page,
     windows_platform: bool,
+    token: str,
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -779,6 +846,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     Args:
         index_page: The index page.
         windows_platform: Whether the system is windows.
+        token: a Token.
     """
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
@@ -794,7 +862,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     }
     assert constants.ROUTER_DATA in app.state().computed_var_dependencies
 
-    token = "mock_token"
     sid = "mock_sid"
     client_ip = "127.0.0.1"
     state = await app.state_manager.get_state(token)
@@ -819,6 +886,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             **kwargs,
         )
 
+    prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         hydrate_event = _event(name=get_hydrate_event(state), val=exp_val)
         exp_router_data = {
@@ -828,13 +896,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             "token": token,
             **hydrate_event.router_data,
         }
-        update = await process(
+        process_coro = process(
             app,
             event=hydrate_event,
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()  # type: ignore
+        )
+        update = await process_coro.__anext__()  # type: ignore
 
         # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
@@ -862,14 +931,27 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 ),
             ],
         )
+        if app.state_manager.redis is not None:
+            # When redis is used, the state is not updated until the processing is complete
+            state = await app.state_manager.get_state(token)
+            assert state.dynamic == prev_exp_val
+
+        # complete the processing
+        with pytest.raises(StopAsyncIteration):
+            await process_coro.__anext__()  # type: ignore
+
+        # check that router data was written to the state_manager store
+        state = await app.state_manager.get_state(token)
         assert state.dynamic == exp_val
-        on_load_update = await process(
+
+        process_coro = process(
             app,
             event=_dynamic_state_event(name="on_load", val=exp_val),
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()  # type: ignore
+        )
+        on_load_update = await process_coro.__anext__()  # type: ignore
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -881,7 +963,10 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             },
             events=[],
         )
-        on_set_is_hydrated_update = await process(
+        # complete the processing
+        with pytest.raises(StopAsyncIteration):
+            await process_coro.__anext__()  # type: ignore
+        process_coro = process(
             app,
             event=_dynamic_state_event(
                 name="set_is_hydrated", payload={"value": True}, val=exp_val
@@ -889,7 +974,8 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()  # type: ignore
+        )
+        on_set_is_hydrated_update = await process_coro.__anext__()  # type: ignore
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -901,15 +987,19 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             },
             events=[],
         )
+        # complete the processing
+        with pytest.raises(StopAsyncIteration):
+            await process_coro.__anext__()  # type: ignore
 
         # a simple state update event should NOT trigger on_load or route var side effects
-        update = await process(
+        process_coro = process(
             app,
             event=_dynamic_state_event(name="on_counter", val=exp_val),
             sid=sid,
             headers={},
             client_ip=client_ip,
-        ).__anext__()  # type: ignore
+        )
+        update = await process_coro.__anext__()  # type: ignore
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -921,6 +1011,12 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             },
             events=[],
         )
+        # complete the processing
+        with pytest.raises(StopAsyncIteration):
+            await process_coro.__anext__()  # type: ignore
+
+        prev_exp_val = exp_val
+    state = await app.state_manager.get_state(token)
     assert state.loaded == len(exp_vals)
     assert state.counter == len(exp_vals)
     # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
@@ -928,33 +1024,33 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
 
 @pytest.mark.asyncio
-async def test_process_events(gen_state, mocker):
+async def test_process_events(mocker, token: str):
     """Test that an event is processed properly and that it is postprocessed
     n+1 times. Also check that the processing flag of the last stateupdate is set to
     False.
 
     Args:
-        gen_state: The state.
         mocker: mocker object.
+        token: a Token.
     """
     router_data = {
         "pathname": "/",
         "query": {},
-        "token": "mock_token",
+        "token": token,
         "sid": "mock_sid",
         "headers": {},
         "ip": "127.0.0.1",
     }
-    app = App(state=gen_state)
+    app = App(state=GenState)
     mocker.patch.object(app, "postprocess", AsyncMock())
     event = Event(
-        token="token", name="gen_state.go", payload={"c": 5}, router_data=router_data
+        token=token, name="gen_state.go", payload={"c": 5}, router_data=router_data
     )
 
     async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):  # type: ignore
         pass
 
-    assert (await app.state_manager.get_state("token")).value == 5
+    assert (await app.state_manager.get_state(token)).value == 5
     assert app.postprocess.call_count == 6
 
 
