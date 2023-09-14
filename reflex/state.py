@@ -1254,12 +1254,17 @@ class StateManager(Base):
     }
 
     # The mutex ensures the dict of mutexes is updated exclusively
-    _state_manager_lock: asyncio.Lock = pydantic.PrivateAttr(
-        default_factory=asyncio.Lock,
-    )
+    _state_manager_lock = asyncio.Lock()
 
     # The dict of mutexes for each client
     _states_locks: Dict[str, asyncio.Lock] = pydantic.PrivateAttr({})
+
+    class Config:
+        """The Pydantic config."""
+
+        fields = {
+            "_states_locks": {"exclude": True},
+        }
 
     def setup(self, state: Type[State]):
         """Set up the state manager.

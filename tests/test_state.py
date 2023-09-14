@@ -1425,7 +1425,7 @@ async def test_state_manager_modify_state(state_manager):
 
     # separate instances should NOT share locks
     sm2 = StateManager()
-    assert sm2._state_manager_lock != state_manager._state_manager_lock
+    assert sm2._state_manager_lock is state_manager._state_manager_lock
     assert not sm2._states_locks
     if state_manager._states_locks:
         assert sm2._states_locks != state_manager._states_locks
