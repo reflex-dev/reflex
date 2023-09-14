@@ -17,29 +17,6 @@ except ImportError:
 
 IS_WINDOWS = platform.system() == "Windows"
 
-
-def get_fnm_name() -> str | None:
-    """Get the appropriate fnm executable name based on the current platform.
-
-    Returns:
-            The fnm executable name for the current platform.
-    """
-    platform_os = platform.system()
-
-    if platform_os == "Windows":
-        return "fnm-windows"
-    elif platform_os == "Darwin":
-        return "fnm-macos"
-    elif platform_os == "Linux":
-        machine = platform.machine()
-        if machine == "arm" or machine.startswith("armv7"):
-            return "fnm-arm32"
-        elif machine.startswith("aarch") or machine.startswith("armv8"):
-            return "fnm-arm64"
-        return "fnm-linux"
-    return None
-
-
 # App names and versions.
 # The name of the Reflex package.
 MODULE_NAME = "reflex"
@@ -71,7 +48,7 @@ JINJA_TEMPLATE_DIR = os.path.join(TEMPLATE_DIR, "jinja")
 # The Bun version.
 BUN_VERSION = "1.0.1"
 # Min Bun Version
-MIN_BUN_VERSION = "0.7.0"
+MIN_BUN_VERSION = "1.0.1"
 # The directory to store the bun.
 BUN_ROOT_PATH = os.path.join(REFLEX_DIR, "bun")
 # Default bun path.
@@ -88,25 +65,23 @@ NODE_VERSION = "18.17.0"
 NODE_VERSION_MIN = "16.8.0"
 # The directory to store fnm.
 FNM_DIR = os.path.join(REFLEX_DIR, "fnm")
-FNM_FILENAME = get_fnm_name()
+# The windows FNM filename.
+WINDOWS_FNM_FILENAME = "fnm-windows"
 # The fnm executable binary.
-FNM_EXE = os.path.join(FNM_DIR, "fnm.exe" if IS_WINDOWS else "fnm")
+FNM_EXE = os.path.join(FNM_DIR, "fnm.exe")
 # The node bin path.
 NODE_BIN_PATH = os.path.join(
     FNM_DIR,
     "node-versions",
     f"v{NODE_VERSION}",
     "installation",
-    "bin" if not IS_WINDOWS else "",
 )
 # The default path where node is installed.
-NODE_PATH = os.path.join(NODE_BIN_PATH, "node.exe" if IS_WINDOWS else "node")
+NODE_PATH = os.path.join(NODE_BIN_PATH, "node.exe")
 # The default path where npm is installed.
 NPM_PATH = os.path.join(NODE_BIN_PATH, "npm")
 # The URL to the fnm release binary
-FNM_INSTALL_URL = (
-    f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/{FNM_FILENAME}.zip"
-)
+FNM_INSTALL_URL = f"https://github.com/Schniz/fnm/releases/download/v{FNM_VERSION}/{WINDOWS_FNM_FILENAME}.zip"
 # The frontend directories in a project.
 # The web folder where the NextJS app is compiled to.
 WEB_DIR = ".web"

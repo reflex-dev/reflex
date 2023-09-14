@@ -6,10 +6,8 @@ import glob
 import importlib
 import json
 import os
-import platform
 import random
 import re
-import stat
 import sys
 import tempfile
 import zipfile
@@ -286,7 +284,9 @@ def download_and_extract_fnm_zip():
     # Download the zip file
     url = constants.FNM_INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = os.path.join(constants.FNM_DIR, f"{constants.FNM_FILENAME}.zip")
+    fnm_zip_file = os.path.join(
+        constants.FNM_DIR, f"{constants.WINDOWS_FNM_FILENAME}.zip"
+    )
     # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release.
@@ -311,16 +311,9 @@ def download_and_extract_fnm_zip():
 
 
 def install_node():
-    """Install fnm and nodejs for use by Reflex.
-    Independent of any existing system installations.
-    """
+    """Install fnm and nodejs on windows for use by Reflex."""
     # Check that the OS is Windows.
     assert constants.IS_WINDOWS, "Node installation is only supported on Windows."
-
-    if not constants.FNM_FILENAME:
-        # fnm only support Linux, macOS and Windows distros.
-        console.debug("Invalid OS. Skipping node installation.")
-        return
 
     path_ops.mkdir(constants.FNM_DIR)
     if not os.path.exists(constants.FNM_EXE):
@@ -354,6 +347,7 @@ def install_bun():
         return
 
     #  if unzip is installed
+    # breakpoint()
     unzip_path = path_ops.which("unzip")
     if unzip_path is None:
         raise FileNotFoundError("Reflex requires unzip to be installed.")
@@ -502,17 +496,9 @@ def validate_bun():
 
 
 def validate_frontend_dependencies():
-    """Validate frontend dependencies to ensure they meet requirements.
-
-    Raises:
-        Exit: If the package manager is invalid.
-    """
-    if constants.IS_WINDOWS:
-        # For Windows, check the node version is valid.
-        validate_node()
-    else:
-        # For Linux and macOS, check the bun version is valid.
-        validate_bun()
+    """Validate frontend dependencies to ensure they meet requirements."""
+    # Check node version validity for windows and bun version validity for other OS
+    validate_node() if constants.IS_WINDOWS else validate_bun()
 
 
 def initialize_frontend_dependencies():
@@ -520,10 +506,7 @@ def initialize_frontend_dependencies():
     # Create the reflex directory.
     path_ops.mkdir(constants.REFLEX_DIR)
     # Install the frontend dependencies.
-    if constants.IS_WINDOWS:
-        install_node()
-    else:
-        install_bun()
+    install_node() if constants.IS_WINDOWS else install_bun()
     # Validate dependencies before install
     validate_frontend_dependencies()
     # Set up the web directory.
