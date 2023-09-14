@@ -1,10 +1,7 @@
 """Component for displaying a plotly graph."""
 
 import json
-from typing import Dict, List
-
-from plotly.graph_objects import Figure
-from plotly.io import to_json
+from typing import Any, Dict, List
 
 from reflex.components.component import NoSSRComponent
 from reflex.components.tags import Tag
@@ -28,7 +25,7 @@ class Plotly(PlotlyLib):
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Figure]
+    data: Var[Any]
 
     # The layout of the graph.
     layout: Var[Dict]
@@ -43,26 +40,38 @@ class Plotly(PlotlyLib):
     use_resize_handler: Var[bool]
 
     def _render(self) -> Tag:
-        if (
-            isinstance(self.data, Figure)
-            and self.layout is None
-            and self.width is not None
-        ):
-            layout = Var.create({"width": self.width, "height": self.height})
-            assert layout is not None
-            self.layout = layout
+        try:
+            from plotly.graph_objects import Figure
+
+            if (
+                isinstance(self.data, Figure)
+                and self.layout is None
+                and self.width is not None
+            ):
+                layout = Var.create({"width": self.width, "height": self.height})
+                assert layout is not None
+                self.layout = layout
+        except ImportError:
+            pass
 
         return super()._render()
 
 
-@serializer
-def serialize_figure(figure: Figure) -> str:
-    """Serialize a plotly figure.
+try:
+    from plotly.graph_objects import Figure
+    from plotly.io import to_json
 
-    Args:
-        figure: The figure to serialize.
+    @serializer
+    def serialize_figure(figure: Figure) -> str:
+        """Serialize a plotly figure.
 
-    Returns:
-        The serialized figure.
-    """
-    return json.loads(to_json(figure))["data"]
+        Args:
+            figure: The figure to serialize.
+
+        Returns:
+            The serialized figure.
+        """
+        return json.loads(str(to_json(figure)))["data"]
+
+except ImportError:
+    pass
