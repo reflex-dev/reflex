@@ -251,6 +251,7 @@ class Var(ABC):
         Raises:
             TypeError: when attempting to iterate over the Var.
         """
+        print(self.full_name)
         raise TypeError(
             f"Cannot iterate over Var {self.full_name!r}. Instead use `rx.foreach`."
         )

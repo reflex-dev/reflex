@@ -239,6 +239,7 @@ class Component(Base, ABC):
         if isinstance(value, List):
             events = []
             for v in value:
+                print(v, type(v))
                 if isinstance(v, EventHandler):
                     # Call the event handler to get the event.
                     event = call_event_handler(v, arg)
@@ -434,6 +435,12 @@ class Component(Base, ABC):
             The dictionary for template of component.
         """
         tag = self._render()
+        for name, trigger in self.event_triggers.items():
+            print(name, type(trigger))
+            for event in trigger.events:
+                print(type(event.handler), event.handler)
+                print(event.args)
+            print()
 
         rendered_dict = dict(
             tag.add_props(

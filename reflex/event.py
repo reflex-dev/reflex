@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+import types
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from reflex import constants
@@ -398,12 +399,33 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
         The event spec from calling the event handler.
     """
     args = inspect.getfullargspec(event_handler.fn).args
+
+    # handle new API using lambda to define triggers
+    if isinstance(arg, types.LambdaType):
+        lambda_args = inspect.getfullargspec(arg).args
+        if len(args) == len(lambda_args) + 1:
+            print("match number of expected arguments")
+            parsed_args = [
+                BaseVar(name=f"_{l_arg}", type_=FrontendEvent, is_local=True)
+                for l_arg in lambda_args
+            ]
+            parsed_args = arg(*parsed_args)
+        return event_handler(*parsed_args)  # type: ignore
+
     if len(args) == 1:
         return event_handler()
     assert (
         len(args) == 2
     ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
     return event_handler(arg)
+
+
+# def extract_arg_value(fn, arg_name):
+#     import ast
+
+#     a = ast.parse(inspect.getsource(fn).strip(" "))
+#     print(a.body[0])
+#     return f"_{arg_name}"
 
 
 def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
@@ -428,6 +450,7 @@ def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
 
     # Get the args of the lambda.
     args = inspect.getfullargspec(fn).args
+    # print(fn, arg, type(arg))
 
     # Call the lambda.
     if len(args) == 0:
@@ -436,6 +459,8 @@ def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
         out = fn(arg)
     else:
         raise ValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+        # console_log("WARN: more than 1 args provided")
+        # out = fn(*arg())
 
     # Convert the output to a list.
     if not isinstance(out, List):
