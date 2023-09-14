@@ -511,10 +511,6 @@ def format_state(value: Any) -> Any:
             "data": format_dataframe_values(value),
         }
 
-    # Convert datetime objects to str.
-    if types.is_datetime(type(value)):
-        return str(value)
-
     raise TypeError(
         "State vars must be primitive Python types, "
         "or subclasses of rx.Base. "

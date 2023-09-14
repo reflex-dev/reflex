@@ -1,6 +1,7 @@
 """Serializers used to convert Var types to JSON strings."""
 
 import re
+from datetime import datetime
 from typing import get_type_hints, Any, Callable, Type
 
 from reflex.utils import exceptions, types
@@ -154,3 +155,15 @@ def serialize_dict(prop: dict[str, Any]) -> str:
 
     # Return the formatted dict.
     return fprop
+
+@serializer
+def serialize_datetime(dt: datetime) -> str:
+    """Serialize a datetime to a JSON string.
+    
+    Args:
+        dt: The datetime to serialize.
+
+    Returns:
+        The serialized datetime.
+    """
+    return str(dt)
