@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import functools
+import os
 from typing import Dict, List
 
 import pytest
@@ -17,6 +18,10 @@ from reflex.utils import format
 from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
 
 from .states import GenState
+
+CI = bool(os.environ.get("CI", False))
+LOCK_EXPIRATION = 2000 if CI else 100
+LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.2
 
 
 class Object(Base):
@@ -1472,14 +1477,14 @@ async def test_state_manager_lock_expire(token):
     state_manager.setup(TestState)
     if state_manager.redis is None:
         pytest.skip("Test requires redis")
-    state_manager.lock_expiration = 300
+    state_manager.lock_expiration = LOCK_EXPIRATION
 
     async with state_manager.modify_state(token):
         await asyncio.sleep(0.01)
 
     with pytest.raises(LockExpiredError):
         async with state_manager.modify_state(token):
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(LOCK_EXPIRE_SLEEP)
 
 
 @pytest.mark.asyncio
@@ -1496,14 +1501,14 @@ async def test_state_manager_lock_expire_contend(token: str):
     state_manager.setup(TestState)
     if state_manager.redis is None:
         pytest.skip("Test requires redis")
-    state_manager.lock_expiration = 300
+    state_manager.lock_expiration = LOCK_EXPIRATION
 
     order = []
 
     async def _coro_blocker():
         async with state_manager.modify_state(token) as state:
             order.append("blocker")
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(LOCK_EXPIRE_SLEEP)
             state.num1 = unexp_num1
 
     async def _coro_waiter():
