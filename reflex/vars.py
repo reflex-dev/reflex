@@ -130,9 +130,6 @@ class Var(ABC):
         if serialized is not None:
             value = serialized
 
-        if isinstance(value, dict):
-            value = format.format_dict(value)
-
         try:
             name = value if isinstance(value, str) else json.dumps(value)
         except TypeError as e:

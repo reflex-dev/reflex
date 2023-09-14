@@ -1,8 +1,10 @@
 """Serializers used to convert Var types to JSON strings."""
 
+import re
 from typing import get_type_hints, Any, Callable, Type
 
-from reflex.utils import types
+from reflex.utils import exceptions, types
+
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON string.
@@ -84,7 +86,7 @@ def get_serializer(type_: Type) -> Serializer | None:
     
     # If the type is not registered, check if it is a subclass of a registered type.
     for registered_type, serializer in SERIALIZERS.items():
-        if issubclass(type_, registered_type):
+        if types._issubclass(type_, registered_type):
             return serializer
         
     # If there is no serializer, return None.
@@ -101,3 +103,54 @@ def has_serializer(type_: Type) -> bool:
         Whether there is a serializer for the type.
     """
     return get_serializer(type_) is not None
+
+
+@serializer
+def serialize_dict(prop: dict[str, Any]) -> str:
+    """Serialize a dictionary to a JSON string.
+    
+    Args:
+        prop: The dictionary to serialize.
+
+    Returns:
+        The serialized dictionary.
+    """
+        # Import here to avoid circular imports.
+    from reflex.event import EventHandler
+    from reflex.vars import Var
+    from reflex.utils.format import json_dumps
+
+    prop_dict = {}
+
+    # Convert any var keys to strings.
+    for key, value in prop.items():
+        if types._issubclass(type(value), Callable):
+            raise exceptions.InvalidStylePropError(
+                f"The style prop `{to_snake_case(key)}` cannot have "  # type: ignore
+                f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
+                f"an event handler or callable as its value"
+            )
+        prop_dict[key] = str(value) if isinstance(value, Var) else value
+
+    # Dump the dict to a string.
+    fprop = json_dumps(prop_dict)
+
+    def unescape_double_quotes_in_var(m: re.Match) -> str:
+        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
+        return re.sub('\\\\"', '"', m.group(1))
+
+    # This substitution is necessary to unwrap var values.
+    fprop = re.sub(
+        pattern=r"""
+            (?<!\\)      # must NOT start with a backslash
+            "            # match opening double quote of JSON value
+            {(.*?)}      # extract the value between curly braces (non-greedy)
+            "            # match must end with an unescaped double quote
+        """,
+        repl=unescape_double_quotes_in_var,
+        string=fprop,
+        flags=re.VERBOSE,
+    )
+
+    # Return the formatted dict.
+    return fprop
