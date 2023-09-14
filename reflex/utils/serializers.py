@@ -1,5 +1,7 @@
 """Serializers used to convert Var types to JSON strings."""
 
+from __future__ import annotations
+
 import re
 from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Type, get_type_hints
@@ -20,6 +22,9 @@ def serializer(fn: Serializer) -> Serializer:
 
     Returns:
         The decorated function.
+
+    Raises:
+        ValueError: If the function does not take a single argument.
     """
     # Get the global serializers.
     global SERIALIZERS
@@ -117,6 +122,9 @@ def serialize_dict(prop: dict[str, Any]) -> str:
 
     Returns:
         The serialized dictionary.
+
+    Raises:
+        InvalidStylePropError: If the style prop is invalid.
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler

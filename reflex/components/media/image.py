@@ -63,22 +63,37 @@ class Image(ChakraComponent):
         return super().get_triggers() | {"on_error", "on_load"}
 
     def _render(self) -> Tag:
-        # If the src is an image, convert it to a base64 string.
-        if types.is_image(type(self.src)):
-            self.src = Var.create(serialize(self.src))  # type: ignore
+        try:
+            from PIL.Image import Image as Img
+
+            # If the src is an image, convert it to a base64 string.
+            if types._isinstance(self.src, Img):
+                self.src = Var.create(serialize(self.src))  # type: ignore
+        except ImportError:
+            pass
 
         # Render the table.
         return super()._render()
 
 
-from PIL.Image import Image as Img
+try:
+    from PIL.Image import Image as Img
 
+    @serializer
+    def serialize_image(image: Img) -> str:
+        """Serialize a plotly figure.
 
-@serializer
-def serialize_image(image: Img) -> str:
-    """Serialize a plotly figure."""
-    buff = io.BytesIO()
-    image.save(buff, format="PNG")
-    image_bytes = buff.getvalue()
-    base64_image = base64.b64encode(image_bytes).decode("utf-8")
-    return f"data:image/png;base64,{base64_image}"
+        Args:
+            image: The image to serialize.
+
+        Returns:
+            The serialized image.
+        """
+        buff = io.BytesIO()
+        image.save(buff, format="PNG")
+        image_bytes = buff.getvalue()
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        return f"data:image/png;base64,{base64_image}"
+
+except ImportError:
+    pass

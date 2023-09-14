@@ -57,5 +57,12 @@ class Plotly(PlotlyLib):
 
 @serializer
 def serialize_figure(figure: Figure) -> str:
-    """Serialize a plotly figure."""
+    """Serialize a plotly figure.
+
+    Args:
+        figure: The figure to serialize.
+
+    Returns:
+        The serialized figure.
+    """
     return json.loads(to_json(figure))["data"]
