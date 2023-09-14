@@ -189,6 +189,7 @@ class Config(Base):
     rxdeploy_url: Optional[str] = None
 
     # The Control Plane url for hosting (include the ports).
+    # TODO: should probably get these from a well known endpoint instead of hard coded here.
     cp_web_url: Optional[str] = None
     cp_backend_url: Optional[str] = None
     # TODO: change this back to 1 second

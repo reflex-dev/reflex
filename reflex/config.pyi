@@ -66,6 +66,9 @@ class Config(Base):
     event_namespace: Optional[str]
     frontend_packages: List[str]
     rxdeploy_url: Optional[str]
+    cp_web_url: Optional[str]
+    cp_backend_url: Optional[str]
+    http_request_timeout: int
     username: Optional[str]
 
     def __init__(
@@ -90,6 +93,9 @@ class Config(Base):
         event_namespace: Optional[str] = None,
         frontend_packages: Optional[List[str]] = None,
         rxdeploy_url: Optional[str] = None,
+        cp_web_url: Optional[str] = None,
+        cp_backend_url: Optional[str] = None,
+        http_request_timeout: int = 15,
         username: Optional[str] = None,
         **kwargs
     ) -> None: ...

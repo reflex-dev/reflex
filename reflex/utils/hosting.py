@@ -11,12 +11,12 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.utils import console
 
+config = get_config()
 
-class PresignedUrlPostParam(BaseModel):
-    """Params for presigned url GET request."""
-
-    instance_name: str  # name of the hosted instance
-    file_name: str  # name of the file to be uploaded
+POST_HOSTED_INSTANCE_ENDPOINT = f"{config.cp_backend_url}/hosted-instances"
+POST_PROJECT_ENDPOINT = f"{config.cp_backend_url}/projects"
+GET_PROJECT_ENDPOINT = f"{config.cp_backend_url}/projects"
+GET_HOSTED_INSTANCE_ENDPOINT = f"{config.cp_backend_url}/hosted-instances"
 
 
 class ProjectPostParam(BaseModel):
@@ -36,11 +36,8 @@ class HostedInstancePostParam(BaseModel):
     """Params for hosted instance deployment POST request."""
 
     key: str  # name of the hosted instance
-    backend_initial_region: str
     project_name: str
-    backend_file_name: str
-    frontend_file_name: str
-    description: Optional[str] = None
+    backend_initial_region: str
     backend_cpus: Optional[int] = None
     backend_memory_mb: Optional[int] = None
 

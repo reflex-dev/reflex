@@ -6,6 +6,7 @@ import os
 import webbrowser
 from http import HTTPStatus
 from pathlib import Path
+from typing import Optional
 
 import requests
 import typer
@@ -215,6 +216,12 @@ def deploy(
     ),
     # TODO: make this in a list of choices
     initial_region: str = typer.Option(..., help="The initial region to deploy to."),
+    cpus: Optional[int] = typer.Option(
+        None, help="The number of CPUs to allocate. List the available types here."
+    ),
+    memory_mb: Optional[int] = typer.Option(
+        None, help="The amount of memory to allocate. List the available types here."
+    ),
     dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
     loglevel: constants.LogLevel = typer.Option(
         console.LOG_LEVEL, help="The log level to use."
@@ -227,7 +234,6 @@ def deploy(
     # Check if the deploy url is set.
     if not hosting.is_set_up():
         return
-    cp_backend_url = config.cp_backend_url or ""
 
     # Check if the user is authenticated
     token = hosting.get_existing_access_token()
@@ -245,103 +251,35 @@ def deploy(
     if dry_run:
         return
 
-    # Upload the frontend and backend.
-    params = hosting.PresignedUrlPostParam(
-        file_name="frontend.zip",
-        instance_name=instance_name,
-    )
-    response = requests.post(
-        f"{cp_backend_url}/presigned-url",
-        headers=hosting.authorization_header(token),
-        json=params.dict(exclude_none=True),
-        timeout=config.http_request_timeout,
-    )
-
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-            console.debug(f"Reason: {response.content}")
-            console.error("Internal server error. Please contact support.")
-        else:
-            console.error(f"Unable to deploy due to {response.reason}.")
-        return
-
-    frontend_presign_response = response.json()
-    if not frontend_presign_response:
-        console.error(
-            "Unable to get presigned url for frontend upload. Please contact support."
-        )
-        return
-    console.debug(f"Frontend upload presign response: {frontend_presign_response}")
-    try:
-        frontend_file_name = constants.FRONTEND_ZIP
-        with open(frontend_file_name, "rb") as object_file:
-            files = {"file": (frontend_file_name, object_file)}
-            response = requests.post(
-                frontend_presign_response["url"],
-                data=frontend_presign_response["fields"],
-                files=files,
-            )
-        response.raise_for_status()
-    except Exception as ex:
-        console.error(f"Unable to upload frontend zip due to {ex}")
-        return
-
-    params = hosting.PresignedUrlPostParam(
-        file_name="backend.zip",
-        instance_name=instance_name,
-    )
-    response = requests.post(
-        f"{config.cp_backend_url}/presigned-url",
-        headers=hosting.authorization_header(token),
-        json=params.dict(exclude_none=True),
-        timeout=config.http_request_timeout,
-        # TODO: fix me
-        verify=False,
-    )
-    backend_presign_response = response.json()
-    if not backend_presign_response:
-        console.error(
-            "Unable to get presigned url for backend upload. Please contact support."
-        )
-        return
-    console.debug(f"Backend archive url: {backend_presign_response}")
-    try:
-        backend_file_name = constants.BACKEND_ZIP
-        with open(backend_file_name, "rb") as object_file:
-            files = {"file": (backend_file_name, object_file)}
-            response = requests.post(
-                backend_presign_response["url"],
-                data=backend_presign_response["fields"],
-                files=files,
-            )
-        response.raise_for_status()
-    except Exception as ex:
-        console.error(f"Unable to upload backend zip due to {ex}")
-        return
-
-    # Create a deployment with the control plane.
-    post_params = hosting.HostedInstancePostParam(
+    frontend_file_name = constants.FRONTEND_ZIP
+    backend_file_name = constants.BACKEND_ZIP
+    params = hosting.HostedInstancePostParam(
         key=instance_name,
         project_name=project_name,
         backend_initial_region=initial_region,
-        backend_file_name=backend_file_name,
-        frontend_file_name=frontend_file_name,
-    )
-    response = requests.post(
-        f"{config.cp_backend_url}/hosted-instances",
-        headers=hosting.authorization_header(token),
-        json=post_params.dict(exclude_none=True),
+        backend_cpus=cpus,
+        backend_memory_mb=memory_mb,
     )
     try:
+        with open(frontend_file_name, "rb") as frontend_file, open(
+            backend_file_name, "rb"
+        ) as backend_file:
+            # https://docs.python-requests.org/en/latest/user/advanced/#post-multiple-multipart-encoded-files
+            files = [
+                ("files", (frontend_file_name, frontend_file)),
+                ("files", (backend_file_name, backend_file)),
+            ]
+            response = requests.post(
+                hosting.POST_HOSTED_INSTANCE_ENDPOINT,
+                headers=hosting.authorization_header(token),
+                data=params.dict(exclude_none=True),
+                files=files,
+            )
+            print(response.json())
         response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-            console.debug(f"Reason: {response.content}")
-            console.error("Internal server error. Please contact support.")
-        else:
-            console.error(f"Unable to deploy due to {response.reason}.")
+
+    except requests.exceptions.HTTPError as http_error:
+        console.error(f"Unable to deploy due to {http_error}.")
         return
     except requests.exceptions.Timeout:
         console.error("Unable to deploy due to request timeout.")
@@ -414,7 +352,7 @@ def login(
     token = hosting.get_existing_access_token()
     if not token:
         # If not already logged in, open a browser window/tab to the login page.
-        print(f"Opening {config.cp_web_url} ...")
+        console.print(f"Opening {config.cp_web_url} ...")
         if not webbrowser.open(config.cp_web_url or ""):
             console.warn(
                 f'Unable to open the browser. Please open the "{config.cp_web_url}" manually.'
@@ -564,7 +502,7 @@ def create(
 
     project_params = hosting.ProjectPostParam(name=project_name)
     response = requests.post(
-        f"{config.cp_backend_url}/projects",
+        hosting.POST_PROJECT_ENDPOINT,
         headers=hosting.authorization_header(token),
         json=project_params.dict(exclude_none=True),
         timeout=config.http_request_timeout,
@@ -598,7 +536,7 @@ def list_projects(
         return
 
     response = requests.get(
-        f"{config.cp_backend_url}/projects",
+        hosting.GET_PROJECT_ENDPOINT,
         headers=hosting.authorization_header(token),
     )
     if response.status_code != 200:
@@ -638,7 +576,7 @@ def list_instances(
 
     params = hosting.HostedInstanceGetParam(project_name=project_name)
     response = requests.get(
-        f"{config.cp_backend_url}/hosted-instances",
+        hosting.GET_HOSTED_INSTANCE_ENDPOINT,
         headers=hosting.authorization_header(token),
         json=params.dict(exclude_none=True),
     )
