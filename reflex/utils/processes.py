@@ -127,7 +127,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         Execute a child program in a new process.
     """
     node_bin_path = path_ops.get_node_bin_path()
-    if constants.IS_WINDOWS and not node_bin_path:
+    if not constants.IS_LINUX_OR_MAC and not node_bin_path:
         console.warn(
             "The path to the Node binary could not be found. Please ensure that Node is properly "
             "installed and added to your system's PATH environment variable."
