@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.tags import Tag
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
@@ -59,6 +60,12 @@ class Image(ChakraComponent):
             The event triggers.
         """
         return super().get_triggers() | {"on_error", "on_load"}
+
+    def _render(self) -> Tag:
+        self.src.is_string = True
+
+        # Render the table.
+        return super()._render()
 
 
 try:
