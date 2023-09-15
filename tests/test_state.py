@@ -5,7 +5,7 @@ import datetime
 import functools
 import json
 import os
-from typing import Dict, List
+from typing import Dict, Generator, List
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -1391,13 +1391,13 @@ def test_state_with_invalid_yield():
 
 
 @pytest.fixture(scope="function", params=["in_process", "redis"])
-def state_manager(request):
+def state_manager(request) -> Generator[StateManager, None, None]:
     """Instance of state manager parametrized for redis and in-process.
 
     Args:
         request: pytest request object.
 
-    Returns:
+    Yields:
         A state manager instance
     """
     state_manager = StateManager()
@@ -1411,7 +1411,10 @@ def state_manager(request):
         # explicitly NOT using redis
         state_manager.redis = None
 
-    return state_manager
+    yield state_manager
+
+    if state_manager.redis:
+        asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
 
 
 @pytest.mark.asyncio
@@ -1475,47 +1478,62 @@ async def test_state_manager_contend(state_manager: StateManager, token: str):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
 
 
-@pytest.mark.asyncio
-async def test_state_manager_lock_expire(token):
-    """Test that the state manager lock expires and raises exception exiting context.
+@pytest.fixture(scope="function")
+def state_manager_redis() -> Generator[StateManager, None, None]:
+    """Instance of state manager for redis only.
 
-    Args:
-        token: A token.
+    Yields:
+        A state manager instance
     """
     state_manager = StateManager()
     state_manager.setup(TestState)
+    assert not state_manager._states_locks
+
     if state_manager.redis is None:
         pytest.skip("Test requires redis")
-    state_manager.lock_expiration = LOCK_EXPIRATION
 
-    async with state_manager.modify_state(token):
+    yield state_manager
+
+    asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_expire(state_manager_redis: StateManager, token: str):
+    """Test that the state manager lock expires and raises exception exiting context.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+    """
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
+
+    async with state_manager_redis.modify_state(token):
         await asyncio.sleep(0.01)
 
     with pytest.raises(LockExpiredError):
-        async with state_manager.modify_state(token):
+        async with state_manager_redis.modify_state(token):
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
 
 
 @pytest.mark.asyncio
-async def test_state_manager_lock_expire_contend(token: str):
+async def test_state_manager_lock_expire_contend(
+    state_manager_redis: StateManager, token: str
+):
     """Test that the state manager lock expires and queued waiters proceed.
 
     Args:
+        state_manager_redis: A state manager instance.
         token: A token.
     """
     exp_num1 = 4252
     unexp_num1 = 666
 
-    state_manager = StateManager()
-    state_manager.setup(TestState)
-    if state_manager.redis is None:
-        pytest.skip("Test requires redis")
-    state_manager.lock_expiration = LOCK_EXPIRATION
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
 
     order = []
 
     async def _coro_blocker():
-        async with state_manager.modify_state(token) as state:
+        async with state_manager_redis.modify_state(token) as state:
             order.append("blocker")
             await asyncio.sleep(LOCK_EXPIRE_SLEEP)
             state.num1 = unexp_num1
@@ -1523,7 +1541,7 @@ async def test_state_manager_lock_expire_contend(token: str):
     async def _coro_waiter():
         while "blocker" not in order:
             await asyncio.sleep(0.005)
-        async with state_manager.modify_state(token) as state:
+        async with state_manager_redis.modify_state(token) as state:
             order.append("waiter")
             assert state.num1 != unexp_num1
             state.num1 = exp_num1
@@ -1537,7 +1555,7 @@ async def test_state_manager_lock_expire_contend(token: str):
     await tasks[1]
 
     assert order == ["blocker", "waiter"]
-    assert (await state_manager.get_state(token)).num1 == exp_num1
+    assert (await state_manager_redis.get_state(token)).num1 == exp_num1
 
 
 @pytest.fixture(scope="function")

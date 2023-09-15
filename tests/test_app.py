@@ -339,6 +339,9 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
+    if app.state_manager.redis is not None:
+        await app.state_manager.redis.close()
+
 
 @pytest.mark.asyncio
 async def test_set_and_get_state(test_state):
@@ -370,6 +373,9 @@ async def test_set_and_get_state(test_state):
     state2 = await app.state_manager.get_state(token2)
     assert state1.var == 1  # type: ignore
     assert state2.var == 2  # type: ignore
+
+    if app.state_manager.redis is not None:
+        await app.state_manager.redis.close()
 
 
 @pytest.mark.asyncio
@@ -754,6 +760,9 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         "image2.jpg",
     ]
 
+    if app.state_manager.redis is not None:
+        await app.state_manager.redis.close()
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -792,6 +801,9 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         err.value.args[0]
         == f"`{state.get_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
+
+    if app.state_manager.redis is not None:
+        await app.state_manager.redis.close()
 
 
 class DynamicState(State):
@@ -1022,6 +1034,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
     # assert state.side_effect_counter == len(exp_vals)
 
+    if app.state_manager.redis is not None:
+        await app.state_manager.redis.close()
+
 
 @pytest.mark.asyncio
 async def test_process_events(mocker, token: str):
@@ -1052,6 +1067,9 @@ async def test_process_events(mocker, token: str):
 
     assert (await app.state_manager.get_state(token)).value == 5
     assert app.postprocess.call_count == 6
+
+    if app.state_manager.redis is not None:
+        await app.state_manager.redis.close()
 
 
 @pytest.mark.parametrize(
