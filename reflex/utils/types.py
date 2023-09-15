@@ -152,11 +152,7 @@ def is_valid_var_type(type_: Type) -> bool:
     Returns:
         Whether the type is a valid prop type.
     """
-    return (
-        _issubclass(type_, StateVar)
-        or serializers.has_serializer(type_)
-        or is_dataframe(type_)
-    )
+    return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
 
 
 def is_backend_variable(name: str) -> bool:

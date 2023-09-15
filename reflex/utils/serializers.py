@@ -10,7 +10,7 @@ from reflex.utils import exceptions, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON string.
-Serializer = Callable[[Type], str]
+Serializer = Callable[[Type], str | dict]
 SERIALIZERS: dict[Type, Serializer] = {}
 
 
@@ -54,7 +54,7 @@ def serializer(fn: Serializer) -> Serializer:
     return fn
 
 
-def serialize(value: Any) -> str | None:
+def serialize(value: Any) -> str | dict | None:
     """Serialize the value to a JSON string.
 
     Args:

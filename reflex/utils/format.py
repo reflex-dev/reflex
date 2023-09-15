@@ -8,7 +8,7 @@ import os.path as op
 import re
 import sys
 import types as builtin_types
-from typing import TYPE_CHECKING, Any, Callable, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 from reflex import constants
 from reflex.utils import exceptions, types
@@ -453,28 +453,6 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_dataframe_values(value: Type) -> list[Any]:
-    """Format dataframe values.
-
-    Args:
-        value: The value to format.
-
-    Returns:
-        Format data
-    """
-    if not types.is_dataframe(type(value)):
-        return value
-
-    format_data = []
-    for data in list(value.values.tolist()):
-        element = []
-        for d in data:
-            element.append(str(d) if isinstance(d, (list, tuple)) else d)
-        format_data.append(element)
-
-    return format_data
-
-
 def format_state(value: Any) -> Any:
     """Recursively format values in the given state.
 
@@ -503,13 +481,6 @@ def format_state(value: Any) -> Any:
     serialized = serialize(value)
     if serialized is not None:
         return serialized
-
-    # Convert pandas dataframes to JSON.
-    if types.is_dataframe(type(value)):
-        return {
-            "columns": value.columns.tolist(),
-            "data": format_dataframe_values(value),
-        }
 
     raise TypeError(
         "State vars must be primitive Python types, "
