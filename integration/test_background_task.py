@@ -172,8 +172,7 @@ def token(background_task: AppHarness, driver: WebDriver) -> str:
     return token
 
 
-@pytest.mark.asyncio
-async def test_background_task(
+def test_background_task(
     background_task: AppHarness,
     driver: WebDriver,
     token: str,
