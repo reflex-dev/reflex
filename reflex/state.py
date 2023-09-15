@@ -1061,6 +1061,32 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         variables = {**base_vars, **computed_vars, **substate_vars}
         return {k: variables[k] for k in sorted(variables)}
 
+    async def __aenter__(self) -> State:
+        """Enter the async context manager protocol.
+
+        This should not be used for the State class, but exists for
+        type-compatibility with StateProxy.
+
+        Raises:
+            TypeError: always, because async contextmanager protocol is only supported for background task.
+        """
+        raise TypeError(
+            "Only background task should use `async with self` to modify state."
+        )
+
+    async def __aexit__(self, *exc_info: Any) -> None:
+        """Exit the async context manager protocol.
+
+        Sets proxy mutability to False and persists any state changes.
+
+        This should not be used for the State class, but exists for
+        type-compatibility with StateProxy.
+
+        Args:
+            exc_info: The exception info tuple.
+        """
+        pass
+
 
 class ImmutableStateError(AttributeError):
     """Raised when a background task attempts to modify state outside of context."""
@@ -1171,7 +1197,12 @@ class StateProxy:
         Returns:
             The value of the attribute.
         """
-        return getattr(self._state_instance, name)
+        value = getattr(self._state_instance, name)
+        if isinstance(value, (ReflexDict, ReflexList, ReflexSet)):
+            # ensure mutations to these containers are blocked unless proxy is _mutable
+            value = type(value)(value)  # type: ignore
+            value._reassign_field = lambda: setattr(self, name, value)  # type: ignore
+        return value
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set the attribute on the underlying state instance.

@@ -1633,3 +1633,128 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         ).json(),
         to=grandchild_state.get_sid(),
     )
+
+
+class BackgroundTaskState(State):
+    """A state with a background task."""
+
+    order: List[str] = []
+
+    @rx.background
+    async def background_task(self):
+        """A background task that updates the state."""
+        async with self:
+            assert not self.order
+            self.order.append("background_task:start")
+
+        assert isinstance(self, StateProxy)
+        with pytest.raises(ImmutableStateError):
+            self.order.append("bad idea")
+
+        # wait for some other event to happen
+        while len(self.order) == 1:
+            await asyncio.sleep(0.01)
+            async with self:
+                pass  # update proxy instance
+
+        async with self:
+            self.order.append("background_task:stop")
+
+    @rx.background
+    async def background_task_generator(self):
+        """A background task generator that does nothing.
+
+        Yields:
+            None
+        """
+        yield
+
+    def other(self):
+        """Some other event that updates the state."""
+        self.order.append("other")
+
+    async def bad_chain1(self):
+        """Test that a background task cannot be chained."""
+        await self.background_task()
+
+    async def bad_chain2(self):
+        """Test that a background task generator cannot be chained."""
+        async for _foo in self.background_task_generator():
+            pass
+
+
+@pytest.mark.asyncio
+async def test_background_task_no_block(mock_app: rx.App, token: str):
+    """Test that a background task does not block other events.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    router_data = {"query": {}}
+    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
+    async for update in rx.app.process(  # type: ignore
+        mock_app,
+        Event(
+            token=token,
+            name=f"{BackgroundTaskState.get_name()}.background_task",
+            router_data=router_data,
+            payload={},
+        ),
+        sid="",
+        headers={},
+        client_ip="",
+    ):
+        # background task returns empty update immediately
+        assert update == StateUpdate()
+    assert len(mock_app.background_tasks) == 1
+
+    # wait for the coroutine to start
+    await asyncio.sleep(0.5 if CI else 0.1)
+    assert len(mock_app.background_tasks) == 1
+
+    # Process another normal event
+    async for update in rx.app.process(  # type: ignore
+        mock_app,
+        Event(
+            token=token,
+            name=f"{BackgroundTaskState.get_name()}.other",
+            router_data=router_data,
+            payload={},
+        ),
+        sid="",
+        headers={},
+        client_ip="",
+    ):
+        # other task returns delta
+        assert update == StateUpdate(
+            delta={
+                BackgroundTaskState.get_name(): {
+                    "order": [
+                        "background_task:start",
+                        "other",
+                    ],
+                }
+            }
+        )
+
+    # Explicit wait for background tasks
+    for task in tuple(mock_app.background_tasks):
+        await task
+    assert not mock_app.background_tasks
+
+    assert (await mock_app.state_manager.get_state(token)).order == [
+        "background_task:start",
+        "other",
+        "background_task:stop",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_background_task_no_chain():
+    """Test that a background task cannot be chained."""
+    bts = BackgroundTaskState()
+    with pytest.raises(RuntimeError):
+        await bts.bad_chain1()
+    with pytest.raises(RuntimeError):
+        await bts.bad_chain2()
