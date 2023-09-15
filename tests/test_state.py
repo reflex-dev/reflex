@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import functools
+import json
 import os
 from typing import Dict, List
 from unittest.mock import AsyncMock, Mock
@@ -1618,21 +1619,21 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     # ensure state update was emitted
     assert mock_app.event_namespace is not None
-    mock_app.event_namespace.emit.assert_called_once_with(
-        str(SocketEvent.EVENT),
-        StateUpdate(
-            delta={
-                parent_state.get_full_name(): {
-                    "upper": "",
-                    "sum": 3.14,
-                },
-                grandchild_state.get_full_name(): {
-                    "value2": 42,
-                },
-            }
-        ).json(),
-        to=grandchild_state.get_sid(),
+    mock_app.event_namespace.emit.assert_called_once()
+    mcall = mock_app.event_namespace.emit.mock_calls[0]
+    assert mcall.args[0] == str(SocketEvent.EVENT)
+    assert json.loads(mcall.args[1]) == StateUpdate(
+        delta={
+            parent_state.get_full_name(): {
+                "upper": "",
+                "sum": 3.14,
+            },
+            grandchild_state.get_full_name(): {
+                "value2": 42,
+            },
+        }
     )
+    assert mcall.kwargs["to"] == grandchild_state.get_sid()
 
 
 class BackgroundTaskState(State):
