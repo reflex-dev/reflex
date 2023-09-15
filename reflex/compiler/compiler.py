@@ -157,7 +157,7 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
                 raise FileNotFoundError(
                     f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
-            stylesheet = "/".join(["../public", stylesheet.strip("/")])
+            stylesheet = f"@/{stylesheet.strip('/')}"
         sheets.append(stylesheet) if stylesheet not in sheets else None
     return templates.STYLE.render(stylesheets=sheets)
 
