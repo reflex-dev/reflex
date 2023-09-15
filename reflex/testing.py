@@ -1,7 +1,6 @@
 """reflex.testing - tools for testing reflex apps."""
 from __future__ import annotations
 
-import asyncio
 import contextlib
 import dataclasses
 import inspect
@@ -175,20 +174,18 @@ class AppHarness:
             )
         )
 
-        original_handler = self.backend.handle_exit
+        original_handler = self.backend.shutdown
 
-        def _handle_exit_redis(*args, **kwargs):
+        async def _shutdown_redis(*args, **kwargs) -> None:
             # ensure redis is closed before event loop
             if (
                 self.app_instance is not None
                 and self.app_instance.state_manager.redis is not None
             ):
-                asyncio.get_event_loop().run_until_complete(
-                    self.app_instance.state_manager.redis.close()
-                )
-            original_handler(*args, **kwargs)
+                await self.app_instance.state_manager.redis.close()
+            await original_handler(*args, **kwargs)
 
-        self.backend.handle_exit = _handle_exit_redis
+        self.backend.shutdown = _shutdown_redis
 
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
