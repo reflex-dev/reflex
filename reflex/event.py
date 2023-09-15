@@ -474,7 +474,6 @@ def call_event_fn(fn: Callable, arg: Var | ArgsSpec) -> list[EventSpec]:
 
     # Get the args of the lambda.
     args = inspect.getfullargspec(fn).args
-    # print(fn, arg, type(arg))
 
     if isinstance(arg, ArgsSpec):
         out = fn(*parse_args_spec(arg))

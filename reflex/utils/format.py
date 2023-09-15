@@ -608,7 +608,6 @@ def format_dict(prop: ComponentStyle) -> str:
 
     # Convert any var keys to strings.
     for key, value in prop.items():
-        print(value, type(value))
         if issubclass(type(value), Callable):
             raise exceptions.InvalidStylePropError(
                 f"The style prop `{to_snake_case(key)}` cannot have "  # type: ignore
