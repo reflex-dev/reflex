@@ -38,6 +38,35 @@ if TYPE_CHECKING:
 # Set of unique variable names.
 USED_VARIABLES = set()
 
+# Supported operators for all types.
+ALL_OPS = ["==", "!=", "!==", "===", "&&", "||"]
+# Delimiters used between function args or operands.
+DELIMITERS = [","]
+# Mapping of valid operations for different type combinations.
+OPERATION_MAPPING = {
+    (int, int): {
+        "+",
+        "-",
+        "/",
+        "//",
+        "*",
+        "%",
+        "**",
+        ">",
+        "<",
+        "<=",
+        ">=",
+        "|",
+        "&",
+    },
+    (int, str): {"*"},
+    (int, list): {"*"},
+    (str, str): {"+", ">", "<", "<=", ">="},
+    (float, float): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
+    (float, int): {"+", "-", "/", "//", "*", "%", "**", ">", "<", "<=", ">="},
+    (list, list): {"+", ">", "<", "<=", ">="},
+}
+
 
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
@@ -383,6 +412,7 @@ class Var(ABC):
         type_: Type | None = None,
         flip: bool = False,
         fn: str | None = None,
+        invoke_fn: bool = False,
     ) -> Var:
         """Perform an operation on a var.
 
@@ -392,31 +422,99 @@ class Var(ABC):
             type_: The type of the operation result.
             flip: Whether to flip the order of the operation.
             fn: A function to apply to the operation.
+            invoke_fn: Whether to invoke the function.
 
         Returns:
             The operation result.
+
+        Raises:
+            TypeError: If the operation between two operands is invalid.
+            ValueError: If flip is set to true and value of operand is not provided
         """
-        # Wrap strings in quotes.
         if isinstance(other, str):
             other = Var.create(json.dumps(other))
         else:
             other = Var.create(other)
-        if type_ is None:
-            type_ = self.type_
-        if other is None:
-            name = f"{op}{self.full_name}"
+
+        type_ = type_ or self.type_
+
+        if other is None and flip:
+            raise ValueError(
+                "flip_operands cannot be set to True if the value of 'other' operand is not provided"
+            )
+
+        left_operand, right_operand = (other, self) if flip else (self, other)
+
+        if other is not None:
+            # check if the operation between operands is valid.
+            if op and not self.is_valid_operation(
+                types.get_base_class(left_operand.type_),  # type: ignore
+                types.get_base_class(right_operand.type_),  # type: ignore
+                op,
+            ):
+                raise TypeError(
+                    f"Unsupported Operand type(s) for {op}: `{left_operand.full_name}` of type {left_operand.type_.__name__} and `{right_operand.full_name}` of type {right_operand.type_.__name__}"  # type: ignore
+                )
+
+            # apply function to operands
+            if fn is not None:
+                if invoke_fn:
+                    # invoke the function on left operand.
+                    operation_name = f"{left_operand.full_name}.{fn}({right_operand.full_name})"  # type: ignore
+                else:
+                    # pass the operands as arguments to the function.
+                    operation_name = f"{left_operand.full_name} {op} {right_operand.full_name}"  # type: ignore
+                    operation_name = f"{fn}({operation_name})"
+            else:
+                # apply operator to operands (left operand <operator> right_operand)
+                operation_name = f"{left_operand.full_name} {op} {right_operand.full_name}"  # type: ignore
+                operation_name = format.wrap(operation_name, "(")
         else:
-            props = (other, self) if flip else (self, other)
-            name = f"{props[0].full_name} {op} {props[1].full_name}"
-            if fn is None:
-                name = format.wrap(name, "(")
-        if fn is not None:
-            name = f"{fn}({name})"
+            # apply operator to left operand (<operator> left_operand)
+            operation_name = f"{op}{self.full_name}"
+            # apply function to operands
+            if fn is not None:
+                operation_name = (
+                    f"{fn}({operation_name})"
+                    if not invoke_fn
+                    else f"{self.full_name}.{fn}()"
+                )
+
         return BaseVar(
-            name=name,
+            name=operation_name,
             type_=type_,
             is_local=self.is_local,
         )
+
+    @staticmethod
+    def is_valid_operation(
+        operand1_type: Type, operand2_type: Type, operator: str
+    ) -> bool:
+        """Check if an operation between two operands is valid.
+
+        Args:
+            operand1_type: Type of the operand
+            operand2_type: Type of the second operand
+            operator: The operator.
+
+        Returns:
+            Whether operation is valid or not
+
+        """
+        if operator in ALL_OPS or operator in DELIMITERS:
+            return True
+
+        # bools are subclasses of ints
+        pair = tuple(
+            sorted(
+                [
+                    int if operand1_type == bool else operand1_type,
+                    int if operand2_type == bool else operand2_type,
+                ],
+                key=lambda x: x.__name__,
+            )
+        )
+        return pair in OPERATION_MAPPING and operator in OPERATION_MAPPING[pair]
 
     def compare(self, op: str, other: Var) -> Var:
         """Compare two vars with inequalities.
@@ -537,16 +635,26 @@ class Var(ABC):
         """
         return self.compare("<=", other)
 
-    def __add__(self, other: Var) -> Var:
+    def __add__(self, other: Var, flip=False) -> Var:
         """Add two vars.
 
         Args:
             other: The other var to add.
+            flip: Whether to flip operands.
 
         Returns:
             A var representing the sum.
         """
-        return self.operation("+", other)
+        other_type = other.type_ if isinstance(other, Var) else type(other)
+        # For list-list addition, javascript concatenates the content of the lists instead of
+        # merging the list, and for that reason we use the spread operator available through spreadArraysOrObjects
+        # utility function
+        if (
+            types.get_base_class(self.type_) == list
+            and types.get_base_class(other_type) == list
+        ):
+            return self.operation(",", other, fn="spreadArraysOrObjects", flip=flip)
+        return self.operation("+", other, flip=flip)
 
     def __radd__(self, other: Var) -> Var:
         """Add two vars.
@@ -557,7 +665,7 @@ class Var(ABC):
         Returns:
             A var representing the sum.
         """
-        return self.operation("+", other, flip=True)
+        return self.__add__(other=other, flip=True)
 
     def __sub__(self, other: Var) -> Var:
         """Subtract two vars.
@@ -581,15 +689,39 @@ class Var(ABC):
         """
         return self.operation("-", other, flip=True)
 
-    def __mul__(self, other: Var) -> Var:
+    def __mul__(self, other: Var, flip=True) -> Var:
         """Multiply two vars.
 
         Args:
             other: The other var to multiply.
+            flip: Whether to flip operands
 
         Returns:
             A var representing the product.
         """
+        other_type = other.type_ if isinstance(other, Var) else type(other)
+        # For str-int multiplication, we use the repeat function.
+        # i.e "hello" * 2 is equivalent to "hello".repeat(2) in js.
+        if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
+            (int, str),
+            (str, int),
+        ]:
+            return self.operation(other=other, fn="repeat", invoke_fn=True)
+
+        # For list-int multiplication, we use the Array function.
+        # i.e ["hello"] * 2 is equivalent to Array(2).fill().map(() => ["hello"]).flat() in js.
+        if (types.get_base_class(self.type_), types.get_base_class(other_type)) in [
+            (int, list),
+            (list, int),
+        ]:
+            other_name = other.full_name if isinstance(other, Var) else other
+            name = f"Array({other_name}).fill().map(() => {self.full_name}).flat()"
+            return BaseVar(
+                name=name,
+                type_=str,
+                is_local=self.is_local,
+            )
+
         return self.operation("*", other)
 
     def __rmul__(self, other: Var) -> Var:
@@ -601,7 +733,7 @@ class Var(ABC):
         Returns:
             A var representing the product.
         """
-        return self.operation("*", other, flip=True)
+        return self.__mul__(other=other, flip=True)
 
     def __pow__(self, other: Var) -> Var:
         """Raise a var to a power.
@@ -684,10 +816,29 @@ class Var(ABC):
         """Perform a logical and.
 
         Args:
-            other: The other var to perform the logical and with.
+            other: The other var to perform the logical AND with.
 
         Returns:
-            A var representing the logical and.
+            A var representing the logical AND.
+
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '&&' operator) of a logical AND operation.
+            In JavaScript, the
+            logical OR operator '&&' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical AND 'and' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely.
+            Therefore, this method leverages the
+            bitwise AND '__and__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 & var2
+        >>> print(js_code.full_name)
+        '(true && false)'
         """
         return self.operation("&&", other, type_=bool)
 
@@ -695,10 +846,29 @@ class Var(ABC):
         """Perform a logical and.
 
         Args:
-            other: The other var to perform the logical and with.
+            other: The other var to perform the logical AND with.
 
         Returns:
-            A var representing the logical and.
+            A var representing the logical AND.
+
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '&&' operator) of a logical AND operation.
+            In JavaScript, the
+            logical OR operator '&&' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical AND 'and' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely.
+            Therefore, this method leverages the
+            bitwise AND '__rand__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 & var2
+        >>> print(js_code.full_name)
+        '(false && true)'
         """
         return self.operation("&&", other, type_=bool, flip=True)
 
@@ -710,6 +880,23 @@ class Var(ABC):
 
         Returns:
             A var representing the logical or.
+
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '||' operator) of a logical OR operation. In JavaScript, the
+            logical OR operator '||' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical OR 'or' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely. Therefore, this method leverages the
+            bitwise OR '__or__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 | var2
+        >>> print(js_code.full_name)
+        '(true || false)'
         """
         return self.operation("||", other, type_=bool)
 
@@ -721,6 +908,23 @@ class Var(ABC):
 
         Returns:
             A var representing the logical or.
+
+        Note:
+            This method provides behavior specific to JavaScript, where it returns the JavaScript
+            equivalent code (using the '||' operator) of a logical OR operation. In JavaScript, the
+            logical OR operator '||' is used for Boolean logic, and this method emulates that behavior
+            by returning the equivalent code as a Var instance.
+
+            In Python, logical OR 'or' operates differently, evaluating expressions immediately, making
+            it challenging to override the behavior entirely. Therefore, this method leverages the
+            bitwise OR '__or__' operator for custom JavaScript-like behavior.
+
+        Example:
+        >>> var1 = Var.create(True)
+        >>> var2 = Var.create(False)
+        >>> js_code = var1 | var2
+        >>> print(js_code)
+        'false || true'
         """
         return self.operation("||", other, type_=bool, flip=True)
 
@@ -752,13 +956,16 @@ class Var(ABC):
             raise TypeError(
                 f"Var {self.full_name} of type {self.type_} does not support contains check."
             )
+        method = (
+            "hasOwnProperty" if types.get_base_class(self.type_) == dict else "includes"
+        )
         if isinstance(other, str):
             other = Var.create(json.dumps(other), is_string=True)
         elif not isinstance(other, Var):
             other = Var.create(other)
         if types._issubclass(self.type_, Dict):
             return BaseVar(
-                name=f"{self.full_name}.has({other.full_name})",
+                name=f"{self.full_name}.{method}({other.full_name})",
                 type_=bool,
                 is_local=self.is_local,
             )

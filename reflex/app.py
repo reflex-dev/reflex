@@ -529,6 +529,7 @@ class App(Base):
             and i != "focus-visible/dist/focus-visible"
             and "next" not in i
             and not i.startswith("/")
+            and not i.startswith(".")
             and i != ""
         }
         frontend_packages = get_config().frontend_packages
