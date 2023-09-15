@@ -7,7 +7,7 @@ import re
 import sys
 from inspect import getfullargspec
 from pathlib import Path
-from typing import Any, Dict, List, Optional, get_args
+from typing import Any, Dict, List, Optional, Union, get_args
 
 import black
 
