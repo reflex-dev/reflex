@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from urllib.parse import urlparse
 
 from pydantic.fields import ModelField
 
@@ -18,7 +19,6 @@ from reflex.components.base import (
     Main,
     Meta,
     NextScript,
-    RawLink,
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
@@ -257,18 +257,14 @@ def compile_custom_component(
     )
 
 
-def create_document_root(stylesheets: List[str]) -> Component:
+def create_document_root() -> Component:
     """Create the document root.
-
-    Args:
-        stylesheets: The list of stylesheets to include in the document root.
 
     Returns:
         The document root.
     """
-    sheets = [RawLink.create(rel="stylesheet", href=href) for href in stylesheets]
     return Html.create(
-        DocumentHead.create(*sheets),
+        DocumentHead.create(),
         Body.create(
             ColorModeScript.create(),
             Main.create(),
@@ -322,6 +318,17 @@ def get_theme_path() -> str:
         The path of the theme style.
     """
     return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
+
+
+def get_root_stylesheet_path() -> str:
+    """Get the path of the app root file.
+
+    Returns:
+        The path of the app root file.
+    """
+    return os.path.join(
+        constants.STYLES_DIR, constants.STYLESHEET_ROOT + constants.CSS_EXT
+    )
 
 
 def get_context_path() -> str:
@@ -415,3 +422,16 @@ def empty_dir(path: str, keep_files: Optional[List[str]] = None):
     for element in directory_contents:
         if element not in keep_files:
             path_ops.rm(os.path.join(path, element))
+
+
+def is_valid_url(url) -> bool:
+    """Check if a url is valid.
+
+    Args:
+        url: The Url to check.
+
+    Returns:
+        Whether url is valid.
+    """
+    result = urlparse(url)
+    return all([result.scheme, result.netloc])
