@@ -171,21 +171,21 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         def no_chain_background_task(name, fn):
             call = f"{type(state or self).__name__}.{name}"
+            message = (
+                f"Cannot directly call background task {name!r}, use "
+                f"`yield {call}` or `return {call}` instead."
+            )
             if inspect.iscoroutinefunction(fn):
 
                 async def _no_chain_background_task_co(*args, **kwargs):
-                    raise RuntimeError(
-                        f"Cannot directly call background task {name!r}, use `yield {call}` or `return {call}` instead."
-                    )
+                    raise RuntimeError(message)
 
                 return _no_chain_background_task_co
             if inspect.isasyncgenfunction(fn):
 
                 async def _no_chain_background_task_gen(*args, **kwargs):
                     yield
-                    raise RuntimeError(
-                        f"Cannot directly call background task {name!r}, use `yield {call}` or `return {call}` instead."
-                    )
+                    raise RuntimeError(message)
 
                 return _no_chain_background_task_gen
 
