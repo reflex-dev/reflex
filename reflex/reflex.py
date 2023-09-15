@@ -202,92 +202,6 @@ def run(
             backend_cmd(backend_host, int(backend_port))
 
 
-# TODO: alternatively, we can combine all requests into one to CP and send the files in the body
-# then CP uploads files to S3 without needing resigned urls
-# question: 1) if we need multipart upload https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi
-# 2) if CP machine has enough disk space to store the files
-@cli.command()
-def deploy(
-    instance_name: str = typer.Option(
-        ..., "-n", "--instance-name", help="The name of the instance to deploy."
-    ),
-    project_name: str = typer.Option(
-        ..., "-p", "--project-name", help="The name of the project to deploy under."
-    ),
-    # TODO: make this in a list of choices
-    initial_region: str = typer.Option(..., help="The initial region to deploy to."),
-    cpus: Optional[int] = typer.Option(
-        None, help="The number of CPUs to allocate. List the available types here."
-    ),
-    memory_mb: Optional[int] = typer.Option(
-        None, help="The amount of memory to allocate. List the available types here."
-    ),
-    dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
-    loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
-    ),
-):
-    """Deploy the app to the Reflex hosting service."""
-    # Set the log level.
-    console.set_log_level(loglevel)
-
-    # Check if the deploy url is set.
-    if not hosting.is_set_up():
-        return
-
-    # Check if the user is authenticated
-    token = hosting.get_existing_access_token()
-    if not token:
-        console.error("Please authenticate using `reflex login` first.")
-        return
-    if not hosting.validate_token(token):
-        console.error("Access denied, exiting.")
-        return
-
-    # Compile the app in production mode.
-    export(loglevel=loglevel)
-
-    # Exit early if this is a dry run.
-    if dry_run:
-        return
-
-    frontend_file_name = constants.FRONTEND_ZIP
-    backend_file_name = constants.BACKEND_ZIP
-    params = hosting.HostedInstancePostParam(
-        key=instance_name,
-        project_name=project_name,
-        backend_initial_region=initial_region,
-        backend_cpus=cpus,
-        backend_memory_mb=memory_mb,
-    )
-    try:
-        with open(frontend_file_name, "rb") as frontend_file, open(
-            backend_file_name, "rb"
-        ) as backend_file:
-            # https://docs.python-requests.org/en/latest/user/advanced/#post-multiple-multipart-encoded-files
-            files = [
-                ("files", (frontend_file_name, frontend_file)),
-                ("files", (backend_file_name, backend_file)),
-            ]
-            response = requests.post(
-                hosting.POST_HOSTED_INSTANCE_ENDPOINT,
-                headers=hosting.authorization_header(token),
-                data=params.dict(exclude_none=True),
-                files=files,
-            )
-            print(response.json())
-        response.raise_for_status()
-
-    except requests.exceptions.HTTPError as http_error:
-        console.error(f"Unable to deploy due to {http_error}.")
-        return
-    except requests.exceptions.Timeout:
-        console.error("Unable to deploy due to request timeout.")
-        return
-
-    console.print(f"Successfully deployed {instance_name} to {initial_region}.")
-
-
 @cli.command()
 def export(
     zipping: bool = typer.Option(
@@ -538,7 +452,9 @@ def list_projects(
     response = requests.get(
         hosting.GET_PROJECT_ENDPOINT,
         headers=hosting.authorization_header(token),
+        timeout=config.http_request_timeout,
     )
+
     if response.status_code != 200:
         console.error(f"Unable to list projects due to {response.reason}.")
         return
@@ -580,6 +496,7 @@ def list_instances(
         headers=hosting.authorization_header(token),
         json=params.dict(exclude_none=True),
     )
+
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError:
@@ -595,14 +512,161 @@ def list_instances(
 
     try:
         # TODO: add project name to the column if project_name not specified
-        fields_to_show = ["key", "backend_initial_region"]
-        field_to_header = {"key": "name", "backend_initial_region": "region"}
+        # TODO: below are very susceptible to changes in the API response, make it robust
+        fields_to_show = [
+            "key",
+            "regions",
+            "vm_type",
+            "cpus",
+            "memory_mb",
+            "auto_start",
+            "auto_stop",
+        ]
+        field_to_header = [
+            "name",  # key is the name of the deployment
+            "regions",
+            "vm_type",
+            "cpus",
+            "memory_mb",
+            "auto_start",
+            "auto_stop",
+        ]
         table = [[instance[k] for k in fields_to_show] for instance in response.json()]
-        print(tabulate(table, headers=list(field_to_header.values())))
+        print(tabulate(table, headers=field_to_header))
 
     except Exception as ex:
         console.debug(f"Unable to parse the response due to {ex}.")
         console.error("Unable to list hosted instances due to internal errors.")
+
+
+# TODO: alternatively, we can combine all requests into one to CP and send the files in the body
+# then CP uploads files to S3 without needing resigned urls
+# question: 1) if we need multipart upload https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi
+# 2) if CP machine has enough disk space to store the files
+@instance_cli.command()
+def deploy(
+    instance_name: str = typer.Option(
+        ..., "-n", "--instance-name", help="The name of the instance to deploy."
+    ),
+    project_name: str = typer.Option(
+        config.app_name,
+        "-p",
+        "--project-name",
+        help="The name of the project to deploy under.",
+    ),
+    # TODO: make this in a list of choices
+    regions: list[str] = typer.Option(
+        ...,
+        "-r",
+        "--region",
+        help="The regions to deploy to. For multiple regions, repeat this option followed by the region name.",
+    ),
+    cpus: Optional[int] = typer.Option(
+        None, help="The number of CPUs to allocate. List the available types here."
+    ),
+    memory_mb: Optional[int] = typer.Option(
+        None, help="The amount of memory to allocate. List the available types here."
+    ),
+    vm_type: Optional[str] = typer.Option(
+        None, help="The type of VM to use. List the available types here."
+    ),
+    auto_start: Optional[bool] = typer.Option(
+        None, help="Whether to auto start the instance."
+    ),
+    auto_stop: Optional[bool] = typer.Option(
+        None, help="Whether to auto stop the instance."
+    ),
+    dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+):
+    """Deploy the app to the Reflex hosting service."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
+    # Check if the deploy url is set.
+    if not hosting.is_set_up():
+        return
+
+    # Check if the user is authenticated
+    token = hosting.get_existing_access_token()
+    if not token:
+        console.error("Please authenticate using `reflex login` first.")
+        return
+    if not hosting.validate_token(token):
+        console.error("Access denied, exiting.")
+        return
+
+    url_response = requests.post(
+        hosting.POST_APP_API_URL_ENDPOINT,
+        headers=hosting.authorization_header(token),
+        json=hosting.AppAPIUrlPostParam(key=instance_name).dict(exclude_none=True),
+        timeout=config.http_request_timeout,
+    )
+    try:
+        url_response.raise_for_status()
+        assert (
+            url_response
+            and "url" in (url_json := url_response.json())
+            and "prefix" in url_json
+        )
+    except requests.exceptions.HTTPError:
+        console.error(
+            f"Unable to get ready to deploy the app due to {url_response.reason}."
+        )
+        return
+
+    save_api_url = config.api_url
+    # Compile the app in production mode.
+    config.api_url = url_json["url"]
+    export(loglevel=loglevel)
+    config.api_url = save_api_url
+
+    # Exit early if this is a dry run.
+    if dry_run:
+        return
+
+    frontend_file_name = constants.FRONTEND_ZIP
+    backend_file_name = constants.BACKEND_ZIP
+    params = hosting.HostedInstancePostParam(
+        key=instance_name,
+        project_name=project_name,
+        regions_json=json.dumps(regions),
+        app_prefix=url_json["prefix"],
+        vm_type=vm_type,
+        cpus=cpus,
+        memory_mb=memory_mb,
+        auto_start=auto_start,
+        auto_stop=auto_stop,
+    )
+    console.debug(f"{params.dict(exclude_none=True)}")
+    try:
+        with open(frontend_file_name, "rb") as frontend_file, open(
+            backend_file_name, "rb"
+        ) as backend_file:
+            # https://docs.python-requests.org/en/latest/user/advanced/#post-multiple-multipart-encoded-files
+            files = [
+                ("files", (frontend_file_name, frontend_file)),
+                ("files", (backend_file_name, backend_file)),
+            ]
+            response = requests.post(
+                hosting.POST_HOSTED_INSTANCE_ENDPOINT,
+                headers=hosting.authorization_header(token),
+                data=params.dict(exclude_none=True),
+                files=files,
+            )
+            print(response.json())
+        response.raise_for_status()
+
+    except requests.exceptions.HTTPError as http_error:
+        console.error(f"Unable to deploy due to {http_error}.")
+        return
+    except requests.exceptions.Timeout:
+        console.error("Unable to deploy due to request timeout.")
+        return
+
+    console.print(f"Successfully deployed {instance_name} to {regions}.")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

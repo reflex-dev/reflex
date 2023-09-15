@@ -5,7 +5,7 @@ from http import HTTPStatus
 from typing import Optional
 
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from reflex import constants
 from reflex.config import get_config
@@ -17,6 +17,20 @@ POST_HOSTED_INSTANCE_ENDPOINT = f"{config.cp_backend_url}/hosted-instances"
 POST_PROJECT_ENDPOINT = f"{config.cp_backend_url}/projects"
 GET_PROJECT_ENDPOINT = f"{config.cp_backend_url}/projects"
 GET_HOSTED_INSTANCE_ENDPOINT = f"{config.cp_backend_url}/hosted-instances"
+POST_APP_API_URL_ENDPOINT = f"{config.cp_backend_url}/api-urls"
+
+
+class AppAPIUrl(BaseModel):
+    """The backend URLs for the deployed app."""
+
+    url: str
+    prefix: str
+
+
+class AppAPIUrlPostParam(BaseModel):
+    """Params for app API URL creation backend API."""
+
+    key: str  # the deployment name
 
 
 class ProjectPostParam(BaseModel):
@@ -35,11 +49,18 @@ class ProjectGetParam(BaseModel):
 class HostedInstancePostParam(BaseModel):
     """Params for hosted instance deployment POST request."""
 
-    key: str  # name of the hosted instance
-    project_name: str
-    backend_initial_region: str
-    backend_cpus: Optional[int] = None
-    backend_memory_mb: Optional[int] = None
+    # key is the name of the deployment, it becomes part of the URL
+    key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
+    project_name: str  # name of the App
+    regions_json: str
+    app_prefix: str = Field(...)
+    vm_type: Optional[str] = None
+    cpus: Optional[int] = None
+    memory_mb: Optional[int] = None
+    auto_start: Optional[bool] = None
+    auto_stop: Optional[bool] = None
+    description: Optional[str] = None
+    secrets_json: Optional[str] = None
 
 
 class HostedInstanceGetParam(BaseModel):
