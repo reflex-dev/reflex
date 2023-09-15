@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Type
+from typing import Any, Dict, Type
 
 import pytest
 
@@ -11,7 +11,7 @@ from reflex.utils import serializers
     [
         (str, True),
         (dict, True),
-        (dict[int, int], True),
+        (Dict[int, int], True),
     ],
 )
 def test_has_serializer(type_: Type, expected: bool):
@@ -30,7 +30,7 @@ def test_has_serializer(type_: Type, expected: bool):
     [
         (str, serializers.serialize_str),
         (dict, serializers.serialize_dict),
-        (dict[int, int], serializers.serialize_dict),
+        (Dict[int, int], serializers.serialize_dict),
         (datetime.datetime, serializers.serialize_datetime),
         (datetime.date, serializers.serialize_datetime),
         (datetime.time, serializers.serialize_datetime),
