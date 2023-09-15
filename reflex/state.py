@@ -1077,8 +1077,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     async def __aexit__(self, *exc_info: Any) -> None:
         """Exit the async context manager protocol.
 
-        Sets proxy mutability to False and persists any state changes.
-
         This should not be used for the State class, but exists for
         type-compatibility with StateProxy.
 
@@ -1380,25 +1378,27 @@ class StateManager(Base):
             )
 
         state_is_locked = await try_get_lock()
-        while not state_is_locked:
+        if not state_is_locked:
+            # Missed the fast-path to get lock, subscribe for lock delete/expire events
             await self.redis.config_set(
                 "notify-keyspace-events", self._redis_notify_keyspace_events
             )
             async with self.redis.pubsub() as pubsub:
                 await pubsub.psubscribe(lock_key_channel)
-                # wait for the lock to be released
-                while True:
-                    if not await self.redis.exists(lock_key):
-                        break  # key was removed, try to get the lock again
-                    message = await pubsub.get_message(
-                        ignore_subscribe_messages=True,
-                        timeout=self.lock_expiration,
-                    )
-                    if message is None:
-                        continue
-                    if message["data"] in self._redis_keyspace_lock_release_events:
-                        break
-            state_is_locked = await try_get_lock()
+                while not state_is_locked:
+                    # wait for the lock to be released
+                    while True:
+                        if not await self.redis.exists(lock_key):
+                            break  # key was removed, try to get the lock again
+                        message = await pubsub.get_message(
+                            ignore_subscribe_messages=True,
+                            timeout=self.lock_expiration / 1000.0,
+                        )
+                        if message is None:
+                            continue
+                        if message["data"] in self._redis_keyspace_lock_release_events:
+                            break
+                    state_is_locked = await try_get_lock()
         try:
             yield lock_id
         except LockExpiredError:
