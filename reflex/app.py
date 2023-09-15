@@ -105,7 +105,7 @@ class App(Base):
     admin_dash: Optional[AdminDash] = None
 
     # The async server name space
-    event_namespace: Optional[AsyncNamespace] = None
+    event_namespace: Optional[EventNamespace] = None
 
     # A component that is present on every page.
     overlay_component: Optional[
@@ -666,10 +666,9 @@ class App(Base):
             delta = state.get_delta()
             if delta:
                 state._clean()
-                await self.event_namespace.emit(
-                    str(constants.SocketEvent.EVENT),
-                    StateUpdate(delta=delta).json(),
-                    to=state.get_sid(),
+                await self.event_namespace.emit_update(
+                    update=StateUpdate(delta=delta),
+                    sid=state.get_sid(),
                 )
 
     def _process_background(self, state: State, event: Event) -> asyncio.Task | None:
@@ -698,10 +697,9 @@ class App(Base):
                 update = await self.postprocess(state, event, update)
 
                 # Send the update to the client.
-                await self.event_namespace.emit(
-                    str(constants.SocketEvent.EVENT),
-                    update.json(),
-                    to=state.get_sid(),
+                await self.event_namespace.emit_update(
+                    update=update,
+                    sid=state.get_sid(),
                 )
 
         task = asyncio.create_task(_coro())
@@ -837,7 +835,10 @@ def upload(app: App):
                 # Postprocess the event.
                 update = await app.postprocess(state, event, update)
                 # Send update to client
-                await app.event_namespace.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)  # type: ignore
+                await app.event_namespace.emit_update(  # type: ignore
+                    update=update,
+                    sid=sid,
+                )
 
     return upload_file
 
@@ -875,6 +876,15 @@ class EventNamespace(AsyncNamespace):
         """
         pass
 
+    async def emit_update(self, update: StateUpdate, sid: str) -> None:
+        """Emit an update to the client.
+
+        Args:
+            update: The state update to send.
+            sid: The Socket.IO session id.
+        """
+        await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
 
@@ -901,8 +911,8 @@ class EventNamespace(AsyncNamespace):
 
         # Process the events.
         async for update in process(self.app, event, sid, headers, client_ip):
-            # Emit the event.
-            await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+            # Emit the update from processing the event.
+            await self.emit_update(update=update, sid=sid)
 
     async def on_ping(self, sid):
         """Event for testing the API endpoint.
