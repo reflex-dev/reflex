@@ -4,7 +4,6 @@ import json
 from typing import Any, Dict, List
 
 from reflex.components.component import NoSSRComponent
-from reflex.components.tags import Tag
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
@@ -44,30 +43,13 @@ class Plotly(PlotlyLib):
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool]
 
-    def _render(self) -> Tag:
-        try:
-            from plotly.graph_objects import Figure
-
-            if (
-                isinstance(self.data, Figure)
-                and self.layout is None
-                and self.width is not None
-            ):
-                layout = Var.create({"width": self.width, "height": self.height})
-                assert layout is not None
-                self.layout = layout
-        except ImportError:
-            pass
-
-        return super()._render()
-
 
 try:
     from plotly.graph_objects import Figure
     from plotly.io import to_json
 
     @serializer
-    def serialize_figure(figure: Figure) -> str:
+    def serialize_figure(figure: Figure) -> list:
         """Serialize a plotly figure.
 
         Args:

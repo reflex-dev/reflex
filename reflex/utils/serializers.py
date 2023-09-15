@@ -11,7 +11,8 @@ from reflex.utils import exceptions, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
-Serializer = Callable[[Type], Union[str, dict]]
+SerializedType = Union[str, bool, int, float, list, dict]
+Serializer = Callable[[Type], SerializedType]
 SERIALIZERS: dict[Type, Serializer] = {}
 
 
@@ -55,7 +56,7 @@ def serializer(fn: Serializer) -> Serializer:
     return fn
 
 
-def serialize(value: Any) -> str | dict | None:
+def serialize(value: Any) -> SerializedType | None:
     """Serialize the value to a JSON string.
 
     Args:

@@ -312,7 +312,7 @@ def format_prop(
 
         # For dictionaries, convert any properties to strings.
         elif isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)
+            prop = serializers.serialize_dict(prop)  # type: ignore
 
         else:
             # Dump the prop as JSON.

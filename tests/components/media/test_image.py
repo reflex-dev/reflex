@@ -27,7 +27,7 @@ try:
             pil_image: The image to serialize.
         """
         data = serialize(pil_image)
-        assert type(data) == str
+        assert isinstance(data, str)
         assert data == serialize_image(pil_image)
         assert data.startswith("data:image/png;base64,")
 
@@ -57,4 +57,9 @@ try:
         assert image.src.is_string  # type: ignore
 
 except ImportError:
-    pass
+
+    def test_pillow_import():
+        """Make sure the Python version is less than 3.8."""
+        import sys
+
+        assert sys.version_info < (3, 8)
