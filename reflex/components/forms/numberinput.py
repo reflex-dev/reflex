@@ -1,5 +1,6 @@
 """A number input component."""
 
+from numbers import Number
 from typing import Dict
 
 from reflex.components.component import Component
@@ -14,7 +15,7 @@ class NumberInput(ChakraComponent):
     tag = "NumberInput"
 
     # State var to bind the input.
-    value: Var[int]
+    value: Var[Number]
 
     # If true, the input's value will change based on mouse wheel.
     allow_mouse_wheel: Var[bool]
@@ -23,7 +24,7 @@ class NumberInput(ChakraComponent):
     clamped_value_on_blur: Var[bool]
 
     # The initial value of the counter. Should be less than max and greater than min
-    default_value: Var[int]
+    default_value: Var[Number]
 
     # The border color when the input is invalid.
     error_border_color: Var[str]
