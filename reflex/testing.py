@@ -174,7 +174,7 @@ class AppHarness:
             )
         )
 
-        original_handler = self.backend.shutdown
+        original_shutdown = self.backend.shutdown
 
         async def _shutdown_redis(*args, **kwargs) -> None:
             # ensure redis is closed before event loop
@@ -183,7 +183,7 @@ class AppHarness:
                 and self.app_instance.state_manager.redis is not None
             ):
                 await self.app_instance.state_manager.redis.close()
-            await original_handler(*args, **kwargs)
+            await original_shutdown(*args, **kwargs)
 
         self.backend.shutdown = _shutdown_redis
 
