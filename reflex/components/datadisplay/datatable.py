@@ -1,5 +1,7 @@
 """Table components."""
 
+from __future__ import annotations
+
 from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
