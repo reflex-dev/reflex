@@ -67,7 +67,7 @@ def test_add_serializer():
     assert serializers.serialize(5) is None
 
     # Register the serializer.
-    serializers.serializer(serialize_test)
+    assert serializers.serializer(serialize_test) == serialize_test
 
     # There should now be a serializer for int.
     assert serializers.has_serializer(int)

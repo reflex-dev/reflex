@@ -7,9 +7,7 @@ from typing import Any, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.components.tags import Tag
-from reflex.utils import types
-from reflex.utils.serializers import serialize, serializer
+from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
 
@@ -61,19 +59,6 @@ class Image(ChakraComponent):
             The event triggers.
         """
         return super().get_triggers() | {"on_error", "on_load"}
-
-    def _render(self) -> Tag:
-        try:
-            from PIL.Image import Image as Img
-
-            # If the src is an image, convert it to a base64 string.
-            if types._isinstance(self.src, Img):
-                self.src = Var.create(serialize(self.src))  # type: ignore
-        except ImportError:
-            pass
-
-        # Render the table.
-        return super()._render()
 
 
 try:
