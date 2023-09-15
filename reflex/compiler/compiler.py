@@ -4,7 +4,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import List, Set, Tuple, Type
-from urllib.parse import urlparse
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -147,20 +146,16 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-
-    def is_valid_url(url):
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
-
     sheets = [constants.TAILWIND_ROOT_STYLE_PATH]
     for stylesheet in stylesheets:
-        if not is_valid_url(stylesheet):
+        if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
-            if not os.path.exists(
+            stylesheet_full_path = (
                 Path.cwd() / constants.APP_ASSETS_DIR / stylesheet.strip("/")
-            ):
+            )
+            if not os.path.exists(stylesheet_full_path):
                 raise FileNotFoundError(
-                    f"The stylesheet file {Path.cwd() / constants.APP_ASSETS_DIR / stylesheet} does not exist."
+                    f"The stylesheet file {stylesheet_full_path} does not exist."
                 )
             stylesheet = "/".join(["../public", stylesheet.strip("/")])
         sheets.append(stylesheet) if stylesheet not in sheets else None

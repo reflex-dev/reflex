@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from urllib.parse import urlparse
 
 from pydantic.fields import ModelField
 
@@ -421,3 +422,16 @@ def empty_dir(path: str, keep_files: Optional[List[str]] = None):
     for element in directory_contents:
         if element not in keep_files:
             path_ops.rm(os.path.join(path, element))
+
+
+def is_valid_url(url) -> bool:
+    """Check if a url is valid.
+
+    Args:
+        url: The Url to check.
+
+    Returns:
+        Whether url is valid.
+    """
+    result = urlparse(url)
+    return all([result.scheme, result.netloc])
