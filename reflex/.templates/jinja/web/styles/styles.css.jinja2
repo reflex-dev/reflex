@@ -1,0 +1,5 @@
+{%- block imports_styles %}
+{% for sheet_name in stylesheets %}
+    {{- "@import url('" + sheet_name + "'); " }}
+{% endfor %}
+{% endblock %}
