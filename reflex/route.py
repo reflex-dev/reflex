@@ -5,51 +5,6 @@ from __future__ import annotations
 import re
 
 from reflex import constants
-from reflex.event import EventHandler
-from reflex.page import page
-from reflex.utils.console import deprecate
-
-
-def route(
-    route: str | None = None,
-    title: str | None = None,
-    image: str | None = None,
-    description: str | None = None,
-    on_load: EventHandler | list[EventHandler] | None = None,
-):
-    """Decorate a function as a page.
-
-    rx.App() will automatically call add_page() for any method decorated with route
-    when App.compile is called.
-
-    All defaults are None because they will use the one from add_page().
-
-    Note: the decorated functions still need to be imported.
-
-    Args:
-        route: The route to reach the page.
-        title: The title of the page.
-        image: The favicon of the page.
-        description: The description of the page
-        on_load: The event handler(s) called when the page load.
-
-    Returns:
-        The decorated function.
-    """
-    deprecate(
-        feature_name="@rx.route",
-        deprecation_version="0.2.3",
-        reason="and is being replaced by @rx.page due to enhanced routing features.",
-        removal_version="0.2.8",
-    )
-
-    return page(
-        route=route,
-        title=title,
-        image=image,
-        description=description,
-        on_load=on_load,
-    )
 
 
 def verify_route_validity(route: str) -> None:
