@@ -114,6 +114,19 @@ def has_serializer(type_: Type) -> bool:
 
 
 @serializer
+def serialize_str(value: str) -> str:
+    """Serialize a string.
+
+    Args:
+        value: The string to serialize.
+
+    Returns:
+        The serialized string.
+    """
+    return value
+
+
+@serializer
 def serialize_dict(prop: Dict[str, Any]) -> str:
     """Serialize a dictionary to a JSON string.
 

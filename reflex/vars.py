@@ -134,7 +134,7 @@ class Var(ABC):
             name = value if isinstance(value, str) else json.dumps(value)
         except TypeError as e:
             raise TypeError(
-                f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
+                f"No JSON serializer found for var {value} of type {type_}."
             ) from e
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
