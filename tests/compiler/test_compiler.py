@@ -136,7 +136,7 @@ def test_compile_stylesheets(tmp_path, mocker):
         f"@import url('./tailwind.css'); \n"
         f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        f"@import url('../public/styles.css'); \n"
+        f"@import url('@/styles.css'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
 
