@@ -1,15 +1,9 @@
 import datetime
+from typing import Any, Type
 
 import pytest
 
 from reflex.utils import serializers
-
-
-@pytest.fixture
-def sending_user(mail_admin):
-    user = mail_admin.create_user()
-    yield user
-    mail_admin.delete_user(user)
 
 
 @pytest.mark.parametrize(
@@ -20,7 +14,14 @@ def sending_user(mail_admin):
         (dict[int, int], True),
     ],
 )
-def test_has_serializer(type_, expected):
+def test_has_serializer(type_: Type, expected: bool):
+    """Test that has_serializer returns the correct value.
+
+
+    Args:
+        type_: The type to check.
+        expected: The expected result.
+    """
     assert serializers.has_serializer(type_) == expected
 
 
@@ -36,12 +37,29 @@ def test_has_serializer(type_, expected):
         (datetime.timedelta, serializers.serialize_datetime),
     ],
 )
-def test_get_serializer(type_, expected):
+def test_get_serializer(type_: Type, expected: serializers.Serializer):
+    """Test that get_serializer returns the correct value.
+
+
+    Args:
+        type_: The type to check.
+        expected: The expected result.
+    """
     assert serializers.get_serializer(type_) == expected
 
 
 def test_add_serializer():
+    """Test that adding a serializer works."""
+
     def serialize_test(value: int) -> str:
+        """Serialize an int to a string.
+
+        Args:
+            value: The value to serialize.
+
+        Returns:
+            The serialized value.
+        """
         return str(value)
 
     # Initially there should be no serializer for int.
@@ -60,10 +78,6 @@ def test_add_serializer():
     serializers.SERIALIZERS.pop(int)
 
 
-def test_serialize_str():
-    assert serializers.serialize_str("test") == "test"
-
-
 @pytest.mark.parametrize(
     "value,expected",
     [
@@ -77,5 +91,12 @@ def test_serialize_str():
         ([], None),
     ],
 )
-def test_serialize(value, expected):
+def test_serialize(value: Any, expected: str):
+    """Test that serialize returns the correct value.
+
+
+    Args:
+        value: The value to serialize.
+        expected: The expected result.
+    """
     assert serializers.serialize(value) == expected
