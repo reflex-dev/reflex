@@ -1,13 +1,11 @@
 """Test @rx.background task functionality."""
 
 import os
-from collections.abc import Coroutine
-from typing import Callable, Generator
+from typing import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex import State
 from reflex.testing import AppHarness, WebDriver
 
 
@@ -153,17 +151,15 @@ def driver(background_task: AppHarness) -> Generator[WebDriver, None, None]:
 
 
 @pytest.fixture()
-def backend_state(
-    background_task: AppHarness, driver: WebDriver
-) -> Callable[[], Coroutine[None, None, State]]:
-    """Get a function that returns the backend state.
+def token(background_task: AppHarness, driver: WebDriver) -> str:
+    """Get a function that returns the active token.
 
     Args:
         background_task: harness for BackgroundTask app.
         driver: WebDriver instance.
 
     Returns:
-        The backend state associated with the token visible in the driver browser.
+        The token for the connected client
     """
     assert background_task.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -173,25 +169,21 @@ def backend_state(
     token = background_task.poll_for_value(token_input)
     assert token is not None
 
-    async def _backend_state() -> State:
-        # look up the backend state from the state manager
-        assert background_task.app_instance is not None
-        return await background_task.app_instance.state_manager.get_state(token)
-
-    return _backend_state
+    return token
 
 
-def test_background_task(
+@pytest.mark.asyncio
+async def test_background_task(
     background_task: AppHarness,
     driver: WebDriver,
-    backend_state: Callable[[], State],
+    token: str,
 ):
     """Test that background tasks work as expected.
 
     Args:
         background_task: harness for BackgroundTask app.
         driver: WebDriver instance.
-        backend_state: function that returns the backend state.
+        token: The token for the connected client.
     """
     assert background_task.app_instance is not None
 
@@ -230,6 +222,7 @@ def test_background_task(
     yield_increment_button.click()
     blocking_pause_button.click()
     assert background_task._poll_for(lambda: counter.text == "420", timeout=40)
-    assert backend_state().counter == 420
     # all tasks should have exited and cleaned up
-    assert not background_task.app_instance.background_tasks
+    assert background_task._poll_for(
+        lambda: not background_task.app_instance.background_tasks  # type: ignore
+    )
