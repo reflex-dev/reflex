@@ -311,7 +311,9 @@ def test_format_route(route: str, format_case: bool, expected: bool):
             r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
         ),
         (
-            EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
+            ),
             '{_e => Event([E("mock_event", {})], _e)}',
         ),
         (
@@ -321,7 +323,8 @@ def test_format_route(route: str, format_case: bool, expected: bool):
                         handler=EventHandler(fn=mock_event),
                         args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
                     )
-                ]
+                ],
+                args_spec=None,
             ),
             '{_e => Event([E("mock_event", {arg:_e.target.value})], _e)}',
         ),

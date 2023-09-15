@@ -5,8 +5,8 @@ import pytest
 import reflex as rx
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
-from reflex.constants import ON_MOUNT, ON_UNMOUNT
-from reflex.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
+from reflex.constants import EventTriggers
+from reflex.event import EVENT_ARG, EventHandler
 from reflex.state import State
 from reflex.style import Style
 from reflex.utils import imports
@@ -371,16 +371,35 @@ def test_get_controlled_triggers(component1, component2):
     assert set(component2().get_controlled_triggers()) == {"on_open", "on_close"}
 
 
-def test_get_triggers(component1, component2):
+def test_get_event_triggers(component1, component2):
     """Test that we can get the triggers of a component.
 
     Args:
         component1: A test component.
         component2: A test component.
     """
-    default_triggers = {ON_MOUNT, ON_UNMOUNT} | EVENT_TRIGGERS
-    assert component1().get_triggers() == default_triggers
-    assert component2().get_triggers() == {"on_open", "on_close"} | default_triggers
+    default_triggers = {
+        EventTriggers.ON_FOCUS,
+        EventTriggers.ON_BLUR,
+        EventTriggers.ON_CLICK,
+        EventTriggers.ON_CONTEXT_MENU,
+        EventTriggers.ON_DOUBLE_CLICK,
+        EventTriggers.ON_MOUSE_DOWN,
+        EventTriggers.ON_MOUSE_ENTER,
+        EventTriggers.ON_MOUSE_LEAVE,
+        EventTriggers.ON_MOUSE_MOVE,
+        EventTriggers.ON_MOUSE_OUT,
+        EventTriggers.ON_MOUSE_OVER,
+        EventTriggers.ON_MOUSE_UP,
+        EventTriggers.ON_SCROLL,
+        EventTriggers.ON_MOUNT,
+        EventTriggers.ON_UNMOUNT,
+    }
+    assert set(component1().get_event_triggers().keys()) == default_triggers
+    assert (
+        component2().get_event_triggers().keys()
+        == {"on_open", "on_close"} | default_triggers
+    )
 
 
 def test_create_custom_component(my_component):

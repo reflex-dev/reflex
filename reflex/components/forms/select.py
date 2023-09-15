@@ -2,10 +2,11 @@
 
 from typing import Any, Dict, List
 
-from reflex.components.component import EVENT_ARG, Component
+from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.typography.text import Text
+from reflex.constants import EventTriggers
 from reflex.utils import types
 from reflex.vars import Var
 
@@ -45,15 +46,14 @@ class Select(ChakraComponent):
     # The size of the select.
     size: Var[str]
 
-    @classmethod
-    def get_controlled_triggers(cls) -> Dict[str, Var]:
+    def get_event_triggers(self) -> Dict[str, Var | types.ArgsSpec]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {
-            "on_change": EVENT_ARG.target.value,
+        return super().get_event_triggers() | {
+            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
         }
 
     @classmethod

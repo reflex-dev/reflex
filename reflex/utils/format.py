@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import inspect
 import io
 import json
 import os
@@ -306,9 +307,16 @@ def format_prop(
 
         # Handle event props.
         elif isinstance(prop, EventChain):
+            if prop.args_spec is None:
+                arg_def = f"{EVENT_ARG}"
+            else:
+                sig = inspect.signature(prop.args_spec)
+                arg_def = ",".join(f"_{p}" for p in sig.parameters)
+                arg_def = f"({arg_def})"
+
             chain = ",".join([format_event(event) for event in prop.events])
-            event = f"Event([{chain}], {EVENT_ARG})"
-            prop = f"{EVENT_ARG} => {event}"
+            event = f"Event([{chain}], {arg_def})"
+            prop = f"{arg_def} => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -600,6 +608,7 @@ def format_dict(prop: ComponentStyle) -> str:
 
     # Convert any var keys to strings.
     for key, value in prop.items():
+        print(value, type(value))
         if issubclass(type(value), Callable):
             raise exceptions.InvalidStylePropError(
                 f"The style prop `{to_snake_case(key)}` cannot have "  # type: ignore

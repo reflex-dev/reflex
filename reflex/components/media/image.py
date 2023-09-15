@@ -1,7 +1,7 @@
 """An image component."""
 from __future__ import annotations
 
-from typing import Any, Optional, Set
+from typing import Any, Dict, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -51,13 +51,16 @@ class Image(ChakraComponent):
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)_
     src_set: Var[str]
 
-    def get_triggers(self) -> Set[str]:
+    def get_event_triggers(self) -> Dict[str, Var | types.ArgsSpec]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_triggers() | {"on_error", "on_load"}
+        return super().get_event_triggers() | {
+            "on_error": lambda e0: [],
+            "on_load": lambda e0: [],
+        }
 
     def _render(self) -> Tag:
         # If the src is an image, convert it to a base64 string.

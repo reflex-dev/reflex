@@ -7,7 +7,7 @@ from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.typography.text import Text
-from reflex.event import EVENT_ARG
+from reflex.constants import EventTriggers
 from reflex.utils import types
 from reflex.vars import Var
 
@@ -23,14 +23,14 @@ class RadioGroup(ChakraComponent):
     # The default value.
     default_value: Var[Any]
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> Dict[str, Var | types.ArgsSpec]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {
-            "on_change": EVENT_ARG,
+        return super().get_event_triggers() | {
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
     @classmethod

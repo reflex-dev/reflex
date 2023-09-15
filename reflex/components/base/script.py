@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from reflex.components.component import Component
 from reflex.event import EventChain
+from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
 
 
@@ -57,13 +58,17 @@ class Script(Component):
             raise ValueError("Must provide inline script or `src` prop.")
         return super().create(*children, **props)
 
-    def get_triggers(self) -> set[str]:
+    def get_event_triggers(self) -> dict[str, Var | ArgsSpec]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_triggers() | {"on_load", "on_ready", "on_error"}
+        return super().get_event_triggers() | {
+            "on_load": lambda e0: [],
+            "on_ready": lambda e0: [],
+            "on_error": lambda e0: [],
+        }
 
 
 def client_side(javascript_code) -> Var[EventChain]:

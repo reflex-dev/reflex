@@ -4,8 +4,9 @@ from typing import Dict, List, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.event import EVENT_ARG
+from reflex.constants import EventTriggers
 from reflex.utils import format
+from reflex.utils.types import ArgsSpec
 from reflex.vars import Var
 
 
@@ -44,16 +45,16 @@ class RangeSlider(ChakraComponent):
     # The minimum distance between slider thumbs. Useful for preventing the thumbs from being too close together.
     min_steps_between_thumbs: Var[int]
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return {
-            "on_change": EVENT_ARG,
-            "on_change_end": EVENT_ARG,
-            "on_change_start": EVENT_ARG,
+        return super().get_event_triggers() | {
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE_END: lambda e0: [e0],
+            EventTriggers.ON_CHANGE_START: lambda e0: [e0],
         }
 
     def get_ref(self):

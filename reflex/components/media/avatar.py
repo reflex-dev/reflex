@@ -1,8 +1,9 @@
 """Avatar components."""
 
-from typing import Set
+from typing import Dict
 
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.utils.types import ArgsSpec
 from reflex.vars import Var
 
 
@@ -35,13 +36,15 @@ class Avatar(ChakraComponent):
     # "2xs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "full"
     size: Var[str]
 
-    def get_triggers(self) -> Set[str]:
+    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_triggers() | {"on_error"}
+        return super().get_event_triggers() | {
+            "on_error": lambda e0: [],
+        }
 
 
 class AvatarBadge(ChakraComponent):

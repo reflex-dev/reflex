@@ -1,9 +1,10 @@
 """Form components."""
 
-from typing import Dict
+from typing import Any, Dict
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
@@ -15,7 +16,7 @@ class Form(ChakraComponent):
     # What the form renders to.
     as_: Var[str] = "form"  # type: ignore
 
-    def get_controlled_triggers(self) -> Dict[str, Dict]:
+    def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -33,7 +34,9 @@ class Form(ChakraComponent):
             else:
                 form_refs[ref[4:]] = Var.create(f"getRefValue({ref})", is_local=False)
 
-        return {"on_submit": form_refs}
+        return super().get_event_triggers() | {
+            EventTriggers.ON_SUBMIT: lambda e0: [form_refs],
+        }
 
 
 class FormControl(ChakraComponent):

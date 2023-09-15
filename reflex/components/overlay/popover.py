@@ -1,9 +1,10 @@
 """Popover components."""
 
-from typing import Set
+from typing import Dict
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.utils.types import ArgsSpec
 from reflex.vars import Var
 
 
@@ -75,13 +76,16 @@ class Popover(ChakraComponent):
     # The interaction that triggers the popover. hover - means the popover will open when you hover with mouse or focus with keyboard on the popover trigger click - means the popover will open on click or press Enter to Space on keyboard ("click" | "hover")
     trigger: Var[str]
 
-    def get_triggers(self) -> Set[str]:
+    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_triggers() | {"on_close", "on_open"}
+        return super().get_event_triggers() | {
+            "on_close": lambda e0: [],
+            "on_open": lambda e0: [],
+        }
 
     @classmethod
     def create(

@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from reflex.base import Base
 from reflex.components.component import Component
-from reflex.event import EVENT_ARG
+from reflex.constants import EventTriggers
+from reflex.utils.types import ArgsSpec
 from reflex.vars import Var
 
 
@@ -298,19 +299,19 @@ class Select(Component):
     # How the options should be displayed in the menu.
     menu_position: Var[str] = "fixed"  # type: ignore
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        # A normal select returns the value.
-        value = EVENT_ARG.value
-
-        # Multi-select returns a list of values.
-        if self.is_multi:
-            value = Var.create_safe(f"{EVENT_ARG}.map(e => e.value)", is_local=True)
-        return {"on_change": value}
+        return super().get_event_triggers() | {
+            EventTriggers.ON_CHANGE: (
+                lambda e0: [Var.create_safe(f"{e0}.map(e => e.value)", is_local=True)]
+                if self.is_multi
+                else lambda e0: [e0]
+            )
+        }
 
     @classmethod
     def get_initial_props(cls) -> Set[str]:
