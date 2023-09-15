@@ -57,10 +57,10 @@ class NumberInput(ChakraComponent):
     keep_within_range: Var[bool]
 
     # The maximum value of the counter
-    max_: Var[int]
+    max_: Var[Number]
 
     # The minimum value of the counter
-    min_: Var[int]
+    min_: Var[Number]
 
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[str]
