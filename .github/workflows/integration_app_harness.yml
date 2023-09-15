@@ -16,6 +16,19 @@ permissions:
 jobs:
   integration-app-harness:
     runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      redis:
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/setup_build_env
@@ -29,6 +42,8 @@ jobs:
         SCREENSHOT_DIR: /tmp/screenshots
       run: |
         poetry run pytest integration
+        # Others cannot run with redis yet, but test_background_task uses redis-specific functionality
+        REDIS_URL=localhost:6379 poetry run pytest integration/test_background_task.py
     - uses: actions/upload-artifact@v3
       name: Upload failed test screenshots
       if: always()
