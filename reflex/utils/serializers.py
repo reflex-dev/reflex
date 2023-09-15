@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Type, Union, get_type_hints
 from reflex.utils import exceptions, types
 
 # Mapping from type to a serializer.
-# The serializer should convert the type to a JSON string.
+# The serializer should convert the type to a JSON object.
 Serializer = Callable[[Type], str | dict]
 SERIALIZERS: dict[Type, Serializer] = {}
 
