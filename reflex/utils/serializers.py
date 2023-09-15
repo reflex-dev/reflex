@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import types as builtin_types
 from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, Type, Union, get_type_hints
 
@@ -44,7 +45,7 @@ def serializer(fn: Serializer) -> Serializer:
     registered_fn = SERIALIZERS.get(type_)
     if registered_fn is not None and registered_fn != fn:
         raise ValueError(
-            f"Serializer for type {type_} is already registered as {registered_fn}."
+            f"Serializer for type {type_} is already registered as {registered_fn.__qualname__}."
         )
 
     # Register the serializer.
@@ -63,8 +64,6 @@ def serialize(value: Any) -> str | dict | None:
     Returns:
         The serialized value, or None if a serializer is not found.
     """
-    global SERIALIZERS
-
     # Get the serializer for the type.
     serializer = get_serializer(type(value))
 
@@ -141,7 +140,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler
-    from reflex.utils.format import builtin_types, json_dumps, to_snake_case
+    from reflex.utils.format import json_dumps, to_snake_case
     from reflex.vars import Var
 
     prop_dict = {}

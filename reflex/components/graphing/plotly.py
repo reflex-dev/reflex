@@ -8,6 +8,11 @@ from reflex.components.tags import Tag
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
+try:
+    from plotly.graph_objects import Figure
+except ImportError:
+    Figure = Any
+
 
 class PlotlyLib(NoSSRComponent):
     """A component that wraps a plotly lib."""
@@ -25,7 +30,7 @@ class Plotly(PlotlyLib):
     is_default = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
-    data: Var[Any]
+    data: Var[Figure]
 
     # The layout of the graph.
     layout: Var[Dict]
