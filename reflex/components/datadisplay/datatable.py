@@ -134,7 +134,7 @@ class DataTable(Gridjs):
 try:
     from pandas import DataFrame
 
-    def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
+    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
         """Format dataframe values to a list of lists.
 
         Args:
