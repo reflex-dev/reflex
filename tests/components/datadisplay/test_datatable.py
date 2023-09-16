@@ -2,8 +2,12 @@ import pandas as pd
 import pytest
 
 import reflex as rx
-from reflex.components import data_table
+from reflex.components.datadisplay.datatable import (
+    DataTable,
+    serialize_dataframe,  # type: ignore
+)
 from reflex.utils import types
+from reflex.utils.serializers import serialize
 
 
 @pytest.mark.parametrize(
@@ -31,11 +35,11 @@ def test_validate_data_table(data_table_state: rx.Var, expected):
 
     """
     if not types.is_dataframe(data_table_state.data.type_):
-        data_table_component = data_table(
+        data_table_component = DataTable.create(
             data=data_table_state.data, columns=data_table_state.columns
         )
     else:
-        data_table_component = data_table(data=data_table_state.data)
+        data_table_component = DataTable.create(data=data_table_state.data)
 
     data_table_dict = data_table_component.render()
 
@@ -62,7 +66,7 @@ def test_invalid_props(props):
         props: props to pass in component.
     """
     with pytest.raises(ValueError):
-        data_table(**props)
+        DataTable.create(**props)
 
 
 @pytest.mark.parametrize(
@@ -96,10 +100,21 @@ def test_computed_var_without_annotation(fixture, request, err_msg, is_data_fram
     """
     with pytest.raises(ValueError) as err:
         if is_data_frame:
-            data_table(data=request.getfixturevalue(fixture).data)
+            DataTable.create(data=request.getfixturevalue(fixture).data)
         else:
-            data_table(
+            DataTable.create(
                 data=request.getfixturevalue(fixture).data,
                 columns=request.getfixturevalue(fixture).columns,
             )
     assert err.value.args[0] == err_msg
+
+
+def test_serialize_dataframe():
+    """Test if dataframe is serialized correctly."""
+    df = pd.DataFrame(
+        [["foo", "bar"], ["foo1", "bar1"]], columns=["column1", "column2"]
+    )
+    value = serialize(df)
+    assert value == serialize_dataframe(df)
+    assert isinstance(value, dict)
+    assert list(value.keys()) == ["columns", "data"]
