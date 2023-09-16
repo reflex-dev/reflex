@@ -607,7 +607,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             name in super().__getattribute__("base_vars") or name in backend_vars
         ):
             # track changes in mutable containers (list, dict, set, etc)
-            return MutableProxy(value, self, name)
+            return MutableProxy(wrapped=value, state=self, field_name=name)
 
         return value
 
@@ -1224,17 +1224,21 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The attribute value.
         """
-        v = super().__getattribute__(__name)
-        if callable(v) and __name in super().__getattribute__("__magic_attrs__"):
+        value = super().__getattribute__(__name)
+        if callable(value) and __name in super().__getattribute__("__magic_attrs__"):
             return wrapt.FunctionWrapper(
-                v,
+                value,
                 super().__getattribute__("_mark_dirty"),
             )
         if isinstance(
-            v, super().__getattribute__("__mutable_types__")
+            value, super().__getattribute__("__mutable_types__")
         ) and __name not in ("__wrapped__", "_self_state"):
-            return MutableProxy(v, self._self_state, self._self_field_name)
-        return v
+            return MutableProxy(
+                wrapped=value,
+                state=self._self_state,
+                field_name=self._self_field_name,
+            )
+        return value
 
     def __getitem__(self, key) -> Any:
         """Get the item on the proxied object and return a proxy if mutable.
@@ -1245,10 +1249,14 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The item value.
         """
-        v = super().__getitem__(key)
-        if isinstance(v, self.__mutable_types__):
-            return MutableProxy(v, self._self_state, self._self_field_name)
-        return v
+        value = super().__getitem__(key)
+        if isinstance(value, self.__mutable_types__):
+            return MutableProxy(
+                wrapped=value,
+                state=self._self_state,
+                field_name=self._self_field_name,
+            )
+        return value
 
     def __delattr__(self, name):
         """Delete the attribute on the proxied object and mark state dirty.
