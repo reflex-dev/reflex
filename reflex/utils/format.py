@@ -2,22 +2,16 @@
 
 from __future__ import annotations
 
-import base64
-import io
 import json
 import os
 import os.path as op
 import re
 import sys
-import types as builtin_types
-from typing import TYPE_CHECKING, Any, Callable, Type, Union
-
-import plotly.graph_objects as go
-from plotly.graph_objects import Figure
-from plotly.io import to_json
+from typing import TYPE_CHECKING, Any, Union
 
 from reflex import constants
-from reflex.utils import exceptions, types
+from reflex.utils import exceptions, serializers, types
+from reflex.utils.serializers import serialize
 from reflex.vars import Var
 
 if TYPE_CHECKING:
@@ -316,12 +310,9 @@ def format_prop(
                 return prop
             return json_dumps(prop)
 
-        elif isinstance(prop, Figure):
-            prop = json.loads(to_json(prop))["data"]  # type: ignore
-
         # For dictionaries, convert any properties to strings.
         elif isinstance(prop, dict):
-            prop = format_dict(prop)
+            prop = serializers.serialize_dict(prop)  # type: ignore
 
         else:
             # Dump the prop as JSON.
@@ -461,44 +452,6 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 
-def format_dataframe_values(value: Type) -> list[Any]:
-    """Format dataframe values.
-
-    Args:
-        value: The value to format.
-
-    Returns:
-        Format data
-    """
-    if not types.is_dataframe(type(value)):
-        return value
-
-    format_data = []
-    for data in list(value.values.tolist()):
-        element = []
-        for d in data:
-            element.append(str(d) if isinstance(d, (list, tuple)) else d)
-        format_data.append(element)
-
-    return format_data
-
-
-def format_image_data(value: Type) -> str:
-    """Format image data.
-
-    Args:
-        value: The value to format.
-
-    Returns:
-        Format data
-    """
-    buff = io.BytesIO()
-    value.save(buff, format="PNG")
-    image_bytes = buff.getvalue()
-    base64_image = base64.b64encode(image_bytes).decode("utf-8")
-    return f"data:image/png;base64,{base64_image}"
-
-
 def format_state(value: Any) -> Any:
     """Recursively format values in the given state.
 
@@ -523,30 +476,12 @@ def format_state(value: Any) -> Any:
     if isinstance(value, types.StateBases):
         return value
 
-    # Convert plotly figures to JSON.
-    if isinstance(value, go.Figure):
-        return json.loads(to_json(value))["data"]  # type: ignore
+    # Serialize the value.
+    serialized = serialize(value)
+    if serialized is not None:
+        return serialized
 
-    # Convert pandas dataframes to JSON.
-    if types.is_dataframe(type(value)):
-        return {
-            "columns": value.columns.tolist(),
-            "data": format_dataframe_values(value),
-        }
-
-    # Convert datetime objects to str.
-    if types.is_datetime(type(value)):
-        return str(value)
-
-    # Convert Image objects to base64.
-    if types.is_image(type(value)):
-        return format_image_data(value)  # type: ignore
-
-    raise TypeError(
-        "State vars must be primitive Python types, "
-        "or subclasses of rx.Base. "
-        f"Got var of type {type(value)}."
-    )
+    raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
 
 
 def format_ref(ref: str) -> str:
@@ -578,58 +513,6 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
         idx.is_local = True
         return f"refs_{clean_ref}[{idx}]"
     return f"refs_{clean_ref}"
-
-
-def format_dict(prop: ComponentStyle) -> str:
-    """Format a dict with vars potentially as values.
-
-    Args:
-        prop: The dict to format.
-
-    Returns:
-        The formatted dict.
-
-    Raises:
-        InvalidStylePropError: If a style prop has a callable value
-    """
-    # Import here to avoid circular imports.
-    from reflex.event import EventHandler
-    from reflex.vars import Var
-
-    prop_dict = {}
-
-    # Convert any var keys to strings.
-    for key, value in prop.items():
-        if issubclass(type(value), Callable):
-            raise exceptions.InvalidStylePropError(
-                f"The style prop `{to_snake_case(key)}` cannot have "  # type: ignore
-                f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
-                f"an event handler or callable as its value"
-            )
-        prop_dict[key] = str(value) if isinstance(value, Var) else value
-
-    # Dump the dict to a string.
-    fprop = json_dumps(prop_dict)
-
-    def unescape_double_quotes_in_var(m: re.Match) -> str:
-        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
-        return re.sub('\\\\"', '"', m.group(1))
-
-    # This substitution is necessary to unwrap var values.
-    fprop = re.sub(
-        pattern=r"""
-            (?<!\\)      # must NOT start with a backslash
-            "            # match opening double quote of JSON value
-            {(.*?)}      # extract the value between curly braces (non-greedy)
-            "            # match must end with an unescaped double quote
-        """,
-        repl=unescape_double_quotes_in_var,
-        string=fprop,
-        flags=re.VERBOSE,
-    )
-
-    # Return the formatted dict.
-    return fprop
 
 
 def format_breadcrumbs(route: str) -> list[tuple[str, str]]:

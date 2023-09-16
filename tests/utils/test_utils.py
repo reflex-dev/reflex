@@ -21,6 +21,7 @@ from reflex.utils import (
     types,
 )
 from reflex.utils import exec as utils_exec
+from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var
 
 
@@ -777,4 +778,4 @@ def test_style_prop_with_event_handler_value(callable):
     }
 
     with pytest.raises(TypeError):
-        format.format_dict(style)  # type: ignore
+        serialize(style)  # type: ignore
