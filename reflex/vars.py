@@ -24,13 +24,12 @@ from typing import (
     get_type_hints,
 )
 
-from plotly.graph_objects import Figure
-from plotly.io import to_json
 from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, types
+from reflex.utils.serializers import serialize
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -126,19 +125,16 @@ class Var(ABC):
 
         type_ = type(value)
 
-        # Special case for plotly figures.
-        if isinstance(value, Figure):
-            value = json.loads(to_json(value))["data"]  # type: ignore
-            type_ = Figure
-
-        if isinstance(value, dict):
-            value = format.format_dict(value)
+        # Try to serialize the value.
+        serialized = serialize(value)
+        if serialized is not None:
+            value = serialized
 
         try:
             name = value if isinstance(value, str) else json.dumps(value)
         except TypeError as e:
             raise TypeError(
-                f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
+                f"No JSON serializer found for var {value} of type {type_}."
             ) from e
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
@@ -184,7 +180,7 @@ class Var(ABC):
         """
         if self.state:
             return self.full_name
-        if self.is_string or self.type_ is Figure:
+        if self.is_string:
             return self.name
         try:
             return json.loads(self.name)

@@ -230,13 +230,8 @@ def test_create_type_error():
 
     value = ErrorType()
 
-    with pytest.raises(TypeError) as exception:
+    with pytest.raises(TypeError):
         Var.create(value)
-
-    assert (
-        exception.value.args[0]
-        == f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
-    )
 
 
 def v(value) -> Var:
