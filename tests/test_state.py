@@ -1401,6 +1401,11 @@ def test_state_with_invalid_yield():
 
 
 def test_mutable_list(mutable_state):
+    """Test that mutable lists are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
     assert not mutable_state.dirty_vars
 
     def assert_array_dirty():
@@ -1441,6 +1446,11 @@ def test_mutable_list(mutable_state):
 
 
 def test_mutable_dict(mutable_state):
+    """Test that mutable dicts are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
     assert not mutable_state.dirty_vars
 
     def assert_hashmap_dirty():
@@ -1482,6 +1492,11 @@ def test_mutable_dict(mutable_state):
 
 
 def test_mutable_set(mutable_state):
+    """Test that mutable sets are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
     assert not mutable_state.dirty_vars
 
     def assert_set_dirty():
@@ -1519,6 +1534,11 @@ def test_mutable_set(mutable_state):
 
 
 def test_mutable_custom(mutable_state):
+    """Test that mutable custom types derived from Base are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
     assert not mutable_state.dirty_vars
 
     def assert_custom_dirty():
