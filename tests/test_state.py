@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import functools
+import sys
 from typing import Dict, List
 
 import pytest
@@ -1473,8 +1474,9 @@ def test_mutable_dict(mutable_state):
     assert_hashmap_dirty()
     del mutable_state.hashmap["new_key"]
     assert_hashmap_dirty()
-    mutable_state.hashmap |= {"new_key": 44}
-    assert_hashmap_dirty()
+    if sys.version_info >= (3, 9):
+        mutable_state.hashmap |= {"new_key": 44}
+        assert_hashmap_dirty()
 
     # Test nested dict operations
     mutable_state.hashmap["array"] = []
