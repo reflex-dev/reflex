@@ -596,15 +596,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         }
         if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
-        elif name in super().__getattribute__("_backend_vars"):
-            value = super().__getattribute__("_backend_vars").__getitem__(name)
+
+        backend_vars = super().__getattribute__("_backend_vars")
+        if name in backend_vars:
+            value = backend_vars[name]
         else:
             value = super().__getattribute__(name)
-        if isinstance(
-            value, MutableProxy.__mutable_types__
-        ) and name in super().__getattribute__("base_vars"):
+
+        if isinstance(value, MutableProxy.__mutable_types__) and (
+            name in super().__getattribute__("base_vars") or name in backend_vars
+        ):
             # track changes in mutable containers (list, dict, set, etc)
             return MutableProxy(value, self, name)
+
         return value
 
     def __setattr__(self, name: str, value: Any):

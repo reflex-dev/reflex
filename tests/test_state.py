@@ -1558,3 +1558,28 @@ def test_mutable_custom(mutable_state):
     assert_custom_dirty()
     mutable_state.custom.custom.bar = "baz"
     assert_custom_dirty()
+
+
+def test_mutable_backend(mutable_state):
+    """Test that mutable backend vars are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_custom_dirty():
+        assert mutable_state.dirty_vars == {"_be_custom"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    mutable_state._be_custom.foo = "bar"
+    assert_custom_dirty()
+    mutable_state._be_custom.array.append(42)
+    assert_custom_dirty()
+    mutable_state._be_custom.hashmap["key"] = 68
+    assert_custom_dirty()
+    mutable_state._be_custom.test_set.add(42)
+    assert_custom_dirty()
+    mutable_state._be_custom.custom.bar = "baz"
+    assert_custom_dirty()
