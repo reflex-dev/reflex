@@ -1327,6 +1327,15 @@ def test_setattr_of_mutable_types(mutable_state):
     assert isinstance(test_set, MutableProxy)
     assert isinstance(test_set, set)
 
+    assert isinstance(mutable_state.custom, MutableProxy)
+    assert isinstance(mutable_state.custom.array, MutableProxy)
+    assert isinstance(mutable_state.custom.array, list)
+    assert isinstance(mutable_state.custom.hashmap, MutableProxy)
+    assert isinstance(mutable_state.custom.hashmap, dict)
+    assert isinstance(mutable_state.custom.test_set, MutableProxy)
+    assert isinstance(mutable_state.custom.test_set, set)
+    assert isinstance(mutable_state.custom.custom, MutableProxy)
+
     mutable_state.reassign_mutables()
 
     array = mutable_state.array
@@ -1507,3 +1516,23 @@ def test_mutable_set(mutable_state):
     assert_set_dirty()
     mutable_state.test_set.clear()
     assert_set_dirty()
+
+
+def test_mutable_custom(mutable_state):
+    assert not mutable_state.dirty_vars
+
+    def assert_custom_dirty():
+        assert mutable_state.dirty_vars == {"custom"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    mutable_state.custom.foo = "bar"
+    assert_custom_dirty()
+    mutable_state.custom.array.append(42)
+    assert_custom_dirty()
+    mutable_state.custom.hashmap["key"] = 68
+    assert_custom_dirty()
+    mutable_state.custom.test_set.add(42)
+    assert_custom_dirty()
+    mutable_state.custom.custom.bar = "baz"
+    assert_custom_dirty()

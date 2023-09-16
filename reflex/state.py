@@ -1177,7 +1177,7 @@ class MutableProxy(wrapt.ObjectProxy):
         ]
     )
 
-    __mutable_types__ = (list, dict, set)
+    __mutable_types__ = (list, dict, set, Base)
 
     def __init__(self, wrapped: Any, state: State, field_name: str):
         """Create a proxy for a mutable object that tracks changes.
@@ -1226,10 +1226,9 @@ class MutableProxy(wrapt.ObjectProxy):
                 v,
                 super().__getattribute__("_mark_dirty"),
             )
-        if (
-            isinstance(v, super().__getattribute__("__mutable_types__"))
-            and __name != "__wrapped__"
-        ):
+        if isinstance(
+            v, super().__getattribute__("__mutable_types__")
+        ) and __name not in ("__wrapped__", "_self_state"):
             return MutableProxy(v, self._self_state, self._self_field_name)
         return v
 
