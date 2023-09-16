@@ -1,8 +1,9 @@
+import os
 from typing import List, Set
 
 import pytest
 
-from reflex.compiler import utils
+from reflex.compiler import compiler, utils
 from reflex.utils import imports
 from reflex.vars import ImportVar
 
@@ -106,22 +107,56 @@ def test_compile_imports(import_dict: imports.ImportDict, test_dicts: List[dict]
         assert import_dict["rest"] == test_dict["rest"]
 
 
-# @pytest.mark.parametrize(
-#     "name,value,output",
-#     [
-#         ("foo", "bar", 'const foo = "bar"'),
-#         ("num", 1, "const num = 1"),
-#         ("check", False, "const check = false"),
-#         ("arr", [1, 2, 3], "const arr = [1, 2, 3]"),
-#         ("obj", {"foo": "bar"}, 'const obj = {"foo": "bar"}'),
-#     ],
-# )
-# def test_compile_constant_declaration(name: str, value: str, output: str):
-#     """Test the compile_constant_declaration function.
+def test_compile_stylesheets(tmp_path, mocker):
+    """Test that stylesheets compile correctly.
 
-#     Args:
-#         name: The name of the constant.
-#         value: The value of the constant.
-#         output: The expected output.
-#     """
-#     assert utils.compile_constant_declaration(name, value) == output
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    (assets_dir / "styles.css").touch()
+
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+
+    stylesheets = [
+        "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
+        "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
+        "/styles.css",
+        "https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css",
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        os.path.join(".web", "styles", "styles.css"),
+        f"@import url('./tailwind.css'); \n"
+        f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
+        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
+        f"@import url('@/styles.css'); \n"
+        f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+    )
+
+
+def test_compile_nonexistent_stylesheet(tmp_path, mocker):
+    """Test that an error is thrown for non-existent stylesheets.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+
+    stylesheets = ["/styles.css"]
+
+    with pytest.raises(FileNotFoundError):
+        compiler.compile_root_stylesheet(stylesheets)

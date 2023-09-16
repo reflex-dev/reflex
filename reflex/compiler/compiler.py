@@ -1,6 +1,8 @@
 """Compiler for the reflex apps."""
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import List, Set, Tuple, Type
 
 from reflex import constants
@@ -118,6 +120,50 @@ def _compile_page(
     )
 
 
+def compile_root_stylesheet(stylesheets: List[str]) -> Tuple[str, str]:
+    """Compile the root stylesheet.
+
+    Args:
+        stylesheets: The stylesheets to include in the root stylesheet.
+
+    Returns:
+        The path and code of the compiled root stylesheet.
+    """
+    output_path = utils.get_root_stylesheet_path()
+
+    code = _compile_root_stylesheet(stylesheets)
+
+    return output_path, code
+
+
+def _compile_root_stylesheet(stylesheets: List[str]) -> str:
+    """Compile the root stylesheet.
+
+    Args:
+        stylesheets: The stylesheets to include in the root stylesheet.
+
+    Returns:
+        The compiled root stylesheet.
+
+    Raises:
+        FileNotFoundError: If a specified stylesheet in assets directory does not exist.
+    """
+    sheets = [constants.TAILWIND_ROOT_STYLE_PATH]
+    for stylesheet in stylesheets:
+        if not utils.is_valid_url(stylesheet):
+            # check if stylesheet provided exists.
+            stylesheet_full_path = (
+                Path.cwd() / constants.APP_ASSETS_DIR / stylesheet.strip("/")
+            )
+            if not os.path.exists(stylesheet_full_path):
+                raise FileNotFoundError(
+                    f"The stylesheet file {stylesheet_full_path} does not exist."
+                )
+            stylesheet = f"@/{stylesheet.strip('/')}"
+        sheets.append(stylesheet) if stylesheet not in sheets else None
+    return templates.STYLE.render(stylesheets=sheets)
+
+
 def _compile_components(components: Set[CustomComponent]) -> str:
     """Compile the components.
 
@@ -162,11 +208,8 @@ def _compile_tailwind(
     )
 
 
-def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
+def compile_document_root() -> Tuple[str, str]:
     """Compile the document root.
-
-    Args:
-        stylesheets: The stylesheets to include in the document root.
 
     Returns:
         The path and code of the compiled document root.
@@ -175,8 +218,7 @@ def compile_document_root(stylesheets: List[str]) -> Tuple[str, str]:
     output_path = utils.get_page_path(constants.DOCUMENT_ROOT)
 
     # Create the document root.
-    document_root = utils.create_document_root(stylesheets)
-
+    document_root = utils.create_document_root()
     # Compile the document root.
     code = _compile_document_root(document_root)
     return output_path, code
@@ -279,5 +321,4 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    template_files = ["_app.js"]
-    utils.empty_dir(constants.WEB_PAGES_DIR, keep_files=template_files)
+    utils.empty_dir(constants.WEB_PAGES_DIR, keep_files=["_app.js"])
