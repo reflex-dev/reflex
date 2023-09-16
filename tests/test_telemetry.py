@@ -35,3 +35,8 @@ def test_telemetry():
     assert tel_json["memory"] == tel.memory
     assert tel_json["reflex_version"] == tel.reflex_version
     assert tel_json["python_version"] == tel.python_version
+
+
+def test_disable():
+    """Test that disabling telemetry works."""
+    assert not telemetry.send("test", telemetry_enabled=False)

@@ -24,6 +24,7 @@ env:
   # - Catch encoding errors when printing logs
   # - Best effort print lines that contain illegal chars (map to some default char, etc.)
   PYTHONIOENCODING: "utf8"
+  TELEMETRY_ENABLED: false
 
 jobs:
   example-counter:
