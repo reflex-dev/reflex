@@ -275,6 +275,7 @@ class Component(Base, ABC):
             EventSpec(
                 handler=e.handler,
                 args=get_handler_args(e),
+                client_handler_name=e.client_handler_name,
             )
             for e in events
         ]
