@@ -1,12 +1,14 @@
-from typing import Any, Dict, List, Optional, Union
+"""General components for Recharts."""
 
-from reflex.components.component import Component
-from reflex.style import Style
+from typing import Any, Dict
+
 from reflex.vars import Var
+
 from .recharts import Recharts
 
 
 class ResponsiveContainer(Recharts):
+    """A base class for responsive containers in Recharts."""
 
     tag = "ResponsiveContainer"
 
@@ -30,6 +32,7 @@ class ResponsiveContainer(Recharts):
 
 
 class Legend(Recharts):
+    """A Legend component in Recharts."""
 
     tag = "Legend"
 
@@ -65,6 +68,7 @@ class Legend(Recharts):
 
 
 class Tooltip(Recharts):
+    """A Tooltip component in Recharts."""
 
     tag = "Tooltip"
 
@@ -103,6 +107,7 @@ class Tooltip(Recharts):
 
 
 class Label(Recharts):
+    """A Label component in Recharts."""
 
     tag = "Label"
 
@@ -120,6 +125,7 @@ class Label(Recharts):
 
 
 class LabelList(Recharts):
+    """A LabelList component in Recharts."""
 
     tag = "LabelList"
 

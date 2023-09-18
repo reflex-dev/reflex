@@ -1,16 +1,20 @@
-from typing import Any, Dict, List, Optional, Union
+"""Polar charts in Recharts."""
 
-from reflex.components.component import Component
-from reflex.style import Style
+from typing import Any, Dict, List, Union
+
 from reflex.vars import Var
+
 from .recharts import Recharts
 
 
 class Polar(Recharts):
+    """A base class for polar charts in Recharts."""
+
     pass
 
 
 class Pie(Recharts):
+    """A Pie chart component in Recharts."""
 
     tag = "Pie"
 
@@ -58,6 +62,7 @@ class Pie(Recharts):
 
 
 class Radar(Recharts):
+    """A Radar chart component in Recharts."""
 
     tag = "Radar"
 
@@ -81,6 +86,7 @@ class Radar(Recharts):
 
 
 class RadialBar(Recharts):
+    """A RadialBar chart component in Recharts."""
 
     tag = "RadialBar"
 
@@ -89,6 +95,7 @@ class RadialBar(Recharts):
 
 
 class PolarAngleAxis(Recharts):
+    """A PolarAngleAxis component in Recharts."""
 
     tag = "PolarAngleAxis"
 
@@ -121,6 +128,7 @@ class PolarAngleAxis(Recharts):
 
 
 class PolarGrid(Recharts):
+    """A PolarGrid component in Recharts."""
 
     tag = "PolarGrid"
 
@@ -147,6 +155,7 @@ class PolarGrid(Recharts):
 
 
 class PolarRadiusAxis(Recharts):
+    """A PolarRadiusAxis component in Recharts."""
 
     tag = "PolarRadiusAxis"
 

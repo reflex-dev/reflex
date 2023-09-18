@@ -1,12 +1,14 @@
-from typing import Any, Dict, List, Optional, Union
+"""Cartesian charts in Recharts."""
 
-from reflex.components.component import Component
-from reflex.style import Style
+from typing import Any, Dict, List
+
 from reflex.vars import Var
+
 from .recharts import Recharts
 
 
 class Cartesian(Recharts):
+    """A base class for cartesian charts in Recharts."""
 
     # The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
     layout: Var[str]
@@ -25,6 +27,8 @@ class Cartesian(Recharts):
 
 
 class Axis(Recharts):
+    """A base class for axes in Recharts."""
+
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[str]
 
@@ -69,11 +73,13 @@ class Axis(Recharts):
 
 
 class XAxis(Axis):
+    """An XAxis component in Recharts."""
 
     tag = "XAxis"
 
 
 class YAxis(Axis):
+    """A YAxis component in Recharts."""
 
     tag = "YAxis"
 
@@ -82,6 +88,7 @@ class YAxis(Axis):
 
 
 class ZAxis(Cartesian):
+    """A ZAxis component in Recharts."""
 
     tag = "ZAxis"
 
@@ -102,6 +109,7 @@ class ZAxis(Cartesian):
 
 
 class Brush(Recharts):
+    """A Brush component in Recharts."""
 
     tag = "Brush"
 
@@ -137,6 +145,7 @@ class Brush(Recharts):
 
 
 class Area(Cartesian):
+    """An Area component in Recharts."""
 
     tag = "Area"
 
@@ -146,6 +155,7 @@ class Area(Cartesian):
 
 
 class Bar(Cartesian):
+    """A Bar component in Recharts."""
 
     tag = "Bar"
 
@@ -153,7 +163,9 @@ class Bar(Cartesian):
 
     fill: Var[str]
 
+
 class Line(Cartesian):
+    """A Line component in Recharts."""
 
     tag = "Line"
 
@@ -163,6 +175,7 @@ class Line(Cartesian):
 
 
 class Scatter(Cartesian):
+    """A Scatter component in Recharts."""
 
     tag = "Scatter"
 
@@ -180,6 +193,7 @@ class Scatter(Cartesian):
 
 
 class Funnel(Cartesian):
+    """A Funnel component in Recharts."""
 
     tag = "Funnel"
 
@@ -197,26 +211,31 @@ class Funnel(Cartesian):
 
 
 class ErrorBar(Cartesian):
+    """An ErrorBar component in Recharts."""
 
     tag = "ErrorBar"
 
 
 class ReferenceLine(Recharts):
+    """A ReferenceLine component in Recharts."""
 
     tag = "ReferenceLine"
 
 
 class ReferenceDot(Recharts):
+    """A ReferenceDot component in Recharts."""
 
     tag = "ReferenceDot"
 
 
 class ReferenceArea(Recharts):
+    """A ReferenceArea component in Recharts."""
 
     tag = "ReferenceArea"
 
 
 class CartesianGrid(Recharts):
+    """A CartesianGrid component in Recharts."""
 
     tag = "CartesianGrid"
 
@@ -228,5 +247,6 @@ class CartesianGrid(Recharts):
 
 
 class CartesianAxis(Cartesian):
+    """A CartesianAxis component in Recharts."""
 
     tag = "CartesianAxis"

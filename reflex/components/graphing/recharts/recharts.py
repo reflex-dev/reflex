@@ -1,8 +1,8 @@
-from typing import Any, Dict, List, Optional, Union
+"""A component that wraps a recharts lib."""
+
+from typing import List
 
 from reflex.components.component import Component
-from reflex.style import Style
-from reflex.vars import Var
 
 
 class Recharts(Component):

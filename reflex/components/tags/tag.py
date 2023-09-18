@@ -71,18 +71,15 @@ class Tag(Base):
         Returns:
             The tag with the props added.
         """
-        try:
-            self.props.update(
-                {
-                    format.to_camel_case(name): prop
-                    if types._isinstance(prop, Union[EventChain, dict])
-                    else Var.create(prop)
-                    for name, prop in kwargs.items()
-                    if self.is_valid_prop(prop)
-                }
-            )
-        except:
-            breakpoint()
+        self.props.update(
+            {
+                format.to_camel_case(name): prop
+                if types._isinstance(prop, Union[EventChain, dict])
+                else Var.create(prop)
+                for name, prop in kwargs.items()
+                if self.is_valid_prop(prop)
+            }
+        )
         return self
 
     def remove_props(self, *args: str) -> Tag:

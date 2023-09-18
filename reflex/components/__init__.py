@@ -135,7 +135,7 @@ bar_chart = BarChart.create
 line_chart = LineChart.create
 composed_chart = ComposedChart.create
 pie_chart = PieChart.create
-radial_bar_chart = RadialBarChart.create    
+radial_bar_chart = RadialBarChart.create
 radar_chart = RadarChart.create
 scatter_chart = ScatterChart.create
 treemap = Treemap.create
@@ -162,7 +162,6 @@ label = Label.create
 label_list = LabelList.create
 responsive_container = ResponsiveContainer.create
 graph_tooltip = Tooltip.create
-
 
 
 box = Box.create

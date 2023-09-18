@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Optional, Union
+"""A module that defines the chart components in Recharts."""
 
-from reflex.components.component import Component
-from reflex.style import Style
+from typing import Any, Dict, List, Union
+
 from reflex.vars import Var
+
 from .recharts import Recharts
 
 
@@ -35,6 +36,7 @@ class ChartBase(Recharts):
 
 
 class AreaChart(ChartBase):
+    """An Area chart component in Recharts."""
 
     tag = "AreaChart"
 
@@ -43,6 +45,7 @@ class AreaChart(ChartBase):
 
 
 class BarChart(ChartBase):
+    """A Bar chart component in Recharts."""
 
     tag = "BarChart"
 
@@ -63,11 +66,13 @@ class BarChart(ChartBase):
 
 
 class LineChart(ChartBase):
+    """A Line chart component in Recharts."""
 
     tag = "LineChart"
 
 
 class ComposedChart(ChartBase):
+    """A Composed chart component in Recharts."""
 
     tag = "ComposedChart"
 
@@ -88,11 +93,13 @@ class ComposedChart(ChartBase):
 
 
 class PieChart(ChartBase):
+    """A Pie chart component in Recharts."""
 
     tag = "PieChart"
 
 
 class RadarChart(ChartBase):
+    """A Radar chart component in Recharts."""
 
     tag = "RadarChart"
 
@@ -116,6 +123,7 @@ class RadarChart(ChartBase):
 
 
 class RadialBarChart(ChartBase):
+    """A RadialBar chart component in Recharts."""
 
     tag = "RadialBarChart"
 
@@ -145,11 +153,13 @@ class RadialBarChart(ChartBase):
 
 
 class ScatterChart(ChartBase):
+    """A Scatter chart component in Recharts."""
 
     tag = "ScatterChart"
 
 
 class FunnelChart(ChartBase):
+    """A Funnel chart component in Recharts."""
 
     tag = "FunnelChart"
 
@@ -158,6 +168,7 @@ class FunnelChart(ChartBase):
 
 
 class Treemap(ChartBase):
+    """A Treemap chart component in Recharts."""
 
     tag = "Treemap"
 
