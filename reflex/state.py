@@ -22,18 +22,18 @@ from typing import (
     Sequence,
     Set,
     Type,
-    Union,
 )
 
 import cloudpickle
 import pydantic
+import wrapt
 from redis import Redis
 
 from reflex import constants
 from reflex.base import Base
 from reflex.event import Event, EventHandler, EventSpec, fix_events, window_alert
 from reflex.utils import format, prerequisites, types
-from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet, Var
+from reflex.vars import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
 
@@ -129,32 +129,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(self.backend_vars)
 
-        # Initialize the mutable fields.
-        self._init_mutable_fields()
-
-    def _init_mutable_fields(self):
-        """Initialize mutable fields.
-
-        Allow mutation to dict, list, and set to be detected by the app.
-        """
-        for field in self.base_vars.values():
-            value = getattr(self, field.name)
-
-            if types._issubclass(field.type_, Union[List, Dict, Set]):
-                value_in_rx_data = _convert_mutable_datatypes(
-                    value, self._reassign_field, field.name
-                )
-                setattr(self, field.name, value_in_rx_data)
-
-        for field_name, value in self._backend_vars.items():
-            if isinstance(value, (list, dict, set)):
-                value_in_rx_data = _convert_mutable_datatypes(
-                    value, self._reassign_field, field_name
-                )
-                self._backend_vars[field_name] = value_in_rx_data
-
-        self._clean()
-
     def _init_event_handlers(self, state: State | None = None):
         """Initialize event handlers.
 
@@ -177,20 +151,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Also allow direct calling of parent state event handlers
         if state.parent_state is not None:
             self._init_event_handlers(state.parent_state)
-
-    def _reassign_field(self, field_name: str):
-        """Reassign the given field.
-
-        Primarily for mutation in fields of mutable data types.
-
-        Args:
-            field_name: The name of the field we want to reassign
-        """
-        setattr(
-            self,
-            field_name,
-            getattr(self, field_name),
-        )
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -636,9 +596,20 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         }
         if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
-        elif name in super().__getattribute__("_backend_vars"):
-            return super().__getattribute__("_backend_vars").__getitem__(name)
-        return super().__getattribute__(name)
+
+        backend_vars = super().__getattribute__("_backend_vars")
+        if name in backend_vars:
+            value = backend_vars[name]
+        else:
+            value = super().__getattribute__(name)
+
+        if isinstance(value, MutableProxy.__mutable_types__) and (
+            name in super().__getattribute__("base_vars") or name in backend_vars
+        ):
+            # track changes in mutable containers (list, dict, set, etc)
+            return MutableProxy(wrapped=value, state=self, field_name=name)
+
+        return value
 
     def __setattr__(self, name: str, value: Any):
         """Set the attribute.
@@ -649,17 +620,15 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             name: The name of the attribute.
             value: The value of the attribute.
         """
+        if isinstance(value, MutableProxy):
+            # unwrap proxy objects when assigning back to the state
+            value = value.__wrapped__
+
         # Set the var on the parent state.
         inherited_vars = {**self.inherited_vars, **self.inherited_backend_vars}
         if name in inherited_vars:
             setattr(self.parent_state, name, value)
             return
-
-        # Make sure lists and dicts are converted to ReflexList, ReflexDict and ReflexSet.
-        if name in (*self.base_vars, *self.backend_vars) and types._isinstance(
-            value, Union[List, Dict, Set]
-        ):
-            value = _convert_mutable_datatypes(value, self._reassign_field, name)
 
         if types.is_backend_variable(name) and name != "_backend_vars":
             self._backend_vars.__setitem__(name, value)
@@ -1087,54 +1056,6 @@ class StateManager(Base):
         self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
 
 
-def _convert_mutable_datatypes(
-    field_value: Any, reassign_field: Callable, field_name: str
-) -> Any:
-    """Recursively convert mutable data to the Rx data types.
-
-    Note: right now only list, dict and set would be handled recursively.
-
-    Args:
-        field_value: The target field_value.
-        reassign_field:
-            The function to reassign the field in the parent state.
-        field_name: the name of the field in the parent state
-
-    Returns:
-        The converted field_value
-    """
-    if isinstance(field_value, list):
-        field_value = [
-            _convert_mutable_datatypes(value, reassign_field, field_name)
-            for value in field_value
-        ]
-
-        field_value = ReflexList(
-            field_value, reassign_field=reassign_field, field_name=field_name
-        )
-
-    if isinstance(field_value, dict):
-        field_value = {
-            key: _convert_mutable_datatypes(value, reassign_field, field_name)
-            for key, value in field_value.items()
-        }
-        field_value = ReflexDict(
-            field_value, reassign_field=reassign_field, field_name=field_name
-        )
-
-    if isinstance(field_value, set):
-        field_value = [
-            _convert_mutable_datatypes(value, reassign_field, field_name)
-            for value in field_value
-        ]
-
-        field_value = ReflexSet(
-            field_value, reassign_field=reassign_field, field_name=field_name
-        )
-
-    return field_value
-
-
 class ClientStorageBase:
     """Base class for client-side storage."""
 
@@ -1234,3 +1155,152 @@ class LocalStorage(ClientStorageBase, str):
             inst = super().__new__(cls, object)
         inst.name = name
         return inst
+
+
+class MutableProxy(wrapt.ObjectProxy):
+    """A proxy for a mutable object that tracks changes."""
+
+    # Methods on wrapped objects which should mark the state as dirty.
+    __mark_dirty_attrs__ = set(
+        [
+            "add",
+            "append",
+            "clear",
+            "difference_update",
+            "discard",
+            "extend",
+            "insert",
+            "intersection_update",
+            "pop",
+            "popitem",
+            "remove",
+            "reverse",
+            "setdefault",
+            "sort",
+            "symmetric_difference_update",
+            "update",
+        ]
+    )
+
+    __mutable_types__ = (list, dict, set, Base)
+
+    def __init__(self, wrapped: Any, state: State, field_name: str):
+        """Create a proxy for a mutable object that tracks changes.
+
+        Args:
+            wrapped: The object to proxy.
+            state: The state to mark dirty when the object is changed.
+            field_name: The name of the field on the state associated with the
+                wrapped object.
+        """
+        super().__init__(wrapped)
+        self._self_state = state
+        self._self_field_name = field_name
+
+    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None):
+        """Mark the state as dirty, then call a wrapped function.
+
+        Intended for use with `FunctionWrapper` from the `wrapt` library.
+
+        Args:
+            wrapped: The wrapped function.
+            instance: The instance of the wrapped function.
+            args: The args for the wrapped function.
+            kwargs: The kwargs for the wrapped function.
+        """
+        self._self_state.dirty_vars.add(self._self_field_name)
+        self._self_state._mark_dirty()
+        if wrapped is not None:
+            wrapped(*args, **(kwargs or {}))
+
+    def __getattribute__(self, __name: str) -> Any:
+        """Get the attribute on the proxied object and return a proxy if mutable.
+
+        Args:
+            __name: The name of the attribute.
+
+        Returns:
+            The attribute value.
+        """
+        value = super().__getattribute__(__name)
+
+        if callable(value) and __name in super().__getattribute__(
+            "__mark_dirty_attrs__"
+        ):
+            # Wrap special callables, like "append", which should mark state dirty.
+            return wrapt.FunctionWrapper(
+                value,
+                super().__getattribute__("_mark_dirty"),
+            )
+
+        if isinstance(
+            value, super().__getattribute__("__mutable_types__")
+        ) and __name not in ("__wrapped__", "_self_state"):
+            # Recursively wrap mutable attribute values retrieved through this proxy.
+            return MutableProxy(
+                wrapped=value,
+                state=self._self_state,
+                field_name=self._self_field_name,
+            )
+
+        return value
+
+    def __getitem__(self, key) -> Any:
+        """Get the item on the proxied object and return a proxy if mutable.
+
+        Args:
+            key: The key of the item.
+
+        Returns:
+            The item value.
+        """
+        value = super().__getitem__(key)
+        if isinstance(value, self.__mutable_types__):
+            # Recursively wrap mutable items retrieved through this proxy.
+            return MutableProxy(
+                wrapped=value,
+                state=self._self_state,
+                field_name=self._self_field_name,
+            )
+        return value
+
+    def __delattr__(self, name):
+        """Delete the attribute on the proxied object and mark state dirty.
+
+        Args:
+            name: The name of the attribute.
+        """
+        self._mark_dirty(super().__delattr__, args=(name,))
+
+    def __delitem__(self, key):
+        """Delete the item on the proxied object and mark state dirty.
+
+        Args:
+            key: The key of the item.
+        """
+        self._mark_dirty(super().__delitem__, args=(key,))
+
+    def __setitem__(self, key, value):
+        """Set the item on the proxied object and mark state dirty.
+
+        Args:
+            key: The key of the item.
+            value: The value of the item.
+        """
+        self._mark_dirty(super().__setitem__, args=(key, value))
+
+    def __setattr__(self, name, value):
+        """Set the attribute on the proxied object and mark state dirty.
+
+        If the attribute starts with "_self_", then the state is NOT marked
+        dirty as these are internal proxy attributes.
+
+        Args:
+            name: The name of the attribute.
+            value: The value of the attribute.
+        """
+        if name.startswith("_self_"):
+            # Special case attributes of the proxy itself, not applied to the wrapped object.
+            super().__setattr__(name, value)
+            return
+        self._mark_dirty(super().__setattr__, args=(name, value))
