@@ -1,19 +1,24 @@
-"""Component for displaying am altair graph."""
+"""Component for displaying a Matplotlib graph."""
+
 from typing import Any
 
-from reflex.utils.serializers import serializer
 from reflex.components.layout.box import Box
 from reflex.components.tags import Tag
+from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
 try:
-   import matplotlib.pyplot as plt, mpld3
-   from matplotlib.figure import Figure
+    import mpld3
+    from matplotlib.figure import Figure
 except ImportError:
-    figure = Any
-    
+    Figure = Any
+
+
 class Pyplot(Box):
-    """Display an altair chart."""
+    """Display a Matplotlib chart.
+
+    This component takes a Matplotlib figure as input and renders it within a Box layout component.
+    """
 
     # The figure to display.
     fig: Var[Figure]
@@ -22,14 +27,28 @@ class Pyplot(Box):
     dangerouslySetInnerHTML: Any
 
     def _render(self) -> Tag:
-        self.dangerouslySetInnerHTML = {"__html": self.fig} 
-        self.fig = None
-        return super()._render()
+        """Render the Matplotlib figure as HTML and set it as the inner HTML of the Box component.
+
+        Returns:
+            The rendered component.
+        """
+        self.dangerouslySetInnerHTML = {"__html": self.fig}
+        return super()._render().remove_props("fig")
 
 
 try:
+    from matplotlib.figure import Figure
+
     @serializer
-    def serialize_matplotlib_figure(fig: Figure) -> list:
+    def serialize_matplotlib_figure(fig: Figure) -> str:
+        """Serialize the Matplotlib figure to HTML.
+
+        Args:
+            fig (Figure): The Matplotlib figure to serialize.
+
+        Returns:
+            str: The serialized Matplotlib figure as HTML.
+        """
         return mpld3.fig_to_html(fig)
 
 except ImportError:

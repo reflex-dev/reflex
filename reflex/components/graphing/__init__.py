@@ -1,5 +1,8 @@
 """Convenience functions to define layout components."""
 
+from .altair import Altair
+from .bokeh import Bokeh
+from .matplotlib import Pyplot
 from .plotly import Plotly
 from .victory import (
     Area,
@@ -17,8 +20,5 @@ from .victory import (
     Scatter,
     Voronoi,
 )
-from .altair import Altair
-from .bokeh import Bokeh
-from .matplotlib import Pyplot
 
 __all__ = [f for f in dir() if f[0].isupper()]  # type: ignore
