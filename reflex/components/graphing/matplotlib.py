@@ -10,6 +10,8 @@ from reflex.vars import Var
 try:
     import mpld3
     from matplotlib.figure import Figure
+    import matplotlib
+    matplotlib.use('Agg')
 except ImportError:
     Figure = Any
 
