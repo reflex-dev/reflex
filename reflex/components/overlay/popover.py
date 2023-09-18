@@ -1,4 +1,5 @@
 """Popover components."""
+from __future__ import annotations
 
 from typing import Dict
 
@@ -96,7 +97,7 @@ class Popover(ChakraComponent):
         body=None,
         footer=None,
         use_close_button=False,
-        **props
+        **props,
     ) -> Component:
         """Create a popover component.
 

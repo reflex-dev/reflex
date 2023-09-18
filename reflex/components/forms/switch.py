@@ -1,4 +1,6 @@
 """A switch component."""
+from __future__ import annotations
+
 from typing import Dict
 
 from reflex.components.libs.chakra import ChakraComponent

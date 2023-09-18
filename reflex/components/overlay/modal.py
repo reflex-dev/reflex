@@ -1,4 +1,5 @@
 """Modal components."""
+from __future__ import annotations
 
 from typing import Dict, Optional, Union
 
@@ -74,7 +75,7 @@ class Modal(ChakraComponent):
         body: Optional[Union[Component, str]] = None,
         footer: Optional[Union[Component, str]] = None,
         close_button: Optional[Component] = None,
-        **props
+        **props,
     ) -> Component:
         """Create a modal component.
 
