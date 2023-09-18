@@ -1,12 +1,11 @@
 """Alert dialog components."""
 from __future__ import annotations
 
-from typing import Union
+from typing import Any, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.media.icon import Icon
-from reflex.utils.types import ArgsSpec
 from reflex.vars import Var
 
 
@@ -54,17 +53,18 @@ class AlertDialog(ChakraComponent):
     # If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
     use_inert: Var[bool]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_event_triggers() | {
-            "on_close": lambda e0: [],
-            "on_close_complete": lambda e0: [],
-            "on_esc": lambda e0: [],
-            "on_overlay_click": lambda e0: [],
+        return {
+            **super().get_event_triggers(),
+            "on_close": lambda: [],
+            "on_close_complete": lambda: [],
+            "on_esc": lambda: [],
+            "on_overlay_click": lambda: [],
         }
 
     @classmethod

@@ -71,7 +71,8 @@ class NumberInput(ChakraComponent):
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return super().get_event_triggers() | {
+        return {
+            **super().get_event_triggers(),
             EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 

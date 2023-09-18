@@ -7,7 +7,7 @@ from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.typography.text import Text
 from reflex.constants import EventTriggers
-from reflex.utils.types import ArgsSpec, _issubclass
+from reflex.utils.types import _issubclass
 from reflex.vars import Var
 
 
@@ -46,13 +46,14 @@ class Select(ChakraComponent):
     # The size of the select.
     size: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Union[Var, ArgsSpec]]:
+    def get_event_triggers(self) -> Dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return super().get_event_triggers() | {
+        return {
+            **super().get_event_triggers(),
             EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
         }
 

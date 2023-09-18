@@ -4,11 +4,10 @@ https://nextjs.org/docs/app/api-reference/components/script
 """
 from __future__ import annotations
 
-from typing import Union
+from typing import Any, Union
 
 from reflex.components.component import Component
 from reflex.event import EventChain
-from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
 
 
@@ -60,16 +59,17 @@ class Script(Component):
             raise ValueError("Must provide inline script or `src` prop.")
         return super().create(*children, **props)
 
-    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_event_triggers() | {
-            "on_load": lambda e0: [],
-            "on_ready": lambda e0: [],
-            "on_error": lambda e0: [],
+        return {
+            **super().get_event_triggers(),
+            "on_load": lambda: [],
+            "on_ready": lambda: [],
+            "on_error": lambda: [],
         }
 
 
