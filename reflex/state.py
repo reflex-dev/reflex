@@ -1590,7 +1590,7 @@ class MutableProxy(wrapt.ObjectProxy):
             value, super().__getattribute__("__mutable_types__")
         ) and __name not in ("__wrapped__", "_self_state"):
             # Recursively wrap mutable attribute values retrieved through this proxy.
-            return MutableProxy(
+            return type(self)(
                 wrapped=value,
                 state=self._self_state,
                 field_name=self._self_field_name,
@@ -1610,7 +1610,7 @@ class MutableProxy(wrapt.ObjectProxy):
         value = super().__getitem__(key)
         if isinstance(value, self.__mutable_types__):
             # Recursively wrap mutable items retrieved through this proxy.
-            return MutableProxy(
+            return type(self)(
                 wrapped=value,
                 state=self._self_state,
                 field_name=self._self_field_name,

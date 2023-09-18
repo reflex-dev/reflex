@@ -1683,6 +1683,7 @@ class BackgroundTaskState(State):
     """A state with a background task."""
 
     order: List[str] = []
+    dict_list: Dict[str, List[int]] = {"foo": []}
 
     @rx.background
     async def background_task(self):
@@ -1694,6 +1695,10 @@ class BackgroundTaskState(State):
         assert isinstance(self, StateProxy)
         with pytest.raises(ImmutableStateError):
             self.order.append("bad idea")
+
+        with pytest.raises(ImmutableStateError):
+            # Even nested access to mutables raises an exception.
+            self.dict_list["foo"].append(42)
 
         # wait for some other event to happen
         while len(self.order) == 1:
