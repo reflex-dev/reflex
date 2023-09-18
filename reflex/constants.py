@@ -126,10 +126,14 @@ WEB_STATIC_DIR = os.path.join(WEB_DIR, STATIC_DIR)
 WEB_UTILS_DIR = os.path.join(WEB_DIR, UTILS_DIR)
 # The directory where the assets are located.
 WEB_ASSETS_DIR = os.path.join(WEB_DIR, "public")
+# The directory where styles are located.
+STYLES_DIR = os.path.join(WEB_DIR, "styles")
 # The Tailwind config.
 TAILWIND_CONFIG = os.path.join(WEB_DIR, "tailwind.config.js")
 # Default Tailwind content paths
 TAILWIND_CONTENT = ["./pages/**/*.{js,ts,jsx,tsx}"]
+# Relative tailwind style path to root stylesheet in STYLES_DIR.
+TAILWIND_ROOT_STYLE_PATH = "./tailwind.css"
 # The NextJS config file
 NEXT_CONFIG_FILE = "next.config.js"
 # The sitemap config file.
@@ -148,6 +152,8 @@ ENV_JSON = os.path.join(WEB_DIR, "env.json")
 JS_EXT = ".js"
 # The extension for python files.
 PY_EXT = ".py"
+# The extension for css files.
+CSS_EXT = ".css"
 # The expected variable name where the rx.App is stored.
 APP_VAR = "app"
 # The expected variable name where the API object is stored for deployment.
@@ -172,6 +178,10 @@ HYDRATE = "hydrate"
 IS_HYDRATED = "is_hydrated"
 # The name of the index page.
 INDEX_ROUTE = "index"
+# The name of the app root page.
+APP_ROOT = "_app"
+# The root stylesheet filename.
+STYLESHEET_ROOT = "styles"
 # The name of the document root page.
 DOCUMENT_ROOT = "_document"
 # The name of the theme page.

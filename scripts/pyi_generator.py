@@ -7,7 +7,7 @@ import re
 import sys
 from inspect import getfullargspec
 from pathlib import Path
-from typing import Any, Dict, List, Optional, get_args
+from typing import Any, Dict, List, Optional, Union, get_args  # NOQA
 
 import black
 
@@ -181,7 +181,14 @@ class PyiGenerator:
         return _get_var_definition(self.current_module, _name)
 
     def _generate_function(self, _name, _func):
-        definition = "".join(inspect.getsource(_func).split(":\n")[0].split("\n"))
+        import textwrap
+
+        # Don't generate indented functions.
+        source = inspect.getsource(_func)
+        if textwrap.dedent(source) != source:
+            return []
+
+        definition = "".join([line for line in source.split(":\n")[0].split("\n")])
         return [f"{definition}:", "    ..."]
 
     def _write_pyi_file(self, variables, functions, classes):

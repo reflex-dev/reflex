@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import contextlib
 import typing
-from datetime import date, datetime, time, timedelta
 from types import LambdaType
 from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
+from reflex.utils import serializers
 
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
@@ -146,60 +146,16 @@ def is_dataframe(value: Type) -> bool:
     return value.__name__ == "DataFrame"
 
 
-def is_image(value: Type) -> bool:
-    """Check if the given value is a pillow image. By checking if the value subclasses PIL.
+def is_valid_var_type(type_: Type) -> bool:
+    """Check if the given type is a valid prop type.
 
     Args:
-        value: The value to check.
+        type_: The type to check.
 
     Returns:
-        Whether the value is a pillow image.
+        Whether the type is a valid prop type.
     """
-    if is_generic_alias(value) or value == typing.Any:
-        return False
-    return "PIL" in value.__module__
-
-
-def is_figure(value: Type) -> bool:
-    """Check if the given value is a figure.
-
-    Args:
-        value: The value to check.
-
-    Returns:
-        Whether the value is a figure.
-    """
-    return value.__name__ == "Figure"
-
-
-def is_datetime(value: Type) -> bool:
-    """Check if the given value is a datetime object.
-
-    Args:
-        value: The value to check.
-
-    Returns:
-        Whether the value is a date, datetime, time, or timedelta.
-    """
-    return issubclass(value, (date, datetime, time, timedelta))
-
-
-def is_valid_var_type(var: Type) -> bool:
-    """Check if the given value is a valid prop type.
-
-    Args:
-        var: The value to check.
-
-    Returns:
-        Whether the value is a valid prop type.
-    """
-    return (
-        _issubclass(var, StateVar)
-        or is_dataframe(var)
-        or is_figure(var)
-        or is_image(var)
-        or is_datetime(var)
-    )
+    return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
 
 
 def is_backend_variable(name: str) -> bool:

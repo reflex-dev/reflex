@@ -81,9 +81,9 @@ def init(
     if not os.path.exists(constants.CONFIG_FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
-        telemetry.send("init", config.telemetry_enabled)
+        telemetry.send("init")
     else:
-        telemetry.send("reinit", config.telemetry_enabled)
+        telemetry.send("reinit")
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -165,7 +165,7 @@ def run(
     assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
 
     # Post a telemetry event.
-    telemetry.send(f"run-{env.value}", config.telemetry_enabled)
+    telemetry.send(f"run-{env.value}")
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
@@ -273,7 +273,7 @@ def export(
     )
 
     # Post a telemetry event.
-    telemetry.send("export", config.telemetry_enabled)
+    telemetry.send("export")
 
 
 db_cli = typer.Typer()

@@ -1,12 +1,16 @@
 """Component for displaying a plotly graph."""
 
-from typing import Dict, List
-
-from plotly.graph_objects import Figure
+import json
+from typing import Any, Dict, List
 
 from reflex.components.component import NoSSRComponent
-from reflex.components.tags import Tag
+from reflex.utils.serializers import serializer
 from reflex.vars import Var
+
+try:
+    from plotly.graph_objects import Figure
+except ImportError:
+    Figure = Any
 
 
 class PlotlyLib(NoSSRComponent):
@@ -39,14 +43,22 @@ class Plotly(PlotlyLib):
     # If true, the graph will resize when the window is resized.
     use_resize_handler: Var[bool]
 
-    def _render(self) -> Tag:
-        if (
-            isinstance(self.data, Figure)
-            and self.layout is None
-            and self.width is not None
-        ):
-            layout = Var.create({"width": self.width, "height": self.height})
-            assert layout is not None
-            self.layout = layout
 
-        return super()._render()
+try:
+    from plotly.graph_objects import Figure
+    from plotly.io import to_json
+
+    @serializer
+    def serialize_figure(figure: Figure) -> list:
+        """Serialize a plotly figure.
+
+        Args:
+            figure: The figure to serialize.
+
+        Returns:
+            The serialized figure.
+        """
+        return json.loads(str(to_json(figure)))["data"]
+
+except ImportError:
+    pass

@@ -1,12 +1,15 @@
 """An image component."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+import base64
+import io
+from typing import Any, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
-from reflex.utils import format, types
+from reflex.utils.serializers import serializer
+from reflex.utils.types import ArgsSpec
 from reflex.vars import Var
 
 
@@ -51,7 +54,7 @@ class Image(ChakraComponent):
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)_
     src_set: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Var | types.ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Var | ArgsSpec]:
         """Get the event triggers for the component.
 
         Returns:
@@ -63,9 +66,30 @@ class Image(ChakraComponent):
         }
 
     def _render(self) -> Tag:
-        # If the src is an image, convert it to a base64 string.
-        if types.is_image(type(self.src)):
-            self.src = Var.create(format.format_image_data(self.src))  # type: ignore
+        self.src.is_string = True
 
         # Render the table.
         return super()._render()
+
+
+try:
+    from PIL.Image import Image as Img
+
+    @serializer
+    def serialize_image(image: Img) -> str:
+        """Serialize a plotly figure.
+
+        Args:
+            image: The image to serialize.
+
+        Returns:
+            The serialized image.
+        """
+        buff = io.BytesIO()
+        image.save(buff, format="PNG")
+        image_bytes = buff.getvalue()
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        return f"data:image/png;base64,{base64_image}"
+
+except ImportError:
+    pass
