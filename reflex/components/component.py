@@ -315,21 +315,21 @@ class Component(Base, ABC):
             )
 
         return {
-            EventTriggers.ON_FOCUS: lambda e0: [],
-            EventTriggers.ON_BLUR: lambda e0: [],
+            EventTriggers.ON_FOCUS: lambda: [],
+            EventTriggers.ON_BLUR: lambda: [],
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_CONTEXT_MENU: lambda e0: [],
-            EventTriggers.ON_DOUBLE_CLICK: lambda e0: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda e0: [],
-            EventTriggers.ON_MOUSE_ENTER: lambda e0: [],
-            EventTriggers.ON_MOUSE_LEAVE: lambda e0: [],
-            EventTriggers.ON_MOUSE_MOVE: lambda e0: [],
-            EventTriggers.ON_MOUSE_OUT: lambda e0: [],
-            EventTriggers.ON_MOUSE_OVER: lambda e0: [],
-            EventTriggers.ON_MOUSE_UP: lambda e0: [],
-            EventTriggers.ON_SCROLL: lambda e0: [],
-            EventTriggers.ON_MOUNT: lambda e0: [],
-            EventTriggers.ON_UNMOUNT: lambda e0: [],
+            EventTriggers.ON_CONTEXT_MENU: lambda: [],
+            EventTriggers.ON_DOUBLE_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_SCROLL: lambda: [],
+            EventTriggers.ON_MOUNT: lambda: [],
+            EventTriggers.ON_UNMOUNT: lambda: [],
             **deprecated_triggers,
             **deprecated_controlled_triggers,
         }
@@ -338,7 +338,7 @@ class Component(Base, ABC):
         """Get the triggers for non controlled events [DEPRECATED].
 
         Returns:
-            Set[str]: _description_
+            A set of non controlled triggers.
         """
         return set()
 
