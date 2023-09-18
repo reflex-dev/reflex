@@ -197,6 +197,7 @@ class Model(Base, sqlmodel.SQLModel):
                 target_metadata=sqlmodel.SQLModel.metadata,
                 render_item=cls._alembic_render_item,
                 process_revision_directives=writer,  # type: ignore
+                compare_type=False,
             )
             env.run_migrations()
         changes_detected = False

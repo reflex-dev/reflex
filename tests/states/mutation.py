@@ -128,6 +128,22 @@ class ListMutationTestState(rx.State):
         self.friends_in_nested_list[1].append("Jimmy")
 
 
+class OtherBase(rx.Base):
+    """A Base model with a str field."""
+
+    bar: str = ""
+
+
+class CustomVar(rx.Base):
+    """A Base model with multiple fields."""
+
+    foo: str = ""
+    array: List[str] = []
+    hashmap: Dict[str, str] = {}
+    test_set: Set[str] = set()
+    custom: OtherBase = OtherBase()
+
+
 class MutableTestState(rx.State):
     """A test state."""
 
@@ -142,9 +158,11 @@ class MutableTestState(rx.State):
         "third_key": {"key": "value"},
     }
     test_set: Set[Union[str, int]] = {1, 2, 3, 4, "five"}
+    custom: CustomVar = CustomVar()
+    _be_custom: CustomVar = CustomVar()
 
     def reassign_mutables(self):
-        """Reassign the mutable vars."""
+        """Assign mutable fields to different values."""
         self.array = ["modified_value", [1, 2, 3], {"mod_key": "mod_value"}]
         self.hashmap = {
             "mod_key": ["list", "of", "values"],

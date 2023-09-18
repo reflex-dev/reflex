@@ -2,7 +2,6 @@ import json
 import typing
 from typing import Dict, List, Set, Tuple
 
-import cloudpickle
 import pytest
 from pandas import DataFrame
 
@@ -12,9 +11,6 @@ from reflex.vars import (
     BaseVar,
     ComputedVar,
     ImportVar,
-    ReflexDict,
-    ReflexList,
-    ReflexSet,
     Var,
     get_local_storage,
 )
@@ -230,13 +226,8 @@ def test_create_type_error():
 
     value = ErrorType()
 
-    with pytest.raises(TypeError) as exception:
+    with pytest.raises(TypeError):
         Var.create(value)
-
-    assert (
-        exception.value.args[0]
-        == f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
-    )
 
 
 def v(value) -> Var:
@@ -589,36 +580,6 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly.\n"
         f"original message: 'ComputedVar' object has no attribute 'foo'"
     )
-
-
-def test_pickleable_rx_list():
-    """Test that ReflexList is pickleable."""
-    rx_list = ReflexList(
-        original_list=[1, 2, 3], reassign_field=lambda x: x, field_name="random"
-    )
-
-    pickled_list = cloudpickle.dumps(rx_list)
-    assert cloudpickle.loads(pickled_list) == rx_list
-
-
-def test_pickleable_rx_dict():
-    """Test that ReflexDict is pickleable."""
-    rx_dict = ReflexDict(
-        original_dict={1: 2, 3: 4}, reassign_field=lambda x: x, field_name="random"
-    )
-
-    pickled_dict = cloudpickle.dumps(rx_dict)
-    assert cloudpickle.loads(pickled_dict) == rx_dict
-
-
-def test_pickleable_rx_set():
-    """Test that ReflexSet is pickleable."""
-    rx_set = ReflexSet(
-        original_set={1, 2, 3}, reassign_field=lambda x: x, field_name="random"
-    )
-
-    pickled_set = cloudpickle.dumps(rx_set)
-    assert cloudpickle.loads(pickled_set) == rx_set
 
 
 @pytest.mark.parametrize(

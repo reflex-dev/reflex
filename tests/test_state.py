@@ -5,6 +5,7 @@ import datetime
 import functools
 import json
 import os
+import sys
 from typing import Dict, Generator, List
 from unittest.mock import AsyncMock, Mock
 
@@ -18,13 +19,14 @@ from reflex.event import Event, EventHandler
 from reflex.state import (
     ImmutableStateError,
     LockExpiredError,
+    MutableProxy,
     State,
     StateManager,
     StateProxy,
     StateUpdate,
 )
 from reflex.utils import format, prerequisites
-from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
+from reflex.vars import BaseVar, ComputedVar
 
 from .states import GenState
 
@@ -1323,15 +1325,31 @@ def test_setattr_of_mutable_types(mutable_state):
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
 
-    assert isinstance(array, ReflexList)
-    assert isinstance(array[1], ReflexList)
-    assert isinstance(array[2], ReflexDict)
+    assert isinstance(array, MutableProxy)
+    assert isinstance(array, list)
+    assert isinstance(array[1], MutableProxy)
+    assert isinstance(array[1], list)
+    assert isinstance(array[2], MutableProxy)
+    assert isinstance(array[2], dict)
 
-    assert isinstance(hashmap, ReflexDict)
-    assert isinstance(hashmap["key"], ReflexList)
-    assert isinstance(hashmap["third_key"], ReflexDict)
+    assert isinstance(hashmap, MutableProxy)
+    assert isinstance(hashmap, dict)
+    assert isinstance(hashmap["key"], MutableProxy)
+    assert isinstance(hashmap["key"], list)
+    assert isinstance(hashmap["third_key"], MutableProxy)
+    assert isinstance(hashmap["third_key"], dict)
 
+    assert isinstance(test_set, MutableProxy)
     assert isinstance(test_set, set)
+
+    assert isinstance(mutable_state.custom, MutableProxy)
+    assert isinstance(mutable_state.custom.array, MutableProxy)
+    assert isinstance(mutable_state.custom.array, list)
+    assert isinstance(mutable_state.custom.hashmap, MutableProxy)
+    assert isinstance(mutable_state.custom.hashmap, dict)
+    assert isinstance(mutable_state.custom.test_set, MutableProxy)
+    assert isinstance(mutable_state.custom.test_set, set)
+    assert isinstance(mutable_state.custom.custom, MutableProxy)
 
     mutable_state.reassign_mutables()
 
@@ -1339,15 +1357,22 @@ def test_setattr_of_mutable_types(mutable_state):
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
 
-    assert isinstance(array, ReflexList)
-    assert isinstance(array[1], ReflexList)
-    assert isinstance(array[2], ReflexDict)
+    assert isinstance(array, MutableProxy)
+    assert isinstance(array, list)
+    assert isinstance(array[1], MutableProxy)
+    assert isinstance(array[1], list)
+    assert isinstance(array[2], MutableProxy)
+    assert isinstance(array[2], dict)
 
-    assert isinstance(hashmap, ReflexDict)
-    assert isinstance(hashmap["mod_key"], ReflexList)
-    assert isinstance(hashmap["mod_third_key"], ReflexDict)
+    assert isinstance(hashmap, MutableProxy)
+    assert isinstance(hashmap, dict)
+    assert isinstance(hashmap["mod_key"], MutableProxy)
+    assert isinstance(hashmap["mod_key"], list)
+    assert isinstance(hashmap["mod_third_key"], MutableProxy)
+    assert isinstance(hashmap["mod_third_key"], dict)
 
-    assert isinstance(test_set, ReflexSet)
+    assert isinstance(test_set, MutableProxy)
+    assert isinstance(test_set, set)
 
 
 def test_error_on_state_method_shadow():
@@ -1777,3 +1802,187 @@ async def test_background_task_no_chain():
         await bts.bad_chain1()
     with pytest.raises(RuntimeError):
         await bts.bad_chain2()
+
+
+def test_mutable_list(mutable_state):
+    """Test that mutable lists are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_array_dirty():
+        assert mutable_state.dirty_vars == {"array"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    # Test all list operations
+    mutable_state.array.append(42)
+    assert_array_dirty()
+    mutable_state.array.extend([1, 2, 3])
+    assert_array_dirty()
+    mutable_state.array.insert(0, 0)
+    assert_array_dirty()
+    mutable_state.array.pop()
+    assert_array_dirty()
+    mutable_state.array.remove(42)
+    assert_array_dirty()
+    mutable_state.array.clear()
+    assert_array_dirty()
+    mutable_state.array += [1, 2, 3]
+    assert_array_dirty()
+    mutable_state.array.reverse()
+    assert_array_dirty()
+    mutable_state.array.sort()
+    assert_array_dirty()
+    mutable_state.array[0] = 666
+    assert_array_dirty()
+    del mutable_state.array[0]
+    assert_array_dirty()
+
+    # Test nested list operations
+    mutable_state.array[0] = [1, 2, 3]
+    assert_array_dirty()
+    mutable_state.array[0].append(4)
+    assert_array_dirty()
+    assert isinstance(mutable_state.array[0], MutableProxy)
+
+
+def test_mutable_dict(mutable_state):
+    """Test that mutable dicts are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_hashmap_dirty():
+        assert mutable_state.dirty_vars == {"hashmap"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    # Test all dict operations
+    mutable_state.hashmap.update({"new_key": 43})
+    assert_hashmap_dirty()
+    mutable_state.hashmap.setdefault("another_key", 66)
+    assert_hashmap_dirty()
+    mutable_state.hashmap.pop("new_key")
+    assert_hashmap_dirty()
+    mutable_state.hashmap.popitem()
+    assert_hashmap_dirty()
+    mutable_state.hashmap.clear()
+    assert_hashmap_dirty()
+    mutable_state.hashmap["new_key"] = 42
+    assert_hashmap_dirty()
+    del mutable_state.hashmap["new_key"]
+    assert_hashmap_dirty()
+    if sys.version_info >= (3, 9):
+        mutable_state.hashmap |= {"new_key": 44}
+        assert_hashmap_dirty()
+
+    # Test nested dict operations
+    mutable_state.hashmap["array"] = []
+    assert_hashmap_dirty()
+    mutable_state.hashmap["array"].append(1)
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"] = {}
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"]["key"] = 42
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"]["dict"] = {}
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"]["dict"]["key"] = 43
+    assert_hashmap_dirty()
+
+
+def test_mutable_set(mutable_state):
+    """Test that mutable sets are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_set_dirty():
+        assert mutable_state.dirty_vars == {"test_set"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    # Test all set operations
+    mutable_state.test_set.add(42)
+    assert_set_dirty()
+    mutable_state.test_set.update([1, 2, 3])
+    assert_set_dirty()
+    mutable_state.test_set.remove(42)
+    assert_set_dirty()
+    mutable_state.test_set.discard(3)
+    assert_set_dirty()
+    mutable_state.test_set.pop()
+    assert_set_dirty()
+    mutable_state.test_set.intersection_update([1, 2, 3])
+    assert_set_dirty()
+    mutable_state.test_set.difference_update([99])
+    assert_set_dirty()
+    mutable_state.test_set.symmetric_difference_update([102, 99])
+    assert_set_dirty()
+    mutable_state.test_set |= {1, 2, 3}
+    assert_set_dirty()
+    mutable_state.test_set &= {2, 3, 4}
+    assert_set_dirty()
+    mutable_state.test_set -= {2}
+    assert_set_dirty()
+    mutable_state.test_set ^= {42}
+    assert_set_dirty()
+    mutable_state.test_set.clear()
+    assert_set_dirty()
+
+
+def test_mutable_custom(mutable_state):
+    """Test that mutable custom types derived from Base are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_custom_dirty():
+        assert mutable_state.dirty_vars == {"custom"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    mutable_state.custom.foo = "bar"
+    assert_custom_dirty()
+    mutable_state.custom.array.append(42)
+    assert_custom_dirty()
+    mutable_state.custom.hashmap["key"] = 68
+    assert_custom_dirty()
+    mutable_state.custom.test_set.add(42)
+    assert_custom_dirty()
+    mutable_state.custom.custom.bar = "baz"
+    assert_custom_dirty()
+
+
+def test_mutable_backend(mutable_state):
+    """Test that mutable backend vars are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_custom_dirty():
+        assert mutable_state.dirty_vars == {"_be_custom"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    mutable_state._be_custom.foo = "bar"
+    assert_custom_dirty()
+    mutable_state._be_custom.array.append(42)
+    assert_custom_dirty()
+    mutable_state._be_custom.hashmap["key"] = 68
+    assert_custom_dirty()
+    mutable_state._be_custom.test_set.add(42)
+    assert_custom_dirty()
+    mutable_state._be_custom.custom.bar = "baz"
+    assert_custom_dirty()

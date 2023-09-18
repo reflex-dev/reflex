@@ -15,7 +15,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Set,
     Tuple,
     Type,
     Union,
@@ -24,13 +23,12 @@ from typing import (
     get_type_hints,
 )
 
-from plotly.graph_objects import Figure
-from plotly.io import to_json
 from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, types
+from reflex.utils.serializers import serialize
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -126,19 +124,16 @@ class Var(ABC):
 
         type_ = type(value)
 
-        # Special case for plotly figures.
-        if isinstance(value, Figure):
-            value = json.loads(to_json(value))["data"]  # type: ignore
-            type_ = Figure
-
-        if isinstance(value, dict):
-            value = format.format_dict(value)
+        # Try to serialize the value.
+        serialized = serialize(value)
+        if serialized is not None:
+            value = serialized
 
         try:
             name = value if isinstance(value, str) else json.dumps(value)
         except TypeError as e:
             raise TypeError(
-                f"To create a Var must be Var or JSON-serializable. Got {value} of type {type(value)}."
+                f"No JSON serializer found for var {value} of type {type_}."
             ) from e
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
@@ -184,7 +179,7 @@ class Var(ABC):
         """
         if self.state:
             return self.full_name
-        if self.is_string or self.type_ is Figure:
+        if self.is_string:
             return self.name
         try:
             return json.loads(self.name)
@@ -1323,277 +1318,6 @@ def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
     cvar = ComputedVar(fget=fget)
     cvar.cache = True
     return cvar
-
-
-class ReflexList(list):
-    """A custom list that reflex can detect its mutation."""
-
-    def __init__(
-        self,
-        original_list: List,
-        reassign_field: Callable = lambda _field_name: None,
-        field_name: str = "",
-    ):
-        """Initialize ReflexList.
-
-        Args:
-            original_list (List): The original list
-            reassign_field (Callable):
-                The method in the parent state to reassign the field.
-                Default to be a no-op function
-            field_name (str): the name of field in the parent state
-        """
-        self._reassign_field = lambda: reassign_field(field_name)
-
-        super().__init__(original_list)
-
-    def append(self, *args, **kwargs):
-        """Append.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().append(*args, **kwargs)
-        self._reassign_field()
-
-    def insert(self, *args, **kwargs):
-        """Insert.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().insert(*args, **kwargs)
-        self._reassign_field()
-
-    def __setitem__(self, *args, **kwargs):
-        """Set item.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().__setitem__(*args, **kwargs)
-        self._reassign_field()
-
-    def __delitem__(self, *args, **kwargs):
-        """Delete item.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().__delitem__(*args, **kwargs)
-        self._reassign_field()
-
-    def clear(self, *args, **kwargs):
-        """Remove all item from the list.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().clear(*args, **kwargs)
-        self._reassign_field()
-
-    def extend(self, *args, **kwargs):
-        """Add all item of a list to the end of the list.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().extend(*args, **kwargs)
-        self._reassign_field() if hasattr(self, "_reassign_field") else None
-
-    def pop(self, *args, **kwargs):
-        """Remove an element.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().pop(*args, **kwargs)
-        self._reassign_field()
-
-    def remove(self, *args, **kwargs):
-        """Remove an element.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().remove(*args, **kwargs)
-        self._reassign_field()
-
-
-class ReflexDict(dict):
-    """A custom dict that reflex can detect its mutation."""
-
-    def __init__(
-        self,
-        original_dict: Dict,
-        reassign_field: Callable = lambda _field_name: None,
-        field_name: str = "",
-    ):
-        """Initialize ReflexDict.
-
-        Args:
-            original_dict: The original dict
-            reassign_field:
-                The method in the parent state to reassign the field.
-                Default to be a no-op function
-            field_name: the name of field in the parent state
-        """
-        super().__init__(original_dict)
-        self._reassign_field = lambda: reassign_field(field_name)
-
-    def clear(self):
-        """Remove all item from the list."""
-        super().clear()
-
-        self._reassign_field()
-
-    def setdefault(self, *args, **kwargs):
-        """Return value of key if or set default.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().setdefault(*args, **kwargs)
-        self._reassign_field()
-
-    def popitem(self):
-        """Pop last item."""
-        super().popitem()
-        self._reassign_field()
-
-    def pop(self, k, d=None):
-        """Remove an element.
-
-        Args:
-            k: The args passed.
-            d: The kwargs passed.
-        """
-        super().pop(k, d)
-        self._reassign_field()
-
-    def update(self, *args, **kwargs):
-        """Update the dict with another dict.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().update(*args, **kwargs)
-        self._reassign_field()
-
-    def __setitem__(self, *args, **kwargs):
-        """Set an item in the dict.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().__setitem__(*args, **kwargs)
-        self._reassign_field() if hasattr(self, "_reassign_field") else None
-
-    def __delitem__(self, *args, **kwargs):
-        """Delete an item in the dict.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().__delitem__(*args, **kwargs)
-        self._reassign_field()
-
-
-class ReflexSet(set):
-    """A custom set that reflex can detect its mutation."""
-
-    def __init__(
-        self,
-        original_set: Set,
-        reassign_field: Callable = lambda _field_name: None,
-        field_name: str = "",
-    ):
-        """Initialize ReflexSet.
-
-        Args:
-            original_set (Set): The original set
-            reassign_field (Callable):
-                The method in the parent state to reassign the field.
-                Default to be a no-op function
-            field_name (str): the name of field in the parent state
-        """
-        self._reassign_field = lambda: reassign_field(field_name)
-
-        super().__init__(original_set)
-
-    def add(self, *args, **kwargs):
-        """Add an element to set.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().add(*args, **kwargs)
-        self._reassign_field()
-
-    def remove(self, *args, **kwargs):
-        """Remove an element.
-        Raise key error if element not found.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().remove(*args, **kwargs)
-        self._reassign_field()
-
-    def discard(self, *args, **kwargs):
-        """Remove an element.
-        Does not raise key error if element not found.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().discard(*args, **kwargs)
-        self._reassign_field()
-
-    def pop(self, *args, **kwargs):
-        """Remove an element.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().pop(*args, **kwargs)
-        self._reassign_field()
-
-    def clear(self, *args, **kwargs):
-        """Remove all elements from the set.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().clear(*args, **kwargs)
-        self._reassign_field()
-
-    def update(self, *args, **kwargs):
-        """Adds elements from an iterable to the set.
-
-        Args:
-            args: The args passed.
-            kwargs: The kwargs passed.
-        """
-        super().update(*args, **kwargs)
-        self._reassign_field()
 
 
 class ImportVar(Base):
