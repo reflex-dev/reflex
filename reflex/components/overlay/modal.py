@@ -1,7 +1,7 @@
 """Modal components."""
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -54,7 +54,7 @@ class Modal(ChakraComponent):
     # A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
     use_inert: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:

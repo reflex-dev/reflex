@@ -1,7 +1,7 @@
 """A file upload component."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
@@ -91,7 +91,7 @@ class Upload(Component):
         # Create the component.
         return super().create(zone, on_drop=upload_file, **upload_props)
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

@@ -1,7 +1,7 @@
 """A range slider component."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import List, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -46,7 +46,7 @@ class RangeSlider(ChakraComponent):
     # The minimum distance between slider thumbs. Useful for preventing the thumbs from being too close together.
     min_steps_between_thumbs: Var[int]
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

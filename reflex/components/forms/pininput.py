@@ -1,7 +1,7 @@
 """A pin input component."""
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.layout import Foreach
@@ -59,7 +59,7 @@ class PinInput(ChakraComponent):
     # "outline" | "flushed" | "filled" | "unstyled"
     variant: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

@@ -1,7 +1,7 @@
 """A textarea component."""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Union
 
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
@@ -46,7 +46,7 @@ class TextArea(ChakraComponent):
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

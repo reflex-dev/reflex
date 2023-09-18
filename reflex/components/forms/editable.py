@@ -1,7 +1,7 @@
 """An editable component."""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Union
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.constants import EventTriggers
@@ -38,7 +38,7 @@ class Editable(ChakraComponent):
     # The initial value of the Editable in both edit and preview mode.
     default_value: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

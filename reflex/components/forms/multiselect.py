@@ -300,7 +300,7 @@ class Select(Component):
     # How the options should be displayed in the menu.
     menu_position: Var[str] = "fixed"  # type: ignore
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

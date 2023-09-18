@@ -1,7 +1,7 @@
 """Tooltip components."""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Union
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.utils.types import ArgsSpec
@@ -64,7 +64,7 @@ class Tooltip(ChakraComponent):
     # If true, the tooltip will wrap its children in a `<span/>` with `tabIndex=0`
     should_wrap_children: Var[bool]
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:

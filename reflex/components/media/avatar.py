@@ -1,7 +1,7 @@
 """Avatar components."""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Union
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.utils.types import ArgsSpec
@@ -37,7 +37,7 @@ class Avatar(ChakraComponent):
     # "2xs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "full"
     size: Var[str]
 
-    def get_event_triggers(self) -> Dict[str, Var | ArgsSpec]:
+    def get_event_triggers(self) -> dict[str, Union[Var, ArgsSpec]]:
         """Get the event triggers for the component.
 
         Returns:

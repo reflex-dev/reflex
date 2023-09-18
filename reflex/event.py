@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from reflex import constants
 from reflex.base import Base
@@ -387,7 +387,7 @@ def get_hydrate_event(state) -> str:
 
 
 def call_event_handler(
-    event_handler: EventHandler, arg_spec: Var | ArgsSpec
+    event_handler: EventHandler, arg_spec: Union[Var, ArgsSpec]
 ) -> EventSpec:
     """Call an event handler to get the event spec.
 
@@ -452,7 +452,7 @@ def parse_args_spec(arg_spec: ArgsSpec):
     )
 
 
-def call_event_fn(fn: Callable, arg: Var | ArgsSpec) -> list[EventSpec]:
+def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
     """Call a function to a list of event specs.
 
     The function should return either a single EventSpec or a list of EventSpecs.
