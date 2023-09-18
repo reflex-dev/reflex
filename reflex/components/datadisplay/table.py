@@ -44,16 +44,16 @@ class Table(ChakraComponent):
         if len(children) == 0:
             children = []
 
-            if caption:
+            if caption is not None:
                 children.append(TableCaption.create(caption))
 
-            if headers:
+            if headers is not None:
                 children.append(Thead.create(headers=headers))
 
-            if rows:
+            if rows is not None:
                 children.append(Tbody.create(rows=rows))
 
-            if footers:
+            if footers is not None:
                 children.append(Tfoot.create(footers=footers))
         return super().create(*children, **props)
 
