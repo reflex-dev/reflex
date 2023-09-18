@@ -618,8 +618,8 @@ class Component(Base, ABC):
         """
         # pop on_mount and on_unmount from event_triggers since these are handled by
         # hooks, not as actually props in the component
-        on_mount = self.event_triggers.pop(constants.ON_MOUNT, None)
-        on_unmount = self.event_triggers.pop(constants.ON_UNMOUNT, None)
+        on_mount = self.event_triggers.pop(EventTriggers.ON_MOUNT, None)
+        on_unmount = self.event_triggers.pop(EventTriggers.ON_UNMOUNT, None)
         if on_mount:
             on_mount = format.format_event_chain(on_mount)
         if on_unmount:
