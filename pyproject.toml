@@ -66,6 +66,14 @@ pandas = [
 pillow = [
     {version = "^10.0.0", python = ">=3.8,<4.0"}
 ]
+matplotlib = "^3.8.0"
+mpld3 =  "^0.5.9"
+altair = [
+    {version = "^5.1.1", python = ">=3.8,<4.0"}
+]
+bokeh = [
+    {version = "^3.2.2", python = ">=3.9,<4.0"}
+]
 plotly = "^5.13.0"
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
