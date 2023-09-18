@@ -794,6 +794,39 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (not using `self`)"
         )
 
+    def _as_state_update(
+        self,
+        handler: EventHandler,
+        events: EventSpec | list[EventSpec] | None,
+        final: bool,
+    ) -> StateUpdate:
+        """Convert the events to a StateUpdate.
+
+        Fixes the events and checks for validity before converting.
+
+        Args:
+            handler: The handler where the events originated from.
+            events: The events to queue with the update.
+            final: Whether the handler is done processing.
+
+        Returns:
+            The valid StateUpdate containing the events and final flag.
+        """
+        token = self.get_token()
+
+        # Convert valid EventHandler and EventSpec into Event
+        fixed_events = fix_events(self._check_valid(handler, events), token)
+
+        # Get the delta after processing the event.
+        delta = self.get_delta()
+        self._clean()
+
+        return StateUpdate(
+            delta=delta,
+            events=fixed_events,
+            final=final if not handler.is_background else True,
+        )
+
     async def _process_event(
         self, handler: EventHandler, state: State | StateProxy, payload: Dict
     ) -> AsyncIterator[StateUpdate]:
@@ -810,22 +843,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
-        token = self.get_token()
-
-        def as_state_update(events, final) -> StateUpdate:
-            # Fix the returned events.
-            events = fix_events(self._check_valid(handler, events), token)  # type: ignore
-
-            # Get the delta after processing the event.
-            delta = self.get_delta()
-            self._clean()
-
-            return StateUpdate(
-                delta=delta,
-                events=events,
-                final=final if not handler.is_background else True,
-            )
-
         # Clean the state before processing the event.
         self._clean()
 
@@ -841,31 +858,33 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
-                    yield as_state_update(event, final=False)
-                yield as_state_update(events=None, final=True)
+                    yield self._as_state_update(handler, event, final=False)
+                yield self._as_state_update(handler, events=None, final=True)
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
                 try:
                     while True:
-                        yield as_state_update(next(events), final=False)
+                        yield self._as_state_update(handler, next(events), final=False)
                 except StopIteration as si:
                     # the "return" value of the generator is not available
                     # in the loop, we must catch StopIteration to access it
                     if si.value is not None:
-                        yield as_state_update(si.value, final=False)
-                yield as_state_update(events=None, final=True)
+                        yield self._as_state_update(handler, si.value, final=False)
+                yield self._as_state_update(handler, events=None, final=True)
 
             # Handle regular event chains.
             else:
-                yield as_state_update(events, final=True)
+                yield self._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
         except Exception:
             error = traceback.format_exc()
             print(error)
-            yield as_state_update(
-                window_alert("An error occurred. See logs for details."), True
+            yield self._as_state_update(
+                handler,
+                window_alert("An error occurred. See logs for details."),
+                final=True,
             )
 
     def _always_dirty_computed_vars(self) -> set[str]:

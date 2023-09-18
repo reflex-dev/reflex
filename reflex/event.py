@@ -550,7 +550,7 @@ def get_handler_args(event_spec: EventSpec, arg: Var) -> tuple[tuple[Var, Var], 
 
 
 def fix_events(
-    events: list[EventHandler | EventSpec],
+    events: list[EventHandler | EventSpec] | None,
     token: str,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:
