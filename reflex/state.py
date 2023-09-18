@@ -1167,7 +1167,11 @@ class StateProxy:
         value = getattr(self._state_instance, name)
         if isinstance(value, MutableProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
-            value._self_state = self  # type: ignore
+            return ImmutableMutableProxy(
+                wrapped=value.__wrapped__,
+                state=self,  # type: ignore
+                field_name=value._self_field_name,
+            )
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -1653,3 +1657,34 @@ class MutableProxy(wrapt.ObjectProxy):
             super().__setattr__(name, value)
             return
         self._mark_dirty(super().__setattr__, args=(name, value))
+
+
+class ImmutableMutableProxy(MutableProxy):
+    """A proxy for a mutable object that tracks changes.
+
+    This wrapper comes from StateProxy, and will raise an exception if an attempt is made
+    to modify the wrapped object when the StateProxy is immutable.
+    """
+
+    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None):
+        """Raise an exception when an attempt is made to modify the object.
+
+        Intended for use with `FunctionWrapper` from the `wrapt` library.
+
+        Args:
+            wrapped: The wrapped function.
+            instance: The instance of the wrapped function.
+            args: The args for the wrapped function.
+            kwargs: The kwargs for the wrapped function.
+
+        Raises:
+            ImmutableStateError: if the StateProxy is not mutable.
+        """
+        if not self._self_state._mutable:
+            raise ImmutableStateError(
+                "Background task StateProxy is immutable outside of a context "
+                "manager. Use `async with self` to modify state."
+            )
+        super()._mark_dirty(
+            wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
+        )
