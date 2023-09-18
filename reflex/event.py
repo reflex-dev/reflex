@@ -511,14 +511,11 @@ def call_event_fn(fn: Callable, arg: Var | ArgsSpec) -> list[EventSpec]:
     return events
 
 
-def get_handler_args(
-    event_spec: EventSpec, arg: Var | ArgsSpec
-) -> tuple[tuple[Var, Var], ...]:
+def get_handler_args(event_spec: EventSpec) -> tuple[tuple[Var, Var], ...]:
     """Get the handler args for the given event spec.
 
     Args:
         event_spec: The event spec.
-        arg: The controlled event argument.
 
     Returns:
         The handler args.

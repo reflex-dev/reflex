@@ -227,7 +227,7 @@ class Component(Base, ABC):
                 raise ValueError(f"Invalid event chain: {value}")
             return value
 
-        arg_spec = triggers.get(event_trigger, lambda e0: [])
+        arg_spec = triggers.get(event_trigger, lambda: [])
 
         wrapped = False
         # If the input is a single event handler, wrap it in a list.
@@ -274,7 +274,7 @@ class Component(Base, ABC):
         events = [
             EventSpec(
                 handler=e.handler,
-                args=get_handler_args(e, arg_spec),  # type: ignore
+                args=get_handler_args(e),
             )
             for e in events
         ]
@@ -302,7 +302,7 @@ class Component(Base, ABC):
         return {
             EventTriggers.ON_FOCUS: lambda e0: [],
             EventTriggers.ON_BLUR: lambda e0: [],
-            EventTriggers.ON_CLICK: lambda e0: [],
+            EventTriggers.ON_CLICK: lambda: [],
             EventTriggers.ON_CONTEXT_MENU: lambda e0: [],
             EventTriggers.ON_DOUBLE_CLICK: lambda e0: [],
             EventTriggers.ON_MOUSE_DOWN: lambda e0: [],
