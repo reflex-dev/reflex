@@ -305,7 +305,6 @@ def format_prop(
                 arg_def = f"{EVENT_ARG}"
             else:
                 sig = inspect.signature(prop.args_spec)
-                print(bool(sig.parameters))
                 if sig.parameters:
                     arg_def = ",".join(f"_{p}" for p in sig.parameters)
                     arg_def = f"({arg_def})"
