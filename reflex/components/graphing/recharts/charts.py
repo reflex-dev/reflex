@@ -5,11 +5,12 @@ from reflex.style import Style
 from reflex.vars import Var
 from .recharts import Recharts
 
+
 class ChartBase(Recharts):
     """A component that wraps a victory lib."""
 
     # The source data, in which each element is an object.
-    data: Var[List[Dict[str, Any]]]    
+    data: Var[List[Dict[str, Any]]]
 
     # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position tooltip, and the start_index, end_index of Brush.
     sync_id: Var[str]
@@ -25,12 +26,13 @@ class ChartBase(Recharts):
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
     layout: Var[str]
-    
+
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
-    
+
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
     stack_offset: Var[str]
+
 
 class AreaChart(ChartBase):
 
@@ -39,17 +41,18 @@ class AreaChart(ChartBase):
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Var[Union[int, str]]
 
+
 class BarChart(ChartBase):
 
     tag = "BarChart"
-    
+
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
     bar_category_gap: Var[str]
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
     bar_gap: Var[str]
 
-    # The width of all the bars in the chart. Number    
+    # The width of all the bars in the chart. Number
     bar_size: Var[int]
 
     # The maximum width of all the bars in a horizontal BarChart, or maximum height in a vertical BarChart.
@@ -58,9 +61,11 @@ class BarChart(ChartBase):
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
     reverse_stack_order: Var[bool]
 
+
 class LineChart(ChartBase):
-    
+
     tag = "LineChart"
+
 
 class ComposedChart(ChartBase):
 
@@ -75,15 +80,17 @@ class ComposedChart(ChartBase):
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
     bar_gap: Var[str]
 
-    # The width of all the bars in the chart. Number    
+    # The width of all the bars in the chart. Number
     bar_size: Var[int]
 
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
     reverse_stack_order: Var[bool]
 
+
 class PieChart(ChartBase):
 
     tag = "PieChart"
+
 
 class RadarChart(ChartBase):
 
@@ -106,6 +113,7 @@ class RadarChart(ChartBase):
 
     # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
     outer_radius: Var[Union[int, str]]
+
 
 class RadialBarChart(ChartBase):
 
@@ -135,9 +143,11 @@ class RadialBarChart(ChartBase):
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
     bar_gap: Var[str]
 
+
 class ScatterChart(ChartBase):
 
     tag = "ScatterChart"
+
 
 class FunnelChart(ChartBase):
 
@@ -145,6 +155,7 @@ class FunnelChart(ChartBase):
 
     # The layout of bars in the chart. centeric
     layout: Var[str]
+
 
 class Treemap(ChartBase):
 

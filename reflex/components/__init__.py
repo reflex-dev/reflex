@@ -131,9 +131,38 @@ text_area = TextArea.create
 upload = Upload.create
 
 area_chart = AreaChart.create
+bar_chart = BarChart.create
+line_chart = LineChart.create
+composed_chart = ComposedChart.create
+pie_chart = PieChart.create
+radial_bar_chart = RadialBarChart.create    
+radar_chart = RadarChart.create
+scatter_chart = ScatterChart.create
+treemap = Treemap.create
+funnel_chart = FunnelChart.create
+
 area = Area.create
+bar = Bar.create
+line = Line.create
+scatter = Scatter.create
+funnel = Funnel.create
+error_bar = ErrorBar.create
+reference_line = ReferenceLine.create
+reference_dot = ReferenceDot.create
+reference_area = ReferenceArea.create
+cartesian_axis = CartesianAxis.create
+cartesian_grid = CartesianGrid.create
+
 x_axis = XAxis.create
 y_axis = YAxis.create
+z_axis = ZAxis.create
+brush = Brush.create
+legend = Legend.create
+label = Label.create
+label_list = LabelList.create
+responsive_container = ResponsiveContainer.create
+graph_tooltip = Tooltip.create
+
 
 
 box = Box.create

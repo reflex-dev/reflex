@@ -5,6 +5,7 @@ from reflex.style import Style
 from reflex.vars import Var
 from .recharts import Recharts
 
+
 class ResponsiveContainer(Recharts):
 
     tag = "ResponsiveContainer"
@@ -27,8 +28,9 @@ class ResponsiveContainer(Recharts):
     # If specified a positive number, debounced function will be used to handle the resize event.
     debounce: Var[int]
 
+
 class Legend(Recharts):
-    
+
     tag = "Legend"
 
     # The width of legend container. Number
@@ -56,16 +58,17 @@ class Legend(Recharts):
     chart_width: Var[int]
 
     # The height of chart container, usually calculated internally.
-    chart_height: Var[int]'
-    
+    chart_height: Var[int]
+
     # The margin of chart container, usually calculated internally.
     margin: Var[Dict[str, Any]]
+
 
 class Tooltip(Recharts):
 
     tag = "Tooltip"
 
-    # The separator between name and value. 
+    # The separator between name and value.
     separator: Var[str]
 
     # The offset size of tooltip. Number
@@ -74,7 +77,7 @@ class Tooltip(Recharts):
     # When an item of the payload has value null or undefined, this item won't be displayed.
     filter_null: Var[bool]
 
-    # The content style of tooltip. Object  
+    # The content style of tooltip. Object
     content_style: Var[Dict[str, Any]]
 
     # The wrapper style of tooltip. Object
@@ -98,8 +101,9 @@ class Tooltip(Recharts):
     # The coordinate of tooltip which is usually calculated internally.
     coordinate: Var[Dict[str, Any]]
 
+
 class Label(Recharts):
-    
+
     tag = "Label"
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
@@ -113,7 +117,8 @@ class Label(Recharts):
 
     # The position of label which can be specified by this props or the children of <Label />
     position: Var[str]
-    
+
+
 class LabelList(Recharts):
 
     tag = "LabelList"
@@ -126,4 +131,3 @@ class LabelList(Recharts):
 
     # The offset to the specified "position"
     offset: Var[int]
-    

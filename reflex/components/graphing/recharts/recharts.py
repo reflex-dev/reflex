@@ -4,6 +4,7 @@ from reflex.components.component import Component
 from reflex.style import Style
 from reflex.vars import Var
 
+
 class Recharts(Component):
     """A component that wraps a victory lib."""
 
