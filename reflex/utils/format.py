@@ -309,7 +309,9 @@ def format_prop(
                 if sig.parameters:
                     arg_def = ",".join(f"_{p}" for p in sig.parameters)
                     arg_def = f"({arg_def})"
-                else:  # add a default argument for addEvents if none were specified in prop.args_spec
+                else:
+                    # add a default argument for addEvents if none were specified in prop.args_spec
+                    # used to trigger the preventDefault() on the event.
                     arg_def = "(_e)"
 
             chain = ",".join([format_event(event) for event in prop.events])
