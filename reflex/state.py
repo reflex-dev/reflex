@@ -33,7 +33,14 @@ from redis.asyncio import Redis
 
 from reflex import constants
 from reflex.base import Base
-from reflex.event import Event, EventHandler, EventSpec, fix_events, window_alert
+from reflex.event import (
+    Event,
+    EventHandler,
+    EventSpec,
+    _no_chain_background_task,
+    fix_events,
+    window_alert,
+)
 from reflex.utils import format, prerequisites, types
 from reflex.vars import BaseVar, ComputedVar, Var
 
@@ -143,32 +150,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         if state is None:
             state = self
 
-        def no_chain_background_task(name, fn):
-            call = f"{type(state or self).__name__}.{name}"
-            message = (
-                f"Cannot directly call background task {name!r}, use "
-                f"`yield {call}` or `return {call}` instead."
-            )
-            if inspect.iscoroutinefunction(fn):
-
-                async def _no_chain_background_task_co(*args, **kwargs):
-                    raise RuntimeError(message)
-
-                return _no_chain_background_task_co
-            if inspect.isasyncgenfunction(fn):
-
-                async def _no_chain_background_task_gen(*args, **kwargs):
-                    yield
-                    raise RuntimeError(message)
-
-                return _no_chain_background_task_gen
-
-            raise TypeError(f"{fn} is marked as a background task, but is not async.")
-
         # Convert the event handlers to functions.
         for name, event_handler in state.event_handlers.items():
             if event_handler.is_background:
-                fn = no_chain_background_task(name, event_handler.fn)
+                fn = _no_chain_background_task(type(state), name, event_handler.fn)
             else:
                 fn = functools.partial(event_handler.fn, self)
             fn.__module__ = event_handler.fn.__module__  # type: ignore

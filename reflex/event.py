@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
+
+if TYPE_CHECKING:
+    from reflex.state import State
 
 
 class Event(Base):
@@ -46,6 +49,44 @@ def background(fn):
         raise TypeError("Background task must be async function or generator.")
     setattr(fn, BACKGROUND_TASK_MARKER, True)
     return fn
+
+
+def _no_chain_background_task(
+    state_cls: Type["State"], name: str, fn: Callable
+) -> Callable:
+    """Protect against directly chaining a background task from another event handler.
+
+    Args:
+        state_cls: The state class that the event handler is in.
+        name: The name of the background task.
+        fn: The background task coroutine function / generator.
+
+    Returns:
+        A compatible coroutine function / generator that raises a runtime error.
+
+    Raises:
+        TypeError: If the background task is not async.
+    """
+    call = f"{state_cls.__name__}.{name}"
+    message = (
+        f"Cannot directly call background task {name!r}, use "
+        f"`yield {call}` or `return {call}` instead."
+    )
+    if inspect.iscoroutinefunction(fn):
+
+        async def _no_chain_background_task_co(*args, **kwargs):
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_co
+    if inspect.isasyncgenfunction(fn):
+
+        async def _no_chain_background_task_gen(*args, **kwargs):
+            yield
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_gen
+
+    raise TypeError(f"{fn} is marked as a background task, but is not async.")
 
 
 class EventHandler(Base):
