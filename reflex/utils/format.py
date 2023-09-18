@@ -445,7 +445,7 @@ def format_event_chain(
     chain = ",".join([format_event(event) for event in event_chain.events])
     return "".join(
         [
-            f"Event([{chain}]",
+            f"addEvents([{chain}]",
             f", {format_var(event_arg)}" if event_arg else "",
             ")",
         ]
