@@ -56,33 +56,33 @@ def Table():
     def another():
         return rx.center(
             rx.table_container(
-                rx.table(
-                    rx.thead(
-                        rx.tr(
+                rx.table(  # type: ignore
+                    rx.thead(  # type: ignore
+                        rx.tr(  # type: ignore
                             rx.th("Name"),
                             rx.th("Age"),
                             rx.th("Location"),
                         )
                     ),
-                    rx.tbody(
-                        rx.tr(
+                    rx.tbody(  # type: ignore
+                        rx.tr(  # type: ignore
                             rx.td("John"),
                             rx.td(30),
                             rx.td("New York"),
                         ),
-                        rx.tr(
+                        rx.tr(  # type: ignore
                             rx.td("Jane"),
                             rx.td(31),
                             rx.td("San Francisco"),
                         ),
-                        rx.tr(
+                        rx.tr(  # type: ignore
                             rx.td("Joe"),
                             rx.td(32),
                             rx.td("Los Angeles"),
                         ),
                     ),
-                    rx.tfoot(
-                        rx.tr(rx.td("footer1"), rx.td("footer2"), rx.td("footer3"))
+                    rx.tfoot(  # type: ignore
+                        rx.tr(rx.td("footer1"), rx.td("footer2"), rx.td("footer3"))  # type: ignore
                     ),
                     rx.table_caption("random caption"),
                     variant="striped",
