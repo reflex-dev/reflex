@@ -8,9 +8,8 @@ from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
 try:
-    import mpld3
-    from matplotlib.figure import Figure
     import matplotlib
+    from matplotlib.figure import Figure
 
     matplotlib.use("Agg")
 except ImportError:
@@ -40,6 +39,7 @@ class Pyplot(Box):
 
 
 try:
+    import mpld3
     from matplotlib.figure import Figure
 
     @serializer
