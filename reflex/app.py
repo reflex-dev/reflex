@@ -901,7 +901,10 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             sid: The Socket.IO session id.
         """
-        await self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+        # Creating a task allows prevents the update from being blocked behind other coroutines.
+        await asyncio.create_task(
+            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
+        )
 
     async def on_event(self, sid, data):
         """Event for receiving front-end websocket events.
