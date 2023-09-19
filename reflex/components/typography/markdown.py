@@ -34,13 +34,6 @@ class Markdown(Component):
 
     library = "react-markdown@^8.0.7"
 
-    lib_dependencies: List[str] = [
-        "rehype-katex@^6.0.3",
-        "remark-math@^5.1.1",
-        "rehype-raw@^6.1.1",
-        "remark-gfm@^3.0.1",
-    ]
-
     tag = "ReactMarkdown"
 
     is_default = True
@@ -103,7 +96,13 @@ class Markdown(Component):
         imports = super()._get_imports()
 
         # Special markdown imports.
-        imports[""] = {ImportVar(tag="katex/dist/katex.min.css")}
+        imports.update({
+            "": {ImportVar(tag="katex/dist/katex.min.css")},
+            "rehype-katex@^6.0.3": {ImportVar(tag="rehypeKatex", is_default=True)},
+            "remark-math@^5.1.1": {ImportVar(tag="remarkMath", is_default=True)},
+            "rehype-raw@^6.1.1": {ImportVar(tag="rehypeRaw", is_default=True)},
+            "remark-gfm@^3.0.1": {ImportVar(tag="remarkGfm", is_default=True)},
+        })
 
         # Get the imports for each component.
         for component in components_by_tag.values():
