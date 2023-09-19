@@ -1,6 +1,7 @@
 """reflex.testing - tools for testing reflex apps."""
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import dataclasses
 import inspect
@@ -19,14 +20,13 @@ import types
 from http.server import SimpleHTTPRequestHandler
 from typing import (
     TYPE_CHECKING,
-    Any,
+    AsyncIterator,
     Callable,
     Coroutine,
     Optional,
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 import psutil
@@ -38,7 +38,7 @@ import reflex.utils.build
 import reflex.utils.exec
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.app import EventNamespace
+from reflex.state import State, StateManagerMemory, StateManagerRedis
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -109,6 +109,7 @@ class AppHarness:
     frontend_url: Optional[str] = None
     backend_thread: Optional[threading.Thread] = None
     backend: Optional[uvicorn.Server] = None
+    state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
     _frontends: list["WebDriver"] = dataclasses.field(default_factory=list)
 
     @classmethod
@@ -162,6 +163,27 @@ class AppHarness:
             reflex.config.get_config(reload=True)
             self.app_module = reflex.utils.prerequisites.get_app(reload=True)
         self.app_instance = self.app_module.app
+        if isinstance(self.app_instance.state_manager, StateManagerRedis):
+            # Create our own redis connection for testing.
+            self.state_manager = StateManagerRedis.create(self.app_instance.state)
+        else:
+            self.state_manager = self.app_instance.state_manager
+
+    def _get_backend_shutdown_handler(self):
+        if self.backend is None:
+            raise RuntimeError("Backend was not initialized.")
+
+        original_shutdown = self.backend.shutdown
+
+        async def _shutdown_redis(*args, **kwargs) -> None:
+            # ensure redis is closed before event loop
+            if self.app_instance is not None and isinstance(
+                self.app_instance.state_manager, StateManagerRedis
+            ):
+                await self.app_instance.state_manager.redis.close()
+            await original_shutdown(*args, **kwargs)
+
+        return _shutdown_redis
 
     def _start_backend(self, port=0):
         if self.app_instance is None:
@@ -173,20 +195,7 @@ class AppHarness:
                 port=port,
             )
         )
-
-        original_shutdown = self.backend.shutdown
-
-        async def _shutdown_redis(*args, **kwargs) -> None:
-            # ensure redis is closed before event loop
-            if (
-                self.app_instance is not None
-                and self.app_instance.state_manager.redis is not None
-            ):
-                await self.app_instance.state_manager.redis.close()
-            await original_shutdown(*args, **kwargs)
-
-        self.backend.shutdown = _shutdown_redis
-
+        self.backend.shutdown = self._get_backend_shutdown_handler()
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 
@@ -310,6 +319,35 @@ class AppHarness:
             time.sleep(step)
         return False
 
+    @staticmethod
+    async def _poll_for_async(
+        target: Callable[[], Coroutine[None, None, T]],
+        timeout: TimeoutType = None,
+        step: TimeoutType = None,
+    ) -> T | bool:
+        """Generic polling logic for async functions.
+
+        Args:
+            target: callable that returns truthy if polling condition is met.
+            timeout: max polling time
+            step: interval between checking target()
+
+        Returns:
+            return value of target() if truthy within timeout
+            False if timeout elapses
+        """
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUT
+        if step is None:
+            step = POLL_INTERVAL
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            success = await target()
+            if success:
+                return success
+            await asyncio.sleep(step)
+        return False
+
     def _poll_for_servers(self, timeout: TimeoutType = None) -> socket.socket:
         """Poll backend server for listening sockets.
 
@@ -365,39 +403,76 @@ class AppHarness:
         self._frontends.append(driver)
         return driver
 
-    async def emit_state_updates(self) -> list[Any]:
-        """Send any backend state deltas to the frontend.
+    async def get_state(self, token: str) -> State:
+        """Get the state associated with the given token.
+
+        Args:
+            token: The state token to look up.
 
         Returns:
-            List of awaited response from each EventNamespace.emit() call.
+            The state instance associated with the given token
 
         Raises:
             RuntimeError: when the app hasn't started running
         """
-        if self.app_instance is None or self.app_instance.sio is None:
+        if self.state_manager is None:
+            raise RuntimeError("state_manager is not set.")
+        try:
+            return await self.state_manager.get_state(token)
+        finally:
+            if isinstance(self.state_manager, StateManagerRedis):
+                await self.state_manager.redis.close()
+
+    async def set_state(self, token: str, **kwargs) -> None:
+        """Set the state associated with the given token.
+
+        Args:
+            token: The state token to set.
+            kwargs: Attributes to set on the state.
+
+        Raises:
+            RuntimeError: when the app hasn't started running
+        """
+        if self.state_manager is None:
+            raise RuntimeError("state_manager is not set.")
+        state = await self.get_state(token)
+        for key, value in kwargs.items():
+            setattr(state, key, value)
+        try:
+            await self.state_manager.set_state(token, state)
+        finally:
+            if isinstance(self.state_manager, StateManagerRedis):
+                await self.state_manager.redis.close()
+
+    @contextlib.asynccontextmanager
+    async def modify_state(self, token: str) -> AsyncIterator[State]:
+        """Modify the state associated with the given token and send update to frontend.
+
+        Args:
+            token: The state token to modify
+
+        Yields:
+            The state instance associated with the given token
+
+        Raises:
+            RuntimeError: when the app hasn't started running
+        """
+        if self.state_manager is None:
+            raise RuntimeError("state_manager is not set.")
+        if self.app_instance is None:
             raise RuntimeError("App is not running.")
-        event_ns: EventNamespace = cast(
-            EventNamespace,
-            self.app_instance.event_namespace,
-        )
-        pending: list[Coroutine[Any, Any, Any]] = []
-        for state in self.app_instance.state_manager.states.values():
-            delta = state.get_delta()
-            if delta:
-                update = reflex.state.StateUpdate(delta=delta, events=[], final=True)
-                state._clean()
-                # Emit the event.
-                pending.append(
-                    event_ns.emit(
-                        str(reflex.constants.SocketEvent.EVENT),
-                        update.json(),
-                        to=state.get_sid(),
-                    ),
-                )
-        responses = []
-        for request in pending:
-            responses.append(await request)
-        return responses
+        app_state_manager = self.app_instance.state_manager
+        if isinstance(self.state_manager, StateManagerRedis):
+            # Temporarily replace the app's state manager with our own, since
+            # the redis connection is on the backend_thread event loop
+            self.app_instance.state_manager = self.state_manager
+        try:
+            async with self.app_instance.modify_state(token) as state:
+                yield state
+        finally:
+            if isinstance(self.state_manager, StateManagerRedis):
+                self.app_instance.state_manager = app_state_manager
+                await self.state_manager.redis.close()
 
     def poll_for_content(
         self,
@@ -471,6 +546,9 @@ class AppHarness:
         if self.app_instance is None:
             raise RuntimeError("App is not running.")
         state_manager = self.app_instance.state_manager
+        assert isinstance(
+            state_manager, StateManagerMemory
+        ), "Only works with memory state manager"
         if not self._poll_for(
             target=lambda: state_manager.states,
             timeout=timeout,
@@ -548,7 +626,6 @@ class Subdir404TCPServer(socketserver.TCPServer):
             request: the requesting socket
             client_address: (host, port) referring to the client’s address.
         """
-        print(client_address, type(client_address))
         self.RequestHandlerClass(
             request,
             client_address,
@@ -619,6 +696,7 @@ class AppHarnessProd(AppHarness):
                 workers=reflex.utils.processes.get_num_workers(),
             ),
         )
+        self.backend.shutdown = self._get_backend_shutdown_handler()
         self.backend_thread = threading.Thread(target=self.backend.run)
         self.backend_thread.start()
 

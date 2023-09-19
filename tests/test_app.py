@@ -31,7 +31,7 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import State, StateUpdate
+from reflex.state import State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -339,7 +339,7 @@ async def test_initialize_with_state(test_state: Type[ATestState], token: str):
     assert isinstance(state, test_state)
     assert state.var == 0  # type: ignore
 
-    if app.state_manager.redis is not None:
+    if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
 
 
@@ -374,7 +374,7 @@ async def test_set_and_get_state(test_state):
     assert state1.var == 1  # type: ignore
     assert state2.var == 2  # type: ignore
 
-    if app.state_manager.redis is not None:
+    if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
 
 
@@ -760,7 +760,7 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         "image2.jpg",
     ]
 
-    if app.state_manager.redis is not None:
+    if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
 
 
@@ -802,7 +802,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         == f"`{state.get_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
-    if app.state_manager.redis is not None:
+    if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
 
 
@@ -943,7 +943,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 ),
             ],
         )
-        if app.state_manager.redis is not None:
+        if isinstance(app.state_manager, StateManagerRedis):
             # When redis is used, the state is not updated until the processing is complete
             state = await app.state_manager.get_state(token)
             assert state.dynamic == prev_exp_val
@@ -1034,7 +1034,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     # print(f"Expected {exp_vals} rendering side effects, got {state.side_effect_counter}")
     # assert state.side_effect_counter == len(exp_vals)
 
-    if app.state_manager.redis is not None:
+    if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
 
 
@@ -1068,7 +1068,7 @@ async def test_process_events(mocker, token: str):
     assert (await app.state_manager.get_state(token)).value == 5
     assert app.postprocess.call_count == 6
 
-    if app.state_manager.redis is not None:
+    if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
 
 

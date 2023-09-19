@@ -51,7 +51,13 @@ from reflex.route import (
     get_route_args,
     verify_route_validity,
 )
-from reflex.state import DefaultState, State, StateManager, StateUpdate
+from reflex.state import (
+    DefaultState,
+    State,
+    StateManager,
+    StateManagerMemory,
+    StateUpdate,
+)
 from reflex.utils import console, format, prerequisites, types
 
 # Define custom types.
@@ -90,7 +96,7 @@ class App(Base):
     state: Type[State] = DefaultState
 
     # Class to manage many client states.
-    state_manager: StateManager = StateManager()
+    state_manager: StateManager = StateManagerMemory(state=DefaultState)
 
     # The styling to apply to each component.
     style: ComponentStyle = {}
@@ -158,7 +164,7 @@ class App(Base):
         self.middleware.append(HydrateMiddleware())
 
         # Set up the state manager.
-        self.state_manager.setup(state=self.state)
+        self.state_manager = StateManager.create(state=self.state)
 
         # Set up the API.
         self.api = FastAPI()

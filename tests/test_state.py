@@ -22,6 +22,8 @@ from reflex.state import (
     MutableProxy,
     State,
     StateManager,
+    StateManagerMemory,
+    StateManagerRedis,
     StateProxy,
     StateUpdate,
 )
@@ -1425,20 +1427,18 @@ def state_manager(request) -> Generator[StateManager, None, None]:
     Yields:
         A state manager instance
     """
-    state_manager = StateManager()
-    state_manager.setup(TestState)
-    assert not state_manager._states_locks
-
+    state_manager = StateManager.create(state=TestState)
     if request.param == "redis":
-        if state_manager.redis is None:
+        if not isinstance(state_manager, StateManagerRedis):
             pytest.skip("Test requires redis")
     else:
         # explicitly NOT using redis
-        state_manager.redis = None
+        state_manager = StateManagerMemory(state=TestState)
+        assert not state_manager._states_locks
 
     yield state_manager
 
-    if state_manager.redis:
+    if isinstance(state_manager, StateManagerRedis):
         asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
 
 
@@ -1451,23 +1451,23 @@ async def test_state_manager_modify_state(state_manager: StateManager, token: st
         token: A token.
     """
     async with state_manager.modify_state(token):
-        if state_manager.redis is None:
+        if isinstance(state_manager, StateManagerRedis):
+            assert await state_manager.redis.get(f"{token}_lock")
+        elif isinstance(state_manager, StateManagerMemory):
             assert token in state_manager._states_locks
             assert state_manager._states_locks[token].locked()
-        else:
-            assert await state_manager.redis.get(f"{token}_lock")
     # lock should be dropped after exiting the context
-    if state_manager.redis is None:
-        assert not state_manager._states_locks[token].locked()
-    else:
+    if isinstance(state_manager, StateManagerRedis):
         assert (await state_manager.redis.get(f"{token}_lock")) is None
+    elif isinstance(state_manager, StateManagerMemory):
+        assert not state_manager._states_locks[token].locked()
 
-    # separate instances should NOT share locks
-    sm2 = StateManager()
-    assert sm2._state_manager_lock is state_manager._state_manager_lock
-    assert not sm2._states_locks
-    if state_manager._states_locks:
-        assert sm2._states_locks != state_manager._states_locks
+        # separate instances should NOT share locks
+        sm2 = StateManagerMemory(state=TestState)
+        assert sm2._state_manager_lock is state_manager._state_manager_lock
+        assert not sm2._states_locks
+        if state_manager._states_locks:
+            assert sm2._states_locks != state_manager._states_locks
 
 
 @pytest.mark.asyncio
@@ -1496,11 +1496,11 @@ async def test_state_manager_contend(state_manager: StateManager, token: str):
 
     assert (await state_manager.get_state(token)).num1 == exp_num1
 
-    if state_manager.redis is None:
+    if isinstance(state_manager, StateManagerRedis):
+        assert (await state_manager.redis.get(f"{token}_lock")) is None
+    elif isinstance(state_manager, StateManagerMemory):
         assert token in state_manager._states_locks
         assert not state_manager._states_locks[token].locked()
-    else:
-        assert (await state_manager.redis.get(f"{token}_lock")) is None
 
 
 @pytest.fixture(scope="function")
@@ -1510,11 +1510,9 @@ def state_manager_redis() -> Generator[StateManager, None, None]:
     Yields:
         A state manager instance
     """
-    state_manager = StateManager()
-    state_manager.setup(TestState)
-    assert not state_manager._states_locks
+    state_manager = StateManager.create(TestState)
 
-    if state_manager.redis is None:
+    if not isinstance(state_manager, StateManagerRedis):
         pytest.skip("Test requires redis")
 
     yield state_manager
@@ -1617,7 +1615,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert child_state is not None
     parent_state = child_state.parent_state
     assert parent_state is not None
-    if mock_app.state_manager.redis is None:
+    if isinstance(mock_app.state_manager, StateManagerMemory):
         mock_app.state_manager.states[parent_state.get_token()] = parent_state
 
     sp = StateProxy(grandchild_state)
@@ -1638,7 +1636,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     async with sp:
         assert sp._self_actx is not None
         assert sp._self_mutable  # proxy is mutable inside context
-        if mock_app.state_manager.redis is None:
+        if isinstance(mock_app.state_manager, StateManagerMemory):
             # For in-process store, only one instance of the state exists
             assert sp.__wrapped__ is grandchild_state
         else:
@@ -1651,7 +1649,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
 
     # Get the state from the state manager directly and check that the value is updated
     gotten_state = await mock_app.state_manager.get_state(grandchild_state.get_token())
-    if mock_app.state_manager.redis is None:
+    if isinstance(mock_app.state_manager, StateManagerMemory):
         # For in-process store, only one instance of the state exists
         assert gotten_state is parent_state
     else:
