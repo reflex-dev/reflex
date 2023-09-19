@@ -670,10 +670,13 @@ class App(Base):
         """
         if self.event_namespace is None:
             raise RuntimeError("App has not been initialized yet.")
+        # Get exclusive access to the state.
         async with self.state_manager.modify_state(token) as state:
+            # No other event handler can modify the state while in this context.
             yield state
             delta = state.get_delta()
             if delta:
+                # When the state is modified reset dirty status and emit the delta to the frontend.
                 state._clean()
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
@@ -695,6 +698,11 @@ class App(Base):
             return None
 
         async def _coro():
+            """Coroutine to process the event and emit updates inside an asyncio.Task.
+
+            Raises:
+                RuntimeError: If the app has not been initialized yet.
+            """
             if self.event_namespace is None:
                 raise RuntimeError("App has not been initialized yet.")
 
@@ -713,6 +721,7 @@ class App(Base):
 
         task = asyncio.create_task(_coro())
         self.background_tasks.add(task)
+        # Clean up task from background_tasks set when complete.
         task.add_done_callback(self.background_tasks.discard)
         return task
 
@@ -761,7 +770,7 @@ async def process(
         # Only process the event if there is no update.
         else:
             if app._process_background(state, event) is not None:
-                # let the client send more events immediately
+                # `final=True` allows the frontend send more events immediately.
                 yield StateUpdate(final=True)
                 return
 
