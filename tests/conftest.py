@@ -584,3 +584,23 @@ def mutable_state():
             self.test_set = {1, 2, 3, 4, "five"}
 
     return MutableTestState()
+
+
+@pytest.fixture
+def duplicate_substate():
+    """Create a Test state that has duplicate child substates.
+
+    Returns:
+        The test state.
+    """
+
+    class TestState(rx.State):
+        pass
+
+    class ChildTestState(TestState):  # type: ignore # noqa
+        pass
+
+    class ChildTestState(TestState):  # type: ignore # noqa
+        pass
+
+    return TestState
