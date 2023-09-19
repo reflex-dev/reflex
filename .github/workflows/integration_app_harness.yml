@@ -17,12 +17,12 @@ jobs:
   integration-app-harness:
     strategy:
       matrix:
-        redis: [ true, false ]
+        state_manager: [ "redis", "memory" ]
     runs-on: ubuntu-latest
     services:
       # Label used to access the service container
       redis:
-        image: ${{ matrix.redis && 'redis' || '' }}
+        image: ${{ matrix.state_manager == 'redis' && 'redis' || '' }}
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
@@ -43,7 +43,7 @@ jobs:
     - name: Run app harness tests
       env:
         SCREENSHOT_DIR: /tmp/screenshots
-        REDIS_URL: ${{ matrix.redis && 'localhost:6379' || '' }}
+        REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis' || '' }}
       run: |
         poetry run pytest integration
     - uses: actions/upload-artifact@v3
