@@ -1621,11 +1621,11 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         mock_app.state_manager.states[parent_state.get_token()] = parent_state
 
     sp = StateProxy(grandchild_state)
-    assert sp._state_instance == grandchild_state
-    assert sp._substate_path == grandchild_state.get_full_name().split(".")
-    assert sp._app is mock_app
-    assert not sp._mutable
-    assert sp._actx is None
+    assert sp.__wrapped__ == grandchild_state
+    assert sp._self_substate_path == grandchild_state.get_full_name().split(".")
+    assert sp._self_app is mock_app
+    assert not sp._self_mutable
+    assert sp._self_actx is None
 
     # cannot use normal contextmanager protocol
     with pytest.raises(TypeError), sp:
@@ -1636,17 +1636,17 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         sp.value2 = 16
 
     async with sp:
-        assert sp._actx is not None
-        assert sp._mutable  # proxy is mutable inside context
+        assert sp._self_actx is not None
+        assert sp._self_mutable  # proxy is mutable inside context
         if mock_app.state_manager.redis is None:
             # For in-process store, only one instance of the state exists
-            assert sp._state_instance is grandchild_state
+            assert sp.__wrapped__ is grandchild_state
         else:
             # When redis is used, a new+updated instance is assigned to the proxy
-            assert sp._state_instance is not grandchild_state
+            assert sp.__wrapped__ is not grandchild_state
         sp.value2 = 42
-    assert not sp._mutable  # proxy is not mutable after exiting context
-    assert sp._actx is None
+    assert not sp._self_mutable  # proxy is not mutable after exiting context
+    assert sp._self_actx is None
     assert sp.value2 == 42
 
     # Get the state from the state manager directly and check that the value is updated
@@ -1656,7 +1656,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
         assert gotten_state is parent_state
     else:
         assert gotten_state is not parent_state
-    gotten_grandchild_state = gotten_state.get_substate(sp._substate_path)
+    gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
     assert gotten_grandchild_state is not None
     assert gotten_grandchild_state.value2 == 42
 

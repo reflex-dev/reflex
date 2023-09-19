@@ -1065,7 +1065,7 @@ class ImmutableStateError(AttributeError):
     pass
 
 
-class StateProxy:
+class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
 
     Since a background task runs against a state instance without holding the
@@ -1091,21 +1091,17 @@ class StateProxy:
                     self.counter += 1
     """
 
-    __internal_attributes = set(
-        ["_actx", "_app", "_mutable", "_state_instance", "_substate_path"],
-    )
-
     def __init__(self, state_instance):
         """Create a proxy for a state instance.
 
         Args:
             state_instance: The state instance to proxy.
         """
-        self._app = getattr(prerequisites.get_app(), constants.APP_VAR)
-        self._state_instance = state_instance
-        self._substate_path = state_instance.get_full_name().split(".")
-        self._actx = None
-        self._mutable = False
+        super().__init__(state_instance)
+        self._self_app = getattr(prerequisites.get_app(), constants.APP_VAR)
+        self._self_substate_path = state_instance.get_full_name().split(".")
+        self._self_actx = None
+        self._self_mutable = False
 
     async def __aenter__(self) -> StateProxy:
         """Enter the async context manager protocol.
@@ -1119,10 +1115,12 @@ class StateProxy:
         Returns:
             This StateProxy instance in mutable mode.
         """
-        self._actx = self._app.modify_state(self._state_instance.get_token())
-        mutable_state = await self._actx.__aenter__()
-        self._state_instance = mutable_state.get_substate(self._substate_path)
-        self._mutable = True
+        self._self_actx = self._self_app.modify_state(self.__wrapped__.get_token())
+        mutable_state = await self._self_actx.__aenter__()
+        super().__setattr__(
+            "__wrapped__", mutable_state.get_substate(self._self_substate_path)
+        )
+        self._self_mutable = True
         return self
 
     async def __aexit__(self, *exc_info: Any) -> None:
@@ -1133,11 +1131,11 @@ class StateProxy:
         Args:
             exc_info: The exception info tuple.
         """
-        if self._actx is None:
+        if self._self_actx is None:
             return
-        self._mutable = False
-        await self._actx.__aexit__(*exc_info)
-        self._actx = None
+        self._self_mutable = False
+        await self._self_actx.__aexit__(*exc_info)
+        self._self_actx = None
 
     def __enter__(self):
         """Enter the regular context manager protocol.
@@ -1168,8 +1166,8 @@ class StateProxy:
         Returns:
             The value of the attribute.
         """
-        value = getattr(self._state_instance, name)
-        if isinstance(value, MutableProxy):
+        value = super().__getattr__(name)
+        if not name.startswith("_self_") and isinstance(value, MutableProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
@@ -1190,16 +1188,12 @@ class StateProxy:
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if name in self.__internal_attributes:
-            # allow proxy internal attributes to be set
-            super().__setattr__(name, value)
-            return
-        if not self._mutable:
+        if not name.startswith("_self_") and not self._self_mutable:
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        setattr(self._state_instance, name, value)
+        super().__setattr__(name, value)
 
 
 class DefaultState(State):
@@ -1684,7 +1678,7 @@ class ImmutableMutableProxy(MutableProxy):
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
-        if not self._self_state._mutable:
+        if not self._self_state._self_mutable:
             raise ImmutableStateError(
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
