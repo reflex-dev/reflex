@@ -42,6 +42,7 @@ from reflex.event import (
     window_alert,
 )
 from reflex.utils import format, prerequisites, types
+from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.vars import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
@@ -1059,12 +1060,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         pass
 
 
-class ImmutableStateError(AttributeError):
-    """Raised when a background task attempts to modify state outside of context."""
-
-    pass
-
-
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
 
@@ -1213,10 +1208,6 @@ class StateUpdate(Base):
 
     # Whether this is the final state update for the event.
     final: bool = True
-
-
-class LockExpiredError(Exception):
-    """Raised when the state lock expires while an event is being processed."""
 
 
 class StateManager(Base):
