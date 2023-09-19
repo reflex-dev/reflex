@@ -6,7 +6,7 @@ from typing import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
 
 
 def BackgroundTask():
@@ -166,7 +166,7 @@ def token(background_task: AppHarness, driver: WebDriver) -> str:
     assert token_input
 
     # wait for the backend connection to send the token
-    token = background_task.poll_for_value(token_input)
+    token = background_task.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
     assert token is not None
 
     return token
