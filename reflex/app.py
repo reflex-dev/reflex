@@ -901,7 +901,7 @@ class EventNamespace(AsyncNamespace):
             update: The state update to send.
             sid: The Socket.IO session id.
         """
-        # Creating a task allows prevents the update from being blocked behind other coroutines.
+        # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
             self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
         )
