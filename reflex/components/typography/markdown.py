@@ -103,10 +103,6 @@ class Markdown(Component):
         imports = super()._get_imports()
 
         # Special markdown imports.
-        imports["remark-math"] = {ImportVar(tag="remarkMath", is_default=True)}
-        imports["remark-gfm"] = {ImportVar(tag="remarkGfm", is_default=True)}
-        imports["rehype-katex"] = {ImportVar(tag="rehypeKatex", is_default=True)}
-        imports["rehype-raw"] = {ImportVar(tag="rehypeRaw", is_default=True)}
         imports[""] = {ImportVar(tag="katex/dist/katex.min.css")}
 
         # Get the imports for each component.
