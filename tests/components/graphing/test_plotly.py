@@ -1,6 +1,10 @@
-import numpy as np
-import plotly.graph_objects as go
 import pytest
+
+try:
+    import numpy as np
+except ImportError:
+    pytest.skip("numpy is not installed", allow_module_level=True)
+import plotly.graph_objects as go
 
 from reflex.components.graphing.plotly import serialize_figure  # type: ignore
 from reflex.utils.serializers import serialize
