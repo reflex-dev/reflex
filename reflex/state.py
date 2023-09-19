@@ -93,6 +93,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             *args: The args to pass to the Pydantic init method.
             parent_state: The parent state.
             **kwargs: The kwargs to pass to the Pydantic init method.
+
+        Raises:
+            ValueError: If a substate class shadows another.
         """
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
@@ -103,7 +106,13 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Setup the substates.
         for substate in self.get_substates():
-            self.substates[substate.get_name()] = substate(parent_state=self)
+            substate_name = substate.get_name()
+            if substate_name in self.substates:
+                raise ValueError(
+                    f"The substate class '{substate_name}' has been defined multiple times. Shadowing "
+                    f"substate classes is not allowed."
+                )
+            self.substates[substate_name] = substate(parent_state=self)
         # Convert the event handlers to functions.
         self._init_event_handlers()
 
