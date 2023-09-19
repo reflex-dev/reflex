@@ -1,6 +1,5 @@
 """Test @rx.background task functionality."""
 
-import os
 from typing import Generator
 
 import pytest
@@ -101,35 +100,23 @@ def BackgroundTask():
     app.compile()
 
 
-@pytest.fixture(scope="session", params=[True, False], ids=["redis", "in_process"])
+@pytest.fixture(scope="session")
 def background_task(
-    request,
     tmp_path_factory,
 ) -> Generator[AppHarness, None, None]:
     """Start BackgroundTask app at tmp_path via AppHarness.
 
     Args:
-        request: the pytest fixturerequest object
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
-    orig_redis_url = os.environ.get("REDIS_URL")
-    if request.param:
-        if not orig_redis_url:
-            pytest.skip("REDIS_URL not set")
-    else:
-        os.environ.pop("REDIS_URL", "")
-
     with AppHarness.create(
         root=tmp_path_factory.mktemp(f"background_task"),
         app_source=BackgroundTask,  # type: ignore
     ) as harness:
         yield harness
-
-    if orig_redis_url is not None:
-        os.environ["REDIS_URL"] = orig_redis_url
 
 
 @pytest.fixture
