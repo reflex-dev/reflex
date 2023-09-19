@@ -270,7 +270,6 @@ class Component(Base, ABC):
             raise ValueError(f"Invalid event chain: {value}")
 
         # Add args to the event specs if necessary.
-        # if is_controlled_event:
         events = [
             EventSpec(
                 handler=e.handler,
