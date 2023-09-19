@@ -15,11 +15,14 @@ permissions:
 
 jobs:
   integration-app-harness:
+    strategy:
+      matrix:
+        redis: [ true, false ]
     runs-on: ubuntu-latest
     services:
       # Label used to access the service container
       redis:
-        image: redis
+        image: ${{ matrix.redis && 'redis' || '' }}
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
@@ -40,10 +43,9 @@ jobs:
     - name: Run app harness tests
       env:
         SCREENSHOT_DIR: /tmp/screenshots
+        REDIS_URL: ${{ matrix.redis && 'localhost:6379' || '' }}
       run: |
         poetry run pytest integration
-        # Others cannot run with redis yet, but test_background_task uses redis-specific functionality
-        REDIS_URL=localhost:6379 poetry run pytest integration/test_background_task.py
     - uses: actions/upload-artifact@v3
       name: Upload failed test screenshots
       if: always()
