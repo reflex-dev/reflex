@@ -1,8 +1,9 @@
-from typing import Dict, List, Type
+from typing import Any, Dict, List, Type
 
 import pytest
 
 import reflex as rx
+from reflex.base import Base
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
@@ -399,6 +400,42 @@ def test_get_event_triggers(component1, component2):
     assert (
         component2().get_event_triggers().keys()
         == {"on_open", "on_close"} | default_triggers
+    )
+
+
+class C1State(State):
+    """State for testing C1 component."""
+
+    def mock_handler(self, _e, _bravo, _charlie):
+        """Mock handler."""
+        pass
+
+
+def test_component_event_trigger_arbitrary_args():
+    """Test that we can define arbitrary types for the args of an event trigger."""
+
+    class Obj(Base):
+        custom: int = 0
+
+    def on_foo_spec(_e, alpha: str, bravo: Dict[str, Any], charlie: Obj):
+        return [_e.target.value, bravo["nested"], charlie.custom + 42]
+
+    class C1(Component):
+        library = "/local"
+        tag = "C1"
+
+        def get_event_triggers(self) -> Dict[str, Any]:
+            return {
+                **super().get_event_triggers(),
+                "on_foo": on_foo_spec,
+            }
+
+    comp = C1.create(on_foo=C1State.mock_handler)
+
+    assert comp.render()["props"][0] == (
+        "onFoo={(__e,_alpha,_bravo,_charlie) => addEvents("
+        '[Event("c1_state.mock_handler", {_e:__e.target.value,bravo:_bravo["nested"],charlie:(_charlie.custom + 42)})], '
+        "(__e,_alpha,_bravo,_charlie))}"
     )
 
 

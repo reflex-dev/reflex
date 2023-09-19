@@ -446,7 +446,11 @@ def parse_args_spec(arg_spec: ArgsSpec):
     spec = inspect.getfullargspec(arg_spec)
     return arg_spec(
         *[
-            BaseVar(name=f"_{l_arg}", type_=FrontendEvent, is_local=True)
+            BaseVar(
+                name=f"_{l_arg}",
+                type_=spec.annotations.get(l_arg, FrontendEvent),
+                is_local=True,
+            )
             for l_arg in spec.args
         ]
     )
