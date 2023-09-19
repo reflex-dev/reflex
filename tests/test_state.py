@@ -1989,3 +1989,8 @@ def test_mutable_backend(mutable_state):
     assert_custom_dirty()
     mutable_state._be_custom.custom.bar = "baz"
     assert_custom_dirty()
+
+
+def test_duplicate_substate_class(duplicate_substate):
+    with pytest.raises(ValueError):
+        duplicate_substate()
