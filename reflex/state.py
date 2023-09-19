@@ -1146,7 +1146,6 @@ class StateProxy(wrapt.ObjectProxy):
     def __exit__(self, *exc_info: Any) -> None:
         """Exit the regular context manager protocol.
 
-
         Args:
             exc_info: The exception info tuple.
         """
@@ -1450,7 +1449,7 @@ class StateManagerRedis(StateManager):
         """
         state_is_locked = False
         lock_key_channel = f"__keyspace@0__:{lock_key.decode()}"
-        # Missed the fast-path to get lock, subscribe for lock delete/expire events
+        # Enable keyspace notifications for the lock key, so we know when it is available.
         await self.redis.config_set(
             "notify-keyspace-events", self._redis_notify_keyspace_events
         )
