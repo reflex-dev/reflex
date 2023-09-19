@@ -3,7 +3,6 @@ import typing
 from typing import Dict, List, Set, Tuple
 
 import pytest
-from pandas import DataFrame
 
 from reflex.base import Base
 from reflex.state import State
@@ -476,37 +475,6 @@ def test_dict_indexing():
             BaseVar(name="lst", type_=Dict[str, str]),
             BaseVar(name="dict_var", type_=Dict[str, str]),
         ),
-        (
-            BaseVar(name="df", type_=DataFrame),
-            [1, 2],
-        ),
-        (
-            BaseVar(name="df", type_=DataFrame),
-            {"name": "dict"},
-        ),
-        (
-            BaseVar(name="df", type_=DataFrame),
-            {"set"},
-        ),
-        (
-            BaseVar(name="df", type_=DataFrame),
-            (
-                1,
-                2,
-            ),
-        ),
-        (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="list_var", type_=List[int]),
-        ),
-        (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="set_var", type_=Set[str]),
-        ),
-        (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="dict_var", type_=Dict[str, str]),
-        ),
     ],
 )
 def test_var_unsupported_indexing_dicts(var, index):
@@ -518,6 +486,32 @@ def test_var_unsupported_indexing_dicts(var, index):
     """
     with pytest.raises(TypeError):
         var[index]
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        [1, 2],
+        {"name": "dict"},
+        {"set"},
+        (
+            1,
+            2,
+        ),
+        BaseVar(name="list_var", type_=List[int]),
+        BaseVar(name="list_var", type_=List[int]),
+        BaseVar(name="set_var", type_=Set[str]),
+        BaseVar(name="dict_var", type_=Dict[str, str]),
+    ],
+)
+def test_var_unsupported_indexing_dataframe(index):
+    try:
+        import pandas as pd
+    except ImportError:
+        pytest.skip("pandas is not installed")
+    df = BaseVar(name="df", type_=pd.DataFrame)
+    with pytest.raises(TypeError):
+        df[index]
 
 
 @pytest.mark.parametrize(
