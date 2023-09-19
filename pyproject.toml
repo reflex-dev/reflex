@@ -72,7 +72,7 @@ mpld3 =  [
     {version = "^0.5.9", python = ">=3.9,<4.0"}
 ]
 altair = [
-    {version = "^5.1.1", python = ">=3.8,<4.0"}
+    {version = "^5.1.1", python = ">=3.9,<4.0"}
 ]
 bokeh = [
     {version = "^3.2.2", python = ">=3.9,<4.0"}
