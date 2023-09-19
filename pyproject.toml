@@ -66,9 +66,11 @@ pillow = [
     {version = "^10.0.0", python = ">=3.8,<4.0"}
 ]
 matplotlib = [
-    {version = "^3.8.0", python = ">=3.9,<4.0"}
+    {version = "^3.8.0", python = ">=3.9,<4.0"},
 ]
-mpld3 =  "^0.5.9"
+mpld3 =  [
+    {version = "^0.5.9", python = ">=3.9,<4.0"}
+]
 altair = [
     {version = "^5.1.1", python = ">=3.8,<4.0"}
 ]
