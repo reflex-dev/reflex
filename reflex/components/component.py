@@ -308,7 +308,7 @@ class Component(Base, ABC):
         deprecated_controlled_triggers = self.get_controlled_triggers()
         if deprecated_controlled_triggers:
             console.deprecate(
-                feature_name="get_controlled_triggers ({self.__class__.__name__})",
+                feature_name=f"get_controlled_triggers ({self.__class__.__name__})",
                 reason="replaced by get_event_triggers",
                 deprecation_version="0.2.8",
                 removal_version="0.2.9",
