@@ -527,7 +527,7 @@ class App(Base):
             and not i.startswith("/")
             and not i.startswith(".")
             and i != ""
-            and all(tag.install for tag in tags)
+            and any(tag.install for tag in tags)
         }
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
