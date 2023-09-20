@@ -28,9 +28,12 @@ class Bokeh(Box):
         Returns:
             The rendered component.
         """
-        return super()._render().add_props(
-                dangerouslySetInnerHTML=Var.create({"__html": self.fig})
-            ).remove_props("fig")
+        return (
+            super()
+            ._render()
+            .add_props(dangerouslySetInnerHTML=Var.create({"__html": self.fig}))
+            .remove_props("fig")
+        )
 
 
 try:
