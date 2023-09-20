@@ -51,6 +51,7 @@ class Tag(Base):
         Returns:
             The formatted props list.
         """
+        # return format.format_props({**self.props, **self.special_props})
         # If there are no props, return an empty string.
         if len(self.props) == 0:
             return []

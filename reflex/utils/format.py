@@ -326,6 +326,25 @@ def format_prop(
     assert isinstance(prop, str), "The prop must be a string."
     return wrap(prop, "{", check_first=False)
 
+def format_props(props: dict[str, Any]) -> list[str]:
+    """Format the tag's props.
+
+    Args:
+        props: The props to format.
+
+    Returns:
+        The formatted props list.
+    """
+    # If there are no props, return an empty list.
+    if len(props) == 0:
+        return []
+
+    # Format all the props.
+    return [
+        f"{name}={format_prop(prop)}"
+        for name, prop in sorted(props.items())
+        if prop is not None
+    ]
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     """Get the state and function name of an event handler.

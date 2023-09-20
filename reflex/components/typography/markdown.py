@@ -10,7 +10,7 @@ from reflex.components.navigation import Link
 from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
 from reflex.style import Style
-from reflex.utils import types
+from reflex.utils import format, types
 from reflex.vars import BaseVar, ImportVar, Var
 
 # Mapping from markdown tags to components.
@@ -135,7 +135,7 @@ class Markdown(Component):
         <{CodeBlock().tag}
         children={{String(children).replace(/\n$/, '')}}
         language={{match ? match[1] : ''}}
-        theme={{light}}
+        style={{light}}
         {{...props}}
         />
     ) : (
