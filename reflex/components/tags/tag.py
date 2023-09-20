@@ -51,16 +51,7 @@ class Tag(Base):
         Returns:
             The formatted props list.
         """
-        # If there are no props, return an empty string.
-        if len(self.props) == 0:
-            return []
-
-        # Format all the props.
-        return [
-            f"{name}={format.format_prop(prop)}"
-            for name, prop in sorted(self.props.items())
-            if prop is not None
-        ] + [str(prop) for prop in self.special_props]
+        return format.format_props(*self.special_props, **self.props)
 
     def add_props(self, **kwargs: Optional[Any]) -> Tag:
         """Add props to the tag.
