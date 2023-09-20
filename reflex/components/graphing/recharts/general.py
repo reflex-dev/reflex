@@ -1,6 +1,6 @@
 """General components for Recharts."""
 
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from reflex.vars import Var
 
@@ -15,13 +15,13 @@ class ResponsiveContainer(Recharts):
     # The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
     aspect: Var[int]
 
-    # The width of chart container. Number
-    width: Var[int]
+    # The width of chart container. Can be a number or string
+    width: Var[Union[int, str]]
 
     # The height of chart container. Number
-    height: Var[int]
+    height: Var[Union[int, str]]
 
-    # The minimum width of chart container. Number
+    # The minimum width of chart container.
     min_width: Var[int]
 
     # The minimum height of chart container. Number
