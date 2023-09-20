@@ -875,7 +875,7 @@ class NoSSRComponent(Component):
 
         return {
             **imports,
-            self.library: ImportVar(tag=None, render=False),
+            self.library: {ImportVar(tag=None, render=False)},
             **self._get_dependencies_imports(),
         }
 
