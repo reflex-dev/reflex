@@ -1313,3 +1313,22 @@ class MutableProxy(wrapt.ObjectProxy):
             super().__setattr__(name, value)
             return
         self._mark_dirty(super().__setattr__, args=(name, value))
+
+    def __copy__(self) -> Any:
+        """Return a copy of the proxy.
+
+        Returns:
+            A copy of the wrapped object, unconnected to the proxy.
+        """
+        return copy.copy(self.__wrapped__)
+
+    def __deepcopy__(self, memo=None) -> Any:
+        """Return a deepcopy of the proxy.
+
+        Args:
+            memo: The memo dict to use for the deepcopy.
+
+        Returns:
+            A deepcopy of the wrapped object, unconnected to the proxy.
+        """
+        return copy.deepcopy(self.__wrapped__, memo=memo)
