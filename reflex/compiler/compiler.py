@@ -149,11 +149,11 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    tailwind_config = get_config().tailwind
+    # Add tailwind css if enabled.
     sheets = (
-        []
-        if tailwind_config and tailwind_config.get("disable") is True
-        else [constants.TAILWIND_ROOT_STYLE_PATH]
+        [constants.TAILWIND_ROOT_STYLE_PATH]
+        if get_config().tailwind is not None
+        else []
     )
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
