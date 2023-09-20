@@ -317,7 +317,9 @@ class Component(Base, ABC):
         Returns:
             The code to render the component.
         """
-        return format.json_dumps(self.render())
+        from reflex.compiler.compiler import _compile_component
+
+        return _compile_component(self)
 
     def _render(self) -> Tag:
         """Define how to render the component in React.
