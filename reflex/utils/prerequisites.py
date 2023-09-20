@@ -434,18 +434,13 @@ def install_frontend_packages(packages: set[str]):
     config = get_config()
     if config.tailwind is not None:
         # install tailwind and tailwind plugins as dev dependencies.
-        plugins = [
-            plugin
-            for plugin in config.tailwind["plugins"]
-            if config.tailwind and "plugins" in config.tailwind
-        ]
         process = processes.new_process(
             [
                 get_install_package_manager(),
                 "add",
                 "-d",
                 constants.TAILWIND_VERSION,
-                *plugins,
+                *((config.tailwind or {}).get("plugins", [])),
             ],
             cwd=constants.WEB_DIR,
             shell=constants.IS_WINDOWS,
