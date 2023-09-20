@@ -10,7 +10,7 @@ from reflex.components.navigation import Link
 from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
 from reflex.style import Style
-from reflex.utils import format, types
+from reflex.utils import types
 from reflex.vars import BaseVar, ImportVar, Var
 
 # Mapping from markdown tags to components.
@@ -120,11 +120,18 @@ class Markdown(Component):
 
     def _render(self):
         # Import here to avoid circular imports.
-        from reflex.components.tags.tag import Tag
         from reflex.components.datadisplay.code import Code, CodeBlock
+        from reflex.components.tags.tag import Tag
+
+        def format_props(tag):
+            return "".join(
+                Tag(
+                    name="", props=Style(self.custom_styles.get(tag, {}))
+                ).format_props()
+            )
 
         components = {
-            tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=Style(self.custom_styles.get(tag, {}))).format_props())} />}}"
+            tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {format_props(tag)} />}}"
             for tag, component in components_by_tag.items()
         }
         components[
@@ -137,9 +144,10 @@ class Markdown(Component):
         language={{match ? match[1] : ''}}
         style={{light}}
         {{...props}}
+        {format_props("pre")}
         />
     ) : (
-        <{Code.create().tag} {{...props}}>
+        <{Code.create().tag} {{...props}} {format_props("code")}>
         {{children}}
         </{Code.create().tag}>
     );
