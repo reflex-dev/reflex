@@ -8,6 +8,7 @@ from typing import List, Set, Tuple, Type
 from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.config import get_config
 from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import ImportVar
@@ -148,7 +149,12 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    sheets = [constants.TAILWIND_ROOT_STYLE_PATH]
+    tailwind_config = get_config().tailwind
+    sheets = (
+        [constants.TAILWIND_ROOT_STYLE_PATH]
+        if tailwind_config and tailwind_config.get("disable") is not True
+        else []
+    )
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
