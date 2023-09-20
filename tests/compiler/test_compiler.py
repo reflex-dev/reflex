@@ -121,7 +121,6 @@ def test_compile_stylesheets(tmp_path, mocker):
     assets_dir.mkdir()
 
     (assets_dir / "styles.css").touch()
-
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [

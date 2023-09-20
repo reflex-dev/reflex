@@ -151,9 +151,9 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     """
     tailwind_config = get_config().tailwind
     sheets = (
-        [constants.TAILWIND_ROOT_STYLE_PATH]
-        if tailwind_config and tailwind_config.get("disable") is not True
-        else []
+        []
+        if tailwind_config and tailwind_config.get("disable") is True
+        else [constants.TAILWIND_ROOT_STYLE_PATH]
     )
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
