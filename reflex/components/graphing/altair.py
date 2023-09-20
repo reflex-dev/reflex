@@ -22,17 +22,15 @@ class Altair(Box):
     # The figure to display.
     fig: Var[Chart]
 
-    # The HTML to render.
-    dangerouslySetInnerHTML: Any
-
     def _render(self) -> Tag:
-        """Render the Altair chart as HTML and set it as the inner HTML of the Box component.
+        """Render the Bokeh figure as HTML and set it as the inner HTML of the Box component.
 
         Returns:
             The rendered component.
         """
-        self.dangerouslySetInnerHTML = {"__html": self.fig}
-        return super()._render().remove_props("fig")
+        return super()._render().add_props(
+                dangerouslySetInnerHTML=Var.create({"__html": self.fig})
+            ).remove_props("fig")
 
 
 try:

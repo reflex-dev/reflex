@@ -15,17 +15,6 @@ from .navigation import *
 from .overlay import *
 from .typography import *
 
-# Add the convenience methods for all the components.
-# locals().update(
-#     {
-#         utils.to_snake_case(name): value.create
-#         for name, value in locals().items()
-#         if isinstance(value, type) and issubclass(value, Component)
-#     }
-# )
-
-# Add the convenience methods for all the components manually.
-# This is necessary for static type checking to work.
 component = Component.create
 badge = Badge.create
 code = Code.create

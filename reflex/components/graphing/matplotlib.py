@@ -25,17 +25,15 @@ class Pyplot(Box):
     # The figure to display.
     fig: Var[Figure]
 
-    # The HTML to render.
-    dangerouslySetInnerHTML: Any
-
     def _render(self) -> Tag:
-        """Render the Matplotlib figure as HTML and set it as the inner HTML of the Box component.
+        """Render the Bokeh figure as HTML and set it as the inner HTML of the Box component.
 
         Returns:
             The rendered component.
         """
-        self.dangerouslySetInnerHTML = {"__html": self.fig}
-        return super()._render().remove_props("fig")
+        return super()._render().add_props(
+                dangerouslySetInnerHTML=Var.create({"__html": self.fig})
+            ).remove_props("fig")
 
 
 try:
