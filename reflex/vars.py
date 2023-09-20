@@ -1332,6 +1332,12 @@ class ImportVar(Base):
     # The tag alias.
     alias: Optional[str] = None
 
+    # Whether this import need to install the associated lib
+    install: Optional[bool] = True
+
+    # whether this import should be rendered or not
+    render: Optional[bool] = True
+
     @property
     def name(self) -> str:
         """The name of the import.
@@ -1347,11 +1353,13 @@ class ImportVar(Base):
         Returns:
             The hash of the var.
         """
-        return hash((self.tag, self.is_default, self.alias))
+        return hash((self.tag, self.is_default, self.alias, self.install, self.render))
 
 
 class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
+
+    render: Optional[bool] = False
 
 
 def get_local_storage(key: Var | str | None = None) -> BaseVar:
