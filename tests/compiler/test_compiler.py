@@ -12,28 +12,28 @@ from reflex.vars import ImportVar
     "fields,test_default,test_rest",
     [
         (
-            {ImportVar(tag="axios", is_default=True)},
-            "axios",
-            set(),
+                {ImportVar(tag="axios", is_default=True)},
+                "axios",
+                set(),
         ),
         (
-            {ImportVar(tag="foo"), ImportVar(tag="bar")},
-            "",
-            {"foo", "bar"},
+                {ImportVar(tag="foo"), ImportVar(tag="bar")},
+                "",
+                {"foo", "bar"},
         ),
         (
-            {
-                ImportVar(tag="axios", is_default=True),
-                ImportVar(tag="foo"),
-                ImportVar(tag="bar"),
-            },
-            "axios",
-            {"foo", "bar"},
+                {
+                    ImportVar(tag="axios", is_default=True),
+                    ImportVar(tag="foo"),
+                    ImportVar(tag="bar"),
+                },
+                "axios",
+                {"foo", "bar"},
         ),
     ],
 )
 def test_compile_import_statement(
-    fields: Set[ImportVar], test_default: str, test_rest: str
+        fields: Set[ImportVar], test_default: str, test_rest: str
 ):
     """Test the compile_import_statement function.
 
@@ -52,44 +52,44 @@ def test_compile_import_statement(
     [
         ({}, []),
         (
-            {"axios": {ImportVar(tag="axios", is_default=True)}},
-            [{"lib": "axios", "default": "axios", "rest": set()}],
+                {"axios": {ImportVar(tag="axios", is_default=True)}},
+                [{"lib": "axios", "default": "axios", "rest": set()}],
         ),
         (
-            {"axios": {ImportVar(tag="foo"), ImportVar(tag="bar")}},
-            [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}],
+                {"axios": {ImportVar(tag="foo"), ImportVar(tag="bar")}},
+                [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}],
         ),
         (
-            {
-                "axios": {
-                    ImportVar(tag="axios", is_default=True),
-                    ImportVar(tag="foo"),
-                    ImportVar(tag="bar"),
+                {
+                    "axios": {
+                        ImportVar(tag="axios", is_default=True),
+                        ImportVar(tag="foo"),
+                        ImportVar(tag="bar"),
+                    },
+                    "react": {ImportVar(tag="react", is_default=True)},
                 },
-                "react": {ImportVar(tag="react", is_default=True)},
-            },
-            [
-                {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
-                {"lib": "react", "default": "react", "rest": set()},
-            ],
+                [
+                    {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
+                    {"lib": "react", "default": "react", "rest": set()},
+                ],
         ),
         (
-            {"": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")}},
-            [
-                {"lib": "lib1.js", "default": "", "rest": set()},
-                {"lib": "lib2.js", "default": "", "rest": set()},
-            ],
+                {"": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")}},
+                [
+                    {"lib": "lib1.js", "default": "", "rest": set()},
+                    {"lib": "lib2.js", "default": "", "rest": set()},
+                ],
         ),
         (
-            {
-                "": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")},
-                "axios": {ImportVar(tag="axios", is_default=True)},
-            },
-            [
-                {"lib": "lib1.js", "default": "", "rest": set()},
-                {"lib": "lib2.js", "default": "", "rest": set()},
-                {"lib": "axios", "default": "axios", "rest": set()},
-            ],
+                {
+                    "": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")},
+                    "axios": {ImportVar(tag="axios", is_default=True)},
+                },
+                [
+                    {"lib": "lib1.js", "default": "", "rest": set()},
+                    {"lib": "lib2.js", "default": "", "rest": set()},
+                    {"lib": "axios", "default": "axios", "rest": set()},
+                ],
         ),
     ],
 )
@@ -137,6 +137,36 @@ def test_compile_stylesheets(tmp_path, mocker):
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
         f"@import url('@/styles.css'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+    )
+
+
+def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
+    """Test that Tailwind is excluded if tailwind config is explicitly set to None.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    mock = mocker.Mock()
+
+    mocker.patch.object(mock, "tailwind", None)
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=mock)
+
+    (assets_dir / "styles.css").touch()
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+
+    stylesheets = [
+        "/styles.css",
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        os.path.join(".web", "styles", "styles.css"),
+        "@import url('@/styles.css'); \n"
     )
 
 
