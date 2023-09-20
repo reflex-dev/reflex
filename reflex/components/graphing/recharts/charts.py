@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Union
 
 from reflex.vars import Var
 
-from .recharts import Recharts
+from .recharts import RechartsCharts
 
 
-class ChartBase(Recharts):
+class ChartBase(RechartsCharts):
     """A component that wraps a victory lib."""
 
     # The source data, in which each element is an object.
