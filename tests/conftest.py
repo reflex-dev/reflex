@@ -547,6 +547,16 @@ def mutable_state():
         A state object.
     """
 
+    class OtherBase(rx.Base):
+        bar: str = ""
+
+    class CustomVar(rx.Base):
+        foo: str = ""
+        array: List[str] = []
+        hashmap: Dict[str, str] = {}
+        test_set: Set[str] = set()
+        custom: OtherBase = OtherBase()
+
     class MutableTestState(rx.State):
         """A test state."""
 
@@ -561,6 +571,8 @@ def mutable_state():
             "third_key": {"key": "value"},
         }
         test_set: Set[Union[str, int]] = {1, 2, 3, 4, "five"}
+        custom: CustomVar = CustomVar()
+        _be_custom: CustomVar = CustomVar()
 
         def reassign_mutables(self):
             self.array = ["modified_value", [1, 2, 3], {"mod_key": "mod_value"}]
@@ -572,3 +584,23 @@ def mutable_state():
             self.test_set = {1, 2, 3, 4, "five"}
 
     return MutableTestState()
+
+
+@pytest.fixture
+def duplicate_substate():
+    """Create a Test state that has duplicate child substates.
+
+    Returns:
+        The test state.
+    """
+
+    class TestState(rx.State):
+        pass
+
+    class ChildTestState(TestState):  # type: ignore # noqa
+        pass
+
+    class ChildTestState(TestState):  # type: ignore # noqa
+        pass
+
+    return TestState
