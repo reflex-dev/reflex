@@ -91,6 +91,7 @@ class Markdown(Component):
         return super().create(src, **props)
 
     def _get_imports(self):
+        # Import here to avoid circular imports.
         from reflex.components.datadisplay.code import Code, CodeBlock
 
         imports = super()._get_imports()
@@ -118,7 +119,9 @@ class Markdown(Component):
         return imports
 
     def _render(self):
+        # Import here to avoid circular imports.
         from reflex.components.tags.tag import Tag
+        from reflex.components.datadisplay.code import Code, CodeBlock
 
         components = {
             tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=Style(self.custom_styles.get(tag, {}))).format_props())} />}}"
@@ -126,22 +129,21 @@ class Markdown(Component):
         }
         components[
             "code"
-        ] = """{({node, inline, className, children, ...props}) =>
-                    {
-        const match = (className || '').match(/language-(?<lang>.*)/);
-        return !inline ? (
-          <Prism
-            children={String(children).replace(/\n$/, '')}
-            language={match ? match[1] : ''}
-            theme={light}
-            {...props}
-          />
-        ) : (
-          <Code {...props}>
-            {children}
-          </Code>
-        );
-      }}""".replace(
+        ] = f"""{{({{node, inline, className, children, ...props}}) => {{
+    const match = (className || '').match(/language-(?<lang>.*)/);
+    return !inline ? (
+        <{CodeBlock().tag}
+        children={{String(children).replace(/\n$/, '')}}
+        language={{match ? match[1] : ''}}
+        theme={{light}}
+        {{...props}}
+        />
+    ) : (
+        <{Code.create().tag} {{...props}}>
+        {{children}}
+        </{Code.create().tag}>
+    );
+      }}}}""".replace(
             "\n", " "
         )
 
