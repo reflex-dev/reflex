@@ -51,6 +51,7 @@ from reflex.route import (
 )
 from reflex.state import DefaultState, State, StateManager, StateUpdate
 from reflex.utils import console, format, prerequisites, types
+from reflex.vars import ImportVar
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]
@@ -508,7 +509,7 @@ class App(Base):
 
             admin.mount_to(self.api)
 
-    def get_frontend_packages(self, imports: Dict[str, str]):
+    def get_frontend_packages(self, imports: Dict[str, set[ImportVar]]):
         """Gets the frontend packages to be installed and filters out the unnecessary ones.
 
         Args:
@@ -519,13 +520,14 @@ class App(Base):
         """
         page_imports = {
             i
-            for i in imports
+            for i, tags in imports.items()
             if i not in compiler.DEFAULT_IMPORTS.keys()
             and i != "focus-visible/dist/focus-visible"
             and "next" not in i
             and not i.startswith("/")
             and not i.startswith(".")
             and i != ""
+            and all(tag.install for tag in tags)
         }
         frontend_packages = get_config().frontend_packages
         _frontend_packages = []
