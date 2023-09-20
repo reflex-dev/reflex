@@ -190,10 +190,10 @@ class Config(Base):
 
     # The Control Plane url for hosting (include the ports).
     # TODO: should probably get these from a well known endpoint instead of hard coded here.
-    cp_web_url: Optional[str] = None
-    cp_backend_url: Optional[str] = None
-    # TODO: change this back to 1 second
-    http_request_timeout: int = 15  # seconds
+    cp_web_url: str = "https://control-plane.dev.reflexcorp.run"
+    cp_backend_url: str = "https://rxcp-control-plane-test.fly.dev"
+    # TODO: what is the best timeout setting here
+    http_request_timeout: int = 5  # seconds
 
     # The username.
     username: Optional[str] = None

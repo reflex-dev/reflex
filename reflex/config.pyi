@@ -66,8 +66,8 @@ class Config(Base):
     event_namespace: Optional[str]
     frontend_packages: List[str]
     rxdeploy_url: Optional[str]
-    cp_web_url: Optional[str]
-    cp_backend_url: Optional[str]
+    cp_web_url: str
+    cp_backend_url: str
     http_request_timeout: int
     username: Optional[str]
 

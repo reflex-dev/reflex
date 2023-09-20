@@ -4,11 +4,9 @@ import atexit
 import json
 import os
 import webbrowser
-from http import HTTPStatus
 from pathlib import Path
 from typing import Optional
 
-import requests
 import typer
 from alembic.util.exc import CommandError
 from tabulate import tabulate
@@ -258,36 +256,21 @@ def login(
     # Set the log level.
     console.set_log_level(loglevel)
 
+    # TODO: maybe do not need this
     # Check if feature is enabled:
-    if not hosting.is_set_up():
-        return
+    # if not hosting.is_set_up():
+    #     return
 
     # Check if the user is already logged in.
     token = hosting.get_existing_access_token()
+    using_existing_token = not token
     if not token:
         # If not already logged in, open a browser window/tab to the login page.
         console.print(f"Opening {config.cp_web_url} ...")
-        if not webbrowser.open(config.cp_web_url or ""):
+        if not webbrowser.open(config.cp_web_url or ""):  # TODO: mypy complaints
             console.warn(
                 f'Unable to open the browser. Please open the "{config.cp_web_url}" manually.'
             )
-
-        """
-        with yaspin() as sp:
-            sp.text = "Waiting for session"
-            max_tries = 30
-            for _ in range(max_tries):
-                token = (
-                    requests.get(config.cp_url)
-                    .cookies.get_dict()
-                    .get("__clerk_db_jwt", None)
-                )
-                console.info(f"Fetching token: {token}")
-                if token:
-                    break
-                else:
-                    time.sleep(2)
-        """
         token = input("Enter the token: ")
         if not token:
             console.error("Entered token is empty.")
@@ -295,7 +278,16 @@ def login(
 
     if not hosting.validate_token(token):
         console.error("Access denied.")
-        return
+        if using_existing_token and os.path.exists(constants.HOSTING_JSON):
+            hosting_config = {}
+            try:
+                with open(constants.HOSTING_JSON, "r") as config_file:
+                    hosting_config = json.load(config_file)
+                    del hosting_config["access_token"]
+            except Exception:
+                # Best efforts removing invalid token is OK
+                pass
+        raise typer.Exit(1)
 
     hosting_config = {}
 
@@ -304,7 +296,7 @@ def login(
             with open(constants.HOSTING_JSON, "r") as config_file:
                 hosting_config = json.load(config_file)
         except Exception as ex:
-            console.debug(f"Unable to parse the hosting config file due to {ex}")
+            console.debug(f"Unable to parse the hosting config file due to: {ex}")
             console.warn("Config file is corrupted. Creating a new one.")
 
     hosting_config["access_token"] = token
@@ -312,10 +304,12 @@ def login(
         with open(constants.HOSTING_JSON, "w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
-        console.error(f"Unable to write to the hosting config file due to {ex}")
+        console.error(f"Unable to write to the hosting config file due to: {ex}")
         return
-    # TODO: do not show this message if the user is already logged in.
-    console.print("Successfully logged in.")
+    if not using_existing_token:
+        console.print("Successfully logged in.")
+    else:
+        console.print("You already logged in.")
 
 
 db_cli = typer.Typer()
@@ -384,95 +378,66 @@ def makemigrations(
             )
 
 
-project_cli = typer.Typer()
+apps_cli = typer.Typer()
 
 
-@project_cli.command()
+@apps_cli.command()
 def create(
-    project_name: str = typer.Option(
-        None,
-        "-p",
-        "--project-name",
-        help="The name of the project to create. Only alphanumeric characters and hyphens are allowed.",
-    ),
+    app_name: str,
     loglevel: constants.LogLevel = typer.Option(
         console.LOG_LEVEL, help="The log level to use."
     ),
 ):
-    """Create a new Reflex project for hosting."""  # Set the log level.
+    """Create a new Reflex App for hosting."""  # Set the log level.
     console.set_log_level(loglevel)
 
-    # Check if the control plane url is set.
-    if not hosting.is_set_up():
+    # TODO: we might not need this below
+    # # Check if the control plane url is set.
+    # if not hosting.is_set_up():
+    #     return
+
+    # TODO: detect the app name from the current directory
+    if not app_name:
+        console.error("Please provide a name for the App.")
         return
 
-    if not project_name:
-        console.error("Please provide a name for the project.")
-        return
-
-    # Check if the user is authenticated
-    if not (token := hosting.authenticated_token()):
-        return
-
-    project_params = hosting.ProjectPostParam(name=project_name)
-    response = requests.post(
-        hosting.POST_PROJECT_ENDPOINT,
-        headers=hosting.authorization_header(token),
-        json=project_params.dict(exclude_none=True),
-        timeout=config.http_request_timeout,
-    )
-    try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-            console.debug(f"Reason: {response.content}")
-            console.error("Internal server error. Please contact support.")
-    except requests.exceptions.Timeout:
-        console.error("Unable to create project due to request timeout.")
-    else:
-        console.print(f"New project created (not deployed yet): {project_name}")
+    hosting.create_app(app_name)
 
 
-@project_cli.command(name="list")
-def list_projects(
+@apps_cli.command(name="list")
+def list_apps(
     loglevel: constants.LogLevel = typer.Option(
         console.LOG_LEVEL, help="The log level to use."
+    ),
+    as_json: bool = typer.Option(
+        False, "--json", help="Whether to output the result in json format."
     ),
 ):
     """List all the projects for the authenticated user."""
     console.set_log_level(loglevel)
 
-    if not hosting.is_set_up():
-        return
-
-    # Check if the user is authenticated
-    if not (token := hosting.authenticated_token()):
-        return
-
-    response = requests.get(
-        hosting.GET_PROJECT_ENDPOINT,
-        headers=hosting.authorization_header(token),
-        timeout=config.http_request_timeout,
-    )
-
-    if response.status_code != 200:
-        console.error(f"Unable to list projects due to {response.reason}.")
+    apps = hosting.list_apps()
+    if apps is None:
+        raise typer.Exit(1)
+    if as_json:
+        console.print(json.dumps(apps))
         return
 
     try:
-        for project in response.json():
-            print(project["name"])
+        headers = list(apps[0].dict().keys())
+        table = [list(app.dict().values()) for app in apps]
+        console.print(tabulate(table, headers=headers))
     except Exception as ex:
-        console.debug(f"Unable to parse the response due to {ex}.")
-        console.error("Unable to list projects due to internal errors.")
+        console.debug(f"Unable to tabulate the apps due to: {ex}")
+        console.print(str(apps))
 
 
-instance_cli = typer.Typer()
+deployments_cli = typer.Typer()
 
 
-@instance_cli.command(name="list")
-def list_instances(
-    project_name: str = typer.Option(
+@deployments_cli.command(name="list")
+def list_deployments(
+    app_name: str = typer.Option(
         "-p",
         "--project-name",
         help="The name of the project to list instances for.",
@@ -480,87 +445,49 @@ def list_instances(
     loglevel: constants.LogLevel = typer.Option(
         console.LOG_LEVEL, help="The log level to use."
     ),
+    as_json: bool = typer.Option(
+        False, help="Whether to output the result in json format."
+    ),
 ):
     """List all the hosted instances for the specified project."""
     console.set_log_level(loglevel)
 
-    if not hosting.is_set_up():
+    deployments = hosting.list_deployments(app_name)
+    if deployments is None:
+        raise typer.Exit(1)
+    if as_json:
+        console.print(json.dumps(deployments))
         return
-
-    if not (token := hosting.authenticated_token()):
-        return
-
-    params = hosting.HostedInstanceGetParam(project_name=project_name)
-    response = requests.get(
-        hosting.GET_HOSTED_INSTANCE_ENDPOINT,
-        headers=hosting.authorization_header(token),
-        json=params.dict(exclude_none=True),
-    )
-
     try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError:
-        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-            console.debug(f"Reason: {response.content}")
-            console.error("Internal server error. Please contact support.")
-        else:
-            console.error(f"Unable to list hosted instances due to {response.reason}.")
-        return
-    except requests.exceptions.Timeout:
-        console.error("Unable to list hosted instances due to request timeout.")
-        return
-
-    try:
-        # TODO: add project name to the column if project_name not specified
-        # TODO: below are very susceptible to changes in the API response, make it robust
-        fields_to_show = [
-            "key",
-            "regions",
-            "vm_type",
-            "cpus",
-            "memory_mb",
-            "auto_start",
-            "auto_stop",
-        ]
-        field_to_header = [
-            "name",  # key is the name of the deployment
-            "regions",
-            "vm_type",
-            "cpus",
-            "memory_mb",
-            "auto_start",
-            "auto_stop",
-        ]
-        table = [[instance[k] for k in fields_to_show] for instance in response.json()]
-        print(tabulate(table, headers=field_to_header))
-
+        headers = list(deployments[0].dict().keys())
+        table = [list(deployment.dict().values()) for deployment in deployments]
+        console.print(tabulate(table, headers=headers))
     except Exception as ex:
-        console.debug(f"Unable to parse the response due to {ex}.")
-        console.error("Unable to list hosted instances due to internal errors.")
+        console.debug(f"Unable to tabulate the deployments due to: {ex}")
+        console.print(str(deployments))
 
 
-# TODO: alternatively, we can combine all requests into one to CP and send the files in the body
-# then CP uploads files to S3 without needing resigned urls
-# question: 1) if we need multipart upload https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi
-# 2) if CP machine has enough disk space to store the files
-@instance_cli.command()
-def deploy(
-    instance_name: str = typer.Option(
-        ..., "-n", "--instance-name", help="The name of the instance to deploy."
+# TODO: if CP machine has enough disk space or even relevant
+# when the CP backend handler uses file-like object (not
+# waiting for the whole file to be written to disk)
+@deployments_cli.command()
+def launch(
+    key: Optional[str] = typer.Option(
+        None, "-k", "--deployment-key", help="The name of the deployment."
     ),
-    project_name: str = typer.Option(
+    app_name: str = typer.Option(
         config.app_name,
-        "-p",
-        "--project-name",
-        help="The name of the project to deploy under.",
+        "--app-name",
+        help="The name of the App to deploy under.",
     ),
     # TODO: make this in a list of choices
     regions: list[str] = typer.Option(
-        ...,
+        list(),
         "-r",
         "--region",
         help="The regions to deploy to. For multiple regions, repeat this option followed by the region name.",
     ),
+    # TODO: the VM types, cpus, mem should come from CP, since they are enums
     cpus: Optional[int] = typer.Option(
         None, help="The number of CPUs to allocate. List the available types here."
     ),
@@ -571,12 +498,16 @@ def deploy(
         None, help="The type of VM to use. List the available types here."
     ),
     auto_start: Optional[bool] = typer.Option(
-        None, help="Whether to auto start the instance."
+        False, help="Whether to auto start the instance."
     ),
     auto_stop: Optional[bool] = typer.Option(
-        None, help="Whether to auto stop the instance."
+        False, help="Whether to auto stop the instance."
     ),
-    dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
+    non_interactive: Optional[bool] = typer.Option(
+        False,
+        "--non-interactive",
+        help="Whether to list configuration options and ask for confirmation.",
+    ),
     loglevel: constants.LogLevel = typer.Option(
         console.LOG_LEVEL, help="The log level to use."
     ),
@@ -585,100 +516,91 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Check if the deploy url is set.
-    if not hosting.is_set_up():
-        return
-
     # Check if the user is authenticated
     token = hosting.get_existing_access_token()
     if not token:
         console.error("Please authenticate using `reflex login` first.")
-        return
+        raise typer.Exit(1)
     if not hosting.validate_token(token):
         console.error("Access denied, exiting.")
-        return
+        raise typer.Exit(1)
 
-    url_response = requests.post(
-        hosting.POST_APP_API_URL_ENDPOINT,
-        headers=hosting.authorization_header(token),
-        json=hosting.AppAPIUrlPostParam(key=instance_name).dict(exclude_none=True),
-        timeout=config.http_request_timeout,
-    )
-    try:
-        url_response.raise_for_status()
-        assert (
-            url_response
-            and "url" in (url_json := url_response.json())
-            and "prefix" in url_json
+    # Check if we are set up.
+    # Do not compile yet
+    _skip_compile()
+    # No need to check frontend yet
+    # TODO: export will check again with frontend==True, refactor
+    prerequisites.check_initialized(frontend=True)
+
+    pre_launch_response = hosting.prepare_launch(key, app_name)
+    if not pre_launch_response:
+        raise typer.Exit(1)
+
+    if not non_interactive:
+        # If a key is provided and is available, control plane returns it as the suggested deployment key
+        key = pre_launch_response.suggested_deployment_key
+        # User input takes precedence
+        key = console.ask(f"Name of deployment", default=key) or key
+        app_name = console.ask(f"Associated App", default=app_name) or app_name
+        # TODO: let control plane suggest a region?
+        # Then CP needs to know the user's location, might not be a good idea
+        region_input = console.ask(
+            "Regions to deploy to", default=regions[0] if regions else "sjc"
         )
-    except requests.exceptions.HTTPError:
-        console.error(
-            f"Unable to get ready to deploy the app due to {url_response.reason}."
-        )
-        return
+        regions = regions or [region_input]
+
+    # Check the required params are valid
+    if (
+        not key
+        or not regions
+        or not app_name
+        or not (app_prefix := pre_launch_response.app_prefix)
+    ):
+        console.error("Please provide all the required parameters.")
+        raise typer.Exit(1)
 
     save_api_url = config.api_url
     # Compile the app in production mode.
-    config.api_url = url_json["url"]
+    config.api_url = pre_launch_response.api_url
     export(loglevel=loglevel)
     config.api_url = save_api_url
 
-    # Exit early if this is a dry run.
-    if dry_run:
-        return
-
     frontend_file_name = constants.FRONTEND_ZIP
     backend_file_name = constants.BACKEND_ZIP
-    params = hosting.HostedInstancePostParam(
-        key=instance_name,
-        project_name=project_name,
-        regions_json=json.dumps(regions),
-        app_prefix=url_json["prefix"],
+
+    launch_response = hosting.launch(
+        frontend_file_name,
+        backend_file_name,
+        key,
+        app_name,
+        regions,
+        app_prefix,
         vm_type=vm_type,
         cpus=cpus,
         memory_mb=memory_mb,
         auto_start=auto_start,
         auto_stop=auto_stop,
     )
-    console.debug(f"{params.dict(exclude_none=True)}")
-    try:
-        with open(frontend_file_name, "rb") as frontend_file, open(
-            backend_file_name, "rb"
-        ) as backend_file:
-            # https://docs.python-requests.org/en/latest/user/advanced/#post-multiple-multipart-encoded-files
-            files = [
-                ("files", (frontend_file_name, frontend_file)),
-                ("files", (backend_file_name, backend_file)),
-            ]
-            response = requests.post(
-                hosting.POST_HOSTED_INSTANCE_ENDPOINT,
-                headers=hosting.authorization_header(token),
-                data=params.dict(exclude_none=True),
-                files=files,
-            )
-            print(response.json())
-        response.raise_for_status()
+    if not launch_response:
+        raise typer.Exit(1)
 
-    except requests.exceptions.HTTPError as http_error:
-        console.error(f"Unable to deploy due to {http_error}.")
-        return
-    except requests.exceptions.Timeout:
-        console.error("Unable to deploy due to request timeout.")
-        return
-
-    console.print(f"Successfully deployed {instance_name} to {regions}.")
+    # TODO: below is a bit hacky, refactor
+    site_url = launch_response.url
+    if not site_url.startswith("https://"):
+        site_url = f"https://{site_url}"
+    console.print(f"Deploying <{key}> {regions} shortly to: {site_url}.")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(
-    project_cli,
-    name="projects",
-    help="Subcommands for managing the projects for hosting.",
+    apps_cli,
+    name="apps",
+    help="Subcommands for managing Apps for hosting.",
 )
 cli.add_typer(
-    instance_cli,
-    name="instances",
-    help="Subcommands for managing the hosted instance.",
+    deployments_cli,
+    name="deployments",
+    help="Subcommands for managing the Deployments.",
 )
 
 if __name__ == "__main__":
