@@ -14,7 +14,7 @@ export default function Component() {
   const focusRef = useRef();
   
   // Main event loop.
-  const [Event, connectError] = useContext(EventLoopContext)
+  const [addEvents, connectError] = useContext(EventLoopContext)
 
   // Set focus to the specified element.
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function Component() {
 
   // Route after the initial page hydration.
   useEffect(() => {
-    const change_complete = () => Event(initialEvents.map((e) => ({...e})))
+    const change_complete = () => addEvents(initialEvents.map((e) => ({...e})))
     {{const.router}}.events.on('routeChangeComplete', change_complete)
     return () => {
       {{const.router}}.events.off('routeChangeComplete', change_complete)

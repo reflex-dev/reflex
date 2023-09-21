@@ -120,6 +120,8 @@ class ImportVar(Base):
     tag: Optional[str]
     is_default: Optional[bool] = False
     alias: Optional[str] = None
+    install: Optional[bool] = True
+    render: Optional[bool] = True
     @property
     def name(self) -> str: ...
     def __hash__(self) -> int: ...

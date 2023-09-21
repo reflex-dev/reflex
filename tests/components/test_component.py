@@ -1,12 +1,13 @@
-from typing import Dict, List, Type
+from typing import Any, Dict, List, Type
 
 import pytest
 
 import reflex as rx
+from reflex.base import Base
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
-from reflex.constants import ON_MOUNT, ON_UNMOUNT
-from reflex.event import EVENT_ARG, EVENT_TRIGGERS, EventHandler
+from reflex.constants import EventTriggers
+from reflex.event import EVENT_ARG, EventHandler
 from reflex.state import State
 from reflex.style import Style
 from reflex.utils import imports
@@ -371,16 +372,71 @@ def test_get_controlled_triggers(component1, component2):
     assert set(component2().get_controlled_triggers()) == {"on_open", "on_close"}
 
 
-def test_get_triggers(component1, component2):
+def test_get_event_triggers(component1, component2):
     """Test that we can get the triggers of a component.
 
     Args:
         component1: A test component.
         component2: A test component.
     """
-    default_triggers = {ON_MOUNT, ON_UNMOUNT} | EVENT_TRIGGERS
-    assert component1().get_triggers() == default_triggers
-    assert component2().get_triggers() == {"on_open", "on_close"} | default_triggers
+    default_triggers = {
+        EventTriggers.ON_FOCUS,
+        EventTriggers.ON_BLUR,
+        EventTriggers.ON_CLICK,
+        EventTriggers.ON_CONTEXT_MENU,
+        EventTriggers.ON_DOUBLE_CLICK,
+        EventTriggers.ON_MOUSE_DOWN,
+        EventTriggers.ON_MOUSE_ENTER,
+        EventTriggers.ON_MOUSE_LEAVE,
+        EventTriggers.ON_MOUSE_MOVE,
+        EventTriggers.ON_MOUSE_OUT,
+        EventTriggers.ON_MOUSE_OVER,
+        EventTriggers.ON_MOUSE_UP,
+        EventTriggers.ON_SCROLL,
+        EventTriggers.ON_MOUNT,
+        EventTriggers.ON_UNMOUNT,
+    }
+    assert set(component1().get_event_triggers().keys()) == default_triggers
+    assert (
+        component2().get_event_triggers().keys()
+        == {"on_open", "on_close"} | default_triggers
+    )
+
+
+class C1State(State):
+    """State for testing C1 component."""
+
+    def mock_handler(self, _e, _bravo, _charlie):
+        """Mock handler."""
+        pass
+
+
+def test_component_event_trigger_arbitrary_args():
+    """Test that we can define arbitrary types for the args of an event trigger."""
+
+    class Obj(Base):
+        custom: int = 0
+
+    def on_foo_spec(_e, alpha: str, bravo: Dict[str, Any], charlie: Obj):
+        return [_e.target.value, bravo["nested"], charlie.custom + 42]
+
+    class C1(Component):
+        library = "/local"
+        tag = "C1"
+
+        def get_event_triggers(self) -> Dict[str, Any]:
+            return {
+                **super().get_event_triggers(),
+                "on_foo": on_foo_spec,
+            }
+
+    comp = C1.create(on_foo=C1State.mock_handler)
+
+    assert comp.render()["props"][0] == (
+        "onFoo={(__e,_alpha,_bravo,_charlie) => addEvents("
+        '[Event("c1_state.mock_handler", {_e:__e.target.value,_bravo:_bravo["nested"],_charlie:(_charlie.custom + 42)})], '
+        "(__e,_alpha,_bravo,_charlie))}"
+    )
 
 
 def test_create_custom_component(my_component):
@@ -534,3 +590,23 @@ def test_component_with_only_valid_children(fixture, request):
         == f"The component `{component.__name__}` only allows the components: `Text` as children. "
         f"Got `Box` instead."
     )
+
+
+@pytest.mark.parametrize(
+    "component,rendered",
+    [
+        (rx.text("hi"), "<Text>\n  {`hi`}\n</Text>"),
+        (
+            rx.box(rx.heading("test", size="md")),
+            "<Box>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</Box>",
+        ),
+    ],
+)
+def test_format_component(component, rendered):
+    """Test that a component is formatted correctly.
+
+    Args:
+        component: The component to format.
+        rendered: The expected rendered component.
+    """
+    assert str(component) == rendered

@@ -2,11 +2,22 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import format
+from reflex.utils import console, format
+from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
@@ -180,6 +191,8 @@ class EventChain(Base):
     """Container for a chain of events that will be executed in order."""
 
     events: List[EventSpec]
+
+    args_spec: Optional[ArgsSpec]
 
 
 class Target(Base):
@@ -455,7 +468,9 @@ def get_hydrate_event(state) -> str:
     return get_event(state, constants.HYDRATE)
 
 
-def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
+def call_event_handler(
+    event_handler: EventHandler, arg_spec: Union[Var, ArgsSpec]
+) -> EventSpec:
     """Call an event handler to get the event spec.
 
     This function will inspect the function signature of the event handler.
@@ -464,21 +479,66 @@ def call_event_handler(event_handler: EventHandler, arg: Var) -> EventSpec:
 
     Args:
         event_handler: The event handler.
-        arg: The argument to pass to the event handler.
+        arg_spec: The lambda that define the argument(s) to pass to the event handler.
+
+    Raises:
+        ValueError: if number of arguments expected by event_handler doesn't match the spec.
 
     Returns:
         The event spec from calling the event handler.
     """
     args = inspect.getfullargspec(event_handler.fn).args
+
+    # handle new API using lambda to define triggers
+    if isinstance(arg_spec, ArgsSpec):
+        parsed_args = parse_args_spec(arg_spec)
+
+        if len(args) == len(["self", *parsed_args]):
+            return event_handler(*parsed_args)  # type: ignore
+        else:
+            source = inspect.getsource(arg_spec)
+            raise ValueError(
+                f"number of arguments in {event_handler.fn.__name__} "
+                f"doesn't match the definition '{source.strip().strip(',')}'"
+            )
+    else:
+        console.deprecate(
+            feature_name="EVENT_ARG API for triggers",
+            reason="Replaced by new API using lambda allow arbitrary number of args",
+            deprecation_version="0.2.8",
+            removal_version="0.2.9",
+        )
     if len(args) == 1:
         return event_handler()
     assert (
         len(args) == 2
     ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
-    return event_handler(arg)
+    return event_handler(arg_spec)
 
 
-def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
+def parse_args_spec(arg_spec: ArgsSpec):
+    """Parse the args provided in the ArgsSpec of an event trigger.
+
+    Args:
+        arg_spec: The spec of the args.
+
+    Returns:
+        The parsed args.
+    """
+    spec = inspect.getfullargspec(arg_spec)
+    return arg_spec(
+        *[
+            BaseVar(
+                name=f"_{l_arg}",
+                type_=spec.annotations.get(l_arg, FrontendEvent),
+                is_local=True,
+            )
+            for l_arg in spec.args
+        ]
+    )
+
+
+def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
     """Call a function to a list of event specs.
 
     The function should return either a single EventSpec or a list of EventSpecs.
@@ -501,13 +561,16 @@ def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
     # Get the args of the lambda.
     args = inspect.getfullargspec(fn).args
 
-    # Call the lambda.
-    if len(args) == 0:
-        out = fn()
-    elif len(args) == 1:
-        out = fn(arg)
+    if isinstance(arg, ArgsSpec):
+        out = fn(*parse_args_spec(arg))
     else:
-        raise ValueError(f"Lambda {fn} must have 0 or 1 arguments.")
+        # Call the lambda.
+        if len(args) == 0:
+            out = fn()
+        elif len(args) == 1:
+            out = fn(arg)
+        else:
+            raise ValueError(f"Lambda {fn} must have 0 or 1 arguments.")
 
     # Convert the output to a list.
     if not isinstance(out, List):
@@ -521,7 +584,7 @@ def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
             if len(args) == 0:
                 e = e()
             elif len(args) == 1:
-                e = e(arg)
+                e = e(arg)  # type: ignore
 
         # Make sure the event spec is valid.
         if not isinstance(e, EventSpec):
@@ -534,12 +597,11 @@ def call_event_fn(fn: Callable, arg: Var) -> list[EventSpec]:
     return events
 
 
-def get_handler_args(event_spec: EventSpec, arg: Var) -> tuple[tuple[Var, Var], ...]:
+def get_handler_args(event_spec: EventSpec) -> tuple[tuple[Var, Var], ...]:
     """Get the handler args for the given event spec.
 
     Args:
         event_spec: The event spec.
-        arg: The controlled event argument.
 
     Returns:
         The handler args.
@@ -611,21 +673,3 @@ def get_fn_signature(fn: Callable) -> inspect.Signature:
         "state", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=Any
     )
     return signature.replace(parameters=(new_param, *signature.parameters.values()))
-
-
-# A set of common event triggers.
-EVENT_TRIGGERS: set[str] = {
-    "on_focus",
-    "on_blur",
-    "on_click",
-    "on_context_menu",
-    "on_double_click",
-    "on_mouse_down",
-    "on_mouse_enter",
-    "on_mouse_leave",
-    "on_mouse_move",
-    "on_mouse_out",
-    "on_mouse_over",
-    "on_mouse_up",
-    "on_scroll",
-}

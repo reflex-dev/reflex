@@ -1,6 +1,7 @@
 """Modal components."""
+from __future__ import annotations
 
-from typing import Optional, Set, Union
+from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -52,17 +53,18 @@ class Modal(ChakraComponent):
     # A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
     use_inert: Var[bool]
 
-    def get_triggers(self) -> Set[str]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_triggers() | {
-            "on_close",
-            "on_close_complete",
-            "on_esc",
-            "on_overlay_click",
+        return {
+            **super().get_event_triggers(),
+            "on_close": lambda: [],
+            "on_close_complete": lambda: [],
+            "on_esc": lambda: [],
+            "on_overlay_click": lambda: [],
         }
 
     @classmethod
@@ -73,7 +75,7 @@ class Modal(ChakraComponent):
         body: Optional[Union[Component, str]] = None,
         footer: Optional[Union[Component, str]] = None,
         close_button: Optional[Component] = None,
-        **props
+        **props,
     ) -> Component:
         """Create a modal component.
 

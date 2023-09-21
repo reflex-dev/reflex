@@ -134,6 +134,10 @@ TAILWIND_CONFIG = os.path.join(WEB_DIR, "tailwind.config.js")
 TAILWIND_CONTENT = ["./pages/**/*.{js,ts,jsx,tsx}"]
 # Relative tailwind style path to root stylesheet in STYLES_DIR.
 TAILWIND_ROOT_STYLE_PATH = "./tailwind.css"
+# The Tailwindcss version
+TAILWIND_VERSION = "tailwindcss@^3.3.2"
+# The package json file
+PACKAGE_JSON_PATH = os.path.join(WEB_DIR, "package.json")
 # The NextJS config file
 NEXT_CONFIG_FILE = "next.config.js"
 # The sitemap config file.
@@ -351,6 +355,36 @@ class RouteRegex(SimpleNamespace):
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
 
 
+class PackageJsonCommands(SimpleNamespace):
+    """Commands used in package.json file."""
+
+    DEV = "next dev"
+    EXPORT = "next build && next export -o _static"
+    EXPORT_SITEMAP = "next build && next-sitemap && next export -o _static"
+    PROD = "next start"
+
+
+PACKAGE_DEPENDENCIES = {
+    "@chakra-ui/react": "^2.6.0",
+    "@chakra-ui/system": "^2.5.6",
+    "@emotion/react": "^11.10.6",
+    "@emotion/styled": "^11.10.6",
+    "axios": "^1.4.0",
+    "chakra-react-select": "^4.6.0",
+    "focus-visible": "^5.2.0",
+    "json5": "^2.2.3",
+    "next": "^13.3.1",
+    "next-sitemap": "^4.1.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io-client": "^4.6.1",
+    "universal-cookie": "^4.0.4",
+}
+PACKAGE_DEV_DEPENDENCIES = {
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24",
+}
+
 # 404 variables
 SLUG_404 = "404"
 TITLE_404 = "404 - Not Found"
@@ -375,9 +409,36 @@ ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
 COOKIES = "cookies"
 LOCAL_STORAGE = "local_storage"
 
-# Names of event handlers on all components mapped to useEffect
-ON_MOUNT = "on_mount"
-ON_UNMOUNT = "on_unmount"
+
+class EventTriggers(SimpleNamespace):
+    """All trigger names used in Reflex."""
+
+    ON_FOCUS = "on_focus"
+    ON_BLUR = "on_blur"
+    ON_CANCEL = "on_cancel"
+    ON_CLICK = "on_click"
+    ON_CHANGE = "on_change"
+    ON_CHANGE_END = "on_change_end"
+    ON_CHANGE_START = "on_change_start"
+    ON_COMPLETE = "on_complete"
+    ON_CONTEXT_MENU = "on_context_menu"
+    ON_DOUBLE_CLICK = "on_double_click"
+    ON_DROP = "on_drop"
+    ON_EDIT = "on_edit"
+    ON_KEY_DOWN = "on_key_down"
+    ON_KEY_UP = "on_key_up"
+    ON_MOUSE_DOWN = "on_mouse_down"
+    ON_MOUSE_ENTER = "on_mouse_enter"
+    ON_MOUSE_LEAVE = "on_mouse_leave"
+    ON_MOUSE_MOVE = "on_mouse_move"
+    ON_MOUSE_OUT = "on_mouse_out"
+    ON_MOUSE_OVER = "on_mouse_over"
+    ON_MOUSE_UP = "on_mouse_up"
+    ON_SCROLL = "on_scroll"
+    ON_SUBMIT = "on_submit"
+    ON_MOUNT = "on_mount"
+    ON_UNMOUNT = "on_unmount"
+
 
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"

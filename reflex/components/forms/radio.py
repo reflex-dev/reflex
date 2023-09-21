@@ -1,14 +1,14 @@
 """A radio component."""
 
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.typography.text import Text
-from reflex.event import EVENT_ARG
-from reflex.utils import types
+from reflex.constants import EventTriggers
+from reflex.utils.types import _issubclass
 from reflex.vars import Var
 
 
@@ -23,14 +23,15 @@ class RadioGroup(ChakraComponent):
     # The default value.
     default_value: Var[Any]
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> Dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            "on_change": EVENT_ARG,
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
     @classmethod
@@ -49,7 +50,7 @@ class RadioGroup(ChakraComponent):
         if (
             len(children) == 1
             and isinstance(children[0], Var)
-            and types._issubclass(children[0].type_, List)
+            and _issubclass(children[0].type_, List)
         ):
             children = [Foreach.create(children[0], lambda item: Radio.create(item))]
         return super().create(*children, **props)

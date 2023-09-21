@@ -1,0 +1,21 @@
+{
+  "name": "reflex",
+  "scripts": {
+    "dev": "{{ scripts.dev }}",
+    "export": "{{ scripts.export }}",
+    "export-sitemap": "{{ scripts.export_sitemap }}",
+    "prod": "{{ scripts.prod }}"
+  },
+  "dependencies": {
+    {% for package, version in dependencies.items() %}
+    "{{ package }}": "{{ version }}"{% if not loop.last %},{% endif %}
+
+    {% endfor %}
+  },
+  "devDependencies": {
+    {% for package, version in dev_dependencies.items() %}
+    "{{ package }}": "{{ version }}"{% if not loop.last %},{% endif %}
+    
+    {% endfor %}
+  }
+}

@@ -8,6 +8,7 @@ from typing import List, Set, Tuple, Type
 from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.config import get_config
 from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import ImportVar
@@ -24,7 +25,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
         ImportVar(tag="uploadFiles"),
-        ImportVar(tag="E"),
+        ImportVar(tag="Event"),
         ImportVar(tag="isTrue"),
         ImportVar(tag="spreadArraysOrObjects"),
         ImportVar(tag="preventDefault"),
@@ -148,7 +149,12 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    sheets = [constants.TAILWIND_ROOT_STYLE_PATH]
+    # Add tailwind css if enabled.
+    sheets = (
+        [constants.TAILWIND_ROOT_STYLE_PATH]
+        if get_config().tailwind is not None
+        else []
+    )
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
@@ -162,6 +168,18 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
             stylesheet = f"@/{stylesheet.strip('/')}"
         sheets.append(stylesheet) if stylesheet not in sheets else None
     return templates.STYLE.render(stylesheets=sheets)
+
+
+def _compile_component(component: Component) -> str:
+    """Compile a single component.
+
+    Args:
+        component: The component to compile.
+
+    Returns:
+        The compiled component.
+    """
+    return templates.COMPONENT.render(component=component)
 
 
 def _compile_components(components: Set[CustomComponent]) -> str:

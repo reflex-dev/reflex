@@ -15,13 +15,13 @@ const GlobalStyles = css`
 `;
 
 function EventLoopProvider({ children }) {
-  const [state, Event, connectError] = useEventLoop(
+  const [state, addEvents, connectError] = useEventLoop(
     initialState,
     initialEvents,
     clientStorage,
   )
   return (
-    <EventLoopContext.Provider value={[Event, connectError]}>
+    <EventLoopContext.Provider value={[addEvents, connectError]}>
       <StateContext.Provider value={state}>
         {children}
       </StateContext.Provider>
