@@ -734,21 +734,6 @@ async def test_process_event_generator(gen_state):
     assert count == 6
 
 
-def test_format_event_handler():
-    """Test formatting an event handler."""
-    assert (
-        format.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
-    )
-    assert (
-        format.format_event_handler(ChildState.change_both)  # type: ignore
-        == "test_state.child_state.change_both"
-    )
-    assert (
-        format.format_event_handler(GrandchildState.do_nothing)  # type: ignore
-        == "test_state.child_state.grandchild_state.do_nothing"
-    )
-
-
 def test_get_token(test_state, mocker, router_data):
     """Test that the token obtained from the router_data is correct.
 

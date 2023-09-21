@@ -521,11 +521,13 @@ class App(Base):
         page_imports = {
             i
             for i, tags in imports.items()
-            if i not in compiler.DEFAULT_IMPORTS.keys()
-            and i != "focus-visible/dist/focus-visible"
-            and "next" not in i
-            and not i.startswith("/")
-            and not i.startswith(".")
+            if i
+            not in [
+                *compiler.DEFAULT_IMPORTS.keys(),
+                *constants.PACKAGE_DEPENDENCIES.keys(),
+                *constants.PACKAGE_DEV_DEPENDENCIES.keys(),
+            ]
+            and not any(i.startswith(prefix) for prefix in ["/", ".", "next/"])
             and i != ""
             and any(tag.install for tag in tags)
         }

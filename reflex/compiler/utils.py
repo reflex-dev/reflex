@@ -93,7 +93,7 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
         default, rest = compile_import_statement(fields)
 
         # prevent lib from being rendered on the page if all imports are non rendered kind
-        if all({not f.render for f in fields}):  # type: ignore
+        if not any({f.render for f in fields}):  # type: ignore
             continue
 
         if not lib:
@@ -104,9 +104,7 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
             continue
 
         # remove the version before rendering the package imports
-        lib, at, version = lib.rpartition("@")
-        if not lib:
-            lib = at + version
+        lib = format.format_library_name(lib)
 
         import_dicts.append(get_import_dict(lib, default, rest))
     return import_dicts

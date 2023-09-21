@@ -551,6 +551,22 @@ def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
     ]
 
 
+def format_library_name(library_fullname: str):
+    """Format the name of a library.
+
+    Args:
+        library_fullname: The fullname of the library.
+
+    Returns:
+        The name without the @version if it was part of the name
+    """
+    lib, at, version = library_fullname.rpartition("@")
+    if not lib:
+        lib = at + version
+
+    return lib
+
+
 def json_dumps(obj: Any) -> str:
     """Takes an object and returns a jsonified string.
 
