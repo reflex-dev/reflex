@@ -136,6 +136,8 @@ TAILWIND_CONTENT = ["./pages/**/*.{js,ts,jsx,tsx}"]
 TAILWIND_ROOT_STYLE_PATH = "./tailwind.css"
 # The Tailwindcss version
 TAILWIND_VERSION = "tailwindcss@^3.3.2"
+# The package json file
+PACKAGE_JSON_PATH = os.path.join(WEB_DIR, "package.json")
 # The NextJS config file
 NEXT_CONFIG_FILE = "next.config.js"
 # The sitemap config file.
@@ -350,6 +352,36 @@ class RouteRegex(SimpleNamespace):
     # group return the arg name (i.e. "slug")
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
 
+
+class PackageJsonCommands(SimpleNamespace):
+    """Commands used in package.json file."""
+
+    DEV = "next dev"
+    EXPORT = "next build && next export -o _static"
+    EXPORT_SITEMAP = "next build && next-sitemap && next export -o _static"
+    PROD = "next start"
+
+
+PACKAGE_DEPENDENCIES = {
+    "@chakra-ui/react": "^2.6.0",
+    "@chakra-ui/system": "^2.5.6",
+    "@emotion/react": "^11.10.6",
+    "@emotion/styled": "^11.10.6",
+    "axios": "^1.4.0",
+    "chakra-react-select": "^4.6.0",
+    "focus-visible": "^5.2.0",
+    "json5": "^2.2.3",
+    "next": "^13.3.1",
+    "next-sitemap": "^4.1.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io-client": "^4.6.1",
+    "universal-cookie": "^4.0.4",
+}
+PACKAGE_DEV_DEPENDENCIES = {
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24",
+}
 
 # 404 variables
 SLUG_404 = "404"

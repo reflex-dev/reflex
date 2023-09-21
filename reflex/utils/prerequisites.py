@@ -24,6 +24,7 @@ from packaging import version
 from redis import Redis
 
 from reflex import constants, model
+from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
 
@@ -216,7 +217,11 @@ def initialize_app_directory(app_name: str, template: constants.Template):
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
+
     path_ops.cp(constants.WEB_TEMPLATE_DIR, constants.WEB_DIR)
+
+    initialize_package_json()
+
     path_ops.mkdir(constants.WEB_ASSETS_DIR)
 
     # update nextJS config based on rxConfig
@@ -231,6 +236,27 @@ def initialize_web_directory():
 
     # Initialize the reflex json file.
     init_reflex_json()
+
+
+def _compile_package_json():
+    return templates.PACKAGE_JSON.render(
+        scripts={
+            "dev": constants.PackageJsonCommands.DEV,
+            "export": constants.PackageJsonCommands.EXPORT,
+            "export_sitemap": constants.PackageJsonCommands.EXPORT_SITEMAP,
+            "prod": constants.PackageJsonCommands.PROD,
+        },
+        dependencies=constants.PACKAGE_DEPENDENCIES,
+        dev_dependencies=constants.PACKAGE_DEV_DEPENDENCIES,
+    )
+
+
+def initialize_package_json():
+    """Render and write in .web the package.json file."""
+    output_path = constants.PACKAGE_JSON_PATH
+    code = _compile_package_json()
+    with open(output_path, "w") as file:
+        file.write(code)
 
 
 def init_reflex_json():
