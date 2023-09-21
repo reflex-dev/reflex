@@ -21,7 +21,7 @@ class List(ChakraComponent):
     style_type: Var[str]
 
     @classmethod
-    def create(cls, *children, items=None, **props) -> Component:
+    def create(cls, *children, items: list | Var | None = None, **props) -> Component:
         """Create a list component.
 
         Args:

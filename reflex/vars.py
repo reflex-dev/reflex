@@ -202,13 +202,17 @@ class Var(ABC):
             and self.is_local == other.is_local
         )
 
-    def to_string(self) -> Var:
+    def to_string(self, json: bool = True) -> Var:
         """Convert a var to a string.
+
+        Args:
+            json: Whether to convert to a JSON string.
 
         Returns:
             The stringified var.
         """
-        return self.operation(fn="JSON.stringify", type_=str)
+        fn = "JSON.stringify" if json else "String"
+        return self.operation(fn=fn, type_=str)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -993,6 +997,77 @@ class Var(ABC):
         return BaseVar(
             name=f"[...{self.full_name}].reverse()",
             type_=self.type_,
+            is_local=self.is_local,
+        )
+
+    def lower(self) -> Var:
+        """Convert a string var to lowercase.
+
+        Returns:
+            A var with the lowercase string.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self.type_, str):
+            raise TypeError(
+                f"Cannot convert non-string var {self.full_name} to lowercase."
+            )
+
+        return BaseVar(
+            name=f"{self.full_name}.toLowerCase()",
+            type_=str,
+            is_local=self.is_local,
+        )
+
+    def split(self, other: str | Var[str] = " ") -> Var:
+        """Split a string var into a list.
+
+        Args:
+            other: The string to split the var with.
+
+        Returns:
+            A var with the list.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self.type_, str):
+            raise TypeError(f"Cannot split non-string var {self.full_name}.")
+
+        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+
+        return BaseVar(
+            name=f"{self.full_name}.split({other.full_name})",
+            type_=list[str],
+            is_local=self.is_local,
+        )
+
+    def join(self, other: str | Var[str] | None = None) -> Var:
+        """Join a list var into a string.
+
+        Args:
+            other: The string to join the list with.
+
+        Returns:
+            A var with the string.
+
+        Raises:
+            TypeError: If the var is not a list.
+        """
+        if not types._issubclass(self.type_, list):
+            raise TypeError(f"Cannot join non-list var {self.full_name}.")
+
+        if other is None:
+            other = Var.create_safe("")
+        if isinstance(other, str):
+            other = Var.create_safe(json.dumps(other))
+        else:
+            other = Var.create_safe(other)
+
+        return BaseVar(
+            name=f"{self.full_name}.join({other.full_name})",
+            type_=str,
             is_local=self.is_local,
         )
 

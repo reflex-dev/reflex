@@ -1,7 +1,7 @@
 """Markdown component."""
 
 import textwrap
-from typing import Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 
 from reflex.compiler import utils
 from reflex.components.component import Component
@@ -9,7 +9,6 @@ from reflex.components.datadisplay.list import ListItem, OrderedList, UnorderedL
 from reflex.components.navigation import Link
 from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
-from reflex.style import Style
 from reflex.utils import types
 from reflex.vars import BaseVar, ImportVar, Var
 
@@ -28,6 +27,21 @@ components_by_tag: Dict[str, Callable] = {
     "a": Link,
 }
 
+# Component Mapping
+base_component_map: dict[str, Callable] = {
+    "h1": lambda value: Heading.create(value, as_="h1"),
+    "h2": lambda value: Heading.create(value, as_="h2"),
+    "h3": lambda value: Heading.create(value, as_="h3"),
+    "h4": lambda value: Heading.create(value, as_="h4"),
+    "h5": lambda value: Heading.create(value, as_="h5"),
+    "h6": lambda value: Heading.create(value, as_="h6"),
+    "p": lambda value: Text.create(value),
+    "ul": lambda value: UnorderedList.create(value),  # type: ignore
+    "ol": lambda value: OrderedList.create(value),  # type: ignore
+    "li": lambda value: ListItem.create(value),
+    "a": lambda value: Link.create(value),
+}
+
 
 class Markdown(Component):
     """A markdown component."""
@@ -38,43 +52,18 @@ class Markdown(Component):
 
     is_default = True
 
-    # Custom defined styles for the markdown elements.
-    custom_styles: Dict[str, Style] = {
-        k: Style(v)
-        for k, v in {
-            "h1": {
-                "as_": "h1",
-                "size": "2xl",
-            },
-            "h2": {
-                "as_": "h2",
-                "size": "xl",
-            },
-            "h3": {
-                "as_": "h3",
-                "size": "lg",
-            },
-            "h4": {
-                "as_": "h4",
-                "size": "md",
-            },
-            "h5": {
-                "as_": "h5",
-                "size": "sm",
-            },
-            "h6": {
-                "as_": "h6",
-                "size": "xs",
-            },
-        }.items()
-    }
+    # The component map
+    component_map: Any = base_component_map
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls, *children, component_map: dict[str, Callable] | None = None, **props
+    ) -> Component:
         """Create a markdown component.
 
         Args:
             *children: The children of the component.
+            component_map: A mapping from markdown tags to components.
             **props: The properties of the component.
 
         Returns:
@@ -84,11 +73,14 @@ class Markdown(Component):
             children[0], Union[str, Var]
         ), "Markdown component must have exactly one child containing the markdown source."
 
+        component_map = component_map or {}
+        component_map = {**base_component_map, **component_map}
+
         # Get the markdown source.
         src = children[0]
         if isinstance(src, str):
             src = textwrap.dedent(src)
-        return super().create(src, **props)
+        return super().create(src, component_map=component_map, **props)
 
     def _get_imports(self):
         # Import here to avoid circular imports.
@@ -108,8 +100,10 @@ class Markdown(Component):
         )
 
         # Get the imports for each component.
-        for component in components_by_tag.values():
-            imports = utils.merge_imports(imports, component()._get_imports())
+        for component in self.component_map.values():
+            imports = utils.merge_imports(
+                imports, component(Var.create("")).get_imports()
+            )
 
         # Get the imports for the code components.
         imports = utils.merge_imports(
@@ -121,18 +115,17 @@ class Markdown(Component):
     def _render(self):
         # Import here to avoid circular imports.
         from reflex.components.datadisplay.code import Code, CodeBlock
-        from reflex.components.tags.tag import Tag
 
-        def format_props(tag):
-            return "".join(
-                Tag(
-                    name="", props=Style(self.custom_styles.get(tag, {}))
-                ).format_props()
-            )
+        def format_comp(comp):
+            return str(
+                comp(Var.create("children", is_local=False)).set(
+                    special_props={Var.create("...props", is_local=False)}
+                )
+            ).replace("\n", " ")
 
         components = {
-            tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {format_props(tag)} />}}"
-            for tag, component in components_by_tag.items()
+            tag: f"{{({{node, children, ...props}}) => {format_comp(component)}}}"
+            for tag, component in self.component_map.items()
         }
         components[
             "code"
@@ -144,10 +137,9 @@ class Markdown(Component):
         language={{match ? match[1] : ''}}
         style={{light}}
         {{...props}}
-        {format_props("pre")}
         />
     ) : (
-        <{Code.create().tag} {{...props}} {format_props("code")}>
+        <{Code.create().tag} {{...props}}>
         {{children}}
         </{Code.create().tag}>
     );
@@ -155,7 +147,7 @@ class Markdown(Component):
             "\n", " "
         )
 
-        return (
+        o = (
             super()
             ._render()
             .add_props(
@@ -165,5 +157,6 @@ class Markdown(Component):
                     name="[rehypeKatex, rehypeRaw]", type_=List[str]
                 ),
             )
-            .remove_props("custom_components")
+            .remove_props("customComponents", "componentMap")
         )
+        return o
