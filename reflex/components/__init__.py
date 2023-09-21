@@ -155,6 +155,7 @@ grid = Grid.create
 grid_item = GridItem.create
 hstack = Hstack.create
 html = Html.create
+html_dangerous = HtmlDangerous.create
 responsive_grid = ResponsiveGrid.create
 spacer = Spacer.create
 square = Square.create
