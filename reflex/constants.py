@@ -219,6 +219,8 @@ OLD_CONFIG_FILE = f"pcconfig{PY_EXT}"
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
 # Token expiration time in seconds.
 TOKEN_EXPIRATION = 60 * 60
+# Maximum time in milliseconds that a state can be locked for exclusive access.
+LOCK_EXPIRATION = 10000
 
 # Testing variables.
 # Testing os env set by pytest when running a test case.
@@ -407,9 +409,36 @@ ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
 COOKIES = "cookies"
 LOCAL_STORAGE = "local_storage"
 
-# Names of event handlers on all components mapped to useEffect
-ON_MOUNT = "on_mount"
-ON_UNMOUNT = "on_unmount"
+
+class EventTriggers(SimpleNamespace):
+    """All trigger names used in Reflex."""
+
+    ON_FOCUS = "on_focus"
+    ON_BLUR = "on_blur"
+    ON_CANCEL = "on_cancel"
+    ON_CLICK = "on_click"
+    ON_CHANGE = "on_change"
+    ON_CHANGE_END = "on_change_end"
+    ON_CHANGE_START = "on_change_start"
+    ON_COMPLETE = "on_complete"
+    ON_CONTEXT_MENU = "on_context_menu"
+    ON_DOUBLE_CLICK = "on_double_click"
+    ON_DROP = "on_drop"
+    ON_EDIT = "on_edit"
+    ON_KEY_DOWN = "on_key_down"
+    ON_KEY_UP = "on_key_up"
+    ON_MOUSE_DOWN = "on_mouse_down"
+    ON_MOUSE_ENTER = "on_mouse_enter"
+    ON_MOUSE_LEAVE = "on_mouse_leave"
+    ON_MOUSE_MOVE = "on_mouse_move"
+    ON_MOUSE_OUT = "on_mouse_out"
+    ON_MOUSE_OVER = "on_mouse_over"
+    ON_MOUSE_UP = "on_mouse_up"
+    ON_SCROLL = "on_scroll"
+    ON_SUBMIT = "on_submit"
+    ON_MOUNT = "on_mount"
+    ON_UNMOUNT = "on_unmount"
+
 
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"

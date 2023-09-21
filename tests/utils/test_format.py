@@ -290,7 +290,9 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
             r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
         ),
         (
-            EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
+            ),
             '{_e => Event([E("mock_event", {})], _e)}',
         ),
         (
@@ -300,7 +302,8 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
                         handler=EventHandler(fn=mock_event),
                         args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
                     )
-                ]
+                ],
+                args_spec=None,
             ),
             '{_e => Event([E("mock_event", {arg:_e.target.value})], _e)}',
         ),
@@ -409,7 +412,8 @@ def test_format_event(input, output):
                 events=[
                     EventSpec(handler=EventHandler(fn=mock_event)),
                     EventSpec(handler=EventHandler(fn=mock_event)),
-                ]
+                ],
+                args_spec=None,
             ),
             "",
         ),

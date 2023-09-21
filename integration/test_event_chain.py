@@ -1,18 +1,20 @@
 """Ensure that Event Chains are properly queued and handled between frontend and backend."""
 
-import time
 from typing import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness
+from reflex.testing import AppHarness, WebDriver
 
 MANY_EVENTS = 50
 
 
 def EventChain():
     """App with chained event handlers."""
+    import asyncio
+    import time
+
     import reflex as rx
 
     # repeated here since the outer global isn't exported into the App module
@@ -20,6 +22,7 @@ def EventChain():
 
     class State(rx.State):
         event_order: list[str] = []
+        interim_value: str = ""
 
         @rx.var
         def token(self) -> str:
@@ -111,12 +114,25 @@ def EventChain():
             self.event_order.append("click_return_dict_type")
             return State.event_arg_repr_type({"a": 1})  # type: ignore
 
+        async def click_yield_interim_value_async(self):
+            self.interim_value = "interim"
+            yield
+            await asyncio.sleep(0.5)
+            self.interim_value = "final"
+
+        def click_yield_interim_value(self):
+            self.interim_value = "interim"
+            yield
+            time.sleep(0.5)
+            self.interim_value = "final"
+
     app = rx.App(state=State)
 
     @app.add_page
     def index():
         return rx.fragment(
             rx.input(value=State.token, readonly=True, id="token"),
+            rx.input(value=State.interim_value, readonly=True, id="interim_value"),
             rx.button(
                 "Return Event",
                 id="return_event",
@@ -171,6 +187,16 @@ def EventChain():
                 "Return Chain Dict Type",
                 id="return_dict_type",
                 on_click=State.click_return_dict_type,
+            ),
+            rx.button(
+                "Click Yield Interim Value (Async)",
+                id="click_yield_interim_value_async",
+                on_click=State.click_yield_interim_value_async,
+            ),
+            rx.button(
+                "Click Yield Interim Value",
+                id="click_yield_interim_value",
+                on_click=State.click_yield_interim_value,
             ),
         )
 
@@ -237,7 +263,7 @@ def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 @pytest.fixture
-def driver(event_chain: AppHarness):
+def driver(event_chain: AppHarness) -> Generator[WebDriver, None, None]:
     """Get an instance of the browser open to the event_chain app.
 
     Args:
@@ -249,7 +275,6 @@ def driver(event_chain: AppHarness):
     assert event_chain.app_instance is not None, "app is not running"
     driver = event_chain.frontend()
     try:
-        assert event_chain.poll_for_clients()
         yield driver
     finally:
         driver.quit()
@@ -335,7 +360,13 @@ def driver(event_chain: AppHarness):
         ),
     ],
 )
-def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
+@pytest.mark.asyncio
+async def test_event_chain_click(
+    event_chain: AppHarness,
+    driver: WebDriver,
+    button_id: str,
+    exp_event_order: list[str],
+):
     """Click the button, assert that the events are handled in the correct order.
 
     Args:
@@ -350,17 +381,18 @@ def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
     assert btn
 
     token = event_chain.poll_for_value(token_input)
+    assert token is not None
 
     btn.click()
-    if "redirect" in button_id:
-        # wait a bit longer if we're redirecting
-        time.sleep(1)
-    if "many_events" in button_id:
-        # wait a bit longer if we have loads of events
-        time.sleep(1)
-    time.sleep(0.5)
-    backend_state = event_chain.app_instance.state_manager.states[token]
-    assert backend_state.event_order == exp_event_order
+
+    async def _has_all_events():
+        return len((await event_chain.get_state(token)).event_order) == len(
+            exp_event_order
+        )
+
+    await AppHarness._poll_for_async(_has_all_events)
+    event_order = (await event_chain.get_state(token)).event_order
+    assert event_order == exp_event_order
 
 
 @pytest.mark.parametrize(
@@ -386,7 +418,13 @@ def test_event_chain_click(event_chain, driver, button_id, exp_event_order):
         ),
     ],
 )
-def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
+@pytest.mark.asyncio
+async def test_event_chain_on_load(
+    event_chain: AppHarness,
+    driver: WebDriver,
+    uri: str,
+    exp_event_order: list[str],
+):
     """Load the URI, assert that the events are handled in the correct order.
 
     Args:
@@ -395,16 +433,23 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
         uri: the page to load
         exp_event_order: the expected events recorded in the State
     """
+    assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
     token_input = driver.find_element(By.ID, "token")
     assert token_input
 
     token = event_chain.poll_for_value(token_input)
+    assert token is not None
 
-    time.sleep(0.5)
-    backend_state = event_chain.app_instance.state_manager.states[token]
-    assert backend_state.is_hydrated is True
+    async def _has_all_events():
+        return len((await event_chain.get_state(token)).event_order) == len(
+            exp_event_order
+        )
+
+    await AppHarness._poll_for_async(_has_all_events)
+    backend_state = await event_chain.get_state(token)
     assert backend_state.event_order == exp_event_order
+    assert backend_state.is_hydrated is True
 
 
 @pytest.mark.parametrize(
@@ -444,7 +489,13 @@ def test_event_chain_on_load(event_chain, driver, uri, exp_event_order):
         ),
     ],
 )
-def test_event_chain_on_mount(event_chain, driver, uri, exp_event_order):
+@pytest.mark.asyncio
+async def test_event_chain_on_mount(
+    event_chain: AppHarness,
+    driver: WebDriver,
+    uri: str,
+    exp_event_order: list[str],
+):
     """Load the URI, assert that the events are handled in the correct order.
 
     These pages use `on_mount` and `on_unmount`, which get fired twice in dev mode
@@ -458,16 +509,53 @@ def test_event_chain_on_mount(event_chain, driver, uri, exp_event_order):
         uri: the page to load
         exp_event_order: the expected events recorded in the State
     """
+    assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
     token_input = driver.find_element(By.ID, "token")
     assert token_input
 
     token = event_chain.poll_for_value(token_input)
+    assert token is not None
 
     unmount_button = driver.find_element(By.ID, "unmount")
     assert unmount_button
     unmount_button.click()
 
-    time.sleep(1)
-    backend_state = event_chain.app_instance.state_manager.states[token]
-    assert backend_state.event_order == exp_event_order
+    async def _has_all_events():
+        return len((await event_chain.get_state(token)).event_order) == len(
+            exp_event_order
+        )
+
+    await AppHarness._poll_for_async(_has_all_events)
+    event_order = (await event_chain.get_state(token)).event_order
+    assert event_order == exp_event_order
+
+
+@pytest.mark.parametrize(
+    ("button_id",),
+    [
+        ("click_yield_interim_value_async",),
+        ("click_yield_interim_value",),
+    ],
+)
+def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_id: str):
+    """Click the button, assert that the interim value is set, then final value is set.
+
+    Args:
+        event_chain: AppHarness for the event_chain app
+        driver: selenium WebDriver open to the app
+        button_id: the ID of the button to click
+    """
+    token_input = driver.find_element(By.ID, "token")
+    interim_value_input = driver.find_element(By.ID, "interim_value")
+    assert event_chain.poll_for_value(token_input)
+
+    btn = driver.find_element(By.ID, button_id)
+    btn.click()
+    assert (
+        event_chain.poll_for_value(interim_value_input, exp_not_equal="") == "interim"
+    )
+    assert (
+        event_chain.poll_for_value(interim_value_input, exp_not_equal="interim")
+        == "final"
+    )

@@ -1,6 +1,7 @@
 """Container to stack elements with spacing."""
+from __future__ import annotations
 
-from typing import Set
+from typing import Any, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -58,17 +59,18 @@ class Drawer(ChakraComponent):
     # Variant of drawer
     variant: Var[str]
 
-    def get_triggers(self) -> Set[str]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_triggers() | {
-            "on_close",
-            "on_close_complete",
-            "on_esc",
-            "on_overlay_click",
+        return {
+            **super().get_event_triggers(),
+            "on_close": lambda: [],
+            "on_close_complete": lambda: [],
+            "on_esc": lambda: [],
+            "on_overlay_click": lambda: [],
         }
 
     @classmethod

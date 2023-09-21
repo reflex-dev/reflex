@@ -133,7 +133,6 @@ def driver(client_side: AppHarness) -> Generator[WebDriver, None, None]:
     assert client_side.app_instance is not None, "app is not running"
     driver = client_side.frontend()
     try:
-        assert client_side.poll_for_clients()
         yield driver
     finally:
         driver.quit()
@@ -168,7 +167,20 @@ def delete_all_cookies(driver: WebDriver) -> Generator[None, None, None]:
     driver.delete_all_cookies()
 
 
-def test_client_side_state(
+def cookie_info_map(driver: WebDriver) -> dict[str, dict[str, str]]:
+    """Get a map of cookie names to cookie info.
+
+    Args:
+        driver: WebDriver instance.
+
+    Returns:
+        A map of cookie names to cookie info.
+    """
+    return {cookie_info["name"]: cookie_info for cookie_info in driver.get_cookies()}
+
+
+@pytest.mark.asyncio
+async def test_client_side_state(
     client_side: AppHarness, driver: WebDriver, local_storage: utils.LocalStorage
 ):
     """Test client side state.
@@ -186,8 +198,6 @@ def test_client_side_state(
     # wait for the backend connection to send the token
     token = client_side.poll_for_value(token_input)
     assert token is not None
-
-    backend_state = client_side.app_instance.state_manager.states[token]
 
     # get a reference to the cookie manipulation form
     state_var_input = driver.find_element(By.ID, "state_var")
@@ -274,7 +284,7 @@ def test_client_side_state(
     input_value_input.send_keys("l1s value")
     set_sub_sub_state_button.click()
 
-    cookies = {cookie_info["name"]: cookie_info for cookie_info in driver.get_cookies()}
+    cookies = cookie_info_map(driver)
     assert cookies.pop("client_side_state.client_side_sub_state.c1") == {
         "domain": "localhost",
         "httpOnly": False,
@@ -338,8 +348,10 @@ def test_client_side_state(
     state_var_input.send_keys("c3")
     input_value_input.send_keys("c3 value")
     set_sub_state_button.click()
-    cookies = {cookie_info["name"]: cookie_info for cookie_info in driver.get_cookies()}
-    c3_cookie = cookies["client_side_state.client_side_sub_state.c3"]
+    AppHarness._poll_for(
+        lambda: "client_side_state.client_side_sub_state.c3" in cookie_info_map(driver)
+    )
+    c3_cookie = cookie_info_map(driver)["client_side_state.client_side_sub_state.c3"]
     assert c3_cookie.pop("expiry") is not None
     assert c3_cookie == {
         "domain": "localhost",
@@ -351,9 +363,7 @@ def test_client_side_state(
         "value": "c3%20value",
     }
     time.sleep(2)  # wait for c3 to expire
-    assert "client_side_state.client_side_sub_state.c3" not in {
-        cookie_info["name"] for cookie_info in driver.get_cookies()
-    }
+    assert "client_side_state.client_side_sub_state.c3" not in cookie_info_map(driver)
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
@@ -426,7 +436,8 @@ def test_client_side_state(
     assert l1s.text == "l1s value"
 
     # reset the backend state to force refresh from client storage
-    backend_state.reset()
+    async with client_side.modify_state(token) as state:
+        state.reset()
     driver.refresh()
 
     # wait for the backend connection to send the token (again)
@@ -465,9 +476,7 @@ def test_client_side_state(
     assert l1s.text == "l1s value"
 
     # make sure c5 cookie shows up on the `/foo` route
-    cookies = {cookie_info["name"]: cookie_info for cookie_info in driver.get_cookies()}
-
-    assert cookies["client_side_state.client_side_sub_state.c5"] == {
+    assert cookie_info_map(driver)["client_side_state.client_side_sub_state.c5"] == {
         "domain": "localhost",
         "httpOnly": False,
         "name": "client_side_state.client_side_sub_state.c5",

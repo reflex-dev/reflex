@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import os.path as op
@@ -300,9 +301,21 @@ def format_prop(
 
         # Handle event props.
         elif isinstance(prop, EventChain):
+            if prop.args_spec is None:
+                arg_def = f"{EVENT_ARG}"
+            else:
+                sig = inspect.signature(prop.args_spec)
+                if sig.parameters:
+                    arg_def = ",".join(f"_{p}" for p in sig.parameters)
+                    arg_def = f"({arg_def})"
+                else:
+                    # add a default argument for addEvents if none were specified in prop.args_spec
+                    # used to trigger the preventDefault() on the event.
+                    arg_def = "(_e)"
+
             chain = ",".join([format_event(event) for event in prop.events])
-            event = f"Event([{chain}], {EVENT_ARG})"
-            prop = f"{EVENT_ARG} => {event}"
+            event = f"addEvents([{chain}], {arg_def})"
+            prop = f"{arg_def} => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -414,7 +427,7 @@ def format_event(event_spec: EventSpec) -> str:
 
     if event_spec.client_handler_name:
         event_args.append(wrap(event_spec.client_handler_name, '"'))
-    return f"E({', '.join(event_args)})"
+    return f"Event({', '.join(event_args)})"
 
 
 def format_event_chain(
@@ -450,7 +463,7 @@ def format_event_chain(
     chain = ",".join([format_event(event) for event in event_chain.events])
     return "".join(
         [
-            f"Event([{chain}]",
+            f"addEvents([{chain}]",
             f", {format_var(event_arg)}" if event_arg else "",
             ")",
         ]

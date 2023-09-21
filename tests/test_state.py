@@ -1,21 +1,41 @@
 from __future__ import annotations
 
+import asyncio
 import copy
 import datetime
 import functools
+import json
+import os
 import sys
-from typing import Dict, List
+from typing import Dict, Generator, List
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
 from reflex.base import Base
-from reflex.constants import IS_HYDRATED, RouteVar
+from reflex.constants import APP_VAR, IS_HYDRATED, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.state import MutableProxy, State
-from reflex.utils import format
+from reflex.state import (
+    ImmutableStateError,
+    LockExpiredError,
+    MutableProxy,
+    State,
+    StateManager,
+    StateManagerMemory,
+    StateManagerRedis,
+    StateProxy,
+    StateUpdate,
+)
+from reflex.utils import format, prerequisites
 from reflex.vars import BaseVar, ComputedVar
+
+from .states import GenState
+
+CI = bool(os.environ.get("CI", False))
+LOCK_EXPIRATION = 2000 if CI else 100
+LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.2
 
 
 class Object(Base):
@@ -704,13 +724,9 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
 
 
 @pytest.mark.asyncio
-async def test_process_event_generator(gen_state):
-    """Test event handlers that generate multiple updates.
-
-    Args:
-        gen_state: A state.
-    """
-    gen_state = gen_state()
+async def test_process_event_generator():
+    """Test event handlers that generate multiple updates."""
+    gen_state = GenState()  # type: ignore
     event = Event(
         token="t",
         name="go",
@@ -1385,6 +1401,396 @@ def test_state_with_invalid_yield():
         "must only return/yield: None, Events or other EventHandlers"
         in err.value.args[0]
     )
+
+
+@pytest.fixture(scope="function", params=["in_process", "redis"])
+def state_manager(request) -> Generator[StateManager, None, None]:
+    """Instance of state manager parametrized for redis and in-process.
+
+    Args:
+        request: pytest request object.
+
+    Yields:
+        A state manager instance
+    """
+    state_manager = StateManager.create(state=TestState)
+    if request.param == "redis":
+        if not isinstance(state_manager, StateManagerRedis):
+            pytest.skip("Test requires redis")
+    else:
+        # explicitly NOT using redis
+        state_manager = StateManagerMemory(state=TestState)
+        assert not state_manager._states_locks
+
+    yield state_manager
+
+    if isinstance(state_manager, StateManagerRedis):
+        asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
+
+
+@pytest.mark.asyncio
+async def test_state_manager_modify_state(state_manager: StateManager, token: str):
+    """Test that the state manager can modify a state exclusively.
+
+    Args:
+        state_manager: A state manager instance.
+        token: A token.
+    """
+    async with state_manager.modify_state(token):
+        if isinstance(state_manager, StateManagerRedis):
+            assert await state_manager.redis.get(f"{token}_lock")
+        elif isinstance(state_manager, StateManagerMemory):
+            assert token in state_manager._states_locks
+            assert state_manager._states_locks[token].locked()
+    # lock should be dropped after exiting the context
+    if isinstance(state_manager, StateManagerRedis):
+        assert (await state_manager.redis.get(f"{token}_lock")) is None
+    elif isinstance(state_manager, StateManagerMemory):
+        assert not state_manager._states_locks[token].locked()
+
+        # separate instances should NOT share locks
+        sm2 = StateManagerMemory(state=TestState)
+        assert sm2._state_manager_lock is state_manager._state_manager_lock
+        assert not sm2._states_locks
+        if state_manager._states_locks:
+            assert sm2._states_locks != state_manager._states_locks
+
+
+@pytest.mark.asyncio
+async def test_state_manager_contend(state_manager: StateManager, token: str):
+    """Multiple coroutines attempting to access the same state.
+
+    Args:
+        state_manager: A state manager instance.
+        token: A token.
+    """
+    n_coroutines = 10
+    exp_num1 = 10
+
+    async with state_manager.modify_state(token) as state:
+        state.num1 = 0
+
+    async def _coro():
+        async with state_manager.modify_state(token) as state:
+            await asyncio.sleep(0.01)
+            state.num1 += 1
+
+    tasks = [asyncio.create_task(_coro()) for _ in range(n_coroutines)]
+
+    for f in asyncio.as_completed(tasks):
+        await f
+
+    assert (await state_manager.get_state(token)).num1 == exp_num1
+
+    if isinstance(state_manager, StateManagerRedis):
+        assert (await state_manager.redis.get(f"{token}_lock")) is None
+    elif isinstance(state_manager, StateManagerMemory):
+        assert token in state_manager._states_locks
+        assert not state_manager._states_locks[token].locked()
+
+
+@pytest.fixture(scope="function")
+def state_manager_redis() -> Generator[StateManager, None, None]:
+    """Instance of state manager for redis only.
+
+    Yields:
+        A state manager instance
+    """
+    state_manager = StateManager.create(TestState)
+
+    if not isinstance(state_manager, StateManagerRedis):
+        pytest.skip("Test requires redis")
+
+    yield state_manager
+
+    asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_expire(state_manager_redis: StateManager, token: str):
+    """Test that the state manager lock expires and raises exception exiting context.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+    """
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
+
+    async with state_manager_redis.modify_state(token):
+        await asyncio.sleep(0.01)
+
+    with pytest.raises(LockExpiredError):
+        async with state_manager_redis.modify_state(token):
+            await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_expire_contend(
+    state_manager_redis: StateManager, token: str
+):
+    """Test that the state manager lock expires and queued waiters proceed.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+    """
+    exp_num1 = 4252
+    unexp_num1 = 666
+
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
+
+    order = []
+
+    async def _coro_blocker():
+        async with state_manager_redis.modify_state(token) as state:
+            order.append("blocker")
+            await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+            state.num1 = unexp_num1
+
+    async def _coro_waiter():
+        while "blocker" not in order:
+            await asyncio.sleep(0.005)
+        async with state_manager_redis.modify_state(token) as state:
+            order.append("waiter")
+            assert state.num1 != unexp_num1
+            state.num1 = exp_num1
+
+    tasks = [
+        asyncio.create_task(_coro_blocker()),
+        asyncio.create_task(_coro_waiter()),
+    ]
+    with pytest.raises(LockExpiredError):
+        await tasks[0]
+    await tasks[1]
+
+    assert order == ["blocker", "waiter"]
+    assert (await state_manager_redis.get_state(token)).num1 == exp_num1
+
+
+@pytest.fixture(scope="function")
+def mock_app(monkeypatch, app: rx.App, state_manager: StateManager) -> rx.App:
+    """Mock app fixture.
+
+    Args:
+        monkeypatch: Pytest monkeypatch object.
+        app: An app.
+        state_manager: A state manager.
+
+    Returns:
+        The app, after mocking out prerequisites.get_app()
+    """
+    app_module = Mock()
+    setattr(app_module, APP_VAR, app)
+    app.state = TestState
+    app.state_manager = state_manager
+    assert app.event_namespace is not None
+    app.event_namespace.emit = AsyncMock()
+    monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
+    """Test that the state proxy works.
+
+    Args:
+        grandchild_state: A grandchild state.
+        mock_app: An app that will be returned by `get_app()`
+    """
+    child_state = grandchild_state.parent_state
+    assert child_state is not None
+    parent_state = child_state.parent_state
+    assert parent_state is not None
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        mock_app.state_manager.states[parent_state.get_token()] = parent_state
+
+    sp = StateProxy(grandchild_state)
+    assert sp.__wrapped__ == grandchild_state
+    assert sp._self_substate_path == grandchild_state.get_full_name().split(".")
+    assert sp._self_app is mock_app
+    assert not sp._self_mutable
+    assert sp._self_actx is None
+
+    # cannot use normal contextmanager protocol
+    with pytest.raises(TypeError), sp:
+        pass
+
+    with pytest.raises(ImmutableStateError):
+        # cannot directly modify state proxy outside of async context
+        sp.value2 = 16
+
+    async with sp:
+        assert sp._self_actx is not None
+        assert sp._self_mutable  # proxy is mutable inside context
+        if isinstance(mock_app.state_manager, StateManagerMemory):
+            # For in-process store, only one instance of the state exists
+            assert sp.__wrapped__ is grandchild_state
+        else:
+            # When redis is used, a new+updated instance is assigned to the proxy
+            assert sp.__wrapped__ is not grandchild_state
+        sp.value2 = 42
+    assert not sp._self_mutable  # proxy is not mutable after exiting context
+    assert sp._self_actx is None
+    assert sp.value2 == 42
+
+    # Get the state from the state manager directly and check that the value is updated
+    gotten_state = await mock_app.state_manager.get_state(grandchild_state.get_token())
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        # For in-process store, only one instance of the state exists
+        assert gotten_state is parent_state
+    else:
+        assert gotten_state is not parent_state
+    gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
+    assert gotten_grandchild_state is not None
+    assert gotten_grandchild_state.value2 == 42
+
+    # ensure state update was emitted
+    assert mock_app.event_namespace is not None
+    mock_app.event_namespace.emit.assert_called_once()
+    mcall = mock_app.event_namespace.emit.mock_calls[0]
+    assert mcall.args[0] == str(SocketEvent.EVENT)
+    assert json.loads(mcall.args[1]) == StateUpdate(
+        delta={
+            parent_state.get_full_name(): {
+                "upper": "",
+                "sum": 3.14,
+            },
+            grandchild_state.get_full_name(): {
+                "value2": 42,
+            },
+        }
+    )
+    assert mcall.kwargs["to"] == grandchild_state.get_sid()
+
+
+class BackgroundTaskState(State):
+    """A state with a background task."""
+
+    order: List[str] = []
+    dict_list: Dict[str, List[int]] = {"foo": []}
+
+    @rx.background
+    async def background_task(self):
+        """A background task that updates the state."""
+        async with self:
+            assert not self.order
+            self.order.append("background_task:start")
+
+        assert isinstance(self, StateProxy)
+        with pytest.raises(ImmutableStateError):
+            self.order.append("bad idea")
+
+        with pytest.raises(ImmutableStateError):
+            # Even nested access to mutables raises an exception.
+            self.dict_list["foo"].append(42)
+
+        # wait for some other event to happen
+        while len(self.order) == 1:
+            await asyncio.sleep(0.01)
+            async with self:
+                pass  # update proxy instance
+
+        async with self:
+            self.order.append("background_task:stop")
+
+    @rx.background
+    async def background_task_generator(self):
+        """A background task generator that does nothing.
+
+        Yields:
+            None
+        """
+        yield
+
+    def other(self):
+        """Some other event that updates the state."""
+        self.order.append("other")
+
+    async def bad_chain1(self):
+        """Test that a background task cannot be chained."""
+        await self.background_task()
+
+    async def bad_chain2(self):
+        """Test that a background task generator cannot be chained."""
+        async for _foo in self.background_task_generator():
+            pass
+
+
+@pytest.mark.asyncio
+async def test_background_task_no_block(mock_app: rx.App, token: str):
+    """Test that a background task does not block other events.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    router_data = {"query": {}}
+    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
+    async for update in rx.app.process(  # type: ignore
+        mock_app,
+        Event(
+            token=token,
+            name=f"{BackgroundTaskState.get_name()}.background_task",
+            router_data=router_data,
+            payload={},
+        ),
+        sid="",
+        headers={},
+        client_ip="",
+    ):
+        # background task returns empty update immediately
+        assert update == StateUpdate()
+    assert len(mock_app.background_tasks) == 1
+
+    # wait for the coroutine to start
+    await asyncio.sleep(0.5 if CI else 0.1)
+    assert len(mock_app.background_tasks) == 1
+
+    # Process another normal event
+    async for update in rx.app.process(  # type: ignore
+        mock_app,
+        Event(
+            token=token,
+            name=f"{BackgroundTaskState.get_name()}.other",
+            router_data=router_data,
+            payload={},
+        ),
+        sid="",
+        headers={},
+        client_ip="",
+    ):
+        # other task returns delta
+        assert update == StateUpdate(
+            delta={
+                BackgroundTaskState.get_name(): {
+                    "order": [
+                        "background_task:start",
+                        "other",
+                    ],
+                }
+            }
+        )
+
+    # Explicit wait for background tasks
+    for task in tuple(mock_app.background_tasks):
+        await task
+    assert not mock_app.background_tasks
+
+    assert (await mock_app.state_manager.get_state(token)).order == [
+        "background_task:start",
+        "other",
+        "background_task:stop",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_background_task_no_chain():
+    """Test that a background task cannot be chained."""
+    bts = BackgroundTaskState()
+    with pytest.raises(RuntimeError):
+        await bts.bad_chain1()
+    with pytest.raises(RuntimeError):
+        await bts.bad_chain2()
 
 
 def test_mutable_list(mutable_state):

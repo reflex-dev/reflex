@@ -89,13 +89,13 @@ def driver(upload_file: AppHarness):
     assert upload_file.app_instance is not None, "app is not running"
     driver = upload_file.frontend()
     try:
-        assert upload_file.poll_for_clients()
         yield driver
     finally:
         driver.quit()
 
 
-def test_upload_file(tmp_path, upload_file: AppHarness, driver):
+@pytest.mark.asyncio
+async def test_upload_file(tmp_path, upload_file: AppHarness, driver):
     """Submit a file upload and check that it arrived on the backend.
 
     Args:
@@ -124,16 +124,20 @@ def test_upload_file(tmp_path, upload_file: AppHarness, driver):
     upload_button.click()
 
     # look up the backend state and assert on uploaded contents
-    backend_state = upload_file.app_instance.state_manager.states[token]
-    time.sleep(0.5)
-    assert backend_state._file_data[exp_name] == exp_contents
+    async def get_file_data():
+        return (await upload_file.get_state(token))._file_data
+
+    file_data = await AppHarness._poll_for_async(get_file_data)
+    assert isinstance(file_data, dict)
+    assert file_data[exp_name] == exp_contents
 
     # check that the selected files are displayed
     selected_files = driver.find_element(By.ID, "selected_files")
     assert selected_files.text == exp_name
 
 
-def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
+@pytest.mark.asyncio
+async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     """Submit several file uploads and check that they arrived on the backend.
 
     Args:
@@ -173,10 +177,13 @@ def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     upload_button.click()
 
     # look up the backend state and assert on uploaded contents
-    backend_state = upload_file.app_instance.state_manager.states[token]
-    time.sleep(0.5)
+    async def get_file_data():
+        return (await upload_file.get_state(token))._file_data
+
+    file_data = await AppHarness._poll_for_async(get_file_data)
+    assert isinstance(file_data, dict)
     for exp_name, exp_contents in exp_files.items():
-        assert backend_state._file_data[exp_name] == exp_contents
+        assert file_data[exp_name] == exp_contents
 
 
 def test_clear_files(tmp_path, upload_file: AppHarness, driver):
