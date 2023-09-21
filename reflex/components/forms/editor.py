@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -63,7 +63,7 @@ class EditorOptions(Base):
     rtl: Optional[bool] = None
 
     # List of buttons to use in the toolbar.
-    button_list: Optional[List[List[str] | str]]
+    button_list: Optional[List[Union[List[str], str]]]
 
 
 class Editor(NoSSRComponent):
@@ -78,7 +78,7 @@ class Editor(NoSSRComponent):
 
     is_default = True
 
-    lib_dependencies: list[str] = ["suneditor"]
+    lib_dependencies: List[str] = ["suneditor"]
 
     # Language of the editor.
     # Alternatively to a string, a dict of your language can be passed to this prop.
@@ -86,7 +86,7 @@ class Editor(NoSSRComponent):
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
     #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
     # default : "en"
-    lang: Var[str | dict]
+    lang: Var[Union[str, dict]]
 
     # This is used to set the HTML form name of the editor.
     # This means on HTML form submission,
