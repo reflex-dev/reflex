@@ -10,9 +10,8 @@ from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 from reflex import constants
 from reflex.base import Base
 from reflex.components.tags import Tag
+from reflex.constants import EventTriggers
 from reflex.event import (
-    EVENT_ARG,
-    EVENT_TRIGGERS,
     EventChain,
     EventHandler,
     EventSpec,
@@ -21,7 +20,7 @@ from reflex.event import (
     get_handler_args,
 )
 from reflex.style import Style
-from reflex.utils import format, imports, types
+from reflex.utils import console, format, imports, types
 from reflex.vars import BaseVar, ImportVar, Var
 
 
@@ -126,7 +125,7 @@ class Component(Base, ABC):
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
-        triggers = self.get_triggers()
+        triggers = self.get_event_triggers().keys()
         props = self.get_props()
 
         # Add any events triggers.
@@ -220,8 +219,7 @@ class Component(Base, ABC):
             ValueError: If the value is not a valid event chain.
         """
         # Check if the trigger is a controlled event.
-        controlled_triggers = self.get_controlled_triggers()
-        is_controlled_event = event_trigger in controlled_triggers
+        triggers = self.get_event_triggers()
 
         # If it's an event chain var, return it.
         if isinstance(value, Var):
@@ -229,27 +227,28 @@ class Component(Base, ABC):
                 raise ValueError(f"Invalid event chain: {value}")
             return value
 
-        arg = controlled_triggers.get(event_trigger, EVENT_ARG)
+        arg_spec = triggers.get(event_trigger, lambda: [])
 
+        wrapped = False
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, (EventHandler, EventSpec)):
+            wrapped = True
             value = [value]
 
         # If the input is a list of event handlers, create an event chain.
         if isinstance(value, List):
+            if not wrapped:
+                console.deprecate(
+                    feature_name="EventChain",
+                    reason="to avoid confusion, only use yield API",
+                    deprecation_version="0.2.8",
+                    removal_version="0.2.9",
+                )
             events = []
             for v in value:
                 if isinstance(v, EventHandler):
                     # Call the event handler to get the event.
-                    event = call_event_handler(v, arg)
-
-                    # Check that the event handler takes no args if it's uncontrolled.
-                    if not is_controlled_event and (
-                        event.args is not None and len(event.args) > 0
-                    ):
-                        raise ValueError(
-                            f"Event handler: {v.fn} for uncontrolled event {event_trigger} should not take any args."
-                        )
+                    event = call_event_handler(v, arg_spec)  # type: ignore
 
                     # Add the event to the chain.
                     events.append(event)
@@ -258,45 +257,93 @@ class Component(Base, ABC):
                     events.append(v)
                 elif isinstance(v, Callable):
                     # Call the lambda to get the event chain.
-                    events.extend(call_event_fn(v, arg))
+                    events.extend(call_event_fn(v, arg_spec))  # type: ignore
                 else:
                     raise ValueError(f"Invalid event: {v}")
 
         # If the input is a callable, create an event chain.
         elif isinstance(value, Callable):
-            events = call_event_fn(value, arg)
+            events = call_event_fn(value, arg_spec)  # type: ignore
 
         # Otherwise, raise an error.
         else:
             raise ValueError(f"Invalid event chain: {value}")
 
         # Add args to the event specs if necessary.
-        if is_controlled_event:
-            events = [
-                EventSpec(
-                    handler=e.handler,
-                    args=get_handler_args(e, arg),
-                )
-                for e in events
-            ]
+        events = [
+            EventSpec(
+                handler=e.handler,
+                args=get_handler_args(e),
+                client_handler_name=e.client_handler_name,
+            )
+            for e in events
+        ]
 
         # Return the event chain.
-        return EventChain(events=events)
+        if isinstance(arg_spec, Var):
+            return EventChain(events=events, args_spec=None)
+        else:
+            return EventChain(events=events, args_spec=arg_spec)  # type: ignore
 
-    def get_triggers(self) -> Set[str]:
+    def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return (
-            EVENT_TRIGGERS
-            | set(self.get_controlled_triggers())
-            | set((constants.ON_MOUNT, constants.ON_UNMOUNT))
-        )
+        deprecated_triggers = self.get_triggers()
+        if deprecated_triggers:
+            console.deprecate(
+                feature_name=f"get_triggers ({self.__class__.__name__})",
+                reason="replaced by get_event_triggers",
+                deprecation_version="0.2.8",
+                removal_version="0.2.9",
+            )
+            deprecated_triggers = {
+                trigger: lambda: [] for trigger in deprecated_triggers
+            }
+        else:
+            deprecated_triggers = {}
+
+        deprecated_controlled_triggers = self.get_controlled_triggers()
+        if deprecated_controlled_triggers:
+            console.deprecate(
+                feature_name=f"get_controlled_triggers ({self.__class__.__name__})",
+                reason="replaced by get_event_triggers",
+                deprecation_version="0.2.8",
+                removal_version="0.2.9",
+            )
+
+        return {
+            EventTriggers.ON_FOCUS: lambda: [],
+            EventTriggers.ON_BLUR: lambda: [],
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_CONTEXT_MENU: lambda: [],
+            EventTriggers.ON_DOUBLE_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_SCROLL: lambda: [],
+            EventTriggers.ON_MOUNT: lambda: [],
+            EventTriggers.ON_UNMOUNT: lambda: [],
+            **deprecated_triggers,
+            **deprecated_controlled_triggers,
+        }
+
+    def get_triggers(self) -> Set[str]:
+        """Get the triggers for non controlled events [DEPRECATED].
+
+        Returns:
+            A set of non controlled triggers.
+        """
+        return set()
 
     def get_controlled_triggers(self) -> Dict[str, Var]:
-        """Get the event triggers that pass the component's value to the handler.
+        """Get the event triggers that pass the component's value to the handler [DEPRECATED].
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
@@ -436,7 +483,6 @@ class Component(Base, ABC):
             The dictionary for template of component.
         """
         tag = self._render()
-
         rendered_dict = dict(
             tag.add_props(
                 **self.event_triggers,
@@ -577,8 +623,8 @@ class Component(Base, ABC):
         """
         # pop on_mount and on_unmount from event_triggers since these are handled by
         # hooks, not as actually props in the component
-        on_mount = self.event_triggers.pop(constants.ON_MOUNT, None)
-        on_unmount = self.event_triggers.pop(constants.ON_UNMOUNT, None)
+        on_mount = self.event_triggers.pop(EventTriggers.ON_MOUNT, None)
+        on_unmount = self.event_triggers.pop(EventTriggers.ON_UNMOUNT, None)
         if on_mount:
             on_mount = format.format_event_chain(on_mount)
         if on_unmount:

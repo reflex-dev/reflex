@@ -364,7 +364,7 @@ export const uploadFiles = async (handler, files) => {
  * @param handler The client handler to process event.
  * @returns The event object.
  */
-export const E = (name, payload = {}, handler = null) => {
+export const Event = (name, payload = {}, handler = null) => {
   return { name, payload, handler };
 };
 
@@ -440,9 +440,9 @@ const applyClientStorageDelta = (client_storage, delta) => {
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
  *
- * @returns [state, Event, connectError] -
+ * @returns [state, addEvents, connectError] -
  *   state is a reactive dict,
- *   Event is used to queue an event, and
+ *   addEvents is used to queue an event, and
  *   connectError is a reactive js error from the websocket connection (or null if connected).
  */
 export const useEventLoop = (
@@ -456,7 +456,7 @@ export const useEventLoop = (
   const [connectError, setConnectError] = useState(null)
 
   // Function to add new events to the event queue.
-  const Event = (events, _e) => {
+  const addEvents = (events, _e) => {
     preventDefault(_e);
     queueEvents(events, socket)
   }
@@ -465,7 +465,7 @@ export const useEventLoop = (
   // initial state hydrate
   useEffect(() => {
     if (router.isReady && !sentHydrate.current) {
-      Event(initial_events.map((e) => ({ ...e })))
+      addEvents(initial_events.map((e) => ({ ...e })))
       sentHydrate.current = true
     }
   }, [router.isReady])
@@ -488,7 +488,7 @@ export const useEventLoop = (
       }
     })()
   })
-  return [state, Event, connectError]
+  return [state, addEvents, connectError]
 }
 
 /***

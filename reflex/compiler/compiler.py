@@ -25,7 +25,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
         ImportVar(tag="uploadFiles"),
-        ImportVar(tag="E"),
+        ImportVar(tag="Event"),
         ImportVar(tag="isTrue"),
         ImportVar(tag="spreadArraysOrObjects"),
         ImportVar(tag="preventDefault"),

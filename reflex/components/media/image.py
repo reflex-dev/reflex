@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import base64
 import io
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -53,13 +53,17 @@ class Image(ChakraComponent):
     # Learn more _[here](https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images)_
     src_set: Var[str]
 
-    def get_triggers(self) -> set[str]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.
 
         Returns:
             The event triggers.
         """
-        return super().get_triggers() | {"on_error", "on_load"}
+        return {
+            **super().get_event_triggers(),
+            "on_error": lambda: [],
+            "on_load": lambda: [],
+        }
 
     def _render(self) -> Tag:
         self.src.is_string = True

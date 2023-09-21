@@ -57,13 +57,14 @@ def test_script_event_handler():
     )
     render_dict = component.render()
     assert (
-        'onReady={_e => Event([E("ev_state.on_ready", {})], _e)}'
+        'onReady={(_e) => addEvents([Event("ev_state.on_ready", {})], (_e))}'
         in render_dict["props"]
     )
     assert (
-        'onLoad={_e => Event([E("ev_state.on_load", {})], _e)}' in render_dict["props"]
+        'onLoad={(_e) => addEvents([Event("ev_state.on_load", {})], (_e))}'
+        in render_dict["props"]
     )
     assert (
-        'onError={_e => Event([E("ev_state.on_error", {})], _e)}'
+        'onError={(_e) => addEvents([Event("ev_state.on_error", {})], (_e))}'
         in render_dict["props"]
     )

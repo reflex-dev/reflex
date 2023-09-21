@@ -1,10 +1,12 @@
 """A textarea component."""
+from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Union
 
-from reflex.components.component import EVENT_ARG, Component
+from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
@@ -43,18 +45,19 @@ class TextArea(ChakraComponent):
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[str]
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            "on_change": EVENT_ARG.target.value,
-            "on_focus": EVENT_ARG.target.value,
-            "on_blur": EVENT_ARG.target.value,
-            "on_key_down": EVENT_ARG.key,
-            "on_key_up": EVENT_ARG.key,
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
+            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
+            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
+            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
+            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
         }
 
     @classmethod
