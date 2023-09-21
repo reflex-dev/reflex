@@ -590,3 +590,23 @@ def test_component_with_only_valid_children(fixture, request):
         == f"The component `{component.__name__}` only allows the components: `Text` as children. "
         f"Got `Box` instead."
     )
+
+
+@pytest.mark.parametrize(
+    "component,rendered",
+    [
+        (rx.text("hi"), "<Text>\n  {`hi`}\n</Text>"),
+        (
+            rx.box(rx.heading("test", size="md")),
+            "<Box>\n  <Heading size={`md`}>\n  {`test`}\n</Heading>\n</Box>",
+        ),
+    ],
+)
+def test_format_component(component, rendered):
+    """Test that a component is formatted correctly.
+
+    Args:
+        component: The component to format.
+        rendered: The expected rendered component.
+    """
+    assert str(component) == rendered

@@ -134,6 +134,8 @@ TAILWIND_CONFIG = os.path.join(WEB_DIR, "tailwind.config.js")
 TAILWIND_CONTENT = ["./pages/**/*.{js,ts,jsx,tsx}"]
 # Relative tailwind style path to root stylesheet in STYLES_DIR.
 TAILWIND_ROOT_STYLE_PATH = "./tailwind.css"
+# The Tailwindcss version
+TAILWIND_VERSION = "tailwindcss@^3.3.2"
 # The NextJS config file
 NEXT_CONFIG_FILE = "next.config.js"
 # The sitemap config file.

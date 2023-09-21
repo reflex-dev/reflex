@@ -85,10 +85,10 @@ def run_process_and_launch_url(run_command: list[str]):
             )
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
-                match = re.search("ready started server on ([0-9.:]+)", line)
+                match = re.search("ready started server on ([0-9.:]+), url: (.*)", line)
                 if match:
                     if first_run:
-                        url = f"http://{match.group(1)}"
+                        url = match.group(2)
                         if get_config().frontend_path != "":
                             url = urljoin(url, get_config().frontend_path)
                         console.print(f"App running at: [bold green]{url}")

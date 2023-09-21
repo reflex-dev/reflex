@@ -69,6 +69,9 @@ CONTEXT = get_template("web/utils/context.js.jinja2")
 # Template for Tailwind config.
 TAILWIND_CONFIG = get_template("web/tailwind.config.js.jinja2")
 
+# Template to render a component tag.
+COMPONENT = get_template("web/pages/component.js.jinja2")
+
 # Code to render a single NextJS page.
 PAGE = get_template("web/pages/index.js.jinja2")
 

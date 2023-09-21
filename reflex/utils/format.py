@@ -340,6 +340,24 @@ def format_prop(
     return wrap(prop, "{", check_first=False)
 
 
+def format_props(*single_props, **key_value_props) -> list[str]:
+    """Format the tag's props.
+
+    Args:
+        single_props: Props that are not key-value pairs.
+        key_value_props: Props that are key-value pairs.
+
+    Returns:
+        The formatted props list.
+    """
+    # Format all the props.
+    return [
+        f"{name}={format_prop(prop)}"
+        for name, prop in sorted(key_value_props.items())
+        if prop is not None
+    ] + [str(prop) for prop in sorted(single_props)]
+
+
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     """Get the state and function name of an event handler.
 
