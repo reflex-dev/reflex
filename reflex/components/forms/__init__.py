@@ -8,7 +8,6 @@ from .colormodeswitch import (
     ColorModeSwitch,
     color_mode_cond,
 )
-from .copytoclipboard import CopyToClipboard
 from .date_picker import DatePicker
 from .date_time_picker import DateTimePicker
 from .debounce import DebounceInput
