@@ -1,12 +1,13 @@
 """A Rich Text Editor based on SunEditor."""
+from __future__ import annotations
 
 import enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from reflex.base import Base
-from reflex.components.component import Component
-from reflex.event import EVENT_ARG
-from reflex.vars import Var
+from reflex.components.component import Component, NoSSRComponent
+from reflex.constants import EventTriggers
+from reflex.vars import ImportVar, Var
 
 
 class EditorButtonList(list, enum.Enum):
@@ -64,7 +65,7 @@ class EditorOptions(Base):
     button_list: Optional[List[List[str] | str]]
 
 
-class Editor(Component):
+class Editor(NoSSRComponent):
     """A Rich Text Editor component based on SunEditor.
     Not every JS prop is listed here (some are not easily usable from python),
     refer to the library docs for a complete list.
@@ -73,6 +74,10 @@ class Editor(Component):
     library = "suneditor-react"
 
     tag = "SunEditor"
+
+    is_default = True
+
+    lib_dependencies: list[str] = ["suneditor"]
 
     # Language of the editor.
     # Alternatively to a string, a dict of your language can be passed to this prop.
@@ -108,7 +113,7 @@ class Editor(Component):
     auto_focus: Var[bool]
 
     # Pass an EditorOptions instance to modify the behaviour of Editor even more.
-    set_options: Var[Dict]
+    set_options: Var[EditorOptions]
 
     # Whether all SunEditor plugins should be loaded.
     # default: True
@@ -146,48 +151,33 @@ class Editor(Component):
     disable_toolbar: Var[bool]
 
     def _get_imports(self):
-        return {}
+        imports = super()._get_imports()
+        imports[""] = {
+            ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
+        }
+        return imports
 
-    def _get_custom_code(self) -> str:
-        return """import dynamic from 'next/dynamic'; 
-import 'suneditor/dist/css/suneditor.min.css'; 
-const SunEditor = dynamic(() => import('suneditor-react'), { ssr: false });"""
-
-    def get_controlled_triggers(self):
+    def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            "on_change": EVENT_ARG.target.value,
-            "on_scroll": None,
-            "on_click": None,
-            "on_mouse_down": None,
-            "on_input": None,
-            "on_key_up": None,
-            "on_key_down": None,
-            "on_focus": None,
-            "on_blur": None,
-            "on_drop": None,
-            "on_image_upload_before": None,
-            "on_image_upload": None,
-            "on_image_upload_error": None,
-            "on_video_upload_before": None,
-            "on_video_upload": None,
-            "on_video_upload_error": None,
-            "on_audio_upload_before": None,
-            "on_audio_upload": None,
-            "on_audio_upload_error": None,
-            "on_resize_editor": None,
-            "on_copy": None,
-            "on_cut": None,
-            "on_paste": None,
-            "image_upload_handler": None,
-            "toggle_code_view": None,
-            "toggle_full_screen": None,
-            "show_inline": None,
-            "show_controller": None,
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda content: [content],
+            "on_input": lambda _e: [_e],
+            EventTriggers.ON_BLUR: lambda _e, content: [content],
+            "on_load": lambda reload: [reload],
+            "on_resize_editor": lambda height, prev_height: [height, prev_height],
+            "on_copy": lambda _e, clipboard_data: [clipboard_data],
+            "on_cut": lambda _e, clipboard_data: [clipboard_data],
+            "on_paste": lambda _e, clean_data, max_char_count: [
+                clean_data,
+                max_char_count,
+            ],
+            "toggle_code_view": lambda is_code_view: [is_code_view],
+            "toggle_full_screen": lambda is_full_screen: [is_full_screen],
         }
 
     @classmethod
