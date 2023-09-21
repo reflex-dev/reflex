@@ -170,6 +170,18 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     return templates.STYLE.render(stylesheets=sheets)
 
 
+def _compile_component(component: Component) -> str:
+    """Compile a single component.
+
+    Args:
+        component: The component to compile.
+
+    Returns:
+        The compiled component.
+    """
+    return templates.COMPONENT.render(component=component)
+
+
 def _compile_components(components: Set[CustomComponent]) -> str:
     """Compile the components.
 
