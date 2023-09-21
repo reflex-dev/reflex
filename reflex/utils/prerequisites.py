@@ -21,7 +21,7 @@ import httpx
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
-from redis import Redis
+from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
@@ -124,9 +124,11 @@ def get_redis() -> Redis | None:
         The redis client.
     """
     config = get_config()
-    if config.redis_url is None:
+    if not config.redis_url:
         return None
-    redis_url, redis_port = config.redis_url.split(":")
+    redis_url, has_port, redis_port = config.redis_url.partition(":")
+    if not has_port:
+        redis_port = 6379
     console.info(f"Using redis at {config.redis_url}")
     return Redis(host=redis_url, port=int(redis_port), db=0)
 

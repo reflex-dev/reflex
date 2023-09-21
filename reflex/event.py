@@ -2,13 +2,26 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
+
+if TYPE_CHECKING:
+    from reflex.state import State
 
 
 class Event(Base):
@@ -27,6 +40,66 @@ class Event(Base):
     payload: Dict[str, Any] = {}
 
 
+BACKGROUND_TASK_MARKER = "_reflex_background_task"
+
+
+def background(fn):
+    """Decorator to mark event handler as running in the background.
+
+    Args:
+        fn: The function to decorate.
+
+    Returns:
+        The same function, but with a marker set.
+
+
+    Raises:
+        TypeError: If the function is not a coroutine function or async generator.
+    """
+    if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
+        raise TypeError("Background task must be async function or generator.")
+    setattr(fn, BACKGROUND_TASK_MARKER, True)
+    return fn
+
+
+def _no_chain_background_task(
+    state_cls: Type["State"], name: str, fn: Callable
+) -> Callable:
+    """Protect against directly chaining a background task from another event handler.
+
+    Args:
+        state_cls: The state class that the event handler is in.
+        name: The name of the background task.
+        fn: The background task coroutine function / generator.
+
+    Returns:
+        A compatible coroutine function / generator that raises a runtime error.
+
+    Raises:
+        TypeError: If the background task is not async.
+    """
+    call = f"{state_cls.__name__}.{name}"
+    message = (
+        f"Cannot directly call background task {name!r}, use "
+        f"`yield {call}` or `return {call}` instead."
+    )
+    if inspect.iscoroutinefunction(fn):
+
+        async def _no_chain_background_task_co(*args, **kwargs):
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_co
+    if inspect.isasyncgenfunction(fn):
+
+        async def _no_chain_background_task_gen(*args, **kwargs):
+            yield
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_gen
+
+    raise TypeError(f"{fn} is marked as a background task, but is not async.")
+
+
 class EventHandler(Base):
     """An event handler responds to an event to update the state."""
 
@@ -38,6 +111,15 @@ class EventHandler(Base):
 
         # Needed to allow serialization of Callable.
         frozen = True
+
+    @property
+    def is_background(self) -> bool:
+        """Whether the event handler is a background task.
+
+        Returns:
+            True if the event handler is marked as a background task.
+        """
+        return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
     def __call__(self, *args: Var) -> EventSpec:
         """Pass arguments to the handler to get an event spec.
@@ -530,7 +612,7 @@ def get_handler_args(event_spec: EventSpec) -> tuple[tuple[Var, Var], ...]:
 
 
 def fix_events(
-    events: list[EventHandler | EventSpec],
+    events: list[EventHandler | EventSpec] | None,
     token: str,
     router_data: dict[str, Any] | None = None,
 ) -> list[Event]:

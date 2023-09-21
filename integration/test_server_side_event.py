@@ -33,11 +33,16 @@ def ServerSideEvent():
         def set_value_return_c(self):
             return rx.set_value("c", "")
 
+        @rx.var
+        def token(self) -> str:
+            return self.get_token()
+
     app = rx.App(state=SSState)
 
     @app.add_page
     def index():
         return rx.fragment(
+            rx.input(id="token", value=SSState.token, is_read_only=True),
             rx.input(default_value="a", id="a"),
             rx.input(default_value="b", id="b"),
             rx.input(default_value="c", id="c"),
@@ -106,7 +111,12 @@ def driver(server_side_event: AppHarness):
     assert server_side_event.app_instance is not None, "app is not running"
     driver = server_side_event.frontend()
     try:
-        assert server_side_event.poll_for_clients()
+        token_input = driver.find_element(By.ID, "token")
+        assert token_input
+        # wait for the backend connection to send the token
+        token = server_side_event.poll_for_value(token_input)
+        assert token is not None
+
         yield driver
     finally:
         driver.quit()

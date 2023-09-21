@@ -26,11 +26,16 @@ def VarOperations():
         dict1: dict = {1: 2}
         dict2: dict = {3: 4}
 
+        @rx.var
+        def token(self) -> str:
+            return self.get_token()
+
     app = rx.App(state=VarOperationState)
 
     @app.add_page
     def index():
         return rx.vstack(
+            rx.input(id="token", value=VarOperationState.token, is_read_only=True),
             # INT INT
             rx.text(
                 VarOperationState.int_var1 + VarOperationState.int_var2,
@@ -544,7 +549,12 @@ def driver(var_operations: AppHarness):
     """
     driver = var_operations.frontend()
     try:
-        assert var_operations.poll_for_clients()
+        token_input = driver.find_element(By.ID, "token")
+        assert token_input
+        # wait for the backend connection to send the token
+        token = var_operations.poll_for_value(token_input)
+        assert token is not None
+
         yield driver
     finally:
         driver.quit()

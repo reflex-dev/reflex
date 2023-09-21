@@ -1,5 +1,6 @@
 """ Generated with stubgen from mypy, then manually edited, do not regen."""
 
+import asyncio
 from fastapi import FastAPI
 from fastapi import UploadFile as UploadFile
 from reflex import constants as constants
@@ -45,12 +46,14 @@ from reflex.utils import (
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from typing import (
     Any,
+    AsyncContextManager,
     AsyncIterator,
     Callable,
     Coroutine,
     Dict,
     List,
     Optional,
+    Set,
     Type,
     Union,
     overload,
@@ -75,6 +78,7 @@ class App(Base):
     admin_dash: Optional[AdminDash]
     event_namespace: Optional[AsyncNamespace]
     overlay_component: Optional[Union[Component, ComponentCallable]]
+    background_tasks: Set[asyncio.Task] = set()
     def __init__(
         self,
         *args,
@@ -116,6 +120,10 @@ class App(Base):
     def setup_admin_dash(self) -> None: ...
     def get_frontend_packages(self, imports: Dict[str, str]): ...
     def compile(self) -> None: ...
+    def modify_state(self, token: str) -> AsyncContextManager[State]: ...
+    def _process_background(
+        self, state: State, event: Event
+    ) -> asyncio.Task | None: ...
 
 async def process(
     app: App, event: Event, sid: str, headers: Dict, client_ip: str
