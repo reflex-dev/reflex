@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.constants import EventTriggers
+from reflex.utils.format import to_camel_case
 from reflex.vars import ImportVar, Var
 
 
@@ -113,7 +114,7 @@ class Editor(NoSSRComponent):
     auto_focus: Var[bool]
 
     # Pass an EditorOptions instance to modify the behaviour of Editor even more.
-    set_options: Var[EditorOptions]
+    set_options: Var[Dict]
 
     # Whether all SunEditor plugins should be loaded.
     # default: True
@@ -190,7 +191,16 @@ class Editor(NoSSRComponent):
 
         Returns:
             An Editor instance.
+
+        Raises:
+            ValueError: If set_options is a state Var.
         """
         if set_options is not None:
-            props["set_options"] = set_options.dict()
+            if isinstance(set_options, Var):
+                raise ValueError("EditorOptions cannot be a state Var")
+            props["set_options"] = {
+                to_camel_case(k): v
+                for k, v in set_options.dict().items()
+                if v is not None
+            }
         return super().create(*[], **props)
