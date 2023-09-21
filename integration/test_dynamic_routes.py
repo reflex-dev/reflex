@@ -1,11 +1,10 @@
 """Integration tests for dynamic route page behavior."""
-from typing import Callable, Generator, Type
+from typing import Callable, Coroutine, Generator, Type
 from urllib.parse import urlsplit
 
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex import State
 from reflex.testing import AppHarness, AppHarnessProd, WebDriver
 
 from .utils import poll_for_navigation
@@ -100,22 +99,21 @@ def driver(dynamic_route: AppHarness) -> Generator[WebDriver, None, None]:
     assert dynamic_route.app_instance is not None, "app is not running"
     driver = dynamic_route.frontend()
     try:
-        assert dynamic_route.poll_for_clients()
         yield driver
     finally:
         driver.quit()
 
 
 @pytest.fixture()
-def backend_state(dynamic_route: AppHarness, driver: WebDriver) -> State:
-    """Get the backend state.
+def token(dynamic_route: AppHarness, driver: WebDriver) -> str:
+    """Get the token associated with backend state.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
 
     Returns:
-        The backend state associated with the token visible in the driver browser.
+        The token visible in the driver browser.
     """
     assert dynamic_route.app_instance is not None
     token_input = driver.find_element(By.ID, "token")
@@ -125,43 +123,49 @@ def backend_state(dynamic_route: AppHarness, driver: WebDriver) -> State:
     token = dynamic_route.poll_for_value(token_input)
     assert token is not None
 
-    # look up the backend state from the state manager
-    return dynamic_route.app_instance.state_manager.states[token]
+    return token
 
 
 @pytest.fixture()
 def poll_for_order(
-    dynamic_route: AppHarness, backend_state: State
-) -> Callable[[list[str]], None]:
+    dynamic_route: AppHarness, token: str
+) -> Callable[[list[str]], Coroutine[None, None, None]]:
     """Poll for the order list to match the expected order.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
-        backend_state: The backend state associated with the token visible in the driver browser.
+        token: The token visible in the driver browser.
 
     Returns:
-        A function that polls for the order list to match the expected order.
+        An async function that polls for the order list to match the expected order.
     """
 
-    def _poll_for_order(exp_order: list[str]):
-        dynamic_route._poll_for(lambda: backend_state.order == exp_order)
-        assert backend_state.order == exp_order
+    async def _poll_for_order(exp_order: list[str]):
+        async def _backend_state():
+            return await dynamic_route.get_state(token)
+
+        async def _check():
+            return (await _backend_state()).order == exp_order
+
+        await AppHarness._poll_for_async(_check)
+        assert (await _backend_state()).order == exp_order
 
     return _poll_for_order
 
 
-def test_on_load_navigate(
+@pytest.mark.asyncio
+async def test_on_load_navigate(
     dynamic_route: AppHarness,
     driver: WebDriver,
-    backend_state: State,
-    poll_for_order: Callable[[list[str]], None],
+    token: str,
+    poll_for_order: Callable[[list[str]], Coroutine[None, None, None]],
 ):
     """Click links to navigate between dynamic pages with on_load event.
 
     Args:
         dynamic_route: harness for DynamicRoute app.
         driver: WebDriver instance.
-        backend_state: The backend state associated with the token visible in the driver browser.
+        token: The token visible in the driver browser.
         poll_for_order: function that polls for the order list to match the expected order.
     """
     assert dynamic_route.app_instance is not None
@@ -184,7 +188,7 @@ def test_on_load_navigate(
         assert page_id_input
 
         assert dynamic_route.poll_for_value(page_id_input) == str(ix)
-    poll_for_order(exp_order)
+    await poll_for_order(exp_order)
 
     # manually load the next page to trigger client side routing in prod mode
     if is_prod:
@@ -192,14 +196,14 @@ def test_on_load_navigate(
     exp_order += ["/page/[page_id]-10"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/page/10/")
-    poll_for_order(exp_order)
+    await poll_for_order(exp_order)
 
     # make sure internal nav still hydrates after redirect
     exp_order += ["/page/[page_id]-11"]
     link = driver.find_element(By.ID, "link_page_next")
     with poll_for_navigation(driver):
         link.click()
-    poll_for_order(exp_order)
+    await poll_for_order(exp_order)
 
     # load same page with a query param and make sure it passes through
     if is_prod:
@@ -207,14 +211,14 @@ def test_on_load_navigate(
     exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
-    poll_for_order(exp_order)
-    assert backend_state.get_query_params()["foo"] == "bar"
+    await poll_for_order(exp_order)
+    assert (await dynamic_route.get_state(token)).get_query_params()["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/missing")
-    poll_for_order(exp_order)
+    await poll_for_order(exp_order)
 
     # browser nav should still trigger hydration
     if is_prod:
@@ -222,14 +226,14 @@ def test_on_load_navigate(
     exp_order += ["/page/[page_id]-11"]
     with poll_for_navigation(driver):
         driver.back()
-    poll_for_order(exp_order)
+    await poll_for_order(exp_order)
 
     # next/link to a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
     link = driver.find_element(By.ID, "link_missing")
     with poll_for_navigation(driver):
         link.click()
-    poll_for_order(exp_order)
+    await poll_for_order(exp_order)
 
     # hit a page that redirects back to dynamic page
     if is_prod:
@@ -237,15 +241,16 @@ def test_on_load_navigate(
     exp_order += ["on_load_redir-{'foo': 'bar', 'page_id': '0'}", "/page/[page_id]-0"]
     with poll_for_navigation(driver):
         driver.get(f"{dynamic_route.frontend_url}/redirect-page/0/?foo=bar")
-    poll_for_order(exp_order)
+    await poll_for_order(exp_order)
     # should have redirected back to page 0
     assert urlsplit(driver.current_url).path == "/page/0/"
 
 
-def test_on_load_navigate_non_dynamic(
+@pytest.mark.asyncio
+async def test_on_load_navigate_non_dynamic(
     dynamic_route: AppHarness,
     driver: WebDriver,
-    poll_for_order: Callable[[list[str]], None],
+    poll_for_order: Callable[[list[str]], Coroutine[None, None, None]],
 ):
     """Click links to navigate between static pages with on_load event.
 
@@ -261,7 +266,7 @@ def test_on_load_navigate_non_dynamic(
     with poll_for_navigation(driver):
         link.click()
     assert urlsplit(driver.current_url).path == "/static/x/"
-    poll_for_order(["/static/x-no page id"])
+    await poll_for_order(["/static/x-no page id"])
 
     # go back to the index and navigate back to the static route
     link = driver.find_element(By.ID, "link_index")
@@ -273,4 +278,4 @@ def test_on_load_navigate_non_dynamic(
     with poll_for_navigation(driver):
         link.click()
     assert urlsplit(driver.current_url).path == "/static/x/"
-    poll_for_order(["/static/x-no page id", "/static/x-no page id"])
+    await poll_for_order(["/static/x-no page id", "/static/x-no page id"])
