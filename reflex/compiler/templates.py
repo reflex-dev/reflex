@@ -83,3 +83,6 @@ SITEMAP_CONFIG = "module.exports = {config}".format
 
 # Code to render the root stylesheet.
 STYLE = get_template("web/styles/styles.css.jinja2")
+
+# Code that generate the package json file
+PACKAGE_JSON = get_template("web/package.json.jinja2")
