@@ -1,7 +1,7 @@
 """Markdown component."""
 
 import textwrap
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, List, Union
 
 from reflex.compiler import utils
 from reflex.components.component import Component
@@ -12,35 +12,30 @@ from reflex.components.typography.text import Text
 from reflex.utils import types
 from reflex.vars import BaseVar, ImportVar, Var
 
-# Mapping from markdown tags to components.
-components_by_tag: Dict[str, Callable] = {
-    "h1": Heading,
-    "h2": Heading,
-    "h3": Heading,
-    "h4": Heading,
-    "h5": Heading,
-    "h6": Heading,
-    "p": Text,
-    "ul": UnorderedList,
-    "ol": OrderedList,
-    "li": ListItem,
-    "a": Link,
-}
 
 # Component Mapping
-base_component_map: dict[str, Callable] = {
-    "h1": lambda value: Heading.create(value, as_="h1"),
-    "h2": lambda value: Heading.create(value, as_="h2"),
-    "h3": lambda value: Heading.create(value, as_="h3"),
-    "h4": lambda value: Heading.create(value, as_="h4"),
-    "h5": lambda value: Heading.create(value, as_="h5"),
-    "h6": lambda value: Heading.create(value, as_="h6"),
-    "p": lambda value: Text.create(value),
-    "ul": lambda value: UnorderedList.create(value),  # type: ignore
-    "ol": lambda value: OrderedList.create(value),  # type: ignore
-    "li": lambda value: ListItem.create(value),
-    "a": lambda value: Link.create(value),
-}
+def get_base_component_map() -> dict[str, Callable]:
+    """Get the base component map.
+
+    Returns:
+        The base component map.
+    """
+    from reflex.components.datadisplay.code import Code
+
+    return {
+        "h1": lambda value: Heading.create(value, as_="h1"),
+        "h2": lambda value: Heading.create(value, as_="h2"),
+        "h3": lambda value: Heading.create(value, as_="h3"),
+        "h4": lambda value: Heading.create(value, as_="h4"),
+        "h5": lambda value: Heading.create(value, as_="h5"),
+        "h6": lambda value: Heading.create(value, as_="h6"),
+        "p": lambda value: Text.create(value),
+        "ul": lambda value: UnorderedList.create(value),  # type: ignore
+        "ol": lambda value: OrderedList.create(value),  # type: ignore
+        "li": lambda value: ListItem.create(value),
+        "a": lambda value: Link.create(value),
+        "code": lambda value: Code.create(value),
+    }
 
 
 class Markdown(Component):
@@ -53,7 +48,7 @@ class Markdown(Component):
     is_default = True
 
     # The component map
-    component_map: Any = base_component_map
+    component_map: Any = {}
 
     @classmethod
     def create(
@@ -74,7 +69,7 @@ class Markdown(Component):
         ), "Markdown component must have exactly one child containing the markdown source."
 
         component_map = component_map or {}
-        component_map = {**base_component_map, **component_map}
+        component_map = {**get_base_component_map(), **component_map}
 
         # Get the markdown source.
         src = children[0]
@@ -114,7 +109,7 @@ class Markdown(Component):
 
     def _render(self):
         # Import here to avoid circular imports.
-        from reflex.components.datadisplay.code import Code, CodeBlock
+        from reflex.components.datadisplay.code import CodeBlock
 
         def format_comp(comp):
             return str(
@@ -139,9 +134,7 @@ class Markdown(Component):
         {{...props}}
         />
     ) : (
-        <{Code.create().tag} {{...props}}>
-        {{children}}
-        </{Code.create().tag}>
+        {format_comp(self.component_map["code"])}
     );
       }}}}""".replace(
             "\n", " "
