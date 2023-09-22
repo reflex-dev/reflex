@@ -6,8 +6,8 @@ license = "Apache-2.0"
 authors = [
     "Nikhil Rao <nikhil@reflex.dev>",
     "Alek Petuskey <alek@reflex.dev>",
-    "Masen Furer <masen@reflex.dev",
-    "Elijah Ahianyo <elijah@reflex.dev",
+    "Masen Furer <masen@reflex.dev>",
+    "Elijah Ahianyo <elijah@reflex.dev>",
     "Thomas Brandého <thomas@reflex.dev>",
 ]
 readme = "README.md"
