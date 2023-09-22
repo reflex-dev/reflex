@@ -263,7 +263,7 @@ def login(
 
     # Check if the user is already logged in.
     token = hosting.get_existing_access_token()
-    using_existing_token = not token
+    using_existing_token = bool(token)
     if not token:
         # If not already logged in, open a browser window/tab to the login page.
         console.print(f"Opening {config.cp_web_url} ...")
