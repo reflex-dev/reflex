@@ -19,11 +19,16 @@ def FormSubmit():
         def form_submit(self, form_data: dict):
             self.form_data = form_data
 
+        @rx.var
+        def token(self) -> str:
+            return self.get_token()
+
     app = rx.App(state=FormState)
 
     @app.add_page
     def index():
         return rx.vstack(
+            rx.input(value=FormState.token, is_read_only=True, id="token"),
             rx.form(
                 rx.vstack(
                     rx.input(id="name_input"),
@@ -82,13 +87,13 @@ def driver(form_submit: AppHarness):
     """
     driver = form_submit.frontend()
     try:
-        assert form_submit.poll_for_clients()
         yield driver
     finally:
         driver.quit()
 
 
-def test_submit(driver, form_submit: AppHarness):
+@pytest.mark.asyncio
+async def test_submit(driver, form_submit: AppHarness):
     """Fill a form with various different output, submit it to backend and verify
     the output.
 
@@ -97,7 +102,14 @@ def test_submit(driver, form_submit: AppHarness):
         form_submit: harness for FormSubmit app
     """
     assert form_submit.app_instance is not None, "app is not running"
-    _, backend_state = list(form_submit.app_instance.state_manager.states.items())[0]
+
+    # get a reference to the connected client
+    token_input = driver.find_element(By.ID, "token")
+    assert token_input
+
+    # wait for the backend connection to send the token
+    token = form_submit.poll_for_value(token_input)
+    assert token
 
     name_input = driver.find_element(By.ID, "name_input")
     name_input.send_keys("foo")
@@ -132,19 +144,21 @@ def test_submit(driver, form_submit: AppHarness):
     submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
     submit_input.click()
 
-    # wait for the form data to arrive at the backend
-    AppHarness._poll_for(
-        lambda: backend_state.form_data != {},
-    )
+    async def get_form_data():
+        return (await form_submit.get_state(token)).form_data
 
-    assert backend_state.form_data["name_input"] == "foo"
-    assert backend_state.form_data["pin_input"] == pin_values
-    assert backend_state.form_data["number_input"] == "-3"
-    assert backend_state.form_data["bool_input"] is True
-    assert backend_state.form_data["bool_input2"] is True
-    assert backend_state.form_data["slider_input"] == "50"
-    assert backend_state.form_data["range_input"] == ["25", "75"]
-    assert backend_state.form_data["radio_input"] == "option2"
-    assert backend_state.form_data["select_input"] == "option1"
-    assert backend_state.form_data["text_area_input"] == "Some\nText"
-    assert backend_state.form_data["debounce_input"] == "bar baz"
+    # wait for the form data to arrive at the backend
+    form_data = await AppHarness._poll_for_async(get_form_data)
+    assert isinstance(form_data, dict)
+
+    assert form_data["name_input"] == "foo"
+    assert form_data["pin_input"] == pin_values
+    assert form_data["number_input"] == "-3"
+    assert form_data["bool_input"] is True
+    assert form_data["bool_input2"] is True
+    assert form_data["slider_input"] == "50"
+    assert form_data["range_input"] == ["25", "75"]
+    assert form_data["radio_input"] == "option2"
+    assert form_data["select_input"] == "option1"
+    assert form_data["text_area_input"] == "Some\nText"
+    assert form_data["debounce_input"] == "bar baz"

@@ -1,8 +1,5 @@
 import reflex as rx
 
-class {{ config_name }}(rx.Config):
-    pass
-
-config = {{ config_name }}(
+config = rx.Config(
     app_name="{{ app_name }}",
 )

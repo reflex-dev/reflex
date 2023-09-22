@@ -15,7 +15,23 @@ permissions:
 
 jobs:
   integration-app-harness:
+    strategy:
+      matrix:
+        state_manager: [ "redis", "memory" ]
     runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      redis:
+        image: ${{ matrix.state_manager == 'redis' && 'redis' || '' }}
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
     steps:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/setup_build_env
@@ -27,6 +43,7 @@ jobs:
     - name: Run app harness tests
       env:
         SCREENSHOT_DIR: /tmp/screenshots
+        REDIS_URL: ${{ matrix.state_manager == 'redis' && 'localhost:6379' || '' }}
       run: |
         poetry run pytest integration
     - uses: actions/upload-artifact@v3

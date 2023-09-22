@@ -13,6 +13,9 @@ on:
 permissions:
   contents: read
 
+env:
+  TELEMETRY_ENABLED: false
+
 jobs:
   example-counter-wsl:
     # 2019 is more stable with WSL in GH actions

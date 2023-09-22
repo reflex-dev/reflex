@@ -34,13 +34,6 @@ class Markdown(Component):
 
     library = "react-markdown@^8.0.7"
 
-    lib_dependencies: List[str] = [
-        "rehype-katex@^6.0.3",
-        "remark-math@^5.1.1",
-        "rehype-raw@^6.1.1",
-        "remark-gfm@^3.0.1",
-    ]
-
     tag = "ReactMarkdown"
 
     is_default = True
@@ -98,16 +91,21 @@ class Markdown(Component):
         return super().create(src, **props)
 
     def _get_imports(self):
+        # Import here to avoid circular imports.
         from reflex.components.datadisplay.code import Code, CodeBlock
 
         imports = super()._get_imports()
 
         # Special markdown imports.
-        imports["remark-math"] = {ImportVar(tag="remarkMath", is_default=True)}
-        imports["remark-gfm"] = {ImportVar(tag="remarkGfm", is_default=True)}
-        imports["rehype-katex"] = {ImportVar(tag="rehypeKatex", is_default=True)}
-        imports["rehype-raw"] = {ImportVar(tag="rehypeRaw", is_default=True)}
-        imports[""] = {ImportVar(tag="katex/dist/katex.min.css")}
+        imports.update(
+            {
+                "": {ImportVar(tag="katex/dist/katex.min.css")},
+                "rehype-katex@^6.0.3": {ImportVar(tag="rehypeKatex", is_default=True)},
+                "remark-math@^5.1.1": {ImportVar(tag="remarkMath", is_default=True)},
+                "rehype-raw@^6.1.1": {ImportVar(tag="rehypeRaw", is_default=True)},
+                "remark-gfm@^3.0.1": {ImportVar(tag="remarkGfm", is_default=True)},
+            }
+        )
 
         # Get the imports for each component.
         for component in components_by_tag.values():
@@ -121,30 +119,39 @@ class Markdown(Component):
         return imports
 
     def _render(self):
+        # Import here to avoid circular imports.
+        from reflex.components.datadisplay.code import Code, CodeBlock
         from reflex.components.tags.tag import Tag
 
+        def format_props(tag):
+            return "".join(
+                Tag(
+                    name="", props=Style(self.custom_styles.get(tag, {}))
+                ).format_props()
+            )
+
         components = {
-            tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {''.join(Tag(name='', props=Style(self.custom_styles.get(tag, {}))).format_props())} />}}"
+            tag: f"{{({{node, ...props}}) => <{(component().tag)} {{...props}} {format_props(tag)} />}}"
             for tag, component in components_by_tag.items()
         }
         components[
             "code"
-        ] = """{({node, inline, className, children, ...props}) =>
-                    {
-        const match = (className || '').match(/language-(?<lang>.*)/);
-        return !inline ? (
-          <Prism
-            children={String(children).replace(/\n$/, '')}
-            language={match ? match[1] : ''}
-            theme={light}
-            {...props}
-          />
-        ) : (
-          <Code {...props}>
-            {children}
-          </Code>
-        );
-      }}""".replace(
+        ] = f"""{{({{node, inline, className, children, ...props}}) => {{
+    const match = (className || '').match(/language-(?<lang>.*)/);
+    return !inline ? (
+        <{CodeBlock().tag}
+        children={{String(children).replace(/\n$/, '')}}
+        language={{match ? match[1] : ''}}
+        style={{light}}
+        {{...props}}
+        {format_props("pre")}
+        />
+    ) : (
+        <{Code.create().tag} {{...props}} {format_props("code")}>
+        {{children}}
+        </{Code.create().tag}>
+    );
+      }}}}""".replace(
             "\n", " "
         )
 

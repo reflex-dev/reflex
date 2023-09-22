@@ -1,19 +1,41 @@
 from __future__ import annotations
 
+import asyncio
+import copy
 import datetime
 import functools
-from typing import Dict, List
+import json
+import os
+import sys
+from typing import Dict, Generator, List
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
 from reflex.base import Base
-from reflex.constants import IS_HYDRATED, RouteVar
+from reflex.constants import APP_VAR, IS_HYDRATED, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
-from reflex.state import State
-from reflex.utils import format
-from reflex.vars import BaseVar, ComputedVar, ReflexDict, ReflexList, ReflexSet
+from reflex.state import (
+    ImmutableStateError,
+    LockExpiredError,
+    MutableProxy,
+    State,
+    StateManager,
+    StateManagerMemory,
+    StateManagerRedis,
+    StateProxy,
+    StateUpdate,
+)
+from reflex.utils import format, prerequisites
+from reflex.vars import BaseVar, ComputedVar
+
+from .states import GenState
+
+CI = bool(os.environ.get("CI", False))
+LOCK_EXPIRATION = 2000 if CI else 100
+LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.2
 
 
 class Object(Base):
@@ -702,13 +724,9 @@ async def test_process_event_substate(test_state, child_state, grandchild_state)
 
 
 @pytest.mark.asyncio
-async def test_process_event_generator(gen_state):
-    """Test event handlers that generate multiple updates.
-
-    Args:
-        gen_state: A state.
-    """
-    gen_state = gen_state()
+async def test_process_event_generator():
+    """Test event handlers that generate multiple updates."""
+    gen_state = GenState()  # type: ignore
     event = Event(
         token="t",
         name="go",
@@ -1310,15 +1328,31 @@ def test_setattr_of_mutable_types(mutable_state):
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
 
-    assert isinstance(array, ReflexList)
-    assert isinstance(array[1], ReflexList)
-    assert isinstance(array[2], ReflexDict)
+    assert isinstance(array, MutableProxy)
+    assert isinstance(array, list)
+    assert isinstance(array[1], MutableProxy)
+    assert isinstance(array[1], list)
+    assert isinstance(array[2], MutableProxy)
+    assert isinstance(array[2], dict)
 
-    assert isinstance(hashmap, ReflexDict)
-    assert isinstance(hashmap["key"], ReflexList)
-    assert isinstance(hashmap["third_key"], ReflexDict)
+    assert isinstance(hashmap, MutableProxy)
+    assert isinstance(hashmap, dict)
+    assert isinstance(hashmap["key"], MutableProxy)
+    assert isinstance(hashmap["key"], list)
+    assert isinstance(hashmap["third_key"], MutableProxy)
+    assert isinstance(hashmap["third_key"], dict)
 
+    assert isinstance(test_set, MutableProxy)
     assert isinstance(test_set, set)
+
+    assert isinstance(mutable_state.custom, MutableProxy)
+    assert isinstance(mutable_state.custom.array, MutableProxy)
+    assert isinstance(mutable_state.custom.array, list)
+    assert isinstance(mutable_state.custom.hashmap, MutableProxy)
+    assert isinstance(mutable_state.custom.hashmap, dict)
+    assert isinstance(mutable_state.custom.test_set, MutableProxy)
+    assert isinstance(mutable_state.custom.test_set, set)
+    assert isinstance(mutable_state.custom.custom, MutableProxy)
 
     mutable_state.reassign_mutables()
 
@@ -1326,15 +1360,22 @@ def test_setattr_of_mutable_types(mutable_state):
     hashmap = mutable_state.hashmap
     test_set = mutable_state.test_set
 
-    assert isinstance(array, ReflexList)
-    assert isinstance(array[1], ReflexList)
-    assert isinstance(array[2], ReflexDict)
+    assert isinstance(array, MutableProxy)
+    assert isinstance(array, list)
+    assert isinstance(array[1], MutableProxy)
+    assert isinstance(array[1], list)
+    assert isinstance(array[2], MutableProxy)
+    assert isinstance(array[2], dict)
 
-    assert isinstance(hashmap, ReflexDict)
-    assert isinstance(hashmap["mod_key"], ReflexList)
-    assert isinstance(hashmap["mod_third_key"], ReflexDict)
+    assert isinstance(hashmap, MutableProxy)
+    assert isinstance(hashmap, dict)
+    assert isinstance(hashmap["mod_key"], MutableProxy)
+    assert isinstance(hashmap["mod_key"], list)
+    assert isinstance(hashmap["mod_third_key"], MutableProxy)
+    assert isinstance(hashmap["mod_third_key"], dict)
 
-    assert isinstance(test_set, ReflexSet)
+    assert isinstance(test_set, MutableProxy)
+    assert isinstance(test_set, set)
 
 
 def test_error_on_state_method_shadow():
@@ -1375,3 +1416,632 @@ def test_state_with_invalid_yield():
         "must only return/yield: None, Events or other EventHandlers"
         in err.value.args[0]
     )
+
+
+@pytest.fixture(scope="function", params=["in_process", "redis"])
+def state_manager(request) -> Generator[StateManager, None, None]:
+    """Instance of state manager parametrized for redis and in-process.
+
+    Args:
+        request: pytest request object.
+
+    Yields:
+        A state manager instance
+    """
+    state_manager = StateManager.create(state=TestState)
+    if request.param == "redis":
+        if not isinstance(state_manager, StateManagerRedis):
+            pytest.skip("Test requires redis")
+    else:
+        # explicitly NOT using redis
+        state_manager = StateManagerMemory(state=TestState)
+        assert not state_manager._states_locks
+
+    yield state_manager
+
+    if isinstance(state_manager, StateManagerRedis):
+        asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
+
+
+@pytest.mark.asyncio
+async def test_state_manager_modify_state(state_manager: StateManager, token: str):
+    """Test that the state manager can modify a state exclusively.
+
+    Args:
+        state_manager: A state manager instance.
+        token: A token.
+    """
+    async with state_manager.modify_state(token):
+        if isinstance(state_manager, StateManagerRedis):
+            assert await state_manager.redis.get(f"{token}_lock")
+        elif isinstance(state_manager, StateManagerMemory):
+            assert token in state_manager._states_locks
+            assert state_manager._states_locks[token].locked()
+    # lock should be dropped after exiting the context
+    if isinstance(state_manager, StateManagerRedis):
+        assert (await state_manager.redis.get(f"{token}_lock")) is None
+    elif isinstance(state_manager, StateManagerMemory):
+        assert not state_manager._states_locks[token].locked()
+
+        # separate instances should NOT share locks
+        sm2 = StateManagerMemory(state=TestState)
+        assert sm2._state_manager_lock is state_manager._state_manager_lock
+        assert not sm2._states_locks
+        if state_manager._states_locks:
+            assert sm2._states_locks != state_manager._states_locks
+
+
+@pytest.mark.asyncio
+async def test_state_manager_contend(state_manager: StateManager, token: str):
+    """Multiple coroutines attempting to access the same state.
+
+    Args:
+        state_manager: A state manager instance.
+        token: A token.
+    """
+    n_coroutines = 10
+    exp_num1 = 10
+
+    async with state_manager.modify_state(token) as state:
+        state.num1 = 0
+
+    async def _coro():
+        async with state_manager.modify_state(token) as state:
+            await asyncio.sleep(0.01)
+            state.num1 += 1
+
+    tasks = [asyncio.create_task(_coro()) for _ in range(n_coroutines)]
+
+    for f in asyncio.as_completed(tasks):
+        await f
+
+    assert (await state_manager.get_state(token)).num1 == exp_num1
+
+    if isinstance(state_manager, StateManagerRedis):
+        assert (await state_manager.redis.get(f"{token}_lock")) is None
+    elif isinstance(state_manager, StateManagerMemory):
+        assert token in state_manager._states_locks
+        assert not state_manager._states_locks[token].locked()
+
+
+@pytest.fixture(scope="function")
+def state_manager_redis() -> Generator[StateManager, None, None]:
+    """Instance of state manager for redis only.
+
+    Yields:
+        A state manager instance
+    """
+    state_manager = StateManager.create(TestState)
+
+    if not isinstance(state_manager, StateManagerRedis):
+        pytest.skip("Test requires redis")
+
+    yield state_manager
+
+    asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_expire(state_manager_redis: StateManager, token: str):
+    """Test that the state manager lock expires and raises exception exiting context.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+    """
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
+
+    async with state_manager_redis.modify_state(token):
+        await asyncio.sleep(0.01)
+
+    with pytest.raises(LockExpiredError):
+        async with state_manager_redis.modify_state(token):
+            await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+
+
+@pytest.mark.asyncio
+async def test_state_manager_lock_expire_contend(
+    state_manager_redis: StateManager, token: str
+):
+    """Test that the state manager lock expires and queued waiters proceed.
+
+    Args:
+        state_manager_redis: A state manager instance.
+        token: A token.
+    """
+    exp_num1 = 4252
+    unexp_num1 = 666
+
+    state_manager_redis.lock_expiration = LOCK_EXPIRATION
+
+    order = []
+
+    async def _coro_blocker():
+        async with state_manager_redis.modify_state(token) as state:
+            order.append("blocker")
+            await asyncio.sleep(LOCK_EXPIRE_SLEEP)
+            state.num1 = unexp_num1
+
+    async def _coro_waiter():
+        while "blocker" not in order:
+            await asyncio.sleep(0.005)
+        async with state_manager_redis.modify_state(token) as state:
+            order.append("waiter")
+            assert state.num1 != unexp_num1
+            state.num1 = exp_num1
+
+    tasks = [
+        asyncio.create_task(_coro_blocker()),
+        asyncio.create_task(_coro_waiter()),
+    ]
+    with pytest.raises(LockExpiredError):
+        await tasks[0]
+    await tasks[1]
+
+    assert order == ["blocker", "waiter"]
+    assert (await state_manager_redis.get_state(token)).num1 == exp_num1
+
+
+@pytest.fixture(scope="function")
+def mock_app(monkeypatch, app: rx.App, state_manager: StateManager) -> rx.App:
+    """Mock app fixture.
+
+    Args:
+        monkeypatch: Pytest monkeypatch object.
+        app: An app.
+        state_manager: A state manager.
+
+    Returns:
+        The app, after mocking out prerequisites.get_app()
+    """
+    app_module = Mock()
+    setattr(app_module, APP_VAR, app)
+    app.state = TestState
+    app.state_manager = state_manager
+    assert app.event_namespace is not None
+    app.event_namespace.emit = AsyncMock()
+    monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
+    """Test that the state proxy works.
+
+    Args:
+        grandchild_state: A grandchild state.
+        mock_app: An app that will be returned by `get_app()`
+    """
+    child_state = grandchild_state.parent_state
+    assert child_state is not None
+    parent_state = child_state.parent_state
+    assert parent_state is not None
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        mock_app.state_manager.states[parent_state.get_token()] = parent_state
+
+    sp = StateProxy(grandchild_state)
+    assert sp.__wrapped__ == grandchild_state
+    assert sp._self_substate_path == grandchild_state.get_full_name().split(".")
+    assert sp._self_app is mock_app
+    assert not sp._self_mutable
+    assert sp._self_actx is None
+
+    # cannot use normal contextmanager protocol
+    with pytest.raises(TypeError), sp:
+        pass
+
+    with pytest.raises(ImmutableStateError):
+        # cannot directly modify state proxy outside of async context
+        sp.value2 = 16
+
+    async with sp:
+        assert sp._self_actx is not None
+        assert sp._self_mutable  # proxy is mutable inside context
+        if isinstance(mock_app.state_manager, StateManagerMemory):
+            # For in-process store, only one instance of the state exists
+            assert sp.__wrapped__ is grandchild_state
+        else:
+            # When redis is used, a new+updated instance is assigned to the proxy
+            assert sp.__wrapped__ is not grandchild_state
+        sp.value2 = 42
+    assert not sp._self_mutable  # proxy is not mutable after exiting context
+    assert sp._self_actx is None
+    assert sp.value2 == 42
+
+    # Get the state from the state manager directly and check that the value is updated
+    gotten_state = await mock_app.state_manager.get_state(grandchild_state.get_token())
+    if isinstance(mock_app.state_manager, StateManagerMemory):
+        # For in-process store, only one instance of the state exists
+        assert gotten_state is parent_state
+    else:
+        assert gotten_state is not parent_state
+    gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
+    assert gotten_grandchild_state is not None
+    assert gotten_grandchild_state.value2 == 42
+
+    # ensure state update was emitted
+    assert mock_app.event_namespace is not None
+    mock_app.event_namespace.emit.assert_called_once()
+    mcall = mock_app.event_namespace.emit.mock_calls[0]
+    assert mcall.args[0] == str(SocketEvent.EVENT)
+    assert json.loads(mcall.args[1]) == StateUpdate(
+        delta={
+            parent_state.get_full_name(): {
+                "upper": "",
+                "sum": 3.14,
+            },
+            grandchild_state.get_full_name(): {
+                "value2": 42,
+            },
+        }
+    )
+    assert mcall.kwargs["to"] == grandchild_state.get_sid()
+
+
+class BackgroundTaskState(State):
+    """A state with a background task."""
+
+    order: List[str] = []
+    dict_list: Dict[str, List[int]] = {"foo": []}
+
+    @rx.background
+    async def background_task(self):
+        """A background task that updates the state."""
+        async with self:
+            assert not self.order
+            self.order.append("background_task:start")
+
+        assert isinstance(self, StateProxy)
+        with pytest.raises(ImmutableStateError):
+            self.order.append("bad idea")
+
+        with pytest.raises(ImmutableStateError):
+            # Even nested access to mutables raises an exception.
+            self.dict_list["foo"].append(42)
+
+        # wait for some other event to happen
+        while len(self.order) == 1:
+            await asyncio.sleep(0.01)
+            async with self:
+                pass  # update proxy instance
+
+        async with self:
+            self.order.append("background_task:stop")
+
+    @rx.background
+    async def background_task_generator(self):
+        """A background task generator that does nothing.
+
+        Yields:
+            None
+        """
+        yield
+
+    def other(self):
+        """Some other event that updates the state."""
+        self.order.append("other")
+
+    async def bad_chain1(self):
+        """Test that a background task cannot be chained."""
+        await self.background_task()
+
+    async def bad_chain2(self):
+        """Test that a background task generator cannot be chained."""
+        async for _foo in self.background_task_generator():
+            pass
+
+
+@pytest.mark.asyncio
+async def test_background_task_no_block(mock_app: rx.App, token: str):
+    """Test that a background task does not block other events.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    router_data = {"query": {}}
+    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
+    async for update in rx.app.process(  # type: ignore
+        mock_app,
+        Event(
+            token=token,
+            name=f"{BackgroundTaskState.get_name()}.background_task",
+            router_data=router_data,
+            payload={},
+        ),
+        sid="",
+        headers={},
+        client_ip="",
+    ):
+        # background task returns empty update immediately
+        assert update == StateUpdate()
+    assert len(mock_app.background_tasks) == 1
+
+    # wait for the coroutine to start
+    await asyncio.sleep(0.5 if CI else 0.1)
+    assert len(mock_app.background_tasks) == 1
+
+    # Process another normal event
+    async for update in rx.app.process(  # type: ignore
+        mock_app,
+        Event(
+            token=token,
+            name=f"{BackgroundTaskState.get_name()}.other",
+            router_data=router_data,
+            payload={},
+        ),
+        sid="",
+        headers={},
+        client_ip="",
+    ):
+        # other task returns delta
+        assert update == StateUpdate(
+            delta={
+                BackgroundTaskState.get_name(): {
+                    "order": [
+                        "background_task:start",
+                        "other",
+                    ],
+                }
+            }
+        )
+
+    # Explicit wait for background tasks
+    for task in tuple(mock_app.background_tasks):
+        await task
+    assert not mock_app.background_tasks
+
+    assert (await mock_app.state_manager.get_state(token)).order == [
+        "background_task:start",
+        "other",
+        "background_task:stop",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_background_task_no_chain():
+    """Test that a background task cannot be chained."""
+    bts = BackgroundTaskState()
+    with pytest.raises(RuntimeError):
+        await bts.bad_chain1()
+    with pytest.raises(RuntimeError):
+        await bts.bad_chain2()
+
+
+def test_mutable_list(mutable_state):
+    """Test that mutable lists are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_array_dirty():
+        assert mutable_state.dirty_vars == {"array"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    # Test all list operations
+    mutable_state.array.append(42)
+    assert_array_dirty()
+    mutable_state.array.extend([1, 2, 3])
+    assert_array_dirty()
+    mutable_state.array.insert(0, 0)
+    assert_array_dirty()
+    mutable_state.array.pop()
+    assert_array_dirty()
+    mutable_state.array.remove(42)
+    assert_array_dirty()
+    mutable_state.array.clear()
+    assert_array_dirty()
+    mutable_state.array += [1, 2, 3]
+    assert_array_dirty()
+    mutable_state.array.reverse()
+    assert_array_dirty()
+    mutable_state.array.sort()
+    assert_array_dirty()
+    mutable_state.array[0] = 666
+    assert_array_dirty()
+    del mutable_state.array[0]
+    assert_array_dirty()
+
+    # Test nested list operations
+    mutable_state.array[0] = [1, 2, 3]
+    assert_array_dirty()
+    mutable_state.array[0].append(4)
+    assert_array_dirty()
+    assert isinstance(mutable_state.array[0], MutableProxy)
+
+
+def test_mutable_dict(mutable_state):
+    """Test that mutable dicts are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_hashmap_dirty():
+        assert mutable_state.dirty_vars == {"hashmap"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    # Test all dict operations
+    mutable_state.hashmap.update({"new_key": 43})
+    assert_hashmap_dirty()
+    mutable_state.hashmap.setdefault("another_key", 66)
+    assert_hashmap_dirty()
+    mutable_state.hashmap.pop("new_key")
+    assert_hashmap_dirty()
+    mutable_state.hashmap.popitem()
+    assert_hashmap_dirty()
+    mutable_state.hashmap.clear()
+    assert_hashmap_dirty()
+    mutable_state.hashmap["new_key"] = 42
+    assert_hashmap_dirty()
+    del mutable_state.hashmap["new_key"]
+    assert_hashmap_dirty()
+    if sys.version_info >= (3, 9):
+        mutable_state.hashmap |= {"new_key": 44}
+        assert_hashmap_dirty()
+
+    # Test nested dict operations
+    mutable_state.hashmap["array"] = []
+    assert_hashmap_dirty()
+    mutable_state.hashmap["array"].append(1)
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"] = {}
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"]["key"] = 42
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"]["dict"] = {}
+    assert_hashmap_dirty()
+    mutable_state.hashmap["dict"]["dict"]["key"] = 43
+    assert_hashmap_dirty()
+
+
+def test_mutable_set(mutable_state):
+    """Test that mutable sets are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_set_dirty():
+        assert mutable_state.dirty_vars == {"test_set"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    # Test all set operations
+    mutable_state.test_set.add(42)
+    assert_set_dirty()
+    mutable_state.test_set.update([1, 2, 3])
+    assert_set_dirty()
+    mutable_state.test_set.remove(42)
+    assert_set_dirty()
+    mutable_state.test_set.discard(3)
+    assert_set_dirty()
+    mutable_state.test_set.pop()
+    assert_set_dirty()
+    mutable_state.test_set.intersection_update([1, 2, 3])
+    assert_set_dirty()
+    mutable_state.test_set.difference_update([99])
+    assert_set_dirty()
+    mutable_state.test_set.symmetric_difference_update([102, 99])
+    assert_set_dirty()
+    mutable_state.test_set |= {1, 2, 3}
+    assert_set_dirty()
+    mutable_state.test_set &= {2, 3, 4}
+    assert_set_dirty()
+    mutable_state.test_set -= {2}
+    assert_set_dirty()
+    mutable_state.test_set ^= {42}
+    assert_set_dirty()
+    mutable_state.test_set.clear()
+    assert_set_dirty()
+
+
+def test_mutable_custom(mutable_state):
+    """Test that mutable custom types derived from Base are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_custom_dirty():
+        assert mutable_state.dirty_vars == {"custom"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    mutable_state.custom.foo = "bar"
+    assert_custom_dirty()
+    mutable_state.custom.array.append(42)
+    assert_custom_dirty()
+    mutable_state.custom.hashmap["key"] = 68
+    assert_custom_dirty()
+    mutable_state.custom.test_set.add(42)
+    assert_custom_dirty()
+    mutable_state.custom.custom.bar = "baz"
+    assert_custom_dirty()
+
+
+def test_mutable_backend(mutable_state):
+    """Test that mutable backend vars are tracked correctly.
+
+    Args:
+        mutable_state: A test state.
+    """
+    assert not mutable_state.dirty_vars
+
+    def assert_custom_dirty():
+        assert mutable_state.dirty_vars == {"_be_custom"}
+        mutable_state._clean()
+        assert not mutable_state.dirty_vars
+
+    mutable_state._be_custom.foo = "bar"
+    assert_custom_dirty()
+    mutable_state._be_custom.array.append(42)
+    assert_custom_dirty()
+    mutable_state._be_custom.hashmap["key"] = 68
+    assert_custom_dirty()
+    mutable_state._be_custom.test_set.add(42)
+    assert_custom_dirty()
+    mutable_state._be_custom.custom.bar = "baz"
+    assert_custom_dirty()
+
+
+@pytest.mark.parametrize(
+    ("copy_func",),
+    [
+        (copy.copy,),
+        (copy.deepcopy,),
+    ],
+)
+def test_mutable_copy(mutable_state, copy_func):
+    """Test that mutable types are copied correctly.
+
+    Args:
+        mutable_state: A test state.
+        copy_func: A copy function.
+    """
+    ms_copy = copy_func(mutable_state)
+    assert ms_copy is not mutable_state
+    for attr in ("array", "hashmap", "test_set", "custom"):
+        assert getattr(ms_copy, attr) == getattr(mutable_state, attr)
+        assert getattr(ms_copy, attr) is not getattr(mutable_state, attr)
+    ms_copy.custom.array.append(42)
+    assert "custom" in ms_copy.dirty_vars
+    if copy_func is copy.copy:
+        assert "custom" in mutable_state.dirty_vars
+    else:
+        assert not mutable_state.dirty_vars
+
+
+@pytest.mark.parametrize(
+    ("copy_func",),
+    [
+        (copy.copy,),
+        (copy.deepcopy,),
+    ],
+)
+def test_mutable_copy_vars(mutable_state, copy_func):
+    """Test that mutable types are copied correctly.
+
+    Args:
+        mutable_state: A test state.
+        copy_func: A copy function.
+    """
+    for attr in ("array", "hashmap", "test_set", "custom"):
+        var_orig = getattr(mutable_state, attr)
+        var_copy = copy_func(var_orig)
+        assert var_orig is not var_copy
+        assert var_orig == var_copy
+        # copied vars should never be proxies, as they by definition are no longer attached to the state.
+        assert not isinstance(var_copy, MutableProxy)
+
+
+def test_duplicate_substate_class(duplicate_substate):
+    with pytest.raises(ValueError):
+        duplicate_substate()

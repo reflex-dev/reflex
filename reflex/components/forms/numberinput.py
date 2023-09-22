@@ -1,10 +1,11 @@
 """A number input component."""
 
-from typing import Dict
+from numbers import Number
+from typing import Any, Dict
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.event import EVENT_ARG
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
@@ -14,7 +15,7 @@ class NumberInput(ChakraComponent):
     tag = "NumberInput"
 
     # State var to bind the input.
-    value: Var[int]
+    value: Var[Number]
 
     # If true, the input's value will change based on mouse wheel.
     allow_mouse_wheel: Var[bool]
@@ -23,7 +24,7 @@ class NumberInput(ChakraComponent):
     clamped_value_on_blur: Var[bool]
 
     # The initial value of the counter. Should be less than max and greater than min
-    default_value: Var[int]
+    default_value: Var[Number]
 
     # The border color when the input is invalid.
     error_border_color: Var[str]
@@ -56,22 +57,23 @@ class NumberInput(ChakraComponent):
     keep_within_range: Var[bool]
 
     # The maximum value of the counter
-    max_: Var[int]
+    max_: Var[Number]
 
     # The minimum value of the counter
-    min_: Var[int]
+    min_: Var[Number]
 
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[str]
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            "on_change": EVENT_ARG,
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
     @classmethod
@@ -90,7 +92,9 @@ class NumberInput(ChakraComponent):
         if len(children) == 0:
             _id = props.pop("id", None)
             children = [
-                NumberInputField.create(id=_id) if _id else NumberInputField.create(),
+                NumberInputField.create(id=_id)
+                if _id is not None
+                else NumberInputField.create(),
                 NumberInputStepper.create(
                     NumberIncrementStepper.create(),
                     NumberDecrementStepper.create(),

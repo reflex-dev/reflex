@@ -11,6 +11,7 @@ from reflex import constants
 from reflex.base import Base
 from reflex.components.tags import Tag
 from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.state import State
 from reflex.style import Style
 from reflex.utils import (
     build,
@@ -20,6 +21,7 @@ from reflex.utils import (
     types,
 )
 from reflex.utils import exec as utils_exec
+from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var
 
 
@@ -43,6 +45,18 @@ V055 = version.parse("0.5.5")
 V059 = version.parse("0.5.9")
 V056 = version.parse("0.5.6")
 VMAXPLUS1 = version.parse(get_above_max_version())
+
+
+class ExampleTestState(State):
+    """Test state class."""
+
+    def test_event_handler(self):
+        """Test event handler."""
+        pass
+
+
+def test_func():
+    pass
 
 
 @pytest.mark.parametrize(
@@ -298,8 +312,10 @@ def test_format_route(route: str, format_case: bool, expected: bool):
             r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
         ),
         (
-            EventChain(events=[EventSpec(handler=EventHandler(fn=mock_event))]),
-            '{_e => Event([E("mock_event", {})], _e)}',
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
+            ),
+            '{_e => addEvents([Event("mock_event", {})], _e)}',
         ),
         (
             EventChain(
@@ -308,9 +324,10 @@ def test_format_route(route: str, format_case: bool, expected: bool):
                         handler=EventHandler(fn=mock_event),
                         args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
                     )
-                ]
+                ],
+                args_spec=None,
             ),
-            '{_e => Event([E("mock_event", {arg:_e.target.value})], _e)}',
+            '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e)}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(name="var", type_="int"), "{var}"),
@@ -744,3 +761,24 @@ def test_output_system_info(mocker):
     """
     mocker.patch("reflex.utils.console.LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
+
+
+@pytest.mark.parametrize(
+    "callable", [ExampleTestState.test_event_handler, test_func, lambda x: x]
+)
+def test_style_prop_with_event_handler_value(callable):
+    """Test that a type error is thrown when a style prop has a
+    callable as value.
+
+    Args:
+        callable: The callable function or event handler.
+
+    """
+    style = {
+        "color": EventHandler(fn=callable)
+        if type(callable) != EventHandler
+        else callable
+    }
+
+    with pytest.raises(TypeError):
+        serialize(style)  # type: ignore

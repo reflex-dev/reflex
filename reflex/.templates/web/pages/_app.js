@@ -4,7 +4,7 @@ import theme from "/utils/theme";
 import { clientStorage, initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
 import { useEventLoop } from "utils/state";
 
-import '../styles/tailwind.css'
+import '/styles/styles.css'
 
 const GlobalStyles = css`
   /* Hide the blue border around Chakra components. */
@@ -15,13 +15,13 @@ const GlobalStyles = css`
 `;
 
 function EventLoopProvider({ children }) {
-  const [state, Event, connectError] = useEventLoop(
+  const [state, addEvents, connectError] = useEventLoop(
     initialState,
     initialEvents,
     clientStorage,
   )
   return (
-    <EventLoopContext.Provider value={[Event, connectError]}>
+    <EventLoopContext.Provider value={[addEvents, connectError]}>
       <StateContext.Provider value={state}>
         {children}
       </StateContext.Provider>

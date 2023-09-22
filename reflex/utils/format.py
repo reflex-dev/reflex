@@ -2,21 +2,17 @@
 
 from __future__ import annotations
 
-import base64
-import io
+import inspect
 import json
 import os
 import os.path as op
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Type, Union
-
-import plotly.graph_objects as go
-from plotly.graph_objects import Figure
-from plotly.io import to_json
+from typing import TYPE_CHECKING, Any, Union
 
 from reflex import constants
-from reflex.utils import types
+from reflex.utils import exceptions, serializers, types
+from reflex.utils.serializers import serialize
 from reflex.vars import Var
 
 if TYPE_CHECKING:
@@ -288,7 +284,8 @@ def format_prop(
         The formatted prop to display within a tag.
 
     Raises:
-        TypeError: If the prop is not a valid type.
+        exceptions.InvalidStylePropError: If the style prop value is not a valid type.
+        TypeError: If the prop is not valid.
     """
     # import here to avoid circular import.
     from reflex.event import EVENT_ARG, EventChain
@@ -304,9 +301,21 @@ def format_prop(
 
         # Handle event props.
         elif isinstance(prop, EventChain):
+            if prop.args_spec is None:
+                arg_def = f"{EVENT_ARG}"
+            else:
+                sig = inspect.signature(prop.args_spec)
+                if sig.parameters:
+                    arg_def = ",".join(f"_{p}" for p in sig.parameters)
+                    arg_def = f"({arg_def})"
+                else:
+                    # add a default argument for addEvents if none were specified in prop.args_spec
+                    # used to trigger the preventDefault() on the event.
+                    arg_def = "(_e)"
+
             chain = ",".join([format_event(event) for event in prop.events])
-            event = f"Event([{chain}], {EVENT_ARG})"
-            prop = f"{EVENT_ARG} => {event}"
+            event = f"addEvents([{chain}], {arg_def})"
+            prop = f"{arg_def} => {event}"
 
         # Handle other types.
         elif isinstance(prop, str):
@@ -314,22 +323,39 @@ def format_prop(
                 return prop
             return json_dumps(prop)
 
-        elif isinstance(prop, Figure):
-            prop = json.loads(to_json(prop))["data"]  # type: ignore
-
         # For dictionaries, convert any properties to strings.
         elif isinstance(prop, dict):
-            prop = format_dict(prop)
+            prop = serializers.serialize_dict(prop)  # type: ignore
 
         else:
             # Dump the prop as JSON.
             prop = json_dumps(prop)
+    except exceptions.InvalidStylePropError:
+        raise
     except TypeError as e:
         raise TypeError(f"Could not format prop: {prop} of type {type(prop)}") from e
 
     # Wrap the variable in braces.
     assert isinstance(prop, str), "The prop must be a string."
     return wrap(prop, "{", check_first=False)
+
+
+def format_props(*single_props, **key_value_props) -> list[str]:
+    """Format the tag's props.
+
+    Args:
+        single_props: Props that are not key-value pairs.
+        key_value_props: Props that are key-value pairs.
+
+    Returns:
+        The formatted props list.
+    """
+    # Format all the props.
+    return [
+        f"{name}={format_prop(prop)}"
+        for name, prop in sorted(key_value_props.items())
+        if prop is not None
+    ] + [str(prop) for prop in sorted(single_props)]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
@@ -401,7 +427,7 @@ def format_event(event_spec: EventSpec) -> str:
 
     if event_spec.client_handler_name:
         event_args.append(wrap(event_spec.client_handler_name, '"'))
-    return f"E({', '.join(event_args)})"
+    return f"Event({', '.join(event_args)})"
 
 
 def format_event_chain(
@@ -437,7 +463,7 @@ def format_event_chain(
     chain = ",".join([format_event(event) for event in event_chain.events])
     return "".join(
         [
-            f"Event([{chain}]",
+            f"addEvents([{chain}]",
             f", {format_var(event_arg)}" if event_arg else "",
             ")",
         ]
@@ -455,44 +481,6 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """
     params = router_data[constants.RouteVar.QUERY]
     return {k.replace("-", "_"): v for k, v in params.items()}
-
-
-def format_dataframe_values(value: Type) -> list[Any]:
-    """Format dataframe values.
-
-    Args:
-        value: The value to format.
-
-    Returns:
-        Format data
-    """
-    if not types.is_dataframe(type(value)):
-        return value
-
-    format_data = []
-    for data in list(value.values.tolist()):
-        element = []
-        for d in data:
-            element.append(str(d) if isinstance(d, (list, tuple)) else d)
-        format_data.append(element)
-
-    return format_data
-
-
-def format_image_data(value: Type) -> str:
-    """Format image data.
-
-    Args:
-        value: The value to format.
-
-    Returns:
-        Format data
-    """
-    buff = io.BytesIO()
-    value.save(buff, format="PNG")
-    image_bytes = buff.getvalue()
-    base64_image = base64.b64encode(image_bytes).decode("utf-8")
-    return f"data:image/png;base64,{base64_image}"
 
 
 def format_state(value: Any) -> Any:
@@ -519,30 +507,12 @@ def format_state(value: Any) -> Any:
     if isinstance(value, types.StateBases):
         return value
 
-    # Convert plotly figures to JSON.
-    if isinstance(value, go.Figure):
-        return json.loads(to_json(value))["data"]  # type: ignore
+    # Serialize the value.
+    serialized = serialize(value)
+    if serialized is not None:
+        return serialized
 
-    # Convert pandas dataframes to JSON.
-    if types.is_dataframe(type(value)):
-        return {
-            "columns": value.columns.tolist(),
-            "data": format_dataframe_values(value),
-        }
-
-    # Convert datetime objects to str.
-    if types.is_datetime(type(value)):
-        return str(value)
-
-    # Convert Image objects to base64.
-    if types.is_image(type(value)):
-        return format_image_data(value)  # type: ignore
-
-    raise TypeError(
-        "State vars must be primitive Python types, "
-        "or subclasses of rx.Base. "
-        f"Got var of type {type(value)}."
-    )
+    raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
 
 
 def format_ref(ref: str) -> str:
@@ -574,45 +544,6 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
         idx.is_local = True
         return f"refs_{clean_ref}[{idx}]"
     return f"refs_{clean_ref}"
-
-
-def format_dict(prop: ComponentStyle) -> str:
-    """Format a dict with vars potentially as values.
-
-    Args:
-        prop: The dict to format.
-
-    Returns:
-        The formatted dict.
-    """
-    # Import here to avoid circular imports.
-    from reflex.vars import Var
-
-    # Convert any var keys to strings.
-    prop = {key: str(val) if isinstance(val, Var) else val for key, val in prop.items()}
-
-    # Dump the dict to a string.
-    fprop = json_dumps(prop)
-
-    def unescape_double_quotes_in_var(m: re.Match) -> str:
-        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
-        return re.sub('\\\\"', '"', m.group(1))
-
-    # This substitution is necessary to unwrap var values.
-    fprop = re.sub(
-        pattern=r"""
-            (?<!\\)      # must NOT start with a backslash
-            "            # match opening double quote of JSON value
-            {(.*?)}      # extract the value between curly braces (non-greedy)
-            "            # match must end with an unescaped double quote
-        """,
-        repl=unescape_double_quotes_in_var,
-        string=fprop,
-        flags=re.VERBOSE,
-    )
-
-    # Return the formatted dict.
-    return fprop
 
 
 def format_breadcrumbs(route: str) -> list[tuple[str, str]]:

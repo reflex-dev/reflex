@@ -25,6 +25,7 @@ class Tabs(ChakraComponent):
             is_manual: If true, the tabs will be manually activated and display its panel by pressing Space or Enter. If false, the tabs will be automatically activated and their panel is displayed when they receive focus.
             orientation: The orientation of the tab list.
             variant: "line" | "enclosed" | "enclosed-colored" | "soft-rounded" | "solid-rounded" | "unstyled"
+            color_scheme: The color scheme of the tabs.
             items: The items for the tabs component, a list of tuple (label, panel)
             **props: The properties of the component.
 

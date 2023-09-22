@@ -21,8 +21,10 @@ from .constants import Env as Env
 from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
+from .event import background as background
 from .event import clear_local_storage as clear_local_storage
 from .event import console_log as console_log
+from .event import download as download
 from .event import redirect as redirect
 from .event import remove_cookie as remove_cookie
 from .event import remove_local_storage as remove_local_storage
@@ -36,7 +38,6 @@ from .middleware import Middleware as Middleware
 from .model import Model as Model
 from .model import session as session
 from .page import page as page
-from .route import route as route
 from .state import ComputedVar as var
 from .state import Cookie as Cookie
 from .state import LocalStorage as LocalStorage
