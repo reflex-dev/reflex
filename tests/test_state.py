@@ -1699,6 +1699,10 @@ class BackgroundTaskState(State):
             # Even nested access to mutables raises an exception.
             self.dict_list["foo"].append(42)
 
+        with pytest.raises(ImmutableStateError):
+            # Direct calling another handler that modifies state raises an exception.
+            self.other()
+
         # wait for some other event to happen
         while len(self.order) == 1:
             await asyncio.sleep(0.01)
@@ -1707,6 +1711,7 @@ class BackgroundTaskState(State):
 
         async with self:
             self.order.append("background_task:stop")
+            self.other()  # direct calling event handlers works in context
 
     @rx.background
     async def background_task_generator(self):
@@ -1795,6 +1800,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "background_task:start",
         "other",
         "background_task:stop",
+        "other",
     ]
 
 
