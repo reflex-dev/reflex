@@ -1177,6 +1177,14 @@ class StateProxy(wrapt.ObjectProxy):
                 state=self,  # type: ignore
                 field_name=value._self_field_name,
             )
+        if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
+            # Rebind event handler to the proxy instance
+            value = functools.partial(
+                value.func,
+                self,
+                *value.args[1:],
+                **value.keywords,
+            )
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
