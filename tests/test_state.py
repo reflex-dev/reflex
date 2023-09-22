@@ -1703,6 +1703,10 @@ class BackgroundTaskState(State):
             # Direct calling another handler that modifies state raises an exception.
             self.other()
 
+        with pytest.raises(ImmutableStateError):
+            # Calling other methods that modify state raises an exception.
+            self._private_method()
+
         # wait for some other event to happen
         while len(self.order) == 1:
             await asyncio.sleep(0.01)
@@ -1712,6 +1716,7 @@ class BackgroundTaskState(State):
         async with self:
             self.order.append("background_task:stop")
             self.other()  # direct calling event handlers works in context
+            self._private_method()
 
     @rx.background
     async def background_task_reset(self):
@@ -1739,6 +1744,10 @@ class BackgroundTaskState(State):
     def other(self):
         """Some other event that updates the state."""
         self.order.append("other")
+
+    def _private_method(self):
+        """Some private method that updates the state."""
+        self.order.append("private")
 
     async def bad_chain1(self):
         """Test that a background task cannot be chained."""
@@ -1814,6 +1823,7 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "other",
         "background_task:stop",
         "other",
+        "private",
     ]
 
 
