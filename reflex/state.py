@@ -12,7 +12,7 @@ import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from types import FunctionType
+from types import FunctionType, MethodType
 from typing import (
     Any,
     AsyncIterator,
@@ -1185,6 +1185,9 @@ class StateProxy(wrapt.ObjectProxy):
                 *value.args[1:],
                 **value.keywords,
             )
+        if isinstance(value, MethodType) and value.__self__ is self.__wrapped__:
+            # Rebind methods to the proxy instance
+            value = type(value)(value.__func__, self)  # type: ignore
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
