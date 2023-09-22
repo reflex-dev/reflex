@@ -28,7 +28,7 @@ from reflex.state import (
     StateProxy,
     StateUpdate,
 )
-from reflex.utils import format, prerequisites
+from reflex.utils import prerequisites
 from reflex.vars import BaseVar, ComputedVar
 
 from .states import GenState
@@ -116,6 +116,15 @@ class GrandchildState(ChildState):
     def do_nothing(self):
         """Do something."""
         pass
+
+
+class DateTimeState(State):
+    """A State with some datetime fields."""
+
+    d: datetime.date = datetime.date.fromisoformat("1989-11-09")
+    dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
+    t: datetime.time = datetime.time.fromisoformat("18:53:00+01:00")
+    td: datetime.timedelta = datetime.timedelta(days=11, minutes=11)
 
 
 @pytest.fixture
@@ -290,58 +299,6 @@ def test_dict(test_state):
         set(test_state.dict(include_computed=False).keys())
         == set(test_state.base_vars) | substates
     )
-
-
-def test_format_state(test_state):
-    """Test that the format state is correct.
-
-    Args:
-        test_state: A state.
-    """
-    formatted_state = format.format_state(test_state.dict())
-    exp_formatted_state = {
-        "array": [1, 2, 3.14],
-        "child_state": {"count": 23, "grandchild_state": {"value2": ""}, "value": ""},
-        "child_state2": {"value": ""},
-        "complex": {
-            1: {"prop1": 42, "prop2": "hello"},
-            2: {"prop1": 42, "prop2": "hello"},
-        },
-        "dt": "1989-11-09 18:53:00+01:00",
-        "fig": [],
-        "is_hydrated": False,
-        "key": "",
-        "map_key": "a",
-        "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
-        "num1": 0,
-        "num2": 3.14,
-        "obj": {"prop1": 42, "prop2": "hello"},
-        "sum": 3.14,
-        "upper": "",
-    }
-    assert formatted_state == exp_formatted_state
-
-
-def test_format_state_datetime():
-    """Test that the format state is correct for datetime classes."""
-
-    class DateTimeState(State):
-        d: datetime.date = datetime.date.fromisoformat("1989-11-09")
-        dt: datetime.datetime = datetime.datetime.fromisoformat(
-            "1989-11-09T18:53:00+01:00"
-        )
-        t: datetime.time = datetime.time.fromisoformat("18:53:00+01:00")
-        td: datetime.timedelta = datetime.timedelta(days=11, minutes=11)
-
-    formatted_state = format.format_state(DateTimeState().dict())
-    exp_formatted_state = {
-        "d": "1989-11-09",
-        "dt": "1989-11-09 18:53:00+01:00",
-        "is_hydrated": False,
-        "t": "18:53:00+01:00",
-        "td": "11 days, 0:11:00",
-    }
-    assert formatted_state == exp_formatted_state
 
 
 def test_default_setters(test_state):

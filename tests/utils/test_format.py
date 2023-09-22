@@ -7,7 +7,7 @@ from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
-from tests.test_state import ChildState, GrandchildState, TestState
+from tests.test_state import ChildState, DateTimeState, GrandchildState, TestState
 
 
 def mock_event(arg):
@@ -293,7 +293,7 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
             ),
-            '{_e => Event([E("mock_event", {})], _e)}',
+            '{_e => addEvents([Event("mock_event", {})], _e)}',
         ),
         (
             EventChain(
@@ -305,7 +305,7 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
                 ],
                 args_spec=None,
             ),
-            '{_e => Event([E("mock_event", {arg:_e.target.value})], _e)}',
+            '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e)}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(name="var", type_="int"), "{var}"),
@@ -396,12 +396,11 @@ def test_format_event_handler(input, output):
 @pytest.mark.parametrize(
     "input,output",
     [
-        (EventSpec(handler=EventHandler(fn=mock_event)), ""),
+        (EventSpec(handler=EventHandler(fn=mock_event)), 'Event("mock_event", {})'),
     ],
 )
 def test_format_event(input, output):
-    # assert format.format_event(input) == output
-    ...
+    assert format.format_event(input) == output
 
 
 @pytest.mark.parametrize(
@@ -415,13 +414,132 @@ def test_format_event(input, output):
                 ],
                 args_spec=None,
             ),
-            "",
+            'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
+        ),
+        (
+            EventChain(
+                events=[
+                    EventSpec(handler=EventHandler(fn=mock_event)),
+                    EventSpec(handler=EventHandler(fn=mock_event)),
+                ],
+                args_spec=lambda e0: [e0],
+            ),
+            'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
         ),
     ],
 )
 def test_format_event_chain(input, output):
-    # assert format.format_event_chain(input) == output
-    ...
+    assert format.format_event_chain(input) == output
+
+
+@pytest.mark.parametrize(
+    "input,output",
+    [
+        ({"query": {"k1": 1, "k2": 2}}, {"k1": 1, "k2": 2}),
+        ({"query": {"k1": 1, "k-2": 2}}, {"k1": 1, "k_2": 2}),
+    ],
+)
+def test_format_query_params(input, output):
+    assert format.format_query_params(input) == output
+
+
+@pytest.mark.parametrize(
+    "input, output",
+    [
+        (
+            TestState().dict(),  # type: ignore
+            {
+                "array": [1, 2, 3.14],
+                "child_state": {
+                    "count": 23,
+                    "grandchild_state": {"value2": ""},
+                    "value": "",
+                },
+                "child_state2": {"value": ""},
+                "complex": {
+                    1: {"prop1": 42, "prop2": "hello"},
+                    2: {"prop1": 42, "prop2": "hello"},
+                },
+                "dt": "1989-11-09 18:53:00+01:00",
+                "fig": [],
+                "is_hydrated": False,
+                "key": "",
+                "map_key": "a",
+                "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
+                "num1": 0,
+                "num2": 3.14,
+                "obj": {"prop1": 42, "prop2": "hello"},
+                "sum": 3.14,
+                "upper": "",
+            },
+        ),
+        (
+            DateTimeState().dict(),
+            {
+                "d": "1989-11-09",
+                "dt": "1989-11-09 18:53:00+01:00",
+                "is_hydrated": False,
+                "t": "18:53:00+01:00",
+                "td": "11 days, 0:11:00",
+            },
+        ),
+    ],
+)
+def test_format_state(input, output):
+    """Test that the format state is correct.
+
+    Args:
+        input: The state to format.
+        output: The expected formatted state.
+    """
+    assert format.format_state(input) == output
+
+
+@pytest.mark.parametrize(
+    "input,output",
+    [
+        ("input1", "ref_input1"),
+        ("input 1", "ref_input_1"),
+        ("input-1", "ref_input_1"),
+        ("input_1", "ref_input_1"),
+        ("a long test?1! name", "ref_a_long_test_1_name"),
+    ],
+)
+def test_format_ref(input, output):
+    """Test formatting a ref.
+
+    Args:
+        input: The name to format.
+        output: The expected formatted name.
+    """
+    assert format.format_ref(input) == output
+
+
+@pytest.mark.parametrize(
+    "input,output",
+    [
+        (("my_array", None), "refs_my_array"),
+        (("my_array", Var.create(0)), "refs_my_array[0]"),
+        (("my_array", Var.create(1)), "refs_my_array[1]"),
+    ],
+)
+def test_format_array_ref(input, output):
+    assert format.format_array_ref(input[0], input[1]) == output
+
+
+@pytest.mark.parametrize(
+    "input,output",
+    [
+        ("/foo", [("foo", "/foo")]),
+        ("/foo/bar", [("foo", "/foo"), ("bar", "/foo/bar")]),
+        (
+            "/foo/bar/baz",
+            [("foo", "/foo"), ("bar", "/foo/bar"), ("baz", "/foo/bar/baz")],
+        ),
+    ],
+)
+def test_format_breadcrumbs(input, output):
+    assert format.format_breadcrumbs(input) == output
 
 
 @pytest.mark.parametrize(
@@ -441,3 +559,20 @@ def test_format_library_name(input: str, output: str):
         output: the output string.
     """
     assert format.format_library_name(input) == output
+
+
+@pytest.mark.parametrize(
+    "input,output",
+    [
+        (None, "null"),
+        (True, "true"),
+        (1, "1"),
+        (1.0, "1.0"),
+        ([], "[]"),
+        ([1, 2, 3], "[1, 2, 3]"),
+        ({}, "{}"),
+        ({"k1": False, "k2": True}, '{"k1": false, "k2": true}'),
+    ],
+)
+def test_json_dumps(input, output):
+    assert format.json_dumps(input) == output

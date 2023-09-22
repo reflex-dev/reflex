@@ -192,7 +192,7 @@ class EventChain(Base):
 
     events: List[EventSpec]
 
-    args_spec: Optional[ArgsSpec]
+    args_spec: Optional[Callable]
 
 
 class Target(Base):
