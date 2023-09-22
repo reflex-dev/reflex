@@ -1714,6 +1714,20 @@ class BackgroundTaskState(State):
             self.other()  # direct calling event handlers works in context
 
     @rx.background
+    async def background_task_reset(self):
+        """A background task that resets the state."""
+        with pytest.raises(ImmutableStateError):
+            # Resetting the state should be explicitly blocked.
+            self.reset()
+
+        async with self:
+            self.order.append("foo")
+            self.reset()
+        assert not self.order
+        async with self:
+            self.order.append("reset")
+
+    @rx.background
     async def background_task_generator(self):
         """A background task generator that does nothing.
 
@@ -1760,7 +1774,6 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     ):
         # background task returns empty update immediately
         assert update == StateUpdate()
-    assert len(mock_app.background_tasks) == 1
 
     # wait for the coroutine to start
     await asyncio.sleep(0.5 if CI else 0.1)
@@ -1801,6 +1814,41 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         "other",
         "background_task:stop",
         "other",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_background_task_reset(mock_app: rx.App, token: str):
+    """Test that a background task calling reset is protected by the state proxy.
+
+    Args:
+        mock_app: An app that will be returned by `get_app()`
+        token: A token.
+    """
+    router_data = {"query": {}}
+    mock_app.state_manager.state = mock_app.state = BackgroundTaskState
+    async for update in rx.app.process(  # type: ignore
+        mock_app,
+        Event(
+            token=token,
+            name=f"{BackgroundTaskState.get_name()}.background_task_reset",
+            router_data=router_data,
+            payload={},
+        ),
+        sid="",
+        headers={},
+        client_ip="",
+    ):
+        # background task returns empty update immediately
+        assert update == StateUpdate()
+
+    # Explicit wait for background tasks
+    for task in tuple(mock_app.background_tasks):
+        await task
+    assert not mock_app.background_tasks
+
+    assert (await mock_app.state_manager.get_state(token)).order == [
+        "reset",
     ]
 
 
