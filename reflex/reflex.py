@@ -526,9 +526,6 @@ def launch(
         raise typer.Exit(1)
 
     # Check if we are set up.
-    # Do not compile yet
-    _skip_compile()
-    # No need to check frontend yet
     # TODO: export will check again with frontend==True, refactor
     prerequisites.check_initialized(frontend=True)
 
@@ -559,11 +556,10 @@ def launch(
         console.error("Please provide all the required parameters.")
         raise typer.Exit(1)
 
-    save_api_url = config.api_url
     # Compile the app in production mode.
     config.api_url = pre_launch_response.api_url
-    export(loglevel=loglevel)
-    config.api_url = save_api_url
+    export(frontend=True, backend=True, zipping=True, loglevel=loglevel)
+    # config.api_url = save_api_url
 
     frontend_file_name = constants.FRONTEND_ZIP
     backend_file_name = constants.BACKEND_ZIP
@@ -588,7 +584,7 @@ def launch(
     site_url = launch_response.url
     if not site_url.startswith("https://"):
         site_url = f"https://{site_url}"
-    console.print(f"Deploying <{key}> {regions} shortly to: {site_url}.")
+    console.print(f"Deploying <{key}> {regions} shortly at: {site_url}.")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
