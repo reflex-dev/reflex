@@ -437,10 +437,10 @@ deployments_cli = typer.Typer()
 
 @deployments_cli.command(name="list")
 def list_deployments(
-    app_name: str = typer.Option(
-        "-p",
-        "--project-name",
-        help="The name of the project to list instances for.",
+    app_name: Optional[str] = typer.Option(
+        None,
+        "--app-name",
+        help="The name of the App to list instances for.",
     ),
     loglevel: constants.LogLevel = typer.Option(
         console.LOG_LEVEL, help="The log level to use."
@@ -449,7 +449,7 @@ def list_deployments(
         False, help="Whether to output the result in json format."
     ),
 ):
-    """List all the hosted instances for the specified project."""
+    """List all the hosted instances for the specified app."""
     console.set_log_level(loglevel)
 
     deployments = hosting.list_deployments(app_name)
