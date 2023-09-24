@@ -2,10 +2,8 @@
 
 from typing import Any
 
-from reflex.components.layout.box import Box
-from reflex.components.tags import Tag
+from reflex.components.layout.html import HtmlDangerous
 from reflex.utils.serializers import serializer
-from reflex.vars import Var
 
 try:
     import matplotlib
@@ -16,27 +14,25 @@ except ImportError:
     Figure = Any
 
 
-class Pyplot(Box):
+class Pyplot(HtmlDangerous):
     """Display a Matplotlib chart.
 
     This component takes a Matplotlib figure as input and renders it within a Box layout component.
     """
 
-    # The figure to display.
-    fig: Var[Figure]
+    @classmethod
+    def create(cls, fig: Figure, **props):
+        """Create a Pyplot component.
 
-    def _render(self) -> Tag:
-        """Render the Bokeh figure as HTML and set it as the inner HTML of the Box component.
+        Args:
+            fig: The Matplotlib figure to display.
+            **props: The props to pass to the component.
 
         Returns:
-            The rendered component.
+            The Pyplot component.
         """
-        return (
-            super()
-            ._render()
-            .add_props(dangerouslySetInnerHTML=Var.create({"__html": self.fig}))
-            .remove_props("fig")
-        )
+        # Create the component.
+        return super().create(html=fig, **props)
 
 
 try:

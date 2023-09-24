@@ -10,7 +10,7 @@ from .flex import Flex
 from .foreach import Foreach
 from .fragment import Fragment
 from .grid import Grid, GridItem, ResponsiveGrid
-from .html import Html
+from .html import Html, HtmlDangerous
 from .responsive import (
     desktop_only,
     mobile_and_tablet,
