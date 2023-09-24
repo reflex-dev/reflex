@@ -355,7 +355,7 @@ def format_props(*single_props, **key_value_props) -> list[str]:
         f"{name}={format_prop(prop)}"
         for name, prop in sorted(key_value_props.items())
         if prop is not None
-    ] + [str(prop) for prop in sorted(single_props)]
+    ] + [str(prop) for prop in single_props]
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:

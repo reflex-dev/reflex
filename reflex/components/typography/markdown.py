@@ -14,8 +14,8 @@ from reflex.utils import console, imports, types
 from reflex.vars import ImportVar, Var
 
 # Special vars used in the component map.
-children_var = Var.create_safe("children", is_local=False)
-props_var = Var.create_safe("...props", is_local=False)
+CHILDREN = Var.create_safe("children", is_local=False)
+PROPS = Var.create_safe("...props", is_local=False)
 
 # Special remark plugins.
 REMARK_MATH = Var.create_safe("remarkMath", is_local=False)
@@ -34,7 +34,7 @@ def get_base_component_map() -> dict[str, Callable]:
     Returns:
         The base component map.
     """
-    from reflex.components.datadisplay.code import Code
+    from reflex.components.datadisplay.code import Code, CodeBlock
 
     return {
         "h1": lambda value: Heading.create(value, as_="h1", size="2xl"),
@@ -49,6 +49,9 @@ def get_base_component_map() -> dict[str, Callable]:
         "li": lambda value: ListItem.create(value),
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
+        "codeblock": lambda *children, **props: CodeBlock.create(
+            *children, theme="light", **props
+        ),
     }
 
 
@@ -138,11 +141,12 @@ class Markdown(Component):
         imports = utils.merge_imports(imports, Code.create()._get_imports())
         return imports
 
-    def format_component(self, tag: str) -> str:
+    def format_component(self, tag: str, **props) -> str:
         """Format a component for rendering in the component map.
 
         Args:
             tag: The tag of the component.
+            **props: Extra props to pass to the component function.
 
         Returns:
             The formatted component.
@@ -154,10 +158,18 @@ class Markdown(Component):
         if tag not in self.component_map:
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
+        special_props = {PROPS}
+        children = [CHILDREN]
+
+        children_prop = props.pop("children", None)
+        if children_prop is not None:
+            special_props.add(Var.create_safe(f"children={str(children_prop)}"))
+            children = []
+
         # Format the component.
         return str(
-            self.component_map[tag](children_var)
-            .set(special_props={props_var})
+            self.component_map[tag](*children, **props)
+            .set(special_props=special_props)
             .add_style(self.custom_attrs.get(tag, {}))
         ).replace("\n", " ")
 
@@ -168,29 +180,25 @@ class Markdown(Component):
             The formatted component map.
         """
         # Import here to avoid circular imports.
-        from reflex.components.datadisplay.code import CodeBlock
 
         components = {
-            tag: f"{{({{{children_var.name}, {props_var.name}}}) => {self.format_component(tag)}}}"
+            tag: f"{{({{{CHILDREN.name}, {PROPS.name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
         }
         components[
             "code"
-        ] = f"""{{({{node, inline, className, children, ...props}}) => {{
+        ] = f"""{{({{inline, className, {CHILDREN.name}, {PROPS.name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
+    const language = match ? match[1] : '';
     return !inline ? (
-        <{CodeBlock().tag}
-        children={{String(children)}}
-        language={{match ? match[1] : ''}}
-        style={{light}}
-        {{...props}}
-        />
+        {self.format_component("codeblock", language=Var.create_safe("language", is_local=False), children=Var.create_safe("String(children)", is_local=False))}
     ) : (
         {self.format_component("code")}
     );
       }}}}""".replace(
             "\n", " "
         )
+
         return components
 
     def _render(self) -> Tag:
