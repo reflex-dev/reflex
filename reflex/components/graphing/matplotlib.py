@@ -21,7 +21,7 @@ class Pyplot(HtmlDangerous):
     """
 
     @classmethod
-    def create(cls, fig: Figure, **props):
+    def create(cls, fig: Figure, **props):  # type: ignore
         """Create a Pyplot component.
 
         Args:
