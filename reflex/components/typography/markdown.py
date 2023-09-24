@@ -1,7 +1,7 @@
 """Markdown component."""
 
 import textwrap
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, Union
 
 from reflex.compiler import utils
 from reflex.components.component import Component, Style
@@ -11,11 +11,21 @@ from reflex.components.tags.tag import Tag
 from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
 from reflex.utils import console, imports, types
-from reflex.vars import BaseVar, ImportVar, Var
+from reflex.vars import ImportVar, Var
 
 # Special vars used in the component map.
 children_var = Var.create_safe("children", is_local=False)
 props_var = Var.create_safe("...props", is_local=False)
+
+# Special remark plugins.
+REMARK_MATH = Var.create_safe("remarkMath", is_local=False)
+REMARK_GFM = Var.create_safe("remarkGfm", is_local=False)
+REMARK_PLUGINS = Var.create_safe([REMARK_MATH, REMARK_GFM])
+
+# Special rehype plugins.
+REHYPE_KATEX = Var.create_safe("rehypeKatex", is_local=False)
+REHYPE_RAW = Var.create_safe("rehypeRaw", is_local=False)
+REHYPE_PLUGINS = Var.create_safe([REHYPE_KATEX, REHYPE_RAW])
 
 # Component Mapping
 def get_base_component_map() -> dict[str, Callable]:
@@ -86,8 +96,12 @@ class Markdown(Component):
 
         # Get the markdown source.
         src = children[0]
+
+        # Dedent the source.
         if isinstance(src, str):
             src = textwrap.dedent(src)
+
+        # Create the component.
         return super().create(src, component_map=component_map, **props)
 
     def _get_imports(self) -> imports.ImportDict:
@@ -100,10 +114,14 @@ class Markdown(Component):
         imports.update(
             {
                 "": {ImportVar(tag="katex/dist/katex.min.css")},
-                "rehype-katex@^6.0.3": {ImportVar(tag="rehypeKatex", is_default=True)},
-                "remark-math@^5.1.1": {ImportVar(tag="remarkMath", is_default=True)},
-                "rehype-raw@^6.1.1": {ImportVar(tag="rehypeRaw", is_default=True)},
-                "remark-gfm@^3.0.1": {ImportVar(tag="remarkGfm", is_default=True)},
+                "remark-math@^5.1.1": {
+                    ImportVar(tag=REMARK_MATH.name, is_default=True)
+                },
+                "remark-gfm@^3.0.1": {ImportVar(tag=REMARK_GFM.name, is_default=True)},
+                "rehype-katex@^6.0.3": {
+                    ImportVar(tag=REHYPE_KATEX.name, is_default=True)
+                },
+                "rehype-raw@^6.1.1": {ImportVar(tag=REHYPE_RAW.name, is_default=True)},
             }
         )
 
@@ -128,10 +146,17 @@ class Markdown(Component):
 
         Returns:
             The formatted component.
+
+        Raises:
+            ValueError: If the tag is invalid.
         """
-        comp = self.component_map[tag]
+        # Check the tag is valid.
+        if tag not in self.component_map:
+            raise ValueError(f"No markdown component found for tag: {tag}.")
+
+        # Format the component.
         return str(
-            comp(children_var)
+            self.component_map[tag](children_var)
             .set(special_props={props_var})
             .add_style(self.custom_attrs.get(tag, {}))
         ).replace("\n", " ")
@@ -169,19 +194,13 @@ class Markdown(Component):
         return components
 
     def _render(self) -> Tag:
-        # Get the component map.
-        component_map = self.format_component_map()
-
-        # Return the tag.
         return (
             super()
             ._render()
             .add_props(
-                components=component_map,
-                remark_plugins=BaseVar(name="[remarkMath, remarkGfm]", type_=List[str]),
-                rehype_plugins=BaseVar(
-                    name="[rehypeKatex, rehypeRaw]", type_=List[str]
-                ),
+                components=self.format_component_map(),
+                remark_plugins=REMARK_PLUGINS,
+                rehype_plugins=REHYPE_PLUGINS,
             )
             .remove_props("componentMap")
         )

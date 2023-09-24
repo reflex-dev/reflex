@@ -574,3 +574,33 @@ def json_dumps(obj: Any) -> str:
         A string
     """
     return json.dumps(obj, ensure_ascii=False, default=list)
+
+
+def unwrap_vars(value: str) -> str:
+    """Unwrap var values from a JSON string.
+
+    For example, "{var}" will be unwrapped to "var".
+
+    Args:
+        value: The JSON string to unwrap.
+
+    Returns:
+        The unwrapped JSON string.
+    """
+
+    def unescape_double_quotes_in_var(m: re.Match) -> str:
+        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
+        return re.sub('\\\\"', '"', m.group(1))
+
+    # This substitution is necessary to unwrap var values.
+    return re.sub(
+        pattern=r"""
+            (?<!\\)      # must NOT start with a backslash
+            "            # match opening double quote of JSON value
+            {(.*?)}      # extract the value between curly braces (non-greedy)
+            "            # match must end with an unescaped double quote
+        """,
+        repl=unescape_double_quotes_in_var,
+        string=value,
+        flags=re.VERBOSE,
+    )
