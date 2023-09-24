@@ -4,6 +4,7 @@ from typing import List
 from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.utils import types
 from reflex.vars import Var
 
 
@@ -77,8 +78,20 @@ class Thead(ChakraComponent):
 
         Returns:
             The table header component.
+
+        Raises:
+            TypeError: If headers are not of type list.
         """
         if len(children) == 0:
+            if (
+                (
+                    isinstance(headers, Var)
+                    and not types.get_base_class(headers.type_) == list
+                )
+                or not isinstance(headers, Var)
+                and not types.get_base_class(type(headers)) == list
+            ):
+                raise TypeError("table headers should be a list")
             children = [Tr.create(cell_type="header", cells=headers)]
         return super().create(*children, **props)
 
@@ -102,15 +115,41 @@ class Tbody(ChakraComponent):
 
         Returns:
             Component: _description_
+
+        Raises:
+            TypeError: If rows are not of type list[list[Any]].
         """
         if len(children) == 0:
             if isinstance(rows, Var):
+                t = rows.type_
+                # check if outer container type is a list.
+                if not issubclass(types.get_base_class(t), List):
+                    raise TypeError(
+                        f"table rows should be a list of list. Got {t} instead"
+                    )
+
+                # Check if the inner type is also a list.
+                inner_type = t.__args__[0] if hasattr(t, "__args__") else None
+                if not inner_type or not issubclass(
+                    types.get_base_class(inner_type), List
+                ):
+                    raise TypeError(
+                        f"table rows should be a list of list. Got {t} instead"
+                    )
+
                 children = [
                     Foreach.create(
                         rows, lambda row: Tr.create(cell_type="data", cells=row)
                     )
                 ]
             else:
+                if (
+                    rows
+                    and not isinstance(rows, list)
+                    or isinstance(rows, list)
+                    and not isinstance(rows[0], list)
+                ):
+                    raise TypeError("table rows should be a list of list")
                 children = [
                     Tr.create(cell_type="data", cells=row) for row in rows or []
                 ]
@@ -136,8 +175,20 @@ class Tfoot(ChakraComponent):
 
         Returns:
             The table footer component.
+
+        Raises:
+            TypeError: If footers are not of type list.
         """
         if len(children) == 0:
+            if (
+                (
+                    isinstance(footers, Var)
+                    and not types.get_base_class(footers.type_) == list
+                )
+                or not isinstance(footers, Var)
+                and not types.get_base_class(type(footers)) == list
+            ):
+                raise TypeError("table headers should be a list")
             children = [Tr.create(cell_type="header", cells=footers)]
         return super().create(*children, **props)
 
