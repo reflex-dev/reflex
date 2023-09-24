@@ -339,10 +339,13 @@ class Select(Component):
             The `create` method is returning an instance of the `Select` class.
         """
         converted_options: List[Option] = []
-        for option in options:
-            if not isinstance(option, Option):
-                converted_options.append(Option(label=str(option), value=option))
-            else:
-                converted_options.append(option)
-        props["options"] = [o.dict() for o in converted_options]
+        if not isinstance(options, Var):
+            for option in options:
+                if not isinstance(option, Option):
+                    converted_options.append(Option(label=str(option), value=option))
+                else:
+                    converted_options.append(option)
+            props["options"] = [o.dict() for o in converted_options]
+        else:
+            props["options"] = options
         return super().create(*[], **props)
