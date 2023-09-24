@@ -1,7 +1,5 @@
 """Convenience functions to define layout components."""
 
-from .altair import Altair
-from .bokeh import Bokeh
 from .matplotlib import Pyplot
 from .plotly import Plotly
 from .victory import (
