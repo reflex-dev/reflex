@@ -62,17 +62,17 @@ class HtmlDangerous(Component):
             The code to render the DangerouslySetHtmlContent component.
         """
         return """
-            // Copyright 2023 christo-pr (https://github.com/christo-pr)
-            function DangerouslySetHtmlContent({ html, dangerouslySetInnerHTML, ...rest }) {
-              const divRef = useRef(null)
+// Copyright 2023 christo-pr (https://github.com/christo-pr)
+function DangerouslySetHtmlContent({ html, dangerouslySetInnerHTML, ...rest }) {
+    const divRef = useRef(null)
 
-              useEffect(() => {
-                if (!html || !divRef.current) throw new Error("html prop can't be null")
+    useEffect(() => {
+    if (!html || !divRef.current) throw new Error("html prop can't be null")
 
-                const slotHtml = document.createRange().createContextualFragment(html)
-                divRef.current.innerHTML = ''
-                divRef.current.appendChild(slotHtml)
-              }, [html, divRef])
+    const slotHtml = document.createRange().createContextualFragment(html)
+    divRef.current.innerHTML = ''
+    divRef.current.appendChild(slotHtml)
+    }, [html, divRef])
 
-              return <div {...rest} ref={divRef} />
-            }"""
+    return <div {...rest} ref={divRef} />
+}"""
