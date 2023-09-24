@@ -47,7 +47,7 @@ class HtmlDangerous(Component):
     # The HTML to render.
     html: Any
 
-    def _get_custom_code(self) -> str | None:
+    def _get_custom_code(self) -> str:
         """Include DangerouslySetHtmlContent component.
 
         Copyright 2023 christo-pr (https://github.com/christo-pr)
