@@ -6,6 +6,8 @@ import pytest
 from reflex.components.datadisplay.table import Tbody, Tfoot, Thead
 from reflex.state import State
 
+PYTHON_GT_V38 = sys.version_info.major >= 3 and sys.version_info.minor > 8
+
 
 class TableState(State):
     """Test State class."""
@@ -25,12 +27,8 @@ class TableState(State):
         rows_7: list[str] = ["random", "row"]
 
 
-valid_extras = (
-    [TableState.rows_5, TableState.rows_6]
-    if sys.version_info.major >= 3 and sys.version_info.minor > 7
-    else []
-)
-invalid_extras = [TableState.rows_7]
+valid_extras = [TableState.rows_5, TableState.rows_6] if PYTHON_GT_V38 else []
+invalid_extras = [TableState.rows_7] if PYTHON_GT_V38 else []
 
 
 @pytest.mark.parametrize(
