@@ -1078,13 +1078,11 @@ class Var(ABC):
         else:
             other = Var.create_safe(other)
 
-        o = BaseVar(
+        return BaseVar(
             name=f"{self.full_name}.join({other.full_name})",
             type_=str,
             is_local=self.is_local,
         )
-        print("returning", str(o))
-        return o
 
     def foreach(self, fn: Callable) -> Var:
         """Return a list of components. after doing a foreach on this var.

@@ -168,7 +168,6 @@ class Markdown(Component):
             special_props.add(Var.create_safe(f"children={str(children_prop)}"))
             children = []
 
-        print("custom styles", self.custom_styles.get(tag, {}))
         return (
             self.component_map[tag](*children, **props)
             .set(special_props=special_props)
