@@ -1,5 +1,7 @@
 """Markdown component."""
 
+from __future__ import annotations
+
 import textwrap
 from typing import Callable, Dict, Union
 
