@@ -1,8 +1,8 @@
 """Data Editor component from glide-data-grid."""
 
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
-from reflex.components.component import EVENT_ARG, Component, NoSSRComponent
+from reflex.components.component import Component, NoSSRComponent
 from reflex.components.layout import Box
 from reflex.utils import console, imports
 from reflex.vars import ImportVar, Var, get_unique_variable_name
@@ -97,14 +97,14 @@ class DataEditor(NoSSRComponent):
         grid = super().create(*children, **props)
         return Box.create(grid, Div.create(id="portal"))
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> Dict[str, Callable]:
         """The event triggers of the component.
 
         Returns:
             The dict describing the event triggers.
         """
         return {
-            "onCellEdited": EVENT_ARG,
+            "onCellEdited": lambda col, row, data: [col, row, data],
         }
 
     def _get_hooks(self) -> str | None:
@@ -121,7 +121,6 @@ class DataEditor(NoSSRComponent):
                 f"    const rowData = {self.data.full_name}[row];",
                 f"    const column = {self.columns.full_name}[col];"
                 f"    const columnName = column.title.toLowerCase();",
-                # f"    const columnType = column.type;",
                 f"    const cellData = rowData[columnName];",
                 "    return formatCell(cellData, column);",
                 "  }",
