@@ -1,4 +1,5 @@
 """File for constants related to the installation process. (Bun/FNM/Node)."""
+from __future__ import annotations
 
 import os
 import platform

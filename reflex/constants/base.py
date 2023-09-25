@@ -43,6 +43,8 @@ class DIRS(SimpleNamespace):
     WEB_UTILS = os.path.join(WEB, UTILS)
     # The directory where the assets are located.
     WEB_ASSETS = os.path.join(WEB, "public")
+    # The env json file.
+    ENV_JSON = os.path.join(WEB, "env.json")
 
 
 class REFLEX(SimpleNamespace):
@@ -92,10 +94,6 @@ class TEMPLATE(SimpleNamespace):
         ASSETS_TEMPLATE = os.path.join(BASE, DIRS.APP_ASSETS)
         # The jinja template directory.
         JINJA_TEMPLATE = os.path.join(BASE, "jinja")
-
-
-# The env json file.
-ENV_JSON = os.path.join(DIRS.WEB, "env.json")
 
 
 class NEXT(SimpleNamespace):

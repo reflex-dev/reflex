@@ -18,7 +18,7 @@ from reflex.utils import console, path_ops, prerequisites, processes
 def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     path_ops.update_json_file(
-        constants.ENV_JSON,
+        constants.DIRS.ENV_JSON,
         {endpoint.name: endpoint.get_url() for endpoint in constants.ENDPOINT},
     )
 
