@@ -117,7 +117,7 @@ class Tbody(ChakraComponent):
             Component: _description_
 
         Raises:
-            TypeError: If rows are not of type list[list[Any]].
+            TypeError: If rows are not lists or tuples containing inner lists or tuples.
         """
         if len(children) == 0:
             if isinstance(rows, Var):
@@ -125,7 +125,7 @@ class Tbody(ChakraComponent):
                 # check if outer container type is a list.
                 if not issubclass(types.get_base_class(t), (List, Tuple)):
                     raise TypeError(
-                        f"table rows should be a list of list. Got {t} instead"
+                        f"table rows should be a list or tuple containing inner lists or tuples. Got {t} instead"
                     )
 
                 # Check if the inner type is also a list.
@@ -134,7 +134,7 @@ class Tbody(ChakraComponent):
                     types.get_base_class(inner_type), (List, Tuple)
                 ):
                     raise TypeError(
-                        f"table rows should be a list of list. Got {t} instead"
+                        f"table rows should be a list or tuple containing inner lists or tuples. Got {t} instead"
                     )
 
                 children = [
@@ -149,7 +149,9 @@ class Tbody(ChakraComponent):
                     or isinstance(rows, list)
                     and not isinstance(rows[0], (list, tuple))
                 ):
-                    raise TypeError("table rows should be a list of list")
+                    raise TypeError(
+                        "table rows should be a list or tuple containing inner lists or tuples."
+                    )
                 children = [
                     Tr.create(cell_type="data", cells=row) for row in rows or []
                 ]
@@ -188,7 +190,7 @@ class Tfoot(ChakraComponent):
                 or not isinstance(footers, Var)
                 and types.get_base_class(type(footers)) not in (list, tuple)
             ):
-                raise TypeError("table headers should be a list")
+                raise TypeError("table headers should be a list or tuple")
             children = [Tr.create(cell_type="header", cells=footers)]
         return super().create(*children, **props)
 
