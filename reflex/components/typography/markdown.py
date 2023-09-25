@@ -163,16 +163,18 @@ class Markdown(Component):
         special_props = {_PROPS}
         children = [_CHILDREN]
 
+        # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)
         if children_prop is not None:
             special_props.add(Var.create_safe(f"children={str(children_prop)}"))
             children = []
 
-        return (
-            self.component_map[tag](*children, **props)
-            .set(special_props=special_props)
-            ._add_style(self.custom_styles.get(tag, {}))
+        # Get the component.
+        component = self.component_map[tag](*children, **props).set(
+            special_props=special_props
         )
+        component._add_style(self.custom_styles.get(tag, {}))
+        return component
 
     def format_component(self, tag: str, **props) -> str:
         """Format a component for rendering in the component map.
@@ -192,12 +194,12 @@ class Markdown(Component):
         Returns:
             The formatted component map.
         """
-        # Import here to avoid circular imports.
-
         components = {
             tag: f"{{({{{_CHILDREN.name}, {_PROPS.name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
         }
+
+        # Separate out inline code and code blocks.
         components[
             "code"
         ] = f"""{{({{inline, className, {_CHILDREN.name}, {_PROPS.name}}}) => {{

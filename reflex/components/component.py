@@ -447,17 +447,13 @@ class Component(Base, ABC):
 
         return cls(children=children, **props)
 
-    def _add_style(self, style: dict) -> Component:
+    def _add_style(self, style: dict):
         """Add additional style to the component.
 
         Args:
             style: A style dict to apply.
-
-        Returns:
-            The component with the additional style.
         """
         self.style.update(style)
-        return self
 
     def add_style(self, style: ComponentStyle) -> Component:
         """Add additional style to the component and its children.
