@@ -6,7 +6,7 @@ except ImportError:
     pytest.skip("numpy is not installed", allow_module_level=True)
 import plotly.graph_objects as go
 
-from reflex.components.graphing.plotly import serialize_figure  # type: ignore
+from reflex.components.graphing.plotly import serialize_plotly_figure  # type: ignore
 from reflex.utils.serializers import serialize
 
 
@@ -35,4 +35,4 @@ def test_serialize_plotly(plotly_fig: go.Figure):
     """
     value = serialize(plotly_fig)
     assert isinstance(value, list)
-    assert value == serialize_figure(plotly_fig)
+    assert value == serialize_plotly_figure(plotly_fig)
