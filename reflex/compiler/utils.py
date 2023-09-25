@@ -258,7 +258,7 @@ def compile_custom_component(
     )
 
 
-def create_document_root(head_components: list[Component]) -> Component:
+def create_document_root(head_components: list[Component] | None = None) -> Component:
     """Create the document root.
 
     Args:
@@ -267,6 +267,7 @@ def create_document_root(head_components: list[Component]) -> Component:
     Returns:
         The document root.
     """
+    head_components = head_components or []
     return Html.create(
         DocumentHead.create(*head_components),
         Body.create(
