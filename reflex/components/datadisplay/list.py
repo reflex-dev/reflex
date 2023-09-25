@@ -1,5 +1,7 @@
 """List components."""
 
+from __future__ import annotations
+
 from reflex.components import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
