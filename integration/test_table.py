@@ -34,11 +34,16 @@ def Table():
         def caption(self) -> str:
             return "random caption"
 
+        @rx.var
+        def token(self) -> str:
+            return self.get_token()
+
     app = rx.App(state=TableState)
 
     @app.add_page
     def index():
         return rx.center(
+            rx.input(id="token", value=TableState.token, is_read_only=True),
             rx.table_container(
                 rx.table(
                     headers=TableState.headers,
@@ -49,7 +54,7 @@ def Table():
                     color_scheme="blue",
                     width="100%",
                 ),
-            )
+            ),
         )
 
     @app.add_page
@@ -125,7 +130,12 @@ def driver(table: AppHarness):
     """
     driver = table.frontend()
     try:
-        assert table.poll_for_clients()
+        token_input = driver.find_element(By.ID, "token")
+        assert token_input
+        # wait for the backend connection to send the token
+        token = table.poll_for_value(token_input)
+        assert token is not None
+
         yield driver
     finally:
         driver.quit()
