@@ -944,9 +944,7 @@ class Var(ABC):
         Returns:
             A var representing the contain check.
         """
-        if self.type_ is None or not (
-            types._issubclass(self.type_, Union[dict, list, tuple, str])
-        ):
+        if not (types._issubclass(self.type_, Union[dict, list, tuple, str])):
             raise TypeError(
                 f"Var {self.full_name} of type {self.type_} does not support contains check."
             )
@@ -986,7 +984,7 @@ class Var(ABC):
         Returns:
             A var with the reversed list.
         """
-        if self.type_ is None or not types._issubclass(self.type_, list):
+        if not types._issubclass(self.type_, list):
             raise TypeError(f"Cannot reverse non-list var {self.full_name}.")
 
         return BaseVar(
@@ -1011,6 +1009,26 @@ class Var(ABC):
 
         return BaseVar(
             name=f"{self.full_name}.toLowerCase()",
+            type_=str,
+            is_local=self.is_local,
+        )
+
+    def upper(self) -> Var:
+        """Convert a string var to uppercase.
+
+        Returns:
+            A var with the uppercase string.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self.type_, str):
+            raise TypeError(
+                f"Cannot convert non-string var {self.full_name} to uppercase."
+            )
+
+        return BaseVar(
+            name=f"{self.full_name}.toUpperCase()",
             type_=str,
             is_local=self.is_local,
         )
@@ -1060,11 +1078,13 @@ class Var(ABC):
         else:
             other = Var.create_safe(other)
 
-        return BaseVar(
+        o = BaseVar(
             name=f"{self.full_name}.join({other.full_name})",
             type_=str,
             is_local=self.is_local,
         )
+        print("returning", str(o))
+        return o
 
     def foreach(self, fn: Callable) -> Var:
         """Return a list of components. after doing a foreach on this var.

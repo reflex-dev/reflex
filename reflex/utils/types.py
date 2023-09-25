@@ -104,7 +104,7 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
     # Special check for Any.
     if cls_check == Any:
         return True
-    if cls in [Any, Callable]:
+    if cls in [Any, Callable, None]:
         return False
 
     # Get the base classes.
