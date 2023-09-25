@@ -1,5 +1,5 @@
 """Table components."""
-from typing import List
+from typing import List, Tuple
 
 from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
@@ -80,18 +80,18 @@ class Thead(ChakraComponent):
             The table header component.
 
         Raises:
-            TypeError: If headers are not of type list.
+            TypeError: If headers are not of type list or type tuple.
         """
         if len(children) == 0:
             if (
                 (
                     isinstance(headers, Var)
-                    and not types.get_base_class(headers.type_) == list
+                    and types.get_base_class(headers.type_) not in (list, tuple)
                 )
                 or not isinstance(headers, Var)
-                and not types.get_base_class(type(headers)) == list
+                and types.get_base_class(type(headers)) not in (list, tuple)
             ):
-                raise TypeError("table headers should be a list")
+                raise TypeError("table headers should be a list or tuple")
             children = [Tr.create(cell_type="header", cells=headers)]
         return super().create(*children, **props)
 
@@ -123,7 +123,7 @@ class Tbody(ChakraComponent):
             if isinstance(rows, Var):
                 t = rows.type_
                 # check if outer container type is a list.
-                if not issubclass(types.get_base_class(t), List):
+                if not issubclass(types.get_base_class(t), (List, Tuple)):
                     raise TypeError(
                         f"table rows should be a list of list. Got {t} instead"
                     )
@@ -131,7 +131,7 @@ class Tbody(ChakraComponent):
                 # Check if the inner type is also a list.
                 inner_type = t.__args__[0] if hasattr(t, "__args__") else None
                 if not inner_type or not issubclass(
-                    types.get_base_class(inner_type), List
+                    types.get_base_class(inner_type), (List, Tuple)
                 ):
                     raise TypeError(
                         f"table rows should be a list of list. Got {t} instead"
@@ -145,9 +145,9 @@ class Tbody(ChakraComponent):
             else:
                 if (
                     rows
-                    and not isinstance(rows, list)
+                    and not isinstance(rows, (list, tuple))
                     or isinstance(rows, list)
-                    and not isinstance(rows[0], list)
+                    and not isinstance(rows[0], (list, tuple))
                 ):
                     raise TypeError("table rows should be a list of list")
                 children = [
@@ -183,10 +183,10 @@ class Tfoot(ChakraComponent):
             if (
                 (
                     isinstance(footers, Var)
-                    and not types.get_base_class(footers.type_) == list
+                    and types.get_base_class(footers.type_) not in (list, tuple)
                 )
                 or not isinstance(footers, Var)
-                and not types.get_base_class(type(footers)) == list
+                and types.get_base_class(type(footers)) not in (list, tuple)
             ):
                 raise TypeError("table headers should be a list")
             children = [Tr.create(cell_type="header", cells=footers)]
