@@ -230,7 +230,7 @@ def format_route(route: str, format_case=True) -> str:
 
     # If the route is empty, return the index route.
     if route == "":
-        return constants.INDEX_ROUTE
+        return constants.PAGE_NAMES.INDEX_ROUTE
 
     return route
 
@@ -479,7 +479,7 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     Returns:
         The reformatted query params
     """
-    params = router_data[constants.RouteVar.QUERY]
+    params = router_data[constants.ROUTE_VAR.QUERY]
     return {k.replace("-", "_"): v for k, v in params.items()}
 
 

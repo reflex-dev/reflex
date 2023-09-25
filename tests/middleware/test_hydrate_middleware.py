@@ -3,7 +3,7 @@ from typing import Any, Dict
 import pytest
 
 from reflex.app import App
-from reflex.constants import IS_HYDRATED
+from reflex.constants import VAR_NAMES
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
 from reflex.state import State, StateUpdate
 
@@ -17,7 +17,7 @@ def exp_is_hydrated(state: State) -> Dict[str, Any]:
     Returns:
         dict similar to that returned by `State.get_delta` with IS_HYDRATED: True
     """
-    return {state.get_name(): {IS_HYDRATED: True}}
+    return {state.get_name(): {VAR_NAMES.IS_HYDRATED: True}}
 
 
 class TestState(State):

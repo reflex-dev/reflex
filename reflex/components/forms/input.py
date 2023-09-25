@@ -5,7 +5,7 @@ from typing import Any, Dict
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import EventTriggers
+from reflex.constants import EVENT_TRIGGERS
 from reflex.utils import imports
 from reflex.vars import ImportVar, Var
 
@@ -65,11 +65,11 @@ class Input(ChakraComponent):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
-            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
-            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
-            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
-            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
+            EVENT_TRIGGERS.ON_CHANGE: lambda e0: [e0.target.value],
+            EVENT_TRIGGERS.ON_FOCUS: lambda e0: [e0.target.value],
+            EVENT_TRIGGERS.ON_BLUR: lambda e0: [e0.target.value],
+            EVENT_TRIGGERS.ON_KEY_DOWN: lambda e0: [e0.key],
+            EVENT_TRIGGERS.ON_KEY_UP: lambda e0: [e0.key],
         }
 
     @classmethod

@@ -8,23 +8,23 @@ from rich.console import Console
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from rich.prompt import Prompt
 
-from reflex.constants import LogLevel
+from reflex.constants import LOG_LEVEL
 
 # Console for pretty printing.
 _console = Console()
 
 # The current log level.
-LOG_LEVEL = LogLevel.INFO
+_LOG_LEVEL = LOG_LEVEL.INFO
 
 
-def set_log_level(log_level: LogLevel):
+def set_log_level(log_level: LOG_LEVEL):
     """Set the log level.
 
     Args:
         log_level: The log level to set.
     """
-    global LOG_LEVEL
-    LOG_LEVEL = log_level
+    global _LOG_LEVEL
+    _LOG_LEVEL = log_level
 
 
 def print(msg: str, **kwargs):
@@ -44,7 +44,7 @@ def debug(msg: str, **kwargs):
         msg: The debug message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if LOG_LEVEL <= LogLevel.DEBUG:
+    if _LOG_LEVEL <= LOG_LEVEL.DEBUG:
         print(f"[blue]Debug: {msg}[/blue]", **kwargs)
 
 
@@ -55,7 +55,7 @@ def info(msg: str, **kwargs):
         msg: The info message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if LOG_LEVEL <= LogLevel.INFO:
+    if _LOG_LEVEL <= LOG_LEVEL.INFO:
         print(f"[cyan]Info: {msg}[/cyan]", **kwargs)
 
 
@@ -66,7 +66,7 @@ def success(msg: str, **kwargs):
         msg: The success message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if LOG_LEVEL <= LogLevel.INFO:
+    if _LOG_LEVEL <= LOG_LEVEL.INFO:
         print(f"[green]Success: {msg}[/green]", **kwargs)
 
 
@@ -77,7 +77,7 @@ def log(msg: str, **kwargs):
         msg: The message to log.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if LOG_LEVEL <= LogLevel.INFO:
+    if _LOG_LEVEL <= LOG_LEVEL.INFO:
         _console.log(msg, **kwargs)
 
 
@@ -98,7 +98,7 @@ def warn(msg: str, **kwargs):
         msg: The warning message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if LOG_LEVEL <= LogLevel.WARNING:
+    if _LOG_LEVEL <= LOG_LEVEL.WARNING:
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
@@ -123,7 +123,7 @@ def deprecate(
         f"{feature_name} has been deprecated in version {deprecation_version} {reason}. It will be completely "
         f"removed in {removal_version}"
     )
-    if LOG_LEVEL <= LogLevel.WARNING:
+    if _LOG_LEVEL <= LOG_LEVEL.WARNING:
         print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
 
 
@@ -134,7 +134,7 @@ def error(msg: str, **kwargs):
         msg: The error message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if LOG_LEVEL <= LogLevel.ERROR:
+    if _LOG_LEVEL <= LOG_LEVEL.ERROR:
         print(f"[red]{msg}[/red]", **kwargs)
 
 

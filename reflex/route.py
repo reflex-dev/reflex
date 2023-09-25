@@ -50,26 +50,26 @@ def get_route_args(route: str) -> dict[str, str]:
         args[arg_name] = type_
 
     # Regex to check for route args.
-    check = constants.RouteRegex.ARG
-    check_strict_catchall = constants.RouteRegex.STRICT_CATCHALL
-    check_opt_catchall = constants.RouteRegex.OPT_CATCHALL
+    check = constants.ROUTE_REGEX.ARG
+    check_strict_catchall = constants.ROUTE_REGEX.STRICT_CATCHALL
+    check_opt_catchall = constants.ROUTE_REGEX.OPT_CATCHALL
 
     # Iterate over the route parts and check for route args.
     for part in route.split("/"):
         match_opt = check_opt_catchall.match(part)
         if match_opt:
-            add_route_arg(match_opt, constants.RouteArgType.LIST)
+            add_route_arg(match_opt, constants.ROUTE_ARG_TYPE.LIST)
             break
 
         match_strict = check_strict_catchall.match(part)
         if match_strict:
-            add_route_arg(match_strict, constants.RouteArgType.LIST)
+            add_route_arg(match_strict, constants.ROUTE_ARG_TYPE.LIST)
             break
 
         match = check.match(part)
         if match:
             # Add the route arg to the list.
-            add_route_arg(match, constants.RouteArgType.SINGLE)
+            add_route_arg(match, constants.ROUTE_ARG_TYPE.SINGLE)
     return args
 
 
@@ -82,7 +82,7 @@ def catchall_in_route(route: str) -> str:
     Returns:
         str: the catchall part of the URI
     """
-    match_ = constants.RouteRegex.CATCHALL.search(route)
+    match_ = constants.ROUTE_REGEX.CATCHALL.search(route)
     return match_.group() if match_ else ""
 
 

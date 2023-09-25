@@ -7,12 +7,12 @@ from reflex.route import catchall_in_route, get_route_args, verify_route_validit
 @pytest.mark.parametrize(
     "route_name, expected",
     [
-        ("/users/[id]", {"id": constants.RouteArgType.SINGLE}),
+        ("/users/[id]", {"id": constants.ROUTE_ARG_TYPE.SINGLE}),
         (
             "/posts/[postId]/comments/[commentId]",
             {
-                "postId": constants.RouteArgType.SINGLE,
-                "commentId": constants.RouteArgType.SINGLE,
+                "postId": constants.ROUTE_ARG_TYPE.SINGLE,
+                "commentId": constants.ROUTE_ARG_TYPE.SINGLE,
             },
         ),
     ],

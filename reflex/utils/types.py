@@ -8,7 +8,6 @@ from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
 from reflex.utils import serializers
-from reflex.vars import Var
 
 # Union of generic types.
 GenericType = Union[Type, _GenericAlias]
@@ -18,7 +17,8 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-ArgsSpec = Callable[[Var], list[Var]]
+# ArgsSpec = Callable[[Var], list[Var]]
+ArgsSpec = Callable
 
 
 def get_args(alias: _GenericAlias) -> tuple[Type, ...]:

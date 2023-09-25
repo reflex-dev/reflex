@@ -923,7 +923,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 state.get_name(): {
                     arg_name: exp_val,
                     f"comp_{arg_name}": exp_val,
-                    constants.IS_HYDRATED: False,
+                    constants.VAR_NAMES.IS_HYDRATED: False,
                     "loaded": exp_index,
                     "counter": exp_index,
                     # "side_effect_counter": exp_index,

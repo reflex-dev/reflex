@@ -39,7 +39,7 @@ def get_reflex_version() -> str:
     Returns:
         The Reflex version.
     """
-    return constants.VERSION
+    return constants.REFLEX.VERSION
 
 
 def get_cpu_count() -> int:

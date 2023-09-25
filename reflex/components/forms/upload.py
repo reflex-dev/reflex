@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
-from reflex.constants import EventTriggers
+from reflex.constants import EVENT_TRIGGERS
 from reflex.event import EventChain
 from reflex.vars import BaseVar, Var
 
@@ -98,7 +98,7 @@ class Upload(Component):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_DROP: lambda e0: [e0],
+            EVENT_TRIGGERS.ON_DROP: lambda e0: [e0],
         }
 
     def _render(self):

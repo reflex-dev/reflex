@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from reflex.base import Base
 from reflex.components.component import Component
-from reflex.constants import EventTriggers
+from reflex.constants import EVENT_TRIGGERS
 from reflex.vars import Var
 
 
@@ -307,7 +307,7 @@ class Select(Component):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: (
+            EVENT_TRIGGERS.ON_CHANGE: (
                 lambda e0: [Var.create_safe(f"{e0}.map(e => e.value)", is_local=True)]
                 if self.is_multi
                 else lambda e0: [e0]

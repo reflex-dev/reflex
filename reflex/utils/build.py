@@ -6,7 +6,6 @@ import json
 import os
 import subprocess
 import zipfile
-from enum import Enum
 from pathlib import Path
 
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
@@ -20,7 +19,7 @@ def set_env_json():
     """Write the upload url to a REFLEX_JSON."""
     path_ops.update_json_file(
         constants.ENV_JSON,
-        {endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+        {endpoint.name: endpoint.get_url() for endpoint in constants.ENDPOINT},
     )
 
 
@@ -52,17 +51,12 @@ def generate_sitemap_config(deploy_url: str):
         }
     )
 
-    with open(constants.SITEMAP_CONFIG_FILE, "w") as f:
+    with open(constants.NEXT.SITEMAP_CONFIG_FILE, "w") as f:
         f.write(templates.SITEMAP_CONFIG(config=config))
 
 
-class _ComponentName(Enum):
-    BACKEND = "Backend"
-    FRONTEND = "Frontend"
-
-
 def _zip(
-    component_name: _ComponentName,
+    component_name: constants.COMPONENT_NAME,
     target: str,
     root_dir: str,
     dirs_to_exclude: set[str] | None = None,
@@ -130,7 +124,7 @@ def export(
         deploy_url: The URL of the deployed app.
     """
     # Remove the static folder.
-    path_ops.rm(constants.WEB_STATIC_DIR)
+    path_ops.rm(constants.DIRS.WEB_STATIC)
 
     # The export command to run.
     command = "export"
@@ -155,25 +149,28 @@ def export(
         # Start the subprocess with the progress bar.
         process = processes.new_process(
             [prerequisites.get_package_manager(), "run", command],
-            cwd=constants.WEB_DIR,
+            cwd=constants.DIRS.WEB,
             shell=constants.IS_WINDOWS,
         )
         processes.show_progress("Creating Production Build", process, checkpoints)
 
     # Zip up the app.
     if zip:
-        files_to_exclude = {constants.FRONTEND_ZIP, constants.BACKEND_ZIP}
+        files_to_exclude = {
+            constants.COMPONENT_NAME.FRONTEND.zip(),
+            constants.COMPONENT_NAME.BACKEND.zip(),
+        }
         if frontend:
             _zip(
-                component_name=_ComponentName.FRONTEND,
-                target=constants.FRONTEND_ZIP,
+                component_name=constants.COMPONENT_NAME.FRONTEND,
+                target=constants.COMPONENT_NAME.FRONTEND.zip(),
                 root_dir=".web/_static",
                 files_to_exclude=files_to_exclude,
             )
         if backend:
             _zip(
-                component_name=_ComponentName.BACKEND,
-                target=constants.BACKEND_ZIP,
+                component_name=constants.COMPONENT_NAME.BACKEND,
+                target=constants.COMPONENT_NAME.BACKEND.zip(),
                 root_dir=".",
                 dirs_to_exclude={"assets", "__pycache__"},
                 files_to_exclude=files_to_exclude,
@@ -192,8 +189,8 @@ def setup_frontend(
     """
     # Copy asset files to public folder.
     path_ops.cp(
-        src=str(root / constants.APP_ASSETS_DIR),
-        dest=str(root / constants.WEB_ASSETS_DIR),
+        src=str(root / constants.DIRS.APP_ASSETS),
+        dest=str(root / constants.DIRS.WEB_ASSETS),
     )
 
     # Set the environment variables in client (env.json).
@@ -209,7 +206,7 @@ def setup_frontend(
                 "telemetry",
                 "disable",
             ],
-            cwd=constants.WEB_DIR,
+            cwd=constants.DIRS.WEB,
             stdout=subprocess.DEVNULL,
             shell=constants.IS_WINDOWS,
         )

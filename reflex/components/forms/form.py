@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import EventTriggers
+from reflex.constants import EVENT_TRIGGERS
 from reflex.vars import Var
 
 
@@ -36,7 +36,7 @@ class Form(ChakraComponent):
 
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_SUBMIT: lambda e0: [form_refs],
+            EVENT_TRIGGERS.ON_SUBMIT: lambda e0: [form_refs],
         }
 
 

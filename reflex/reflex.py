@@ -29,7 +29,7 @@ def version(value: bool):
         typer.Exit: If the version flag was passed.
     """
     if value:
-        console.print(constants.VERSION)
+        console.print(constants.REFLEX.VERSION)
         raise typer.Exit()
 
 
@@ -53,10 +53,10 @@ def init(
     name: str = typer.Option(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
-    template: constants.Template = typer.Option(
-        constants.Template.DEFAULT, help="The template to initialize the app with."
+    template: constants.TEMPLATE.KIND = typer.Option(
+        constants.TEMPLATE.KIND.DEFAULT, help="The template to initialize the app with."
     ),
-    loglevel: constants.LogLevel = typer.Option(
+    loglevel: constants.LOG_LEVEL = typer.Option(
         config.loglevel, help="The log level to use."
     ),
 ):
@@ -78,7 +78,7 @@ def init(
     prerequisites.migrate_to_reflex()
 
     # Set up the app directory, only if the config doesn't exist.
-    if not os.path.exists(constants.CONFIG_FILE):
+    if not os.path.exists(constants.CONFIG.FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
         telemetry.send("init")
@@ -94,8 +94,8 @@ def init(
 
 @cli.command()
 def run(
-    env: constants.Env = typer.Option(
-        constants.Env.DEV, help="The environment to run the app in."
+    env: constants.ENV = typer.Option(
+        constants.ENV.DEV, help="The environment to run the app in."
     ),
     frontend: bool = typer.Option(
         False, "--frontend-only", help="Execute only frontend."
@@ -110,7 +110,7 @@ def run(
     backend_host: str = typer.Option(
         config.backend_host, help="Specify the backend host."
     ),
-    loglevel: constants.LogLevel = typer.Option(
+    loglevel: constants.LOG_LEVEL = typer.Option(
         config.loglevel, help="The log level to use."
     ),
 ):
@@ -150,13 +150,13 @@ def run(
 
     # Get the frontend and backend commands, based on the environment.
     setup_frontend = frontend_cmd = backend_cmd = None
-    if env == constants.Env.DEV:
+    if env == constants.ENV.DEV:
         setup_frontend, frontend_cmd, backend_cmd = (
             build.setup_frontend,
             exec.run_frontend,
             exec.run_backend,
         )
-    if env == constants.Env.PROD:
+    if env == constants.ENV.PROD:
         setup_frontend, frontend_cmd, backend_cmd = (
             build.setup_frontend_prod,
             exec.run_frontend_prod,
@@ -179,21 +179,21 @@ def run(
         commands.append((frontend_cmd, Path.cwd(), frontend_port))
 
     # In prod mode, run the backend on a separate thread.
-    if backend and env == constants.Env.PROD:
+    if backend and env == constants.ENV.PROD:
         commands.append((backend_cmd, backend_host, backend_port))
 
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):
         # In dev mode, run the backend on the main thread.
-        if backend and env == constants.Env.DEV:
+        if backend and env == constants.ENV.DEV:
             backend_cmd(backend_host, int(backend_port))
 
 
 @cli.command()
 def deploy(
     dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
-    loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+    loglevel: constants.LOG_LEVEL = typer.Option(
+        console._LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
@@ -223,10 +223,10 @@ def deploy(
     backend = response["backend_resources_url"]
 
     # Upload the frontend and backend.
-    with open(constants.FRONTEND_ZIP, "rb") as f:
+    with open(constants.COMPONENT_NAME.FRONTEND.zip(), "rb") as f:
         httpx.put(frontend, data=f)  # type: ignore
 
-    with open(constants.BACKEND_ZIP, "rb") as f:
+    with open(constants.COMPONENT_NAME.BACKEND.zip(), "rb") as f:
         httpx.put(backend, data=f)  # type: ignore
 
 
@@ -241,8 +241,8 @@ def export(
     backend: bool = typer.Option(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
-    loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+    loglevel: constants.LOG_LEVEL = typer.Option(
+        console._LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Export the app to a zip file."""

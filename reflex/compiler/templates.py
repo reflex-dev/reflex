@@ -19,26 +19,26 @@ class ReflexJinjaEnvironment(Environment):
         )
         self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
-        self.loader = FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
+        self.loader = FileSystemLoader(constants.TEMPLATE.DIR.JINJA_TEMPLATE)
         self.globals["const"] = {
-            "socket": constants.SOCKET,
-            "result": constants.RESULT,
-            "router": constants.ROUTER,
-            "event_endpoint": constants.Endpoint.EVENT.name,
-            "events": constants.EVENTS,
-            "state": constants.STATE,
-            "final": constants.FINAL,
-            "processing": constants.PROCESSING,
+            "socket": constants.VAR_NAMES.SOCKET,
+            "result": constants.VAR_NAMES.RESULT,
+            "router": constants.VAR_NAMES.ROUTER,
+            "event_endpoint": constants.ENDPOINT.EVENT.name,
+            "events": constants.VAR_NAMES.EVENTS,
+            "state": constants.VAR_NAMES.STATE,
+            "final": constants.VAR_NAMES.FINAL,
+            "processing": constants.VAR_NAMES.PROCESSING,
             "initial_result": {
-                constants.STATE: None,
-                constants.EVENTS: [],
-                constants.FINAL: True,
-                constants.PROCESSING: False,
+                constants.VAR_NAMES.STATE: None,
+                constants.VAR_NAMES.EVENTS: [],
+                constants.VAR_NAMES.FINAL: True,
+                constants.VAR_NAMES.PROCESSING: False,
             },
             "color_mode": constants.COLOR_MODE,
-            "toggle_color_mode": constants.TOGGLE_COLOR_MODE,
-            "use_color_mode": constants.USE_COLOR_MODE,
-            "hydrate": constants.HYDRATE,
+            "toggle_color_mode": constants.COLOR_MODE.TOGGLE,
+            "use_color_mode": constants.COLOR_MODE.USE,
+            "hydrate": constants.VAR_NAMES.HYDRATE,
         }
 
 

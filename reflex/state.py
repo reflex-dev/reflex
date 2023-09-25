@@ -492,7 +492,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The token of the client.
         """
-        return self.router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+        return self.router_data.get(constants.ROUTE_VAR.CLIENT_TOKEN, "")
 
     def get_sid(self) -> str:
         """Return the session ID of the client associated with this state.
@@ -500,7 +500,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The session ID of the client.
         """
-        return self.router_data.get(constants.RouteVar.SESSION_ID, "")
+        return self.router_data.get(constants.ROUTE_VAR.SESSION_ID, "")
 
     def get_headers(self) -> Dict:
         """Return the headers of the client associated with this state.
@@ -508,7 +508,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The headers of the client.
         """
-        return self.router_data.get(constants.RouteVar.HEADERS, {})
+        return self.router_data.get(constants.ROUTE_VAR.HEADERS, {})
 
     def get_client_ip(self) -> str:
         """Return the IP of the client associated with this state.
@@ -516,7 +516,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The IP of the client.
         """
-        return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
+        return self.router_data.get(constants.ROUTE_VAR.CLIENT_IP, "")
 
     def get_current_page(self, origin=False) -> str:
         """Obtain the path of current page from the router data.
@@ -528,9 +528,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             The current page.
         """
         if origin:
-            return self.router_data.get(constants.RouteVar.ORIGIN, "")
+            return self.router_data.get(constants.ROUTE_VAR.ORIGIN, "")
         else:
-            return self.router_data.get(constants.RouteVar.PATH, "")
+            return self.router_data.get(constants.ROUTE_VAR.PATH, "")
 
     def get_query_params(self) -> dict[str, str]:
         """Obtain the query parameters for the queried page.
@@ -540,7 +540,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The dict of query parameters.
         """
-        return self.router_data.get(constants.RouteVar.QUERY, {})
+        return self.router_data.get(constants.ROUTE_VAR.QUERY, {})
 
     def get_cookies(self) -> dict[str, str]:
         """Obtain the cookies of the client stored in the browser.
@@ -549,7 +549,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 The dict of cookies.
         """
         cookie_dict = {}
-        cookies = self.get_headers().get(constants.RouteVar.COOKIE, "").split(";")
+        cookies = self.get_headers().get(constants.ROUTE_VAR.COOKIE, "").split(";")
 
         cookie_pairs = [cookie.split("=") for cookie in cookies if cookie]
 
@@ -587,9 +587,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             return inner_func
 
         for param, value in args.items():
-            if value == constants.RouteArgType.SINGLE:
+            if value == constants.ROUTE_ARG_TYPE.SINGLE:
                 func = argsingle_factory(param)
-            elif value == constants.RouteArgType.LIST:
+            elif value == constants.ROUTE_ARG_TYPE.LIST:
                 func = arglist_factory(param)
             else:
                 continue
@@ -1102,7 +1102,7 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
         """
         super().__init__(state_instance)
-        self._self_app = getattr(prerequisites.get_app(), constants.APP_VAR)
+        self._self_app = getattr(prerequisites.get_app(), constants.VAR_NAMES.APP)
         self._self_substate_path = state_instance.get_full_name().split(".")
         self._self_actx = None
         self._self_mutable = False
@@ -1344,10 +1344,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = constants.TOKEN_EXPIRATION
+    token_expiration: int = constants.EXPIRATION.TOKEN
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = constants.LOCK_EXPIRATION
+    lock_expiration: int = constants.EXPIRATION.LOCK
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (

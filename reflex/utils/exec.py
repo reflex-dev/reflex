@@ -73,7 +73,7 @@ def run_process_and_launch_url(run_command: list[str]):
     Args:
         run_command: The command to run.
     """
-    json_file_path = os.path.join(constants.WEB_DIR, "package.json")
+    json_file_path = os.path.join(constants.DIRS.WEB, "package.json")
     last_hash = detect_package_change(json_file_path)
     process = None
     first_run = True
@@ -81,7 +81,7 @@ def run_process_and_launch_url(run_command: list[str]):
     while True:
         if process is None:
             process = processes.new_process(
-                run_command, cwd=constants.WEB_DIR, shell=constants.IS_WINDOWS
+                run_command, cwd=constants.DIRS.WEB, shell=constants.IS_WINDOWS
             )
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
@@ -143,7 +143,7 @@ def run_frontend_prod(root: Path, port: str):
 def run_backend(
     host: str,
     port: int,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    loglevel: constants.LOG_LEVEL = constants.LOG_LEVEL.ERROR,
 ):
     """Run the backend.
 
@@ -153,9 +153,9 @@ def run_backend(
         loglevel: The log level.
     """
     config = get_config()
-    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
+    app_module = f"{config.app_name}.{config.app_name}:{constants.VAR_NAMES.APP}"
     uvicorn.run(
-        app=f"{app_module}.{constants.API_VAR}",
+        app=f"{app_module}.{constants.VAR_NAMES.API}",
         host=host,
         port=port,
         log_level=loglevel.value,
@@ -167,7 +167,7 @@ def run_backend(
 def run_backend_prod(
     host: str,
     port: int,
-    loglevel: constants.LogLevel = constants.LogLevel.ERROR,
+    loglevel: constants.LOG_LEVEL = constants.LOG_LEVEL.ERROR,
 ):
     """Run the backend.
 
@@ -180,7 +180,7 @@ def run_backend_prod(
     config = get_config()
     RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
-    app_module = f"{config.app_name}.{config.app_name}:{constants.APP_VAR}"
+    app_module = f"{config.app_name}.{config.app_name}:{constants.VAR_NAMES.APP}"
     command = (
         [
             *RUN_BACKEND_PROD_WINDOWS,
@@ -217,7 +217,7 @@ def run_backend_prod(
 
 def output_system_info():
     """Show system information if the loglevel is in DEBUG."""
-    if console.LOG_LEVEL > constants.LogLevel.DEBUG:
+    if console._LOG_LEVEL > constants.LOG_LEVEL.DEBUG:
         return
 
     config = get_config()
@@ -231,8 +231,8 @@ def output_system_info():
     console.debug(f"Config: {config}")
 
     dependencies = [
-        f"[Reflex {constants.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE_VERSION}) (PATH:{path_ops.get_node_path()})]",
+        f"[Reflex {constants.REFLEX.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.NODE.VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
@@ -240,13 +240,13 @@ def output_system_info():
     if system != "Windows":
         dependencies.extend(
             [
-                f"[FNM {constants.FNM_VERSION} (Expected: {constants.FNM_VERSION}) (PATH: {constants.FNM_EXE})]",
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN_VERSION}) (PATH: {config.bun_path})]",
+                f"[FNM {constants.FNM.VERSION} (Expected: {constants.FNM.VERSION}) (PATH: {constants.FNM.EXE})]",
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.BUN.VERSION}) (PATH: {config.bun_path})]",
             ],
         )
     else:
         dependencies.append(
-            f"[FNM {constants.FNM_VERSION} (Expected: {constants.FNM_VERSION}) (PATH: {constants.FNM_EXE})]",
+            f"[FNM {constants.FNM.VERSION} (Expected: {constants.FNM.VERSION}) (PATH: {constants.FNM.EXE})]",
         )
 
     if system == "Linux":

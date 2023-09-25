@@ -23,7 +23,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="useContext"),
     },
     "next/router": {ImportVar(tag="useRouter")},
-    f"/{constants.STATE_PATH}": {
+    f"/{constants.DIRS.STATE_PATH}": {
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="Event"),
         ImportVar(tag="isTrue"),
@@ -42,7 +42,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
     "@chakra-ui/react": {
-        ImportVar(tag=constants.USE_COLOR_MODE),
+        ImportVar(tag=constants.COLOR_MODE.USE),
         ImportVar(tag="Box"),
         ImportVar(tag="Text"),
     },
@@ -151,7 +151,7 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     """
     # Add tailwind css if enabled.
     sheets = (
-        [constants.TAILWIND_ROOT_STYLE_PATH]
+        [constants.TAILWIND.ROOT_STYLE_PATH]
         if get_config().tailwind is not None
         else []
     )
@@ -159,7 +159,7 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
         if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
             stylesheet_full_path = (
-                Path.cwd() / constants.APP_ASSETS_DIR / stylesheet.strip("/")
+                Path.cwd() / constants.DIRS.APP_ASSETS / stylesheet.strip("/")
             )
             if not os.path.exists(stylesheet_full_path):
                 raise FileNotFoundError(
@@ -193,7 +193,7 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     """
     imports = {
         "react": {ImportVar(tag="memo")},
-        f"/{constants.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
+        f"/{constants.DIRS.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
     }
     component_renders = []
 
@@ -233,7 +233,7 @@ def compile_document_root() -> Tuple[str, str]:
         The path and code of the compiled document root.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.DOCUMENT_ROOT)
+    output_path = utils.get_page_path(constants.PAGE_NAMES.DOCUMENT_ROOT)
 
     # Create the document root.
     document_root = utils.create_document_root()
@@ -330,7 +330,7 @@ def compile_tailwind(
         The compiled Tailwind config.
     """
     # Get the path for the output file.
-    output_path = constants.TAILWIND_CONFIG
+    output_path = constants.TAILWIND.CONFIG
 
     # Compile the config.
     code = _compile_tailwind(config)
@@ -339,4 +339,4 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    utils.empty_dir(constants.WEB_PAGES_DIR, keep_files=["_app.js"])
+    utils.empty_dir(constants.DIRS.WEB_PAGES, keep_files=["_app.js"])
