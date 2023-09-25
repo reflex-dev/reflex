@@ -43,6 +43,23 @@ class AreaChart(ChartBase):
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Var[Union[int, str]]
 
+    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
+    stack_offset: Var[str]
+
+    # Valid children components
+    valid_children: List[str] = [
+        "XAxis",
+        "YAxis",
+        "ReferenceArea",
+        "ReferenceDot",
+        "ReferenceLine",
+        "Brush",
+        "CartesianGrid",
+        "Legend",
+        "Tooltip",
+        "Area",
+    ]
+
 
 class BarChart(ChartBase):
     """A Bar chart component in Recharts."""
@@ -59,16 +76,47 @@ class BarChart(ChartBase):
     bar_size: Var[int]
 
     # The maximum width of all the bars in a horizontal BarChart, or maximum height in a vertical BarChart.
-    bar_size_max: Var[int]
+    max_bar_size: Var[int]
+
+    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
+    stack_offset: Var[str]
 
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
     reverse_stack_order: Var[bool]
+
+    # Valid children components
+    valid_children: List[str] = [
+        "XAxis",
+        "YAxis",
+        "ReferenceArea",
+        "ReferenceDot",
+        "ReferenceLine",
+        "Brush",
+        "CartesianGrid",
+        "Legend",
+        "Tooltip",
+        "Bar",
+    ]
 
 
 class LineChart(ChartBase):
     """A Line chart component in Recharts."""
 
     tag = "LineChart"
+
+    # Valid children components
+    valid_children: List[str] = [
+        "XAxis",
+        "YAxis",
+        "ReferenceArea",
+        "ReferenceDot",
+        "ReferenceLine",
+        "Brush",
+        "CartesianGrid",
+        "Legend",
+        "Tooltip",
+        "Line",
+    ]
 
 
 class ComposedChart(ChartBase):
@@ -91,11 +139,37 @@ class ComposedChart(ChartBase):
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
     reverse_stack_order: Var[bool]
 
+    # Valid children components
+    valid_children: List[str] = [
+        "XAxis",
+        "YAxis",
+        "ReferenceArea",
+        "ReferenceDot",
+        "ReferenceLine",
+        "Brush",
+        "CartesianGrid",
+        "Legend",
+        "Tooltip",
+        "Area",
+        "Line",
+        "Bar",
+    ]
+
 
 class PieChart(ChartBase):
     """A Pie chart component in Recharts."""
 
     tag = "PieChart"
+
+    # Valid children components
+    valid_children: List[str] = [
+        "PolarAngleAxis",
+        "PolarRadiusAxis",
+        "PolarGrid",
+        "Legend",
+        "Tooltip",
+        "Pie",
+    ]
 
 
 class RadarChart(ChartBase):
@@ -120,6 +194,16 @@ class RadarChart(ChartBase):
 
     # The outer radius of last circle grid. If set a percentage, the final value is obtained by multiplying the percentage of maxRadius which is calculated by the width, height, cx, cy. Number | Percentage
     outer_radius: Var[Union[int, str]]
+
+    # Valid children components
+    valid_children: List[str] = [
+        "PolarAngleAxis",
+        "PolarRadiusAxis",
+        "PolarGrid",
+        "Legend",
+        "Tooltip",
+        "Radar",
+    ]
 
 
 class RadialBarChart(ChartBase):
@@ -151,11 +235,38 @@ class RadialBarChart(ChartBase):
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
     bar_gap: Var[str]
 
+    # The size of each bar. If the barSize is not specified, the size of bar will be calculated by the barCategoryGap, barGap and the quantity of bar groups.
+    bar_size: Var[int]
+
+    # Valid children components
+    valid_children: List[str] = [
+        "PolarAngleAxis",
+        "PolarRadiusAxis",
+        "PolarGrid",
+        "Legend",
+        "Tooltip",
+        "RadialBar",
+    ]
+
 
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
 
     tag = "ScatterChart"
+
+    # Valid children components
+    valid_children: List[str] = [
+        "XAxis",
+        "YAxis",
+        "ReferenceArea",
+        "ReferenceDot",
+        "ReferenceLine",
+        "Brush",
+        "CartesianGrid",
+        "Legend",
+        "Tooltip",
+        "Line",
+    ]
 
 
 class FunnelChart(ChartBase):
@@ -166,11 +277,20 @@ class FunnelChart(ChartBase):
     # The layout of bars in the chart. centeric
     layout: Var[str]
 
+    # Valid children components
+    valid_children: List[str] = ["Legend", "Tooltip", "Funnel"]
 
-class Treemap(ChartBase):
+
+class Treemap(RechartsCharts):
     """A Treemap chart component in Recharts."""
 
     tag = "Treemap"
+
+    # The width of chart container. String or Integer
+    width: Var[Union[str, int]]
+
+    # The height of chart container.
+    height: Var[Union[str, int]]
 
     # The key of a group of data which should be unique in a treemap. String | Number | Function
     data_key: Var[Union[str, int]]

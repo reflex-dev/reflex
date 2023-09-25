@@ -7,16 +7,13 @@ from reflex.vars import Var
 from .recharts import Recharts
 
 
-class Polar(Recharts):
-    """A base class for polar charts in Recharts."""
-
-    pass
-
-
 class Pie(Recharts):
     """A Pie chart component in Recharts."""
 
     tag = "Pie"
+
+    # The key of each sector's value.
+    data_key: Var[str]
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
     cx: Var[Union[int, str]]
@@ -42,23 +39,20 @@ class Pie(Recharts):
     # The angle between two sectors.
     padding_angle: Var[int]
 
-    # The key of each sector's value.
-    data_key: Var[str]
-
     # The key of each sector's name.
     name_key: Var[str]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
     legend_type: Var[str]
 
-    # Specifies when the animation should begin, the unit of this option is ms.
-    animation_begin: Var[int]
+    # If false set, labels will not be drawn.
+    label: Var[bool]
 
-    # Specifies the duration of animation, the unit of this option is ms.
-    animation_duration: Var[int]
+    # If false set, label lines will not be drawn.
+    label_line: Var[bool]
 
-    # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[str]
+    # Valid children components
+    valid_children: List[str] = ["Cell", "LabelList"]
 
 
 class Radar(Recharts):
@@ -72,8 +66,14 @@ class Radar(Recharts):
     # The coordinates of all the vertexes of the radar shape, like [{ x, y }].
     points: Var[List[Dict[str, Any]]]
 
+    # If false set, dots will not be drawn
+    dot: Var[bool]
+
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
     legend_type: Var[str]
+
+    # If false set, labels will not be drawn
+    label: Var[bool]
 
     # Specifies when the animation should begin, the unit of this option is ms.
     animation_begin: Var[int]
@@ -84,6 +84,9 @@ class Radar(Recharts):
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
     animation_easing: Var[str]
 
+    # Valid children components
+    valid_children: List[str] = ["LabelList"]
+
 
 class RadialBar(Recharts):
     """A RadialBar chart component in Recharts."""
@@ -92,6 +95,21 @@ class RadialBar(Recharts):
 
     # The source data which each element is an object.
     data: Var[List[Dict[str, Any]]]
+
+    # Min angle of each bar. A positive value between 0 and 360.
+    min_angle: Var[int]
+
+    # Type of legend
+    legend_type: Var[str]
+
+    # If false set, labels will not be drawn.
+    label: Var[bool]
+
+    # If false set, background sector will not be drawn.
+    background: Var[bool]
+
+    # Valid children components
+    valid_children: List[str] = ["LabelList"]
 
 
 class PolarAngleAxis(Recharts):
@@ -126,6 +144,15 @@ class PolarAngleAxis(Recharts):
     # The array of every tick's value and angle.
     ticks: Var[List[Dict[str, Any]]]
 
+    # The orientation of axis text.
+    orient: Var[str]
+
+    # Allow the axis has duplicated categorys or not when the type of axis is "category".
+    allow_duplicated_category: Var[bool]
+
+    # Valid children components
+    valid_children: List[str] = ["Label"]
+
 
 class PolarGrid(Recharts):
     """A PolarGrid component in Recharts."""
@@ -153,6 +180,9 @@ class PolarGrid(Recharts):
     # The type of polar grids. 'polygon' | 'circle'
     grid_type: Var[str]
 
+    # Valid children components
+    valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
+
 
 class PolarRadiusAxis(Recharts):
     """A PolarRadiusAxis component in Recharts."""
@@ -163,7 +193,7 @@ class PolarRadiusAxis(Recharts):
     angle: Var[int]
 
     # The type of axis line. 'number' | 'category'
-    _type: Var[str]
+    type_: Var[str]
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
     allow_duplicated_category: Var[bool]
@@ -188,3 +218,9 @@ class PolarRadiusAxis(Recharts):
 
     # The count of ticks.
     tick_count: Var[int]
+
+    # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
+    scale: Var[str]
+
+    # Valid children components
+    valid_children: List[str] = ["Label"]

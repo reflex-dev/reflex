@@ -1,6 +1,6 @@
 """General components for Recharts."""
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 from reflex.vars import Var
 
@@ -29,6 +29,19 @@ class ResponsiveContainer(Recharts):
 
     # If specified a positive number, debounced function will be used to handle the resize event.
     debounce: Var[int]
+
+    # Valid children components
+    valid_children: List[str] = [
+        "AreaChart",
+        "BarChart",
+        "LineChart",
+        "PieChart",
+        "RadarChart",
+        "RadialBarChart",
+        "ScatterChart",
+        "Treemap",
+        "ComposedChart",
+    ]
 
 
 class Legend(Recharts):
@@ -81,17 +94,8 @@ class Tooltip(Recharts):
     # When an item of the payload has value null or undefined, this item won't be displayed.
     filter_null: Var[bool]
 
-    # The content style of tooltip. Object
-    content_style: Var[Dict[str, Any]]
-
-    # The wrapper style of tooltip. Object
-    wrapper_style: Var[Dict[str, Any]]
-
-    # The style of tooltip item container. Object
-    item_style: Var[Dict[str, Any]]
-
-    # The style of default tooltip label which is a p element.
-    label_style: Var[Dict[str, Any]]
+    # If set false, no cursor will be drawn when tooltip is active.
+    cursor: Var[bool]
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[Dict[str, Any]]
