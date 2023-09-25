@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Callable, Dict, Union
+from typing import Any, Callable, Dict, Union
 
 from reflex.compiler import utils
 from reflex.components.component import Component, Style
@@ -67,10 +67,10 @@ class Markdown(Component):
     is_default = True
 
     # The component map from a tag to a lambda that creates a component.
-    component_map: Dict[str, Callable] = {}
+    component_map: Dict[str, Any] = {}
 
     # Custom styles for the markdown (deprecated in v0.2.9).
-    custom_styles: Var[Dict[str, Style]]
+    custom_styles: Var[Dict]
 
     @classmethod
     def create(cls, *children, **props) -> Component:
