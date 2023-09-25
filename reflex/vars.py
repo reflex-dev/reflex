@@ -122,19 +122,13 @@ class Var(ABC):
         if isinstance(value, Var):
             return value
 
-        type_ = type(value)
-
         # Try to serialize the value.
-        serialized = serialize(value)
-        if serialized is not None:
-            value = serialized
-
-        try:
-            name = value if isinstance(value, str) else json.dumps(value)
-        except TypeError as e:
+        type_ = type(value)
+        name = serialize(value)
+        if name is None:
             raise TypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
-            ) from e
+            )
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
 

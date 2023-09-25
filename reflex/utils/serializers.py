@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import types as builtin_types
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, Dict, List, Type, Union, get_type_hints
+from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
+from reflex.base import Base
 from reflex.utils import exceptions, format, types
 
 # Mapping from type to a serializer.
@@ -126,7 +127,20 @@ def serialize_str(value: str) -> str:
 
 
 @serializer
-def serialize_list(value: List[Any]) -> str:
+def serialize_primitive(value: Union[bool, int, float, Base, None]) -> str:
+    """Serialize a primitive type.
+
+    Args:
+        value: The number to serialize.
+
+    Returns:
+        The serialized number.
+    """
+    return format.json_dumps(value)
+
+
+@serializer
+def serialize_list(value: Union[List, Tuple, Set]) -> str:
     """Serialize a list to a JSON string.
 
     Args:
@@ -139,7 +153,8 @@ def serialize_list(value: List[Any]) -> str:
 
     # Convert any var values to strings.
     fprop = format.json_dumps([str(v) if isinstance(v, Var) else v for v in value])
-    return format.unwrap_vars(fprop)
+    return fprop
+    # return format.unwrap_vars(fprop)
 
 
 @serializer
