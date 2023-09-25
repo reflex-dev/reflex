@@ -14,25 +14,17 @@ def Table():
     import reflex as rx
 
     class TableState(rx.State):
-        @rx.var
-        def rows(self) -> List[List[str]]:
-            return [
-                ["John", "30", "New York"],
-                ["Jane", "31", "San Fransisco"],
-                ["Joe", "32", "Los Angeles"],
-            ]
+        rows: List[List[str]] = [
+            ["John", "30", "New York"],
+            ["Jane", "31", "San Fransisco"],
+            ["Joe", "32", "Los Angeles"],
+        ]
 
-        @rx.var
-        def headers(self) -> List[str]:
-            return ["Name", "Age", "Location"]
+        headers: List[str] = ["Name", "Age", "Location"]
 
-        @rx.var
-        def footers(self) -> List[str]:
-            return ["footer1", "footer2", "footer3"]
+        footers: List[str] = ["footer1", "footer2", "footer3"]
 
-        @rx.var
-        def caption(self) -> str:
-            return "random caption"
+        caption: str = "random caption"
 
         @rx.var
         def token(self) -> str:
