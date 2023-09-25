@@ -398,7 +398,7 @@ class AppHarness:
             )
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
-        driver = driver_clz() if driver_clz is not None else webdriver.Chrome()
+        driver = driver_clz() if driver_clz is not None else webdriver.Firefox()
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver

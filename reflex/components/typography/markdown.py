@@ -70,7 +70,7 @@ class Markdown(Component):
     component_map: Dict[str, Any] = {}
 
     # Custom styles for the markdown (deprecated in v0.2.9).
-    custom_styles: Var[Dict[str, Any]]
+    custom_styles: Dict[str, Any] = {}
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -93,7 +93,7 @@ class Markdown(Component):
                 "rx.markdown custom_styles",
                 "Use the component_map prop instead.",
                 "0.2.9",
-                "0.2.10",
+                "0.2.11",
             )
 
         # Update the base component map with the custom component map.
@@ -143,15 +143,15 @@ class Markdown(Component):
         imports = utils.merge_imports(imports, Code.create()._get_imports())
         return imports
 
-    def format_component(self, tag: str, **props) -> str:
-        """Format a component for rendering in the component map.
+    def get_component(self, tag: str, **props) -> Component:
+        """Get the component for a tag and props.
 
         Args:
             tag: The tag of the component.
-            **props: Extra props to pass to the component function.
+            **props: The props of the component.
 
         Returns:
-            The formatted component.
+            The component.
 
         Raises:
             ValueError: If the tag is invalid.
@@ -168,12 +168,24 @@ class Markdown(Component):
             special_props.add(Var.create_safe(f"children={str(children_prop)}"))
             children = []
 
-        # Format the component.
-        return str(
+        print("custom styles", self.custom_styles.get(tag, {}))
+        return (
             self.component_map[tag](*children, **props)
             .set(special_props=special_props)
-            .add_style(self.custom_attrs.get(tag, {}))
-        ).replace("\n", " ")
+            ._add_style(self.custom_styles.get(tag, {}))
+        )
+
+    def format_component(self, tag: str, **props) -> str:
+        """Format a component for rendering in the component map.
+
+        Args:
+            tag: The tag of the component.
+            **props: Extra props to pass to the component function.
+
+        Returns:
+            The formatted component.
+        """
+        return str(self.get_component(tag, **props)).replace("\n", " ")
 
     def format_component_map(self) -> dict[str, str]:
         """Format the component map for rendering.
