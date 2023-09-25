@@ -488,9 +488,7 @@ def call_event_handler(
         The event spec from calling the event handler.
     """
     args = inspect.getfullargspec(event_handler.fn).args
-    from icecream import ic
 
-    ic(arg_spec, ArgsSpec)
     # handle new API using lambda to define triggers
     if isinstance(arg_spec, ArgsSpec):
         parsed_args = parse_args_spec(arg_spec)  # type: ignore
