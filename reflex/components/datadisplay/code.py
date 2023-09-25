@@ -39,7 +39,7 @@ class CodeBlock(Component):
     wrap_long_lines: Var[bool]
 
     # A custom style for the code block.
-    custom_style: Var[Dict[str, str]]
+    custom_style: Dict[str, str] = {}
 
     # Props passed down to the code tag.
     code_tag_props: Var[Dict[str, str]]
@@ -107,7 +107,6 @@ class CodeBlock(Component):
             return code_block
 
     def _add_style(self, style):
-        self.custom_style = self.custom_style or {}
         self.custom_style.update(style)  # type: ignore
 
     def _render(self):
