@@ -129,6 +129,7 @@ class Var(ABC):
             raise TypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
             )
+        name = name if isinstance(name, str) else format.json_dumps(name)
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
 
