@@ -47,6 +47,9 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         #ImportVar(tag="Box"),
         #ImportVar(tag="Text"),
     },
+    "@radix-ui/themes": {
+        ImportVar(tag="useThemeContext"),
+    }
 }
 
 

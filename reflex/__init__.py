@@ -6,6 +6,7 @@ we use the Flask "import name as name" syntax.
 """
 
 from . import el as el
+from . import theme as theme
 from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile

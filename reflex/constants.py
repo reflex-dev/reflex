@@ -443,3 +443,5 @@ class EventTriggers(SimpleNamespace):
 
 # If this env var is set to "yes", App.compile will be a no-op
 SKIP_COMPILE_ENV_VAR = "__REFLEX_SKIP_COMPILE"
+
+THEME_CONTEXT = "theme_context"

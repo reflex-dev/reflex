@@ -11,6 +11,7 @@ export default function Component() {
   const {{state_name}} = useContext(StateContext)
   const {{const.router}} = useRouter()
   const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
+  const {{const.theme_context}} = useThemeContext()
   const focusRef = useRef();
   
   // Main event loop.
