@@ -10,7 +10,7 @@
 export default function Component() {
   const {{state_name}} = useContext(StateContext)
   const {{const.router}} = useRouter()
-  const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
+  const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
   const focusRef = useRef();
   
   // Main event loop.

@@ -375,6 +375,7 @@ PACKAGE_DEPENDENCIES = {
     "json5": "^2.2.3",
     "next": "^13.3.1",
     "next-sitemap": "^4.1.8",
+    "@radix-ui/themes": "^2.0.0-rc.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socket.io-client": "^4.6.1",

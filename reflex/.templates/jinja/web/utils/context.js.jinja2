@@ -2,9 +2,11 @@ import { createContext } from "react"
 import { Event, hydrateClientStorage } from "/utils/state.js"
 
 export const initialState = {{ initial_state|json_dumps }}
+export const ColorModeContext = createContext(null);
 export const StateContext = createContext(null);
 export const EventLoopContext = createContext(null);
 export const clientStorage = {{ client_storage|json_dumps }}
 export const initialEvents = [
     Event('{{state_name}}.{{const.hydrate}}', hydrateClientStorage(clientStorage)),
 ]
+export const isDevMode = {{ is_dev_mode|json_dumps }}

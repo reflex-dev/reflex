@@ -39,12 +39,13 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="EventLoopContext"),
         ImportVar(tag="initialEvents"),
         ImportVar(tag="StateContext"),
+        ImportVar(tag="ColorModeContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible")},
     "@chakra-ui/react": {
         ImportVar(tag=constants.USE_COLOR_MODE),
-        ImportVar(tag="Box"),
-        ImportVar(tag="Text"),
+        #ImportVar(tag="Box"),
+        #ImportVar(tag="Text"),
     },
 }
 
@@ -64,7 +65,7 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
-def _compile_theme(theme: dict) -> str:
+def _compile_theme(theme: dict, radix_theme: dict[str, str]) -> str:
     """Compile the theme.
 
     Args:
@@ -73,7 +74,7 @@ def _compile_theme(theme: dict) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME.render(theme=theme)
+    return templates.THEME.render(theme=theme, radix_theme=radix_theme)
 
 
 def _compile_contexts(state: Type[State]) -> str:
@@ -89,6 +90,7 @@ def _compile_contexts(state: Type[State]) -> str:
         initial_state=utils.compile_state(state),
         state_name=state.get_name(),
         client_storage=utils.compile_client_storage(state),
+        is_dev_mode=os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",
     )
 
 
@@ -242,7 +244,7 @@ def compile_document_root() -> Tuple[str, str]:
     return output_path, code
 
 
-def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
+def compile_theme(style: ComponentStyle, radix_theme: dict[str, str]) -> Tuple[str, str]:
     """Compile the theme.
 
     Args:
@@ -257,7 +259,7 @@ def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     theme = utils.create_theme(style)
 
     # Compile the theme.
-    code = _compile_theme(theme)
+    code = _compile_theme(theme, radix_theme=radix_theme)
     return output_path, code
 
 

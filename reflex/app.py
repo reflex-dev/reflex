@@ -122,6 +122,9 @@ class App(Base):
     # Background tasks that are currently running
     background_tasks: Set[asyncio.Task] = set()
 
+    # The radix theme properties to apply
+    radix_theme: Dict[str, str] = {}
+
     def __init__(self, *args, **kwargs):
         """Initialize the app.
 
@@ -632,7 +635,7 @@ class App(Base):
         compile_results.append(compiler.compile_document_root())
 
         # Compile the theme.
-        compile_results.append(compiler.compile_theme(self.style))
+        compile_results.append(compiler.compile_theme(style=self.style, radix_theme=self.radix_theme))
 
         # Compile the contexts.
         compile_results.append(compiler.compile_contexts(self.state))

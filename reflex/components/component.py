@@ -745,7 +745,9 @@ class Component(Base, ABC):
         Returns:
             An import var.
         """
-        return ImportVar(tag=self.tag, is_default=self.is_default, alias=self.alias)
+        # If the tag is dot-qualified, only import the left-most name.
+        tag = self.tag.partition(".")[0]
+        return ImportVar(tag=tag, is_default=self.is_default, alias=self.alias)
 
 
 # Map from component to styling.

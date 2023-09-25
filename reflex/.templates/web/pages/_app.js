@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { Global, css } from "@emotion/react";
-import theme from "/utils/theme";
-import { clientStorage, initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
+import theme, { radix_theme } from "/utils/theme";
+import { clientStorage, initialEvents, initialState, isDevMode, ColorModeContext, StateContext, EventLoopContext } from "/utils/context.js";
 import { useEventLoop } from "utils/state";
+
+import { Theme, ThemePanel } from '@radix-ui/themes';
+import '@radix-ui/themes/styles.css';
 
 import '/styles/styles.css'
 
@@ -30,12 +34,21 @@ function EventLoopProvider({ children }) {
 }
 
 function MyApp({ Component, pageProps }) {
+  const [colorMode, setColorMode] = useState("light")
+  const toggleColorMode = () => {
+    setColorMode((prevMode) => (prevMode === "light" ? "dark" : "light"))
+  }
   return (
     <ChakraProvider theme={extendTheme(theme)}>
       <Global styles={GlobalStyles} />
-      <EventLoopProvider>
-        <Component {...pageProps} />
-      </EventLoopProvider>
+      <ColorModeContext.Provider value={[colorMode, toggleColorMode]}>
+        <Theme {...radix_theme} appearance={colorMode}>
+          <EventLoopProvider>
+            <Component {...pageProps} />
+          </EventLoopProvider>
+          {isDevMode ? <ThemePanel defaultOpen={false} /> : null}
+        </Theme>
+      </ColorModeContext.Provider>
     </ChakraProvider>
   );
 }
