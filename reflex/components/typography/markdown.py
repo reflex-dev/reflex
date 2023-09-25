@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Any, Callable, Dict, Union
+from typing import Callable, Dict, Union
 
 from reflex.compiler import utils
-from reflex.components.component import Component, Style
+from reflex.components.component import Component
 from reflex.components.datadisplay.list import ListItem, OrderedList, UnorderedList
 from reflex.components.navigation import Link
 from reflex.components.tags.tag import Tag
@@ -16,18 +16,18 @@ from reflex.utils import console, imports, types
 from reflex.vars import ImportVar, Var
 
 # Special vars used in the component map.
-CHILDREN = Var.create_safe("children", is_local=False)
-PROPS = Var.create_safe("...props", is_local=False)
+_CHILDREN = Var.create_safe("children", is_local=False)
+_PROPS = Var.create_safe("...props", is_local=False)
 
 # Special remark plugins.
-REMARK_MATH = Var.create_safe("remarkMath", is_local=False)
-REMARK_GFM = Var.create_safe("remarkGfm", is_local=False)
-REMARK_PLUGINS = Var.create_safe([REMARK_MATH, REMARK_GFM])
+_REMARK_MATH = Var.create_safe("remarkMath", is_local=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", is_local=False)
+_REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM])
 
 # Special rehype plugins.
-REHYPE_KATEX = Var.create_safe("rehypeKatex", is_local=False)
-REHYPE_RAW = Var.create_safe("rehypeRaw", is_local=False)
-REHYPE_PLUGINS = Var.create_safe([REHYPE_KATEX, REHYPE_RAW])
+_REHYPE_KATEX = Var.create_safe("rehypeKatex", is_local=False)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", is_local=False)
+_REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
 # Component Mapping
 def get_base_component_map() -> dict[str, Callable]:
@@ -67,7 +67,7 @@ class Markdown(Component):
     is_default = True
 
     # The component map from a tag to a lambda that creates a component.
-    component_map: Dict[str, Any] = {}
+    component_map: Dict = {}
 
     # Custom styles for the markdown (deprecated in v0.2.9).
     custom_styles: Var[Dict]
@@ -120,13 +120,13 @@ class Markdown(Component):
             {
                 "": {ImportVar(tag="katex/dist/katex.min.css")},
                 "remark-math@^5.1.1": {
-                    ImportVar(tag=REMARK_MATH.name, is_default=True)
+                    ImportVar(tag=_REMARK_MATH.name, is_default=True)
                 },
-                "remark-gfm@^3.0.1": {ImportVar(tag=REMARK_GFM.name, is_default=True)},
+                "remark-gfm@^3.0.1": {ImportVar(tag=_REMARK_GFM.name, is_default=True)},
                 "rehype-katex@^6.0.3": {
-                    ImportVar(tag=REHYPE_KATEX.name, is_default=True)
+                    ImportVar(tag=_REHYPE_KATEX.name, is_default=True)
                 },
-                "rehype-raw@^6.1.1": {ImportVar(tag=REHYPE_RAW.name, is_default=True)},
+                "rehype-raw@^6.1.1": {ImportVar(tag=_REHYPE_RAW.name, is_default=True)},
             }
         )
 
@@ -160,8 +160,8 @@ class Markdown(Component):
         if tag not in self.component_map:
             raise ValueError(f"No markdown component found for tag: {tag}.")
 
-        special_props = {PROPS}
-        children = [CHILDREN]
+        special_props = {_PROPS}
+        children = [_CHILDREN]
 
         children_prop = props.pop("children", None)
         if children_prop is not None:
@@ -184,12 +184,12 @@ class Markdown(Component):
         # Import here to avoid circular imports.
 
         components = {
-            tag: f"{{({{{CHILDREN.name}, {PROPS.name}}}) => {self.format_component(tag)}}}"
+            tag: f"{{({{{_CHILDREN.name}, {_PROPS.name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
         }
         components[
             "code"
-        ] = f"""{{({{inline, className, {CHILDREN.name}, {PROPS.name}}}) => {{
+        ] = f"""{{({{inline, className, {_CHILDREN.name}, {_PROPS.name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     return !inline ? (
@@ -209,8 +209,8 @@ class Markdown(Component):
             ._render()
             .add_props(
                 components=self.format_component_map(),
-                remark_plugins=REMARK_PLUGINS,
-                rehype_plugins=REHYPE_PLUGINS,
+                remark_plugins=_REMARK_PLUGINS,
+                rehype_plugins=_REHYPE_PLUGINS,
             )
             .remove_props("componentMap")
         )
