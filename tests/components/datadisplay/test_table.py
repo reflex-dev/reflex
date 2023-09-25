@@ -19,7 +19,7 @@ class TableState(State):
     footers_1: List[str] = ["footer1", "footer2"]
     footers_2: str = "footer1, footer2"
 
-    if sys.version_info.major >= 3 and sys.version_info.minor > 7:
+    if sys.version_info.major >= 3 and sys.version_info.minor > 8:
         rows_5: list[list[str]] = [["random", "row"]]
         rows_6: list[list] = [["random", "row"]]
         rows_7: list[str] = ["random", "row"]
