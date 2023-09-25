@@ -11,7 +11,6 @@ try:
 except ImportError:
     pytest.skip("matplotlib is not installed", allow_module_level=True)
 
-from reflex.components.graphing.matplotlib import serialize_matplotlib_figure  # type: ignore
 from reflex.utils.serializers import serialize
 
 
@@ -20,7 +19,7 @@ def matplotlib_fig() -> Figure:
     """Get a matplotlib figure.
 
     Returns:
-        A random plotly figure.
+        A random matplotlib figure.
     """
     # Generate random data.
     np.random.seed(19680801)
@@ -38,10 +37,10 @@ def matplotlib_fig() -> Figure:
 
 
 def test_serialize_matplotlib(matplotlib_fig: Figure):
-    """Test that serializing a plotly figure works.
+    """Test that serializing a matplotlib figure works.
 
     Args:
-        plotly_fig: The figure to serialize.
+        matplotlib_fig: The figure to serialize.
     """
     value = serialize(matplotlib_fig)
     assert isinstance(value, str)
