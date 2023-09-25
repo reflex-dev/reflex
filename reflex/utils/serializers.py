@@ -153,8 +153,9 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
 
     # Convert any var values to strings.
     fprop = format.json_dumps([str(v) if isinstance(v, Var) else v for v in value])
-    return fprop
-    # return format.unwrap_vars(fprop)
+
+    # Unwrap var values.
+    return format.unwrap_vars(fprop)
 
 
 @serializer
