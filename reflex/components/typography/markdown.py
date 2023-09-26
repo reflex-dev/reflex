@@ -12,6 +12,7 @@ from reflex.components.navigation import Link
 from reflex.components.tags.tag import Tag
 from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
+from reflex.style import Style
 from reflex.utils import console, imports, types
 from reflex.vars import ImportVar, Var
 
@@ -173,7 +174,7 @@ class Markdown(Component):
         component = self.component_map[tag](*children, **props).set(
             special_props=special_props
         )
-        component._add_style(self.custom_styles.get(tag, {}))
+        component._add_style(Style(self.custom_styles.get(tag, {})))
         return component
 
     def format_component(self, tag: str, **props) -> str:
