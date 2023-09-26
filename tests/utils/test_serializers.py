@@ -1,9 +1,10 @@
 import datetime
-from typing import Any, Dict, Type
+from typing import Any, Dict, List, Type
 
 import pytest
 
 from reflex.utils import serializers
+from reflex.vars import Var
 
 
 @pytest.mark.parametrize(
@@ -29,12 +30,19 @@ def test_has_serializer(type_: Type, expected: bool):
     "type_,expected",
     [
         (str, serializers.serialize_str),
+        (list, serializers.serialize_list),
+        (tuple, serializers.serialize_list),
+        (set, serializers.serialize_list),
         (dict, serializers.serialize_dict),
+        (List[str], serializers.serialize_list),
         (Dict[int, int], serializers.serialize_dict),
         (datetime.datetime, serializers.serialize_datetime),
         (datetime.date, serializers.serialize_datetime),
         (datetime.time, serializers.serialize_datetime),
         (datetime.timedelta, serializers.serialize_datetime),
+        (int, serializers.serialize_primitive),
+        (float, serializers.serialize_primitive),
+        (bool, serializers.serialize_primitive),
     ],
 )
 def test_get_serializer(type_: Type, expected: serializers.Serializer):
@@ -51,8 +59,14 @@ def test_get_serializer(type_: Type, expected: serializers.Serializer):
 def test_add_serializer():
     """Test that adding a serializer works."""
 
-    def serialize_test(value: int) -> str:
-        """Serialize an int to a string.
+    class Foo:
+        """A test class."""
+
+        def __init__(self, name: str):
+            self.name = name
+
+    def serialize_foo(value: Foo) -> str:
+        """Serialize an foo to a string.
 
         Args:
             value: The value to serialize.
@@ -60,35 +74,53 @@ def test_add_serializer():
         Returns:
             The serialized value.
         """
-        return str(value)
+        return value.name
 
     # Initially there should be no serializer for int.
-    assert not serializers.has_serializer(int)
-    assert serializers.serialize(5) is None
+    assert not serializers.has_serializer(Foo)
+    assert serializers.serialize(Foo("hi")) is None
 
     # Register the serializer.
-    assert serializers.serializer(serialize_test) == serialize_test
+    assert serializers.serializer(serialize_foo) == serialize_foo
 
     # There should now be a serializer for int.
-    assert serializers.has_serializer(int)
-    assert serializers.get_serializer(int) == serialize_test
-    assert serializers.serialize(5) == "5"
+    assert serializers.has_serializer(Foo)
+    assert serializers.get_serializer(Foo) == serialize_foo
+    assert serializers.serialize(Foo("hi")) == "hi"
 
     # Remove the serializer.
-    serializers.SERIALIZERS.pop(int)
+    serializers.SERIALIZERS.pop(Foo)
+    assert not serializers.has_serializer(Foo)
 
 
 @pytest.mark.parametrize(
     "value,expected",
     [
         ("test", "test"),
+        (1, "1"),
+        (1.0, "1.0"),
+        (True, "true"),
+        (False, "false"),
+        (None, "null"),
+        ([1, 2, 3], "[1, 2, 3]"),
+        ([1, "2", 3.0], '[1, "2", 3.0]'),
+        (
+            [1, Var.create_safe("hi"), Var.create_safe("bye", is_local=False)],
+            '[1, "hi", bye]',
+        ),
+        (
+            (1, Var.create_safe("hi"), Var.create_safe("bye", is_local=False)),
+            '[1, "hi", bye]',
+        ),
+        ({1: 2, 3: 4}, '{"1": 2, "3": 4}'),
+        (
+            {1: Var.create_safe("hi"), 3: Var.create_safe("bye", is_local=False)},
+            '{"1": "hi", "3": bye}',
+        ),
         (datetime.datetime(2021, 1, 1, 1, 1, 1, 1), "2021-01-01 01:01:01.000001"),
         (datetime.date(2021, 1, 1), "2021-01-01"),
         (datetime.time(1, 1, 1, 1), "01:01:01.000001"),
         (datetime.timedelta(1, 1, 1), "1 day, 0:00:01.000001"),
-        (5, None),
-        (None, None),
-        ([], None),
     ],
 )
 def test_serialize(value: Any, expected: str):

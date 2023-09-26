@@ -447,7 +447,12 @@ class Component(Base, ABC):
 
         return cls(children=children, **props)
 
-    def _add_style(self, style):
+    def _add_style(self, style: dict):
+        """Add additional style to the component.
+
+        Args:
+            style: A style dict to apply.
+        """
         self.style.update(style)
 
     def add_style(self, style: ComponentStyle) -> Component:
@@ -603,7 +608,7 @@ class Component(Base, ABC):
         imports = {}
         if self.library is not None and self.tag is not None:
             imports[self.library] = {self.import_var}
-        return {**imports, **self._get_dependencies_imports()}
+        return {**self._get_dependencies_imports(), **imports}
 
     def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.

@@ -233,7 +233,7 @@ class PyiGenerator:
         local_variables = [
             (name, obj)
             for name, obj in vars(self.current_module).items()
-            if not name.startswith("__")
+            if not name.startswith("_")
             and not inspect.isclass(obj)
             and not inspect.isfunction(obj)
         ]
