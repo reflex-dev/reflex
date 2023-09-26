@@ -243,7 +243,7 @@ def test_create_config_e2e(tmp_working_dir):
     app_name = "e2e"
     prerequisites.create_config(app_name)
     eval_globals = {}
-    exec((tmp_working_dir / constants.NEXT.CONFIG_FILE).read_text(), eval_globals)
+    exec((tmp_working_dir / constants.CONFIG.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
 

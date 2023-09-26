@@ -35,7 +35,7 @@ class ReflexJinjaEnvironment(Environment):
                 constants.VAR_NAMES.FINAL: True,
                 constants.VAR_NAMES.PROCESSING: False,
             },
-            "color_mode": constants.COLOR_MODE,
+            "color_mode": constants.COLOR_MODE.NAME,
             "toggle_color_mode": constants.COLOR_MODE.TOGGLE,
             "use_color_mode": constants.COLOR_MODE.USE,
             "hydrate": constants.VAR_NAMES.HYDRATE,

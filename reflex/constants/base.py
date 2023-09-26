@@ -114,8 +114,8 @@ class COLOR_MODE(SimpleNamespace):
     """Constants related to ColorMode."""
 
     NAME = "colorMode"
-    USE = f"use{NAME}"
-    TOGGLE = f"toggle{NAME}"
+    USE = "useColorMode"
+    TOGGLE = "toggleColorMode"
 
 
 # Env modes
