@@ -114,6 +114,9 @@ class App(Base):
     # The async server name space
     event_namespace: Optional[EventNamespace] = None
 
+    # Components to add to the head of every page.
+    head_components: List[Component] = []
+
     # A component that is present on every page.
     overlay_component: Optional[
         Union[Component, ComponentCallable]
@@ -401,6 +404,12 @@ class App(Base):
 
         # Add script tags if given
         if script_tags:
+            console.deprecate(
+                feature_name="Passing script tags to add_page",
+                reason="Add script components as children to the page component instead",
+                deprecation_version="v0.2.9",
+                removal_version="v0.2.11",
+            )
             component.children.extend(script_tags)
 
         # Add the page.
@@ -631,7 +640,7 @@ class App(Base):
         compile_results.append(compiler.compile_root_stylesheet(self.stylesheets))
 
         # Compile the root document.
-        compile_results.append(compiler.compile_document_root())
+        compile_results.append(compiler.compile_document_root(self.head_components))
 
         # Compile the theme.
         compile_results.append(compiler.compile_theme(self.style))
