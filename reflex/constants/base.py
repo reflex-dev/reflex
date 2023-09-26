@@ -151,7 +151,16 @@ class LOG_LEVEL(str, Enum):
 
 # Server socket configuration variables
 POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000
-PING_INTERVAL = 25
+
+
+class PING(SimpleNamespace):
+    """PING constants."""
+
+    # The 'ping' interval
+    INTERVAL = 25
+    # The 'ping' timeout
+    TIMEOUT = 120
+
 
 # Keys in the client_side_storage dict
 COOKIES = "cookies"

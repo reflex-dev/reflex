@@ -183,8 +183,8 @@ class App(Base):
             else config.cors_allowed_origins,
             cors_credentials=True,
             max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-            ping_interval=constants.PING_INTERVAL,
-            ping_timeout=constants.EXPIRATION.PING,
+            ping_interval=constants.PING.INTERVAL,
+            ping_timeout=constants.PING.TIMEOUT,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
