@@ -311,7 +311,7 @@ class Scatter(Cartesian):
     # The fill
     fill: Var[str]
 
-    # the name 
+    # the name
     name: Var[str]
 
     # Valid children components
