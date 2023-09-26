@@ -129,7 +129,7 @@ class Tbody(ChakraComponent):
             Component: The table body component
         """
         if len(children) == 0:
-            cls.validate_rows(rows)
+            cls.validate_rows(rows) if rows is not None else None
 
             if isinstance(rows, Var):
                 children = [
