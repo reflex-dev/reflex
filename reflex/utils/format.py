@@ -5,7 +5,6 @@ from __future__ import annotations
 import inspect
 import json
 import os
-import os.path as op
 import re
 import sys
 from typing import TYPE_CHECKING, Any, Union
@@ -559,7 +558,7 @@ def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
 
     # create and return breadcrumbs
     return [
-        (part, op.join("/", *route_parts[: i + 1]))
+        (part, "/".join(["", *route_parts[: i + 1]]))
         for i, part in enumerate(route_parts)
     ]
 
