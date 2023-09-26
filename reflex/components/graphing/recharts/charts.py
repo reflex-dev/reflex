@@ -317,7 +317,7 @@ class ScatterChart(ChartBase):
         "CartesianGrid",
         "Legend",
         "Tooltip",
-        "Line",
+        "Scatter",
     ]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
@@ -360,6 +360,9 @@ class Treemap(RechartsCharts):
 
     # The height of chart container.
     height: Var[Union[str, int]]
+
+    # data of treemap. Array
+    data: Var[List[Dict[str, Any]]]
 
     # The key of a group of data which should be unique in a treemap. String | Number | Function
     data_key: Var[Union[str, int]]
