@@ -79,21 +79,33 @@ class Thead(ChakraComponent):
         Returns:
             The table header component.
 
-        Raises:
-            TypeError: If headers are not of type list or type tuple.
         """
         if len(children) == 0:
-            if (
-                (
-                    isinstance(headers, Var)
-                    and types.get_base_class(headers.type_) not in (list, tuple)
-                )
-                or not isinstance(headers, Var)
-                and types.get_base_class(type(headers)) not in (list, tuple)
-            ):
-                raise TypeError("table headers should be a list or tuple")
+            cls.validate(headers)
+
             children = [Tr.create(cell_type="header", cells=headers)]
         return super().create(*children, **props)
+
+    @staticmethod
+    def validate_headers(headers):
+        """Type checking for table headers.
+
+        Args:
+            headers: The table headers.
+
+        Raises:
+            TypeError: If headers are not of type list or type tuple.
+
+        """
+        if (
+            (
+                isinstance(headers, Var)
+                and types.get_base_class(headers.type_) not in (list, tuple)
+            )
+            or not isinstance(headers, Var)
+            and types.get_base_class(type(headers)) not in (list, tuple)
+        ):
+            raise TypeError("table headers should be a list or tuple")
 
 
 class Tbody(ChakraComponent):
@@ -114,48 +126,57 @@ class Tbody(ChakraComponent):
             **props: The properties of the component.
 
         Returns:
-            Component: _description_
-
-        Raises:
-            TypeError: If rows are not lists or tuples containing inner lists or tuples.
+            Component: The table body component
         """
         if len(children) == 0:
+            cls.validate_rows(rows)
+
             if isinstance(rows, Var):
-                t = rows.type_
-                # check if outer container type is a list.
-                if not issubclass(types.get_base_class(t), (List, Tuple)):
-                    raise TypeError(
-                        f"table rows should be a list or tuple containing inner lists or tuples. Got {t} instead"
-                    )
-
-                # Check if the inner type is also a list.
-                inner_type = t.__args__[0] if hasattr(t, "__args__") else None
-                if not inner_type or not issubclass(
-                    types.get_base_class(inner_type), (List, Tuple)
-                ):
-                    raise TypeError(
-                        f"table rows should be a list or tuple containing inner lists or tuples. Got {t} instead"
-                    )
-
                 children = [
                     Foreach.create(
                         rows, lambda row: Tr.create(cell_type="data", cells=row)
                     )
                 ]
             else:
-                if (
-                    rows
-                    and not isinstance(rows, (list, tuple))
-                    or isinstance(rows, list)
-                    and not isinstance(rows[0], (list, tuple))
-                ):
-                    raise TypeError(
-                        "table rows should be a list or tuple containing inner lists or tuples."
-                    )
                 children = [
                     Tr.create(cell_type="data", cells=row) for row in rows or []
                 ]
         return super().create(*children, **props)
+
+    @staticmethod
+    def validate_rows(rows):
+        """Type checking for table rows.
+
+        Args:
+            rows: Table rows.
+
+        Raises:
+            TypeError: If rows are not lists or tuples containing inner lists or tuples.
+        """
+        if isinstance(rows, Var):
+            outer_type = rows.type_
+            inner_type = (
+                outer_type.__args__[0] if hasattr(outer_type, "__args__") else None
+            )
+
+            # check that the outer container and inner container types are lists or tuples.
+            if not (
+                issubclass(types.get_base_class(outer_type), (List, Tuple))
+                and (
+                    inner_type is None
+                    or issubclass(types.get_base_class(inner_type), (List, Tuple))
+                )
+            ):
+                raise TypeError(
+                    f"table rows should be a list or tuple containing inner lists or tuples. Got {outer_type} instead"
+                )
+        elif not (
+            isinstance(rows, (list, tuple))
+            and (not rows or isinstance(rows[0], (list, tuple)))
+        ):
+            raise TypeError(
+                "table rows should be a list or tuple containing inner lists or tuples."
+            )
 
 
 class Tfoot(ChakraComponent):
@@ -177,22 +198,31 @@ class Tfoot(ChakraComponent):
 
         Returns:
             The table footer component.
+        """
+        if len(children) == 0:
+            cls.validate_footers(footers)
+            children = [Tr.create(cell_type="header", cells=footers)]
+        return super().create(*children, **props)
+
+    @staticmethod
+    def validate_footers(footers):
+        """Type checking for table footers.
+
+        Args:
+            footers: Table rows.
 
         Raises:
             TypeError: If footers are not of type list.
         """
-        if len(children) == 0:
-            if (
-                (
-                    isinstance(footers, Var)
-                    and types.get_base_class(footers.type_) not in (list, tuple)
-                )
-                or not isinstance(footers, Var)
-                and types.get_base_class(type(footers)) not in (list, tuple)
-            ):
-                raise TypeError("table headers should be a list or tuple")
-            children = [Tr.create(cell_type="header", cells=footers)]
-        return super().create(*children, **props)
+        if (
+            (
+                isinstance(footers, Var)
+                and types.get_base_class(footers.type_) not in (list, tuple)
+            )
+            or not isinstance(footers, Var)
+            and types.get_base_class(type(footers)) not in (list, tuple)
+        ):
+            raise TypeError("table headers should be a list or tuple")
 
 
 class Tr(ChakraComponent):
