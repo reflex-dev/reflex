@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Union
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from .recharts import RechartsCharts
@@ -33,6 +34,19 @@ class ChartBase(RechartsCharts):
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
     stack_offset: Var[str]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class AreaChart(ChartBase):
@@ -171,6 +185,18 @@ class PieChart(ChartBase):
         "Pie",
     ]
 
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
+
 
 class RadarChart(ChartBase):
     """A Radar chart component in Recharts."""
@@ -204,6 +230,19 @@ class RadarChart(ChartBase):
         "Tooltip",
         "Radar",
     ]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class RadialBarChart(ChartBase):
@@ -248,6 +287,19 @@ class RadialBarChart(ChartBase):
         "RadialBar",
     ]
 
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
+
 
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
@@ -267,6 +319,23 @@ class ScatterChart(ChartBase):
         "Tooltip",
         "Line",
     ]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class FunnelChart(ChartBase):

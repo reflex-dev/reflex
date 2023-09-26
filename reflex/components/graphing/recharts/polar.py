@@ -2,6 +2,7 @@
 
 from typing import Any, Dict, List, Union
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from .recharts import Recharts
@@ -53,6 +54,23 @@ class Pie(Recharts):
 
     # Valid children components
     valid_children: List[str] = ["Cell", "LabelList"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class Radar(Recharts):
@@ -111,6 +129,23 @@ class RadialBar(Recharts):
     # Valid children components
     valid_children: List[str] = ["LabelList"]
 
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
+
 
 class PolarAngleAxis(Recharts):
     """A PolarAngleAxis component in Recharts."""
@@ -152,6 +187,23 @@ class PolarAngleAxis(Recharts):
 
     # Valid children components
     valid_children: List[str] = ["Label"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class PolarGrid(Recharts):
@@ -224,3 +276,20 @@ class PolarRadiusAxis(Recharts):
 
     # Valid children components
     valid_children: List[str] = ["Label"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }

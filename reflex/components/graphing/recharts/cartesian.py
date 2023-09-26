@@ -1,29 +1,11 @@
 """Cartesian charts in Recharts."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from .recharts import Recharts
-
-
-class Cartesian(Recharts):
-    """A base class for cartesian charts in Recharts."""
-
-    # The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
-    layout: Var[str]
-
-    # The key of a group of data which should be unique in an area chart.
-    data_key: Var[str]
-
-    # The id of x-axis which is corresponding to the data.
-    x_axis_id: Var[str]
-
-    # The id of y-axis which is corresponding to the data.
-    y_axis_id: Var[str]
-
-    # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'optional
-    legend_type: Var[str]
 
 
 class Axis(Recharts):
@@ -71,6 +53,23 @@ class Axis(Recharts):
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
     name: Var[str]
 
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
+
 
 class XAxis(Axis):
     """An XAxis component in Recharts."""
@@ -87,7 +86,7 @@ class YAxis(Axis):
     data_key: Var[str]
 
 
-class ZAxis(Cartesian):
+class ZAxis(Recharts):
     """A ZAxis component in Recharts."""
 
     tag = "ZAxis"
@@ -142,6 +141,52 @@ class Brush(Recharts):
 
     # The default end index of brush. If the option is not set, the end index will be 1.
     end_index: Var[int]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CHANGE: lambda: [],
+        }
+
+
+class Cartesian(Recharts):
+    """A base class for cartesian charts in Recharts."""
+
+    # The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
+    layout: Var[str]
+
+    # The key of a group of data which should be unique in an area chart.
+    data_key: Var[str]
+
+    # The id of x-axis which is corresponding to the data.
+    x_axis_id: Var[str]
+
+    # The id of y-axis which is corresponding to the data.
+    y_axis_id: Var[str]
+
+    # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'optional
+    legend_type: Var[str]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class Area(Cartesian):
@@ -282,10 +327,13 @@ class Funnel(Cartesian):
     valid_children: List[str] = ["LabelList", "Cell"]
 
 
-class ErrorBar(Cartesian):
+class ErrorBar(Recharts):
     """An ErrorBar component in Recharts."""
 
     tag = "ErrorBar"
+
+    # The key of a group of data which should be unique in an area chart.
+    data_key: Var[str]
 
     # The width of the error bar ends.
     width: Var[int]
@@ -338,6 +386,23 @@ class ReferenceDot(Reference):
 
     # Valid children components
     valid_children: List[str] = ["Label"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class ReferenceArea(Recharts):
