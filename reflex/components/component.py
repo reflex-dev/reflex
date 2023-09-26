@@ -74,7 +74,7 @@ class Component(Base, ABC):
     valid_children: List[str] = []
 
     # custom attribute
-    custom_attrs: Dict[str, str] = {}
+    custom_attrs: Dict[str, Union[str, Var]] = {}
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
