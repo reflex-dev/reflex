@@ -81,7 +81,7 @@ class Thead(ChakraComponent):
 
         """
         if len(children) == 0:
-            cls.validate(headers)
+            cls.validate_headers(headers)
 
             children = [Tr.create(cell_type="header", cells=headers)]
         return super().create(*children, **props)
