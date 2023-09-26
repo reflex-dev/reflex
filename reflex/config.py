@@ -284,8 +284,6 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
-    from reflex.config import Config
-
     sys.path.insert(0, os.getcwd())
     try:
         rxconfig = __import__(constants.CONFIG.MODULE)

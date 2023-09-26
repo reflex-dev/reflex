@@ -179,8 +179,8 @@ def create_config(app_name: str):
     from reflex.compiler import templates
 
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
-    with open(constants.NEXT.CONFIG_FILE, "w") as f:
-        console.debug(f"Creating {constants.NEXT.CONFIG_FILE}")
+    with open(constants.CONFIG.FILE, "w") as f:
+        console.debug(f"Creating {constants.CONFIG.FILE}")
         f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
 
 
