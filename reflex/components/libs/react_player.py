@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from reflex.components.component import NoSSRComponent
+from typing import Optional
+
+from reflex.components.component import NoSSRComponent, Component
 from reflex.vars import Var
 
 
@@ -35,7 +37,7 @@ class ReactPlayerComponent(NoSSRComponent):
     # Set the volume of the player, between 0 and 1
     volume: Var[float]
 
-    # Mutes the player
+    # Mutes the player (only works if volume is set)
     muted: Var[bool]
 
     # Set the width of the player: ex:640px
@@ -43,3 +45,9 @@ class ReactPlayerComponent(NoSSRComponent):
 
     # Set the height of the player: ex:640px
     height: Var[str]
+
+    # Fallback Reflex component to use as a fallback if you are using lazy loading.
+    fallback: Optional[Component] = None
+
+    # Component to use as the play icon in light mode
+    playIcon: Optional[Component]
