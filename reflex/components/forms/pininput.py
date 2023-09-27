@@ -6,7 +6,7 @@ from typing import Any, Optional, Union
 from reflex.components.component import Component
 from reflex.components.layout import Foreach
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import EVENT_TRIGGERS
+from reflex.constants import EventTriggers
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -66,8 +66,8 @@ class PinInput(ChakraComponent):
         """
         return {
             **super().get_event_triggers(),
-            EVENT_TRIGGERS.ON_CHANGE: lambda e0: [e0],
-            EVENT_TRIGGERS.ON_COMPLETE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_COMPLETE: lambda e0: [e0],
         }
 
     def get_ref(self):

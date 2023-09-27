@@ -311,7 +311,7 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return os.path.join(constants.DIRS.WEB_PAGES, path + constants.EXT.JS)
+    return os.path.join(constants.Dirs.WEB_PAGES, path + constants.Ext.JS)
 
 
 def get_theme_path() -> str:
@@ -321,7 +321,7 @@ def get_theme_path() -> str:
         The path of the theme style.
     """
     return os.path.join(
-        constants.DIRS.WEB_UTILS, constants.PAGE_NAMES.THEME + constants.EXT.JS
+        constants.Dirs.WEB_UTILS, constants.PageNames.THEME + constants.Ext.JS
     )
 
 
@@ -332,7 +332,7 @@ def get_root_stylesheet_path() -> str:
         The path of the app root file.
     """
     return os.path.join(
-        constants.STYLES_DIR, constants.PAGE_NAMES.STYLESHEET_ROOT + constants.EXT.CSS
+        constants.STYLES_DIR, constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS
     )
 
 
@@ -342,7 +342,7 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return os.path.join(constants.DIRS.WEB_UTILS, "context" + constants.EXT.JS)
+    return os.path.join(constants.Dirs.WEB_UTILS, "context" + constants.Ext.JS)
 
 
 def get_components_path() -> str:
@@ -351,7 +351,7 @@ def get_components_path() -> str:
     Returns:
         The path of the compiled components.
     """
-    return os.path.join(constants.DIRS.WEB_UTILS, "components" + constants.EXT.JS)
+    return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
 
 
 def get_asset_path(filename: str | None = None) -> str:
@@ -364,9 +364,9 @@ def get_asset_path(filename: str | None = None) -> str:
         The path of the asset.
     """
     if filename is None:
-        return constants.DIRS.WEB_ASSETS
+        return constants.Dirs.WEB_ASSETS
     else:
-        return os.path.join(constants.DIRS.WEB_ASSETS, filename)
+        return os.path.join(constants.Dirs.WEB_ASSETS, filename)
 
 
 def add_meta(

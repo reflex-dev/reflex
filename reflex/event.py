@@ -465,7 +465,7 @@ def get_hydrate_event(state) -> str:
     Returns:
         The name of the hydrate event.
     """
-    return get_event(state, constants.VAR_NAMES.HYDRATE)
+    return get_event(state, constants.CompileVars.HYDRATE)
 
 
 def call_event_handler(

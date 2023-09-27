@@ -48,7 +48,7 @@ class Config(Base):
     class Config:
         validate_assignment: bool
     app_name: str
-    loglevel: constants.LOG_LEVEL
+    loglevel: constants.LogLevel
     frontend_port: int
     frontend_path: str
     backend_port: int
@@ -72,7 +72,7 @@ class Config(Base):
         self,
         *args,
         app_name: str,
-        loglevel: Optional[constants.LOG_LEVEL] = None,
+        loglevel: Optional[constants.LogLevel] = None,
         frontend_port: Optional[int] = None,
         frontend_path: Optional[str] = None,
         backend_port: Optional[int] = None,

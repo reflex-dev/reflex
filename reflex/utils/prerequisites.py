@@ -39,9 +39,9 @@ def check_node_version() -> bool:
     if current_version:
         # Compare the version numbers
         return (
-            current_version >= version.parse(constants.NODE.MIN_VERSION)
+            current_version >= version.parse(constants.Node.MIN_VERSION)
             if constants.IS_WINDOWS
-            else current_version == version.parse(constants.NODE.VERSION)
+            else current_version == version.parse(constants.Node.VERSION)
         )
     return False
 
@@ -111,7 +111,7 @@ def get_app(reload: bool = False) -> ModuleType:
     config = get_config()
     module = ".".join([config.app_name, config.app_name])
     sys.path.insert(0, os.getcwd())
-    app = __import__(module, fromlist=(constants.VAR_NAMES.APP,))
+    app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
         importlib.reload(app)
     return app
@@ -160,9 +160,9 @@ def get_default_app_name() -> str:
     app_name = os.getcwd().split(os.path.sep)[-1].replace("-", "_")
 
     # Make sure the app is not named "reflex".
-    if app_name == constants.REFLEX.MODULE_NAME:
+    if app_name == constants.Reflex.MODULE_NAME:
         console.error(
-            f"The app directory cannot be named [bold]{constants.REFLEX.MODULE_NAME}[/bold]."
+            f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
         )
         raise typer.Exit(1)
 
@@ -179,28 +179,28 @@ def create_config(app_name: str):
     from reflex.compiler import templates
 
     config_name = f"{re.sub(r'[^a-zA-Z]', '', app_name).capitalize()}Config"
-    with open(constants.CONFIG.FILE, "w") as f:
-        console.debug(f"Creating {constants.CONFIG.FILE}")
+    with open(constants.Config.FILE, "w") as f:
+        console.debug(f"Creating {constants.Config.FILE}")
         f.write(templates.RXCONFIG.render(app_name=app_name, config_name=config_name))
 
 
 def initialize_gitignore():
     """Initialize the template .gitignore file."""
     # The files to add to the .gitignore file.
-    files = constants.GITIGNORE.DEFAULTS
+    files = constants.GitIgnore.DEFAULTS
 
     # Subtract current ignored files.
-    if os.path.exists(constants.GITIGNORE.FILE):
-        with open(constants.GITIGNORE.FILE, "r") as f:
+    if os.path.exists(constants.GitIgnore.FILE):
+        with open(constants.GitIgnore.FILE, "r") as f:
             files |= set([line.strip() for line in f.readlines()])
 
     # Write files to the .gitignore file.
-    with open(constants.GITIGNORE.FILE, "w") as f:
-        console.debug(f"Creating {constants.GITIGNORE.FILE}")
+    with open(constants.GitIgnore.FILE, "w") as f:
+        console.debug(f"Creating {constants.GitIgnore.FILE}")
         f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
 
-def initialize_app_directory(app_name: str, template: constants.TEMPLATE.KIND):
+def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     """Initialize the app directory on reflex init.
 
     Args:
@@ -209,27 +209,27 @@ def initialize_app_directory(app_name: str, template: constants.TEMPLATE.KIND):
     """
     console.log("Initializing the app directory.")
     path_ops.cp(
-        os.path.join(constants.TEMPLATE.DIR.BASE, "apps", template.value), app_name
+        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value), app_name
     )
     path_ops.mv(
         os.path.join(app_name, template.value + ".py"),
-        os.path.join(app_name, app_name + constants.EXT.PY),
+        os.path.join(app_name, app_name + constants.Ext.PY),
     )
-    path_ops.cp(constants.TEMPLATE.DIR.ASSETS_TEMPLATE, constants.DIRS.APP_ASSETS)
+    path_ops.cp(constants.Templates.Dirs.ASSETS_TEMPLATE, constants.Dirs.APP_ASSETS)
 
 
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
 
-    path_ops.cp(constants.TEMPLATE.DIR.WEB_TEMPLATE, constants.DIRS.WEB)
+    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, constants.Dirs.WEB)
 
     initialize_package_json()
 
-    path_ops.mkdir(constants.DIRS.WEB_ASSETS)
+    path_ops.mkdir(constants.Dirs.WEB_ASSETS)
 
     # update nextJS config based on rxConfig
-    next_config_file = os.path.join(constants.DIRS.WEB, constants.NEXT.CONFIG_FILE)
+    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
     with open(next_config_file, "r") as file:
         next_config = file.read()
@@ -245,19 +245,19 @@ def initialize_web_directory():
 def _compile_package_json():
     return templates.PACKAGE_JSON.render(
         scripts={
-            "dev": constants.PACKAGE_JSON.COMMANDS.DEV,
-            "export": constants.PACKAGE_JSON.COMMANDS.EXPORT,
-            "export_sitemap": constants.PACKAGE_JSON.COMMANDS.EXPORT_SITEMAP,
-            "prod": constants.PACKAGE_JSON.COMMANDS.PROD,
+            "dev": constants.PackageJson.Commands.DEV,
+            "export": constants.PackageJson.Commands.EXPORT,
+            "export_sitemap": constants.PackageJson.Commands.EXPORT_SITEMAP,
+            "prod": constants.PackageJson.Commands.PROD,
         },
-        dependencies=constants.PACKAGE_JSON.DEPENDENCIES,
-        dev_dependencies=constants.PACKAGE_JSON.DEV_DEPENDENCIES,
+        dependencies=constants.PackageJson.DEPENDENCIES,
+        dev_dependencies=constants.PackageJson.DEV_DEPENDENCIES,
     )
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
-    output_path = constants.PACKAGE_JSON.PATH
+    output_path = constants.PackageJson.PATH
     code = _compile_package_json()
     with open(output_path, "w") as file:
         file.write(code)
@@ -271,10 +271,10 @@ def init_reflex_json():
 
     # Write the hash and version to the reflex json file.
     reflex_json = {
-        "version": constants.REFLEX.VERSION,
+        "version": constants.Reflex.VERSION,
         "project_hash": project_hash,
     }
-    path_ops.update_json_file(constants.REFLEX.JSON, reflex_json)
+    path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
 def update_next_config(next_config: str, config: Config) -> str:
@@ -304,7 +304,7 @@ def remove_existing_bun_installation():
     """Remove existing bun installation."""
     console.debug("Removing existing bun installation.")
     if os.path.exists(get_config().bun_path):
-        path_ops.rm(constants.BUN.ROOT_PATH)
+        path_ops.rm(constants.Bun.ROOT_PATH)
 
 
 def download_and_run(url: str, *args, show_status: bool = False, **env):
@@ -341,9 +341,9 @@ def download_and_extract_fnm_zip():
         Exit: If an error occurs while downloading or extracting the FNM zip.
     """
     # Download the zip file
-    url = constants.FNM.INSTALL_URL
+    url = constants.Fnm.INSTALL_URL
     console.debug(f"Downloading {url}")
-    fnm_zip_file = os.path.join(constants.FNM.DIR, f"{constants.FNM.FILENAME}.zip")
+    fnm_zip_file = os.path.join(constants.Fnm.DIR, f"{constants.Fnm.FILENAME}.zip")
     # Function to download and extract the FNM zip release.
     try:
         # Download the FNM zip release.
@@ -356,7 +356,7 @@ def download_and_extract_fnm_zip():
 
         # Extract the downloaded zip file.
         with zipfile.ZipFile(fnm_zip_file, "r") as zip_ref:
-            zip_ref.extractall(constants.FNM.DIR)
+            zip_ref.extractall(constants.Fnm.DIR)
 
         console.debug("FNM package downloaded and extracted successfully.")
     except Exception as e:
@@ -371,13 +371,13 @@ def install_node():
     """Install fnm and nodejs for use by Reflex.
     Independent of any existing system installations.
     """
-    if not constants.FNM.FILENAME:
+    if not constants.Fnm.FILENAME:
         # fnm only support Linux, macOS and Windows distros.
         console.debug("")
         return
 
-    path_ops.mkdir(constants.FNM.DIR)
-    if not os.path.exists(constants.FNM.EXE):
+    path_ops.mkdir(constants.Fnm.DIR)
+    if not os.path.exists(constants.Fnm.EXE):
         download_and_extract_fnm_zip()
 
     if constants.IS_WINDOWS:
@@ -386,13 +386,13 @@ def install_node():
             [
                 "powershell",
                 "-Command",
-                f'& "{constants.FNM.EXE}" install {constants.NODE.VERSION} --fnm-dir "{constants.FNM.DIR}"',
+                f'& "{constants.Fnm.EXE}" install {constants.Node.VERSION} --fnm-dir "{constants.Fnm.DIR}"',
             ],
         )
     else:  # All other platforms (Linux, MacOS).
         # TODO we can skip installation if check_node_version() checks out
         # Add execute permissions to fnm executable.
-        os.chmod(constants.FNM.EXE, stat.S_IXUSR)
+        os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
         # Install node.
         # Specify arm64 arch explicitly for M1s and M2s.
         architecture_arg = (
@@ -403,12 +403,12 @@ def install_node():
 
         process = processes.new_process(
             [
-                constants.FNM.EXE,
+                constants.Fnm.EXE,
                 "install",
                 *architecture_arg,
-                constants.NODE.VERSION,
+                constants.Node.VERSION,
                 "--fnm-dir",
-                constants.FNM.DIR,
+                constants.Fnm.DIR,
             ],
         )
     processes.show_status("Installing node", process)
@@ -437,9 +437,9 @@ def install_bun():
 
     # Run the bun install script.
     download_and_run(
-        constants.BUN.INSTALL_URL,
-        f"bun-v{constants.BUN.VERSION}",
-        BUN_INSTALL=constants.BUN.ROOT_PATH,
+        constants.Bun.INSTALL_URL,
+        f"bun-v{constants.Bun.VERSION}",
+        BUN_INSTALL=constants.Bun.ROOT_PATH,
     )
 
 
@@ -455,7 +455,7 @@ def install_frontend_packages(packages: set[str]):
     # Install the base packages.
     process = processes.new_process(
         [get_install_package_manager(), "install", "--loglevel", "silly"],
-        cwd=constants.DIRS.WEB,
+        cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
 
@@ -469,10 +469,10 @@ def install_frontend_packages(packages: set[str]):
                 get_install_package_manager(),
                 "add",
                 "-d",
-                constants.TAILWIND.VERSION,
+                constants.Tailwind.VERSION,
                 *((config.tailwind or {}).get("plugins", [])),
             ],
-            cwd=constants.DIRS.WEB,
+            cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
         processes.show_status("Installing tailwind", process)
@@ -481,7 +481,7 @@ def install_frontend_packages(packages: set[str]):
     if len(packages) > 0:
         process = processes.new_process(
             [get_install_package_manager(), "add", *packages],
-            cwd=constants.DIRS.WEB,
+            cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
         processes.show_status(
@@ -498,14 +498,14 @@ def check_initialized(frontend: bool = True):
     Raises:
         Exit: If the app is not initialized.
     """
-    has_config = os.path.exists(constants.CONFIG.FILE)
-    has_reflex_dir = not frontend or os.path.exists(constants.REFLEX.DIR)
-    has_web_dir = not frontend or os.path.exists(constants.DIRS.WEB)
+    has_config = os.path.exists(constants.Config.FILE)
+    has_reflex_dir = not frontend or os.path.exists(constants.Reflex.DIR)
+    has_web_dir = not frontend or os.path.exists(constants.Dirs.WEB)
 
     # Check if the app is initialized.
     if not (has_config and has_reflex_dir and has_web_dir):
         console.error(
-            f"The app is not initialized. Run [bold]{constants.REFLEX.MODULE_NAME} init[/bold] first."
+            f"The app is not initialized. Run [bold]{constants.Reflex.MODULE_NAME} init[/bold] first."
         )
         raise typer.Exit(1)
 
@@ -529,11 +529,11 @@ def is_latest_template() -> bool:
     Returns:
         Whether the app is using the latest template.
     """
-    if not os.path.exists(constants.REFLEX.JSON):
+    if not os.path.exists(constants.Reflex.JSON):
         return False
-    with open(constants.REFLEX.JSON) as f:  # type: ignore
+    with open(constants.Reflex.JSON) as f:  # type: ignore
         app_version = json.load(f)["version"]
-    return app_version == constants.REFLEX.VERSION
+    return app_version == constants.Reflex.VERSION
 
 
 def validate_bun():
@@ -545,16 +545,16 @@ def validate_bun():
     # if a custom bun path is provided, make sure its valid
     # This is specific to non-FHS OS
     bun_path = get_config().bun_path
-    if bun_path != constants.BUN.DEFAULT_PATH:
+    if bun_path != constants.Bun.DEFAULT_PATH:
         bun_version = get_bun_version()
         if not bun_version:
             console.error(
                 "Failed to obtain bun version. Make sure the specified bun path in your config is correct."
             )
             raise typer.Exit(1)
-        elif bun_version < version.parse(constants.BUN.MIN_VERSION):
+        elif bun_version < version.parse(constants.Bun.MIN_VERSION):
             console.error(
-                f"Reflex requires bun version {constants.BUN.VERSION} or higher to run, but the detected version is "
+                f"Reflex requires bun version {constants.Bun.VERSION} or higher to run, but the detected version is "
                 f"{bun_version}. If you have specified a custom bun path in your config, make sure to provide one "
                 f"that satisfies the minimum version requirement."
             )
@@ -584,7 +584,7 @@ def validate_frontend_dependencies(init=True):
         if not check_node_version():
             node_version = get_node_version()
             console.error(
-                f"Reflex requires node version {constants.NODE.MIN_VERSION} or higher to run, but the detected version is {node_version}",
+                f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
 
@@ -599,7 +599,7 @@ def validate_frontend_dependencies(init=True):
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
-    path_ops.mkdir(constants.REFLEX.DIR)
+    path_ops.mkdir(constants.Reflex.DIR)
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
@@ -646,7 +646,7 @@ def check_schema_up_to_date():
 def migrate_to_reflex():
     """Migration from Pynecone to Reflex."""
     # Check if the old config file exists.
-    if not os.path.exists(constants.CONFIG.PREVIOUS_FILE):
+    if not os.path.exists(constants.Config.PREVIOUS_FILE):
         return
 
     # Ask the user if they want to migrate.
@@ -659,16 +659,16 @@ def migrate_to_reflex():
 
     # Rename pcconfig to rxconfig.
     console.log(
-        f"[bold]Renaming {constants.CONFIG.PREVIOUS_FILE} to {constants.CONFIG.FILE}"
+        f"[bold]Renaming {constants.Config.PREVIOUS_FILE} to {constants.Config.FILE}"
     )
-    os.rename(constants.CONFIG.PREVIOUS_FILE, constants.CONFIG.FILE)
+    os.rename(constants.Config.PREVIOUS_FILE, constants.Config.FILE)
 
     # Find all python files in the app directory.
     file_pattern = os.path.join(get_config().app_name, "**/*.py")
     file_list = glob.glob(file_pattern, recursive=True)
 
     # Add the config file to the list of files to be migrated.
-    file_list.append(constants.CONFIG.FILE)
+    file_list.append(constants.Config.FILE)
 
     # Migrate all files.
     updates = {

@@ -15,7 +15,7 @@ from plotly.graph_objects import Figure
 
 import reflex as rx
 from reflex.base import Base
-from reflex.constants import ROUTE_VAR, SOCKET_EVENT, VAR_NAMES
+from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
     ImmutableStateError,
@@ -223,7 +223,7 @@ def test_class_vars(test_state):
     """
     cls = type(test_state)
     assert set(cls.vars.keys()) == {
-        VAR_NAMES.IS_HYDRATED,  # added by hydrate_middleware to all State
+        CompileVars.IS_HYDRATED,  # added by hydrate_middleware to all State
         "num1",
         "num2",
         "key",
@@ -783,7 +783,7 @@ def test_get_current_page(test_state):
     assert test_state.get_current_page() == ""
 
     route = "mypage/subpage"
-    test_state.router_data = {ROUTE_VAR.PATH: route}
+    test_state.router_data = {RouteVar.PATH: route}
 
     assert test_state.get_current_page() == route
 
@@ -792,7 +792,7 @@ def test_get_query_params(test_state):
     assert test_state.get_query_params() == {}
 
     params = {"p1": "a", "p2": "b"}
-    test_state.router_data = {ROUTE_VAR.QUERY: params}
+    test_state.router_data = {RouteVar.QUERY: params}
 
     assert test_state.get_query_params() == params
 
@@ -1126,17 +1126,17 @@ def test_computed_var_depends_on_parent_non_cached():
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 2},
         "no_cache_v": 1,
-        VAR_NAMES.IS_HYDRATED: False,
+        CompileVars.IS_HYDRATED: False,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 4},
         "no_cache_v": 3,
-        VAR_NAMES.IS_HYDRATED: False,
+        CompileVars.IS_HYDRATED: False,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 6},
         "no_cache_v": 5,
-        VAR_NAMES.IS_HYDRATED: False,
+        CompileVars.IS_HYDRATED: False,
     }
     assert counter == 6
 
@@ -1537,7 +1537,7 @@ def mock_app(monkeypatch, app: rx.App, state_manager: StateManager) -> rx.App:
         The app, after mocking out prerequisites.get_app()
     """
     app_module = Mock()
-    setattr(app_module, VAR_NAMES.APP, app)
+    setattr(app_module, CompileVars.APP, app)
     app.state = TestState
     app.state_manager = state_manager
     assert app.event_namespace is not None
@@ -1605,7 +1605,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert mock_app.event_namespace is not None
     mock_app.event_namespace.emit.assert_called_once()
     mcall = mock_app.event_namespace.emit.mock_calls[0]
-    assert mcall.args[0] == str(SOCKET_EVENT.EVENT)
+    assert mcall.args[0] == str(SocketEvent.EVENT)
     assert json.loads(mcall.args[1]) == StateUpdate(
         delta={
             parent_state.get_full_name(): {

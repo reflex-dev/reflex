@@ -133,7 +133,7 @@ class Config(Base):
     app_name: str
 
     # The log level to use.
-    loglevel: constants.LOG_LEVEL = constants.LOG_LEVEL.INFO
+    loglevel: constants.LogLevel = constants.LogLevel.INFO
 
     # The port to run the frontend on.
     frontend_port: int = 3000
@@ -163,7 +163,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: str = constants.BUN.DEFAULT_PATH
+    bun_path: str = constants.Bun.DEFAULT_PATH
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
@@ -271,7 +271,7 @@ class Config(Base):
         if self.event_namespace:
             return f'/{self.event_namespace.strip("/")}'
 
-        event_url = constants.ENDPOINT.EVENT.get_url()
+        event_url = constants.Endpoint.EVENT.get_url()
         return urllib.parse.urlsplit(event_url).path
 
 
@@ -286,7 +286,7 @@ def get_config(reload: bool = False) -> Config:
     """
     sys.path.insert(0, os.getcwd())
     try:
-        rxconfig = __import__(constants.CONFIG.MODULE)
+        rxconfig = __import__(constants.Config.MODULE)
         if reload:
             importlib.reload(rxconfig)
         return rxconfig.config

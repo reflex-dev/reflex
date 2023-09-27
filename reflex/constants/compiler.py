@@ -6,7 +6,7 @@ from types import SimpleNamespace
 SETTER_PREFIX = "set_"
 
 
-class EXT(SimpleNamespace):
+class Ext(SimpleNamespace):
     """Extension used in Reflex."""
 
     # The extension for JS files.
@@ -19,7 +19,7 @@ class EXT(SimpleNamespace):
     ZIP = ".zip"
 
 
-class VAR_NAMES(SimpleNamespace):
+class CompileVars(SimpleNamespace):
     """The variables used during compilation."""
 
     # The expected variable name where the rx.App is stored.
@@ -46,7 +46,7 @@ class VAR_NAMES(SimpleNamespace):
     IS_HYDRATED = "is_hydrated"
 
 
-class PAGE_NAMES(SimpleNamespace):
+class PageNames(SimpleNamespace):
     """The name of basic pages deployed in NextJS."""
 
     # The name of the index page.
@@ -61,7 +61,7 @@ class PAGE_NAMES(SimpleNamespace):
     THEME = "theme"
 
 
-class COMPONENT_NAME(Enum):
+class ComponentName(Enum):
     """Component names."""
 
     BACKEND = "Backend"
@@ -73,4 +73,4 @@ class COMPONENT_NAME(Enum):
         Returns:
             The lower-case filename with zip extension.
         """
-        return self.value.lower() + EXT.ZIP
+        return self.value.lower() + Ext.ZIP

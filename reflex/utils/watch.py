@@ -8,7 +8,7 @@ import time
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from reflex.constants import DIRS
+from reflex.constants import Dirs
 
 
 class AssetFolderWatch:
@@ -20,7 +20,7 @@ class AssetFolderWatch:
         Args:
             root: root path of the public.
         """
-        self.path = str(root / DIRS.APP_ASSETS)
+        self.path = str(root / Dirs.APP_ASSETS)
         self.event_handler = AssetFolderHandler(root)
 
     def start(self):
@@ -90,5 +90,5 @@ class AssetFolderHandler(FileSystemEventHandler):
             The public file path.
         """
         return src_path.replace(
-            str(self.root / DIRS.APP_ASSETS), str(self.root / DIRS.WEB_ASSETS)
+            str(self.root / Dirs.APP_ASSETS), str(self.root / Dirs.WEB_ASSETS)
         )

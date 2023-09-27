@@ -6,7 +6,7 @@ import reflex as rx
 from reflex.base import Base
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
-from reflex.constants import EVENT_TRIGGERS
+from reflex.constants import EventTriggers
 from reflex.event import EVENT_ARG, EventHandler
 from reflex.state import State
 from reflex.style import Style
@@ -380,21 +380,21 @@ def test_get_event_triggers(component1, component2):
         component2: A test component.
     """
     default_triggers = {
-        EVENT_TRIGGERS.ON_FOCUS,
-        EVENT_TRIGGERS.ON_BLUR,
-        EVENT_TRIGGERS.ON_CLICK,
-        EVENT_TRIGGERS.ON_CONTEXT_MENU,
-        EVENT_TRIGGERS.ON_DOUBLE_CLICK,
-        EVENT_TRIGGERS.ON_MOUSE_DOWN,
-        EVENT_TRIGGERS.ON_MOUSE_ENTER,
-        EVENT_TRIGGERS.ON_MOUSE_LEAVE,
-        EVENT_TRIGGERS.ON_MOUSE_MOVE,
-        EVENT_TRIGGERS.ON_MOUSE_OUT,
-        EVENT_TRIGGERS.ON_MOUSE_OVER,
-        EVENT_TRIGGERS.ON_MOUSE_UP,
-        EVENT_TRIGGERS.ON_SCROLL,
-        EVENT_TRIGGERS.ON_MOUNT,
-        EVENT_TRIGGERS.ON_UNMOUNT,
+        EventTriggers.ON_FOCUS,
+        EventTriggers.ON_BLUR,
+        EventTriggers.ON_CLICK,
+        EventTriggers.ON_CONTEXT_MENU,
+        EventTriggers.ON_DOUBLE_CLICK,
+        EventTriggers.ON_MOUSE_DOWN,
+        EventTriggers.ON_MOUSE_ENTER,
+        EventTriggers.ON_MOUSE_LEAVE,
+        EventTriggers.ON_MOUSE_MOVE,
+        EventTriggers.ON_MOUSE_OUT,
+        EventTriggers.ON_MOUSE_OVER,
+        EventTriggers.ON_MOUSE_UP,
+        EventTriggers.ON_SCROLL,
+        EventTriggers.ON_MOUNT,
+        EventTriggers.ON_UNMOUNT,
     }
     assert set(component1().get_event_triggers().keys()) == default_triggers
     assert (

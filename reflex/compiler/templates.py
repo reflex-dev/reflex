@@ -19,26 +19,26 @@ class ReflexJinjaEnvironment(Environment):
         )
         self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
-        self.loader = FileSystemLoader(constants.TEMPLATE.DIR.JINJA_TEMPLATE)
+        self.loader = FileSystemLoader(constants.Templates.Dirs.JINJA_TEMPLATE)
         self.globals["const"] = {
-            "socket": constants.VAR_NAMES.SOCKET,
-            "result": constants.VAR_NAMES.RESULT,
-            "router": constants.VAR_NAMES.ROUTER,
-            "event_endpoint": constants.ENDPOINT.EVENT.name,
-            "events": constants.VAR_NAMES.EVENTS,
-            "state": constants.VAR_NAMES.STATE,
-            "final": constants.VAR_NAMES.FINAL,
-            "processing": constants.VAR_NAMES.PROCESSING,
+            "socket": constants.CompileVars.SOCKET,
+            "result": constants.CompileVars.RESULT,
+            "router": constants.CompileVars.ROUTER,
+            "event_endpoint": constants.Endpoint.EVENT.name,
+            "events": constants.CompileVars.EVENTS,
+            "state": constants.CompileVars.STATE,
+            "final": constants.CompileVars.FINAL,
+            "processing": constants.CompileVars.PROCESSING,
             "initial_result": {
-                constants.VAR_NAMES.STATE: None,
-                constants.VAR_NAMES.EVENTS: [],
-                constants.VAR_NAMES.FINAL: True,
-                constants.VAR_NAMES.PROCESSING: False,
+                constants.CompileVars.STATE: None,
+                constants.CompileVars.EVENTS: [],
+                constants.CompileVars.FINAL: True,
+                constants.CompileVars.PROCESSING: False,
             },
-            "color_mode": constants.COLOR_MODE.NAME,
-            "toggle_color_mode": constants.COLOR_MODE.TOGGLE,
-            "use_color_mode": constants.COLOR_MODE.USE,
-            "hydrate": constants.VAR_NAMES.HYDRATE,
+            "color_mode": constants.ColorMode.NAME,
+            "toggle_color_mode": constants.ColorMode.TOGGLE,
+            "use_color_mode": constants.ColorMode.USE,
+            "hydrate": constants.CompileVars.HYDRATE,
         }
 
 

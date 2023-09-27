@@ -183,8 +183,8 @@ class App(Base):
             else config.cors_allowed_origins,
             cors_credentials=True,
             max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-            ping_interval=constants.PING.INTERVAL,
-            ping_timeout=constants.PING.TIMEOUT,
+            ping_interval=constants.Ping.INTERVAL,
+            ping_timeout=constants.Ping.TIMEOUT,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
@@ -200,7 +200,7 @@ class App(Base):
         # Register the event namespace with the socket.
         self.sio.register_namespace(self.event_namespace)
         # Mount the socket app with the API.
-        self.api.mount(str(constants.ENDPOINT.EVENT), self.socket_app)
+        self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
         # Set up the admin dash.
         self.setup_admin_dash()
@@ -231,10 +231,10 @@ class App(Base):
     def add_default_endpoints(self):
         """Add the default endpoints."""
         # To test the server.
-        self.api.get(str(constants.ENDPOINT.PING))(ping)
+        self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To upload files.
-        self.api.post(str(constants.ENDPOINT.UPLOAD))(upload(self))
+        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -340,14 +340,14 @@ class App(Base):
         self,
         component: Component | ComponentCallable,
         route: str | None = None,
-        title: str = constants.DEFAULT_PAGE.TITLE,
-        description: str = constants.DEFAULT_PAGE.DESCRIPTION,
-        image: str = constants.DEFAULT_PAGE.IMAGE,
+        title: str = constants.DefaultPage.TITLE,
+        description: str = constants.DefaultPage.DESCRIPTION,
+        image: str = constants.DefaultPage.IMAGE,
         on_load: EventHandler
         | EventSpec
         | list[EventHandler | EventSpec]
         | None = None,
-        meta: list[dict[str, str]] = constants.DEFAULT_PAGE.META_LIST,
+        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
         script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
@@ -433,7 +433,7 @@ class App(Base):
         """
         route = route.lstrip("/")
         if route == "":
-            route = constants.PAGE_NAMES.INDEX_ROUTE
+            route = constants.PageNames.INDEX_ROUTE
         return self.load_events.get(route, [])
 
     def _check_routes_conflict(self, new_route: str):
@@ -472,14 +472,14 @@ class App(Base):
     def add_custom_404_page(
         self,
         component: Component | ComponentCallable | None = None,
-        title: str = constants.PAGE_404.TITLE,
-        image: str = constants.PAGE_404.FAVICON,
-        description: str = constants.PAGE_404.DESCRIPTION,
+        title: str = constants.Page404.TITLE,
+        image: str = constants.Page404.IMAGE,
+        description: str = constants.Page404.DESCRIPTION,
         on_load: EventHandler
         | EventSpec
         | list[EventHandler | EventSpec]
         | None = None,
-        meta: list[dict[str, str]] = constants.DEFAULT_PAGE.META_LIST,
+        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
@@ -498,10 +498,10 @@ class App(Base):
             component = Default404Page.create()
         self.add_page(
             component=wait_for_client_redirect(self._generate_component(component)),
-            route=constants.PAGE_404.SLUG,
-            title=title or constants.PAGE_404.TITLE,
-            image=image or constants.PAGE_404.FAVICON,
-            description=description or constants.PAGE_404.DESCRIPTION,
+            route=constants.Page404.SLUG,
+            title=title or constants.Page404.TITLE,
+            image=image or constants.Page404.IMAGE,
+            description=description or constants.Page404.DESCRIPTION,
             on_load=on_load,
             meta=meta,
         )
@@ -544,8 +544,8 @@ class App(Base):
             if i
             not in [
                 *compiler.DEFAULT_IMPORTS.keys(),
-                *constants.PACKAGE_JSON.DEPENDENCIES.keys(),
-                *constants.PACKAGE_JSON.DEV_DEPENDENCIES.keys(),
+                *constants.PackageJson.DEPENDENCIES.keys(),
+                *constants.PackageJson.DEV_DEPENDENCIES.keys(),
             ]
             and not any(i.startswith(prefix) for prefix in ["/", ".", "next/"])
             and i != ""
@@ -583,7 +583,7 @@ class App(Base):
             self.add_page(render, **kwargs)
 
         # Render a default 404 page if the user didn't supply one
-        if constants.PAGE_404.SLUG not in self.pages:
+        if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
 
         task = progress.add_task("Compiling: ", total=len(self.pages))
@@ -651,7 +651,7 @@ class App(Base):
         # Compile the Tailwind config.
         if config.tailwind is not None:
             config.tailwind["content"] = config.tailwind.get(
-                "content", constants.TAILWIND.CONTENT
+                "content", constants.Tailwind.CONTENT
             )
             compile_results.append(compiler.compile_tailwind(config.tailwind))
 
@@ -758,11 +758,11 @@ async def process(
     router_data = event.router_data
     router_data.update(
         {
-            constants.ROUTE_VAR.QUERY: format.format_query_params(event.router_data),
-            constants.ROUTE_VAR.CLIENT_TOKEN: event.token,
-            constants.ROUTE_VAR.SESSION_ID: sid,
-            constants.ROUTE_VAR.HEADERS: headers,
-            constants.ROUTE_VAR.CLIENT_IP: client_ip,
+            constants.RouteVar.QUERY: format.format_query_params(event.router_data),
+            constants.RouteVar.CLIENT_TOKEN: event.token,
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
         }
     )
     # Get the state for the session exclusively.
@@ -916,7 +916,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Creating a task prevents the update from being blocked behind other coroutines.
         await asyncio.create_task(
-            self.emit(str(constants.SOCKET_EVENT.EVENT), update.json(), to=sid)
+            self.emit(str(constants.SocketEvent.EVENT), update.json(), to=sid)
         )
 
     async def on_event(self, sid, data):
@@ -955,4 +955,4 @@ class EventNamespace(AsyncNamespace):
             sid: The Socket.IO session id.
         """
         # Emit the test event.
-        await self.emit(str(constants.SOCKET_EVENT.PING), "pong", to=sid)
+        await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)

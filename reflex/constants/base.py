@@ -19,7 +19,7 @@ except ImportError:
 IS_WINDOWS = platform.system() == "Windows"
 
 
-class DIRS(SimpleNamespace):
+class Dirs(SimpleNamespace):
     """Various directories/paths used by Reflex."""
 
     # The frontend directories in a project.
@@ -47,7 +47,7 @@ class DIRS(SimpleNamespace):
     ENV_JSON = os.path.join(WEB, "env.json")
 
 
-class REFLEX(SimpleNamespace):
+class Reflex(SimpleNamespace):
     """Base constants concerning Reflex."""
 
     # App names and versions.
@@ -57,7 +57,7 @@ class REFLEX(SimpleNamespace):
     VERSION = metadata.version(MODULE_NAME)
 
     # The reflex json file.
-    JSON = os.path.join(DIRS.WEB, "reflex.json")
+    JSON = os.path.join(Dirs.WEB, "reflex.json")
 
     # Files and directories used to init a new project.
     # The directory to store reflex dependencies.
@@ -74,35 +74,35 @@ class REFLEX(SimpleNamespace):
     )
 
 
-class TEMPLATE(SimpleNamespace):
+class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
-    class KIND(str, Enum):
+    class Kind(str, Enum):
         """The templates to use for the app."""
 
         DEFAULT = "default"
         COUNTER = "counter"
 
-    class DIR(SimpleNamespace):
+    class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
 
         # The template directory used during reflex init.
-        BASE = os.path.join(REFLEX.ROOT_DIR, REFLEX.MODULE_NAME, ".templates")
+        BASE = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates")
         # The web subdirectory of the template directory.
         WEB_TEMPLATE = os.path.join(BASE, "web")
         # The assets subdirectory of the template directory.
-        ASSETS_TEMPLATE = os.path.join(BASE, DIRS.APP_ASSETS)
+        ASSETS_TEMPLATE = os.path.join(BASE, Dirs.APP_ASSETS)
         # The jinja template directory.
         JINJA_TEMPLATE = os.path.join(BASE, "jinja")
 
 
-class NEXT(SimpleNamespace):
+class Next(SimpleNamespace):
     """Constants related to NextJS."""
 
     # The NextJS config file
     CONFIG_FILE = "next.config.js"
     # The sitemap config file.
-    SITEMAP_CONFIG_FILE = os.path.join(DIRS.WEB, "next-sitemap.config.js")
+    SITEMAP_CONFIG_FILE = os.path.join(Dirs.WEB, "next-sitemap.config.js")
     # The node modules directory.
     NODE_MODULES = "node_modules"
     # The package lock file.
@@ -110,7 +110,7 @@ class NEXT(SimpleNamespace):
 
 
 # Color mode variables
-class COLOR_MODE(SimpleNamespace):
+class ColorMode(SimpleNamespace):
     """Constants related to ColorMode."""
 
     NAME = "colorMode"
@@ -119,7 +119,7 @@ class COLOR_MODE(SimpleNamespace):
 
 
 # Env modes
-class ENV(str, Enum):
+class Env(str, Enum):
     """The environment modes."""
 
     DEV = "dev"
@@ -127,7 +127,7 @@ class ENV(str, Enum):
 
 
 # Log levels
-class LOG_LEVEL(str, Enum):
+class LogLevel(str, Enum):
     """The log levels."""
 
     DEBUG = "debug"
@@ -136,7 +136,7 @@ class LOG_LEVEL(str, Enum):
     ERROR = "error"
     CRITICAL = "critical"
 
-    def __le__(self, other: LOG_LEVEL) -> bool:
+    def __le__(self, other: LogLevel) -> bool:
         """Compare log levels.
 
         Args:
@@ -145,7 +145,7 @@ class LOG_LEVEL(str, Enum):
         Returns:
             True if the log level is less than or equal to the other log level.
         """
-        levels = list(LOG_LEVEL)
+        levels = list(LogLevel)
         return levels.index(self) <= levels.index(other)
 
 
@@ -153,7 +153,7 @@ class LOG_LEVEL(str, Enum):
 POLLING_MAX_HTTP_BUFFER_SIZE = 1000 * 1000
 
 
-class PING(SimpleNamespace):
+class Ping(SimpleNamespace):
     """PING constants."""
 
     # The 'ping' interval

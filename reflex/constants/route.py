@@ -4,7 +4,7 @@ import re
 from types import SimpleNamespace
 
 
-class ROUTE_ARG_TYPE(SimpleNamespace):
+class RouteArgType(SimpleNamespace):
     """Type of dynamic route arg extracted from URI route."""
 
     # Typecast to str is needed for Enum to work.
@@ -16,7 +16,7 @@ class ROUTE_ARG_TYPE(SimpleNamespace):
 ROUTER_DATA = "router_data"
 
 
-class ROUTE_VAR(SimpleNamespace):
+class RouteVar(SimpleNamespace):
     """Names of variables used in the router_data dict stored in State."""
 
     CLIENT_IP = "ip"
@@ -29,7 +29,7 @@ class ROUTE_VAR(SimpleNamespace):
     COOKIE = "cookie"
 
 
-class ROUTE_REGEX(SimpleNamespace):
+class RouteRegex(SimpleNamespace):
     """Regex used for extracting route args in route."""
 
     ARG = re.compile(r"\[(?!\.)([^\[\]]+)\]")
@@ -41,7 +41,7 @@ class ROUTE_REGEX(SimpleNamespace):
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
 
 
-class DEFAULT_PAGE(SimpleNamespace):
+class DefaultPage(SimpleNamespace):
     """Default page constants."""
 
     # The default title to show for Reflex apps.
@@ -55,12 +55,12 @@ class DEFAULT_PAGE(SimpleNamespace):
 
 
 # 404 variables
-class PAGE_404(SimpleNamespace):
+class Page404(SimpleNamespace):
     """Page 404 constants."""
 
     SLUG = "404"
     TITLE = "404 - Not Found"
-    FAVICON = "favicon.ico"
+    IMAGE = "favicon.ico"
     DESCRIPTION = "The page was not found"
 
 

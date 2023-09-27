@@ -5,7 +5,7 @@ import os
 import platform
 from types import SimpleNamespace
 
-from .base import DIRS, IS_WINDOWS, REFLEX
+from .base import IS_WINDOWS, Dirs, Reflex
 
 
 def get_fnm_name() -> str | None:
@@ -31,7 +31,7 @@ def get_fnm_name() -> str | None:
 
 
 # Bun config.
-class BUN(SimpleNamespace):
+class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
@@ -39,7 +39,7 @@ class BUN(SimpleNamespace):
     # Min Bun Version
     MIN_VERSION = "0.7.0"
     # The directory to store the bun.
-    ROOT_PATH = os.path.join(REFLEX.DIR, "bun")
+    ROOT_PATH = os.path.join(Reflex.DIR, "bun")
     # Default bun path.
     DEFAULT_PATH = os.path.join(ROOT_PATH, "bin", "bun")
     # URL to bun install script.
@@ -47,13 +47,13 @@ class BUN(SimpleNamespace):
 
 
 # FNM config.
-class FNM(SimpleNamespace):
+class Fnm(SimpleNamespace):
     """FNM constants."""
 
     # The FNM version.
     VERSION = "1.35.1"
     # The directory to store fnm.
-    DIR = os.path.join(REFLEX.DIR, "fnm")
+    DIR = os.path.join(Reflex.DIR, "fnm")
     FILENAME = get_fnm_name()
     # The fnm executable binary.
     EXE = os.path.join(DIR, "fnm.exe" if IS_WINDOWS else "fnm")
@@ -65,7 +65,7 @@ class FNM(SimpleNamespace):
 
 
 # Node / NPM config
-class NODE(SimpleNamespace):
+class Node(SimpleNamespace):
     """Node/ NPM constants."""
 
     # The Node version.
@@ -75,7 +75,7 @@ class NODE(SimpleNamespace):
 
     # The node bin path.
     BIN_PATH = os.path.join(
-        FNM.DIR,
+        Fnm.DIR,
         "node-versions",
         f"v{VERSION}",
         "installation",
@@ -88,10 +88,10 @@ class NODE(SimpleNamespace):
     NPM_PATH = os.path.join(BIN_PATH, "npm")
 
 
-class PACKAGE_JSON(SimpleNamespace):
+class PackageJson(SimpleNamespace):
     """Constants used to build the package.json file."""
 
-    class COMMANDS(SimpleNamespace):
+    class Commands(SimpleNamespace):
         """The commands to define in package.json."""
 
         DEV = "next dev"
@@ -99,7 +99,7 @@ class PACKAGE_JSON(SimpleNamespace):
         EXPORT_SITEMAP = "next build && next-sitemap && next export -o _static"
         PROD = "next start"
 
-    PATH = os.path.join(DIRS.WEB, "package.json")
+    PATH = os.path.join(Dirs.WEB, "package.json")
 
     DEPENDENCIES = {
         "@chakra-ui/react": "^2.6.0",

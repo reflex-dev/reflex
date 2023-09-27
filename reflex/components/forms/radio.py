@@ -7,7 +7,7 @@ from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.typography.text import Text
-from reflex.constants import EVENT_TRIGGERS
+from reflex.constants import EventTriggers
 from reflex.utils.types import _issubclass
 from reflex.vars import Var
 
@@ -31,7 +31,7 @@ class RadioGroup(ChakraComponent):
         """
         return {
             **super().get_event_triggers(),
-            EVENT_TRIGGERS.ON_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
         }
 
     @classmethod

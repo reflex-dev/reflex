@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 
-State.add_var(constants.VAR_NAMES.IS_HYDRATED, type_=bool, default_value=False)
+State.add_var(constants.CompileVars.IS_HYDRATED, type_=bool, default_value=False)
 
 
 class HydrateMiddleware(Middleware):
@@ -40,7 +40,7 @@ class HydrateMiddleware(Middleware):
         state._reset_client_storage()
 
         # Mark state as not hydrated (until on_loads are complete)
-        setattr(state, constants.VAR_NAMES.IS_HYDRATED, False)
+        setattr(state, constants.CompileVars.IS_HYDRATED, False)
 
         # Apply client side storage values to state
         for storage_type in (constants.COOKIES, constants.LOCAL_STORAGE):
@@ -56,7 +56,7 @@ class HydrateMiddleware(Middleware):
         state._clean()
 
         # Get the route for on_load events.
-        route = event.router_data.get(constants.ROUTE_VAR.PATH, "")
+        route = event.router_data.get(constants.RouteVar.PATH, "")
 
         # Add the on_load events and set is_hydrated to True.
         events = [*app.get_load_events(route), type(state).set_is_hydrated(True)]  # type: ignore

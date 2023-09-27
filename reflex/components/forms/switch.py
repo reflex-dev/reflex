@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import EVENT_TRIGGERS
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
@@ -51,5 +51,5 @@ class Switch(ChakraComponent):
         """
         return {
             **super().get_event_triggers(),
-            EVENT_TRIGGERS.ON_CHANGE: lambda e0: [e0.target.checked],
+            EventTriggers.ON_CHANGE: lambda e0: [e0.target.checked],
         }

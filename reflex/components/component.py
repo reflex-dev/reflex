@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from reflex.base import Base
 from reflex.components.tags import Tag
-from reflex.constants import DIRS, EVENT_TRIGGERS
+from reflex.constants import Dirs, EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
@@ -314,21 +314,21 @@ class Component(Base, ABC):
             )
 
         return {
-            EVENT_TRIGGERS.ON_FOCUS: lambda: [],
-            EVENT_TRIGGERS.ON_BLUR: lambda: [],
-            EVENT_TRIGGERS.ON_CLICK: lambda: [],
-            EVENT_TRIGGERS.ON_CONTEXT_MENU: lambda: [],
-            EVENT_TRIGGERS.ON_DOUBLE_CLICK: lambda: [],
-            EVENT_TRIGGERS.ON_MOUSE_DOWN: lambda: [],
-            EVENT_TRIGGERS.ON_MOUSE_ENTER: lambda: [],
-            EVENT_TRIGGERS.ON_MOUSE_LEAVE: lambda: [],
-            EVENT_TRIGGERS.ON_MOUSE_MOVE: lambda: [],
-            EVENT_TRIGGERS.ON_MOUSE_OUT: lambda: [],
-            EVENT_TRIGGERS.ON_MOUSE_OVER: lambda: [],
-            EVENT_TRIGGERS.ON_MOUSE_UP: lambda: [],
-            EVENT_TRIGGERS.ON_SCROLL: lambda: [],
-            EVENT_TRIGGERS.ON_MOUNT: lambda: [],
-            EVENT_TRIGGERS.ON_UNMOUNT: lambda: [],
+            EventTriggers.ON_FOCUS: lambda: [],
+            EventTriggers.ON_BLUR: lambda: [],
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_CONTEXT_MENU: lambda: [],
+            EventTriggers.ON_DOUBLE_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_DOWN: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_OUT: lambda: [],
+            EventTriggers.ON_MOUSE_OVER: lambda: [],
+            EventTriggers.ON_MOUSE_UP: lambda: [],
+            EventTriggers.ON_SCROLL: lambda: [],
+            EventTriggers.ON_MOUNT: lambda: [],
+            EventTriggers.ON_UNMOUNT: lambda: [],
             **deprecated_triggers,
             **deprecated_controlled_triggers,
         }
@@ -627,8 +627,8 @@ class Component(Base, ABC):
         """
         # pop on_mount and on_unmount from event_triggers since these are handled by
         # hooks, not as actually props in the component
-        on_mount = self.event_triggers.pop(EVENT_TRIGGERS.ON_MOUNT, None)
-        on_unmount = self.event_triggers.pop(EVENT_TRIGGERS.ON_UNMOUNT, None)
+        on_mount = self.event_triggers.pop(EventTriggers.ON_MOUNT, None)
+        on_unmount = self.event_triggers.pop(EventTriggers.ON_UNMOUNT, None)
         if on_mount:
             on_mount = format.format_event_chain(on_mount)
         if on_unmount:
@@ -761,7 +761,7 @@ class CustomComponent(Component):
     """A custom user-defined component."""
 
     # Use the components library.
-    library = f"/{DIRS.COMPONENTS_PATH}"
+    library = f"/{Dirs.COMPONENTS_PATH}"
 
     # The function that creates the component.
     component_fn: Callable[..., Component] = Component.create

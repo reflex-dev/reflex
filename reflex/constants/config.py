@@ -2,26 +2,26 @@
 import os
 from types import SimpleNamespace
 
-from reflex.constants.base import DIRS
+from reflex.constants.base import Dirs
 
-from .compiler import EXT
+from .compiler import Ext
 
 # Alembic migrations
 ALEMBIC_CONFIG = os.environ.get("ALEMBIC_CONFIG", "alembic.ini")
 
 
-class CONFIG(SimpleNamespace):
+class Config(SimpleNamespace):
     """Config constants."""
 
     # The name of the reflex config module.
     MODULE = "rxconfig"
     # The python config file.
-    FILE = f"{MODULE}{EXT.PY}"
+    FILE = f"{MODULE}{Ext.PY}"
     # The previous config file.
-    PREVIOUS_FILE = f"pcconfig{EXT.PY}"
+    PREVIOUS_FILE = f"pcconfig{Ext.PY}"
 
 
-class EXPIRATION(SimpleNamespace):
+class Expiration(SimpleNamespace):
     """Expiration constants."""
 
     # Token expiration time in seconds
@@ -32,13 +32,13 @@ class EXPIRATION(SimpleNamespace):
     PING = 120
 
 
-class GITIGNORE(SimpleNamespace):
+class GitIgnore(SimpleNamespace):
     """Gitignore constants."""
 
     # The gitignore file.
     FILE = ".gitignore"
     # Files to gitignore.
-    DEFAULTS = {DIRS.WEB, "*.db", "__pycache__/", "*.py[cod]"}
+    DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]"}
 
 
 # The deployment URL.

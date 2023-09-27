@@ -3,7 +3,7 @@ from enum import Enum
 from types import SimpleNamespace
 
 
-class ENDPOINT(Enum):
+class Endpoint(Enum):
     """Endpoints for the reflex backend API."""
 
     PING = "ping"
@@ -32,7 +32,7 @@ class ENDPOINT(Enum):
         url = "".join([config.api_url, str(self)])
 
         # The event endpoint is a websocket.
-        if self == ENDPOINT.EVENT:
+        if self == Endpoint.EVENT:
             # Replace the protocol with ws.
             url = url.replace("https://", "wss://").replace("http://", "ws://")
 
@@ -40,7 +40,7 @@ class ENDPOINT(Enum):
         return url
 
 
-class SOCKET_EVENT(SimpleNamespace):
+class SocketEvent(SimpleNamespace):
     """Socket events sent by the reflex backend API."""
 
     PING = "ping"
@@ -55,15 +55,7 @@ class SOCKET_EVENT(SimpleNamespace):
         return str(self.value)
 
 
-class ROUTE_ARG_TYPE(SimpleNamespace):
-    """Type of dynamic route arg extracted from URI route."""
-
-    # Typecast to str is needed for Enum to work.
-    SINGLE = str("arg_single")
-    LIST = str("arg_list")
-
-
-class EVENT_TRIGGERS(SimpleNamespace):
+class EventTriggers(SimpleNamespace):
     """All trigger names used in Reflex."""
 
     ON_FOCUS = "on_focus"

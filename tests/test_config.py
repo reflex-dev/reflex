@@ -5,7 +5,7 @@ import pytest
 
 import reflex as rx
 import reflex.config
-from reflex.constants import ENDPOINT
+from reflex.constants import Endpoint
 
 
 def test_requires_app_name():
@@ -80,18 +80,18 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
     [
         (
             {"app_name": "test_app", "api_url": "http://example.com"},
-            f"{ENDPOINT.EVENT}",
+            f"{Endpoint.EVENT}",
         ),
         (
             {"app_name": "test_app", "api_url": "http://example.com/api"},
-            f"/api{ENDPOINT.EVENT}",
+            f"/api{Endpoint.EVENT}",
         ),
         ({"app_name": "test_app", "event_namespace": "/event"}, f"/event"),
         ({"app_name": "test_app", "event_namespace": "event"}, f"/event"),
         ({"app_name": "test_app", "event_namespace": "event/"}, f"/event"),
-        ({"app_name": "test_app", "event_namespace": "/_event"}, f"{ENDPOINT.EVENT}"),
-        ({"app_name": "test_app", "event_namespace": "_event"}, f"{ENDPOINT.EVENT}"),
-        ({"app_name": "test_app", "event_namespace": "_event/"}, f"{ENDPOINT.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "/_event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "_event"}, f"{Endpoint.EVENT}"),
+        ({"app_name": "test_app", "event_namespace": "_event/"}, f"{Endpoint.EVENT}"),
     ],
 )
 def test_event_namespace(mocker, kwargs, expected):

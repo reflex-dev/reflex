@@ -33,7 +33,7 @@ def get_above_max_version():
         max bun version plus one.
 
     """
-    semantic_version_list = constants.BUN.VERSION.split(".")
+    semantic_version_list = constants.Bun.VERSION.split(".")
     semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
     return ".".join(semantic_version_list)
 
@@ -243,7 +243,7 @@ def test_create_config_e2e(tmp_working_dir):
     app_name = "e2e"
     prerequisites.create_config(app_name)
     eval_globals = {}
-    exec((tmp_working_dir / constants.CONFIG.FILE).read_text(), eval_globals)
+    exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
 
@@ -285,8 +285,8 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         mocker: The mock object.
         gitignore_exists: Whether a gitignore file exists in the root dir.
     """
-    expected = constants.GITIGNORE.DEFAULTS.copy()
-    mocker.patch("reflex.constants.GITIGNORE.FILE", tmp_path / ".gitignore")
+    expected = constants.GitIgnore.DEFAULTS.copy()
+    mocker.patch("reflex.constants.GitIgnore.FILE", tmp_path / ".gitignore")
 
     gitignore_file = tmp_path / ".gitignore"
 
@@ -333,8 +333,8 @@ def test_node_install_windows(tmp_path, mocker):
     fnm_root_path = tmp_path / "reflex" / "fnm"
     fnm_exe = fnm_root_path / "fnm.exe"
 
-    mocker.patch("reflex.utils.prerequisites.constants.FNM.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.FNM.EXE", fnm_exe)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
     mocker.patch("reflex.utils.processes.new_process")
     mocker.patch("reflex.utils.processes.stream_logs")
@@ -375,8 +375,8 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
     fnm_root_path = tmp_path / "reflex" / "fnm"
     fnm_exe = fnm_root_path / "fnm"
 
-    mocker.patch("reflex.utils.prerequisites.constants.FNM.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.FNM.EXE", fnm_exe)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
     mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
     mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
@@ -401,14 +401,14 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
                 fnm_exe,
                 "install",
                 "--arch=arm64",
-                constants.NODE.VERSION,
+                constants.Node.VERSION,
                 "--fnm-dir",
                 fnm_root_path,
             ]
         )
     else:
         process.assert_called_with(
-            [fnm_exe, "install", constants.NODE.VERSION, "--fnm-dir", fnm_root_path]
+            [fnm_exe, "install", constants.Node.VERSION, "--fnm-dir", fnm_root_path]
         )
     chmod.assert_called_once()
 
@@ -459,7 +459,7 @@ def test_output_system_info(mocker):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex.utils.console._LOG_LEVEL", constants.LOG_LEVEL.DEBUG)
+    mocker.patch("reflex.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 

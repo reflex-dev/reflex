@@ -7,8 +7,8 @@ from reflex.event import EventChain
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
 
-color_mode = BaseVar(name=constants.COLOR_MODE.NAME, type_="str")
-toggle_color_mode = BaseVar(name=constants.COLOR_MODE.TOGGLE, type_=EventChain)
+color_mode = BaseVar(name=constants.ColorMode.NAME, type_="str")
+toggle_color_mode = BaseVar(name=constants.ColorMode.TOGGLE, type_=EventChain)
 
 
 def convert(style_dict):
