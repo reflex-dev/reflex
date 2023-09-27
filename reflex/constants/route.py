@@ -37,7 +37,7 @@ class ROUTE_REGEX(SimpleNamespace):
     CATCHALL = re.compile(r"(\[?\[\.{3}(?![0-9]).*\]?\])")
     # group return the arg name (i.e. "slug")
     STRICT_CATCHALL = re.compile(r"\[\.{3}([a-zA-Z_][\w]*)\]")
-    # group return the arg name (i.e. "slug")
+    # group return the arg name (i.e. "slug") (optional arg can be empty)
     OPT_CATCHALL = re.compile(r"\[\[\.{3}([a-zA-Z_][\w]*)\]\]")
 
 

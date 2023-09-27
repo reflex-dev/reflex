@@ -342,7 +342,7 @@ class App(Base):
         route: str | None = None,
         title: str = constants.DEFAULT_PAGE.TITLE,
         description: str = constants.DEFAULT_PAGE.DESCRIPTION,
-        image=constants.DEFAULT_PAGE.IMAGE,
+        image: str = constants.DEFAULT_PAGE.IMAGE,
         on_load: EventHandler
         | EventSpec
         | list[EventHandler | EventSpec]
