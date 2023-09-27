@@ -383,7 +383,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
         state = vars(sys.modules[handler.fn.__module__])[state_name]
     except Exception:
         # If the state isn't in the module, just return the function name.
-        return ("", handler.fn.__qualname__)
+        return ("", to_snake_case(handler.fn.__qualname__))
 
     return (state.get_full_name(), name)
 
