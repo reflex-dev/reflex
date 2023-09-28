@@ -443,6 +443,22 @@ def download(url: str, filename: Optional[str] = None) -> EventSpec:
     )
 
 
+def call_script(javascript_code: str) -> EventSpec:
+    """Create an event handler that executes arbitrary javascript code.
+
+    Args:
+        javascript_code: The code to execute.
+
+    Returns:
+        EventSpec: An event that will execute the client side javascript.
+    """
+    return server_side(
+        "_call_script",
+        get_fn_signature(call_script),
+        javascript_code=javascript_code,
+    )
+
+
 def get_event(state, event):
     """Get the event from the given state.
 
