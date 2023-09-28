@@ -121,7 +121,6 @@ def test_compile_stylesheets(tmp_path, mocker):
     assets_dir.mkdir()
 
     (assets_dir / "styles.css").touch()
-
     mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [
@@ -138,6 +137,36 @@ def test_compile_stylesheets(tmp_path, mocker):
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
         f"@import url('@/styles.css'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
+    )
+
+
+def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
+    """Test that Tailwind is excluded if tailwind config is explicitly set to None.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    mock = mocker.Mock()
+
+    mocker.patch.object(mock, "tailwind", None)
+    mocker.patch("reflex.compiler.compiler.get_config", return_value=mock)
+
+    (assets_dir / "styles.css").touch()
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+
+    stylesheets = [
+        "/styles.css",
+    ]
+
+    assert compiler.compile_root_stylesheet(stylesheets) == (
+        os.path.join(".web", "styles", "styles.css"),
+        "@import url('@/styles.css'); \n",
     )
 
 
@@ -160,3 +189,22 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker):
 
     with pytest.raises(FileNotFoundError):
         compiler.compile_root_stylesheet(stylesheets)
+
+
+def test_create_document_root():
+    """Test that the document root is created correctly."""
+    # Test with no components.
+    root = utils.create_document_root()
+    assert isinstance(root, utils.Html)
+    assert isinstance(root.children[0], utils.DocumentHead)
+    # No children in head.
+    assert len(root.children[0].children) == 0
+
+    # Test with components.
+    comps = [
+        utils.NextScript.create(src="foo.js"),
+        utils.NextScript.create(src="bar.js"),
+    ]
+    root = utils.create_document_root(head_components=comps)  # type: ignore
+    # Two children in head.
+    assert len(root.children[0].children) == 2

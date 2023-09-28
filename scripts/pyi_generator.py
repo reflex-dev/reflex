@@ -123,7 +123,7 @@ class PyiGenerator:
                 continue
             definition += f"{name}: {_get_type_hint(value)} = None, "
 
-        for trigger in sorted(_class().get_triggers()):
+        for trigger in sorted(_class().get_event_triggers().keys()):
             definition += f"{trigger}: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, "
 
         definition = definition.rstrip(", ")
@@ -233,7 +233,7 @@ class PyiGenerator:
         local_variables = [
             (name, obj)
             for name, obj in vars(self.current_module).items()
-            if not name.startswith("__")
+            if not name.startswith("_")
             and not inspect.isclass(obj)
             and not inspect.isfunction(obj)
         ]

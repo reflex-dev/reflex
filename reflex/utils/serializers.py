@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import re
 import types as builtin_types
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, Dict, Type, Union, get_type_hints
+from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
-from reflex.utils import exceptions, types
+from reflex.base import Base
+from reflex.utils import exceptions, format, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
@@ -127,6 +127,38 @@ def serialize_str(value: str) -> str:
 
 
 @serializer
+def serialize_primitive(value: Union[bool, int, float, Base, None]) -> str:
+    """Serialize a primitive type.
+
+    Args:
+        value: The number to serialize.
+
+    Returns:
+        The serialized number.
+    """
+    return format.json_dumps(value)
+
+
+@serializer
+def serialize_list(value: Union[List, Tuple, Set]) -> str:
+    """Serialize a list to a JSON string.
+
+    Args:
+        value: The list to serialize.
+
+    Returns:
+        The serialized list.
+    """
+    from reflex.vars import Var
+
+    # Convert any var values to strings.
+    fprop = format.json_dumps([str(v) if isinstance(v, Var) else v for v in value])
+
+    # Unwrap var values.
+    return format.unwrap_vars(fprop)
+
+
+@serializer
 def serialize_dict(prop: Dict[str, Any]) -> str:
     """Serialize a dictionary to a JSON string.
 
@@ -141,7 +173,6 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler
-    from reflex.utils.format import json_dumps, to_snake_case
     from reflex.vars import Var
 
     prop_dict = {}
@@ -150,34 +181,17 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     for key, value in prop.items():
         if types._issubclass(type(value), Callable):
             raise exceptions.InvalidStylePropError(
-                f"The style prop `{to_snake_case(key)}` cannot have "  # type: ignore
+                f"The style prop `{format.to_snake_case(key)}` cannot have "  # type: ignore
                 f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
                 f"an event handler or callable as its value"
             )
         prop_dict[key] = str(value) if isinstance(value, Var) else value
 
     # Dump the dict to a string.
-    fprop = json_dumps(prop_dict)
+    fprop = format.json_dumps(prop_dict)
 
-    def unescape_double_quotes_in_var(m: re.Match) -> str:
-        # Since the outer quotes are removed, the inner escaped quotes must be unescaped.
-        return re.sub('\\\\"', '"', m.group(1))
-
-    # This substitution is necessary to unwrap var values.
-    fprop = re.sub(
-        pattern=r"""
-            (?<!\\)      # must NOT start with a backslash
-            "            # match opening double quote of JSON value
-            {(.*?)}      # extract the value between curly braces (non-greedy)
-            "            # match must end with an unescaped double quote
-        """,
-        repl=unescape_double_quotes_in_var,
-        string=fprop,
-        flags=re.VERBOSE,
-    )
-
-    # Return the formatted dict.
-    return fprop
+    # Unwrap var values.
+    return format.unwrap_vars(fprop)
 
 
 @serializer

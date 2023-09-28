@@ -21,16 +21,24 @@ def VarOperations():
         float_var2: float = 5.5
         list1: list = [1, 2]
         list2: list = [3, 4]
+        list3: list = ["first", "second", "third"]
         str_var1: str = "first"
         str_var2: str = "second"
+        str_var3: str = "ThIrD"
+        str_var4: str = "a long string"
         dict1: dict = {1: 2}
         dict2: dict = {3: 4}
+
+        @rx.var
+        def token(self) -> str:
+            return self.get_token()
 
     app = rx.App(state=VarOperationState)
 
     @app.add_page
     def index():
         return rx.vstack(
+            rx.input(id="token", value=VarOperationState.token, is_read_only=True),
             # INT INT
             rx.text(
                 VarOperationState.int_var1 + VarOperationState.int_var2,
@@ -509,6 +517,11 @@ def VarOperations():
             rx.text(
                 VarOperationState.dict1.contains(1).to_string(), id="dict_contains"
             ),
+            rx.text(VarOperationState.str_var3.lower(), id="str_lower"),
+            rx.text(VarOperationState.str_var3.upper(), id="str_upper"),
+            rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
+            rx.text(VarOperationState.list3.join(""), id="list_join"),
+            rx.text(VarOperationState.list3.join(","), id="list_join_comma"),
         )
 
     app.compile()
@@ -544,7 +557,12 @@ def driver(var_operations: AppHarness):
     """
     driver = var_operations.frontend()
     try:
-        assert var_operations.poll_for_clients()
+        token_input = driver.find_element(By.ID, "token")
+        assert token_input
+        # wait for the backend connection to send the token
+        token = var_operations.poll_for_value(token_input)
+        assert token is not None
+
         yield driver
     finally:
         driver.quit()
@@ -557,145 +575,137 @@ def test_var_operations(driver, var_operations: AppHarness):
         driver: selenium WebDriver open to the app
         var_operations: AppHarness for the var operations app
     """
-    assert var_operations.app_instance is not None, "app is not running"
-    # INT INT
-    assert driver.find_element(By.ID, "int_add_int").text == "15"
-    assert driver.find_element(By.ID, "int_mult_int").text == "50"
-    assert driver.find_element(By.ID, "int_sub_int").text == "5"
-    assert driver.find_element(By.ID, "int_exp_int").text == "100000"
-    assert driver.find_element(By.ID, "int_div_int").text == "2"
-    assert driver.find_element(By.ID, "int_floor_int").text == "1"
-    assert driver.find_element(By.ID, "int_mod_int").text == "0"
-    assert driver.find_element(By.ID, "int_gt_int").text == "true"
-    assert driver.find_element(By.ID, "int_lt_int").text == "false"
-    assert driver.find_element(By.ID, "int_gte_int").text == "true"
-    assert driver.find_element(By.ID, "int_lte_int").text == "false"
-    assert driver.find_element(By.ID, "int_and_int").text == "5"
-    assert driver.find_element(By.ID, "int_or_int").text == "10"
-    assert driver.find_element(By.ID, "int_eq_int").text == "false"
-    assert driver.find_element(By.ID, "int_neq_int").text == "true"
+    tests = [
+        # int, int
+        ("int_add_int", "15"),
+        ("int_mult_int", "50"),
+        ("int_sub_int", "5"),
+        ("int_exp_int", "100000"),
+        ("int_div_int", "2"),
+        ("int_floor_int", "1"),
+        ("int_mod_int", "0"),
+        ("int_gt_int", "true"),
+        ("int_lt_int", "false"),
+        ("int_gte_int", "true"),
+        ("int_lte_int", "false"),
+        ("int_and_int", "5"),
+        ("int_or_int", "10"),
+        ("int_eq_int", "false"),
+        ("int_neq_int", "true"),
+        # int, float
+        ("float_add_int", "15.5"),
+        ("float_mult_int", "52.5"),
+        ("float_sub_int", "5.5"),
+        ("float_exp_int", "127628.15625"),
+        ("float_div_int", "2.1"),
+        ("float_floor_int", "1"),
+        ("float_mod_int", "0.5"),
+        ("float_gt_int", "true"),
+        ("float_lt_int", "false"),
+        ("float_gte_int", "true"),
+        ("float_lte_int", "false"),
+        ("float_eq_int", "false"),
+        ("float_neq_int", "true"),
+        ("float_and_int", "5"),
+        ("float_or_int", "10.5"),
+        # int, dict
+        ("int_or_dict", "10"),
+        ("int_and_dict", '{"1":2}'),
+        ("int_eq_dict", "false"),
+        ("int_neq_dict", "true"),
+        # float, float
+        ("float_add_float", "16"),
+        ("float_mult_float", "57.75"),
+        ("float_sub_float", "5"),
+        ("float_exp_float", "413562.49323606625"),
+        ("float_div_float", "1.9090909090909092"),
+        ("float_floor_float", "1"),
+        ("float_mod_float", "5"),
+        ("float_gt_float", "true"),
+        ("float_lt_float", "false"),
+        ("float_gte_float", "true"),
+        ("float_lte_float", "false"),
+        ("float_eq_float", "false"),
+        ("float_neq_float", "true"),
+        ("float_and_float", "5.5"),
+        ("float_or_float", "10.5"),
+        # float, str
+        ("float_or_str", "10.5"),
+        ("float_and_str", "first"),
+        ("float_eq_str", "false"),
+        ("float_neq_str", "true"),
+        # float, list
+        ("float_or_list", "10.5"),
+        ("float_and_list", "[1,2]"),
+        ("float_eq_list", "false"),
+        ("float_neq_list", "true"),
+        # float, dict
+        ("float_or_dict", "10.5"),
+        ("float_and_dict", '{"1":2}'),
+        ("float_eq_dict", "false"),
+        ("float_neq_dict", "true"),
+        # str, str
+        ("str_add_str", "firstsecond"),
+        ("str_gt_str", "false"),
+        ("str_lt_str", "true"),
+        ("str_gte_str", "false"),
+        ("str_lte_str", "true"),
+        ("str_eq_str", "false"),
+        ("str_neq_str", "true"),
+        ("str_and_str", "second"),
+        ("str_or_str", "first"),
+        ("str_contains", "true"),
+        ("str_lower", "third"),
+        ("str_upper", "THIRD"),
+        ("str_split", '["a","long","string"]'),
+        # str, int
+        ("str_mult_int", "firstfirstfirstfirstfirst"),
+        ("str_and_int", "5"),
+        ("str_or_int", "first"),
+        ("str_eq_int", "false"),
+        ("str_neq_int", "true"),
+        # str, list
+        ("str_and_list", "[1,2]"),
+        ("str_or_list", "first"),
+        ("str_eq_list", "false"),
+        ("str_neq_list", "true"),
+        # str, dict
+        ("str_or_dict", "first"),
+        ("str_and_dict", '{"1":2}'),
+        ("str_eq_dict", "false"),
+        ("str_neq_dict", "true"),
+        # list, list
+        ("list_add_list", "[1,2,3,4]"),
+        ("list_gt_list", "false"),
+        ("list_lt_list", "true"),
+        ("list_gte_list", "false"),
+        ("list_lte_list", "true"),
+        ("list_eq_list", "false"),
+        ("list_neq_list", "true"),
+        ("list_and_list", "[3,4]"),
+        ("list_or_list", "[1,2]"),
+        ("list_contains", "true"),
+        ("list_reverse", "[2,1]"),
+        ("list_join", "firstsecondthird"),
+        ("list_join_comma", "first,second,third"),
+        # list, int
+        ("list_mult_int", "[1,2,1,2,1,2,1,2,1,2]"),
+        ("list_or_int", "[1,2]"),
+        ("list_and_int", "10"),
+        ("list_eq_int", "false"),
+        ("list_neq_int", "true"),
+        # list, dict
+        ("list_and_dict", '{"1":2}'),
+        ("list_or_dict", "[1,2]"),
+        ("list_eq_dict", "false"),
+        ("list_neq_dict", "true"),
+        # dict, dict
+        ("dict_or_dict", '{"1":2}'),
+        ("dict_and_dict", '{"3":4}'),
+        ("dict_eq_dict", "false"),
+        ("dict_neq_dict", "true"),
+        ("dict_contains", "true"),
+    ]
 
-    # INT FLOAT OR FLOAT INT
-    assert driver.find_element(By.ID, "float_add_int").text == "15.5"
-    assert driver.find_element(By.ID, "float_mult_int").text == "52.5"
-    assert driver.find_element(By.ID, "float_sub_int").text == "5.5"
-    assert driver.find_element(By.ID, "float_exp_int").text == "127628.15625"
-    assert driver.find_element(By.ID, "float_div_int").text == "2.1"
-    assert driver.find_element(By.ID, "float_floor_int").text == "1"
-    assert driver.find_element(By.ID, "float_mod_int").text == "0.5"
-    assert driver.find_element(By.ID, "float_gt_int").text == "true"
-    assert driver.find_element(By.ID, "float_lt_int").text == "false"
-    assert driver.find_element(By.ID, "float_gte_int").text == "true"
-    assert driver.find_element(By.ID, "float_lte_int").text == "false"
-    assert driver.find_element(By.ID, "float_eq_int").text == "false"
-    assert driver.find_element(By.ID, "float_neq_int").text == "true"
-    assert driver.find_element(By.ID, "float_and_int").text == "5"
-    assert driver.find_element(By.ID, "float_or_int").text == "10.5"
-
-    # INT, DICT
-    assert driver.find_element(By.ID, "int_or_dict").text == "10"
-    assert driver.find_element(By.ID, "int_and_dict").text == '{"1":2}'
-    assert driver.find_element(By.ID, "int_eq_dict").text == "false"
-    assert driver.find_element(By.ID, "int_neq_dict").text == "true"
-
-    # FLOAT FLOAT
-    assert driver.find_element(By.ID, "float_add_float").text == "16"
-    assert driver.find_element(By.ID, "float_mult_float").text == "57.75"
-    assert driver.find_element(By.ID, "float_sub_float").text == "5"
-    assert driver.find_element(By.ID, "float_exp_float").text == "413562.49323606625"
-    assert driver.find_element(By.ID, "float_div_float").text == "1.9090909090909092"
-    assert driver.find_element(By.ID, "float_floor_float").text == "1"
-    assert driver.find_element(By.ID, "float_mod_float").text == "5"
-    assert driver.find_element(By.ID, "float_gt_float").text == "true"
-    assert driver.find_element(By.ID, "float_lt_float").text == "false"
-    assert driver.find_element(By.ID, "float_gte_float").text == "true"
-    assert driver.find_element(By.ID, "float_lte_float").text == "false"
-    assert driver.find_element(By.ID, "float_eq_float").text == "false"
-    assert driver.find_element(By.ID, "float_neq_float").text == "true"
-    assert driver.find_element(By.ID, "float_and_float").text == "5.5"
-    assert driver.find_element(By.ID, "float_or_float").text == "10.5"
-
-    # FLOAT STR
-    assert driver.find_element(By.ID, "float_or_str").text == "10.5"
-    assert driver.find_element(By.ID, "float_and_str").text == "first"
-    assert driver.find_element(By.ID, "float_eq_str").text == "false"
-    assert driver.find_element(By.ID, "float_neq_str").text == "true"
-
-    # FLOAT,LIST
-    assert driver.find_element(By.ID, "float_or_list").text == "10.5"
-    assert driver.find_element(By.ID, "float_and_list").text == "[1,2]"
-    assert driver.find_element(By.ID, "float_eq_list").text == "false"
-    assert driver.find_element(By.ID, "float_neq_list").text == "true"
-
-    # FLOAT, DICT
-    assert driver.find_element(By.ID, "float_or_dict").text == "10.5"
-    assert driver.find_element(By.ID, "float_and_dict").text == '{"1":2}'
-    assert driver.find_element(By.ID, "float_eq_dict").text == "false"
-    assert driver.find_element(By.ID, "float_neq_dict").text == "true"
-
-    # STR STR
-    assert driver.find_element(By.ID, "str_add_str").text == "firstsecond"
-    assert driver.find_element(By.ID, "str_gt_str").text == "false"
-    assert driver.find_element(By.ID, "str_lt_str").text == "true"
-    assert driver.find_element(By.ID, "str_gte_str").text == "false"
-    assert driver.find_element(By.ID, "str_lte_str").text == "true"
-    assert driver.find_element(By.ID, "str_eq_str").text == "false"
-    assert driver.find_element(By.ID, "str_neq_str").text == "true"
-    assert driver.find_element(By.ID, "str_and_str").text == "second"
-    assert driver.find_element(By.ID, "str_or_str").text == "first"
-    assert driver.find_element(By.ID, "str_contains").text == "true"
-
-    # STR INT
-    assert (
-        driver.find_element(By.ID, "str_mult_int").text == "firstfirstfirstfirstfirst"
-    )
-    assert driver.find_element(By.ID, "str_and_int").text == "5"
-    assert driver.find_element(By.ID, "str_or_int").text == "first"
-    assert driver.find_element(By.ID, "str_eq_int").text == "false"
-    assert driver.find_element(By.ID, "str_neq_int").text == "true"
-
-    # STR, LIST
-    assert driver.find_element(By.ID, "str_and_list").text == "[1,2]"
-    assert driver.find_element(By.ID, "str_or_list").text == "first"
-    assert driver.find_element(By.ID, "str_eq_list").text == "false"
-    assert driver.find_element(By.ID, "str_neq_list").text == "true"
-
-    # STR, DICT
-
-    assert driver.find_element(By.ID, "str_or_dict").text == "first"
-    assert driver.find_element(By.ID, "str_and_dict").text == '{"1":2}'
-    assert driver.find_element(By.ID, "str_eq_dict").text == "false"
-    assert driver.find_element(By.ID, "str_neq_dict").text == "true"
-
-    # LIST,LIST
-    assert driver.find_element(By.ID, "list_add_list").text == "[1,2,3,4]"
-    assert driver.find_element(By.ID, "list_gt_list").text == "false"
-    assert driver.find_element(By.ID, "list_lt_list").text == "true"
-    assert driver.find_element(By.ID, "list_gte_list").text == "false"
-    assert driver.find_element(By.ID, "list_lte_list").text == "true"
-    assert driver.find_element(By.ID, "list_eq_list").text == "false"
-    assert driver.find_element(By.ID, "list_neq_list").text == "true"
-    assert driver.find_element(By.ID, "list_and_list").text == "[3,4]"
-    assert driver.find_element(By.ID, "list_or_list").text == "[1,2]"
-    assert driver.find_element(By.ID, "list_contains").text == "true"
-    assert driver.find_element(By.ID, "list_reverse").text == "[2,1]"
-
-    # LIST INT
-    assert driver.find_element(By.ID, "list_mult_int").text == "[1,2,1,2,1,2,1,2,1,2]"
-    assert driver.find_element(By.ID, "list_or_int").text == "[1,2]"
-    assert driver.find_element(By.ID, "list_and_int").text == "10"
-    assert driver.find_element(By.ID, "list_eq_int").text == "false"
-    assert driver.find_element(By.ID, "list_neq_int").text == "true"
-
-    # LIST DICT
-    assert driver.find_element(By.ID, "list_and_dict").text == '{"1":2}'
-    assert driver.find_element(By.ID, "list_or_dict").text == "[1,2]"
-    assert driver.find_element(By.ID, "list_eq_dict").text == "false"
-    assert driver.find_element(By.ID, "list_neq_dict").text == "true"
-
-    # DICT, DICT
-    assert driver.find_element(By.ID, "dict_or_dict").text == '{"1":2}'
-    assert driver.find_element(By.ID, "dict_and_dict").text == '{"3":4}'
-    assert driver.find_element(By.ID, "dict_eq_dict").text == "false"
-    assert driver.find_element(By.ID, "dict_neq_dict").text == "true"
-    assert driver.find_element(By.ID, "dict_contains").text == "true"
+    for tag, expected in tests:
+        assert driver.find_element(By.ID, tag).text == expected

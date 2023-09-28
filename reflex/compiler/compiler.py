@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List, Set, Tuple, Type
+from typing import Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.config import get_config
 from reflex.state import State
 from reflex.utils import imports
 from reflex.vars import ImportVar
@@ -24,7 +25,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.STATE_PATH}": {
         ImportVar(tag="uploadFiles"),
-        ImportVar(tag="E"),
+        ImportVar(tag="Event"),
         ImportVar(tag="isTrue"),
         ImportVar(tag="spreadArraysOrObjects"),
         ImportVar(tag="preventDefault"),
@@ -120,7 +121,7 @@ def _compile_page(
     )
 
 
-def compile_root_stylesheet(stylesheets: List[str]) -> Tuple[str, str]:
+def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
     """Compile the root stylesheet.
 
     Args:
@@ -136,7 +137,7 @@ def compile_root_stylesheet(stylesheets: List[str]) -> Tuple[str, str]:
     return output_path, code
 
 
-def _compile_root_stylesheet(stylesheets: List[str]) -> str:
+def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     """Compile the root stylesheet.
 
     Args:
@@ -148,7 +149,12 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     Raises:
         FileNotFoundError: If a specified stylesheet in assets directory does not exist.
     """
-    sheets = [constants.TAILWIND_ROOT_STYLE_PATH]
+    # Add tailwind css if enabled.
+    sheets = (
+        [constants.TAILWIND_ROOT_STYLE_PATH]
+        if get_config().tailwind is not None
+        else []
+    )
     for stylesheet in stylesheets:
         if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
@@ -164,7 +170,19 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     return templates.STYLE.render(stylesheets=sheets)
 
 
-def _compile_components(components: Set[CustomComponent]) -> str:
+def _compile_component(component: Component) -> str:
+    """Compile a single component.
+
+    Args:
+        component: The component to compile.
+
+    Returns:
+        The compiled component.
+    """
+    return templates.COMPONENT.render(component=component)
+
+
+def _compile_components(components: set[CustomComponent]) -> str:
     """Compile the components.
 
     Args:
@@ -208,8 +226,11 @@ def _compile_tailwind(
     )
 
 
-def compile_document_root() -> Tuple[str, str]:
+def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     """Compile the document root.
+
+    Args:
+        head_components: The components to include in the head.
 
     Returns:
         The path and code of the compiled document root.
@@ -218,13 +239,14 @@ def compile_document_root() -> Tuple[str, str]:
     output_path = utils.get_page_path(constants.DOCUMENT_ROOT)
 
     # Create the document root.
-    document_root = utils.create_document_root()
+    document_root = utils.create_document_root(head_components)
+
     # Compile the document root.
     code = _compile_document_root(document_root)
     return output_path, code
 
 
-def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
+def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     """Compile the theme.
 
     Args:
@@ -243,9 +265,7 @@ def compile_theme(style: ComponentStyle) -> Tuple[str, str]:
     return output_path, code
 
 
-def compile_contexts(
-    state: Type[State],
-) -> Tuple[str, str]:
+def compile_contexts(state: Type[State]) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
@@ -261,10 +281,8 @@ def compile_contexts(
 
 
 def compile_page(
-    path: str,
-    component: Component,
-    state: Type[State],
-) -> Tuple[str, str]:
+    path: str, component: Component, state: Type[State]
+) -> tuple[str, str]:
     """Compile a single page.
 
     Args:
@@ -283,7 +301,7 @@ def compile_page(
     return output_path, code
 
 
-def compile_components(components: Set[CustomComponent]):
+def compile_components(components: set[CustomComponent]):
     """Compile the custom components.
 
     Args:

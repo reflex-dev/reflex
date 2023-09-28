@@ -1,10 +1,11 @@
 """A slider component."""
+from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.event import EVENT_ARG
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
@@ -64,17 +65,18 @@ class Slider(ChakraComponent):
     # Maximum width of the slider.
     max_w: Var[str]
 
-    def get_controlled_triggers(self) -> Dict[str, Var]:
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
             A dict mapping the event trigger to the var that is passed to the handler.
         """
         return {
-            "on_change": EVENT_ARG,
-            "on_change_end": EVENT_ARG,
-            "on_change_start": EVENT_ARG,
-        }
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0],
+            EventTriggers.ON_CHANGE_END: lambda e0: [e0],
+            EventTriggers.ON_CHANGE_START: lambda e0: [e0],
+        }  # type: ignore
 
     @classmethod
     def create(cls, *children, **props) -> Component:

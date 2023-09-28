@@ -122,19 +122,14 @@ class Var(ABC):
         if isinstance(value, Var):
             return value
 
-        type_ = type(value)
-
         # Try to serialize the value.
-        serialized = serialize(value)
-        if serialized is not None:
-            value = serialized
-
-        try:
-            name = value if isinstance(value, str) else json.dumps(value)
-        except TypeError as e:
+        type_ = type(value)
+        name = serialize(value)
+        if name is None:
             raise TypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
-            ) from e
+            )
+        name = name if isinstance(name, str) else format.json_dumps(name)
 
         return BaseVar(name=name, type_=type_, is_local=is_local, is_string=is_string)
 
@@ -202,13 +197,17 @@ class Var(ABC):
             and self.is_local == other.is_local
         )
 
-    def to_string(self) -> Var:
+    def to_string(self, json: bool = True) -> Var:
         """Convert a var to a string.
+
+        Args:
+            json: Whether to convert to a JSON string.
 
         Returns:
             The stringified var.
         """
-        return self.operation(fn="JSON.stringify", type_=str)
+        fn = "JSON.stringify" if json else "String"
+        return self.operation(fn=fn, type_=str)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -945,9 +944,7 @@ class Var(ABC):
         Returns:
             A var representing the contain check.
         """
-        if self.type_ is None or not (
-            types._issubclass(self.type_, Union[dict, list, tuple, str])
-        ):
+        if not (types._issubclass(self.type_, Union[dict, list, tuple, str])):
             raise TypeError(
                 f"Var {self.full_name} of type {self.type_} does not support contains check."
             )
@@ -987,12 +984,103 @@ class Var(ABC):
         Returns:
             A var with the reversed list.
         """
-        if self.type_ is None or not types._issubclass(self.type_, list):
+        if not types._issubclass(self.type_, list):
             raise TypeError(f"Cannot reverse non-list var {self.full_name}.")
 
         return BaseVar(
             name=f"[...{self.full_name}].reverse()",
             type_=self.type_,
+            is_local=self.is_local,
+        )
+
+    def lower(self) -> Var:
+        """Convert a string var to lowercase.
+
+        Returns:
+            A var with the lowercase string.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self.type_, str):
+            raise TypeError(
+                f"Cannot convert non-string var {self.full_name} to lowercase."
+            )
+
+        return BaseVar(
+            name=f"{self.full_name}.toLowerCase()",
+            type_=str,
+            is_local=self.is_local,
+        )
+
+    def upper(self) -> Var:
+        """Convert a string var to uppercase.
+
+        Returns:
+            A var with the uppercase string.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self.type_, str):
+            raise TypeError(
+                f"Cannot convert non-string var {self.full_name} to uppercase."
+            )
+
+        return BaseVar(
+            name=f"{self.full_name}.toUpperCase()",
+            type_=str,
+            is_local=self.is_local,
+        )
+
+    def split(self, other: str | Var[str] = " ") -> Var:
+        """Split a string var into a list.
+
+        Args:
+            other: The string to split the var with.
+
+        Returns:
+            A var with the list.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self.type_, str):
+            raise TypeError(f"Cannot split non-string var {self.full_name}.")
+
+        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+
+        return BaseVar(
+            name=f"{self.full_name}.split({other.full_name})",
+            type_=list[str],
+            is_local=self.is_local,
+        )
+
+    def join(self, other: str | Var[str] | None = None) -> Var:
+        """Join a list var into a string.
+
+        Args:
+            other: The string to join the list with.
+
+        Returns:
+            A var with the string.
+
+        Raises:
+            TypeError: If the var is not a list.
+        """
+        if not types._issubclass(self.type_, list):
+            raise TypeError(f"Cannot join non-list var {self.full_name}.")
+
+        if other is None:
+            other = Var.create_safe("")
+        if isinstance(other, str):
+            other = Var.create_safe(json.dumps(other))
+        else:
+            other = Var.create_safe(other)
+
+        return BaseVar(
+            name=f"{self.full_name}.join({other.full_name})",
+            type_=str,
             is_local=self.is_local,
         )
 
@@ -1332,6 +1420,12 @@ class ImportVar(Base):
     # The tag alias.
     alias: Optional[str] = None
 
+    # Whether this import need to install the associated lib
+    install: Optional[bool] = True
+
+    # whether this import should be rendered or not
+    render: Optional[bool] = True
+
     @property
     def name(self) -> str:
         """The name of the import.
@@ -1347,11 +1441,13 @@ class ImportVar(Base):
         Returns:
             The hash of the var.
         """
-        return hash((self.tag, self.is_default, self.alias))
+        return hash((self.tag, self.is_default, self.alias, self.install, self.render))
 
 
 class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
+
+    render: Optional[bool] = False
 
 
 def get_local_storage(key: Var | str | None = None) -> BaseVar:

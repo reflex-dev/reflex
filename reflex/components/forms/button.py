@@ -40,6 +40,11 @@ class Button(ChakraComponent):
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     color_scheme: Var[str]
 
+    # Position of the loading spinner.
+    # Options:
+    # "start" | "end"
+    spinner_placement: Var[str]
+
     # The type of button.
     type_: Var[str]
 
