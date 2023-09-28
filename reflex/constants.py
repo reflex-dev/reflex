@@ -152,6 +152,12 @@ REFLEX_JSON = os.path.join(WEB_DIR, "reflex.json")
 ENV_JSON = os.path.join(WEB_DIR, "env.json")
 # The hosting config json file
 HOSTING_JSON = os.path.join(REFLEX_DIR, "config.json")
+# The time to wait for the user to complete web authentication. In seconds.
+WEB_AUTH_TIMEOUT = 300
+# The time to wait for the backend to come up after user initiates deployment. In seconds.
+BACKEND_POLL_TIMEOUT = 120
+# The time to wait for the frontend to come up after user initiates deployment. In seconds.
+FRONTEND_POLL_TIMEOUT = 120
 
 
 # Compiler variables.

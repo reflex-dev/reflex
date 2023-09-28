@@ -3,6 +3,9 @@
 import atexit
 import json
 import os
+import re
+import time
+import uuid
 import webbrowser
 from pathlib import Path
 from typing import Optional
@@ -10,6 +13,7 @@ from typing import Optional
 import typer
 from alembic.util.exc import CommandError
 from tabulate import tabulate
+from yaspin import yaspin
 
 from reflex import constants, model
 from reflex.config import get_config
@@ -267,15 +271,21 @@ def login(
     if not token:
         # If not already logged in, open a browser window/tab to the login page.
         console.print(f"Opening {config.cp_web_url} ...")
-        if not webbrowser.open(config.cp_web_url or ""):  # TODO: mypy complaints
-            console.warn(
-                f'Unable to open the browser. Please open the "{config.cp_web_url}" manually.'
+        request_id = uuid.uuid4().hex
+        if not webbrowser.open(f"{config.cp_web_url}?request={request_id}"):
+            console.error(
+                f"Unable to open the browser to authenticate. Please contact support."
             )
-        token = input("Enter the token: ")
-        if not token:
-            console.error("Entered token is empty.")
-            return
-
+            raise typer.Exit(1)
+        with yaspin(text="Waiting for authentication...", color="yellow"):
+            for _ in range(constants.WEB_AUTH_TIMEOUT):
+                token = hosting.fetch_token(request_id)
+                if token:
+                    break
+                time.sleep(1)
+    if not token:
+        console.error(f"Unable to authenticate. Please try again or contact support.")
+        raise typer.Exit(1)
     if not hosting.validate_token(token):
         console.error("Access denied.")
         if using_existing_token and os.path.exists(constants.HOSTING_JSON):
@@ -378,100 +388,8 @@ def makemigrations(
             )
 
 
-apps_cli = typer.Typer()
-
-
-@apps_cli.command()
-def create(
-    app_name: str,
-    loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
-    ),
-):
-    """Create a new Reflex App for hosting."""  # Set the log level.
-    console.set_log_level(loglevel)
-
-    # TODO: we might not need this below
-    # # Check if the control plane url is set.
-    # if not hosting.is_set_up():
-    #     return
-
-    # TODO: detect the app name from the current directory
-    if not app_name:
-        console.error("Please provide a name for the App.")
-        return
-
-    hosting.create_app(app_name)
-
-
-@apps_cli.command(name="list")
-def list_apps(
-    loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
-    ),
-    as_json: bool = typer.Option(
-        False, "--json", help="Whether to output the result in json format."
-    ),
-):
-    """List all the projects for the authenticated user."""
-    console.set_log_level(loglevel)
-
-    apps = hosting.list_apps()
-    if apps is None:
-        raise typer.Exit(1)
-    if as_json:
-        console.print(json.dumps(apps))
-        return
-
-    try:
-        headers = list(apps[0].dict().keys())
-        table = [list(app.dict().values()) for app in apps]
-        console.print(tabulate(table, headers=headers))
-    except Exception as ex:
-        console.debug(f"Unable to tabulate the apps due to: {ex}")
-        console.print(str(apps))
-
-
-deployments_cli = typer.Typer()
-
-
-@deployments_cli.command(name="list")
-def list_deployments(
-    app_name: Optional[str] = typer.Option(
-        None,
-        "--app-name",
-        help="The name of the App to list instances for.",
-    ),
-    loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
-    ),
-    as_json: bool = typer.Option(
-        False, help="Whether to output the result in json format."
-    ),
-):
-    """List all the hosted instances for the specified app."""
-    console.set_log_level(loglevel)
-
-    deployments = hosting.list_deployments(app_name)
-    if deployments is None:
-        raise typer.Exit(1)
-    if as_json:
-        console.print(json.dumps(deployments))
-        return
-    try:
-        headers = list(deployments[0].dict().keys())
-        table = [list(deployment.dict().values()) for deployment in deployments]
-        console.print(tabulate(table, headers=headers))
-    except Exception as ex:
-        console.debug(f"Unable to tabulate the deployments due to: {ex}")
-        console.print(str(deployments))
-
-
-# TODO: if CP machine has enough disk space or even relevant
-# when the CP backend handler uses file-like object (not
-# waiting for the whole file to be written to disk)
-@deployments_cli.command()
-def launch(
+@cli.command()
+def deploy(
     key: Optional[str] = typer.Option(
         None, "-k", "--deployment-key", help="The name of the deployment."
     ),
@@ -487,15 +405,17 @@ def launch(
         "--region",
         help="The regions to deploy to. For multiple regions, repeat this option followed by the region name.",
     ),
+    envs: list[str] = typer.Option(
+        list(),
+        "--env",
+        help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option followed by the env name.",
+    ),
     # TODO: the VM types, cpus, mem should come from CP, since they are enums
     cpus: Optional[int] = typer.Option(
         None, help="The number of CPUs to allocate. List the available types here."
     ),
     memory_mb: Optional[int] = typer.Option(
         None, help="The amount of memory to allocate. List the available types here."
-    ),
-    vm_type: Optional[str] = typer.Option(
-        None, help="The type of VM to use. List the available types here."
     ),
     auto_start: Optional[bool] = typer.Option(
         False, help="Whether to auto start the instance."
@@ -529,70 +449,210 @@ def launch(
     # TODO: export will check again with frontend==True, refactor
     prerequisites.check_initialized(frontend=True)
 
-    pre_launch_response = hosting.prepare_launch(key, app_name)
+    pre_launch_response = hosting.prepare_deploy(key, app_name)
     if not pre_launch_response:
         raise typer.Exit(1)
 
+    # This should not change during the time of preparation
+    app_prefix = pre_launch_response.app_prefix
+    api_url = pre_launch_response.api_url
     if not non_interactive:
-        # If a key is provided and is available, control plane returns it as the suggested deployment key
-        key = pre_launch_response.suggested_deployment_key
-        # User input takes precedence
-        key = console.ask(f"Name of deployment", default=key) or key
-        app_name = console.ask(f"Associated App", default=app_name) or app_name
+        key_candidate = api_url_candidate = None
+
+        if pre_launch_response.existing_deployments_same_app_and_api_urls:
+            # TODO: add another check to guard against CP returning a (None, None)
+            key_candidate = (
+                pre_launch_response.existing_deployments_same_app_and_api_urls[0][0]
+            )
+            api_url_candidate = (
+                pre_launch_response.existing_deployments_same_app_and_api_urls[0][1]
+            )
+            # TODO: maybe keep it simple for now, since do not allow multiple deployments per app
+            console.print(f"Overwrite deployment [ {key_candidate} ] ...")
+        elif pre_launch_response.suggested_key_and_api_url:
+            key_candidate = pre_launch_response.suggested_key_and_api_url[0]
+            api_url_candidate = pre_launch_response.suggested_key_and_api_url[1]
+            # This should not change during the time of preparation
+            app_prefix = pre_launch_response.app_prefix
+            # If user takes the suggestion, we will use the suggested key and proceed
+            while key_input := console.ask(
+                f"Name of deployment", default=key_candidate
+            ):
+                pre_launch_response = hosting.prepare_deploy(key_input, app_name)
+                if pre_launch_response and pre_launch_response.api_url:
+                    api_url_candidate = pre_launch_response.api_url
+                    # This should not change during the time of preparation
+                    app_prefix = pre_launch_response.app_prefix
+                    break
+                else:
+                    console.error(
+                        "Cannot deploy at this name, try picking a different name"
+                    )
+            key_candidate = key_input or key_candidate
+
+        # We have pydantic validator to ensure key_candidate is provided
+        if not key_candidate or not api_url_candidate:
+            console.error("Unable to find a suitable deployment key.")
+            raise typer.Exit(1)
+        # Rename to make them more clear
+        key = key_candidate
+        api_url = api_url_candidate
+
         # TODO: let control plane suggest a region?
         # Then CP needs to know the user's location, might not be a good idea
         region_input = console.ask(
-            "Regions to deploy to", default=regions[0] if regions else "sjc"
+            "Region to deploy to", default=regions[0] if regions else "sjc"
         )
         regions = regions or [region_input]
+        # process the envs
+        envs_finished = False
+        env_key_prompt = "Env name (enter to skip)"
+        while not envs_finished:
+            env_key = console.ask(env_key_prompt)
+            env_key_prompt = "Env name (enter to finish)"
+            if not env_key:
+                envs_finished = True
+                if envs:
+                    console.print("Finished adding envs.")
+                else:
+                    console.print("No envs added. Continuing ...")
+                break
+            # If it possible to have empty values for env, so we do not check here
+            env_value = console.ask("Env value")
+            envs.append(f"{env_key}={env_value}")
 
     # Check the required params are valid
-    if (
-        not key
-        or not regions
-        or not app_name
-        or not (app_prefix := pre_launch_response.app_prefix)
-    ):
+    console.debug(f"{key=}, {regions=}, {app_name=}, {app_prefix=}, {api_url=}")
+    if not key or not regions or not app_name or not app_prefix or not api_url:
         console.error("Please provide all the required parameters.")
         raise typer.Exit(1)
 
+    processed_envs = None
+    if envs:
+        # check format
+        processed_envs = {}
+        for env in envs:
+            kv = env.split("=", maxsplit=1)
+            if len(kv) != 2:
+                console.error("Invalid env format: should be <key>=<value>.")
+                raise typer.Exit(1)
+            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", kv[0]):
+                console.error(
+                    "Invalid env name: should start with a letter or underscore, followed by letters, digits, or underscores."
+                )
+                raise typer.Exit(1)
+            processed_envs[kv[0]] = kv[1]
+
     # Compile the app in production mode.
-    config.api_url = pre_launch_response.api_url
-    export(frontend=True, backend=True, zipping=True, loglevel=loglevel)
+    config.api_url = api_url
+    try:
+        export(frontend=True, backend=True, zipping=True, loglevel=loglevel)
+    except ImportError as ie:
+        # TODO: maybe show the missing dependency as well?
+        console.error(f"Encountered ImportError, did you install all the dependencies?")
+        raise typer.Exit(1) from ie
     # config.api_url = save_api_url
 
     frontend_file_name = constants.FRONTEND_ZIP
     backend_file_name = constants.BACKEND_ZIP
 
-    launch_response = hosting.launch(
+    console.print("Uploading code ...")
+    deploy_response = hosting.deploy(
         frontend_file_name,
         backend_file_name,
         key,
         app_name,
         regions,
         app_prefix,
-        vm_type=vm_type,
         cpus=cpus,
         memory_mb=memory_mb,
         auto_start=auto_start,
         auto_stop=auto_stop,
+        envs=processed_envs,
     )
-    if not launch_response:
+    if not deploy_response:
+        hosting.clean_up()
         raise typer.Exit(1)
+    console.print("Deployment will start shortly.")
+    site_url = deploy_response.url
+
+    backend_up = frontend_up = False
+    # TODO: poll backend for status
+    with yaspin(text="Checking backend ...") as sp:
+        for _ in range(constants.BACKEND_POLL_TIMEOUT):
+            if backend_up := hosting.poll_backend(config.api_url):
+                # TODO: what is a universal tick mark?
+                sp.ok("✅ ")
+                break
+            time.sleep(1)
+        sp.fail("❌ ")
+
+    # TODO: poll frontend for status
+    with yaspin(text="Checking frontend ...") as sp:
+        for _ in range(constants.FRONTEND_POLL_TIMEOUT):
+            if frontend_up := hosting.poll_frontend(config.api_url):
+                # TODO: what is a universal tick mark?
+                sp.ok("✅ ")
+                break
+            time.sleep(1)
+        sp.fail("❌ ")
 
     # TODO: below is a bit hacky, refactor
-    site_url = launch_response.url
+    if not frontend_up or not backend_up:
+        console.warn(
+            "Your deployment is taking unusually long. Check back later using this command: reflex deployments status <deployment-name>"
+        )
+        hosting.clean_up()
     if not site_url.startswith("https://"):
         site_url = f"https://{site_url}"
-    console.print(f"Deploying <{key}> {regions} shortly at: {site_url}.")
+    console.print(f"Your site <{key}> {regions} is up: {site_url}")
+
+
+deployments_cli = typer.Typer()
+
+
+@deployments_cli.command(name="list")
+def list_deployments(
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+    as_json: bool = typer.Option(
+        False, help="Whether to output the result in json format."
+    ),
+):
+    """List all the hosted instances for the specified app."""
+    console.set_log_level(loglevel)
+
+    if (deployments := hosting.list_deployments()) is None:
+        raise typer.Exit(1)
+    if as_json:
+        console.print(json.dumps(deployments))
+        return
+    try:
+        headers = list(deployments[0].dict().keys())
+        table = [list(deployment.dict().values()) for deployment in deployments]
+        console.print(tabulate(table, headers=headers))
+    except Exception as ex:
+        console.debug(f"Unable to tabulate the deployments due to: {ex}")
+        console.print(str(deployments))
+
+
+@deployments_cli.command(name="delete")
+def delete_deployment(
+    key: str,  # = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        console.LOG_LEVEL, help="The log level to use."
+    ),
+):
+    """Delete a hosted instance."""
+    console.set_log_level(loglevel)
+
+    if not hosting.delete_deployment(key):
+        raise typer.Exit(1)
+    console.print(f"Successfully deleted [ {key} ].")
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
-cli.add_typer(
-    apps_cli,
-    name="apps",
-    help="Subcommands for managing Apps for hosting.",
-)
 cli.add_typer(
     deployments_cli,
     name="deployments",
