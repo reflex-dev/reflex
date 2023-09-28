@@ -73,7 +73,7 @@ class Component(Base, ABC):
     valid_children: List[str] = []
 
     # custom attribute
-    custom_attrs: Dict[str, str] = {}
+    custom_attrs: Dict[str, Union[str, Var]] = {}
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -182,12 +182,8 @@ class Component(Base, ABC):
             # Merge styles, the later ones overriding keys in the earlier ones.
             style = {k: v for style_dict in style for k, v in style_dict.items()}
 
-        kwargs["style"] = Style(
-            {
-                **style,
-                **{attr: value for attr, value in kwargs.items() if attr not in fields},
-            }
-        )
+        kwargs["style"] = self._construct_style(style, {k: v for k, v in kwargs.items() if k not in fields})
+
         if "custom_attrs" not in kwargs:
             kwargs["custom_attrs"] = {}
 
@@ -198,6 +194,14 @@ class Component(Base, ABC):
 
         # Construct the component.
         super().__init__(*args, **kwargs)
+
+    def _construct_style(self, style, non_field_kwargs):
+        return Style(
+            {
+                **style,
+                **{attr: value for attr, value in non_field_kwargs.items()},
+            }
+        )
 
     def _create_event_chain(
         self,
@@ -391,7 +395,15 @@ class Component(Base, ABC):
         if ref is not None:
             props["ref"] = Var.create(ref, is_local=False)
 
-        return tag.add_props(**props)
+        return tag.add_props(
+            **props,
+            **self.event_triggers,
+            key=self.key,
+            sx=self.style,
+            id=self.id,
+            class_name=self.class_name,
+            **self.custom_attrs,
+        )
 
     @classmethod
     def get_props(cls) -> Set[str]:
@@ -484,14 +496,7 @@ class Component(Base, ABC):
         """
         tag = self._render()
         rendered_dict = dict(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                sx=self.style,
-                id=self.id,
-                class_name=self.class_name,
-                **self.custom_attrs,
-            ).set(
+            tag.set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
                 props=tag.format_props(),
@@ -703,7 +708,6 @@ class Component(Base, ABC):
         if self.id is None or isinstance(self.id, BaseVar):
             return None
         return format.format_ref(self.id)
-
     def get_refs(self) -> Set[str]:
         """Get the refs for the children of the component.
 

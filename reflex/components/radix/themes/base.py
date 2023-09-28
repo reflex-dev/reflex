@@ -1,4 +1,5 @@
 from typing import Dict
+from reflex.components.tags import Tag
 
 from reflex.vars import Var
 
@@ -12,17 +13,8 @@ class RadixThemeComponent(Component):
 
     variant: Var[str]
 
-    def render(self) -> Dict:
-        """Render the component.
-
-        Returns:
-            The dictionary for template of component.
-        """
-        rd = super().render()
-        # XXX: yucky hacks
-        for ix, prop in enumerate(rd.get("props", [])):
-            if prop.startswith("sx="):
-                rd["props"][ix] = rd["props"][ix].replace("sx=", "style=")
-                breakpoint()
-                break
-        return rd
+    def _render(self) -> Tag:
+        # change sx prop to "style"
+        return super()._render().remove_props(
+            "sx",
+        ).add_props(style=self.style)

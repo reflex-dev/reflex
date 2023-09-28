@@ -26,7 +26,7 @@ def convert(style_dict):
         if isinstance(value, dict):
             out[key] = convert(value)
         elif isinstance(value, Var):
-            out[key] = str(value)
+            out[key] = Var.create_safe(f"`{value}`", is_local=False, is_string=False)
         else:
             out[key] = value
     return out
