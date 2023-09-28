@@ -97,13 +97,14 @@ class Thead(ChakraComponent):
             TypeError: If headers are not of type list or type tuple.
 
         """
+        allowed_types = (list, tuple)
         if (
             (
                 isinstance(headers, Var)
-                and types.get_base_class(headers.type_) not in (list, tuple)
+                and not types.check_type_in_allowed_types(headers.type_, allowed_types)
             )
             or not isinstance(headers, Var)
-            and types.get_base_class(type(headers)) not in (list, tuple)
+            and not types.check_type_in_allowed_types(type(headers), allowed_types)
         ):
             raise TypeError("table headers should be a list or tuple")
 
@@ -153,6 +154,7 @@ class Tbody(ChakraComponent):
         Raises:
             TypeError: If rows are not lists or tuples containing inner lists or tuples.
         """
+        allowed_subclasses = (List, Tuple)
         if isinstance(rows, Var):
             outer_type = rows.type_
             inner_type = (
@@ -161,18 +163,20 @@ class Tbody(ChakraComponent):
 
             # check that the outer container and inner container types are lists or tuples.
             if not (
-                issubclass(types.get_base_class(outer_type), (List, Tuple))
+                types._issubclass(types.get_base_class(outer_type), allowed_subclasses)
                 and (
                     inner_type is None
-                    or issubclass(types.get_base_class(inner_type), (List, Tuple))
+                    or types._issubclass(
+                        types.get_base_class(inner_type), allowed_subclasses
+                    )
                 )
             ):
                 raise TypeError(
                     f"table rows should be a list or tuple containing inner lists or tuples. Got {outer_type} instead"
                 )
         elif not (
-            isinstance(rows, (list, tuple))
-            and (not rows or isinstance(rows[0], (list, tuple)))
+            types._issubclass(type(rows), allowed_subclasses)
+            and (not rows or types._issubclass(type(rows[0]), allowed_subclasses))
         ):
             raise TypeError(
                 "table rows should be a list or tuple containing inner lists or tuples."
@@ -214,13 +218,14 @@ class Tfoot(ChakraComponent):
         Raises:
             TypeError: If footers are not of type list.
         """
+        allowed_types = (list, tuple)
         if (
             (
                 isinstance(footers, Var)
-                and types.get_base_class(footers.type_) not in (list, tuple)
+                and not types.check_type_in_allowed_types(footers.type_, allowed_types)
             )
             or not isinstance(footers, Var)
-            and types.get_base_class(type(footers)) not in (list, tuple)
+            and not types.check_type_in_allowed_types(type(footers), allowed_types)
         ):
             raise TypeError("table headers should be a list or tuple")
 
