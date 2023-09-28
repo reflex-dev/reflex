@@ -170,6 +170,21 @@ def is_backend_variable(name: str) -> bool:
     return name.startswith("_") and not name.startswith("__")
 
 
+def check_type_in_allowed_types(
+    value_type: Type, allowed_types: typing.Iterable
+) -> bool:
+    """Check that a value type is found in a list of allowed types.
+
+    Args:
+        value_type: Type of value.
+        allowed_types: Iterable of allowed types.
+
+    Returns:
+        If the type is found in the allowed types.
+    """
+    return get_base_class(value_type) in allowed_types
+
+
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)
