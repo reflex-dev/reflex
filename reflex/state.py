@@ -1008,6 +1008,21 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         self.dirty_vars = set()
         self.dirty_substates = set()
 
+    def get_value(self, key: str) -> Any:
+        """Get the value of a field (without proxying).
+
+        The returned value will NOT track dirty state updates.
+
+        Args:
+            key: The key of the field.
+
+        Returns:
+            The value of the field.
+        """
+        if isinstance(key, MutableProxy):
+            return super().get_value(key.__wrapped__)
+        return super().get_value(key)
+
     def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
 

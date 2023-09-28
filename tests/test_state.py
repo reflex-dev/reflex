@@ -2109,3 +2109,21 @@ def test_mutable_copy_vars(mutable_state, copy_func):
 def test_duplicate_substate_class(duplicate_substate):
     with pytest.raises(ValueError):
         duplicate_substate()
+
+
+class Foo(Base):
+    """A class containing a list of str."""
+
+    tags: List[str] = ["123", "456"]
+
+
+def test_json_dumps_with_mutables():
+    """Test that json.dumps works with Base vars inside mutable types."""
+
+    class MutableContainsBase(State):
+        items: List[Foo] = [Foo()]
+
+    dict_val = MutableContainsBase().dict()
+    assert isinstance(dict_val["items"][0], dict)
+    val = format.json_dumps(dict_val)
+    assert val == '{"is_hydrated": false, "items": [{"tags": ["123", "456"]}]}'
