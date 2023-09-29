@@ -429,6 +429,7 @@ def poll_backend(backend_url: str) -> bool:
         True if the backend is up, False otherwise.
     """
     try:
+        console.debug(f"Polling backend at {backend_url}")
         resp = httpx.get(f"{backend_url}/ping", timeout=config.http_request_timeout)
         resp.raise_for_status()
         return resp.json() == "pong"
@@ -446,6 +447,7 @@ def poll_frontend(frontend_url: str) -> bool:
         True if the frontend is up, False otherwise.
     """
     try:
+        console.debug(f"Polling frontend at {frontend_url}")
         resp = httpx.get(f"{frontend_url}", timeout=config.http_request_timeout)
         resp.raise_for_status()
         return True

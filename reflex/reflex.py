@@ -576,6 +576,8 @@ def deploy(
         raise typer.Exit(1)
     console.print("Deployment will start shortly.")
     site_url = deploy_response.url
+    if not site_url.startswith("https://"):
+        site_url = f"https://{site_url}"
 
     backend_up = frontend_up = False
     # TODO: poll backend for status
@@ -586,17 +588,19 @@ def deploy(
                 sp.ok("✅ ")
                 break
             time.sleep(1)
-        sp.fail("❌ ")
+        if not backend_up:
+            sp.fail("❌ ")
 
     # TODO: poll frontend for status
     with yaspin(text="Checking frontend ...") as sp:
         for _ in range(constants.Hosting.FRONTEND_POLL_TIMEOUT):
-            if frontend_up := hosting.poll_frontend(config.api_url):
+            if frontend_up := hosting.poll_frontend(site_url):
                 # TODO: what is a universal tick mark?
                 sp.ok("✅ ")
                 break
             time.sleep(1)
-        sp.fail("❌ ")
+        if not frontend_up:
+            sp.fail("❌ ")
 
     # TODO: below is a bit hacky, refactor
     if not frontend_up or not backend_up:
@@ -604,8 +608,6 @@ def deploy(
             "Your deployment is taking unusually long. Check back later using this command: reflex deployments status <deployment-name>"
         )
         hosting.clean_up()
-    if not site_url.startswith("https://"):
-        site_url = f"https://{site_url}"
     console.print(f"Your site <{key}> {regions} is up: {site_url}")
 
 

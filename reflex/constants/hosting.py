@@ -12,6 +12,6 @@ class Hosting:
     # The time to wait for the user to complete web authentication. In seconds.
     WEB_AUTH_TIMEOUT = 300
     # The time to wait for the backend to come up after user initiates deployment. In seconds.
-    BACKEND_POLL_TIMEOUT = 120
+    BACKEND_POLL_TIMEOUT = 180
     # The time to wait for the frontend to come up after user initiates deployment. In seconds.
-    FRONTEND_POLL_TIMEOUT = 120
+    FRONTEND_POLL_TIMEOUT = 180
