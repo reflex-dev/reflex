@@ -313,7 +313,7 @@ def format_prop(
                     arg_def = "(_e)"
 
             chain = ",".join([format_event(event) for event in prop.events])
-            event = f"addEvents([{chain}], {arg_def})"
+            event = f"addEvents([{chain}], {arg_def}, {json_dumps(prop.event_actions)})"
             prop = f"{arg_def} => {event}"
 
         # Handle other types.

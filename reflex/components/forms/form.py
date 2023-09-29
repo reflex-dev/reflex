@@ -1,10 +1,11 @@
 """Form components."""
 
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.constants import EventTriggers
+from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.vars import Var
 
 
@@ -15,6 +16,29 @@ class Form(ChakraComponent):
 
     # What the form renders to.
     as_: Var[str] = "form"  # type: ignore
+
+    def _create_event_chain(
+        self,
+        event_trigger: str,
+        value: Var
+        | EventHandler
+        | EventSpec
+        | List[EventHandler | EventSpec]
+        | Callable[..., Any],
+    ) -> EventChain | Var:
+        """Override the event chain creation to preventDefault for on_submit.
+
+        Args:
+            event_trigger: The event trigger.
+            value: The value of the event trigger.
+
+        Returns:
+            The event chain.
+        """
+        chain = super()._create_event_chain(event_trigger, value)
+        if event_trigger == EventTriggers.ON_SUBMIT and isinstance(chain, EventChain):
+            return chain.prevent_default
+        return chain
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.

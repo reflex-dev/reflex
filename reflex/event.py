@@ -100,7 +100,36 @@ def _no_chain_background_task(
     raise TypeError(f"{fn} is marked as a background task, but is not async.")
 
 
-class EventHandler(Base):
+class EventActionsMixin(Base):
+    """Mixin for DOM event actions."""
+
+    # Whether to `preventDefault` or `stopPropagation` on the event.
+    event_actions: Dict[str, bool] = {}
+
+    @property
+    def stop_propagation(self):
+        """Stop the event from bubbling up the DOM tree.
+
+        Returns:
+            New EventHandler-like with stopPropagation set to True.
+        """
+        return self.copy(
+            update={"event_actions": {"stopPropagation": True, **self.event_actions}},
+        )
+
+    @property
+    def prevent_default(self):
+        """Prevent the default behavior of the event.
+
+        Returns:
+            New EventHandler-like with preventDefault set to True.
+        """
+        return self.copy(
+            update={"event_actions": {"preventDefault": True, **self.event_actions}},
+        )
+
+
+class EventHandler(EventActionsMixin):
     """An event handler responds to an event to update the state."""
 
     # The function to call in response to the event.
@@ -149,6 +178,7 @@ class EventHandler(Base):
                     client_handler_name="uploadFiles",
                     # `files` is defined in the Upload component's _use_hooks
                     args=((Var.create_safe("files"), Var.create_safe("files")),),
+                    event_actions=self.event_actions.copy(),
                 )
 
             # Otherwise, convert to JSON.
@@ -161,10 +191,12 @@ class EventHandler(Base):
         payload = tuple(zip(fn_args, values))
 
         # Return the event spec.
-        return EventSpec(handler=self, args=payload)
+        return EventSpec(
+            handler=self, args=payload, event_actions=self.event_actions.copy()
+        )
 
 
-class EventSpec(Base):
+class EventSpec(EventActionsMixin):
     """An event specification.
 
     Whereas an Event object is passed during runtime, a spec is used
@@ -186,13 +218,34 @@ class EventSpec(Base):
         # Required to allow tuple fields.
         frozen = True
 
+    def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
+        """Copy the event spec, with updated args.
 
-class EventChain(Base):
+        Args:
+            args: The new args to pass to the function.
+
+        Returns:
+            A copy of the event spec, with the new args.
+        """
+        return type(self)(
+            handler=self.handler,
+            client_handler_name=self.client_handler_name,
+            args=args,
+            event_actions=self.event_actions.copy(),
+        )
+
+
+class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
     events: List[EventSpec]
 
     args_spec: Optional[Callable]
+
+
+# These chains can be used for their side effects when no other events are desired.
+stop_propagation = EventChain(events=[], args_spec=None).stop_propagation
+prevent_default = EventChain(events=[], args_spec=None).prevent_default
 
 
 class Target(Base):
