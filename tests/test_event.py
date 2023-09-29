@@ -4,6 +4,7 @@ import pytest
 
 from reflex import event
 from reflex.event import Event, EventHandler, EventSpec, fix_events
+from reflex.state import State
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -269,3 +270,54 @@ def test_remove_local_storage():
     assert (
         format.format_event(spec) == 'Event("_remove_local_storage", {key:"testkey"})'
     )
+
+
+def test_event_actions():
+    """Test DOM event actions, like stopPropagation and preventDefault."""
+    # EventHandler
+    handler = EventHandler(fn=lambda: None)
+    assert not handler.event_actions
+    sp_handler = handler.stop_propagation
+    assert handler is not sp_handler
+    assert sp_handler.event_actions == {"stopPropagation": True}
+    pd_handler = handler.prevent_default
+    assert handler is not pd_handler
+    assert pd_handler.event_actions == {"preventDefault": True}
+    both_handler = sp_handler.prevent_default
+    assert both_handler is not sp_handler
+    assert both_handler.event_actions == {
+        "stopPropagation": True,
+        "preventDefault": True,
+    }
+    assert not handler.event_actions
+
+    # Convert to EventSpec should carry event actions
+    sp_handler2 = handler.stop_propagation
+    spec = sp_handler2()
+    assert spec.event_actions == {"stopPropagation": True}
+    assert spec.event_actions == sp_handler2.event_actions
+    assert spec.event_actions is not sp_handler2.event_actions
+    # But it should be a copy!
+    assert spec.event_actions is not sp_handler2.event_actions
+    spec2 = spec.prevent_default
+    assert spec is not spec2
+    assert spec2.event_actions == {"stopPropagation": True, "preventDefault": True}
+    assert spec2.event_actions != spec.event_actions
+
+    # The original handler should still not be touched.
+    assert not handler.event_actions
+
+
+def test_event_actions_on_state():
+    class EventActionState(State):
+        def handler(self):
+            pass
+
+    handler = EventActionState.handler
+    assert isinstance(handler, EventHandler)
+    assert not handler.event_actions
+
+    sp_handler = EventActionState.handler.stop_propagation
+    assert sp_handler.event_actions == {"stopPropagation": True}
+    # should NOT affect other references to the handler
+    assert not handler.event_actions

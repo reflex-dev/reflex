@@ -293,7 +293,7 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
             ),
-            '{_e => addEvents([Event("mock_event", {})], _e)}',
+            '{_e => addEvents([Event("mock_event", {})], _e, {})}',
         ),
         (
             EventChain(
@@ -305,7 +305,23 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
                 ],
                 args_spec=None,
             ),
-            '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e)}',
+            '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e, {})}',
+        ),
+        (
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))],
+                args_spec=None,
+                event_actions={"stopPropagation": True},
+            ),
+            '{_e => addEvents([Event("mock_event", {})], _e, {"stopPropagation": true})}',
+        ),
+        (
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))],
+                args_spec=None,
+                event_actions={"preventDefault": True},
+            ),
+            '{_e => addEvents([Event("mock_event", {})], _e, {"preventDefault": true})}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(name="var", type_="int"), "{var}"),
