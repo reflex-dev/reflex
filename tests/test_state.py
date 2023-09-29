@@ -2089,3 +2089,33 @@ def test_mutable_copy_vars(mutable_state, copy_func):
 def test_duplicate_substate_class(duplicate_substate):
     with pytest.raises(ValueError):
         duplicate_substate()
+
+
+def test_reset_with_mutables():
+    """Calling reset should always reset fields to a copy of the defaults."""
+    default = [[0, 0], [0, 1], [1, 1]]
+    copied_default = copy.deepcopy(default)
+
+    class MutableResetState(State):
+        items: List[List[int]] = default
+
+    instance = MutableResetState()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
+
+    instance.reset()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
+
+    instance.reset()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
