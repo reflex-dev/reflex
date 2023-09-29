@@ -1858,6 +1858,15 @@ def test_mutable_list(mutable_state):
     assert_array_dirty()
     assert isinstance(mutable_state.array[0], MutableProxy)
 
+    # Test proxy returned from __iter__
+    mutable_state.array = [{}]
+    assert_array_dirty()
+    assert isinstance(mutable_state.array[0], MutableProxy)
+    for item in mutable_state.array:
+        assert isinstance(item, MutableProxy)
+        item["foo"] = "bar"
+        assert_array_dirty()
+
 
 def test_mutable_dict(mutable_state):
     """Test that mutable dicts are tracked correctly.
@@ -1875,9 +1884,13 @@ def test_mutable_dict(mutable_state):
     # Test all dict operations
     mutable_state.hashmap.update({"new_key": 43})
     assert_hashmap_dirty()
-    mutable_state.hashmap.setdefault("another_key", 66)
+    assert mutable_state.hashmap.setdefault("another_key", 66) == "another_value"
     assert_hashmap_dirty()
-    mutable_state.hashmap.pop("new_key")
+    assert mutable_state.hashmap.setdefault("setdefault_key", 67) == 67
+    assert_hashmap_dirty()
+    assert mutable_state.hashmap.setdefault("setdefault_key", 68) == 67
+    assert_hashmap_dirty()
+    assert mutable_state.hashmap.pop("new_key") == 43
     assert_hashmap_dirty()
     mutable_state.hashmap.popitem()
     assert_hashmap_dirty()
@@ -1903,6 +1916,31 @@ def test_mutable_dict(mutable_state):
     mutable_state.hashmap["dict"]["dict"] = {}
     assert_hashmap_dirty()
     mutable_state.hashmap["dict"]["dict"]["key"] = 43
+    assert_hashmap_dirty()
+
+    # Test proxy returned from `setdefault` and `get`
+    mutable_value = mutable_state.hashmap.setdefault("setdefault_mutable_key", [])
+    assert_hashmap_dirty()
+    assert mutable_value == []
+    assert isinstance(mutable_value, MutableProxy)
+    mutable_value.append("foo")
+    assert_hashmap_dirty()
+    mutable_value_other_ref = mutable_state.hashmap.get("setdefault_mutable_key")
+    assert isinstance(mutable_value_other_ref, MutableProxy)
+    assert mutable_value is not mutable_value_other_ref
+    assert mutable_value == mutable_value_other_ref
+    assert not mutable_state.dirty_vars
+    mutable_value_other_ref.append("bar")
+    assert_hashmap_dirty()
+
+    # `pop` should NOT return a proxy, because the returned value is no longer in the dict
+    mutable_value_third_ref = mutable_state.hashmap.pop("setdefault_mutable_key")
+    assert not isinstance(mutable_value_third_ref, MutableProxy)
+    assert_hashmap_dirty()
+    mutable_value_third_ref.append("baz")
+    assert not mutable_state.dirty_vars
+    # Unfortunately previous refs still will mark the state dirty... nothing doing about that
+    assert mutable_value.pop()
     assert_hashmap_dirty()
 
 
