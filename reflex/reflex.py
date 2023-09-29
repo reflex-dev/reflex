@@ -623,7 +623,7 @@ def list_deployments(
         config.loglevel, help="The log level to use."
     ),
     as_json: bool = typer.Option(
-        False, help="Whether to output the result in json format."
+        False, "-j", "--json", help="Whether to output the result in json format."
     ),
 ):
     """List all the hosted instances for the specified app."""
@@ -635,8 +635,8 @@ def list_deployments(
         console.print(json.dumps(deployments))
         return
     try:
-        headers = list(deployments[0].dict().keys())
-        table = [list(deployment.dict().values()) for deployment in deployments]
+        headers = list(deployments[0].keys())
+        table = [list(deployment.values()) for deployment in deployments]
         console.print(tabulate(table, headers=headers))
     except Exception as ex:
         console.debug(f"Unable to tabulate the deployments due to: {ex}")

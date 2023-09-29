@@ -351,7 +351,7 @@ def deploy(
 
 def list_deployments(
     app_name: Optional[str] = None,
-) -> Optional[list[DeploymentGetResponse]]:
+) -> Optional[list[dict]]:
     """Send a GET request to Control Plane to list deployments.
 
     Args:
@@ -383,7 +383,7 @@ def list_deployments(
                 memory_mb=deployment["memory_mb"],
                 url=deployment["url"],
                 envs=deployment["envs"],
-            )
+            ).dict()
             for deployment in response.json()
         ]
     except httpx.TimeoutException:
