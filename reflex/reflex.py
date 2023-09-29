@@ -44,7 +44,7 @@ def version(value: bool):
         typer.Exit: If the version flag was passed.
     """
     if value:
-        console.print(constants.VERSION)
+        console.print(constants.Reflex.VERSION)
         raise typer.Exit()
 
 
@@ -68,8 +68,9 @@ def init(
     name: str = typer.Option(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
-    template: constants.Template = typer.Option(
-        constants.Template.DEFAULT, help="The template to initialize the app with."
+    template: constants.Templates.Kind = typer.Option(
+        constants.Templates.Kind.DEFAULT,
+        help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
@@ -93,7 +94,7 @@ def init(
     prerequisites.migrate_to_reflex()
 
     # Set up the app directory, only if the config doesn't exist.
-    if not os.path.exists(constants.CONFIG_FILE):
+    if not os.path.exists(constants.Config.FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
         telemetry.send("init")
@@ -216,7 +217,7 @@ def export(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        console._LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Export the app to a zip file."""
@@ -253,7 +254,7 @@ def export(
 @cli.command()
 def login(
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
 ):
     """Authenticate with Reflex control plane."""
@@ -278,7 +279,7 @@ def login(
             )
             raise typer.Exit(1)
         with yaspin(text="Waiting for authentication...", color="yellow"):
-            for _ in range(constants.WEB_AUTH_TIMEOUT):
+            for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
                 token = hosting.fetch_token(request_id)
                 if token:
                     break
@@ -288,10 +289,10 @@ def login(
         raise typer.Exit(1)
     if not hosting.validate_token(token):
         console.error("Access denied.")
-        if using_existing_token and os.path.exists(constants.HOSTING_JSON):
+        if using_existing_token and os.path.exists(constants.Hosting.HOSTING_JSON):
             hosting_config = {}
             try:
-                with open(constants.HOSTING_JSON, "r") as config_file:
+                with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
                     hosting_config = json.load(config_file)
                     del hosting_config["access_token"]
             except Exception:
@@ -301,9 +302,9 @@ def login(
 
     hosting_config = {}
 
-    if os.path.exists(constants.HOSTING_JSON):
+    if os.path.exists(constants.Hosting.HOSTING_JSON):
         try:
-            with open(constants.HOSTING_JSON, "r") as config_file:
+            with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
                 hosting_config = json.load(config_file)
         except Exception as ex:
             console.debug(f"Unable to parse the hosting config file due to: {ex}")
@@ -311,7 +312,7 @@ def login(
 
     hosting_config["access_token"] = token
     try:
-        with open(constants.HOSTING_JSON, "w") as config_file:
+        with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
         console.error(f"Unable to write to the hosting config file due to: {ex}")
@@ -429,7 +430,7 @@ def deploy(
         help="Whether to list configuration options and ask for confirmation.",
     ),
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
@@ -553,8 +554,8 @@ def deploy(
         raise typer.Exit(1) from ie
     # config.api_url = save_api_url
 
-    frontend_file_name = constants.FRONTEND_ZIP
-    backend_file_name = constants.BACKEND_ZIP
+    frontend_file_name = constants.ComponentName.FRONTEND.zip()
+    backend_file_name = constants.ComponentName.BACKEND.zip()
 
     console.print("Uploading code ...")
     deploy_response = hosting.deploy(
@@ -579,7 +580,7 @@ def deploy(
     backend_up = frontend_up = False
     # TODO: poll backend for status
     with yaspin(text="Checking backend ...") as sp:
-        for _ in range(constants.BACKEND_POLL_TIMEOUT):
+        for _ in range(constants.Hosting.BACKEND_POLL_TIMEOUT):
             if backend_up := hosting.poll_backend(config.api_url):
                 # TODO: what is a universal tick mark?
                 sp.ok("✅ ")
@@ -589,7 +590,7 @@ def deploy(
 
     # TODO: poll frontend for status
     with yaspin(text="Checking frontend ...") as sp:
-        for _ in range(constants.FRONTEND_POLL_TIMEOUT):
+        for _ in range(constants.Hosting.FRONTEND_POLL_TIMEOUT):
             if frontend_up := hosting.poll_frontend(config.api_url):
                 # TODO: what is a universal tick mark?
                 sp.ok("✅ ")
@@ -614,7 +615,7 @@ deployments_cli = typer.Typer()
 @deployments_cli.command(name="list")
 def list_deployments(
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
     as_json: bool = typer.Option(
         False, help="Whether to output the result in json format."
@@ -641,7 +642,7 @@ def list_deployments(
 def delete_deployment(
     key: str,  # = typer.Argument(..., help="The name of the deployment."),
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
 ):
     """Delete a hosted instance."""

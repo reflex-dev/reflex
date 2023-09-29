@@ -136,10 +136,10 @@ def get_existing_access_token() -> Optional[str]:
         The access token if it exists, None otherwise.
     """
     token = None
-    if os.path.exists(constants.HOSTING_JSON):
+    if os.path.exists(constants.Hosting.HOSTING_JSON):
         console.debug("Fetching token from existing config.")
         try:
-            with open(constants.HOSTING_JSON, "r") as config_file:
+            with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
                 hosting_config = json.load(config_file)
                 token = hosting_config.get("access_token")
         except Exception as ex:
@@ -320,7 +320,7 @@ def deploy(
         auto_start=auto_start,
         auto_stop=auto_stop,
         envs_json=json.dumps(envs) if envs else None,
-        reflex_version=constants.VERSION,
+        reflex_version=constants.Reflex.VERSION,
     )
     console.debug(f"{params.dict(exclude_none=True)}")
     try:
@@ -455,10 +455,12 @@ def poll_frontend(frontend_url: str) -> bool:
 
 def clean_up():
     """Helper function to perform cleanup before exiting."""
-    if os.path.exists(constants.FRONTEND_ZIP):
-        os.remove(constants.FRONTEND_ZIP)
-    if os.path.exists(constants.BACKEND_ZIP):
-        os.remove(constants.BACKEND_ZIP)
+    frontend_zip = constants.ComponentName.FRONTEND.zip()
+    backend_zip = constants.ComponentName.BACKEND.zip()
+    if os.path.exists(frontend_zip):
+        os.remove(frontend_zip)
+    if os.path.exists(backend_zip):
+        os.remove(backend_zip)
 
 
 def delete_deployment(key: str) -> bool:

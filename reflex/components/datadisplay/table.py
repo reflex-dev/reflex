@@ -1,9 +1,10 @@
 """Table components."""
-from typing import List
+from typing import List, Tuple
 
 from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.utils import types
 from reflex.vars import Var
 
 
@@ -44,16 +45,16 @@ class Table(ChakraComponent):
         if len(children) == 0:
             children = []
 
-            if caption:
+            if caption is not None:
                 children.append(TableCaption.create(caption))
 
-            if headers:
+            if headers is not None:
                 children.append(Thead.create(headers=headers))
 
-            if rows:
+            if rows is not None:
                 children.append(Tbody.create(rows=rows))
 
-            if footers:
+            if footers is not None:
                 children.append(Tfoot.create(footers=footers))
         return super().create(*children, **props)
 
@@ -77,10 +78,35 @@ class Thead(ChakraComponent):
 
         Returns:
             The table header component.
+
         """
         if len(children) == 0:
+            cls.validate_headers(headers)
+
             children = [Tr.create(cell_type="header", cells=headers)]
         return super().create(*children, **props)
+
+    @staticmethod
+    def validate_headers(headers):
+        """Type checking for table headers.
+
+        Args:
+            headers: The table headers.
+
+        Raises:
+            TypeError: If headers are not of type list or type tuple.
+
+        """
+        allowed_types = (list, tuple)
+        if (
+            (
+                isinstance(headers, Var)
+                and not types.check_type_in_allowed_types(headers.type_, allowed_types)
+            )
+            or not isinstance(headers, Var)
+            and not types.check_type_in_allowed_types(type(headers), allowed_types)
+        ):
+            raise TypeError("table headers should be a list or tuple")
 
 
 class Tbody(ChakraComponent):
@@ -101,9 +127,11 @@ class Tbody(ChakraComponent):
             **props: The properties of the component.
 
         Returns:
-            Component: _description_
+            Component: The table body component
         """
         if len(children) == 0:
+            cls.validate_rows(rows) if rows is not None else None
+
             if isinstance(rows, Var):
                 children = [
                     Foreach.create(
@@ -115,6 +143,44 @@ class Tbody(ChakraComponent):
                     Tr.create(cell_type="data", cells=row) for row in rows or []
                 ]
         return super().create(*children, **props)
+
+    @staticmethod
+    def validate_rows(rows):
+        """Type checking for table rows.
+
+        Args:
+            rows: Table rows.
+
+        Raises:
+            TypeError: If rows are not lists or tuples containing inner lists or tuples.
+        """
+        allowed_subclasses = (List, Tuple)
+        if isinstance(rows, Var):
+            outer_type = rows.type_
+            inner_type = (
+                outer_type.__args__[0] if hasattr(outer_type, "__args__") else None
+            )
+
+            # check that the outer container and inner container types are lists or tuples.
+            if not (
+                types._issubclass(types.get_base_class(outer_type), allowed_subclasses)
+                and (
+                    inner_type is None
+                    or types._issubclass(
+                        types.get_base_class(inner_type), allowed_subclasses
+                    )
+                )
+            ):
+                raise TypeError(
+                    f"table rows should be a list or tuple containing inner lists or tuples. Got {outer_type} instead"
+                )
+        elif not (
+            types._issubclass(type(rows), allowed_subclasses)
+            and (not rows or types._issubclass(type(rows[0]), allowed_subclasses))
+        ):
+            raise TypeError(
+                "table rows should be a list or tuple containing inner lists or tuples."
+            )
 
 
 class Tfoot(ChakraComponent):
@@ -138,8 +204,30 @@ class Tfoot(ChakraComponent):
             The table footer component.
         """
         if len(children) == 0:
+            cls.validate_footers(footers)
             children = [Tr.create(cell_type="header", cells=footers)]
         return super().create(*children, **props)
+
+    @staticmethod
+    def validate_footers(footers):
+        """Type checking for table footers.
+
+        Args:
+            footers: Table rows.
+
+        Raises:
+            TypeError: If footers are not of type list.
+        """
+        allowed_types = (list, tuple)
+        if (
+            (
+                isinstance(footers, Var)
+                and not types.check_type_in_allowed_types(footers.type_, allowed_types)
+            )
+            or not isinstance(footers, Var)
+            and not types.check_type_in_allowed_types(type(footers), allowed_types)
+        ):
+            raise TypeError("table headers should be a list or tuple")
 
 
 class Tr(ChakraComponent):

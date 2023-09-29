@@ -9,20 +9,17 @@ from packaging import version
 
 from reflex import constants
 from reflex.base import Base
-from reflex.components.tags import Tag
-from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.event import EventHandler
 from reflex.state import State
-from reflex.style import Style
 from reflex.utils import (
     build,
-    format,
     imports,
     prerequisites,
     types,
 )
 from reflex.utils import exec as utils_exec
 from reflex.utils.serializers import serialize
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 
 def mock_event(arg):
@@ -36,7 +33,7 @@ def get_above_max_version():
         max bun version plus one.
 
     """
-    semantic_version_list = constants.BUN_VERSION.split(".")
+    semantic_version_list = constants.Bun.VERSION.split(".")
     semantic_version_list[-1] = str(int(semantic_version_list[-1]) + 1)  # type: ignore
     return ".".join(semantic_version_list)
 
@@ -57,179 +54,6 @@ class ExampleTestState(State):
 
 def test_func():
     pass
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
-        ("", ""),
-        ("hello", "hello"),
-        ("Hello", "hello"),
-        ("camelCase", "camel_case"),
-        ("camelTwoHumps", "camel_two_humps"),
-        ("_start_with_underscore", "_start_with_underscore"),
-        ("__start_with_double_underscore", "__start_with_double_underscore"),
-    ],
-)
-def test_to_snake_case(input: str, output: str):
-    """Test converting strings to snake case.
-
-    Args:
-        input: The input string.
-        output: The expected output string.
-    """
-    assert format.to_snake_case(input) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
-        ("", ""),
-        ("hello", "hello"),
-        ("Hello", "Hello"),
-        ("snake_case", "snakeCase"),
-        ("snake_case_two", "snakeCaseTwo"),
-    ],
-)
-def test_to_camel_case(input: str, output: str):
-    """Test converting strings to camel case.
-
-    Args:
-        input: The input string.
-        output: The expected output string.
-    """
-    assert format.to_camel_case(input) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
-        ("", ""),
-        ("hello", "Hello"),
-        ("Hello", "Hello"),
-        ("snake_case", "SnakeCase"),
-        ("snake_case_two", "SnakeCaseTwo"),
-    ],
-)
-def test_to_title_case(input: str, output: str):
-    """Test converting strings to title case.
-
-    Args:
-        input: The input string.
-        output: The expected output string.
-    """
-    assert format.to_title_case(input) == output
-
-
-@pytest.mark.parametrize(
-    "input,output",
-    [
-        ("{", "}"),
-        ("(", ")"),
-        ("[", "]"),
-        ("<", ">"),
-        ('"', '"'),
-        ("'", "'"),
-    ],
-)
-def test_get_close_char(input: str, output: str):
-    """Test getting the close character for a given open character.
-
-    Args:
-        input: The open character.
-        output: The expected close character.
-    """
-    assert format.get_close_char(input) == output
-
-
-@pytest.mark.parametrize(
-    "text,open,expected",
-    [
-        ("", "{", False),
-        ("{wrap}", "{", True),
-        ("{wrap", "{", False),
-        ("{wrap}", "(", False),
-        ("(wrap)", "(", True),
-    ],
-)
-def test_is_wrapped(text: str, open: str, expected: bool):
-    """Test checking if a string is wrapped in the given open and close characters.
-
-    Args:
-        text: The text to check.
-        open: The open character.
-        expected: Whether the text is wrapped.
-    """
-    assert format.is_wrapped(text, open) == expected
-
-
-@pytest.mark.parametrize(
-    "text,open,check_first,num,expected",
-    [
-        ("", "{", True, 1, "{}"),
-        ("wrap", "{", True, 1, "{wrap}"),
-        ("wrap", "(", True, 1, "(wrap)"),
-        ("wrap", "(", True, 2, "((wrap))"),
-        ("(wrap)", "(", True, 1, "(wrap)"),
-        ("{wrap}", "{", True, 2, "{wrap}"),
-        ("(wrap)", "{", True, 1, "{(wrap)}"),
-        ("(wrap)", "(", False, 1, "((wrap))"),
-    ],
-)
-def test_wrap(text: str, open: str, expected: str, check_first: bool, num: int):
-    """Test wrapping a string.
-
-    Args:
-        text: The text to wrap.
-        open: The open character.
-        expected: The expected output string.
-        check_first: Whether to check if the text is already wrapped.
-        num: The number of times to wrap the text.
-    """
-    assert format.wrap(text, open, check_first=check_first, num=num) == expected
-
-
-@pytest.mark.parametrize(
-    "text,indent_level,expected",
-    [
-        ("", 2, ""),
-        ("hello", 2, "hello"),
-        ("hello\nworld", 2, "  hello\n  world\n"),
-        ("hello\nworld", 4, "    hello\n    world\n"),
-        ("  hello\n  world", 2, "    hello\n    world\n"),
-    ],
-)
-def test_indent(text: str, indent_level: int, expected: str, windows_platform: bool):
-    """Test indenting a string.
-
-    Args:
-        text: The text to indent.
-        indent_level: The number of spaces to indent by.
-        expected: The expected output string.
-        windows_platform: Whether the system is windows.
-    """
-    assert format.indent(text, indent_level) == (
-        expected.replace("\n", "\r\n") if windows_platform else expected
-    )
-
-
-@pytest.mark.parametrize(
-    "condition,true_value,false_value,expected",
-    [
-        ("cond", "<C1>", '""', '{isTrue(cond) ? <C1> : ""}'),
-        ("cond", "<C1>", "<C2>", "{isTrue(cond) ? <C1> : <C2>}"),
-    ],
-)
-def test_format_cond(condition: str, true_value: str, false_value: str, expected: str):
-    """Test formatting a cond.
-
-    Args:
-        condition: The condition to check.
-        true_value: The value to return if the condition is true.
-        false_value: The value to return if the condition is false.
-        expected: The expected output string.
-    """
-    assert format.format_cond(condition, true_value, false_value) == expected
 
 
 def test_merge_imports():
@@ -261,110 +85,6 @@ def test_is_generic_alias(cls: type, expected: bool):
         expected: Whether the class is a GenericAlias.
     """
     assert types.is_generic_alias(cls) == expected
-
-
-@pytest.mark.parametrize(
-    "route,format_case,expected",
-    [
-        ("", True, "index"),
-        ("/", True, "index"),
-        ("custom-route", True, "custom-route"),
-        ("custom-route", False, "custom-route"),
-        ("custom-route/", True, "custom-route"),
-        ("custom-route/", False, "custom-route"),
-        ("/custom-route", True, "custom-route"),
-        ("/custom-route", False, "custom-route"),
-        ("/custom_route", True, "custom-route"),
-        ("/custom_route", False, "custom_route"),
-        ("/CUSTOM_route", True, "custom-route"),
-        ("/CUSTOM_route", False, "CUSTOM_route"),
-    ],
-)
-def test_format_route(route: str, format_case: bool, expected: bool):
-    """Test formatting a route.
-
-    Args:
-        route: The route to format.
-        format_case: Whether to change casing to snake_case.
-        expected: The expected formatted route.
-    """
-    assert format.format_route(route, format_case=format_case) == expected
-
-
-@pytest.mark.parametrize(
-    "prop,formatted",
-    [
-        ("string", '"string"'),
-        ("{wrapped_string}", "{wrapped_string}"),
-        (True, "{true}"),
-        (False, "{false}"),
-        (123, "{123}"),
-        (3.14, "{3.14}"),
-        ([1, 2, 3], "{[1, 2, 3]}"),
-        (["a", "b", "c"], '{["a", "b", "c"]}'),
-        ({"a": 1, "b": 2, "c": 3}, '{{"a": 1, "b": 2, "c": 3}}'),
-        ({"a": 'foo "bar" baz'}, r'{{"a": "foo \"bar\" baz"}}'),
-        (
-            {
-                "a": 'foo "{ "bar" }" baz',
-                "b": BaseVar(name="val", type_="str"),
-            },
-            r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
-        ),
-        (
-            EventChain(
-                events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
-            ),
-            '{_e => addEvents([Event("mock_event", {})], _e)}',
-        ),
-        (
-            EventChain(
-                events=[
-                    EventSpec(
-                        handler=EventHandler(fn=mock_event),
-                        args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
-                    )
-                ],
-                args_spec=None,
-            ),
-            '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e)}',
-        ),
-        ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
-        (BaseVar(name="var", type_="int"), "{var}"),
-        (
-            BaseVar(
-                name="_",
-                type_=Any,
-                state="",
-                is_local=True,
-                is_string=False,
-            ),
-            "{_}",
-        ),
-        (BaseVar(name='state.colors["a"]', type_="str"), '{state.colors["a"]}'),
-        ({"a": BaseVar(name="val", type_="str")}, '{{"a": val}}'),
-        ({"a": BaseVar(name='"val"', type_="str")}, '{{"a": "val"}}'),
-        (
-            {"a": BaseVar(name='state.colors["val"]', type_="str")},
-            '{{"a": state.colors["val"]}}',
-        ),
-        # tricky real-world case from markdown component
-        (
-            {
-                "h1": f"{{({{node, ...props}}) => <Heading {{...props}} {''.join(Tag(name='', props=Style({'as_': 'h1'})).format_props())} />}}"
-            },
-            '{{"h1": ({node, ...props}) => <Heading {...props} as={`h1`} />}}',
-        ),
-    ],
-)
-def test_format_prop(prop: Var, formatted: str):
-    """Test that the formatted value of an prop is correct.
-
-    Args:
-        prop: The prop to test.
-        formatted: The expected formatted value.
-    """
-    assert format.format_prop(prop) == formatted
 
 
 def test_validate_invalid_bun_path(mocker):
@@ -523,29 +243,9 @@ def test_create_config_e2e(tmp_working_dir):
     app_name = "e2e"
     prerequisites.create_config(app_name)
     eval_globals = {}
-    exec((tmp_working_dir / constants.CONFIG_FILE).read_text(), eval_globals)
+    exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
-
-
-@pytest.mark.parametrize(
-    "name,expected",
-    [
-        ("input1", "ref_input1"),
-        ("input 1", "ref_input_1"),
-        ("input-1", "ref_input_1"),
-        ("input_1", "ref_input_1"),
-        ("a long test?1! name", "ref_a_long_test_1_name"),
-    ],
-)
-def test_format_ref(name, expected):
-    """Test formatting a ref.
-
-    Args:
-        name: The name to format.
-        expected: The expected formatted name.
-    """
-    assert format.format_ref(name) == expected
 
 
 class DataFrame:
@@ -585,8 +285,8 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         mocker: The mock object.
         gitignore_exists: Whether a gitignore file exists in the root dir.
     """
-    expected = constants.DEFAULT_GITIGNORE.copy()
-    mocker.patch("reflex.constants.GITIGNORE_FILE", tmp_path / ".gitignore")
+    expected = constants.GitIgnore.DEFAULTS.copy()
+    mocker.patch("reflex.constants.GitIgnore.FILE", tmp_path / ".gitignore")
 
     gitignore_file = tmp_path / ".gitignore"
 
@@ -633,8 +333,8 @@ def test_node_install_windows(tmp_path, mocker):
     fnm_root_path = tmp_path / "reflex" / "fnm"
     fnm_exe = fnm_root_path / "fnm.exe"
 
-    mocker.patch("reflex.utils.prerequisites.constants.FNM_DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.FNM_EXE", fnm_exe)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
     mocker.patch("reflex.utils.processes.new_process")
     mocker.patch("reflex.utils.processes.stream_logs")
@@ -675,8 +375,8 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
     fnm_root_path = tmp_path / "reflex" / "fnm"
     fnm_exe = fnm_root_path / "fnm"
 
-    mocker.patch("reflex.utils.prerequisites.constants.FNM_DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.FNM_EXE", fnm_exe)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
+    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
     mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
     mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
@@ -701,14 +401,14 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
                 fnm_exe,
                 "install",
                 "--arch=arm64",
-                constants.NODE_VERSION,
+                constants.Node.VERSION,
                 "--fnm-dir",
                 fnm_root_path,
             ]
         )
     else:
         process.assert_called_with(
-            [fnm_exe, "install", constants.NODE_VERSION, "--fnm-dir", fnm_root_path]
+            [fnm_exe, "install", constants.Node.VERSION, "--fnm-dir", fnm_root_path]
         )
     chmod.assert_called_once()
 
@@ -759,7 +459,7 @@ def test_output_system_info(mocker):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex.utils.console.LOG_LEVEL", constants.LogLevel.DEBUG)
+    mocker.patch("reflex.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 
