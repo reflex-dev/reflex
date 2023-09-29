@@ -22,6 +22,7 @@ from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
 from .event import background as background
+from .event import call_script as call_script
 from .event import clear_local_storage as clear_local_storage
 from .event import console_log as console_log
 from .event import download as download

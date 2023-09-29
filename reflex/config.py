@@ -163,7 +163,7 @@ class Config(Base):
     telemetry_enabled: bool = True
 
     # The bun path
-    bun_path: str = constants.DEFAULT_BUN_PATH
+    bun_path: str = constants.Bun.DEFAULT_PATH
 
     # List of origins that are allowed to connect to the backend API.
     cors_allowed_origins: List[str] = ["*"]
@@ -284,11 +284,9 @@ def get_config(reload: bool = False) -> Config:
     Returns:
         The app config.
     """
-    from reflex.config import Config
-
     sys.path.insert(0, os.getcwd())
     try:
-        rxconfig = __import__(constants.CONFIG_MODULE)
+        rxconfig = __import__(constants.Config.MODULE)
         if reload:
             importlib.reload(rxconfig)
         return rxconfig.config

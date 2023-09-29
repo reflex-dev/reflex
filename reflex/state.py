@@ -1102,7 +1102,7 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
         """
         super().__init__(state_instance)
-        self._self_app = getattr(prerequisites.get_app(), constants.APP_VAR)
+        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         self._self_substate_path = state_instance.get_full_name().split(".")
         self._self_actx = None
         self._self_mutable = False
@@ -1355,10 +1355,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = constants.TOKEN_EXPIRATION
+    token_expiration: int = constants.Expiration.TOKEN
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = constants.LOCK_EXPIRATION
+    lock_expiration: int = constants.Expiration.LOCK
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (
@@ -1647,6 +1647,13 @@ class MutableProxy(wrapt.ObjectProxy):
             "update",
         ]
     )
+    # Methods on wrapped objects might return mutable objects that should be tracked.
+    __wrap_mutable_attrs__ = set(
+        [
+            "get",
+            "setdefault",
+        ]
+    )
 
     __mutable_types__ = (list, dict, set, Base)
 
@@ -1663,7 +1670,13 @@ class MutableProxy(wrapt.ObjectProxy):
         self._self_state = state
         self._self_field_name = field_name
 
-    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None):
+    def _mark_dirty(
+        self,
+        wrapped=None,
+        instance=None,
+        args=tuple(),
+        kwargs=None,
+    ) -> Any:
         """Mark the state as dirty, then call a wrapped function.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -1673,11 +1686,47 @@ class MutableProxy(wrapt.ObjectProxy):
             instance: The instance of the wrapped function.
             args: The args for the wrapped function.
             kwargs: The kwargs for the wrapped function.
+
+        Returns:
+            The result of the wrapped function.
         """
         self._self_state.dirty_vars.add(self._self_field_name)
         self._self_state._mark_dirty()
         if wrapped is not None:
-            wrapped(*args, **(kwargs or {}))
+            return wrapped(*args, **(kwargs or {}))
+
+    def _wrap_recursive(self, value: Any) -> Any:
+        """Wrap a value recursively if it is mutable.
+
+        Args:
+            value: The value to wrap.
+
+        Returns:
+            The wrapped value.
+        """
+        if isinstance(value, self.__mutable_types__):
+            return type(self)(
+                wrapped=value,
+                state=self._self_state,
+                field_name=self._self_field_name,
+            )
+        return value
+
+    def _wrap_recursive_decorator(self, wrapped, instance, args, kwargs) -> Any:
+        """Wrap a function that returns a possibly mutable value.
+
+        Intended for use with `FunctionWrapper` from the `wrapt` library.
+
+        Args:
+            wrapped: The wrapped function.
+            instance: The instance of the wrapped function.
+            args: The args for the wrapped function.
+            kwargs: The kwargs for the wrapped function.
+
+        Returns:
+            The result of the wrapped function (possibly wrapped in a MutableProxy).
+        """
+        return self._wrap_recursive(wrapped(*args, **kwargs))
 
     def __getattribute__(self, __name: str) -> Any:
         """Get the attribute on the proxied object and return a proxy if mutable.
@@ -1690,24 +1739,26 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         value = super().__getattribute__(__name)
 
-        if callable(value) and __name in super().__getattribute__(
-            "__mark_dirty_attrs__"
-        ):
-            # Wrap special callables, like "append", which should mark state dirty.
-            return wrapt.FunctionWrapper(
-                value,
-                super().__getattribute__("_mark_dirty"),
-            )
+        if callable(value):
+            if __name in super().__getattribute__("__mark_dirty_attrs__"):
+                # Wrap special callables, like "append", which should mark state dirty.
+                value = wrapt.FunctionWrapper(
+                    value,
+                    super().__getattribute__("_mark_dirty"),
+                )
+
+            if __name in super().__getattribute__("__wrap_mutable_attrs__"):
+                # Wrap methods that may return mutable objects tied to the state.
+                value = wrapt.FunctionWrapper(
+                    value,
+                    super().__getattribute__("_wrap_recursive_decorator"),
+                )
 
         if isinstance(
             value, super().__getattribute__("__mutable_types__")
         ) and __name not in ("__wrapped__", "_self_state"):
             # Recursively wrap mutable attribute values retrieved through this proxy.
-            return type(self)(
-                wrapped=value,
-                state=self._self_state,
-                field_name=self._self_field_name,
-            )
+            return self._wrap_recursive(value)
 
         return value
 
@@ -1721,14 +1772,18 @@ class MutableProxy(wrapt.ObjectProxy):
             The item value.
         """
         value = super().__getitem__(key)
-        if isinstance(value, self.__mutable_types__):
+        # Recursively wrap mutable items retrieved through this proxy.
+        return self._wrap_recursive(value)
+
+    def __iter__(self) -> Any:
+        """Iterate over the proxied object and return a proxy if mutable.
+
+        Yields:
+            Each item value (possibly wrapped in MutableProxy).
+        """
+        for value in super().__iter__():
             # Recursively wrap mutable items retrieved through this proxy.
-            return type(self)(
-                wrapped=value,
-                state=self._self_state,
-                field_name=self._self_field_name,
-            )
-        return value
+            yield self._wrap_recursive(value)
 
     def __delattr__(self, name):
         """Delete the attribute on the proxied object and mark state dirty.

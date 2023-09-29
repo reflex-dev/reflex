@@ -154,7 +154,7 @@ class AppHarness:
             with chdir(self.app_path):
                 reflex.reflex.init(
                     name=self.app_name,
-                    template=reflex.constants.Template.DEFAULT,
+                    template=reflex.constants.Templates.Kind.DEFAULT,
                     loglevel=reflex.constants.LogLevel.INFO,
                 )
                 self.app_module_path.write_text(source_code)
@@ -211,7 +211,7 @@ class AppHarness:
         # Start the frontend.
         self.frontend_process = reflex.utils.processes.new_process(
             [reflex.utils.prerequisites.get_package_manager(), "run", "dev"],
-            cwd=self.app_path / reflex.constants.WEB_DIR,
+            cwd=self.app_path / reflex.constants.Dirs.WEB,
             env={"PORT": "0"},
             **FRONTEND_POPEN_ARGS,
         )
@@ -647,7 +647,7 @@ class AppHarnessProd(AppHarness):
     frontend_server: Optional[Subdir404TCPServer] = None
 
     def _run_frontend(self):
-        web_root = self.app_path / reflex.constants.WEB_DIR / "_static"
+        web_root = self.app_path / reflex.constants.Dirs.WEB / "_static"
         error_page_map = {
             404: web_root / "404.html",
         }

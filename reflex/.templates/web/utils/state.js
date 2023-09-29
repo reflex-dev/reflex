@@ -182,6 +182,15 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
+  if (event.name == "_call_script") {
+    try {
+      eval(event.payload.javascript_code);
+    } catch(e) {
+      console.log("_call_script", e);
+    }
+    return false;
+  }
+
   // Update token and router data (if missing).
   event.token = getToken()
   if (event.router_data === undefined || Object.keys(event.router_data).length === 0) {

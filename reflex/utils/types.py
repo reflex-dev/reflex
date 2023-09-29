@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import typing
-from types import LambdaType
 from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
@@ -18,7 +17,8 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-ArgsSpec = LambdaType
+# ArgsSpec = Callable[[Var], list[Var]]
+ArgsSpec = Callable
 
 
 def get_args(alias: _GenericAlias) -> tuple[Type, ...]:
@@ -168,6 +168,21 @@ def is_backend_variable(name: str) -> bool:
         bool: The result of the check
     """
     return name.startswith("_") and not name.startswith("__")
+
+
+def check_type_in_allowed_types(
+    value_type: Type, allowed_types: typing.Iterable
+) -> bool:
+    """Check that a value type is found in a list of allowed types.
+
+    Args:
+        value_type: Type of value.
+        allowed_types: Iterable of allowed types.
+
+    Returns:
+        If the type is found in the allowed types.
+    """
+    return get_base_class(value_type) in allowed_types
 
 
 # Store this here for performance.

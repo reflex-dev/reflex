@@ -5,7 +5,6 @@ from __future__ import annotations
 import inspect
 import json
 import os
-import os.path as op
 import re
 import sys
 from typing import TYPE_CHECKING, Any, Union
@@ -230,7 +229,7 @@ def format_route(route: str, format_case=True) -> str:
 
     # If the route is empty, return the index route.
     if route == "":
-        return constants.INDEX_ROUTE
+        return constants.PageNames.INDEX_ROUTE
 
     return route
 
@@ -383,7 +382,7 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
         state = vars(sys.modules[handler.fn.__module__])[state_name]
     except Exception:
         # If the state isn't in the module, just return the function name.
-        return ("", handler.fn.__qualname__)
+        return ("", to_snake_case(handler.fn.__qualname__))
 
     return (state.get_full_name(), name)
 
@@ -559,9 +558,25 @@ def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
 
     # create and return breadcrumbs
     return [
-        (part, op.join("/", *route_parts[: i + 1]))
+        (part, "/".join(["", *route_parts[: i + 1]]))
         for i, part in enumerate(route_parts)
     ]
+
+
+def format_library_name(library_fullname: str):
+    """Format the name of a library.
+
+    Args:
+        library_fullname: The fullname of the library.
+
+    Returns:
+        The name without the @version if it was part of the name
+    """
+    lib, at, version = library_fullname.rpartition("@")
+    if not lib:
+        lib = at + version
+
+    return lib
 
 
 def json_dumps(obj: Any) -> str:
