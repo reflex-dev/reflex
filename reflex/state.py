@@ -679,7 +679,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Reset the base vars.
         fields = self.get_fields()
         for prop_name in self.base_vars:
-            setattr(self, prop_name, fields[prop_name].default)
+            setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -696,7 +696,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 isinstance(field.type_, type)
                 and issubclass(field.type_, ClientStorageBase)
             ):
-                setattr(self, prop_name, field.default)
+                setattr(self, prop_name, copy.deepcopy(field.default))
 
         # Recursively reset the substate client storage.
         for substate in self.substates.values():
