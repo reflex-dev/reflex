@@ -13,7 +13,7 @@ from typing import Optional
 import typer
 from alembic.util.exc import CommandError
 from tabulate import tabulate
-from yaspin import yaspin
+from yaspin import kbi_safe_yaspin
 
 from reflex import constants, model
 from reflex.config import get_config
@@ -278,7 +278,7 @@ def login(
                 f"Unable to open the browser to authenticate. Please contact support."
             )
             raise typer.Exit(1)
-        with yaspin(text="Waiting for authentication...", color="yellow"):
+        with kbi_safe_yaspin(text="Waiting for authentication...", side="right"):
             for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
                 token = hosting.fetch_token(request_id)
                 if token:
@@ -506,11 +506,13 @@ def deploy(
         )
         regions = regions or [region_input]
         # process the envs
+
         envs_finished = False
-        env_key_prompt = "Env name (enter to skip)"
+        env_key_prompt = "  Env name (enter to skip)"
+        console.print("Environment variables ...")
         while not envs_finished:
             env_key = console.ask(env_key_prompt)
-            env_key_prompt = "Env name (enter to finish)"
+            env_key_prompt = "  env name (enter to finish)"
             if not env_key:
                 envs_finished = True
                 if envs:
@@ -519,7 +521,7 @@ def deploy(
                     console.print("No envs added. Continuing ...")
                 break
             # If it possible to have empty values for env, so we do not check here
-            env_value = console.ask("Env value")
+            env_value = console.ask("  env value")
             envs.append(f"{env_key}={env_value}")
 
     # Check the required params are valid
@@ -581,18 +583,18 @@ def deploy(
 
     backend_up = frontend_up = False
     # TODO: poll backend for status
-    with yaspin(text="Checking backend ...") as sp:
+    with kbi_safe_yaspin(text="Checking backend ...", side="right", timer=True) as sp:
         for _ in range(constants.Hosting.BACKEND_POLL_TIMEOUT):
             if backend_up := hosting.poll_backend(config.api_url):
                 # TODO: what is a universal tick mark?
-                sp.ok("✅ ")
+                sp.ok("✅")
                 break
             time.sleep(1)
         if not backend_up:
-            sp.fail("❌ ")
+            sp.fail("❌")
 
     # TODO: poll frontend for status
-    with yaspin(text="Checking frontend ...") as sp:
+    with kbi_safe_yaspin(text="Checking frontend ...", side="right", timer=True) as sp:
         for _ in range(constants.Hosting.FRONTEND_POLL_TIMEOUT):
             if frontend_up := hosting.poll_frontend(site_url):
                 # TODO: what is a universal tick mark?
@@ -603,12 +605,13 @@ def deploy(
             sp.fail("❌ ")
 
     # TODO: below is a bit hacky, refactor
-    if not frontend_up or not backend_up:
-        console.warn(
-            "Your deployment is taking unusually long. Check back later using this command: reflex deployments status <deployment-name>"
-        )
-        hosting.clean_up()
-    console.print(f"Your site <{key}> {regions} is up: {site_url}")
+    hosting.clean_up()
+    if frontend_up and backend_up:
+        console.print(f"Your site <{key}> {regions} is up: {site_url}")
+        return
+    console.warn(
+        "Your deployment is taking unusually long. Check back later using this command: `reflex deployments status`"
+    )
 
 
 deployments_cli = typer.Typer()
