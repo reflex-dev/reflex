@@ -18,7 +18,7 @@ from reflex.utils import (
     types,
 )
 from reflex.utils import exec as utils_exec
-from reflex.utils.serializers import serialize
+from reflex.utils.serializers import serialize, serializer
 from reflex.vars import Var
 
 
@@ -254,6 +254,11 @@ class DataFrame:
     pass
 
 
+@serializer
+def serialize_dataframe(df: DataFrame) -> dict:
+    return {}
+
+
 @pytest.mark.parametrize(
     "class_type,expected",
     [
@@ -263,6 +268,7 @@ class DataFrame:
         (DataFrame, True),
         (typing.Any, False),
         (typing.List, False),
+        # (Var.create(value=DataFrame()), True),
     ],
 )
 def test_is_dataframe(class_type, expected):

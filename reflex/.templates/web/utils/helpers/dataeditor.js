@@ -1,5 +1,23 @@
 import { GridCellKind } from "@glideapps/glide-data-grid"
 
+export function getDEColumn(columns, col) {
+    let c = columns[col];
+    c.pos = col;
+    return c;
+}
+
+export function getDERow(data, row) {
+    return data[row];
+}
+
+export function locateCell(row, column) {
+    if (Array.isArray(row)) {
+        return row[column.pos];
+    } else {
+        return row[column.id];
+    }
+}
+
 export function formatCell(value, column) {
     switch (column.type) {
         case "int":
@@ -29,7 +47,7 @@ export function formatCell(value, column) {
                 // allowOverlay: true
             }
         default:
-            console.log(type, value);
+            console.log(column.type, value);
     };
     return {
         kind: GridCellKind.Text,
