@@ -27,8 +27,7 @@ from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, format, types
-from reflex.utils.serializers import serialize
+from reflex.utils import console, format, serializers, types
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -124,7 +123,7 @@ class Var(ABC):
 
         # Try to serialize the value.
         type_ = type(value)
-        name = serialize(value)
+        name = serializers.serialize(value)
         if name is None:
             raise TypeError(
                 f"No JSON serializer found for var {value} of type {type_}."

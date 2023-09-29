@@ -192,7 +192,7 @@ class EventChain(Base):
 
     events: List[EventSpec]
 
-    args_spec: Optional[ArgsSpec]
+    args_spec: Optional[Callable]
 
 
 class Target(Base):
@@ -481,7 +481,7 @@ def get_hydrate_event(state) -> str:
     Returns:
         The name of the hydrate event.
     """
-    return get_event(state, constants.HYDRATE)
+    return get_event(state, constants.CompileVars.HYDRATE)
 
 
 def call_event_handler(
@@ -507,12 +507,12 @@ def call_event_handler(
 
     # handle new API using lambda to define triggers
     if isinstance(arg_spec, ArgsSpec):
-        parsed_args = parse_args_spec(arg_spec)
+        parsed_args = parse_args_spec(arg_spec)  # type: ignore
 
         if len(args) == len(["self", *parsed_args]):
             return event_handler(*parsed_args)  # type: ignore
         else:
-            source = inspect.getsource(arg_spec)
+            source = inspect.getsource(arg_spec)  # type: ignore
             raise ValueError(
                 f"number of arguments in {event_handler.fn.__name__} "
                 f"doesn't match the definition '{source.strip().strip(',')}'"
@@ -524,12 +524,12 @@ def call_event_handler(
             deprecation_version="0.2.8",
             removal_version="0.2.9",
         )
-    if len(args) == 1:
-        return event_handler()
-    assert (
-        len(args) == 2
-    ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
-    return event_handler(arg_spec)
+        if len(args) == 1:
+            return event_handler()
+        assert (
+            len(args) == 2
+        ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
+        return event_handler(arg_spec)  # type: ignore
 
 
 def parse_args_spec(arg_spec: ArgsSpec):
@@ -578,7 +578,7 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
     args = inspect.getfullargspec(fn).args
 
     if isinstance(arg, ArgsSpec):
-        out = fn(*parse_args_spec(arg))
+        out = fn(*parse_args_spec(arg))  # type: ignore
     else:
         # Call the lambda.
         if len(args) == 0:

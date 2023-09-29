@@ -1102,7 +1102,7 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
         """
         super().__init__(state_instance)
-        self._self_app = getattr(prerequisites.get_app(), constants.APP_VAR)
+        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
         self._self_substate_path = state_instance.get_full_name().split(".")
         self._self_actx = None
         self._self_mutable = False
@@ -1355,10 +1355,10 @@ class StateManagerRedis(StateManager):
     redis: Redis
 
     # The token expiration time (s).
-    token_expiration: int = constants.TOKEN_EXPIRATION
+    token_expiration: int = constants.Expiration.TOKEN
 
     # The maximum time to hold a lock (ms).
-    lock_expiration: int = constants.LOCK_EXPIRATION
+    lock_expiration: int = constants.Expiration.LOCK
 
     # The keyspace subscription string when redis is waiting for lock to be released
     _redis_notify_keyspace_events: str = (

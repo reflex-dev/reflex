@@ -118,10 +118,10 @@ def get_node_bin_path() -> str | None:
     Returns:
         The path to the node bin folder.
     """
-    if not os.path.exists(constants.NODE_BIN_PATH):
+    if not os.path.exists(constants.Node.BIN_PATH):
         str_path = which("node")
         return str(Path(str_path).parent) if str_path else str_path
-    return constants.NODE_BIN_PATH
+    return constants.Node.BIN_PATH
 
 
 def get_node_path() -> str | None:
@@ -130,9 +130,9 @@ def get_node_path() -> str | None:
     Returns:
         The path to the node binary file.
     """
-    if not os.path.exists(constants.NODE_PATH):
+    if not os.path.exists(constants.Node.PATH):
         return which("node")
-    return constants.NODE_PATH
+    return constants.Node.PATH
 
 
 def get_npm_path() -> str | None:
@@ -141,9 +141,9 @@ def get_npm_path() -> str | None:
     Returns:
         The path to the npm binary file.
     """
-    if not os.path.exists(constants.NODE_PATH):
+    if not os.path.exists(constants.Node.PATH):
         return which("npm")
-    return constants.NPM_PATH
+    return constants.Node.NPM_PATH
 
 
 def update_json_file(file_path: str, update_dict: dict[str, int | str]):

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import typing
-from types import LambdaType
 from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
@@ -18,7 +17,8 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-ArgsSpec = LambdaType
+# ArgsSpec = Callable[[Var], list[Var]]
+ArgsSpec = Callable
 
 
 def get_args(alias: _GenericAlias) -> tuple[Type, ...]:
