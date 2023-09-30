@@ -133,7 +133,9 @@ def _compile_conditional_rendering(template_obj: str) -> str:
     Returns:
         The template after relevant modifications
     """
-    pattern = re.compile(r'(<DataTableGrid[^>]*\/>)')
+    pattern = re.compile(
+        r'(<DataTableGrid[^>]*\bdata\s*=\s*\{\s*\[\s*\]\s*\}[^>]*\/>)'
+    )
     replacement = r'{ state.is_hydrated ? \1 : null }'
 
     template_obj = re.sub(pattern, replacement, template_obj)
