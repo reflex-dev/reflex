@@ -110,7 +110,7 @@ class PackageJson(SimpleNamespace):
         "chakra-react-select": "^4.6.0",
         "focus-visible": "^5.2.0",
         "json5": "^2.2.3",
-        "next": "^13.3.1",
+        "next": "^13.5.1",
         "next-sitemap": "^4.1.8",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
