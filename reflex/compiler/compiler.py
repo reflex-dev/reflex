@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Type
 
@@ -111,7 +112,7 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    return templates.PAGE.render(
+    template_obj = templates.PAGE.render(
         imports=imports,
         dynamic_imports=component.get_dynamic_imports(),
         custom_codes=component.get_custom_code(),
@@ -119,6 +120,15 @@ def _compile_page(
         hooks=component.get_hooks(),
         render=component.render(),
     )
+    template_obj = _compile_conditional_rendering(template_obj)
+    return template_obj
+
+def _compile_conditional_rendering(template_obj: str):
+    pattern = re.compile(r'(<DataTableGrid[^>]*\/>)')
+    replacement = r'{ state.is_hydrated ? \1 : null }'
+
+    template_obj = re.sub(pattern, replacement, template_obj)
+    return template_obj
 
 
 def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
