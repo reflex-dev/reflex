@@ -123,7 +123,16 @@ def _compile_page(
     template_obj = _compile_conditional_rendering(template_obj)
     return template_obj
 
-def _compile_conditional_rendering(template_obj: str):
+def _compile_conditional_rendering(template_obj: str) -> str:
+    """Update generated template to add required conditional rendering
+       for elements in the template
+
+    Args:
+        template_obj: Template to be modified
+
+    Returns:
+        The template after relevant modifications
+    """
     pattern = re.compile(r'(<DataTableGrid[^>]*\/>)')
     replacement = r'{ state.is_hydrated ? \1 : null }'
 
