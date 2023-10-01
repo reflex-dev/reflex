@@ -1853,7 +1853,7 @@ class ImmutableMutableProxy(MutableProxy):
     to modify the wrapped object when the StateProxy is immutable.
     """
 
-    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None):
+    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -1864,6 +1864,9 @@ class ImmutableMutableProxy(MutableProxy):
             args: The args for the wrapped function.
             kwargs: The kwargs for the wrapped function.
 
+        Returns:
+            The result of the wrapped function.
+
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
@@ -1872,6 +1875,6 @@ class ImmutableMutableProxy(MutableProxy):
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        super()._mark_dirty(
+        return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )
