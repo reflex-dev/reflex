@@ -183,8 +183,8 @@ class App(Base):
             else config.cors_allowed_origins,
             cors_credentials=True,
             max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-            ping_interval=constants.PING_INTERVAL,
-            ping_timeout=constants.PING_TIMEOUT,
+            ping_interval=constants.Ping.INTERVAL,
+            ping_timeout=constants.Ping.TIMEOUT,
         )
 
         # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
@@ -340,14 +340,14 @@ class App(Base):
         self,
         component: Component | ComponentCallable,
         route: str | None = None,
-        title: str = constants.DEFAULT_TITLE,
-        description: str = constants.DEFAULT_DESCRIPTION,
-        image=constants.DEFAULT_IMAGE,
+        title: str = constants.DefaultPage.TITLE,
+        description: str = constants.DefaultPage.DESCRIPTION,
+        image: str = constants.DefaultPage.IMAGE,
         on_load: EventHandler
         | EventSpec
         | list[EventHandler | EventSpec]
         | None = None,
-        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
+        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
         script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
@@ -433,7 +433,7 @@ class App(Base):
         """
         route = route.lstrip("/")
         if route == "":
-            route = constants.INDEX_ROUTE
+            route = constants.PageNames.INDEX_ROUTE
         return self.load_events.get(route, [])
 
     def _check_routes_conflict(self, new_route: str):
@@ -472,14 +472,14 @@ class App(Base):
     def add_custom_404_page(
         self,
         component: Component | ComponentCallable | None = None,
-        title: str = constants.TITLE_404,
-        image: str = constants.FAVICON_404,
-        description: str = constants.DESCRIPTION_404,
+        title: str = constants.Page404.TITLE,
+        image: str = constants.Page404.IMAGE,
+        description: str = constants.Page404.DESCRIPTION,
         on_load: EventHandler
         | EventSpec
         | list[EventHandler | EventSpec]
         | None = None,
-        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
+        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
@@ -498,10 +498,10 @@ class App(Base):
             component = Default404Page.create()
         self.add_page(
             component=wait_for_client_redirect(self._generate_component(component)),
-            route=constants.SLUG_404,
-            title=title or constants.TITLE_404,
-            image=image or constants.FAVICON_404,
-            description=description or constants.DESCRIPTION_404,
+            route=constants.Page404.SLUG,
+            title=title or constants.Page404.TITLE,
+            image=image or constants.Page404.IMAGE,
+            description=description or constants.Page404.DESCRIPTION,
             on_load=on_load,
             meta=meta,
         )
@@ -541,11 +541,13 @@ class App(Base):
         page_imports = {
             i
             for i, tags in imports.items()
-            if i not in compiler.DEFAULT_IMPORTS.keys()
-            and i != "focus-visible/dist/focus-visible"
-            and "next" not in i
-            and not i.startswith("/")
-            and not i.startswith(".")
+            if i
+            not in [
+                *compiler.DEFAULT_IMPORTS.keys(),
+                *constants.PackageJson.DEPENDENCIES.keys(),
+                *constants.PackageJson.DEV_DEPENDENCIES.keys(),
+            ]
+            and not any(i.startswith(prefix) for prefix in ["/", ".", "next/"])
             and i != ""
             and any(tag.install for tag in tags)
         }
@@ -581,7 +583,7 @@ class App(Base):
             self.add_page(render, **kwargs)
 
         # Render a default 404 page if the user didn't supply one
-        if constants.SLUG_404 not in self.pages:
+        if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
 
         task = progress.add_task("Compiling: ", total=len(self.pages))
@@ -649,7 +651,7 @@ class App(Base):
         # Compile the Tailwind config.
         if config.tailwind is not None:
             config.tailwind["content"] = config.tailwind.get(
-                "content", constants.TAILWIND_CONTENT
+                "content", constants.Tailwind.CONTENT
             )
             compile_results.append(compiler.compile_tailwind(config.tailwind))
 
