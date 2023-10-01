@@ -26,6 +26,7 @@ from .typography import *
 
 # Add the convenience methods for all the components manually.
 # This is necessary for static type checking to work.
+
 component = Component.create
 badge = Badge.create
 code = Code.create
@@ -165,6 +166,7 @@ grid = Grid.create
 grid_item = GridItem.create
 hstack = Hstack.create
 html = Html.create
+html_dangerous = HtmlDangerous.create
 responsive_grid = ResponsiveGrid.create
 spacer = Spacer.create
 square = Square.create
@@ -245,3 +247,4 @@ kbd = KeyboardKey.create
 color_mode_button = ColorModeButton.create
 color_mode_icon = ColorModeIcon.create
 color_mode_switch = ColorModeSwitch.create
+pyplot = Pyplot.create

@@ -1,5 +1,6 @@
 """Convenience functions to define layout components."""
 
+from .matplotlib import Pyplot
 from .plotly import Plotly
 from .victory import (
     Area,

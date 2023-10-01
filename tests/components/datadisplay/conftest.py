@@ -1,7 +1,6 @@
 """Data display component tests fixtures."""
 from typing import List
 
-import pandas as pd
 import pytest
 
 import reflex as rx
@@ -32,6 +31,10 @@ def data_table_state2():
     Returns:
         The data table state class.
     """
+    try:
+        import pandas as pd
+    except ImportError:
+        pytest.skip("pandas is not installed")
 
     class DataTableState(rx.State):
         _data = pd.DataFrame()

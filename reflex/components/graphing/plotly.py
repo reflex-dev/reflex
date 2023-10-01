@@ -49,7 +49,7 @@ try:
     from plotly.io import to_json
 
     @serializer
-    def serialize_figure(figure: Figure) -> list:
+    def serialize_plotly_figure(figure: Figure) -> list:
         """Serialize a plotly figure.
 
         Args:

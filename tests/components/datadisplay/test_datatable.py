@@ -1,5 +1,9 @@
-import pandas as pd
 import pytest
+
+try:
+    import pandas as pd
+except ImportError:
+    pytest.skip("pandas is not installed", allow_module_level=True)
 
 import reflex as rx
 from reflex.components.datadisplay.datatable import (
