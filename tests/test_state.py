@@ -29,6 +29,7 @@ from reflex.state import (
     StateUpdate,
 )
 from reflex.utils import prerequisites
+from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
 from .states import GenState
@@ -2105,7 +2106,7 @@ def test_json_dumps_with_mutables():
 
     dict_val = MutableContainsBase().dict()
     assert isinstance(dict_val["items"][0], dict)
-    val = format.json_dumps(dict_val)
+    val = json_dumps(dict_val)
     assert val == '{"is_hydrated": false, "items": [{"tags": ["123", "456"]}]}'
 
 
