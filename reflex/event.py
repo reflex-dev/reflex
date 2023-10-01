@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+import uuid
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -144,12 +145,7 @@ class EventHandler(Base):
         for arg in args:
             # Special case for file uploads.
             if isinstance(arg, FileUpload):
-                return EventSpec(
-                    handler=self,
-                    client_handler_name="uploadFiles",
-                    # `files` is defined in the Upload component's _use_hooks
-                    args=((Var.create_safe("files"), Var.create_safe("files")),),
-                )
+                return arg.as_event_spec(handler=self)
 
             # Otherwise, convert to JSON.
             try:
@@ -217,7 +213,58 @@ EVENT_ARG = BaseVar(name="_e", type_=FrontendEvent, is_local=True)
 class FileUpload(Base):
     """Class to represent a file upload."""
 
-    pass
+    upload_id: Optional[str] = None
+    on_upload_progress: Optional[EventHandler] = None
+
+    @staticmethod
+    def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
+        """Args spec for on_upload_progress event handler."""
+        return [_prog]
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+        """
+        spec_args = [
+            # `files` is defined in the Upload component's _use_hooks
+            (Var.create_safe("files"), Var.create_safe("files")),
+            (
+                Var.create_safe("upload_id"),
+                Var.create_safe(self.upload_id or str(uuid.uuid4()), is_string=True),
+            ),
+        ]
+        if self.on_upload_progress is not None:
+            if isinstance(self.on_upload_progress, EventHandler):
+                on_upload_progress_chain = EventChain(
+                    events=[
+                        call_event_handler(
+                            self.on_upload_progress,
+                            self.on_upload_progress_args_spec,
+                        ),
+                    ],
+                    args_spec=self.on_upload_progress_args_spec,
+                )
+            else:
+                raise ValueError(
+                    f"{self.on_upload_progress} is not a valid event handler."
+                )
+            spec_args.append(
+                (
+                    Var.create_safe("on_upload_progress"),
+                    BaseVar(
+                        name=format.format_prop(on_upload_progress_chain).strip("{}"),
+                        type_=EventChain,
+                    ),
+                ),
+            )
+        return EventSpec(
+            handler=handler, client_handler_name="uploadFiles", args=tuple(spec_args)
+        )
 
 
 # Special server-side events.

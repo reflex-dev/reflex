@@ -7,7 +7,7 @@ from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
-from reflex.event import EventChain
+from reflex.event import EventChain, EventHandler, call_script
 from reflex.vars import BaseVar, Var
 
 files_state: str = "const [files, setFiles] = useState([]);"
@@ -19,6 +19,10 @@ selected_files: BaseVar = BaseVar(name="files.map((f) => f.name)", type_=List[st
 clear_selected_files: BaseVar = BaseVar(
     name="_e => setFiles((files) => [])", type_=EventChain
 )
+
+
+def cancel_upload(upload_id: str) -> EventHandler:
+    return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 
 class Upload(Component):

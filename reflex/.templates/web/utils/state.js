@@ -29,6 +29,9 @@ let event_processing = false
 // Array holding pending events to be processed.
 const event_queue = [];
 
+// Pending upload promises, by id
+const upload_controllers = {};
+
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -216,7 +219,7 @@ export const applyEvent = async (event, socket) => {
 export const applyRestEvent = async (event) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(event.name, event.payload.files);
+    eventSent = await uploadFiles(event.name, event.payload.files, event.payload.upload_id, event.payload.on_upload_progress);
   }
   return eventSent;
 };
@@ -320,18 +323,30 @@ export const connect = async (
  *
  * @param state The state to apply the delta to.
  * @param handler The handler to use.
+ * @param on_upload_progress The function to call on upload progress.
  *
  * @returns Whether the files were uploaded.
  */
-export const uploadFiles = async (handler, files) => {
+export const uploadFiles = async (handler, files, upload_id, on_upload_progress) => {
   // return if there's no file to upload
   if (files.length == 0) {
     return false;
   }
 
-  const headers = {
-    "Content-Type": files[0].type,
-  };
+  if (upload_controllers[upload_id]) {
+    console.log("Upload already in progress for ", upload_id)
+    return false;
+  }
+  const controller = new AbortController()
+  const config = {
+    headers: {
+      "Content-Type": files[0].type,
+    },
+    signal: controller.signal
+  }
+  if (on_upload_progress) {
+    config["onUploadProgress"] = on_upload_progress
+  }
   const formdata = new FormData();
 
   // Add the token and handler to the file name.
@@ -343,8 +358,13 @@ export const uploadFiles = async (handler, files) => {
     );
   }
 
+  // Allow other events to be processed during upload.
+  event_processing = false;
+
   // Send the file to the server.
-  await axios.post(UPLOADURL, formdata, headers)
+  upload_controllers[upload_id] = controller
+
+  await axios.post(UPLOADURL, formdata, config)
     .then(() => { return true; })
     .catch(
       error => {
@@ -364,6 +384,9 @@ export const uploadFiles = async (handler, files) => {
         return false;
       }
     )
+    .finally(() => {
+      delete upload_controllers[upload_id]
+    })
 };
 
 /**
