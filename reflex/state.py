@@ -1853,7 +1853,13 @@ class ImmutableMutableProxy(MutableProxy):
     to modify the wrapped object when the StateProxy is immutable.
     """
 
-    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None) -> Any:
+    def _mark_dirty(
+        self,
+        wrapped=None,
+        instance=None,
+        args=tuple(),
+        kwargs=None,
+    ) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
