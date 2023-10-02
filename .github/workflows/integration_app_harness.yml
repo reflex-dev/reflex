@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   integration-app-harness:
+    timeout-minutes: 30
     strategy:
       matrix:
         state_manager: [ "redis", "memory" ]

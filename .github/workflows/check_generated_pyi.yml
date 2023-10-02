@@ -15,6 +15,7 @@ on:
 
 jobs:
   check-generated-pyi-components:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
