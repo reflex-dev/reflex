@@ -100,6 +100,9 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
 
     Returns:
         Whether the class is a subclass of the other class.
+
+    Raises:
+        TypeError: If the base class is not valid for issubclass.
     """
     # Special check for Any.
     if cls_check == Any:
@@ -116,7 +119,12 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
         return False
 
     # Check if the types match.
-    return cls_check_base == Any or issubclass(cls_base, cls_check_base)
+    try:
+        return cls_check_base == Any or issubclass(cls_base, cls_check_base)
+    except TypeError as te:
+        # These errors typically arise from bad annotations and are hard to
+        # debug without knowing the type that we tried to compare.
+        raise TypeError(f"Invalid type for issubclass: {cls_base}") from te
 
 
 def _isinstance(obj: Any, cls: GenericType) -> bool:
