@@ -18,6 +18,7 @@ env:
 
 jobs:
   example-counter-wsl:
+    timeout-minutes: 30
     # 2019 is more stable with WSL in GH actions
     # https://github.com/actions/runner-images/issues/5151
     # Confirmed through trial and error. 2022 has >80% failure rate (probably BSOD)
