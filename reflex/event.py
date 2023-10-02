@@ -247,16 +247,19 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
-def redirect(path: str | Var[str]) -> EventSpec:
+def redirect(path: str | Var[str], external: Optional[bool] = False) -> EventSpec:
     """Redirect to a new path.
 
     Args:
         path: The path to redirect to.
+        external: Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
     """
-    return server_side("_redirect", get_fn_signature(redirect), path=path)
+    return server_side(
+        "_redirect", get_fn_signature(redirect), path=path, external=external
+    )
 
 
 def console_log(message: str | Var[str]) -> EventSpec:

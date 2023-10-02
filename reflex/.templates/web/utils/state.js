@@ -114,7 +114,10 @@ export const getAllLocalStorageItems = () => {
 export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
-    Router.push(event.payload.path);
+    if (event.payload.external)
+      window.open(event.payload.path, "_blank");
+    else
+      Router.push(event.payload.path);
     return false;
   }
 
@@ -185,7 +188,7 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_call_script") {
     try {
       eval(event.payload.javascript_code);
-    } catch(e) {
+    } catch (e) {
       console.log("_call_script", e);
     }
     return false;
