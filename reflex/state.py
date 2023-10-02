@@ -679,7 +679,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Reset the base vars.
         fields = self.get_fields()
         for prop_name in self.base_vars:
-            setattr(self, prop_name, fields[prop_name].default)
+            setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -696,7 +696,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 isinstance(field.type_, type)
                 and issubclass(field.type_, ClientStorageBase)
             ):
-                setattr(self, prop_name, field.default)
+                setattr(self, prop_name, copy.deepcopy(field.default))
 
         # Recursively reset the substate client storage.
         for substate in self.substates.values():
@@ -1007,6 +1007,21 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Clean this state.
         self.dirty_vars = set()
         self.dirty_substates = set()
+
+    def get_value(self, key: str) -> Any:
+        """Get the value of a field (without proxying).
+
+        The returned value will NOT track dirty state updates.
+
+        Args:
+            key: The key of the field.
+
+        Returns:
+            The value of the field.
+        """
+        if isinstance(key, MutableProxy):
+            return super().get_value(key.__wrapped__)
+        return super().get_value(key)
 
     def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
@@ -1853,7 +1868,13 @@ class ImmutableMutableProxy(MutableProxy):
     to modify the wrapped object when the StateProxy is immutable.
     """
 
-    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None):
+    def _mark_dirty(
+        self,
+        wrapped=None,
+        instance=None,
+        args=tuple(),
+        kwargs=None,
+    ) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -1864,6 +1885,9 @@ class ImmutableMutableProxy(MutableProxy):
             args: The args for the wrapped function.
             kwargs: The kwargs for the wrapped function.
 
+        Returns:
+            The result of the wrapped function.
+
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
@@ -1872,6 +1896,6 @@ class ImmutableMutableProxy(MutableProxy):
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        super()._mark_dirty(
+        return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )

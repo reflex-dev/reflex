@@ -29,6 +29,7 @@ from reflex.state import (
     StateUpdate,
 )
 from reflex.utils import prerequisites
+from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
 from .states import GenState
@@ -1624,7 +1625,7 @@ class BackgroundTaskState(State):
     """A state with a background task."""
 
     order: List[str] = []
-    dict_list: Dict[str, List[int]] = {"foo": []}
+    dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
 
     @rx.background
     async def background_task(self):
@@ -1656,6 +1657,9 @@ class BackgroundTaskState(State):
                 pass  # update proxy instance
 
         async with self:
+            # Methods on ImmutableMutableProxy should return their wrapped return value.
+            assert self.dict_list.pop("foo") is not None
+
             self.order.append("background_task:stop")
             self.other()  # direct calling event handlers works in context
             self._private_method()
@@ -2089,3 +2093,51 @@ def test_mutable_copy_vars(mutable_state, copy_func):
 def test_duplicate_substate_class(duplicate_substate):
     with pytest.raises(ValueError):
         duplicate_substate()
+
+
+class Foo(Base):
+    """A class containing a list of str."""
+
+    tags: List[str] = ["123", "456"]
+
+
+def test_json_dumps_with_mutables():
+    """Test that json.dumps works with Base vars inside mutable types."""
+
+    class MutableContainsBase(State):
+        items: List[Foo] = [Foo()]
+
+    dict_val = MutableContainsBase().dict()
+    assert isinstance(dict_val["items"][0], dict)
+    val = json_dumps(dict_val)
+    assert val == '{"is_hydrated": false, "items": [{"tags": ["123", "456"]}]}'
+
+
+def test_reset_with_mutables():
+    """Calling reset should always reset fields to a copy of the defaults."""
+    default = [[0, 0], [0, 1], [1, 1]]
+    copied_default = copy.deepcopy(default)
+
+    class MutableResetState(State):
+        items: List[List[int]] = default
+
+    instance = MutableResetState()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
+
+    instance.reset()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
+
+    instance.reset()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
