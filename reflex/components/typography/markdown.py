@@ -46,10 +46,18 @@ def get_base_component_map() -> dict[str, Callable]:
         "h2": lambda value: Heading.create(
             value, as_="h2", size="xl", margin_y="0.5em"
         ),
-        "h3": lambda value: Heading.create(value, as_="h3", size="lg", margin_y="1em"),
-        "h4": lambda value: Heading.create(value, as_="h4", size="md", margin_y="1em"),
-        "h5": lambda value: Heading.create(value, as_="h5", size="sm", margin_y="1em"),
-        "h6": lambda value: Heading.create(value, as_="h6", size="xs", margin_y="1em"),
+        "h3": lambda value: Heading.create(
+            value, as_="h3", size="lg", margin_y="0.5em"
+        ),
+        "h4": lambda value: Heading.create(
+            value, as_="h4", size="md", margin_y="0.5em"
+        ),
+        "h5": lambda value: Heading.create(
+            value, as_="h5", size="sm", margin_y="0.5em"
+        ),
+        "h6": lambda value: Heading.create(
+            value, as_="h6", size="xs", margin_y="0.5em"
+        ),
         "p": lambda value: Text.create(value, margin_y="1em"),
         "ul": lambda value: UnorderedList.create(value, margin_y="1em"),  # type: ignore
         "ol": lambda value: OrderedList.create(value, margin_y="1em"),  # type: ignore
