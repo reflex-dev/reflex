@@ -1658,7 +1658,7 @@ class BackgroundTaskState(State):
 
         async with self:
             # Methods on ImmutableMutableProxy should return their wrapped return value.
-            assert self.dict_list.pop("foo") is not None
+            assert self.dict_list.pop("foo") == [1, 2, 3]
 
             self.order.append("background_task:stop")
             self.other()  # direct calling event handlers works in context
