@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import inspect
+import functools
 import os
 from multiprocessing.pool import ThreadPool
 from typing import (
@@ -17,6 +17,7 @@ from typing import (
     Set,
     Type,
     Union,
+    get_type_hints,
 )
 
 from fastapi import FastAPI, UploadFile
@@ -842,9 +843,11 @@ def upload(app: App):
             func = getattr(current_state, handler.split(".")[-1])
 
             # check if there exists any handler args with annotation, List[UploadFile]
-            for k, v in inspect.getfullargspec(
-                func.fn if isinstance(func, EventHandler) else func
-            ).annotations.items():
+            if isinstance(func, EventHandler):
+                func = func.fn
+            if isinstance(func, functools.partial):
+                func = func.func
+            for k, v in get_type_hints(func).items():
                 if types.is_generic_alias(v) and types._issubclass(
                     v.__args__[0], UploadFile
                 ):
