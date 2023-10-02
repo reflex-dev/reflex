@@ -13,7 +13,6 @@ from typing import Optional
 import typer
 from alembic.util.exc import CommandError
 from tabulate import tabulate
-from yaspin import kbi_safe_yaspin
 
 from reflex import constants, model
 from reflex.config import get_config
@@ -273,22 +272,29 @@ def login(
         # If not already logged in, open a browser window/tab to the login page.
         console.print(f"Opening {config.cp_web_url} ...")
         request_id = uuid.uuid4().hex
-        if not webbrowser.open(f"{config.cp_web_url}?request={request_id}"):
+        if not webbrowser.open(f"{config.cp_web_url}?request-id={request_id}"):
             console.error(
                 f"Unable to open the browser to authenticate. Please contact support."
             )
             raise typer.Exit(1)
-        with kbi_safe_yaspin(text="Waiting for authentication...", side="right"):
+        with console.status("Waiting for authentication..."):
             for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
-                token = hosting.fetch_token(request_id)
-                if token:
+                try:
+                    token = hosting.fetch_token(request_id)
                     break
-                time.sleep(1)
+                except Exception:
+                    pass
+
+                time.sleep(5)
+
     if not token:
         console.error(f"Unable to authenticate. Please try again or contact support.")
         raise typer.Exit(1)
-    if not hosting.validate_token(token):
-        console.error("Access denied.")
+
+    try:
+        hosting.validate_token(token)
+    except Exception as ex:
+        console.error(f"Access denied: {ex}.")
         if using_existing_token and os.path.exists(constants.Hosting.HOSTING_JSON):
             hosting_config = {}
             try:
@@ -298,7 +304,7 @@ def login(
             except Exception:
                 # Best efforts removing invalid token is OK
                 pass
-        raise typer.Exit(1)
+        raise typer.Exit(1) from ex
 
     hosting_config = {}
 
@@ -424,6 +430,9 @@ def deploy(
     auto_stop: Optional[bool] = typer.Option(
         False, help="Whether to auto stop the instance."
     ),
+    frontend_hostname: Optional[str] = typer.Option(
+        None, help="The hostname of the frontend."
+    ),
     non_interactive: Optional[bool] = typer.Option(
         False,
         "--non-interactive",
@@ -437,76 +446,100 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
+    if non_interactive and not key:
+        console.error("Please provide a deployment key when not in interactive mode.")
+        raise typer.Exit(1)
+
     # Check if the user is authenticated
     token = hosting.get_existing_access_token()
     if not token:
-        console.error("Please authenticate using `reflex login` first.")
+        console.print("Please authenticate using `reflex login` first.")
         raise typer.Exit(1)
-    if not hosting.validate_token(token):
-        console.error("Access denied, exiting.")
-        raise typer.Exit(1)
+    try:
+        hosting.validate_token(token)
+    except Exception as ex:
+        console.error("Unable to authenticate: {ex}.")
+        raise typer.Exit(1) from ex
 
     # Check if we are set up.
     # TODO: export will check again with frontend==True, refactor
     prerequisites.check_initialized(frontend=True)
 
-    pre_launch_response = hosting.prepare_deploy(key, app_name)
-    if not pre_launch_response:
-        raise typer.Exit(1)
+    try:
+        pre_deploy_response = hosting.prepare_deploy(
+            app_name, key=key, frontend_hostname=frontend_hostname
+        )
+    except Exception as ex:
+        console.error(f"Unable to prepare deployment due to: {ex}")
+        raise typer.Exit(1) from ex
 
-    # This should not change during the time of preparation
-    app_prefix = pre_launch_response.app_prefix
-    api_url = pre_launch_response.api_url
-    if not non_interactive:
-        key_candidate = api_url_candidate = None
+    # The app prefix should not change during the time of preparation
+    app_prefix = pre_deploy_response.app_prefix
 
-        if pre_launch_response.existing_deployments_same_app_and_api_urls:
-            # TODO: add another check to guard against CP returning a (None, None)
-            key_candidate = (
-                pre_launch_response.existing_deployments_same_app_and_api_urls[0][0]
-            )
-            api_url_candidate = (
-                pre_launch_response.existing_deployments_same_app_and_api_urls[0][1]
-            )
-            # TODO: maybe keep it simple for now, since do not allow multiple deployments per app
-            console.print(f"Overwrite deployment [ {key_candidate} ] ...")
-        elif pre_launch_response.suggested_key_and_api_url:
-            key_candidate = pre_launch_response.suggested_key_and_api_url[0]
-            api_url_candidate = pre_launch_response.suggested_key_and_api_url[1]
-            # This should not change during the time of preparation
-            app_prefix = pre_launch_response.app_prefix
+    if non_interactive:
+        # in this case, the key was supplied for the pre_deploy call, at this point the reply is expected
+        if not (reply := pre_deploy_response.reply):
+            console.error(f"Unable to deploy at this name {key}.")
+            raise typer.Exit(1)
+        api_url = reply.api_url
+        deploy_url = reply.deploy_url
+    else:
+        key_candidate = api_url = deploy_url = ""
+        if reply := pre_deploy_response.reply:
+            api_url = reply.api_url
+            deploy_url = reply.deploy_url
+            key_candidate = reply.key
+        elif pre_deploy_response.existing:
+            # validator already checks existing field is not empty list
+            # Note: keeping this simple as we only allow one deployment per app
+            existing = pre_deploy_response.existing[0]
+            console.print(f"Overwrite deployment [ {existing.key} ] ...")
+            key_candidate = existing.key
+            api_url = existing.api_url
+            deploy_url = existing.deploy_url
+        elif suggestion := pre_deploy_response.suggestion:
+            key_candidate = suggestion.key
+            api_url = suggestion.api_url
+            deploy_url = suggestion.deploy_url
+
             # If user takes the suggestion, we will use the suggested key and proceed
             while key_input := console.ask(
                 f"Name of deployment", default=key_candidate
             ):
-                pre_launch_response = hosting.prepare_deploy(key_input, app_name)
-                if pre_launch_response and pre_launch_response.api_url:
-                    api_url_candidate = pre_launch_response.api_url
-                    # This should not change during the time of preparation
-                    app_prefix = pre_launch_response.app_prefix
+                try:
+                    pre_deploy_response = hosting.prepare_deploy(
+                        app_name,
+                        key=key_input,
+                        frontend_hostname=frontend_hostname,
+                    )
+                    assert pre_deploy_response.reply is not None
+                    assert key_input == pre_deploy_response.reply.key
+                    key_candidate = pre_deploy_response.reply.key
+                    api_url = pre_deploy_response.reply.api_url
+                    deploy_url = pre_deploy_response.reply.deploy_url
+                    # we get the confirmation, so break from the loop
                     break
-                else:
+                except Exception:
                     console.error(
                         "Cannot deploy at this name, try picking a different name"
                     )
-            key_candidate = key_input or key_candidate
 
         # We have pydantic validator to ensure key_candidate is provided
-        if not key_candidate or not api_url_candidate:
+        if not key_candidate or not api_url or not deploy_url:
             console.error("Unable to find a suitable deployment key.")
             raise typer.Exit(1)
-        # Rename to make them more clear
+
+        # Now copy over the candidate to the key
         key = key_candidate
-        api_url = api_url_candidate
 
         # TODO: let control plane suggest a region?
-        # Then CP needs to know the user's location, might not be a good idea
+        # Then CP needs to know the user's location, which requires user permission
         region_input = console.ask(
             "Region to deploy to", default=regions[0] if regions else "sjc"
         )
         regions = regions or [region_input]
-        # process the envs
 
+        # process the envs
         envs_finished = False
         env_key_prompt = "  Env name (enter to skip)"
         console.print("Environment variables ...")
@@ -525,7 +558,7 @@ def deploy(
             envs.append(f"{env_key}={env_value}")
 
     # Check the required params are valid
-    console.debug(f"{key=}, {regions=}, {app_name=}, {app_prefix=}, {api_url=}")
+    console.debug(f"{key=}, {regions=}, {app_name=}, {app_prefix=}, {api_url}")
     if not key or not regions or not app_name or not app_prefix or not api_url:
         console.error("Please provide all the required parameters.")
         raise typer.Exit(1)
@@ -548,6 +581,7 @@ def deploy(
 
     # Compile the app in production mode.
     config.api_url = api_url
+    config.deploy_url = deploy_url
     try:
         export(frontend=True, backend=True, zipping=True, loglevel=loglevel)
     except ImportError as ie:
@@ -577,37 +611,36 @@ def deploy(
         hosting.clean_up()
         raise typer.Exit(1)
     console.print("Deployment will start shortly.")
-    site_url = deploy_response.url
-    if not site_url.startswith("https://"):
-        site_url = f"https://{site_url}"
 
+    # TODO: for overwrite case, poll for the old site to come down
     backend_up = frontend_up = False
-    # TODO: poll backend for status
-    with kbi_safe_yaspin(text="Checking backend ...", side="right", timer=True) as sp:
+
+    with console.status("Checking backend ...") as status:
         for _ in range(constants.Hosting.BACKEND_POLL_TIMEOUT):
-            if backend_up := hosting.poll_backend(config.api_url):
+            if backend_up := hosting.poll_backend(deploy_response.backend_url):
                 # TODO: what is a universal tick mark?
-                sp.ok("✅")
+                status.update("✅ ")
                 break
             time.sleep(1)
         if not backend_up:
-            sp.fail("❌")
+            status.update("❌ ")
 
-    # TODO: poll frontend for status
-    with kbi_safe_yaspin(text="Checking frontend ...", side="right", timer=True) as sp:
+    with console.status("Checking frontend ...") as status:
         for _ in range(constants.Hosting.FRONTEND_POLL_TIMEOUT):
-            if frontend_up := hosting.poll_frontend(site_url):
+            if frontend_up := hosting.poll_frontend(deploy_response.frontend_url):
                 # TODO: what is a universal tick mark?
-                sp.ok("✅ ")
+                status.update("✅ ")
                 break
             time.sleep(1)
         if not frontend_up:
-            sp.fail("❌ ")
+            status.update("❌ ")
 
     # TODO: below is a bit hacky, refactor
     hosting.clean_up()
     if frontend_up and backend_up:
-        console.print(f"Your site <{key}> {regions} is up: {site_url}")
+        console.print(
+            f"Your site [ {key} ] at [ {regions} ] is up: {deploy_response.frontend_url}"
+        )
         return
     console.warn(
         "Your deployment is taking unusually long. Check back later using this command: `reflex deployments status`"
@@ -628,9 +661,12 @@ def list_deployments(
 ):
     """List all the hosted instances for the specified app."""
     console.set_log_level(loglevel)
+    try:
+        deployments = hosting.list_deployments()
+    except Exception as ex:
+        console.error(f"Unable to list deployments due to: {ex}")
+        raise typer.Exit(1) from ex
 
-    if (deployments := hosting.list_deployments()) is None:
-        raise typer.Exit(1)
     if as_json:
         console.print(json.dumps(deployments))
         return
@@ -653,8 +689,11 @@ def delete_deployment(
     """Delete a hosted instance."""
     console.set_log_level(loglevel)
 
-    if not hosting.delete_deployment(key):
-        raise typer.Exit(1)
+    try:
+        hosting.delete_deployment(key)
+    except Exception as ex:
+        console.error(f"Unable to delete deployment due to: {ex}")
+        raise typer.Exit(1) from ex
     console.print(f"Successfully deleted [ {key} ].")
 
 

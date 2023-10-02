@@ -1,11 +1,10 @@
 """Hosting related utilities."""
 import json
 import os
-from http import HTTPStatus
 from typing import Optional
 
 import httpx
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, ValidationError, root_validator
 
 from reflex import constants
 from reflex.config import get_config
@@ -18,9 +17,19 @@ POST_APPS_ENDPOINT = f"{config.cp_backend_url}/apps"
 GET_APPS_ENDPOINT = f"{config.cp_backend_url}/apps"
 GET_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 POST_DEPLOYMENTS_PREPARE_ENDPOINT = f"{config.cp_backend_url}/deployments/prepare"
-POST_VALIDATE_ME_ENDPOINT = f"{config.cp_backend_url}/validate/me"
-FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/validate"
+POST_VALIDATE_ME_ENDPOINT = f"{config.cp_backend_url}/authenticate/me"
+FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/authenticate"
 DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+
+
+class DeploymentPrepInfo(BaseModel):
+    """The params/settings returned from the prepare endpoint
+    including the deployment key and the frontend/backend URLs based on the key.
+    """
+
+    key: str
+    api_url: str
+    deploy_url: str
 
 
 class DeploymentPrepareResponse(BaseModel):
@@ -29,29 +38,31 @@ class DeploymentPrepareResponse(BaseModel):
     """
 
     app_prefix: str
-    api_url: Optional[str]
-    suggested_key_and_api_url: Optional[tuple[str, str]]
-    existing_deployments_same_app_and_api_urls: Optional[list[tuple[str, str]]]
+    reply: Optional[DeploymentPrepInfo] = None
+    existing: Optional[list[DeploymentPrepInfo]] = None
+    suggestion: Optional[DeploymentPrepInfo] = None
 
     @root_validator(pre=True)
-    def ensure_at_least_one_api_url(cls, values):
-        """Ensure at least one API_URL is returned for any of the cases we try to prepare.
+    def ensure_at_least_one_deploy_params(cls, values):
+        """Ensure at least one set of param is returned for any of the cases we try to prepare.
 
         Args:
             values: The values passed in.
 
         Raises:
-            ValueError: If all of the API_URLs are None.
+            ValueError: If all of the optional fields are None.
 
         Returns:
             The values passed in.
         """
         if (
-            values.get("api_url") is None
-            and values.get("suggested_key_and_api_url") is None
-            and values.get("existing_deployments_same_app_and_api_urls") is None
+            values.get("reply") is None
+            and not values.get("existing")
+            and values.get("suggestion") is None
         ):
-            raise ValueError("At least one API_URL is required from control plane.")
+            raise ValueError(
+                "At least one set of params for deploy is required from control plane."
+            )
         return values
 
 
@@ -71,14 +82,16 @@ class DeploymentGetResponse(BaseModel):
 class DeploymentPostResponse(BaseModel):
     """The URL for the deployed site."""
 
-    url: str
+    frontend_url: str = Field(..., regex=r"^https?://", min_length=8)
+    backend_url: str = Field(..., regex=r"^https?://", min_length=8)
 
 
 class DeploymentsPreparePostParam(BaseModel):
     """Params for app API URL creation backend API."""
 
-    key: Optional[str]  # the deployment name
-    app_name: Optional[str] = None
+    app_name: str
+    key: Optional[str] = None  #  name of the deployment
+    frontend_hostname: Optional[str] = None
 
 
 class AppsPostParam(BaseModel):
@@ -135,54 +148,45 @@ def get_existing_access_token() -> Optional[str]:
     Returns:
         The access token if it exists, None otherwise.
     """
-    token = None
-    if os.path.exists(constants.Hosting.HOSTING_JSON):
-        console.debug("Fetching token from existing config.")
-        try:
-            with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
-                hosting_config = json.load(config_file)
-                token = hosting_config.get("access_token")
-        except Exception as ex:
-            console.debug(
-                f"Unable to fetch token from the hosting config file due to: {ex}"
-            )
-            return None
-    if not token:
-        console.error("Unable to fetch the token from existing config.")
-    console.debug(f"Token: {token}")
-    return token
+    console.debug("Fetching token from existing config...")
+    try:
+        with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
+            hosting_config = json.load(config_file)
+            token = hosting_config.get("access_token")
+            return token
+    except Exception as ex:
+        console.debug(
+            f"Unable to fetch token from the hosting config file due to: {ex}"
+        )
+        return None
 
 
-def validate_token(token: str) -> bool:
+def validate_token(token: str):
     """Validate the token with the control plane.
 
     Args:
         token: The access token to validate.
 
-    Returns:
-        True if the token is valid, False otherwise.
+    Raises:
+        Exception: if runs into timeout, failed requests, unexpected errors.
     """
     config = get_config()
-    response = httpx.post(
-        POST_VALIDATE_ME_ENDPOINT,
-        headers=authorization_header(token),
-        timeout=config.http_request_timeout,
-    )
     try:
+        response = httpx.post(
+            POST_VALIDATE_ME_ENDPOINT,
+            headers=authorization_header(token),
+            timeout=config.http_request_timeout,
+        )
         response.raise_for_status()
-    except httpx.HTTPError:
-        if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-            console.debug(f"Reason: {response.reason_phrase}")
-            console.error("Internal server error. Please contact support.")
-        elif response and (detail := response.json().get("detail")):
-            console.debug(f"Details: {detail}")
-        else:
-            console.error(
-                f"Unable to validate the token due to: {response.reason_phrase}."
-            )
-            console.debug(f'Details: {response.json().get("detail")}')
-        return False
-    return True
+    except httpx.TimeoutException as te:
+        console.debug("Unable to validate the token due to request timeout.")
+        raise Exception("request timeout") from te
+    except httpx.HTTPError as ex:
+        console.debug(f"Unable to validate the token due to: {ex}.")
+        raise Exception("access denied") from ex
+    except Exception as ex:
+        console.debug(f"Unexpected error: {ex}.")
+        raise Exception("internal errors") from ex
 
 
 def authenticated_token() -> Optional[str]:
@@ -192,14 +196,16 @@ def authenticated_token() -> Optional[str]:
         The access token if it is valid, None otherwise.
     """
     # Check if the user is authenticated
-    token = get_existing_access_token()
-    if not token:
-        console.error("Please authenticate using `reflex login` first.")
+    try:
+        token = get_existing_access_token()
+        if not token:
+            console.debug("No token found from the existing config.")
+            return None
+        validate_token(token)
+        return token
+    except Exception:
+        console.debug("Unable to validate the token from the existing config.")
         return None
-    if not validate_token(token):
-        console.error("Access denied, exiting.")
-        return None
-    return token
 
 
 def is_set_up() -> bool:
@@ -227,50 +233,61 @@ def authorization_header(token: str) -> dict[str, str]:
 
 
 def prepare_deploy(
-    key: Optional[str], app_name: str
-) -> Optional[DeploymentPrepareResponse]:
+    app_name: str,
+    key: Optional[str] = None,
+    frontend_hostname: Optional[str] = None,
+) -> DeploymentPrepareResponse:
     """Send a POST request to Control Plane to prepare a new deployment.
     Control Plane checks if there is conflict with the key if provided.
-    If the key is absent, it will return a suggested key based on the app_name in the response.
+    If the key is absent, it will return existing deployments and a suggested name based on the app_name in the response.
 
     Args:
         key: The deployment name.
         app_name: The app name.
+        frontend_hostname: The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
+
+    Raises:
+        Exception: If the operation fails. The exception message is the reason.
 
     Returns:
         The response containing the backend URLs if successful, None otherwise.
     """
     # Check if the user is authenticated
     if not (token := authenticated_token()):
-        return None
-    url_response = httpx.post(
-        POST_DEPLOYMENTS_PREPARE_ENDPOINT,
-        headers=authorization_header(token),
-        json=DeploymentsPreparePostParam(key=key, app_name=app_name).dict(
-            exclude_none=True
-        ),
-        timeout=config.http_request_timeout,
-    )
+        raise Exception("not authenticated")
     try:
-        url_response.raise_for_status()
-        url_json = url_response.json()
-        return DeploymentPrepareResponse(
-            app_prefix=url_json["app_prefix"],
-            api_url=url_json["api_url"],
-            suggested_key_and_api_url=url_json["suggested_key_and_api_url"],
-            existing_deployments_same_app_and_api_urls=url_json[
-                "existing_deployments_same_app_and_api_urls"
-            ],
+        response = httpx.post(
+            POST_DEPLOYMENTS_PREPARE_ENDPOINT,
+            headers=authorization_header(token),
+            json=DeploymentsPreparePostParam(
+                app_name=app_name, key=key, frontend_hostname=frontend_hostname
+            ).dict(exclude_none=True),
+            timeout=config.http_request_timeout,
         )
-    except httpx.TimeoutException:
-        console.error("Unable to prepare launch due to request timeout.")
-        return None
-    except httpx.HTTPError as ex:
-        console.error(f"Unable to prepare launch due to {ex}.")
+        response.raise_for_status()
+        response_json = response.json()
+        console.debug(f"Response from prepare endpoint: {response_json}")
+        return DeploymentPrepareResponse(
+            app_prefix=response_json["app_prefix"],
+            reply=response_json["reply"],
+            suggestion=response_json["suggestion"],
+            existing=response_json["existing"],
+        )
+    except httpx.TimeoutException as te:
+        console.debug("Unable to prepare launch due to request timeout.")
+        raise Exception("request timeout") from te
+    except httpx.HTTPError as he:
+        console.debug(f"Unable to prepare deploy due to {he}.")
+        raise Exception("internal errors") from he
+    except json.JSONDecodeError as jde:
+        console.debug(f"Server did not respond with valid json: {jde}")
+        raise Exception("internal errors") from jde
+    except (KeyError, ValidationError) as kve:
+        console.debug(f"The server response format is unexpected {kve}")
+        raise Exception("internal errors") from kve
     except Exception as ex:
-        console.error(f"Unable to prepare launch due to internal errors: {ex}.")
-        return None
-    return None
+        console.debug(f"Unexpected error: {ex}.")
+        raise Exception("internal errors") from ex
 
 
 def deploy(
@@ -286,7 +303,7 @@ def deploy(
     auto_start: Optional[bool] = None,
     auto_stop: Optional[bool] = None,
     envs: Optional[dict[str, str]] = None,
-) -> Optional[DeploymentPostResponse]:
+) -> DeploymentPostResponse:
     """Send a POST request to Control Plane to launch a new deployment.
 
     Args:
@@ -303,12 +320,15 @@ def deploy(
         auto_stop: Whether to auto stop.
         envs: The environment variables.
 
+    Raises:
+        Exception: If the operation fails. The exception message is the reason.
+
     Returns:
         The response containing the URL of the site to be deployed if successful, None otherwise.
     """
     # Check if the user is authenticated
     if not (token := authenticated_token()):
-        return None
+        raise Exception("not authenticated")
 
     params = DeploymentsPostParam(
         key=key,
@@ -322,7 +342,6 @@ def deploy(
         envs_json=json.dumps(envs) if envs else None,
         reflex_version=constants.Reflex.VERSION,
     )
-    console.debug(f"{params.dict(exclude_none=True)}")
     try:
         with open(frontend_file_name, "rb") as frontend_file, open(
             backend_file_name, "rb"
@@ -340,38 +359,53 @@ def deploy(
             )
         response.raise_for_status()
         response_json = response.json()
-        return DeploymentPostResponse(url=response_json["url"])
-    except httpx.TimeoutException:
-        console.error("Unable to deploy due to request timeout.")
-        return None
+        return DeploymentPostResponse(
+            frontend_url=response_json["frontend_url"],
+            backend_url=response_json["backend_url"],
+        )
+    except httpx.TimeoutException as te:
+        console.debug("Unable to deploy due to request timeout.")
+        raise Exception("request timeout") from te
+    except httpx.HTTPError as he:
+        console.debug(f"Unable to deploy due to {he}.")
+        raise Exception("internal errors") from he
+    except json.JSONDecodeError as jde:
+        console.debug(f"Server did not respond with valid json: {jde}")
+        raise Exception("internal errors") from jde
+    except (KeyError, ValidationError) as kve:
+        console.debug(f"Server response format unexpected: {kve}")
+        raise Exception("internal errors") from kve
     except Exception as ex:
-        console.error(f"Unable to deploy due to internal errors: {ex}.")
-        return None
+        console.debug(f"Unable to deploy due to internal errors: {ex}.")
+        raise Exception("internal errors") from ex
 
 
 def list_deployments(
     app_name: Optional[str] = None,
-) -> Optional[list[dict]]:
+) -> list[dict]:
     """Send a GET request to Control Plane to list deployments.
 
     Args:
         app_name: An optional app name as the filter when listing deployments.
 
+    Raises:
+        Exception: If the operation fails. The exception message is the reason.
+
     Returns:
         The list of deployments if successful, None otherwise.
     """
     if not (token := authenticated_token()):
-        return None
+        raise Exception("not authenticated")
 
     params = DeploymentsGetParam(app_name=app_name)
-    response = httpx.get(
-        GET_DEPLOYMENTS_ENDPOINT,
-        headers=authorization_header(token),
-        params=params.dict(exclude_none=True),
-        timeout=config.http_request_timeout,
-    )
 
     try:
+        response = httpx.get(
+            GET_DEPLOYMENTS_ENDPOINT,
+            headers=authorization_header(token),
+            params=params.dict(exclude_none=True),
+            timeout=config.http_request_timeout,
+        )
         response.raise_for_status()
         return [
             DeploymentGetResponse(
@@ -386,37 +420,53 @@ def list_deployments(
             ).dict()
             for deployment in response.json()
         ]
-    except httpx.TimeoutException:
-        console.error("Unable to list hosted instances due to request timeout.")
-        return None
+    except httpx.TimeoutException as te:
+        console.debug("Unable to list deployments due to request timeout.")
+        raise Exception("request timeout") from te
+    except httpx.HTTPError as he:
+        console.debug(f"Unable to list deployments due to {he}.")
+        raise Exception("internal errors") from he
+    except (ValidationError, KeyError, json.JSONDecodeError) as vkje:
+        console.debug(f"Server response format unexpected: {vkje}")
+        raise Exception("internal errors") from vkje
     except Exception as ex:
-        console.error(f"Unable to list hosted instances due to {ex}.")
-        return None
+        console.error(f"Unexpected error: {ex}.")
+        raise Exception("internal errors") from ex
 
 
-def fetch_token(request_id: str) -> Optional[str]:
+def fetch_token(request_id: str) -> str:
     """Fetch the access token for the request_id from Control Plane.
 
     Args:
         request_id: The request ID used when the user opens the browser for authentication.
 
     Raises:
-        SystemExit: If the response format is ill-formed, indicating internal error.
+        Exception: for request timeout, failed requests, ill-formed responses, unexpected errors.
 
     Returns:
         The access token if it exists, None otherwise.
     """
-    resp = httpx.get(
-        f"{FETCH_TOKEN_ENDPOINT}/{request_id}", timeout=config.http_request_timeout
-    )
     try:
+        resp = httpx.get(
+            f"{FETCH_TOKEN_ENDPOINT}/{request_id}", timeout=config.http_request_timeout
+        )
         resp.raise_for_status()
         return resp.json()["access_token"]
-    except httpx.HTTPError:
-        return None
-    except KeyError:
-        console.error("Unable to authenticate. Please contact support.")
-        raise SystemExit(1) from None
+    except httpx.TimeoutException as te:
+        console.debug("Unable to fetch token due to request timeout.")
+        raise Exception("request timeout") from te
+    except httpx.HTTPError as he:
+        console.debug(f"Unable to fetch token due to {he}.")
+        raise Exception("not found") from he
+    except json.JSONDecodeError as jde:
+        console.debug(f"Server did not respond with valid json: {jde}")
+        raise Exception("internal errors") from jde
+    except KeyError as ke:
+        console.debug(f"Server response format unexpected: {ke}")
+        raise Exception("internal errors") from ke
+    except Exception as ex:
+        console.debug("Unexpected errors: {ex}")
+        raise Exception("internal errors") from ex
 
 
 def poll_backend(backend_url: str) -> bool:
@@ -465,7 +515,7 @@ def clean_up():
         os.remove(backend_zip)
 
 
-def delete_deployment(key: str) -> bool:
+def delete_deployment(key: str):
     """Send a DELETE request to Control Plane to delete a deployment.
 
     Args:
@@ -473,25 +523,27 @@ def delete_deployment(key: str) -> bool:
 
     Raises:
         ValueError: If the key is not provided.
-
-    Returns:
-        True if the deployment is deleted successfully, False otherwise.
+        Exception: If the operation fails. The exception message is the reason.
     """
     if not (token := authenticated_token()):
-        return False
+        raise Exception("not authenticated")
     if not key:
-        raise ValueError("key is required for delete operation.")
-    response = httpx.delete(
-        f"{DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
-        headers=authorization_header(token),
-        timeout=config.http_request_timeout,
-    )
+        raise ValueError("Valid key is required for the delete.")
+
     try:
+        response = httpx.delete(
+            f"{DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
+            headers=authorization_header(token),
+            timeout=config.http_request_timeout,
+        )
         response.raise_for_status()
-        return True
-    except httpx.TimeoutException:
-        console.error("Unable to delete deployment due to request timeout.")
-        return False
+
+    except httpx.TimeoutException as te:
+        console.debug("Unable to delete deployment due to request timeout.")
+        raise Exception("request timeout") from te
+    except httpx.HTTPError as he:
+        console.debug(f"Unable to delete deployment due to {he}.")
+        raise Exception("internal errors") from he
     except Exception as ex:
-        console.error(f"Unable to delete deployment due to {ex}.")
-        return False
+        console.debug(f"Unexpected errors {ex}.")
+        raise Exception("internal errors") from ex
