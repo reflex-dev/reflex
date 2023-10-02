@@ -7,10 +7,9 @@ from abc import ABC
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
-from reflex import constants
 from reflex.base import Base
 from reflex.components.tags import Tag
-from reflex.constants import EventTriggers
+from reflex.constants import Dirs, EventTriggers
 from reflex.event import (
     EventChain,
     EventHandler,
@@ -447,7 +446,12 @@ class Component(Base, ABC):
 
         return cls(children=children, **props)
 
-    def _add_style(self, style):
+    def _add_style(self, style: dict):
+        """Add additional style to the component.
+
+        Args:
+            style: A style dict to apply.
+        """
         self.style.update(style)
 
     def add_style(self, style: ComponentStyle) -> Component:
@@ -759,7 +763,7 @@ class CustomComponent(Component):
     """A custom user-defined component."""
 
     # Use the components library.
-    library = f"/{constants.COMPONENTS_PATH}"
+    library = f"/{Dirs.COMPONENTS_PATH}"
 
     # The function that creates the component.
     component_fn: Callable[..., Component] = Component.create

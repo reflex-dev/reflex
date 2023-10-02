@@ -28,6 +28,7 @@ env:
 
 jobs:
   example-counter:
+    timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
       fail-fast: false

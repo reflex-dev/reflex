@@ -192,7 +192,7 @@ class EventChain(Base):
 
     events: List[EventSpec]
 
-    args_spec: Optional[ArgsSpec]
+    args_spec: Optional[Callable]
 
 
 class Target(Base):
@@ -247,16 +247,19 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     )
 
 
-def redirect(path: str | Var[str]) -> EventSpec:
+def redirect(path: str | Var[str], external: Optional[bool] = False) -> EventSpec:
     """Redirect to a new path.
 
     Args:
         path: The path to redirect to.
+        external: Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
     """
-    return server_side("_redirect", get_fn_signature(redirect), path=path)
+    return server_side(
+        "_redirect", get_fn_signature(redirect), path=path, external=external
+    )
 
 
 def console_log(message: str | Var[str]) -> EventSpec:
@@ -443,6 +446,22 @@ def download(url: str, filename: Optional[str] = None) -> EventSpec:
     )
 
 
+def call_script(javascript_code: str) -> EventSpec:
+    """Create an event handler that executes arbitrary javascript code.
+
+    Args:
+        javascript_code: The code to execute.
+
+    Returns:
+        EventSpec: An event that will execute the client side javascript.
+    """
+    return server_side(
+        "_call_script",
+        get_fn_signature(call_script),
+        javascript_code=javascript_code,
+    )
+
+
 def get_event(state, event):
     """Get the event from the given state.
 
@@ -465,7 +484,7 @@ def get_hydrate_event(state) -> str:
     Returns:
         The name of the hydrate event.
     """
-    return get_event(state, constants.HYDRATE)
+    return get_event(state, constants.CompileVars.HYDRATE)
 
 
 def call_event_handler(
@@ -491,12 +510,12 @@ def call_event_handler(
 
     # handle new API using lambda to define triggers
     if isinstance(arg_spec, ArgsSpec):
-        parsed_args = parse_args_spec(arg_spec)
+        parsed_args = parse_args_spec(arg_spec)  # type: ignore
 
         if len(args) == len(["self", *parsed_args]):
             return event_handler(*parsed_args)  # type: ignore
         else:
-            source = inspect.getsource(arg_spec)
+            source = inspect.getsource(arg_spec)  # type: ignore
             raise ValueError(
                 f"number of arguments in {event_handler.fn.__name__} "
                 f"doesn't match the definition '{source.strip().strip(',')}'"
@@ -508,12 +527,12 @@ def call_event_handler(
             deprecation_version="0.2.8",
             removal_version="0.2.9",
         )
-    if len(args) == 1:
-        return event_handler()
-    assert (
-        len(args) == 2
-    ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
-    return event_handler(arg_spec)
+        if len(args) == 1:
+            return event_handler()
+        assert (
+            len(args) == 2
+        ), f"Event handler {event_handler.fn} must have 1 or 2 arguments."
+        return event_handler(arg_spec)  # type: ignore
 
 
 def parse_args_spec(arg_spec: ArgsSpec):
@@ -562,7 +581,7 @@ def call_event_fn(fn: Callable, arg: Union[Var, ArgsSpec]) -> list[EventSpec]:
     args = inspect.getfullargspec(fn).args
 
     if isinstance(arg, ArgsSpec):
-        out = fn(*parse_args_spec(arg))
+        out = fn(*parse_args_spec(arg))  # type: ignore
     else:
         # Call the lambda.
         if len(args) == 0:

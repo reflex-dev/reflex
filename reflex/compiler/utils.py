@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Type
 from urllib.parse import urlparse
 
 from pydantic.fields import ModelField
@@ -31,7 +31,7 @@ from reflex.vars import ImportVar
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(fields: Set[ImportVar]) -> Tuple[str, Set[str]]:
+def compile_import_statement(fields: set[ImportVar]) -> tuple[str, set[str]]:
     """Compile an import statement.
 
     Args:
@@ -79,7 +79,7 @@ def validate_imports(imports: imports.ImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(imports: imports.ImportDict) -> List[dict]:
+def compile_imports(imports: imports.ImportDict) -> list[dict]:
     """Compile an import dict.
 
     Args:
@@ -93,7 +93,7 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
         default, rest = compile_import_statement(fields)
 
         # prevent lib from being rendered on the page if all imports are non rendered kind
-        if all({not f.render for f in fields}):  # type: ignore
+        if not any({f.render for f in fields}):  # type: ignore
             continue
 
         if not lib:
@@ -104,15 +104,13 @@ def compile_imports(imports: imports.ImportDict) -> List[dict]:
             continue
 
         # remove the version before rendering the package imports
-        lib, at, version = lib.rpartition("@")
-        if not lib:
-            lib = at + version
+        lib = format.format_library_name(lib)
 
         import_dicts.append(get_import_dict(lib, default, rest))
     return import_dicts
 
 
-def get_import_dict(lib: str, default: str = "", rest: Optional[Set] = None) -> Dict:
+def get_import_dict(lib: str, default: str = "", rest: set[str] | None = None) -> dict:
     """Get dictionary for import template.
 
     Args:
@@ -130,7 +128,7 @@ def get_import_dict(lib: str, default: str = "", rest: Optional[Set] = None) -> 
     }
 
 
-def compile_state(state: Type[State]) -> Dict:
+def compile_state(state: Type[State]) -> dict:
     """Compile the state of the app.
 
     Args:
@@ -225,7 +223,7 @@ def compile_client_storage(state: Type[State]) -> dict[str, dict]:
 
 def compile_custom_component(
     component: CustomComponent,
-) -> Tuple[dict, imports.ImportDict]:
+) -> tuple[dict, imports.ImportDict]:
     """Compile a custom component.
 
     Args:
@@ -258,14 +256,18 @@ def compile_custom_component(
     )
 
 
-def create_document_root() -> Component:
+def create_document_root(head_components: list[Component] | None = None) -> Component:
     """Create the document root.
+
+    Args:
+        head_components: The components to add to the head.
 
     Returns:
         The document root.
     """
+    head_components = head_components or []
     return Html.create(
-        DocumentHead.create(),
+        DocumentHead.create(*head_components),
         Body.create(
             ColorModeScript.create(),
             Main.create(),
@@ -274,7 +276,7 @@ def create_document_root() -> Component:
     )
 
 
-def create_theme(style: ComponentStyle) -> Dict:
+def create_theme(style: ComponentStyle) -> dict:
     """Create the base style for the app.
 
     Args:
@@ -309,7 +311,7 @@ def get_page_path(path: str) -> str:
     Returns:
         The path of the compiled JS file.
     """
-    return os.path.join(constants.WEB_PAGES_DIR, path + constants.JS_EXT)
+    return os.path.join(constants.Dirs.WEB_PAGES, path + constants.Ext.JS)
 
 
 def get_theme_path() -> str:
@@ -318,7 +320,9 @@ def get_theme_path() -> str:
     Returns:
         The path of the theme style.
     """
-    return os.path.join(constants.WEB_UTILS_DIR, constants.THEME + constants.JS_EXT)
+    return os.path.join(
+        constants.Dirs.WEB_UTILS, constants.PageNames.THEME + constants.Ext.JS
+    )
 
 
 def get_root_stylesheet_path() -> str:
@@ -328,7 +332,7 @@ def get_root_stylesheet_path() -> str:
         The path of the app root file.
     """
     return os.path.join(
-        constants.STYLES_DIR, constants.STYLESHEET_ROOT + constants.CSS_EXT
+        constants.STYLES_DIR, constants.PageNames.STYLESHEET_ROOT + constants.Ext.CSS
     )
 
 
@@ -338,7 +342,7 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return os.path.join(constants.WEB_UTILS_DIR, "context" + constants.JS_EXT)
+    return os.path.join(constants.Dirs.WEB_UTILS, "context" + constants.Ext.JS)
 
 
 def get_components_path() -> str:
@@ -347,26 +351,26 @@ def get_components_path() -> str:
     Returns:
         The path of the compiled components.
     """
-    return os.path.join(constants.WEB_UTILS_DIR, "components" + constants.JS_EXT)
+    return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
 
 
-def get_asset_path(filename: Optional[str] = None) -> str:
+def get_asset_path(filename: str | None = None) -> str:
     """Get the path for an asset.
 
     Args:
-        filename: Optional, if given, is added to the root path of assets dir.
+        filename: If given, is added to the root path of assets dir.
 
     Returns:
         The path of the asset.
     """
     if filename is None:
-        return constants.WEB_ASSETS_DIR
+        return constants.Dirs.WEB_ASSETS
     else:
-        return os.path.join(constants.WEB_ASSETS_DIR, filename)
+        return os.path.join(constants.Dirs.WEB_ASSETS, filename)
 
 
 def add_meta(
-    page: Component, title: str, image: str, description: str, meta: List[Dict]
+    page: Component, title: str, image: str, description: str, meta: list[dict]
 ) -> Component:
     """Add metadata to a page.
 
@@ -406,7 +410,7 @@ def write_page(path: str, code: str):
         f.write(code)
 
 
-def empty_dir(path: str, keep_files: Optional[List[str]] = None):
+def empty_dir(path: str, keep_files: list[str] | None = None):
     """Remove all files and folders in a directory except for the keep_files.
 
     Args:

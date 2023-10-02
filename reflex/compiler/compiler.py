@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import List, Set, Tuple, Type
+from typing import Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -23,7 +23,7 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="useContext"),
     },
     "next/router": {ImportVar(tag="useRouter")},
-    f"/{constants.STATE_PATH}": {
+    f"/{constants.Dirs.STATE_PATH}": {
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="Event"),
         ImportVar(tag="isTrue"),
@@ -41,9 +41,9 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="StateContext"),
         ImportVar(tag="ColorModeContext"),
     },
-    "": {ImportVar(tag="focus-visible/dist/focus-visible")},
+    "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
     "@chakra-ui/react": {
-        ImportVar(tag=constants.USE_COLOR_MODE),
+        ImportVar(tag=constants.ColorMode.USE),
         #ImportVar(tag="Box"),
         #ImportVar(tag="Text"),
     },
@@ -123,7 +123,7 @@ def _compile_page(
     )
 
 
-def compile_root_stylesheet(stylesheets: List[str]) -> Tuple[str, str]:
+def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
     """Compile the root stylesheet.
 
     Args:
@@ -139,7 +139,7 @@ def compile_root_stylesheet(stylesheets: List[str]) -> Tuple[str, str]:
     return output_path, code
 
 
-def _compile_root_stylesheet(stylesheets: List[str]) -> str:
+def _compile_root_stylesheet(stylesheets: list[str]) -> str:
     """Compile the root stylesheet.
 
     Args:
@@ -153,7 +153,7 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
     """
     # Add tailwind css if enabled.
     sheets = (
-        [constants.TAILWIND_ROOT_STYLE_PATH]
+        [constants.Tailwind.ROOT_STYLE_PATH]
         if get_config().tailwind is not None
         else []
     )
@@ -161,7 +161,7 @@ def _compile_root_stylesheet(stylesheets: List[str]) -> str:
         if not utils.is_valid_url(stylesheet):
             # check if stylesheet provided exists.
             stylesheet_full_path = (
-                Path.cwd() / constants.APP_ASSETS_DIR / stylesheet.strip("/")
+                Path.cwd() / constants.Dirs.APP_ASSETS / stylesheet.strip("/")
             )
             if not os.path.exists(stylesheet_full_path):
                 raise FileNotFoundError(
@@ -184,7 +184,7 @@ def _compile_component(component: Component) -> str:
     return templates.COMPONENT.render(component=component)
 
 
-def _compile_components(components: Set[CustomComponent]) -> str:
+def _compile_components(components: set[CustomComponent]) -> str:
     """Compile the components.
 
     Args:
@@ -195,7 +195,7 @@ def _compile_components(components: Set[CustomComponent]) -> str:
     """
     imports = {
         "react": {ImportVar(tag="memo")},
-        f"/{constants.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
+        f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
     }
     component_renders = []
 
@@ -228,23 +228,27 @@ def _compile_tailwind(
     )
 
 
-def compile_document_root() -> Tuple[str, str]:
+def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     """Compile the document root.
+
+    Args:
+        head_components: The components to include in the head.
 
     Returns:
         The path and code of the compiled document root.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.DOCUMENT_ROOT)
+    output_path = utils.get_page_path(constants.PageNames.DOCUMENT_ROOT)
 
     # Create the document root.
-    document_root = utils.create_document_root()
+    document_root = utils.create_document_root(head_components)
+
     # Compile the document root.
     code = _compile_document_root(document_root)
     return output_path, code
 
 
-def compile_theme(style: ComponentStyle, radix_theme: dict[str, str]) -> Tuple[str, str]:
+def compile_theme(style: ComponentStyle, radix_theme: dict[str, str]) -> tuple[str, str]:
     """Compile the theme.
 
     Args:
@@ -263,9 +267,7 @@ def compile_theme(style: ComponentStyle, radix_theme: dict[str, str]) -> Tuple[s
     return output_path, code
 
 
-def compile_contexts(
-    state: Type[State],
-) -> Tuple[str, str]:
+def compile_contexts(state: Type[State]) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
@@ -281,10 +283,8 @@ def compile_contexts(
 
 
 def compile_page(
-    path: str,
-    component: Component,
-    state: Type[State],
-) -> Tuple[str, str]:
+    path: str, component: Component, state: Type[State]
+) -> tuple[str, str]:
     """Compile a single page.
 
     Args:
@@ -303,7 +303,7 @@ def compile_page(
     return output_path, code
 
 
-def compile_components(components: Set[CustomComponent]):
+def compile_components(components: set[CustomComponent]):
     """Compile the custom components.
 
     Args:
@@ -332,7 +332,7 @@ def compile_tailwind(
         The compiled Tailwind config.
     """
     # Get the path for the output file.
-    output_path = constants.TAILWIND_CONFIG
+    output_path = constants.Tailwind.CONFIG
 
     # Compile the config.
     code = _compile_tailwind(config)
@@ -341,4 +341,4 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    utils.empty_dir(constants.WEB_PAGES_DIR, keep_files=["_app.js"])
+    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
