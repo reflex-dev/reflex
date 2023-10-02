@@ -425,10 +425,10 @@ def deploy(
         None, help="The amount of memory to allocate. List the available types here."
     ),
     auto_start: Optional[bool] = typer.Option(
-        False, help="Whether to auto start the instance."
+        True, help="Whether to auto start the instance."
     ),
     auto_stop: Optional[bool] = typer.Option(
-        False, help="Whether to auto stop the instance."
+        True, help="Whether to auto stop the instance."
     ),
     frontend_hostname: Optional[str] = typer.Option(
         None, help="The hostname of the frontend."
@@ -610,30 +610,33 @@ def deploy(
     if not deploy_response:
         hosting.clean_up()
         raise typer.Exit(1)
+    console.debug(f"deploy_response: {deploy_response}")
     console.print("Deployment will start shortly.")
 
     # TODO: for overwrite case, poll for the old site to come down
     backend_up = frontend_up = False
 
-    with console.status("Checking backend ...") as status:
+    with console.status("Checking frontend ..."):
         for _ in range(constants.Hosting.BACKEND_POLL_TIMEOUT):
             if backend_up := hosting.poll_backend(deploy_response.backend_url):
-                # TODO: what is a universal tick mark?
-                status.update("✅ ")
                 break
             time.sleep(1)
-        if not backend_up:
-            status.update("❌ ")
+    if not backend_up:
+        console.print("Backend ❌")
+    else:
+        # TODO: what is a universal tick mark?
+        console.print("Backend ✅")
 
-    with console.status("Checking frontend ...") as status:
+    with console.status("Checking frontend ..."):
         for _ in range(constants.Hosting.FRONTEND_POLL_TIMEOUT):
             if frontend_up := hosting.poll_frontend(deploy_response.frontend_url):
-                # TODO: what is a universal tick mark?
-                status.update("✅ ")
                 break
             time.sleep(1)
-        if not frontend_up:
-            status.update("❌ ")
+    if not frontend_up:
+        console.print("frontend ❌")
+    else:
+        # TODO: what is a universal tick mark?
+        console.print("frontend ✅")
 
     # TODO: below is a bit hacky, refactor
     hosting.clean_up()
