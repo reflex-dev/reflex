@@ -3,25 +3,43 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
+from reflex import constants
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
-from reflex.constants import EventTriggers
-from reflex.event import EventChain, EventHandler, call_script
-from reflex.vars import BaseVar, Var
+from reflex.event import EventChain, EventSpec, call_script
+from reflex.utils import imports
+from reflex.vars import BaseVar, ImportVar, Var
 
-files_state: str = "const [files, setFiles] = useState([]);"
-upload_file: BaseVar = BaseVar(name="e => setFiles((files) => e)", type_=EventChain)
+DEFAULT_UPLOAD_ID = "default"
+
+
+def upload_file_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+    return BaseVar(name=f"e => upload_files.{id_}[1]((files) => e)", type_=EventChain)
+
+
+upload_file = upload_file_for()
+
+
+def selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+    return BaseVar(
+        name=f"upload_files.{id_} ? upload_files.{id_}[0]?.map((f) => f.name) : []",
+        type_=List[str],
+    )
+
 
 # Use this var along with the Upload component to render the list of selected files.
-selected_files: BaseVar = BaseVar(name="files.map((f) => f.name)", type_=List[str])
-
-clear_selected_files: BaseVar = BaseVar(
-    name="_e => setFiles((files) => [])", type_=EventChain
-)
+selected_files = selected_files_for()
 
 
-def cancel_upload(upload_id: str) -> EventHandler:
+def clear_selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
+    return call_script(f"upload_files.{id_}[1]((files) => [])")
+
+
+clear_selected_files = clear_selected_files_for()
+
+
+def cancel_upload(upload_id: str) -> EventSpec:
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 
@@ -92,7 +110,10 @@ class Upload(Component):
         zone.special_props = {BaseVar(name="{...getRootProps()}", type_=None)}
 
         # Create the component.
-        return super().create(zone, on_drop=upload_file, **upload_props)
+        upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
+        return super().create(
+            zone, on_drop=upload_file_for(upload_props["id"]), **upload_props
+        )
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -102,7 +123,7 @@ class Upload(Component):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_DROP: lambda e0: [e0],
+            constants.EventTriggers.ON_DROP: lambda e0: [e0],
         }
 
     def _render(self):
@@ -111,4 +132,15 @@ class Upload(Component):
         return out
 
     def _get_hooks(self) -> str | None:
-        return (super()._get_hooks() or "") + files_state
+        return (
+            (super()._get_hooks() or "")
+            + f"""
+        upload_files.{self.id or DEFAULT_UPLOAD_ID} = useState([]);
+        """
+        )
+
+    def _get_imports(self) -> imports.ImportDict:
+        return {
+            **super()._get_imports(),
+            f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="upload_files")},
+        }

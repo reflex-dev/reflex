@@ -31,6 +31,8 @@ const event_queue = [];
 
 // Pending upload promises, by id
 const upload_controllers = {};
+// Upload files state by id
+export const upload_files = {};
 
 /**
  * Generate a UUID (Used for session tokens).

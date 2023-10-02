@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import inspect
-import uuid
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -214,7 +213,7 @@ class FileUpload(Base):
     """Class to represent a file upload."""
 
     upload_id: Optional[str] = None
-    on_upload_progress: Optional[EventHandler] = None
+    on_upload_progress: Optional[Union[EventHandler, Callable]] = None
 
     @staticmethod
     def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
@@ -230,29 +229,36 @@ class FileUpload(Base):
         Returns:
             The event spec for the handler.
         """
+        from reflex.components.forms.upload import DEFAULT_UPLOAD_ID
+
+        upload_id = self.upload_id or DEFAULT_UPLOAD_ID
+
         spec_args = [
-            # `files` is defined in the Upload component's _use_hooks
-            (Var.create_safe("files"), Var.create_safe("files")),
+            # `upload_files` is defined in state.js and assigned in the Upload component's _use_hooks
+            (Var.create_safe("files"), Var.create_safe(f"upload_files.{upload_id}[0]")),
             (
                 Var.create_safe("upload_id"),
-                Var.create_safe(self.upload_id or str(uuid.uuid4()), is_string=True),
+                Var.create_safe(upload_id, is_string=True),
             ),
         ]
         if self.on_upload_progress is not None:
-            if isinstance(self.on_upload_progress, EventHandler):
-                on_upload_progress_chain = EventChain(
-                    events=[
-                        call_event_handler(
-                            self.on_upload_progress,
-                            self.on_upload_progress_args_spec,
-                        ),
-                    ],
-                    args_spec=self.on_upload_progress_args_spec,
-                )
+            on_upload_progress = self.on_upload_progress
+            if isinstance(on_upload_progress, EventHandler):
+                events = [
+                    call_event_handler(
+                        on_upload_progress,
+                        self.on_upload_progress_args_spec,
+                    ),
+                ]
+            elif isinstance(on_upload_progress, Callable):
+                # Call the lambda to get the event chain.
+                events = call_event_fn(on_upload_progress, self.on_upload_progress_args_spec)  # type: ignore
             else:
-                raise ValueError(
-                    f"{self.on_upload_progress} is not a valid event handler."
-                )
+                raise ValueError(f"{on_upload_progress} is not a valid event handler.")
+            on_upload_progress_chain = EventChain(
+                events=events,
+                args_spec=self.on_upload_progress_args_spec,
+            )
             spec_args.append(
                 (
                     Var.create_safe("on_upload_progress"),
