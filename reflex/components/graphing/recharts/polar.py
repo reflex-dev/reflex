@@ -18,7 +18,7 @@ class Pie(Recharts):
     data: Var[List[Dict[str, Any]]]
 
     # The key of each sector's value.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
     cx: Var[Union[int, str]]
@@ -73,8 +73,6 @@ class Pie(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -89,7 +87,7 @@ class Radar(Recharts):
     tag = "Radar"
 
     # The key of a group of data which should be unique in a radar chart.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The coordinates of all the vertexes of the radar shape, like [{ x, y }].
     points: Var[List[Dict[str, Any]]]
@@ -156,8 +154,6 @@ class RadialBar(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -172,7 +168,7 @@ class PolarAngleAxis(Recharts):
     tag = "PolarAngleAxis"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
     cx: Var[Union[int, str]]
@@ -215,8 +211,6 @@ class PolarAngleAxis(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -304,8 +298,6 @@ class PolarRadiusAxis(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],

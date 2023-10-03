@@ -12,7 +12,7 @@ from .recharts import RechartsCharts
 
 
 class ChartBase(RechartsCharts):
-    """A component that wraps a victory lib."""
+    """A component that wraps a Recharts charts."""
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
@@ -101,10 +101,10 @@ class BarChart(ChartBase):
     tag = "BarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[str]
+    bar_category_gap: Var[Union[str, int]]  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[str]
+    bar_gap: Var[Union[str, int]]  # type: ignore
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -162,10 +162,10 @@ class ComposedChart(ChartBase):
     base_value: Var[Union[int, str]]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[str]
+    bar_category_gap: Var[Union[str, int]]  # type: ignore
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
-    bar_gap: Var[str]
+    bar_gap: Var[int]
 
     # The width of all the bars in the chart. Number
     bar_size: Var[int]
@@ -289,7 +289,7 @@ class RadialBarChart(ChartBase):
     outer_radius: Var[Union[int, str]]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
-    bar_category_gap: Var[str]
+    bar_category_gap: Var[Union[int, str]]
 
     # The gap between two bars in the same category, which can be a percent value or a fixed value. Percentage | Number
     bar_gap: Var[str]
@@ -349,8 +349,6 @@ class ScatterChart(ChartBase):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
             EventTriggers.ON_MOUSE_ENTER: lambda: [],

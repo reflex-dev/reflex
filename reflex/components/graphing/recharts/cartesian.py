@@ -13,7 +13,7 @@ class Axis(Recharts):
     """A base class for axes in Recharts."""
 
     # The key of a group of data which should be unique in an area chart.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # If set true, the axis do not display in the chart.
     hide: Var[bool]
@@ -49,10 +49,10 @@ class Axis(Recharts):
     scale: Var[str]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
-    unit: Var[str]
+    unit: Var[Union[str, int]]
 
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-    name: Var[str]
+    name: Var[Union[str, int]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -62,8 +62,6 @@ class Axis(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -84,7 +82,7 @@ class YAxis(Axis):
     tag = "YAxis"
 
     # The key of data displayed in the axis.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
 
 class ZAxis(Recharts):
@@ -93,16 +91,16 @@ class ZAxis(Recharts):
     tag = "ZAxis"
 
     # The key of data displayed in the axis.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The range of axis.
     range: Var[List[int]]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
-    unit: Var[str]
+    unit: Var[Union[str, int]]
 
     # The name of data displayed in the axis. This option will be used to represent an index in a scatter chart.
-    name: Var[str]
+    name: Var[Union[str, int]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type.
     scale: Var[str]
@@ -117,7 +115,7 @@ class Brush(Recharts):
     stroke: Var[str]
 
     # The key of data displayed in the axis.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The x-coordinate of brush.
     x: Var[int]
@@ -164,13 +162,13 @@ class Cartesian(Recharts):
     layout: Var[str]
 
     # The key of a group of data which should be unique in an area chart.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: Var[str]
+    x_axis_id: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: Var[str]
+    y_axis_id: Var[Union[str, int]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye' | 'none'optional
     legend_type: Var[str]
@@ -183,8 +181,6 @@ class Cartesian(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -316,7 +312,7 @@ class Scatter(Cartesian):
     fill: Var[str]
 
     # the name
-    name: Var[str]
+    name: Var[Union[str, int]]
 
     # Valid children components
     valid_children: List[str] = ["LabelList", "ErrorBar"]
@@ -349,7 +345,7 @@ class ErrorBar(Recharts):
     tag = "ErrorBar"
 
     # The key of a group of data which should be unique in an area chart.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The width of the error bar ends.
     width: Var[int]
@@ -365,10 +361,10 @@ class Reference(Recharts):
     """A base class for reference components in Reference."""
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: Var[str]
+    x_axis_id: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: Var[str]
+    y_axis_id: Var[Union[str, int]]
 
     # If set a string or a number, a vertical line perpendicular to the x-axis specified by xAxisId will be drawn. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys, otherwise no line will be drawn.
     x: Var[str]
@@ -411,8 +407,6 @@ class ReferenceDot(Reference):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -436,10 +430,10 @@ class ReferenceArea(Recharts):
     fill_opacity: Var[float]
 
     # The id of x-axis which is corresponding to the data.
-    x_axis_id: Var[str]
+    x_axis_id: Var[Union[str, int]]
 
     # The id of y-axis which is corresponding to the data.
-    y_axis_id: Var[str]
+    y_axis_id: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys. If one of x1 or x2 is invalidate, the area will cover along x-axis.
     x1: Var[Union[str, int]]

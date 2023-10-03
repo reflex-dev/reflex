@@ -89,8 +89,6 @@ class Legend(Recharts):
         """
         return {
             EventTriggers.ON_CLICK: lambda: [],
-            EventTriggers.ON_MOUSE_DOWN: lambda: [],
-            EventTriggers.ON_MOUSE_UP: lambda: [],
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_OVER: lambda: [],
             EventTriggers.ON_MOUSE_OUT: lambda: [],
@@ -153,7 +151,7 @@ class LabelList(Recharts):
     tag = "LabelList"
 
     # The key of a group of label values in data.
-    data_key: Var[str]
+    data_key: Var[Union[str, int]]
 
     # The position of each label relative to it view box。op" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
     position: Var[str]

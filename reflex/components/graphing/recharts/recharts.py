@@ -1,6 +1,5 @@
 """A component that wraps a recharts lib."""
 
-from typing import List
 
 from reflex.components.component import Component, NoSSRComponent
 
@@ -10,7 +9,7 @@ class Recharts(Component):
 
     library = "recharts"
 
-    lib_dependencies: List[str] = ["recharts@^2.8.0"]
+    lib_dependencies: str = "recharts@^2.8.0"
 
 
 class RechartsCharts(NoSSRComponent):
@@ -18,4 +17,4 @@ class RechartsCharts(NoSSRComponent):
 
     library = "recharts"
 
-    lib_dependencies: List[str] = ["recharts@^2.8.0"]
+    lib_dependencies: str = "recharts@^2.8.0"
