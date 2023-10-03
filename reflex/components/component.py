@@ -750,8 +750,36 @@ class Component(Base, ABC):
             An import var.
         """
         # If the tag is dot-qualified, only import the left-most name.
-        tag = self.tag.partition(".")[0]
-        return ImportVar(tag=tag, is_default=self.is_default, alias=self.alias)
+        tag = self.tag.partition(".")[0] if self.tag else None
+        alias = self.alias.partition(".")[0] if self.alias else None
+        return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the component.
+
+        Returns:
+            The app wrap components.
+        """
+        return {}
+
+    def get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the component and its children.
+
+        Returns:
+            The app wrap components.
+        """
+        # Store the components in a set to avoid duplicates.
+        components = self._get_app_wrap_components()
+
+        for component in tuple(components.values()):
+            components |= component.get_app_wrap_components()
+
+        # Add the app wrap components for the children.
+        for child in self.children:
+            components |= child.get_app_wrap_components()
+
+        # Return the components.
+        return components
 
 
 # Map from component to styling.

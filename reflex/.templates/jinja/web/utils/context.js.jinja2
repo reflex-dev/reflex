@@ -1,5 +1,5 @@
-import { createContext } from "react"
-import { Event, hydrateClientStorage } from "/utils/state.js"
+import { createContext, useState } from "react"
+import { Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
 
 export const initialState = {{ initial_state|json_dumps }}
 export const ColorModeContext = createContext(null);
@@ -10,3 +10,30 @@ export const initialEvents = [
     Event('{{state_name}}.{{const.hydrate}}', hydrateClientStorage(clientStorage)),
 ]
 export const isDevMode = {{ is_dev_mode|json_dumps }}
+
+export function EventLoopProvider({ children }) {
+  const [state, addEvents, connectError] = useEventLoop(
+    initialState,
+    initialEvents,
+    clientStorage,
+  )
+  return (
+    <EventLoopContext.Provider value={[addEvents, connectError]}>
+      <StateContext.Provider value={state}>
+        {children}
+      </StateContext.Provider>
+    </EventLoopContext.Provider>
+  )
+}
+
+export function ReflexColorModeProvider({ children }) {
+  const [colorMode, setColorMode] = useState("light")
+  const toggleColorMode = () => {
+    setColorMode((prevMode) => (prevMode === "light" ? "dark" : "light"))
+  }
+  return (
+    <ColorModeContext.Provider value={[ colorMode, toggleColorMode ]}>
+      {children}
+    </ColorModeContext.Provider>
+  )
+}

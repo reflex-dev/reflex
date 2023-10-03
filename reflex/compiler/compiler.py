@@ -44,8 +44,8 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
     "@chakra-ui/react": {
         ImportVar(tag=constants.ColorMode.USE),
-        #ImportVar(tag="Box"),
-        #ImportVar(tag="Text"),
+        # ImportVar(tag="Box"),
+        # ImportVar(tag="Text"),
     },
 }
 
@@ -62,6 +62,23 @@ def _compile_document_root(root: Component) -> str:
     return templates.DOCUMENT_ROOT.render(
         imports=utils.compile_imports(root.get_imports()),
         document=root.render(),
+    )
+
+
+def _compile_app_wrap(app_root: Component) -> str:
+    """Compile the app wrap template component.
+
+    Args:
+        app_root: The app root to compile.
+
+    Returns:
+        The compiled app wrappers.
+    """
+    return templates.APP_WRAP.render(
+        imports=utils.compile_imports(app_root.get_imports()),
+        custom_codes=app_root.get_custom_code(),
+        hooks=app_root.get_hooks(),
+        render=app_root.render(),
     )
 
 
@@ -248,7 +265,23 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_theme(style: ComponentStyle, radix_theme: dict[str, str]) -> tuple[str, str]:
+def compile_app_wrap(app_root: Component) -> tuple[str, str]:
+    """Compile the app wrapper.
+
+    Returns:
+        The path and code of the compiled app wrapper.
+    """
+    # Get the path for the output file.
+    output_path = utils.get_page_path(constants.PageNames.APP_WRAP)
+
+    # Compile the document root.
+    code = _compile_app_wrap(app_root)
+    return output_path, code
+
+
+def compile_theme(
+    style: ComponentStyle, radix_theme: dict[str, str]
+) -> tuple[str, str]:
     """Compile the theme.
 
     Args:

@@ -1,0 +1,20 @@
+{% extends "web/pages/base_page.js.jinja2" %}
+
+{% block declaration %}
+{% for custom_code in custom_codes %}
+{{custom_code}}
+{% endfor %}
+{% endblock %}
+
+{% block export %}
+export default function AppWrap({children}) {
+
+  {% for hook in hooks %}
+  {{ hook }}
+  {% endfor %}
+
+  return (
+    {{utils.render(render, indent_width=0)}}
+  )
+}
+{% endblock %}

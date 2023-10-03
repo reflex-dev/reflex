@@ -1,13 +1,13 @@
-from .base import RadixThemeComponent
+from .base import RadixThemesComponent
 
 
-class Text(RadixThemeComponent):
+class Text(RadixThemesComponent):
     tag = "Text"
 
 
-class Heading(RadixThemeComponent):
+class Heading(RadixThemesComponent):
     tag = "Heading"
 
 
-class Blockquote(RadixThemeComponent):
+class Blockquote(RadixThemesComponent):
     tag = "Blockquote"

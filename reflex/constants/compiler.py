@@ -59,6 +59,8 @@ class PageNames(SimpleNamespace):
     DOCUMENT_ROOT = "_document"
     # The name of the theme page.
     THEME = "theme"
+    # The component that wraps the top-level app
+    APP_WRAP = "_app_wrap"
 
 
 class ComponentName(Enum):

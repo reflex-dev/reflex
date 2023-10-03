@@ -1,9 +1,9 @@
-from .base import RadixThemeComponent
+from .base import RadixThemesComponent
 
 
-class Box(RadixThemeComponent):
+class Box(RadixThemesComponent):
     tag = "Box"
 
 
-class Flex(RadixThemeComponent):
+class Flex(RadixThemesComponent):
     tag = "Flex"

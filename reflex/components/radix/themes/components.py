@@ -1,19 +1,18 @@
-from reflex.vars import Var
 
-from .base import RadixThemeComponent
+from .base import RadixThemesComponent
 
 
-class Button(RadixThemeComponent):
+class Button(RadixThemesComponent):
     tag = "Button"
 
 
-class Select(RadixThemeComponent):
+class Select(RadixThemesComponent):
     tag = "Select"
 
 
-class Switch(RadixThemeComponent):
+class Switch(RadixThemesComponent):
     tag = "Switch"
 
 
-class TextField(RadixThemeComponent):
+class TextField(RadixThemesComponent):
     tag = "TextField.Input"

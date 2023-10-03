@@ -32,6 +32,7 @@ from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
+from reflex.components.base.app_wrap import AppWrap
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
 from reflex.components.navigation.client_side_routing import (
@@ -571,6 +572,15 @@ class App(Base):
         page_imports.update(_frontend_packages)
         prerequisites.install_frontend_packages(page_imports)
 
+    def _app_root(self, app_wrappers):
+        order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
+        root = parent = app_wrappers[order[0]]
+        for key in order[1:]:
+            child = app_wrappers[key]
+            parent.children.append(child)
+            parent = child
+        return root
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
         if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
@@ -603,10 +613,15 @@ class App(Base):
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
         all_imports = {}
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            (0, "AppWrap"): AppWrap.create()
+        }
+
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
+                app_wrappers.update(component.get_app_wrap_components())
                 component.add_style(self.style)
                 compile_results.append(
                     thread_pool.apply_async(
@@ -645,8 +660,15 @@ class App(Base):
         # Compile the root document.
         compile_results.append(compiler.compile_document_root(self.head_components))
 
+        # Compile the app wrapper
+        compile_results.append(
+            compiler.compile_app_wrap(self._app_root(app_wrappers=app_wrappers))
+        )
+
         # Compile the theme.
-        compile_results.append(compiler.compile_theme(style=self.style, radix_theme=self.radix_theme))
+        compile_results.append(
+            compiler.compile_theme(style=self.style, radix_theme=self.radix_theme)
+        )
 
         # Compile the contexts.
         compile_results.append(compiler.compile_contexts(self.state))
