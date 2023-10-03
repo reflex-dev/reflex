@@ -47,11 +47,11 @@ export function formatCell(value, column) {
                 // allowOverlay: true
             }
         default:
-            console.log(column.type, value);
+        // console.log(column.type, value);
     };
     return {
         kind: GridCellKind.Text,
-        data: "foo",
+        data: value,
         displayData: "unknown render method"
     }
 };

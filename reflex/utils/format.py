@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Union
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
 from reflex.utils.serializers import serialize
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -635,11 +635,15 @@ def format_data_editor_column(col: str | dict):
     """
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
-    elif isinstance(col, dict):
+    elif isinstance(col, (dict,)):
         if "id" not in col:
             col["id"] = col["title"].lower()
         if "type" not in col:
             col["type"] = "str"
+        if "overlayIcon" not in col:
+            col["overlayIcon"] = None
+        return col
+    elif isinstance(col, BaseVar):
         return col
     raise ValueError(
         f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"

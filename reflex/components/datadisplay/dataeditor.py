@@ -1,42 +1,61 @@
 """Data Editor component from glide-data-grid."""
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Callable, Dict, Optional
 
-# GridColumnIcons
-#  HeaderArray
-#  HeaderAudioUri
-#  HeaderBoolean
-#  HeaderCode
-#  HeaderDate
-#  HeaderEmail
-#  HeaderEmoji
-#  HeaderGeoDistance
-#  HeaderIfThenElse
-#  HeaderImage
-#  HeaderJoinStrings
-#  HeaderLookup
-#  HeaderMarkdown
-#  HeaderMath
-#  HeaderNumber
-#  HeaderPhone
-#  HeaderReference
-#  HeaderRollup
-#  HeaderRowID
-#  HeaderSingleValue
-#  HeaderSplitString
-#  HeaderString
-#  HeaderTextTemplate
-#  HeaderTime
-#  HeaderUri
-#  HeaderVideoUri
 from icecream import ic
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.layout import Box
 from reflex.utils import console, format, imports, types
-from reflex.vars import BaseVar, ImportVar, Var, get_unique_variable_name
+from reflex.utils.serializers import serializer
+from reflex.vars import ImportVar, Var, get_unique_variable_name
+
+
+class GridColumnIcons(str, Enum):
+    """An Enum for the available icons in DataEditor."""
+
+    Array = "array"
+    AudioUri = "audio_uri"
+    Boolean = "boolean"
+    HeaderCode = "code"
+    Date = "date"
+    Email = "email"
+    Emoji = "emoji"
+    GeoDistance = "geo_distance"
+    IfThenElse = "if_then_else"
+    Image = "image"
+    JoinStrings = "join_strings"
+    Lookup = "lookup"
+    Markdown = "markdown"
+    Math = "math"
+    Number = "number"
+    Phone = "phone"
+    Reference = "reference"
+    Rollup = "rollup"
+    RowID = "row_id"
+    SingleValue = "single_value"
+    SplitString = "split_string"
+    String = "string"
+    TextTemplate = "text_template"
+    Time = "time"
+    Uri = "uri"
+    VideoUri = "video_uri"
+
+
+@serializer
+def serialize_gridcolumn_icon(icon: GridColumnIcons) -> str:
+    """Serialize grid column icon.
+
+    Args:
+        icon: the Icon to serialize.
+
+    Returns:
+        The serialized value.
+    """
+    return "prefix" + str(icon)
 
 
 class DataEditorColumn(Base):
@@ -56,6 +75,7 @@ class DataEditor(NoSSRComponent):
 
     # number of rows
     rows: Var[int]
+
     # headers of the columns for the data grid
     columns: Var[list[dict[str, Any]]]
 
@@ -67,6 +87,8 @@ class DataEditor(NoSSRComponent):
 
     # allow copy paste or not
     getCellForSelection: Var[bool]
+
+    onPaste: Var[bool]
 
     is_default = True
 
@@ -85,59 +107,6 @@ class DataEditor(NoSSRComponent):
                 },
             },
         )
-
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        """Create the DataEditor component.
-
-        Args:
-            *children: The children of the data editor.
-            **props: The props of the data editor.
-
-        Raises:
-            ValueError: invalid input.
-
-        Returns:
-            The DataEditor component.&
-        """
-        from reflex.el.elements import Div
-
-        columns = props.get("columns", [])
-        data = props.get("data", [])
-        rows = props.get("rows", None)
-        # if rows is not provided, determine from data
-        if rows is None:
-            props["rows"] = (
-                BaseVar.create(value=f"{data}.length()", is_local=False)
-                if isinstance(data, Var)
-                else len(data)
-            )
-
-        if not isinstance(columns, Var) and len(columns):
-            if (
-                types.is_dataframe(type(data))
-                or isinstance(data, Var)
-                and types.is_dataframe(data.type_)
-            ):
-                raise ValueError(
-                    "Cannot pass in both a pandas dataframe and columns to the data_editor component."
-                )
-            else:
-                props["columns"] = [
-                    format.format_data_editor_column(col) for col in columns
-                ]
-
-        if isinstance(data, Var):
-            ic(data.type_)
-
-        props.setdefault("getCellForSelection", True)
-
-        if props.pop("getCellContent", None) is not None:
-            console.warn(
-                "getCellContent is not parametrable, user value will be discarded"
-            )
-        grid = super().create(*children, **props)
-        return Box.create(grid, Div.create(id="portal"))
 
     def get_event_triggers(self) -> Dict[str, Callable]:
         """The event triggers of the component.
@@ -173,6 +142,65 @@ class DataEditor(NoSSRComponent):
         code.append("}")
 
         return "\n".join(code)
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the DataEditor component.
+
+        Args:
+            *children: The children of the data editor.
+            **props: The props of the data editor.
+
+        Raises:
+            ValueError: invalid input.
+
+        Returns:
+            The DataEditor component.&
+        """
+        from reflex.el.elements import Div
+
+        columns = props.get("columns", [])
+        data = props.get("data", [])
+        rows = props.get("rows", None)
+        # if rows is not provided, determine from data
+        if rows is None:
+            props["rows"] = (
+                5  # BaseVar.create(value=f"{data}.length()", is_local=False)
+                if isinstance(data, Var)
+                else len(data)
+            )
+
+        if not isinstance(columns, Var) and len(columns):
+            if (
+                types.is_dataframe(type(data))
+                or isinstance(data, Var)
+                and types.is_dataframe(data.type_)
+            ):
+                raise ValueError(
+                    "Cannot pass in both a pandas dataframe and columns to the data_editor component."
+                )
+            else:
+                props["columns"] = [
+                    format.format_data_editor_column(col) for col in columns
+                ]
+        else:
+            # props["columns"] = Foreach.create(
+            #     columns, lambda col: format.format_data_editor_column(col)
+            # )
+            ...
+
+        if isinstance(data, Var):
+            ic(data.type_)
+
+        props.setdefault("getCellForSelection", True)
+        props.setdefault("onPaste", False)
+
+        if props.pop("getCellContent", None) is not None:
+            console.warn(
+                "getCellContent is not parametrable, user value will be discarded"
+            )
+        grid = super().create(*children, **props)
+        return Box.create(grid, Div.create(id="portal"))
 
     # def _render(self) -> Tag:
     #     if isinstance(self.data, Var) and types.is_dataframe(self.data.type_):
