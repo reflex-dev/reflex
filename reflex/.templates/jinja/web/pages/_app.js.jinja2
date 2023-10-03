@@ -1,0 +1,33 @@
+{% extends "web/pages/base_page.js.jinja2" %}
+
+{% block declaration %}
+import { EventLoopProvider } from "/utils/context.js";
+
+{% for custom_code in custom_codes %}
+{{custom_code}}
+{% endfor %}
+{% endblock %}
+
+{% block export %}
+function AppWrap({children}) {
+
+  {% for hook in hooks %}
+  {{ hook }}
+  {% endfor %}
+
+  return (
+    {{utils.render(render, indent_width=0)}}
+  )
+}
+
+export default function MyApp({ Component, pageProps }) {
+  return (
+    <AppWrap>
+      <EventLoopProvider>
+        <Component {...pageProps} />
+      </EventLoopProvider>
+    </AppWrap>
+  );
+}
+
+{% endblock %}

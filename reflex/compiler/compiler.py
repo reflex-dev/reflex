@@ -65,16 +65,16 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
-def _compile_app_wrap(app_root: Component) -> str:
-    """Compile the app wrap template component.
+def _compile_app(app_root: Component) -> str:
+    """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
 
     Returns:
-        The compiled app wrappers.
+        The compiled app.
     """
-    return templates.APP_WRAP.render(
+    return templates.APP_ROOT.render(
         imports=utils.compile_imports(app_root.get_imports()),
         custom_codes=app_root.get_custom_code(),
         hooks=app_root.get_hooks(),
@@ -265,17 +265,17 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_app_wrap(app_root: Component) -> tuple[str, str]:
-    """Compile the app wrapper.
+def compile_app(app_root: Component) -> tuple[str, str]:
+    """Compile the app root.
 
     Returns:
         The path and code of the compiled app wrapper.
     """
     # Get the path for the output file.
-    output_path = utils.get_page_path(constants.PageNames.APP_WRAP)
+    output_path = utils.get_page_path(constants.PageNames.APP_ROOT)
 
     # Compile the document root.
-    code = _compile_app_wrap(app_root)
+    code = _compile_app(app_root)
     return output_path, code
 
 
@@ -374,4 +374,4 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js", "_app_wrap.js"])
+    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=[])

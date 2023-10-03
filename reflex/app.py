@@ -615,7 +615,7 @@ class App(Base):
         for component in self.pages.values():
             app_wrappers.update(component.get_app_wrap_components())
         compile_results.append(
-            compiler.compile_app_wrap(self._app_root(app_wrappers=app_wrappers))
+            compiler.compile_app(self._app_root(app_wrappers=app_wrappers))
         )
 
         # Compile the pages in parallel.

@@ -28,8 +28,7 @@ class Theme(RadixThemesComponent):
     tag = "Theme"
 
     def _get_imports(self) -> imports.ImportDict:
-        imports = {
-            **super()._get_imports(),
+        return {
             "/utils/theme.js": {ImportVar(tag="radix_theme", is_default=False)},
             "/utils/context.js": {
                 ImportVar(tag="isDevMode", is_default=False),
@@ -41,16 +40,13 @@ class Theme(RadixThemesComponent):
             },
             "react": {ImportVar(tag="useContext", is_default=False)},
         }
-        imports.setdefault(self.library, set()).add(
-            ImportVar(tag="ThemePanel", is_default=False)
-        )
-        return imports
 
     def _get_custom_code(self) -> str | None:
-        return """
+        return (
+            """
 import '@radix-ui/themes/styles.css';
 
-function RadixThemesTheme({children}) {
+function %s({children}) {
     const [colorMode, toggleColorMode] = useContext(ColorModeContext);
 
     return (
@@ -60,6 +56,8 @@ function RadixThemesTheme({children}) {
         </Theme>
     )
 }"""
+            % self.alias
+        )
 
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         return {
@@ -79,8 +77,9 @@ class RadixThemesColorModeProvider(Component):
         }
 
     def _get_custom_code(self) -> str | None:
-        return """
-function RadixThemesColorModeProvider({ children }) {
+        return (
+            """
+function %s({ children }) {
   let defaultMode = "light"
   if (typeof window !== "undefined") {
     defaultMode = window.localStorage.getItem("chakra-ui-color-mode")
@@ -102,3 +101,5 @@ function RadixThemesColorModeProvider({ children }) {
     </ColorModeContext.Provider>
   )
 }"""
+            % self.tag
+        )
