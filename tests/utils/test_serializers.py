@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 from typing import Any, Dict, List, Type
 
 import pytest
@@ -93,6 +94,25 @@ def test_add_serializer():
     assert not serializers.has_serializer(Foo)
 
 
+class TestEnum(str, Enum):
+    """TestEnum."""
+
+    FOO = "foo"
+    BAR = "bar"
+
+
+class TestEnum2(str, Enum):
+    """TestEnum2."""
+
+    FOO = "foo"
+    BAR = "bar"
+
+
+@serializers.serializer
+def serialize_TestEnum2(enum: TestEnum2) -> str:
+    return "prefix_" + enum.value
+
+
 @pytest.mark.parametrize(
     "value,expected",
     [
@@ -104,6 +124,19 @@ def test_add_serializer():
         (None, "null"),
         ([1, 2, 3], "[1, 2, 3]"),
         ([1, "2", 3.0], '[1, "2", 3.0]'),
+        ([{"key": 1}, {"key": 2}], '[{"key": 1}, {"key": 2}]'),
+        (TestEnum.FOO, "foo"),
+        ([TestEnum.FOO, TestEnum.BAR], '["foo", "bar"]'),
+        (
+            {"key1": [1, 2, 3], "key2": [TestEnum.FOO, TestEnum.BAR]},
+            '{"key1": [1, 2, 3], "key2": ["foo", "bar"]}',
+        ),
+        (TestEnum2.FOO, "prefix_foo"),
+        ([TestEnum2.FOO, TestEnum2.BAR], '["prefix_foo", "prefix_bar"]'),
+        (
+            {"key1": TestEnum2.FOO, "key2": TestEnum2.BAR},
+            '{"key1": "prefix_foo", "key2": "prefix_bar"}',
+        ),
         (
             [1, Var.create_safe("hi"), Var.create_safe("bye", is_local=False)],
             '[1, "hi", bye]',
