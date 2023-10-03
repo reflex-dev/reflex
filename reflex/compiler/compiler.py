@@ -374,4 +374,4 @@ def compile_tailwind(
 
 def purge_web_pages_dir():
     """Empty out .web directory."""
-    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])
+    utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js", "_app_wrap.js"])

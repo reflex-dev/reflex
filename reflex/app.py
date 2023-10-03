@@ -608,22 +608,29 @@ class App(Base):
         # Store the compile results.
         compile_results = []
 
+        # Compile the app wrapper
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            (0, "AppWrap"): AppWrap.create()
+        }
+        for component in self.pages.values():
+            app_wrappers.update(component.get_app_wrap_components())
+        compile_results.append(
+            compiler.compile_app_wrap(self._app_root(app_wrappers=app_wrappers))
+        )
+
         # Compile the pages in parallel.
         custom_components = set()
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
         all_imports = {}
-        app_wrappers: Dict[tuple[int, str], Component] = {
-            (0, "AppWrap"): AppWrap.create()
-        }
+        page_futures = []
 
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
-                app_wrappers.update(component.get_app_wrap_components())
                 component.add_style(self.style)
-                compile_results.append(
+                page_futures.append(
                     thread_pool.apply_async(
                         compiler.compile_page,
                         args=(
@@ -643,7 +650,7 @@ class App(Base):
         thread_pool.join()
 
         # Get the results.
-        compile_results = [result.get() for result in compile_results]
+        compile_results.extend(result.get() for result in page_futures)
 
         # TODO the compile tasks below may also benefit from parallelization too
 
@@ -659,11 +666,6 @@ class App(Base):
 
         # Compile the root document.
         compile_results.append(compiler.compile_document_root(self.head_components))
-
-        # Compile the app wrapper
-        compile_results.append(
-            compiler.compile_app_wrap(self._app_root(app_wrappers=app_wrappers))
-        )
 
         # Compile the theme.
         compile_results.append(

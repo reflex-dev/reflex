@@ -51,7 +51,7 @@ class Theme(RadixThemesComponent):
 import '@radix-ui/themes/styles.css';
 
 function RadixThemesTheme({children}) {
-    const [colorMode, setColorMode] = useContext(ColorModeContext);
+    const [colorMode, toggleColorMode] = useContext(ColorModeContext);
 
     return (
         <Theme appearance={colorMode} {...radix_theme}>
@@ -62,4 +62,43 @@ function RadixThemesTheme({children}) {
 }"""
 
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-        return {}
+        return {
+            (45, "RadixThemesColorModeProvider"): RadixThemesColorModeProvider.create(),
+        }
+
+
+class RadixThemesColorModeProvider(Component):
+    tag = "RadixThemesColorModeProvider"
+
+    def _get_imports(self) -> imports.ImportDict:
+        return {
+            "react": {ImportVar(tag="useState", is_default=False)},
+            "/utils/context.js": {
+                ImportVar(tag="ColorModeContext", is_default=False),
+            },
+        }
+
+    def _get_custom_code(self) -> str | None:
+        return """
+function RadixThemesColorModeProvider({ children }) {
+  let defaultMode = "light"
+  if (typeof window !== "undefined") {
+    defaultMode = window.localStorage.getItem("chakra-ui-color-mode")
+  }
+  const [colorMode, setColorMode] = useState(defaultMode)
+
+  const toggleColorMode = () => {
+    setColorMode((prevMode) => {
+        const newMode = (prevMode === "light" ? "dark" : "light")
+        if (typeof window !== "undefined") {
+            window.localStorage.setItem("chakra-ui-color-mode", newMode)
+        }
+        return newMode
+    })
+  }
+  return (
+    <ColorModeContext.Provider value={[ colorMode, toggleColorMode ]}>
+      {children}
+    </ColorModeContext.Provider>
+  )
+}"""

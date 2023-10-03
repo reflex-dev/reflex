@@ -1,16 +1,14 @@
-import { EventLoopProvider, ReflexColorModeProvider } from "/utils/context.js";
+import { EventLoopProvider } from "/utils/context.js";
 import AppWrap from "./_app_wrap.js"
 
 
 function MyApp({ Component, pageProps }) {
   return (
-    <ReflexColorModeProvider>
-      <AppWrap>
-        <EventLoopProvider>
-          <Component {...pageProps} />
-        </EventLoopProvider>
-      </AppWrap>
-    </ReflexColorModeProvider>
+    <AppWrap>
+      <EventLoopProvider>
+        <Component {...pageProps} />
+      </EventLoopProvider>
+    </AppWrap>
   );
 }
 

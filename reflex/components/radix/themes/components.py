@@ -1,4 +1,3 @@
-
 from .base import RadixThemesComponent
 
 

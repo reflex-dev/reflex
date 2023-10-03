@@ -40,13 +40,13 @@ class ChakraProvider(ChakraComponent):
     def _get_imports(self) -> imports.ImportDict:
         imports = super()._get_imports()
         imports.setdefault(self.library, set()).add(
-            ImportVar(tag="extendTheme", is_default=False)
+            ImportVar(tag="extendTheme", is_default=False),
         )
         imports.setdefault("/utils/theme", set()).add(
-            ImportVar(tag="theme", is_default=False)
+            ImportVar(tag="theme", is_default=False),
         )
         imports.setdefault(Global.create().library, set()).add(
-            ImportVar(tag="css", is_default=False)
+            ImportVar(tag="css", is_default=False),
         )
         return imports
 
@@ -64,5 +64,37 @@ const GlobalStyles = css`
 """
 
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-        # avoid infinite recursion
+        return {
+            (50, "ChakraColorModeProvider"): ChakraColorModeProvider.create(),
+        }
+
+
+class ChakraColorModeProvider(ChakraComponent):
+    tag = "ChakraColorModeProvider"
+
+    def _get_imports(self) -> imports.ImportDict:
+        return {
+            self.library: {
+                ImportVar(
+                    tag="useColorMode", alias="chakraUseColorMode", is_default=False
+                ),
+            },
+            "/utils/context.js": {
+                ImportVar(tag="ColorModeContext", is_default=False),
+            },
+        }
+
+    def _get_custom_code(self) -> str | None:
+        return """
+function ChakraColorModeProvider({ children }) {
+  const {colorMode, toggleColorMode} = chakraUseColorMode()
+
+  return (
+    <ColorModeContext.Provider value={[ colorMode, toggleColorMode ]}>
+      {children}
+    </ColorModeContext.Provider>
+  )
+}"""
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         return {}

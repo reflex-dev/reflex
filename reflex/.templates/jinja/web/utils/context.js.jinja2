@@ -25,15 +25,3 @@ export function EventLoopProvider({ children }) {
     </EventLoopContext.Provider>
   )
 }
-
-export function ReflexColorModeProvider({ children }) {
-  const [colorMode, setColorMode] = useState("light")
-  const toggleColorMode = () => {
-    setColorMode((prevMode) => (prevMode === "light" ? "dark" : "light"))
-  }
-  return (
-    <ColorModeContext.Provider value={[ colorMode, toggleColorMode ]}>
-      {children}
-    </ColorModeContext.Provider>
-  )
-}
