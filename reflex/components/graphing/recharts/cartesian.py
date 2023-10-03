@@ -21,7 +21,7 @@ class Axis(Recharts):
     orientation: Var[str]
 
     # The type of axis 'number' | 'category'
-    _type: Var[str]
+    type_: Var[str]
 
     # Allow the ticks of XAxis to be decimals or not.
     allow_decimals: Var[bool]
@@ -111,6 +111,9 @@ class Brush(Recharts):
     """A Brush component in Recharts."""
 
     tag = "Brush"
+
+    # Stroke color
+    stroke: Var[str]
 
     # The key of data displayed in the axis.
     data_key: Var[str]
@@ -422,6 +425,15 @@ class ReferenceArea(Recharts):
 
     tag = "ReferenceArea"
 
+    # Stroke color
+    stroke: Var[str]
+
+    # Fill color
+    fill: Var[str]
+
+    # The opacity of area.
+    fill_opacity: Var[float]
+
     # The id of x-axis which is corresponding to the data.
     x_axis_id: Var[str]
 
@@ -429,16 +441,16 @@ class ReferenceArea(Recharts):
     y_axis_id: Var[str]
 
     # A boundary value of the area. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys. If one of x1 or x2 is invalidate, the area will cover along x-axis.
-    x1: Var[str]
+    x1: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified x-axis is a number axis, the type of x must be Number. If the specified x-axis is a category axis, the value of x must be one of the categorys. If one of x1 or x2 is invalidate, the area will cover along x-axis.
-    x2: Var[str]
+    x2: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys. If one of y1 or y2 is invalidate, the area will cover along y-axis.
-    y1: Var[str]
+    y1: Var[Union[str, int]]
 
     # A boundary value of the area. If the specified y-axis is a number axis, the type of y must be Number. If the specified y-axis is a category axis, the value of y must be one of the categorys. If one of y1 or y2 is invalidate, the area will cover along y-axis.
-    y2: Var[str]
+    y2: Var[Union[str, int]]
 
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
     if_overflow: Var[str]

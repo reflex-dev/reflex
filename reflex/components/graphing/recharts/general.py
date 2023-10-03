@@ -98,7 +98,7 @@ class Legend(Recharts):
         }
 
 
-class Tooltip(Recharts):
+class GraphingTooltip(Recharts):
     """A Tooltip component in Recharts."""
 
     tag = "Tooltip"

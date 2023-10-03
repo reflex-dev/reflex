@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, List, Union
 
+from reflex.components.component import Component
+from reflex.components.graphing.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -14,17 +16,17 @@ class ChartBase(RechartsCharts):
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position tooltip, and the start_index, end_index of Brush.
+    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
     sync_id: Var[str]
 
-    # When sync_id is provided, allows customisation of how the charts will synchronize tooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
     sync_method: Var[str]
 
     # The width of chart container. String or Integer
-    width: Var[Union[str, int]]
+    width: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The height of chart container.
-    height: Var[Union[str, int]]
+    height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
     layout: Var[str]
@@ -48,6 +50,23 @@ class ChartBase(RechartsCharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a chart component.
+
+        Args:
+            *children: The children of the chart component.
+            **props: The properties of the chart component.
+
+        Returns:
+            The chart component wrapped in a responsive container.
+        """
+        return ResponsiveContainer.create(
+            super().create(*children, **props),
+            width=props.pop("width", "100%"),
+            height=props.pop("height", "100%"),
+        )
+
 
 class AreaChart(ChartBase):
     """An Area chart component in Recharts."""
@@ -70,7 +89,7 @@ class AreaChart(ChartBase):
         "Brush",
         "CartesianGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "Area",
     ]
 
@@ -108,7 +127,7 @@ class BarChart(ChartBase):
         "Brush",
         "CartesianGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "Bar",
     ]
 
@@ -128,7 +147,7 @@ class LineChart(ChartBase):
         "Brush",
         "CartesianGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "Line",
     ]
 
@@ -163,7 +182,7 @@ class ComposedChart(ChartBase):
         "Brush",
         "CartesianGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "Area",
         "Line",
         "Bar",
@@ -181,7 +200,7 @@ class PieChart(ChartBase):
         "PolarRadiusAxis",
         "PolarGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "Pie",
     ]
 
@@ -227,7 +246,7 @@ class RadarChart(ChartBase):
         "PolarRadiusAxis",
         "PolarGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "Radar",
     ]
 
@@ -283,7 +302,7 @@ class RadialBarChart(ChartBase):
         "PolarRadiusAxis",
         "PolarGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "RadialBar",
     ]
 
@@ -310,13 +329,14 @@ class ScatterChart(ChartBase):
     valid_children: List[str] = [
         "XAxis",
         "YAxis",
+        "ZAxis",
         "ReferenceArea",
         "ReferenceDot",
         "ReferenceLine",
         "Brush",
         "CartesianGrid",
         "Legend",
-        "Tooltip",
+        "GraphingTooltip",
         "Scatter",
     ]
 
@@ -338,16 +358,53 @@ class ScatterChart(ChartBase):
         }
 
 
-class FunnelChart(ChartBase):
+class FunnelChart(RechartsCharts):
     """A Funnel chart component in Recharts."""
 
     tag = "FunnelChart"
+
+    # The source data, in which each element is an object.
+    data: Var[List[Dict[str, Any]]]
+
+    # If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
+    sync_id: Var[str]
+
+    # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
+    sync_method: Var[str]
+
+    # The width of chart container. String or Integer
+    width: Var[Union[str, int]] = "100%"  # type: ignore
+
+    # The height of chart container.
+    height: Var[Union[str, int]] = "100%"  # type: ignore
+
+    # The layout of area in the chart. 'horizontal' | 'vertical'
+    layout: Var[str]
+
+    # The sizes of whitespace around the chart.
+    margin: Var[Dict[str, Any]]
+
+    # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
+    stack_offset: Var[str]
 
     # The layout of bars in the chart. centeric
     layout: Var[str]
 
     # Valid children components
-    valid_children: List[str] = ["Legend", "Tooltip", "Funnel"]
+    valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
+
+    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            EventTriggers.ON_CLICK: lambda: [],
+            EventTriggers.ON_MOUSE_ENTER: lambda: [],
+            EventTriggers.ON_MOUSE_MOVE: lambda: [],
+            EventTriggers.ON_MOUSE_LEAVE: lambda: [],
+        }
 
 
 class Treemap(RechartsCharts):
@@ -356,10 +413,10 @@ class Treemap(RechartsCharts):
     tag = "Treemap"
 
     # The width of chart container. String or Integer
-    width: Var[Union[str, int]]
+    width: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The height of chart container.
-    height: Var[Union[str, int]]
+    height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # data of treemap. Array
     data: Var[List[Dict[str, Any]]]
@@ -381,3 +438,20 @@ class Treemap(RechartsCharts):
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
     animation_easing: Var[str]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a chart component.
+
+        Args:
+            *children: The children of the chart component.
+            **props: The properties of the chart component.
+
+        Returns:
+            The Treemap component wrapped in a responsive container.
+        """
+        return ResponsiveContainer.create(
+            super().create(*children, **props),
+            width=props.pop("width", "100%"),
+            height=props.pop("height", "100%"),
+        )

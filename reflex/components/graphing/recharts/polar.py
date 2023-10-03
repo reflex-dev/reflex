@@ -13,6 +13,9 @@ class Pie(Recharts):
 
     tag = "Pie"
 
+    # data
+    data: Var[List[Dict[str, Any]]]
+
     # The key of each sector's value.
     data_key: Var[str]
 
@@ -47,13 +50,19 @@ class Pie(Recharts):
     legend_type: Var[str]
 
     # If false set, labels will not be drawn.
-    label: Var[bool]
+    label: Var[bool] = False  # type: ignore
 
     # If false set, label lines will not be drawn.
     label_line: Var[bool]
 
     # Valid children components
     valid_children: List[str] = ["Cell", "LabelList"]
+
+    # fill color
+    fill: Var[str]
+
+    # stroke color
+    stroke: Var[str]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -86,6 +95,15 @@ class Radar(Recharts):
 
     # If false set, dots will not be drawn
     dot: Var[bool]
+
+    # Stoke color
+    stroke: Var[str]
+
+    # Fill color
+    fill: Var[str]
+
+    # opacity
+    fill_opacity: Var[float]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered.
     legend_type: Var[str]

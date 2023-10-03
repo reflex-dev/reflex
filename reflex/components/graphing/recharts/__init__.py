@@ -30,8 +30,9 @@ from .charts import (
     ScatterChart,
     Treemap,
 )
-from .general import Label, LabelList, Legend, ResponsiveContainer, Tooltip
+from .general import GraphingTooltip, Label, LabelList, Legend, ResponsiveContainer
 from .polar import (
+    Pie,
     PolarAngleAxis,
     PolarGrid,
     PolarRadiusAxis,
