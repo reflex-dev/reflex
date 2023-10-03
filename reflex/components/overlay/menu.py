@@ -1,7 +1,7 @@
 """Menu components."""
 from __future__ import annotations
 
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -74,7 +74,13 @@ class Menu(ChakraComponent):
         }
 
     @classmethod
-    def create(cls, *children, button=None, items=None, **props) -> Component:
+    def create(
+        cls,
+        *children,
+        button: Optional[Component] = None,
+        items: Optional[List] = None,
+        **props,
+    ) -> Component:
         """Create a menu component.
 
         Args:
@@ -116,6 +122,24 @@ class MenuList(ChakraComponent):
     """The wrapper for the menu items. Must be a direct child of Menu."""
 
     tag = "MenuList"
+
+    @classmethod
+    def create(cls, *children, **props) -> ChakraComponent:
+        """Create a MenuList component, and automatically wrap in MenuItem if not already one.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The MenuList component.
+        """
+        if len(children) != 0:
+            children = [
+                child if isinstance(child, MenuItem) else MenuItem.create(child)
+                for child in children
+            ]
+        return super().create(*children, **props)
 
 
 class MenuItem(ChakraComponent):
