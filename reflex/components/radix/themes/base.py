@@ -3,16 +3,38 @@ from __future__ import annotations
 from typing import List
 
 from reflex import constants
+from reflex.base import Base
 from reflex.components import Component
 from reflex.vars import Var
 
 
+class CommonMarginProps(Base):
+    """Many radix-themes elements accept shorthand margin props."""
+
+    # Margin: "0" - "9"
+    m: Var[str]
+
+    # Margin horizontal: "0" - "9"
+    mx: Var[str]
+
+    # Margin vertical: "0" - "9"
+    my: Var[str]
+
+    # Margin top: "0" - "9"
+    mt: Var[str]
+
+    # Margin right: "0" - "9"
+    mr: Var[str]
+
+    # Margin bottom: "0" - "9"
+    mb: Var[str]
+
+    # Margin left: "0" - "9"
+    ml: Var[str]
+
+
 class RadixThemesComponent(Component):
     library = "@radix-ui/themes@^2.0.0"
-
-    color: Var[str]
-
-    variant: Var[str]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

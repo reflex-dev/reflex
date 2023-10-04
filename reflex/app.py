@@ -574,11 +574,6 @@ class App(Base):
 
     def _app_root(self, app_wrappers):
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
-        # if (50, "ChakraColorModeProvider") in order:
-        #     try:
-        #         order.remove((45, "RadixThemesColorModeProvider"))
-        #     except ValueError:
-        #         pass
         root = parent = app_wrappers[order[0]]
         for key in order[1:]:
             child = app_wrappers[key]
@@ -619,6 +614,9 @@ class App(Base):
         thread_pool = ThreadPool()
         all_imports = {}
         page_futures = []
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            (0, "AppWrap"): AppWrap.create()
+        }
 
         with progress:
             for route, component in self.pages.items():
@@ -638,13 +636,21 @@ class App(Base):
                 # add component.get_imports() to all_imports
                 all_imports.update(component.get_imports())
 
+                # add the app wrappers from this component
+                app_wrappers.update(component.get_app_wrap_components())
+
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
 
         thread_pool.close()
         thread_pool.join()
 
-        # Get the results.
+        # Compile the app wrapper.
+        app_root = self._app_root(app_wrappers=app_wrappers)
+        all_imports.update(app_root.get_imports())
+        compile_results.append(compiler.compile_app(app_root))
+
+        # Get the compiled pages.
         compile_results.extend(result.get() for result in page_futures)
 
         # TODO the compile tasks below may also benefit from parallelization too
@@ -661,16 +667,6 @@ class App(Base):
 
         # Compile the root document.
         compile_results.append(compiler.compile_document_root(self.head_components))
-
-        # Compile the app wrapper
-        app_wrappers: Dict[tuple[int, str], Component] = {
-            (0, "AppWrap"): AppWrap.create()
-        }
-        for component in self.pages.values():
-            app_wrappers.update(component.get_app_wrap_components())
-        app_root = self._app_root(app_wrappers=app_wrappers)
-        all_imports.update(app_root.get_imports())
-        compile_results.append(compiler.compile_app(app_root))
 
         # Compile the theme.
         compile_results.append(
