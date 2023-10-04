@@ -5,7 +5,7 @@ from ...component import Component
 
 
 class RadixThemesComponent(Component):
-    library = "@radix-ui/themes"
+    library = "@radix-ui/themes@^2.0.0"
 
     color: Var[str]
 
@@ -32,13 +32,11 @@ class Theme(RadixThemesComponent):
             "/utils/theme.js": {ImportVar(tag="radix_theme", is_default=False)},
             "/utils/context.js": {
                 ImportVar(tag="isDevMode", is_default=False),
-                ImportVar(tag="ColorModeContext", is_default=False),
             },
             self.library: {
                 ImportVar(tag="Theme", is_default=False),
                 ImportVar(tag="ThemePanel", is_default=False),
             },
-            "react": {ImportVar(tag="useContext", is_default=False)},
         }
 
     def _get_custom_code(self) -> str | None:
@@ -47,10 +45,8 @@ class Theme(RadixThemesComponent):
 import '@radix-ui/themes/styles.css';
 
 function %s({children}) {
-    const [colorMode, toggleColorMode] = useContext(ColorModeContext);
-
     return (
-        <Theme appearance={colorMode} {...radix_theme}>
+        <Theme {...radix_theme}>
           {children}
           {isDevMode ? <ThemePanel defaultOpen={false} /> : null}
         </Theme>
@@ -70,9 +66,15 @@ class RadixThemesColorModeProvider(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         return {
-            "react": {ImportVar(tag="useState", is_default=False)},
+            "react": {
+                ImportVar(tag="useState", is_default=False),
+                ImportVar(tag="useEffect", is_default=False),
+            },
             "/utils/context.js": {
                 ImportVar(tag="ColorModeContext", is_default=False),
+            },
+            "next-themes@^0.2.0": {
+                ImportVar(tag="useTheme", is_default=False),
             },
         }
 
@@ -80,20 +82,13 @@ class RadixThemesColorModeProvider(Component):
         return (
             """
 function %s({ children }) {
-  let defaultMode = "light"
-  if (typeof window !== "undefined") {
-    defaultMode = window.localStorage.getItem("chakra-ui-color-mode")
-  }
-  const [colorMode, setColorMode] = useState(defaultMode)
+  const {theme, setTheme} = useTheme()
+  const [colorMode, setColorMode] = useState("light")
+
+  useEffect(() => setColorMode(theme), [theme])
 
   const toggleColorMode = () => {
-    setColorMode((prevMode) => {
-        const newMode = (prevMode === "light" ? "dark" : "light")
-        if (typeof window !== "undefined") {
-            window.localStorage.setItem("chakra-ui-color-mode", newMode)
-        }
-        return newMode
-    })
+    setTheme(theme === "light" ? "dark" : "light")
   }
   return (
     <ColorModeContext.Provider value={[ colorMode, toggleColorMode ]}>

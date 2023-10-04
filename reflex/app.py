@@ -574,6 +574,11 @@ class App(Base):
 
     def _app_root(self, app_wrappers):
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
+        # if (50, "ChakraColorModeProvider") in order:
+        #     try:
+        #         order.remove((45, "RadixThemesColorModeProvider"))
+        #     except ValueError:
+        #         pass
         root = parent = app_wrappers[order[0]]
         for key in order[1:]:
             child = app_wrappers[key]
@@ -607,16 +612,6 @@ class App(Base):
 
         # Store the compile results.
         compile_results = []
-
-        # Compile the app wrapper
-        app_wrappers: Dict[tuple[int, str], Component] = {
-            (0, "AppWrap"): AppWrap.create()
-        }
-        for component in self.pages.values():
-            app_wrappers.update(component.get_app_wrap_components())
-        compile_results.append(
-            compiler.compile_app(self._app_root(app_wrappers=app_wrappers))
-        )
 
         # Compile the pages in parallel.
         custom_components = set()
@@ -666,6 +661,16 @@ class App(Base):
 
         # Compile the root document.
         compile_results.append(compiler.compile_document_root(self.head_components))
+
+        # Compile the app wrapper
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            (0, "AppWrap"): AppWrap.create()
+        }
+        for component in self.pages.values():
+            app_wrappers.update(component.get_app_wrap_components())
+        app_root = self._app_root(app_wrappers=app_wrappers)
+        all_imports.update(app_root.get_imports())
+        compile_results.append(compiler.compile_app(app_root))
 
         # Compile the theme.
         compile_results.append(

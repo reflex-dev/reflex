@@ -1,4 +1,5 @@
 """Components that are based on Chakra-UI."""
+from typing import List
 
 from reflex.components.component import Component
 from reflex.utils import imports
@@ -8,7 +9,12 @@ from reflex.vars import ImportVar, Var
 class ChakraComponent(Component):
     """A component that wraps a Chakra component."""
 
-    library = "@chakra-ui/react"
+    library = "@chakra-ui/react@^2.6.0"
+    lib_dependencies: List[str] = [
+        "@chakra-ui/system@^2.5.6",
+        "framer-motion@^10.16.4",
+        "@emotion/styled@^11.10.6",
+    ]
 
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         return {
@@ -18,7 +24,10 @@ class ChakraComponent(Component):
 
 
 class Global(Component):
-    library = "@emotion/react"
+    library = "@emotion/react@^11.10.6"
+    lib_dependencies: List[str] = [
+        "@emotion/styled@^11.10.6",
+    ]
 
     tag = "Global"
 
@@ -79,8 +88,14 @@ class ChakraColorModeProvider(ChakraComponent):
                     tag="useColorMode", alias="chakraUseColorMode", is_default=False
                 ),
             },
+            "react": {
+                ImportVar(tag="useEffect", is_default=False),
+            },
             "/utils/context.js": {
                 ImportVar(tag="ColorModeContext", is_default=False),
+            },
+            "next-themes@^0.2.0": {
+                ImportVar(tag="useTheme", is_default=False),
             },
         }
 
@@ -88,6 +103,13 @@ class ChakraColorModeProvider(ChakraComponent):
         return """
 function ChakraColorModeProvider({ children }) {
   const {colorMode, toggleColorMode} = chakraUseColorMode()
+  const {theme, setTheme} = useTheme()
+
+  useEffect(() => {
+    if (colorMode != theme) {
+        toggleColorMode()
+    }
+  }, [theme])
 
   return (
     <ColorModeContext.Provider value={[ colorMode, toggleColorMode ]}>

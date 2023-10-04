@@ -10,7 +10,6 @@ from pydantic.fields import ModelField
 from reflex import constants
 from reflex.components.base import (
     Body,
-    ColorModeScript,
     Description,
     DocumentHead,
     Head,
@@ -269,7 +268,6 @@ def create_document_root(head_components: list[Component] | None = None) -> Comp
     return Html.create(
         DocumentHead.create(*head_components),
         Body.create(
-            ColorModeScript.create(),
             Main.create(),
             NextScript.create(),
         ),
