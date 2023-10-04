@@ -77,7 +77,7 @@ def _compile_app(app_root: Component) -> str:
     )
 
 
-def _compile_theme(theme: dict, radix_theme: dict[str, str]) -> str:
+def _compile_theme(theme: dict) -> str:
     """Compile the theme.
 
     Args:
@@ -86,7 +86,7 @@ def _compile_theme(theme: dict, radix_theme: dict[str, str]) -> str:
     Returns:
         The compiled theme.
     """
-    return templates.THEME.render(theme=theme, radix_theme=radix_theme)
+    return templates.THEME.render(theme=theme)
 
 
 def _compile_contexts(state: Type[State]) -> str:
@@ -274,9 +274,7 @@ def compile_app(app_root: Component) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_theme(
-    style: ComponentStyle, radix_theme: dict[str, str]
-) -> tuple[str, str]:
+def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     """Compile the theme.
 
     Args:
@@ -291,7 +289,7 @@ def compile_theme(
     theme = utils.create_theme(style)
 
     # Compile the theme.
-    code = _compile_theme(theme, radix_theme=radix_theme)
+    code = _compile_theme(theme)
     return output_path, code
 
 

@@ -126,8 +126,8 @@ class App(Base):
     # Background tasks that are currently running
     background_tasks: Set[asyncio.Task] = set()
 
-    # The radix theme properties to apply
-    radix_theme: Dict[str, str] = {}
+    # The radix theme for the entire app
+    theme: Optional[Component] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -617,6 +617,8 @@ class App(Base):
         app_wrappers: Dict[tuple[int, str], Component] = {
             (0, "AppWrap"): AppWrap.create()
         }
+        if self.theme is not None:
+            app_wrappers[(20, "Theme")] = self.theme
 
         with progress:
             for route, component in self.pages.items():
@@ -669,9 +671,7 @@ class App(Base):
         compile_results.append(compiler.compile_document_root(self.head_components))
 
         # Compile the theme.
-        compile_results.append(
-            compiler.compile_theme(style=self.style, radix_theme=self.radix_theme)
-        )
+        compile_results.append(compiler.compile_theme(style=self.style))
 
         # Compile the contexts.
         compile_results.append(compiler.compile_contexts(self.state))

@@ -1,3 +1,7 @@
+from .base import (
+    Theme,
+    ThemePanel,
+)
 from .components import (
     Button,
     Select,
@@ -31,3 +35,5 @@ strong = Strong.create
 switch = Switch.create
 text = Text.create
 text_field = TextField.create
+theme = Theme.create
+theme_panel = ThemePanel.create
