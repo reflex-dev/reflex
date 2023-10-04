@@ -314,7 +314,7 @@ class Scatter(Cartesian):
     # the name
     name: Var[Union[str, int]]
 
-    # Valid children components
+    # Valid children components.
     valid_children: List[str] = ["LabelList", "ErrorBar"]
 
 
