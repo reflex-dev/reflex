@@ -68,8 +68,8 @@ class Theme(RadixThemesComponent):
     # Whether panel backgrounds are transparent: "solid" | "transparent" (default)
     panel_background: Var[str]
 
-    # Border radius: "none" | "small" | "medium" | "large" | "full"
-    border_radius: Var[str]
+    # Element border radius: "none" | "small" | "medium" | "large" | "full"
+    radius: Var[str]
 
     # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%"
     scaling: Var[str]
