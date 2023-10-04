@@ -278,7 +278,7 @@ class Line(Cartesian):
     # If false set, labels will not be drawn. If true set, labels will be drawn which have the props calculated internally.
     label: Var[bool]
 
-    # Hides the line when true, useful when toggling visibility state via legend
+    # Hides the line when true, useful when toggling visibility state via legend.
     hide: Var[bool]
 
     # Whether to connect a graph line across null points.
