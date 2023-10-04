@@ -1,7 +1,10 @@
-from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from __future__ import annotations
 
-from ...component import Component
+from typing import List
+
+from reflex import constants
+from reflex.components import Component
+from reflex.vars import Var
 
 
 class RadixThemesComponent(Component):
@@ -20,81 +23,31 @@ class RadixThemesComponent(Component):
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         return {
             **super()._get_app_wrap_components(),
-            (20, "Theme"): Theme.create(),
+            (20, "RadixThemesTheme"): RadixThemesTheme.create(),
         }
 
 
-class Theme(RadixThemesComponent):
-    tag = "Theme"
+class RadixThemesTheme(Component):
+    library = "/components/reflex/radix_themes.js"
+    tag = "RadixThemesTheme"
+    is_default = True
 
-    def _get_imports(self) -> imports.ImportDict:
-        return {
-            "/utils/theme.js": {ImportVar(tag="radix_theme", is_default=False)},
-            "/utils/context.js": {
-                ImportVar(tag="isDevMode", is_default=False),
-            },
-            self.library: {
-                ImportVar(tag="Theme", is_default=False),
-                ImportVar(tag="ThemePanel", is_default=False),
-            },
-        }
-
-    def _get_custom_code(self) -> str | None:
-        return (
-            """
-import '@radix-ui/themes/styles.css';
-
-function %s({children}) {
-    return (
-        <Theme {...radix_theme}>
-          {children}
-          {isDevMode ? <ThemePanel defaultOpen={false} /> : null}
-        </Theme>
-    )
-}"""
-            % self.alias
-        )
+    lib_dependencies: List[str] = [
+        RadixThemesComponent().library,
+    ]
 
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         return {
+            **super()._get_app_wrap_components(),
             (45, "RadixThemesColorModeProvider"): RadixThemesColorModeProvider.create(),
         }
 
 
 class RadixThemesColorModeProvider(Component):
+    library = "/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
+    is_default = True
 
-    def _get_imports(self) -> imports.ImportDict:
-        return {
-            "react": {
-                ImportVar(tag="useState", is_default=False),
-                ImportVar(tag="useEffect", is_default=False),
-            },
-            "/utils/context.js": {
-                ImportVar(tag="ColorModeContext", is_default=False),
-            },
-            "next-themes@^0.2.0": {
-                ImportVar(tag="useTheme", is_default=False),
-            },
-        }
-
-    def _get_custom_code(self) -> str | None:
-        return (
-            """
-function %s({ children }) {
-  const {theme, setTheme} = useTheme()
-  const [colorMode, setColorMode] = useState("light")
-
-  useEffect(() => setColorMode(theme), [theme])
-
-  const toggleColorMode = () => {
-    setTheme(theme === "light" ? "dark" : "light")
-  }
-  return (
-    <ColorModeContext.Provider value={[ colorMode, toggleColorMode ]}>
-      {children}
-    </ColorModeContext.Provider>
-  )
-}"""
-            % self.tag
-        )
+    lib_dependencies: List[str] = [
+        constants.Packages.NEXT_THEMES,
+    ]
