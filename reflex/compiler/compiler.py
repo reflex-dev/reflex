@@ -42,11 +42,6 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="ColorModeContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
-    "@chakra-ui/react": {
-        ImportVar(tag=constants.ColorMode.USE),
-        # ImportVar(tag="Box"),
-        # ImportVar(tag="Text"),
-    },
 }
 
 
