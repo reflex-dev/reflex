@@ -163,4 +163,4 @@ class LabelList(Recharts):
     fill: Var[str]
 
     # Color of the stroke
-    stroke: Var[str] 
+    stroke: Var[str]

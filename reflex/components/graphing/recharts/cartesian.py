@@ -296,7 +296,7 @@ class Scatter(Cartesian):
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
-    # # The id of z-axis which is corresponding to the data.
+    # The id of z-axis which is corresponding to the data.
     z_axis_id: Var[str]
 
     # If false set, line will not be drawn. If true set, line will be drawn which have the props calculated internally.
