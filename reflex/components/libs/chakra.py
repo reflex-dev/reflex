@@ -51,7 +51,7 @@ class ChakraProvider(ChakraComponent):
         imports.setdefault(self.library, set()).add(
             ImportVar(tag="extendTheme", is_default=False),
         )
-        imports.setdefault("/utils/theme", set()).add(
+        imports.setdefault("/utils/theme.js", set()).add(
             ImportVar(tag="theme", is_default=False),
         )
         imports.setdefault(Global.create().library, set()).add(
