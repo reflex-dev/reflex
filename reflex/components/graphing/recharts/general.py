@@ -158,3 +158,9 @@ class LabelList(Recharts):
 
     # The offset to the specified "position"
     offset: Var[int]
+
+    # Color of the fill
+    fill: Var[str]
+
+    # Color of the stroke
+    stroke: Var[str] 

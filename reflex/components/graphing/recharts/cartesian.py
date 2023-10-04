@@ -344,6 +344,9 @@ class ErrorBar(Recharts):
 
     tag = "ErrorBar"
 
+    # The direction of error bar. 'x' | 'y' | 'both'
+    direction: Var[str]
+
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]
 
