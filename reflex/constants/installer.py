@@ -88,6 +88,12 @@ class Node(SimpleNamespace):
     NPM_PATH = os.path.join(BIN_PATH, "npm")
 
 
+class Packages(SimpleNamespace):
+    """Constants used install consistent package versions."""
+
+    NEXT_THEMES = "next-themes@0.2.0"
+
+
 class PackageJson(SimpleNamespace):
     """Constants used to build the package.json file."""
 
