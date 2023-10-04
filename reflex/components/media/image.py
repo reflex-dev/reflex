@@ -76,7 +76,7 @@ class Image(ChakraComponent):
             The Image component.
         """
         src = props.get("src", None)
-        if src is not None and isinstance(src, str):
+        if src is not None and not isinstance(src, (Var)):
             props["src"] = Var.create(value=src, is_string=True)
         return super().create(*children, **props)
 
