@@ -9,11 +9,10 @@ from reflex.vars import ImportVar, Var
 class ChakraComponent(Component):
     """A component that wraps a Chakra component."""
 
-    library = "@chakra-ui/react@^2.6.0"
+    library = "@chakra-ui/react@2.6.1"
     lib_dependencies: List[str] = [
-        "@chakra-ui/system@^2.5.6",
-        "framer-motion@^10.16.4",
-        "@emotion/styled@^11.10.6",
+        "@chakra-ui/system@2.5.7",
+        "framer-motion@10.16.4",
     ]
 
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
@@ -24,9 +23,9 @@ class ChakraComponent(Component):
 
 
 class Global(Component):
-    library = "@emotion/react@^11.10.6"
+    library = "@emotion/react@11.11.0"
     lib_dependencies: List[str] = [
-        "@emotion/styled@^11.10.6",
+        "@emotion/styled@11.11.0",
     ]
 
     tag = "Global"
