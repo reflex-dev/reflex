@@ -633,7 +633,7 @@ def deploy(
     # TODO: for overwrite case, poll for the old site to come down
     backend_up = frontend_up = False
 
-    with console.status("Checking frontend ..."):
+    with console.status("Checking backend ..."):
         for _ in range(constants.Hosting.BACKEND_POLL_TIMEOUT):
             if backend_up := hosting.poll_backend(deploy_response.backend_url):
                 break

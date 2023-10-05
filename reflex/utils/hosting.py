@@ -490,7 +490,7 @@ def poll_backend(backend_url: str) -> bool:
         console.debug(f"Polling backend at {backend_url}")
         resp = httpx.get(f"{backend_url}/ping", timeout=config.http_request_timeout)
         resp.raise_for_status()
-        return resp.json() == "pong"
+        return True
     except httpx.HTTPError:
         return False
 
