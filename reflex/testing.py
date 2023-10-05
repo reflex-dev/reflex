@@ -57,7 +57,6 @@ except ImportError:
 
 DEFAULT_TIMEOUT = 10
 POLL_INTERVAL = 0.25
-FRONTEND_LISTENING_MESSAGE = re.compile(r"ready started server on.*, url: (.*:[0-9]+)$")
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = Optional[Union[int, float]]
@@ -224,7 +223,7 @@ class AppHarness:
             if not line:
                 break
             print(line)  # for pytest diagnosis
-            m = FRONTEND_LISTENING_MESSAGE.search(line)
+            m = re.search(reflex.constants.Next.FRONTEND_LISTENING_REGEX, line)
             if m is not None:
                 self.frontend_url = m.group(1)
                 break
