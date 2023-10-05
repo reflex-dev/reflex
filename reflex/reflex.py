@@ -431,7 +431,7 @@ def deploy(
         True, help="Whether to auto stop the instance."
     ),
     frontend_hostname: Optional[str] = typer.Option(
-        None, help="The hostname of the frontend."
+        None, "--frontend-hostname", help="The hostname of the frontend."
     ),
     non_interactive: Optional[bool] = typer.Option(
         False,
@@ -701,7 +701,7 @@ def list_deployments(
 
 @deployments_cli.command(name="delete")
 def delete_deployment(
-    key: str,  # = typer.Argument(..., help="The name of the deployment."),
+    key: str = typer.Argument(..., help="The name of the deployment."),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -715,6 +715,32 @@ def delete_deployment(
         console.error(f"Unable to delete deployment due to: {ex}")
         raise typer.Exit(1) from ex
     console.print(f"Successfully deleted [ {key} ].")
+
+
+@deployments_cli.command(name="status")
+def get_deployment_status(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Check the status of a deployment."""
+    console.set_log_level(loglevel)
+
+    try:
+        status = hosting.get_deployment_status(key)
+        console.print("\nBackend status:\n")
+        # TODO: refactor all these tabulate calls
+        headers = list(status.backend.dict().keys())
+        table = list(status.backend.dict().values())
+        console.print(tabulate([table], headers=headers))
+        console.print("\nFrontend status:\n")
+        headers = list(status.frontend.dict().keys())
+        table = list(status.frontend.dict().values())
+        console.print(tabulate([table], headers=headers))
+    except Exception as ex:
+        console.error(f"Unable to get deployment status due to: {ex}")
+        raise typer.Exit(1) from ex
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

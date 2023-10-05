@@ -20,6 +20,7 @@ POST_DEPLOYMENTS_PREPARE_ENDPOINT = f"{config.cp_backend_url}/deployments/prepar
 POST_VALIDATE_ME_ENDPOINT = f"{config.cp_backend_url}/authenticate/me"
 FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/authenticate"
 DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 
 
 class DeploymentPrepInfo(BaseModel):
@@ -554,4 +555,61 @@ def delete_deployment(key: str):
         raise Exception("internal errors") from he
     except Exception as ex:
         console.debug(f"Unexpected errors {ex}.")
+        raise Exception("internal errors") from ex
+
+
+class SiteStatus(BaseModel):
+    """Deployment status info."""
+
+    url: str
+    reachable: bool
+    updated_at: Optional[str] = None  # iso-formatted datetime string if reachable
+
+
+class DeploymentStatusResponse(BaseModel):
+    """Response for deployment status request."""
+
+    frontend: SiteStatus
+    backend: SiteStatus
+
+
+def get_deployment_status(key: str) -> DeploymentStatusResponse:
+    """Get the deployment status.
+
+    Args:
+        key: The deployment name.
+
+    Raises:
+        ValueError: If the key is not provided.
+        Exception: If the operation fails. The exception message is the reason.
+
+    Returns:
+        The deployment status response including backend and frontend.
+    """
+    if not (token := authenticated_token()):
+        raise Exception("not authenticated")
+    if not key:
+        raise ValueError("Valid key is required for the delete.")
+
+    try:
+        response = httpx.get(
+            f"{GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
+            headers=authorization_header(token),
+            timeout=config.http_request_timeout,
+        )
+        response.raise_for_status()
+        return DeploymentStatusResponse(
+            frontend=SiteStatus(
+                url=response.json()["frontend"]["url"],
+                reachable=response.json()["frontend"]["reachable"],
+                updated_at=response.json()["frontend"]["updated_at"],
+            ),
+            backend=SiteStatus(
+                url=response.json()["backend"]["url"],
+                reachable=response.json()["backend"]["reachable"],
+                updated_at=response.json()["backend"]["updated_at"],
+            ),
+        )
+    except Exception as ex:
+        console.debug(f"Unable to get deployment status due to {ex}.")
         raise Exception("internal errors") from ex
