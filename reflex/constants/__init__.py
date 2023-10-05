@@ -36,7 +36,6 @@ from .installer import (
     Fnm,
     Node,
     PackageJson,
-    Packages,
 )
 from .route import (
     ROUTE_NOT_FOUND,
@@ -71,7 +70,6 @@ __ALL__ = [
     Next,
     Node,
     PackageJson,
-    Packages,
     PageNames,
     Page404,
     Ping,

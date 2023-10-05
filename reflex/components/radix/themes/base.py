@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
-from reflex import constants
 from reflex.base import Base
 from reflex.components import Component
 from reflex.utils import imports
@@ -96,7 +93,3 @@ class RadixThemesColorModeProvider(Component):
     library = "/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
-
-    lib_dependencies: List[str] = [
-        constants.Packages.NEXT_THEMES,
-    ]

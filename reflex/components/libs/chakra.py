@@ -1,7 +1,6 @@
 """Components that are based on Chakra-UI."""
 from typing import List
 
-from reflex import constants
 from reflex.components.component import Component
 from reflex.utils import imports
 from reflex.vars import ImportVar, Var
@@ -82,7 +81,3 @@ class ChakraColorModeProvider(Component):
     library = "/components/reflex/chakra_color_mode_provider.js"
     tag = "ChakraColorModeProvider"
     is_default = True
-
-    lib_dependencies: List[str] = [
-        constants.Packages.NEXT_THEMES,
-    ]
