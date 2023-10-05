@@ -39,7 +39,20 @@ class Tag(ChakraComponent):
     # options: "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" |
     #  "cyan" | "purple" | "pink"
     # default: "gray"
-    color_scheme: Var[Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink"]]
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+        ]
+    ]
 
     # The size of the tag
     # options: "sm" | "md" | "lg"

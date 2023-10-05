@@ -192,7 +192,7 @@ def is_backend_variable(name: str) -> bool:
 
 
 def check_type_in_allowed_types(
-        value_type: Type, allowed_types: typing.Iterable
+    value_type: Type, allowed_types: typing.Iterable
 ) -> bool:
     """Check that a value type is found in a list of allowed types.
 

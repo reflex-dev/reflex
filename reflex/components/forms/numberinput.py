@@ -1,7 +1,7 @@
 """A number input component."""
 
 from numbers import Number
-from typing import Any, Literal, Dict
+from typing import Any, Dict, Literal
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent

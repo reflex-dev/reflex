@@ -37,7 +37,27 @@ class Button(ChakraComponent):
     # Options:
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[Literal["whiteAlpha","blackAlpha", "gray", "red", "orange", "yellow","green", "teal" "blue" , "cyan", "purple", "pink", "linkedin","facebook", "messenger","whatsapp", "twitter" , "telegram"    ]]
+    color_scheme: Var[
+        Literal[
+            "whiteAlpha",
+            "blackAlpha",
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal" "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     # Position of the loading spinner.
     # Options:
@@ -50,10 +70,6 @@ class Button(ChakraComponent):
     # Components that are not allowed as children.
     invalid_children: List[str] = ["Button", "MenuButton"]
 
-    @classmethod
-    def create(cls, *children, **props):
-        # breakpoint()
-        return super().create(*children, **props)
 
 class ButtonGroup(ChakraComponent):
     """A group of buttons."""

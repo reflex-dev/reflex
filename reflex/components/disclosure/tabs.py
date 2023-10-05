@@ -34,10 +34,39 @@ class Tabs(ChakraComponent):
     orientation: Var[str]
 
     # "line" | "enclosed" | "enclosed-colored" | "soft-rounded" | "solid-rounded" | "unstyled"
-    variant: Var[Literal["line", "enclosed", "enclosed-colored", "soft-rounded", "solid-rounded", "unstyled"]]
+    variant: Var[
+        Literal[
+            "line",
+            "enclosed",
+            "enclosed-colored",
+            "soft-rounded",
+            "solid-rounded",
+            "unstyled",
+        ]
+    ]
 
     # The color scheme of the tabs.
-    color_scheme: Var[Literal["whiteAlpha","blackAlpha", "gray", "red", "orange", "yellow","green", "teal" "blue" , "cyan", "purple", "pink", "linkedin","facebook", "messenger","whatsapp", "twitter" , "telegram"]]
+    color_scheme: Var[
+        Literal[
+            "whiteAlpha",
+            "blackAlpha",
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal" "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     @classmethod
     def create(

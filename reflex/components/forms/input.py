@@ -1,6 +1,6 @@
 """An input component."""
 
-from typing import Any, Literal, Dict
+from typing import Any, Dict, Literal
 
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput

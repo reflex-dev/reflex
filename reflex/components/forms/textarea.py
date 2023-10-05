@@ -1,7 +1,7 @@
 """A textarea component."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput

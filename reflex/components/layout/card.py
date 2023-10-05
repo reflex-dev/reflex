@@ -44,7 +44,27 @@ class Card(ChakraComponent):
     #  "green" | "teal" | "blue" | "cyan" | "purple" | "pink" | "linkedin" |
     #  "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     # default: "gray"
-    color_scheme: Var[Literal["whiteAlpha","blackAlpha", "gray", "red", "orange", "yellow","green", "teal" "blue" , "cyan", "purple", "pink", "linkedin","facebook", "messenger","whatsapp", "twitter" , "telegram"    ]]
+    color_scheme: Var[
+        Literal[
+            "whiteAlpha",
+            "blackAlpha",
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal" "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     # The size of the Card
     # options: "sm" | "md" | "lg"

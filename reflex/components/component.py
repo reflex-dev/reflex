@@ -106,6 +106,7 @@ class Component(Base, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
+            ValueError: If a prop value is invalid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -156,16 +157,23 @@ class Component(Base, ABC):
 
                     expected_type = fields[key].outer_type_.__args__[0]
 
-                    if types.is_literal(expected_type) and not value in expected_type.__args__:
+                    if (
+                        types.is_literal(expected_type)
+                        and value not in expected_type.__args__
+                    ):
                         allowed_values = expected_type.__args__
-                        if not value in allowed_values:
+                        if value not in allowed_values:
                             raise ValueError(
-                                f"prop value for {key} should be one of the following: {','.join(allowed_values)}. Got '{value}' instead")
+                                f"prop value for {key} should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
+                            )
 
                     # Get the passed type and the var type.
-                    passed_type = kwargs[key]._var_type_
-                    expected_type = type(expected_type.__args__[0]) if types.is_literal(
-                        expected_type) else expected_type
+                    passed_type = kwargs[key].var_type_
+                    expected_type = (
+                        type(expected_type.__args__[0])
+                        if types.is_literal(expected_type)
+                        else expected_type
+                    )
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -208,11 +216,11 @@ class Component(Base, ABC):
         super().__init__(*args, **kwargs)
 
     def _create_event_chain(
-            self,
-            event_trigger: str,
-            value: Union[
-                Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
-            ],
+        self,
+        event_trigger: str,
+        value: Union[
+            Var, EventHandler, EventSpec, List[Union[EventHandler, EventSpec]], Callable
+        ],
     ) -> Union[EventChain, Var]:
         """Create an event chain from a variety of input types.
 
@@ -733,10 +741,14 @@ class Component(Base, ABC):
 
     def get_custom_components(
 <<<<<<< HEAD
+<<<<<<< HEAD
         self, seen: set[str] | None = None
 =======
             self, seen: Optional[Set[str]] = None
 >>>>>>> ecc97ac (Props as Literals)
+=======
+        self, seen: Optional[Set[str]] = None
+>>>>>>> c099890 (lint)
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -862,10 +874,14 @@ class CustomComponent(Component):
 
     def get_custom_components(
 <<<<<<< HEAD
+<<<<<<< HEAD
         self, seen: set[str] | None = None
 =======
             self, seen: Optional[Set[str]] = None
 >>>>>>> ecc97ac (Props as Literals)
+=======
+        self, seen: Optional[Set[str]] = None
+>>>>>>> c099890 (lint)
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -925,7 +941,7 @@ class CustomComponent(Component):
 
 
 def custom_component(
-        component_fn: Callable[..., Component]
+    component_fn: Callable[..., Component]
 ) -> Callable[..., CustomComponent]:
     """Create a custom component from a function.
 

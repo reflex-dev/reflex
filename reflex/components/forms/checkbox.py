@@ -17,8 +17,27 @@ class Checkbox(ChakraComponent):
     # Options:
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[Literal[
-        "whiteAlpha", "blackAlpha", "gray", "red", "orange", "yellow", "green", "teal" "blue", "cyan", "purple", "pink", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]]
+    color_scheme: Var[
+        Literal[
+            "whiteAlpha",
+            "blackAlpha",
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal" "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     # "sm" | "md" | "lg"
     size: Var[str]

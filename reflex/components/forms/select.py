@@ -43,7 +43,6 @@ class Select(ChakraComponent):
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[Literal["outline", "filled", "flushed", "unstyled"]]
 
-
     # The size of the select.
     size: Var[str]
 
