@@ -24,7 +24,7 @@ clear_selected_files: BaseVar = BaseVar(
 class Upload(Component):
     """A file upload component."""
 
-    library = "react-dropzone@==14.2.3"
+    library = "react-dropzone@14.2.3"
 
     tag = "ReactDropzone"
 

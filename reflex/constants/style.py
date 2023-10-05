@@ -13,7 +13,7 @@ class Tailwind(SimpleNamespace):
     """Tailwind constants."""
 
     # The Tailwindcss version
-    VERSION = "tailwindcss@==3.3.2"
+    VERSION = "tailwindcss@3.3.2"
     # The Tailwind config.
     CONFIG = os.path.join(Dirs.WEB, "tailwind.config.js")
     # Default Tailwind content paths
