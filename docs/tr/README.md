@@ -19,7 +19,7 @@
 ---
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md)
 ---
-## ⚙️ Installation
+## ⚙️ İndirme
 
 Bir terminal açın ve çalıştırın (Python 3.7+ gerekir):
 
