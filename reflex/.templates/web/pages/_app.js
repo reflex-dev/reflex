@@ -2,7 +2,7 @@ import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { Global, css } from "@emotion/react";
 import theme from "/utils/theme";
 import { clientStorage, initialEvents, initialState, StateContext, EventLoopContext } from "/utils/context.js";
-import { useEventLoop } from "utils/state";
+import { useEventLoop } from "/utils/state";
 
 import '/styles/styles.css'
 
