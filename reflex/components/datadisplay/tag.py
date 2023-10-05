@@ -1,5 +1,5 @@
 """Chakra Tag Component."""
-from typing import Optional
+from typing import Literal, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -39,17 +39,17 @@ class Tag(ChakraComponent):
     # options: "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" |
     #  "cyan" | "purple" | "pink"
     # default: "gray"
-    color_scheme: Var[str]
+    color_scheme: Var[Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink"]]
 
     # The size of the tag
     # options: "sm" | "md" | "lg"
     # default: "md"
-    size: Var[str]
+    size: Var[Literal["sm", "md", "lg"]]
 
     # The variant of the tag
     # options: "solid" | "subtle" | "outline"
     # default: "solid"
-    variant: Var[str]
+    variant: Var[Literal["solid", "subtle", "outline"]]
 
     @classmethod
     def create(

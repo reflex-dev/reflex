@@ -1,4 +1,5 @@
 """Alert components."""
+from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -11,10 +12,10 @@ class Alert(ChakraComponent):
     tag = "Alert"
 
     # The status of the alert ("success" | "info" | "warning" | "error")
-    status: Var[str]
+    status: Var[Literal["success", "info", "warning", "error"]]
 
     # "subtle" | "left-accent" | "top-accent" | "solid"
-    variant: Var[str]
+    variant: Var[Literal["subtle", "left-accent", "top-accent", "solid"]]
 
     @classmethod
     def create(

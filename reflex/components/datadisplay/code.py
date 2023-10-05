@@ -1,6 +1,6 @@
 """A code component."""
 
-from typing import Dict, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.forms import Button
@@ -24,7 +24,7 @@ class CodeBlock(Component):
     tag = "Prism"
 
     # The theme to use ("light" or "dark").
-    theme: Var[str]
+    theme: Var[Literal["light", "dark"]]
 
     # The language to use.
     language: Var[str]

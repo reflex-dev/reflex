@@ -1,7 +1,7 @@
 """Tooltip components."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
@@ -37,7 +37,7 @@ class Tooltip(ChakraComponent):
     default_is_open: Var[bool]
 
     # Theme direction ltr or rtl. Popper's placement will be set accordingly
-    direction: Var[str]
+    direction: Var[Literal["ltr", "rtl"]]
 
     # The distance or margin between the reference and popper. It is used internally to create an offset modifier. NB: If you define offset prop, it'll override the gutter.
     gutter: Var[int]

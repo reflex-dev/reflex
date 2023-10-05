@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import typing
-from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
+from typing import Any, Callable, Literal, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -76,6 +76,18 @@ def is_union(cls: GenericType) -> bool:
     return cls.__origin__ == Union if is_generic_alias(cls) else False
 
 
+def is_literal(cls: GenericType) -> bool:
+    """Check if a class is a Literal.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class is a literal.
+    """
+    return hasattr(cls, "__origin__") and cls.__origin__ is Literal
+
+
 def get_base_class(cls: GenericType) -> Type:
     """Get the base class of a class.
 
@@ -122,6 +134,7 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
     try:
         return cls_check_base == Any or issubclass(cls_base, cls_check_base)
     except TypeError as te:
+        # breakpoint()
         # These errors typically arise from bad annotations and are hard to
         # debug without knowing the type that we tried to compare.
         raise TypeError(f"Invalid type for issubclass: {cls_base}") from te
@@ -179,7 +192,7 @@ def is_backend_variable(name: str) -> bool:
 
 
 def check_type_in_allowed_types(
-    value_type: Type, allowed_types: typing.Iterable
+        value_type: Type, allowed_types: typing.Iterable
 ) -> bool:
     """Check that a value type is found in a list of allowed types.
 

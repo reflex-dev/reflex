@@ -1,7 +1,7 @@
 """Menu components."""
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.forms.button import Button
@@ -33,7 +33,7 @@ class Menu(ChakraComponent):
     default_is_open: Var[bool]
 
     # If rtl, popper placement positions will be flipped i.e. 'top-right' will become 'top-left' and vice-verse ("ltr" | "rtl")
-    direction: Var[str]
+    direction: Var[Literal["ltr", "rtl"]]
 
     # If true, the popper will change its placement and flip when it's about to overflow its boundary area.
     flip: Var[bool]
@@ -60,7 +60,7 @@ class Menu(ChakraComponent):
     prevent_overflow: Var[bool]
 
     # The CSS positioning strategy to use. ("fixed" | "absolute")
-    strategy: Var[str]
+    strategy: Var[Literal["fixed", "absolute"]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.
@@ -196,7 +196,7 @@ class MenuItemOption(ChakraComponent):
     is_focusable: Var[bool]
 
     # "checkbox" | "radio"
-    type_: Var[str]
+    type_: Var[Literal["checkbox", "radio"]]
 
     # Value of the menu item.
     value: Var[str]
@@ -214,7 +214,7 @@ class MenuOptionGroup(ChakraComponent):
     tag = "MenuOptionGroup"
 
     # "checkbox" | "radio"
-    type_: Var[str]
+    type_: Var[Literal["checkbox", "radio"]]
 
     # Value of the option group.
     value: Var[str]

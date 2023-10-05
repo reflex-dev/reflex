@@ -1,7 +1,7 @@
 """Popover components."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -71,7 +71,7 @@ class Popover(ChakraComponent):
     return_focus_on_close: Var[bool]
 
     # The CSS positioning strategy to use. ("fixed" | "absolute")
-    strategy: Var[str]
+    strategy: Var[Literal["fixed", "absolute"]]
 
     # The interaction that triggers the popover. hover - means the popover will open when you hover with mouse or focus with keyboard on the popover trigger click - means the popover will open on click or press Enter to Space on keyboard ("click" | "hover")
     trigger: Var[str]

@@ -1,6 +1,6 @@
 """An input component."""
 
-from typing import Any, Dict
+from typing import Any, Literal, Dict
 
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
@@ -46,10 +46,10 @@ class Input(ChakraComponent):
     is_required: Var[bool]
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[str]
+    variant: Var[Literal["outline", "filled", "flushed", "unstyled"]]
 
     # "lg" | "md" | "sm" | "xs"
-    size: Var[str]
+    size: Var[Literal["lg", "md", "sm", "xs"]]
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(

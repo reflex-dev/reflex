@@ -1,5 +1,5 @@
 """A button component."""
-from typing import List
+from typing import List, Literal
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
@@ -29,21 +29,20 @@ class Button(ChakraComponent):
     loading_text: Var[str]
 
     # "lg" | "md" | "sm" | "xs"
-    size: Var[str]
-
+    size: Var[Literal["lg", "md", "sm", "xs"]]
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
-    variant: Var[str]
+    variant: Var[Literal["outline", "solid", "link", "unstyled"]]
 
     # Built in color scheme for ease of use.
     # Options:
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[str]
+    color_scheme: Var[Literal["whiteAlpha","blackAlpha", "gray", "red", "orange", "yellow","green", "teal" "blue" , "cyan", "purple", "pink", "linkedin","facebook", "messenger","whatsapp", "twitter" , "telegram"    ]]
 
     # Position of the loading spinner.
     # Options:
     # "start" | "end"
-    spinner_placement: Var[str]
+    spinner_placement: Var[Literal["start", "end"]]
 
     # The type of button.
     type_: Var[str]
@@ -51,6 +50,10 @@ class Button(ChakraComponent):
     # Components that are not allowed as children.
     invalid_children: List[str] = ["Button", "MenuButton"]
 
+    @classmethod
+    def create(cls, *children, **props):
+        # breakpoint()
+        return super().create(*children, **props)
 
 class ButtonGroup(ChakraComponent):
     """A group of buttons."""

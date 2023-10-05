@@ -1,6 +1,6 @@
 """A select component."""
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
@@ -41,7 +41,8 @@ class Select(ChakraComponent):
     is_required: Var[bool]
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[str]
+    variant: Var[Literal["outline", "filled", "flushed", "unstyled"]]
+
 
     # The size of the select.
     size: Var[str]

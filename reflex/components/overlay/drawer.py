@@ -1,7 +1,7 @@
 """Container to stack elements with spacing."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -51,7 +51,7 @@ class Drawer(ChakraComponent):
     return_focus_on_close: Var[bool]
 
     # "xs" | "sm" | "md" | "lg" | "xl" | "full"
-    size: Var[str]
+    size: Var[Literal["lg", "md", "sm", "xs", "xl", "full"]]
 
     # A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
     use_inert: Var[bool]

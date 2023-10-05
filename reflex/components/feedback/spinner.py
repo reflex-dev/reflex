@@ -1,4 +1,5 @@
 """Container to stack elements with spacing."""
+from typing import Literal
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
@@ -22,4 +23,4 @@ class Spinner(ChakraComponent):
     thickness: Var[int]
 
     # "xs" | "sm" | "md" | "lg" | "xl"
-    size: Var[str]
+    size: Var[Literal["lg", "md", "sm", "xs"]]

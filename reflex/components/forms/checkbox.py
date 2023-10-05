@@ -1,7 +1,7 @@
 """A checkbox component."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.constants import EventTriggers
@@ -17,7 +17,8 @@ class Checkbox(ChakraComponent):
     # Options:
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[str]
+    color_scheme: Var[Literal[
+        "whiteAlpha", "blackAlpha", "gray", "red", "orange", "yellow", "green", "teal" "blue", "cyan", "purple", "pink", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]]
 
     # "sm" | "md" | "lg"
     size: Var[str]

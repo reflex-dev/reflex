@@ -1,7 +1,7 @@
 """A number input component."""
 
 from numbers import Number
-from typing import Any, Dict
+from typing import Any, Literal, Dict
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -63,7 +63,7 @@ class NumberInput(ChakraComponent):
     min_: Var[Number]
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[str]
+    variant: Var[Literal["outline", "filled", "flushed", "unstyled"]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
