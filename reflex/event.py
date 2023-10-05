@@ -537,7 +537,7 @@ def call_event_handler(
             feature_name="EVENT_ARG API for triggers",
             reason="Replaced by new API using lambda allow arbitrary number of args",
             deprecation_version="0.2.8",
-            removal_version="0.2.9",
+            removal_version="0.3.1",
         )
         if len(args) == 1:
             return event_handler()
