@@ -31,7 +31,7 @@ pip install reflex
 
 `reflex`'i indirmek ayrıca `reflex` komut satırı aracınıda indirir.
 
-Yeni bir proje oluşturarak kurulumun başarılı olup olmadığını test edin. (`my_app_name` proje adın ile değiştir.):
+Yeni bir proje oluşturarak kurulumun başarılı olup olmadığını test edin. (`my_app_name`'i proje adın ile değiştir.):
 
 ```bash
 mkdir my_app_name
@@ -124,7 +124,7 @@ app.add_page(index, title="reflex:DALL·E")
 app.compile()
 ```
 
-## Hadi bunu belirli parçalara ayıralım.
+## Hadi bunu parçalara ayırarak inceleyelim.
 
 ### **Reflex UI**
 
