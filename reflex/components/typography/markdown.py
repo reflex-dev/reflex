@@ -105,8 +105,8 @@ class Markdown(Component):
             console.deprecate(
                 "rx.markdown custom_styles",
                 "Use the component_map prop instead.",
-                "0.2.9",
-                "0.2.11",
+                "0.3.0",
+                "0.3.2",
             )
 
         # Update the base component map with the custom component map.

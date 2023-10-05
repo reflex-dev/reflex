@@ -1464,8 +1464,8 @@ def get_local_storage(key: Var | str | None = None) -> BaseVar:
     console.deprecate(
         feature_name=f"rx.get_local_storage",
         reason="and has been replaced by rx.LocalStorage, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.2.10",
+        deprecation_version="0.3.0",
+        removal_version="0.3.1",
     )
     if key is not None:
         if not (isinstance(key, Var) and key.type_ == str) and not isinstance(key, str):

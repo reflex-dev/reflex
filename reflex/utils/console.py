@@ -102,7 +102,6 @@ def warn(msg: str, **kwargs):
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-# def deprecate(msg: str, **kwargs):
 def deprecate(
     feature_name: str,
     reason: str,
