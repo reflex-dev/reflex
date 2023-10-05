@@ -134,7 +134,6 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
     try:
         return cls_check_base == Any or issubclass(cls_base, cls_check_base)
     except TypeError as te:
-        # breakpoint()
         # These errors typically arise from bad annotations and are hard to
         # debug without knowing the type that we tried to compare.
         raise TypeError(f"Invalid type for issubclass: {cls_base}") from te
