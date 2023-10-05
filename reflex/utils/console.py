@@ -102,7 +102,6 @@ def warn(msg: str, **kwargs):
         print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-# def deprecate(msg: str, **kwargs):
 def deprecate(
     feature_name: str,
     reason: str,
@@ -120,7 +119,7 @@ def deprecate(
         kwargs: Keyword arguments to pass to the print function.
     """
     msg = (
-        f"{feature_name} has been deprecated in version {deprecation_version} {reason}. It will be completely "
+        f"{feature_name} has been deprecated in version {deprecation_version} {reason.rstrip('.')}. It will be completely "
         f"removed in {removal_version}"
     )
     if _LOG_LEVEL <= LogLevel.WARNING:

@@ -107,6 +107,8 @@ class Next(SimpleNamespace):
     NODE_MODULES = "node_modules"
     # The package lock file.
     PACKAGE_LOCK = "package-lock.json"
+    # Regex to check for message displayed when frontend comes up
+    FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
 
 
 # Color mode variables

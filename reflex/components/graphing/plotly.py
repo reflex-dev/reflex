@@ -16,9 +16,9 @@ except ImportError:
 class PlotlyLib(NoSSRComponent):
     """A component that wraps a plotly lib."""
 
-    library = "react-plotly.js@^2.6.0"
+    library = "react-plotly.js@2.6.0"
 
-    lib_dependencies: List[str] = ["plotly.js@^2.22.0"]
+    lib_dependencies: List[str] = ["plotly.js@2.22.0"]
 
 
 class Plotly(PlotlyLib):
