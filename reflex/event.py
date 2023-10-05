@@ -333,8 +333,8 @@ def set_cookie(key: str, value: str) -> EventSpec:
     console.deprecate(
         feature_name=f"rx.set_cookie",
         reason="and has been replaced by rx.Cookie, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.2.10",
+        deprecation_version="0.3.0",
+        removal_version="0.3.1",
     )
     return server_side(
         "_set_cookie",
@@ -375,8 +375,8 @@ def set_local_storage(key: str, value: str) -> EventSpec:
     console.deprecate(
         feature_name=f"rx.set_local_storage",
         reason="and has been replaced by rx.LocalStorage, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.2.10",
+        deprecation_version="0.3.0",
+        removal_version="0.3.1",
     )
     return server_side(
         "_set_local_storage",
