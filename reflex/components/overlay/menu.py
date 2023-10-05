@@ -142,7 +142,7 @@ class MenuList(ChakraComponent):
             The MenuList component.
         """
         if len(children) == 0:
-            if not items:
+            if items is None:
                 items = []
             children = [
                 child if isinstance(child, MenuItem) else MenuItem.create(child)
