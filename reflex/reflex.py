@@ -7,6 +7,7 @@ import re
 import time
 import uuid
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -266,25 +267,30 @@ def login(
     #     return
 
     # Check if the user is already logged in.
-    token = hosting.get_existing_access_token()
-    using_existing_token = bool(token)
-    if not token:
+    token = None
+    code = ""
+    using_existing_token = False
+    try:
+        token, code = hosting.get_existing_access_token()
+        using_existing_token = True
+    except Exception as ex:
         # If not already logged in, open a browser window/tab to the login page.
         console.print(f"Opening {config.cp_web_url} ...")
         request_id = uuid.uuid4().hex
-        if not webbrowser.open(f"{config.cp_web_url}?request-id={request_id}"):
+        if not webbrowser.open(
+            f"{config.cp_web_url}?request-id={request_id}&code={code}"
+        ):
             console.error(
                 f"Unable to open the browser to authenticate. Please contact support."
             )
-            raise typer.Exit(1)
+            raise typer.Exit(1) from ex
         with console.status("Waiting for authentication..."):
             for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
                 try:
-                    token = hosting.fetch_token(request_id)
+                    token, code = hosting.fetch_token(request_id)
                     break
                 except Exception:
                     pass
-
                 time.sleep(5)
 
     if not token:
@@ -298,32 +304,26 @@ def login(
         if using_existing_token and os.path.exists(constants.Hosting.HOSTING_JSON):
             hosting_config = {}
             try:
-                with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
+                with open(constants.Hosting.HOSTING_JSON, "rw") as config_file:
                     hosting_config = json.load(config_file)
                     del hosting_config["access_token"]
+                    json.dump(hosting_config, config_file)
             except Exception:
                 # Best efforts removing invalid token is OK
                 pass
         raise typer.Exit(1) from ex
 
-    hosting_config = {}
-
-    if os.path.exists(constants.Hosting.HOSTING_JSON):
-        try:
-            with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
-                hosting_config = json.load(config_file)
-        except Exception as ex:
-            console.debug(f"Unable to parse the hosting config file due to: {ex}")
-            console.warn("Config file is corrupted. Creating a new one.")
-
-    hosting_config["access_token"] = token
-    try:
-        with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
-            json.dump(hosting_config, config_file)
-    except Exception as ex:
-        console.error(f"Unable to write to the hosting config file due to: {ex}")
-        return
     if not using_existing_token:
+        hosting_config = {}
+        hosting_config["access_token"] = token
+        if code:
+            hosting_config["code"] = code
+        try:
+            with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
+                json.dump(hosting_config, config_file)
+        except Exception as ex:
+            console.warn(f"Unable to write to the hosting config file due to: {ex}")
+
         console.print("Successfully logged in.")
     else:
         console.print("You already logged in.")
@@ -451,10 +451,12 @@ def deploy(
         raise typer.Exit(1)
 
     # Check if the user is authenticated
-    token = hosting.get_existing_access_token()
-    if not token:
+    try:
+        token, _ = hosting.get_existing_access_token()
+    except Exception as ex:
+        console.debug("Unable to get existing access token due to: {ex}")
         console.print("Please authenticate using `reflex login` first.")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from ex
     try:
         hosting.validate_token(token)
     except Exception as ex:
@@ -475,7 +477,7 @@ def deploy(
 
     # The app prefix should not change during the time of preparation
     app_prefix = pre_deploy_response.app_prefix
-
+    overwrite_existing = False
     if non_interactive:
         # in this case, the key was supplied for the pre_deploy call, at this point the reply is expected
         if not (reply := pre_deploy_response.reply):
@@ -497,6 +499,7 @@ def deploy(
             key_candidate = existing.key
             api_url = existing.api_url
             deploy_url = existing.deploy_url
+            overwrite_existing = True
         elif suggestion := pre_deploy_response.suggestion:
             key_candidate = suggestion.key
             api_url = suggestion.api_url
@@ -594,25 +597,39 @@ def deploy(
     backend_file_name = constants.ComponentName.BACKEND.zip()
 
     console.print("Uploading code ...")
-    deploy_response = hosting.deploy(
-        frontend_file_name,
-        backend_file_name,
-        key,
-        app_name,
-        regions,
-        app_prefix,
-        cpus=cpus,
-        memory_mb=memory_mb,
-        auto_start=auto_start,
-        auto_stop=auto_stop,
-        envs=processed_envs,
-    )
-    if not deploy_response:
+    datetime.now()
+    try:
+        deploy_response = hosting.deploy(
+            frontend_file_name,
+            backend_file_name,
+            key,
+            app_name,
+            regions,
+            app_prefix,
+            cpus=cpus,
+            memory_mb=memory_mb,
+            auto_start=auto_start,
+            auto_stop=auto_stop,
+            frontend_hostname=frontend_hostname,
+            envs=processed_envs,
+        )
+    except Exception as ex:
+        console.error(f"Unable to deploy due to: {ex}")
         hosting.clean_up()
-        raise typer.Exit(1)
+        raise typer.Exit(1) from ex
+
+    # Deployment will actually start when data plane reconciles this request
+    datetime.now()
+
     console.debug(f"deploy_response: {deploy_response}")
     console.print("Deployment will start shortly.")
 
+    if overwrite_existing:
+        console.print("Waiting for the old deployment to come down")
+        with console.status("this is a TODO"):
+            for _ in range(60):
+                time.sleep(1)
+    console.print("Waiting for the new deployment to come up")
     # TODO: for overwrite case, poll for the old site to come down
     backend_up = frontend_up = False
 

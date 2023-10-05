@@ -126,6 +126,7 @@ class DeploymentsPostParam(BaseModel):
     memory_mb: Optional[int] = None
     auto_start: Optional[bool] = None
     auto_stop: Optional[bool] = None
+    frontend_hostname: Optional[str] = None
     description: Optional[str] = None
     envs_json: Optional[str] = None
 
@@ -142,23 +143,27 @@ class DeploymentDeleteParam(BaseModel):
     key: str
 
 
-def get_existing_access_token() -> Optional[str]:
+def get_existing_access_token() -> tuple[str, str]:
     """Fetch the access token from the existing config if applicable.
 
+    Raises:
+        Exception: if runs into any issues, file not exist, ill-formatted, etc.
+
     Returns:
-        The access token if it exists, None otherwise.
+        The access token and optionally the invitation code if it is valid, otherwise empty string for the.
     """
     console.debug("Fetching token from existing config...")
     try:
         with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
             hosting_config = json.load(config_file)
-            token = hosting_config.get("access_token")
-            return token
+        access_token = hosting_config["access_token"]
+        assert access_token
+        return access_token, hosting_config.get("code")
     except Exception as ex:
         console.debug(
             f"Unable to fetch token from the hosting config file due to: {ex}"
         )
-        return None
+        raise Exception("no existing login found") from ex
 
 
 def validate_token(token: str):
@@ -197,7 +202,7 @@ def authenticated_token() -> Optional[str]:
     """
     # Check if the user is authenticated
     try:
-        token = get_existing_access_token()
+        token, _ = get_existing_access_token()
         if not token:
             console.debug("No token found from the existing config.")
             return None
@@ -302,6 +307,7 @@ def deploy(
     memory_mb: Optional[int] = None,
     auto_start: Optional[bool] = None,
     auto_stop: Optional[bool] = None,
+    frontend_hostname: Optional[str] = None,
     envs: Optional[dict[str, str]] = None,
 ) -> DeploymentPostResponse:
     """Send a POST request to Control Plane to launch a new deployment.
@@ -318,6 +324,7 @@ def deploy(
         memory_mb: The memory in MB.
         auto_start: Whether to auto start.
         auto_stop: Whether to auto stop.
+        frontend_hostname: The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
         envs: The environment variables.
 
     Raises:
@@ -340,6 +347,7 @@ def deploy(
         auto_start=auto_start,
         auto_stop=auto_stop,
         envs_json=json.dumps(envs) if envs else None,
+        frontend_hostname=frontend_hostname,
         reflex_version=constants.Reflex.VERSION,
     )
     try:
@@ -434,7 +442,7 @@ def list_deployments(
         raise Exception("internal errors") from ex
 
 
-def fetch_token(request_id: str) -> str:
+def fetch_token(request_id: str) -> tuple[str, str]:
     """Fetch the access token for the request_id from Control Plane.
 
     Args:
@@ -451,7 +459,7 @@ def fetch_token(request_id: str) -> str:
             f"{FETCH_TOKEN_ENDPOINT}/{request_id}", timeout=config.http_request_timeout
         )
         resp.raise_for_status()
-        return resp.json()["access_token"]
+        return resp.json()["access_token"], resp.json().get("code", "")
     except httpx.TimeoutException as te:
         console.debug("Unable to fetch token due to request timeout.")
         raise Exception("request timeout") from te
