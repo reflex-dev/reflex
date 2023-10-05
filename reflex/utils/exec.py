@@ -85,7 +85,7 @@ def run_process_and_launch_url(run_command: list[str]):
             )
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
-                match = re.search("ready started server on ([0-9.:]+), url: (.*)", line)
+                match = re.search("Local:([\\s]+)(.*)", line)
                 if match:
                     if first_run:
                         url = match.group(2)

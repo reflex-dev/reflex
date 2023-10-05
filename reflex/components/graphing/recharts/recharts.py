@@ -10,7 +10,7 @@ class Recharts(Component):
 
     library = "recharts"
 
-    lib_dependencies: List[str] = ["recharts@^2.8.0"]
+    lib_dependencies: List[str] = ["recharts@==2.8.0"]
 
 
 class RechartsCharts(NoSSRComponent):
@@ -18,4 +18,4 @@ class RechartsCharts(NoSSRComponent):
 
     library = "recharts"
 
-    lib_dependencies: List[str] = ["recharts@^2.8.0"]
+    lib_dependencies: List[str] = ["recharts@==2.8.0"]

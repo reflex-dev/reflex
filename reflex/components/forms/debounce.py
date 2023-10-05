@@ -16,7 +16,7 @@ class DebounceInput(Component):
     is experiencing high latency.
     """
 
-    library = "react-debounce-input@^3.3.0"
+    library = "react-debounce-input@==3.3.0"
     tag = "DebounceInput"
 
     # Minimum input characters before triggering the on_change event

@@ -545,9 +545,9 @@ def test_format_breadcrumbs(input, output):
 @pytest.mark.parametrize(
     "input, output",
     [
-        ("library@^0.1.2", "library"),
+        ("library@==0.1.2", "library"),
         ("library", "library"),
-        ("@library@^0.1.2", "@library"),
+        ("@library@==0.1.2", "@library"),
         ("@library", "@library"),
     ],
 )

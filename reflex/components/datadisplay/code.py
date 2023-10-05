@@ -19,7 +19,7 @@ PRISM_STYLES_PATH: str = "/styles/code/prism"
 class CodeBlock(Component):
     """A code block."""
 
-    library = "react-syntax-highlighter@^15.5.0"
+    library = "react-syntax-highlighter@==15.5.0"
 
     tag = "Prism"
 

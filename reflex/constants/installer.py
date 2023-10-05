@@ -102,22 +102,22 @@ class PackageJson(SimpleNamespace):
     PATH = os.path.join(Dirs.WEB, "package.json")
 
     DEPENDENCIES = {
-        "@chakra-ui/react": "^2.6.0",
-        "@chakra-ui/system": "^2.5.6",
-        "@emotion/react": "^11.10.6",
-        "@emotion/styled": "^11.10.6",
-        "axios": "^1.4.0",
-        "chakra-react-select": "^4.6.0",
-        "focus-visible": "^5.2.0",
-        "json5": "^2.2.3",
-        "next": "^13.3.1",
-        "next-sitemap": "^4.1.8",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
-        "socket.io-client": "^4.6.1",
-        "universal-cookie": "^4.0.4",
+        "@chakra-ui/react": "==2.6.0",
+        "@chakra-ui/system": "==2.5.6",
+        "@emotion/react": "==11.10.6",
+        "@emotion/styled": "==11.10.6",
+        "axios": "==1.4.0",
+        "chakra-react-select": "==4.6.0",
+        "focus-visible": "==5.2.0",
+        "json5": "==2.2.3",
+        "next": "==13.5.4",
+        "next-sitemap": "==4.1.8",
+        "react": "==18.2.0",
+        "react-dom": "==18.2.0",
+        "socket.io-client": "==4.6.1",
+        "universal-cookie": "==4.0.4",
     }
     DEV_DEPENDENCIES = {
-        "autoprefixer": "^10.4.14",
-        "postcss": "^8.4.24",
+        "autoprefixer": "==10.4.14",
+        "postcss": "==8.4.24",
     }
