@@ -8,7 +8,7 @@
 
 <hr>
 
-### **✨ Performant, customizable web apps in pure Python. Deploy in seconds. ✨**
+### **✨ Saf Python'da performanslı, özelleştirilebilir web uygulamaları. Saniyeler içinde oluşturun. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
