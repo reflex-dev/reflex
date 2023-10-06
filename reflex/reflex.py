@@ -672,7 +672,7 @@ def deploy(
     hosting.clean_up()
     if frontend_up and backend_up:
         console.print(
-            f"Your site [ {key} ] at [ {regions} ] is up: {deploy_response.frontend_url}"
+            f"Your site [ {key} ] at {regions} is up: {deploy_response.frontend_url}"
         )
         return
     console.warn(
