@@ -216,8 +216,8 @@ def authenticated_token() -> Optional[str]:
             return None
         validate_token(token)
         return token
-    except Exception:
-        console.debug("Unable to validate the token from the existing config.")
+    except Exception as ex:
+        console.debug(f"Unable to validate the token from the existing config: {ex}")
         return None
 
 
@@ -277,9 +277,13 @@ def prepare_deploy(
             ).dict(exclude_none=True),
             timeout=config.http_request_timeout,
         )
-        response.raise_for_status()
+
         response_json = response.json()
         console.debug(f"Response from prepare endpoint: {response_json}")
+        if response.status_code == HTTPStatus.FORBIDDEN:
+            console.debug(f'Server responded with 403: {response_json.get("detail")}')
+            raise ValueError(f'{response_json.get("detail", "forbidden")}')
+        response.raise_for_status()
         return DeploymentPrepareResponse(
             app_prefix=response_json["app_prefix"],
             reply=response_json["reply"],
@@ -291,13 +295,16 @@ def prepare_deploy(
         raise Exception("request timeout") from te
     except httpx.HTTPError as he:
         console.debug(f"Unable to prepare deploy due to {he}.")
-        raise Exception("internal errors") from he
+        raise Exception(f"{he}") from he
     except json.JSONDecodeError as jde:
         console.debug(f"Server did not respond with valid json: {jde}")
         raise Exception("internal errors") from jde
     except (KeyError, ValidationError) as kve:
         console.debug(f"The server response format is unexpected {kve}")
         raise Exception("internal errors") from kve
+    except ValueError as ve:
+        # This is a recognized client error
+        raise Exception(f"{ve}") from ve
     except Exception as ex:
         console.debug(f"Unexpected error: {ex}.")
         raise Exception("internal errors") from ex
@@ -568,9 +575,27 @@ def delete_deployment(key: str):
 class SiteStatus(BaseModel):
     """Deployment status info."""
 
-    url: str
+    frontend_url: Optional[str] = None
+    backend_url: Optional[str] = None
     reachable: bool
     updated_at: Optional[str] = None  # iso-formatted datetime string if reachable
+
+    @root_validator(pre=True)
+    def ensure_one_of_urls(cls, values):
+        """Ensure at least one of the frontend/backend URLs is provided.
+
+        Args:
+            values: The values passed in.
+
+        Raises:
+            ValueError: If none of the URLs is provided.
+
+        Returns:
+            The values passed in.
+        """
+        if values.get("frontend_url") is None and values.get("backend_url") is None:
+            raise ValueError("At least one of the URLs is required.")
+        return values
 
 
 class DeploymentStatusResponse(BaseModel):
@@ -607,12 +632,12 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
         response.raise_for_status()
         return DeploymentStatusResponse(
             frontend=SiteStatus(
-                url=response.json()["frontend"]["url"],
+                frontend_url=response.json()["frontend"]["url"],
                 reachable=response.json()["frontend"]["reachable"],
                 updated_at=response.json()["frontend"]["updated_at"],
             ),
             backend=SiteStatus(
-                url=response.json()["backend"]["url"],
+                backend_url=response.json()["backend"]["url"],
                 reachable=response.json()["backend"]["reachable"],
                 updated_at=response.json()["backend"]["updated_at"],
             ),

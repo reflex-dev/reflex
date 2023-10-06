@@ -473,7 +473,7 @@ def deploy(
     try:
         hosting.validate_token(token)
     except Exception as ex:
-        console.error("Unable to authenticate: {ex}.")
+        console.error(f"Unable to authenticate: {ex}.")
         raise typer.Exit(1) from ex
 
     # Check if we are set up.
@@ -740,16 +740,35 @@ def get_deployment_status(
     """Check the status of a deployment."""
     console.set_log_level(loglevel)
 
+    def _convert_to_local_time(iso_timestamp: str) -> str:
+        if not iso_timestamp:
+            return "N/A"
+        return (
+            datetime.fromisoformat(iso_timestamp)
+            .astimezone()
+            .strftime("%Y-%m-%d %H:%M:%S %Z")
+        )
+
     try:
+        console.print(f"Getting status for [ {key} ] ...\n")
         status = hosting.get_deployment_status(key)
-        console.print("\nBackend status:\n")
+
         # TODO: refactor all these tabulate calls
-        headers = list(status.backend.dict().keys())
-        table = list(status.backend.dict().values())
+        status.backend.updated_at = _convert_to_local_time(
+            status.backend.updated_at or ""
+        )
+        backend_status = status.backend.dict(exclude_none=True)
+        headers = list(backend_status.keys())
+        table = list(backend_status.values())
         console.print(tabulate([table], headers=headers))
-        console.print("\nFrontend status:\n")
-        headers = list(status.frontend.dict().keys())
-        table = list(status.frontend.dict().values())
+        # Add a new line in console
+        console.print("\n")
+        status.frontend.updated_at = _convert_to_local_time(
+            status.frontend.updated_at or ""
+        )
+        frontend_status = status.frontend.dict(exclude_none=True)
+        headers = list(frontend_status.keys())
+        table = list(frontend_status.values())
         console.print(tabulate([table], headers=headers))
     except Exception as ex:
         console.error(f"Unable to get deployment status due to: {ex}")
