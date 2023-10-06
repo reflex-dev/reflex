@@ -284,7 +284,7 @@ def login(
                 f"Unable to open the browser to authenticate. Please contact support."
             )
             raise typer.Exit(1) from ex
-        with console.status("Waiting for authentication..."):
+        with console.status("Waiting for access token ..."):
             for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
                 try:
                     token, code = hosting.fetch_token(request_id)
@@ -293,25 +293,38 @@ def login(
                     pass
                 time.sleep(5)
 
-    if not token:
-        console.error(f"Unable to authenticate. Please try again or contact support.")
-        raise typer.Exit(1)
+        if not token:
+            console.error(
+                f"Unable to fetch access token. Please try again or contact support."
+            )
+            raise typer.Exit(1) from None
 
-    try:
-        hosting.validate_token(token)
-    except Exception as ex:
-        console.error(f"Access denied: {ex}.")
-        if using_existing_token and os.path.exists(constants.Hosting.HOSTING_JSON):
-            hosting_config = {}
+    token_valid = False
+    with console.status("Validating access token ..."):
+        for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
             try:
-                with open(constants.Hosting.HOSTING_JSON, "rw") as config_file:
-                    hosting_config = json.load(config_file)
-                    del hosting_config["access_token"]
-                    json.dump(hosting_config, config_file)
-            except Exception:
-                # Best efforts removing invalid token is OK
-                pass
-        raise typer.Exit(1) from ex
+                hosting.validate_token(token)
+                token_valid = True
+                break
+            except ValueError as ve:
+                console.error(f"Access denied")
+                if os.path.exists(constants.Hosting.HOSTING_JSON):
+                    hosting_config = {}
+                    try:
+                        with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
+                            hosting_config = json.load(config_file)
+                            del hosting_config["access_token"]
+                            json.dump(hosting_config, config_file)
+                    except Exception:
+                        # Best efforts removing invalid token is OK
+                        pass
+                raise typer.Exit(1) from ve
+            except Exception as ex:
+                console.debug(f"Unable to validate token due to: {ex}")
+                time.sleep(5)
+    if not token_valid:
+        console.error(f"Unable to validate token. Please try again or contact support.")
+        raise typer.Exit(1)
 
     if not using_existing_token:
         hosting_config = {}

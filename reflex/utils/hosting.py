@@ -1,6 +1,7 @@
 """Hosting related utilities."""
 import json
 import os
+from http import HTTPStatus
 from typing import Optional
 
 import httpx
@@ -174,7 +175,8 @@ def validate_token(token: str):
         token: The access token to validate.
 
     Raises:
-        Exception: if runs into timeout, failed requests, unexpected errors.
+        ValueError: if access denied.
+        Exception: if runs into timeout, failed requests, unexpected errors. These should be tried again.
     """
     config = get_config()
     try:
@@ -183,13 +185,18 @@ def validate_token(token: str):
             headers=authorization_header(token),
             timeout=config.http_request_timeout,
         )
+        if response.status_code == HTTPStatus.FORBIDDEN:
+            raise ValueError
         response.raise_for_status()
     except httpx.TimeoutException as te:
         console.debug("Unable to validate the token due to request timeout.")
         raise Exception("request timeout") from te
     except httpx.HTTPError as ex:
         console.debug(f"Unable to validate the token due to: {ex}.")
-        raise Exception("access denied") from ex
+        raise Exception("server error") from ex
+    except ValueError as ve:
+        console.debug(f"Access denied {token}.")
+        raise ValueError("access denied") from ve
     except Exception as ex:
         console.debug(f"Unexpected error: {ex}.")
         raise Exception("internal errors") from ex
