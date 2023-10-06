@@ -2,7 +2,7 @@
 import json
 import os
 from http import HTTPStatus
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import httpx
 from pydantic import BaseModel, Field, ValidationError, root_validator
@@ -24,7 +24,7 @@ DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 
 
-def get_existing_access_token() -> tuple[str, str]:
+def get_existing_access_token() -> Tuple[str, str]:
     """Fetch the access token from the existing config if applicable.
 
     Raises:
@@ -465,7 +465,7 @@ def list_deployments(
         raise Exception("internal errors") from ex
 
 
-def fetch_token(request_id: str) -> tuple[str, str]:
+def fetch_token(request_id: str) -> Tuple[str, str]:
     """Fetch the access token for the request_id from Control Plane.
 
     Args:
