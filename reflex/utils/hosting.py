@@ -24,6 +24,114 @@ DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 
 
+def get_existing_access_token() -> tuple[str, str]:
+    """Fetch the access token from the existing config if applicable.
+
+    Raises:
+        Exception: if runs into any issues, file not exist, ill-formatted, etc.
+
+    Returns:
+        The access token and optionally the invitation code if it is valid, otherwise empty string for the.
+    """
+    console.debug("Fetching token from existing config...")
+    try:
+        with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
+            hosting_config = json.load(config_file)
+        access_token = hosting_config["access_token"]
+        assert access_token
+        return access_token, hosting_config.get("code")
+    except Exception as ex:
+        console.debug(
+            f"Unable to fetch token from the hosting config file due to: {ex}"
+        )
+        raise Exception("no existing login found") from ex
+
+
+def validate_token(token: str):
+    """Validate the token with the control plane.
+
+    Args:
+        token: The access token to validate.
+
+    Raises:
+        ValueError: if access denied.
+        Exception: if runs into timeout, failed requests, unexpected errors. These should be tried again.
+    """
+    config = get_config()
+    try:
+        response = httpx.post(
+            POST_VALIDATE_ME_ENDPOINT,
+            headers=authorization_header(token),
+            timeout=config.http_request_timeout,
+        )
+        if response.status_code == HTTPStatus.FORBIDDEN:
+            raise ValueError
+        response.raise_for_status()
+    except httpx.TimeoutException as te:
+        console.debug("Unable to validate the token due to request timeout.")
+        raise Exception("request timeout") from te
+    except httpx.HTTPError as ex:
+        console.debug(f"Unable to validate the token due to: {ex}.")
+        raise Exception("server error") from ex
+    except ValueError as ve:
+        console.debug(f"Access denied {token}.")
+        raise ValueError("access denied") from ve
+    except Exception as ex:
+        console.debug(f"Unexpected error: {ex}.")
+        raise Exception("internal errors") from ex
+
+
+def authenticated_token() -> Optional[str]:
+    """Fetch the access token from the existing config if applicable and validate it.
+
+    Returns:
+        The access token if it is valid, None otherwise.
+    """
+    # Check if the user is authenticated
+    try:
+        token, _ = get_existing_access_token()
+        if not token:
+            console.debug("No token found from the existing config.")
+            return None
+        validate_token(token)
+        return token
+    except Exception as ex:
+        console.debug(f"Unable to validate the token from the existing config: {ex}")
+        console.debug("Try to delete the invalid token from config file")
+        try:
+            with open(constants.Hosting.HOSTING_JSON, "rw") as config_file:
+                hosting_config = json.load(config_file)
+                del hosting_config["access_token"]
+                json.dump(hosting_config, config_file)
+        except Exception as ex:
+            console.debug(f"Unable to delete the invalid token from config file: {ex}")
+        return None
+
+
+def is_set_up() -> bool:
+    """Check if the hosting config is set up.
+
+    Returns:
+        True if the hosting config is set up, False otherwise.
+    """
+    if get_config().cp_web_url is None:
+        console.info("This feature is coming soon!")
+        return False
+    return True
+
+
+def authorization_header(token: str) -> Dict[str, str]:
+    """Construct an authorization header with the specified token as bearer token.
+
+    Args:
+        token: The access token to use.
+
+    Returns:
+        The authorization header in dict format.
+    """
+    return {"Authorization": f"Bearer {token}"}
+
+
 class DeploymentPrepInfo(BaseModel):
     """The params/settings returned from the prepare endpoint
     including the deployment key and the frontend/backend URLs based on the key.
@@ -143,106 +251,6 @@ class DeploymentDeleteParam(BaseModel):
     """Params for hosted instance DELETE request."""
 
     key: str
-
-
-def get_existing_access_token() -> tuple[str, str]:
-    """Fetch the access token from the existing config if applicable.
-
-    Raises:
-        Exception: if runs into any issues, file not exist, ill-formatted, etc.
-
-    Returns:
-        The access token and optionally the invitation code if it is valid, otherwise empty string for the.
-    """
-    console.debug("Fetching token from existing config...")
-    try:
-        with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
-            hosting_config = json.load(config_file)
-        access_token = hosting_config["access_token"]
-        assert access_token
-        return access_token, hosting_config.get("code")
-    except Exception as ex:
-        console.debug(
-            f"Unable to fetch token from the hosting config file due to: {ex}"
-        )
-        raise Exception("no existing login found") from ex
-
-
-def validate_token(token: str):
-    """Validate the token with the control plane.
-
-    Args:
-        token: The access token to validate.
-
-    Raises:
-        ValueError: if access denied.
-        Exception: if runs into timeout, failed requests, unexpected errors. These should be tried again.
-    """
-    config = get_config()
-    try:
-        response = httpx.post(
-            POST_VALIDATE_ME_ENDPOINT,
-            headers=authorization_header(token),
-            timeout=config.http_request_timeout,
-        )
-        if response.status_code == HTTPStatus.FORBIDDEN:
-            raise ValueError
-        response.raise_for_status()
-    except httpx.TimeoutException as te:
-        console.debug("Unable to validate the token due to request timeout.")
-        raise Exception("request timeout") from te
-    except httpx.HTTPError as ex:
-        console.debug(f"Unable to validate the token due to: {ex}.")
-        raise Exception("server error") from ex
-    except ValueError as ve:
-        console.debug(f"Access denied {token}.")
-        raise ValueError("access denied") from ve
-    except Exception as ex:
-        console.debug(f"Unexpected error: {ex}.")
-        raise Exception("internal errors") from ex
-
-
-def authenticated_token() -> Optional[str]:
-    """Fetch the access token from the existing config if applicable and validate it.
-
-    Returns:
-        The access token if it is valid, None otherwise.
-    """
-    # Check if the user is authenticated
-    try:
-        token, _ = get_existing_access_token()
-        if not token:
-            console.debug("No token found from the existing config.")
-            return None
-        validate_token(token)
-        return token
-    except Exception as ex:
-        console.debug(f"Unable to validate the token from the existing config: {ex}")
-        return None
-
-
-def is_set_up() -> bool:
-    """Check if the hosting config is set up.
-
-    Returns:
-        True if the hosting config is set up, False otherwise.
-    """
-    if get_config().cp_web_url is None:
-        console.info("This feature is coming soon!")
-        return False
-    return True
-
-
-def authorization_header(token: str) -> Dict[str, str]:
-    """Construct an authorization header with the specified token as bearer token.
-
-    Args:
-        token: The access token to use.
-
-    Returns:
-        The authorization header in dict format.
-    """
-    return {"Authorization": f"Bearer {token}"}
 
 
 def prepare_deploy(
