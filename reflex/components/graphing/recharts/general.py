@@ -1,7 +1,7 @@
 """General components for Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -44,6 +44,15 @@ class ResponsiveContainer(Recharts):
         "Treemap",
         "ComposedChart",
     ]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsResponsiveContainer"
 
 
 class Legend(Recharts):
@@ -96,6 +105,15 @@ class Legend(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsLegend"
+
 
 class GraphingTooltip(Recharts):
     """A Tooltip component in Recharts."""
@@ -126,6 +144,15 @@ class GraphingTooltip(Recharts):
     # The coordinate of tooltip which is usually calculated internally.
     coordinate: Var[Dict[str, Any]]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsTooltip"
+
 
 class Label(Recharts):
     """A Label component in Recharts."""
@@ -143,6 +170,15 @@ class Label(Recharts):
 
     # The position of label which can be specified by this props or the children of <Label />
     position: Var[str]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsLabel"
 
 
 class LabelList(Recharts):
@@ -164,3 +200,12 @@ class LabelList(Recharts):
 
     # Color of the stroke
     stroke: Var[str]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsLabelList"

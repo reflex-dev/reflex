@@ -1,7 +1,7 @@
 """Cartesian charts in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -75,6 +75,15 @@ class XAxis(Axis):
 
     tag = "XAxis"
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsXAxis"
+
 
 class YAxis(Axis):
     """A YAxis component in Recharts."""
@@ -83,6 +92,15 @@ class YAxis(Axis):
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsYAxis"
 
 
 class ZAxis(Recharts):
@@ -104,6 +122,15 @@ class ZAxis(Recharts):
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type.
     scale: Var[str]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartszAxis"
 
 
 class Brush(Recharts):
@@ -154,6 +181,15 @@ class Brush(Recharts):
             EventTriggers.ON_CHANGE: lambda: [],
         }
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsBrush"
+
 
 class Cartesian(Recharts):
     """A base class for cartesian charts in Recharts."""
@@ -188,6 +224,15 @@ class Cartesian(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsCartesian"
+
 
 class Area(Cartesian):
     """An Area component in Recharts."""
@@ -220,6 +265,16 @@ class Area(Cartesian):
 
     # Valid children components
     valid_children: List[str] = ["LabelList"]
+
+    classmethod
+
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsArea"
 
 
 class Bar(Cartesian):
@@ -254,6 +309,15 @@ class Bar(Cartesian):
     # Valid children components
     valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsBar"
+
 
 class Line(Cartesian):
     """A Line component in Recharts."""
@@ -287,6 +351,15 @@ class Line(Cartesian):
     # Valid children components
     valid_children: List[str] = ["LabelList", "ErrorBar"]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsLine"
+
 
 class Scatter(Cartesian):
     """A Scatter component in Recharts."""
@@ -317,6 +390,15 @@ class Scatter(Cartesian):
     # Valid children components.
     valid_children: List[str] = ["LabelList", "ErrorBar"]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsScatter"
+
 
 class Funnel(Cartesian):
     """A Funnel component in Recharts."""
@@ -338,6 +420,15 @@ class Funnel(Cartesian):
     # Valid children components
     valid_children: List[str] = ["LabelList", "Cell"]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsFunnel"
+
 
 class ErrorBar(Recharts):
     """An ErrorBar component in Recharts."""
@@ -358,6 +449,15 @@ class ErrorBar(Recharts):
 
     # The stroke width of error bar.
     stroke_width: Var[int]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsErrorBar"
 
 
 class Reference(Recharts):
@@ -393,6 +493,15 @@ class ReferenceLine(Reference):
     # Valid children components
     valid_children: List[str] = ["Label"]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsReferenceLine"
+
 
 class ReferenceDot(Reference):
     """A ReferenceDot component in Recharts."""
@@ -416,6 +525,15 @@ class ReferenceDot(Reference):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsReferenceDot"
 
 
 class ReferenceArea(Recharts):
@@ -459,6 +577,15 @@ class ReferenceArea(Recharts):
     # Valid children components
     valid_children: List[str] = ["Label"]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsReferenceArea"
+
 
 class Grid(Recharts):
     """A base class for grid components in Recharts."""
@@ -496,6 +623,15 @@ class CartesianGrid(Grid):
     # The pattern of dashes and gaps used to paint the lines of the grid
     stroke_dasharray: Var[str]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsCartesianGrid"
+
 
 class CartesianAxis(Grid):
     """A CartesianAxis component in Recharts."""
@@ -528,3 +664,12 @@ class CartesianAxis(Grid):
 
     # The margin between tick line and tick.
     tick_margin: Var[int]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsCartesianAxis"

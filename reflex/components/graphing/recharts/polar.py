@@ -1,7 +1,7 @@
 """Polar charts in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -80,6 +80,15 @@ class Pie(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartPie"
+
 
 class Radar(Recharts):
     """A Radar chart component in Recharts."""
@@ -122,6 +131,15 @@ class Radar(Recharts):
     # Valid children components
     valid_children: List[str] = ["LabelList"]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsRadar"
+
 
 class RadialBar(Recharts):
     """A RadialBar chart component in Recharts."""
@@ -160,6 +178,15 @@ class RadialBar(Recharts):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsRadialBar"
 
 
 class PolarAngleAxis(Recharts):
@@ -218,6 +245,15 @@ class PolarAngleAxis(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsPolarAngleAxis"
+
 
 class PolarGrid(Recharts):
     """A PolarGrid component in Recharts."""
@@ -247,6 +283,15 @@ class PolarGrid(Recharts):
 
     # Valid children components
     valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsPolarGrid"
 
 
 class PolarRadiusAxis(Recharts):
@@ -304,3 +349,12 @@ class PolarRadiusAxis(Recharts):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsPolarRadiusAxis"

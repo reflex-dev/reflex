@@ -1,7 +1,7 @@
 """A module that defines the chart components in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.graphing.recharts.general import ResponsiveContainer
@@ -94,6 +94,15 @@ class AreaChart(ChartBase):
         "Area",
     ]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsAreaChart"
+
 
 class BarChart(ChartBase):
     """A Bar chart component in Recharts."""
@@ -132,6 +141,15 @@ class BarChart(ChartBase):
         "Bar",
     ]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsBarChart"
+
 
 class LineChart(ChartBase):
     """A Line chart component in Recharts."""
@@ -151,6 +169,15 @@ class LineChart(ChartBase):
         "GraphingTooltip",
         "Line",
     ]
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsLineChart"
 
 
 class ComposedChart(ChartBase):
@@ -189,6 +216,15 @@ class ComposedChart(ChartBase):
         "Bar",
     ]
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsComposedChart"
+
 
 class PieChart(ChartBase):
     """A Pie chart component in Recharts."""
@@ -216,6 +252,15 @@ class PieChart(ChartBase):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsPieChart"
 
 
 class RadarChart(ChartBase):
@@ -263,6 +308,15 @@ class RadarChart(ChartBase):
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsRadarChart"
 
 
 class RadialBarChart(ChartBase):
@@ -320,6 +374,15 @@ class RadialBarChart(ChartBase):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsRadialBarChart"
+
 
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
@@ -355,6 +418,15 @@ class ScatterChart(ChartBase):
             EventTriggers.ON_MOUSE_MOVE: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsScatterChart"
 
 
 class FunnelChart(RechartsCharts):
@@ -405,6 +477,15 @@ class FunnelChart(RechartsCharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsFunnelChart"
+
 
 class Treemap(RechartsCharts):
     """A Treemap chart component in Recharts."""
@@ -454,3 +535,12 @@ class Treemap(RechartsCharts):
             width=props.pop("width", "100%"),
             height=props.pop("height", "100%"),
         )
+
+    @classmethod
+    def get_alias(cls) -> Optional[str]:
+        """Get the alias of the component.
+
+        Returns:
+            The alias of the component.
+        """
+        return "RechartsTreemap"
