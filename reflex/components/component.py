@@ -943,7 +943,7 @@ class NoSSRComponent(Component):
             import_name_parts[0] if import_name_parts[0] != "@" else self.library
         )
 
-        library_import = f"const {self.tag} = dynamic(() => import('{import_name}')"
+        library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"
