@@ -241,7 +241,7 @@ class Component(Base, ABC):
                     feature_name="EventChain",
                     reason="to avoid confusion, only use yield API",
                     deprecation_version="0.2.8",
-                    removal_version="0.3.1",
+                    removal_version="0.3.0",
                 )
             events = []
             for v in value:
@@ -310,7 +310,7 @@ class Component(Base, ABC):
                 feature_name=f"get_controlled_triggers ({self.__class__.__name__})",
                 reason="replaced by get_event_triggers",
                 deprecation_version="0.2.8",
-                removal_version="0.3.1",
+                removal_version="0.3.0",
             )
 
         return {
