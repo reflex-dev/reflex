@@ -388,7 +388,7 @@ class Component(Base, ABC):
         # Add ref to element if `id` is not None.
         ref = self.get_ref()
         if ref is not None:
-            props["ref"] = Var.create(ref, is_local=False)
+            props["ref"] = Var.create(ref, _var_is_local=False)
 
         return tag.add_props(**props)
 
@@ -808,7 +808,7 @@ class CustomComponent(Component):
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
                 try:
-                    value = BaseVar(name=value.json(), type_=type_, is_local=True)
+                    value = BaseVar(_var_name=value.json(), _var_type=type_, _var_is_local=True)
                 except Exception:
                     value = Var.create(value)
             else:

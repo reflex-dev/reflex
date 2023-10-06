@@ -77,7 +77,7 @@ class Cond(Component):
             ).set(
                 props=tag.format_props(),
             ),
-            cond_state=f"isTrue({self.cond.full_name})",
+            cond_state=f"isTrue({self.cond._var_full_name})",
         )
 
 
@@ -119,7 +119,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     # Create the conditional var.
     return BaseVar(
         name=format.format_cond(
-            cond=cond_var.full_name,
+            cond=cond_var._var_full_name,
             true_value=c1,
             false_value=c2,
             is_prop=True,

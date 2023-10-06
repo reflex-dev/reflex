@@ -197,11 +197,11 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, BaseVar)
-        assert prop.name == field
+        assert prop._var_name == field
 
-    assert cls.num1.type_ == int
-    assert cls.num2.type_ == float
-    assert cls.key.type_ == str
+    assert cls.num1._var_type == int
+    assert cls.num2._var_type == float
+    assert cls.key._var_type == str
 
 
 def test_computed_class_var(test_state):
@@ -211,7 +211,7 @@ def test_computed_class_var(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    vars = [(prop.name, prop.type_) for prop in cls.computed_vars.values()]
+    vars = [(prop._var_name, prop._var_type) for prop in cls.computed_vars.values()]
     assert ("sum", float) in vars
     assert ("upper", str) in vars
 
@@ -416,11 +416,11 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(BaseVar(name="num3", type_=int).set_state(TestState))
+    TestState._set_var(BaseVar(_var_name="num3", _var_type=int)._var_type(TestState))
     var = TestState.num3  # type: ignore
-    assert var.name == "num3"
-    assert var.type_ == int
-    assert var.state == TestState.get_full_name()
+    assert var._var_name == "num3"
+    assert var._var_type == int
+    assert var._var_state == TestState.get_full_name()
 
 
 def test_set_parent_and_substates(test_state, child_state, grandchild_state):
@@ -984,7 +984,7 @@ def test_conditional_computed_vars():
     assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
-    assert ms.computed_vars["rendered_var"].deps(objclass=MainState) == {
+    assert ms.computed_vars["rendered_var"]._deps(objclass=MainState) == {
         "flag",
         "t1",
         "t2",

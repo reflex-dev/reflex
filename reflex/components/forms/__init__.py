@@ -10,7 +10,7 @@ from .colormodeswitch import (
 )
 from .date_picker import DatePicker
 from .date_time_picker import DateTimePicker
-from .debounce import DebounceInput
+#from .debounce import DebounceInput
 from .editable import Editable, EditableInput, EditablePreview, EditableTextarea
 from .email import Email
 from .form import Form, FormControl, FormErrorMessage, FormHelperText, FormLabel

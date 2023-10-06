@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
+#from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -77,7 +77,7 @@ class TextArea(ChakraComponent):
             # Currently default to 50ms, which appears to be a good balance
             debounce_timeout = props.pop("debounce_timeout", 50)
             # create a debounced input if the user requests full control to avoid typing jank
-            return DebounceInput.create(
-                super().create(*children, **props), debounce_timeout=debounce_timeout
-            )
+            #return DebounceInput.create(
+            #    super().create(*children, **props), debounce_timeout=debounce_timeout
+            #)
         return super().create(*children, **props)

@@ -94,4 +94,4 @@ def client_side(javascript_code) -> Var[EventChain]:
         deprecation_version="0.2.9",
         removal_version="0.2.10",
     )
-    return BaseVar(name=f"...args => {{{javascript_code}}}", type_=EventChain)
+    return BaseVar(_var_name=f"...args => {{{javascript_code}}}", _var_type=EventChain)

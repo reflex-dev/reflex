@@ -65,13 +65,13 @@ class Base(pydantic.BaseModel):
             default_value: The default value of the field
         """
         new_field = ModelField.infer(
-            name=var.name,
+            name=var._var_name,
             value=default_value,
-            annotation=var.type_,
+            annotation=var._var_type,
             class_validators=None,
             config=cls.__config__,
         )
-        cls.__fields__.update({var.name: new_field})
+        cls.__fields__.update({var._var_name: new_field})
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field.

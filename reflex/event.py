@@ -211,7 +211,7 @@ class FrontendEvent(Base):
 
 
 # The default event argument.
-EVENT_ARG = BaseVar(name="_e", type_=FrontendEvent, is_local=True)
+EVENT_ARG = BaseVar(_var_name="_e", _var_type=FrontendEvent, _var_is_local=True)
 
 
 class FileUpload(Base):

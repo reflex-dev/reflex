@@ -17,17 +17,17 @@ from reflex.utils import console, imports, types
 from reflex.vars import ImportVar, Var
 
 # Special vars used in the component map.
-_CHILDREN = Var.create_safe("children", is_local=False)
-_PROPS = Var.create_safe("...props", is_local=False)
+_CHILDREN = Var.create_safe("children", _var_is_local=False)
+_PROPS = Var.create_safe("...props", _var_is_local=False)
 
 # Special remark plugins.
-_REMARK_MATH = Var.create_safe("remarkMath", is_local=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", is_local=False)
+_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False)
 _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM])
 
 # Special rehype plugins.
-_REHYPE_KATEX = Var.create_safe("rehypeKatex", is_local=False)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", is_local=False)
+_REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
 # Component Mapping
@@ -207,7 +207,7 @@ class Markdown(Component):
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     return !inline ? (
-        {self.format_component("codeblock", language=Var.create_safe("language", is_local=False), children=Var.create_safe("String(children)", is_local=False))}
+        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False), children=Var.create_safe("String(children)", _var_is_local=False))}
     ) : (
         {self.format_component("code")}
     );
