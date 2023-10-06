@@ -2,7 +2,7 @@
 import json
 import os
 from http import HTTPStatus
-from typing import Optional
+from typing import Dict, List, Optional
 
 import httpx
 from pydantic import BaseModel, Field, ValidationError, root_validator
@@ -41,7 +41,7 @@ class DeploymentPrepareResponse(BaseModel):
 
     app_prefix: str
     reply: Optional[DeploymentPrepInfo] = None
-    existing: Optional[list[DeploymentPrepInfo]] = None
+    existing: Optional[List[DeploymentPrepInfo]] = None
     suggestion: Optional[DeploymentPrepInfo] = None
 
     @root_validator(pre=True)
@@ -72,13 +72,13 @@ class DeploymentGetResponse(BaseModel):
     """The params/settings returned from the GET endpoint."""
 
     key: str
-    regions: list[str]
+    regions: List[str]
     app_name: str
     vm_type: str
     cpus: int
     memory_mb: int
     url: str
-    envs: list[str]
+    envs: List[str]
 
 
 class DeploymentPostResponse(BaseModel):
@@ -233,7 +233,7 @@ def is_set_up() -> bool:
     return True
 
 
-def authorization_header(token: str) -> dict[str, str]:
+def authorization_header(token: str) -> Dict[str, str]:
     """Construct an authorization header with the specified token as bearer token.
 
     Args:
@@ -315,7 +315,7 @@ def deploy(
     backend_file_name: str,
     key: str,
     app_name: str,
-    regions: list[str],
+    regions: List[str],
     app_prefix: str,
     vm_type: Optional[str] = None,
     cpus: Optional[int] = None,
@@ -323,7 +323,7 @@ def deploy(
     auto_start: Optional[bool] = None,
     auto_stop: Optional[bool] = None,
     frontend_hostname: Optional[str] = None,
-    envs: Optional[dict[str, str]] = None,
+    envs: Optional[Dict[str, str]] = None,
 ) -> DeploymentPostResponse:
     """Send a POST request to Control Plane to launch a new deployment.
 
@@ -405,7 +405,7 @@ def deploy(
 
 def list_deployments(
     app_name: Optional[str] = None,
-) -> list[dict]:
+) -> List[Dict]:
     """Send a GET request to Control Plane to list deployments.
 
     Args:
