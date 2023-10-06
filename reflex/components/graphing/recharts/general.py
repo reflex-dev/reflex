@@ -1,7 +1,7 @@
 """General components for Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -13,6 +13,8 @@ class ResponsiveContainer(Recharts):
     """A base class for responsive containers in Recharts."""
 
     tag = "ResponsiveContainer"
+
+    alias = "RechartsResponsiveContainer"
 
     # The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
     aspect: Var[int]
@@ -45,20 +47,13 @@ class ResponsiveContainer(Recharts):
         "ComposedChart",
     ]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsResponsiveContainer"
-
 
 class Legend(Recharts):
     """A Legend component in Recharts."""
 
     tag = "Legend"
+
+    alias = "RechartsLegend"
 
     # The width of legend container. Number
     width: Var[int]
@@ -105,20 +100,13 @@ class Legend(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsLegend"
-
 
 class GraphingTooltip(Recharts):
     """A Tooltip component in Recharts."""
 
     tag = "Tooltip"
+
+    alias = "RechartsTooltip"
 
     # The separator between name and value.
     separator: Var[str]
@@ -144,20 +132,13 @@ class GraphingTooltip(Recharts):
     # The coordinate of tooltip which is usually calculated internally.
     coordinate: Var[Dict[str, Any]]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsTooltip"
-
 
 class Label(Recharts):
     """A Label component in Recharts."""
 
     tag = "Label"
+
+    alias = "RechartsLabel"
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[Dict[str, Any]]
@@ -171,20 +152,13 @@ class Label(Recharts):
     # The position of label which can be specified by this props or the children of <Label />
     position: Var[str]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsLabel"
-
 
 class LabelList(Recharts):
     """A LabelList component in Recharts."""
 
     tag = "LabelList"
+
+    alias = "RechartsLabelList"
 
     # The key of a group of label values in data.
     data_key: Var[Union[str, int]]
@@ -200,12 +174,3 @@ class LabelList(Recharts):
 
     # Color of the stroke
     stroke: Var[str]
-
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsLabelList"

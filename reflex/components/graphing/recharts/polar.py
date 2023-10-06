@@ -1,7 +1,7 @@
 """Polar charts in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -13,6 +13,8 @@ class Pie(Recharts):
     """A Pie chart component in Recharts."""
 
     tag = "Pie"
+
+    alias = "RechartsPie"
 
     # data
     data: Var[List[Dict[str, Any]]]
@@ -80,20 +82,13 @@ class Pie(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartPie"
-
 
 class Radar(Recharts):
     """A Radar chart component in Recharts."""
 
     tag = "Radar"
+
+    alias = "RechartsRadar"
 
     # The key of a group of data which should be unique in a radar chart.
     data_key: Var[Union[str, int]]
@@ -131,20 +126,13 @@ class Radar(Recharts):
     # Valid children components
     valid_children: List[str] = ["LabelList"]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsRadar"
-
 
 class RadialBar(Recharts):
     """A RadialBar chart component in Recharts."""
 
     tag = "RadialBar"
+
+    alias = "RechartsRadialBar"
 
     # The source data which each element is an object.
     data: Var[List[Dict[str, Any]]]
@@ -179,20 +167,13 @@ class RadialBar(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsRadialBar"
-
 
 class PolarAngleAxis(Recharts):
     """A PolarAngleAxis component in Recharts."""
 
     tag = "PolarAngleAxis"
+
+    alias = "RechartsPolarAngleAxis"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
     data_key: Var[Union[str, int]]
@@ -245,20 +226,13 @@ class PolarAngleAxis(Recharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsPolarAngleAxis"
-
 
 class PolarGrid(Recharts):
     """A PolarGrid component in Recharts."""
 
     tag = "PolarGrid"
+
+    alias = "RechartsPolarGrid"
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
     cx: Var[Union[int, str]]
@@ -284,20 +258,13 @@ class PolarGrid(Recharts):
     # Valid children components
     valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsPolarGrid"
-
 
 class PolarRadiusAxis(Recharts):
     """A PolarRadiusAxis component in Recharts."""
 
     tag = "PolarRadiusAxis"
+
+    alias = "RechartsPolarRadiusAxis"
 
     # The angle of radial direction line to display axis text.
     angle: Var[int]
@@ -349,12 +316,3 @@ class PolarRadiusAxis(Recharts):
             EventTriggers.ON_MOUSE_ENTER: lambda: [],
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
-
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsPolarRadiusAxis"

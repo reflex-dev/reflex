@@ -1,7 +1,7 @@
 """A module that defines the chart components in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.graphing.recharts.general import ResponsiveContainer
@@ -74,6 +74,8 @@ class AreaChart(ChartBase):
 
     tag = "AreaChart"
 
+    alias = "RechartsAreaChart"
+
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Var[Union[int, str]]
 
@@ -94,20 +96,13 @@ class AreaChart(ChartBase):
         "Area",
     ]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsAreaChart"
-
 
 class BarChart(ChartBase):
     """A Bar chart component in Recharts."""
 
     tag = "BarChart"
+
+    alias = "RechartsBarChart"
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
     bar_category_gap: Var[Union[str, int]]  # type: ignore
@@ -141,20 +136,13 @@ class BarChart(ChartBase):
         "Bar",
     ]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsBarChart"
-
 
 class LineChart(ChartBase):
     """A Line chart component in Recharts."""
 
     tag = "LineChart"
+
+    alias = "RechartsLineChart"
 
     # Valid children components
     valid_children: List[str] = [
@@ -170,20 +158,13 @@ class LineChart(ChartBase):
         "Line",
     ]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsLineChart"
-
 
 class ComposedChart(ChartBase):
     """A Composed chart component in Recharts."""
 
     tag = "ComposedChart"
+
+    alias = "RechartsComposedChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
     base_value: Var[Union[int, str]]
@@ -216,20 +197,13 @@ class ComposedChart(ChartBase):
         "Bar",
     ]
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsComposedChart"
-
 
 class PieChart(ChartBase):
     """A Pie chart component in Recharts."""
 
     tag = "PieChart"
+
+    alias = "RechartsPieChart"
 
     # Valid children components
     valid_children: List[str] = [
@@ -253,20 +227,13 @@ class PieChart(ChartBase):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsPieChart"
-
 
 class RadarChart(ChartBase):
     """A Radar chart component in Recharts."""
 
     tag = "RadarChart"
+
+    alias = "RechartsRadarChart"
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -309,20 +276,13 @@ class RadarChart(ChartBase):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsRadarChart"
-
 
 class RadialBarChart(ChartBase):
     """A RadialBar chart component in Recharts."""
 
     tag = "RadialBarChart"
+
+    alias = "RechartsRadialBarChart"
 
     # The The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of width. Number | Percentage
     cx: Var[Union[int, str]]
@@ -374,20 +334,13 @@ class RadialBarChart(ChartBase):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsRadialBarChart"
-
 
 class ScatterChart(ChartBase):
     """A Scatter chart component in Recharts."""
 
     tag = "ScatterChart"
+
+    alias = "RechartsScatterChart"
 
     # Valid children components
     valid_children: List[str] = [
@@ -419,20 +372,13 @@ class ScatterChart(ChartBase):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsScatterChart"
-
 
 class FunnelChart(RechartsCharts):
     """A Funnel chart component in Recharts."""
 
     tag = "FunnelChart"
+
+    alias = "RechartsFunnelChart"
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
@@ -477,20 +423,13 @@ class FunnelChart(RechartsCharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsFunnelChart"
-
 
 class Treemap(RechartsCharts):
     """A Treemap chart component in Recharts."""
 
     tag = "Treemap"
+
+    alias = "RechartsTreemap"
 
     # The width of chart container. String or Integer
     width: Var[Union[str, int]] = "100%"  # type: ignore
@@ -535,12 +474,3 @@ class Treemap(RechartsCharts):
             width=props.pop("width", "100%"),
             height=props.pop("height", "100%"),
         )
-
-    @classmethod
-    def get_alias(cls) -> Optional[str]:
-        """Get the alias of the component.
-
-        Returns:
-            The alias of the component.
-        """
-        return "RechartsTreemap"
