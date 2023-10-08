@@ -1,5 +1,5 @@
 ```diff
-+ Está procurando pelo Pynecone? Este é o repositório certo. Pynecone foi renomado para Reflex. +
++ Está procurando pelo Pynecone? Este é o repositório certo. Pynecone foi renomeado para Reflex. +
 ```
 
 <div align="center">
