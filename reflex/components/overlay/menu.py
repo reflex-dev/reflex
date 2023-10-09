@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, List, Optional, Union
 
 from reflex.components.component import Component
+from reflex.components.forms.button import Button
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
 
@@ -96,10 +97,13 @@ class Menu(ChakraComponent):
             children = []
 
             if button:
-                children.append(MenuButton.create(button))
+                if not isinstance(button, (MenuButton, Button)):
+                    children.append(MenuButton.create(button))
+                else:
+                    children.append(button)
             if not items:
                 items = []
-            children.append(MenuList.create(*items))
+            children.append(MenuList.create(items=items))
         return super().create(*children, **props)
 
 
@@ -124,20 +128,25 @@ class MenuList(ChakraComponent):
     tag = "MenuList"
 
     @classmethod
-    def create(cls, *children, **props) -> ChakraComponent:
+    def create(
+        cls, *children, items: Optional[list] = None, **props
+    ) -> ChakraComponent:
         """Create a MenuList component, and automatically wrap in MenuItem if not already one.
 
         Args:
             *children: The children of the component.
+            items: A list of item to add as child of the component.
             **props: The properties of the component.
 
         Returns:
             The MenuList component.
         """
-        if len(children) != 0:
+        if len(children) == 0:
+            if items is None:
+                items = []
             children = [
                 child if isinstance(child, MenuItem) else MenuItem.create(child)
-                for child in children
+                for child in items
             ]
         return super().create(*children, **props)
 
