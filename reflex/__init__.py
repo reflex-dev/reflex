@@ -15,6 +15,7 @@ from .components import *
 from .components.base.script import client_side
 from .components.component import custom_component as memo
 from .components.graphing import recharts as recharts
+from .components.graphing.victory import data as data
 from .config import Config as Config
 from .config import DBConfig as DBConfig
 from .constants import Env as Env
