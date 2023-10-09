@@ -1,7 +1,7 @@
 import os
 import typing
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, List, Union, Literal
 
 import pytest
 import typer
@@ -182,6 +182,11 @@ def test_is_backend_variable(input, output):
         (int, Any, True),
         (Any, Any, True),
         (Union[int, float], Any, True),
+        (str, Union[Literal["test", "value"], int], True),
+        (int, Union[Literal["test", "value"], int], True),
+        (str, Literal["test", "value"], True),
+        (int, Literal["test", "value"], False),
+        (int, Literal["test", 1], False),
     ],
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
