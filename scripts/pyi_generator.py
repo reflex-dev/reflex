@@ -7,13 +7,14 @@ import re
 import sys
 from inspect import getfullargspec
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Literal, get_args  # NOQA
+from typing import Any, Dict, List, Literal, Optional, Union, get_args  # NOQA
 
 import black
 
 from reflex.components.component import Component
+from reflex.utils import format
+from reflex.utils import types as rx_types
 from reflex.vars import Var
-from reflex.utils import types as rx_types, format
 
 ruff_dont_remove = [Var, Optional, Dict, List]
 
@@ -33,7 +34,15 @@ def _get_type_hint(value, top_level=True, no_union=False):
     res = ""
     args = get_args(value)
     if args:
-        inner_container_type_args = [format.wrap(arg, '"') for arg in args] if rx_types.is_literal(value) else [_get_type_hint(arg, top_level=False) for arg in args if arg is not type(None)]
+        inner_container_type_args = (
+            [format.wrap(arg, '"') for arg in args]
+            if rx_types.is_literal(value)
+            else [
+                _get_type_hint(arg, top_level=False)
+                for arg in args
+                if arg is not type(None)
+            ]
+        )
         res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
