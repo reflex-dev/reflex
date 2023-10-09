@@ -1,6 +1,6 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 import reflex as rx
-from .state import State
+
 from .sidebar import sidebar
 from .styles import *
 
