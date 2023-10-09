@@ -97,6 +97,10 @@ def get_base_class(cls: GenericType) -> Type:
     Returns:
         The base class of the class.
     """
+    if is_literal(cls):
+        # currently, only single Literal types are supported
+        return type(cls.__args__[0])
+
     if is_union(cls):
         return tuple(get_base_class(arg) for arg in get_args(cls))
 
