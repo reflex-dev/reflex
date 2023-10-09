@@ -440,7 +440,7 @@ class Component(Base, ABC):
         children = [
             child
             if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, is_string=True))
+            else Bare.create(contents=Var.create(child, _var_is_string=True))
             for child in children
         ]
 
@@ -814,7 +814,7 @@ class CustomComponent(Component):
                 except Exception:
                     value = Var.create(value)
             else:
-                value = Var.create(value, is_string=type(value) is str)
+                value = Var.create(value, _var_is_string=type(value) is str)
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value

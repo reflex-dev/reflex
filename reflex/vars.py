@@ -213,7 +213,7 @@ class Var:
             The stringified var.
         """
         fn = "JSON.stringify" if json else "String"
-        return self.operation(fn=fn, _var_type=str)
+        return self.operation(fn=fn, type_=str)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -429,7 +429,7 @@ class Var:
 
             raise AttributeError(
                 f"The State var `{self._var_full_name}` has no attribute '{name}' or may have been annotated "
-                f"wrongly.\n"
+                f"wrongly."
             )
 
         return super().__getattr__(name)
@@ -563,7 +563,7 @@ class Var:
         Returns:
             The inverted var.
         """
-        return self.operation("!", _var_type=bool)
+        return self.operation("!", type_=bool)
 
     def __neg__(self) -> Var:
         """Negate a var.
@@ -869,7 +869,7 @@ class Var:
         >>> print(js_code._var_full_name)
         '(true && false)'
         """
-        return self.operation("&&", other, _var_type=bool)
+        return self.operation("&&", other, type_=bool)
 
     def __rand__(self, other: Var) -> Var:
         """Perform a logical and.
@@ -899,7 +899,7 @@ class Var:
         >>> print(js_code._var_full_name)
         '(false && true)'
         """
-        return self.operation("&&", other, _var_type=bool, flip=True)
+        return self.operation("&&", other, type_=bool, flip=True)
 
     def __or__(self, other: Var) -> Var:
         """Perform a logical or.
@@ -927,7 +927,7 @@ class Var:
         >>> print(js_code._var_full_name)
         '(true || false)'
         """
-        return self.operation("||", other, _var_type=bool)
+        return self.operation("||", other, type_=bool)
 
     def __ror__(self, other: Var) -> Var:
         """Perform a logical or.
@@ -955,7 +955,7 @@ class Var:
         >>> print(js_code)
         'false || true'
         """
-        return self.operation("||", other, _var_type=bool, flip=True)
+        return self.operation("||", other, type_=bool, flip=True)
 
     def __contains__(self, _: Any) -> Var:
         """Override the 'in' operator to alert the user that it is not supported.
@@ -1007,7 +1007,7 @@ class Var:
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
             return BaseVar(
-                name=f"{self._var_full_name}.includes({other._var_full_name})",
+                _var_name=f"{self._var_full_name}.includes({other._var_full_name})",
                 _var_type=bool,
                 _var_is_local=self._var_is_local,
             )
@@ -1025,7 +1025,7 @@ class Var:
             raise TypeError(f"Cannot reverse non-list var {self._var_full_name}.")
 
         return BaseVar(
-            name=f"[...{self._var_full_name}].reverse()",
+            _var_name=f"[...{self._var_full_name}].reverse()",
             _var_type=self._var_type,
             _var_is_local=self._var_is_local,
         )
