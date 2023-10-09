@@ -7,7 +7,6 @@ from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.components.tags import Tag
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
@@ -65,11 +64,21 @@ class Image(ChakraComponent):
             "on_load": lambda: [],
         }
 
-    def _render(self) -> Tag:
-        self.src.is_string = True
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create an Image component.
 
-        # Render the table.
-        return super()._render()
+        Args:
+            *children: The children of the image.
+            **props: The props of the image.
+
+        Returns:
+            The Image component.
+        """
+        src = props.get("src", None)
+        if src is not None and not isinstance(src, (Var)):
+            props["src"] = Var.create(value=src, is_string=True)
+        return super().create(*children, **props)
 
 
 try:

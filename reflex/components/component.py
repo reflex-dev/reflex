@@ -241,7 +241,7 @@ class Component(Base, ABC):
                     feature_name="EventChain",
                     reason="to avoid confusion, only use yield API",
                     deprecation_version="0.2.8",
-                    removal_version="0.2.9",
+                    removal_version="0.3.0",
                 )
             events = []
             for v in value:
@@ -296,7 +296,7 @@ class Component(Base, ABC):
                 feature_name=f"get_triggers ({self.__class__.__name__})",
                 reason="replaced by get_event_triggers",
                 deprecation_version="0.2.8",
-                removal_version="0.2.9",
+                removal_version="0.3.1",
             )
             deprecated_triggers = {
                 trigger: lambda: [] for trigger in deprecated_triggers
@@ -310,7 +310,7 @@ class Component(Base, ABC):
                 feature_name=f"get_controlled_triggers ({self.__class__.__name__})",
                 reason="replaced by get_event_triggers",
                 deprecation_version="0.2.8",
-                removal_version="0.2.9",
+                removal_version="0.3.0",
             )
 
         return {
@@ -943,7 +943,7 @@ class NoSSRComponent(Component):
             import_name_parts[0] if import_name_parts[0] != "@" else self.library
         )
 
-        library_import = f"const {self.tag} = dynamic(() => import('{import_name}')"
+        library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"

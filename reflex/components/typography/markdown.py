@@ -40,20 +40,32 @@ def get_base_component_map() -> dict[str, Callable]:
     from reflex.components.datadisplay.code import Code, CodeBlock
 
     return {
-        "h1": lambda value: Heading.create(value, as_="h1", size="2xl"),
-        "h2": lambda value: Heading.create(value, as_="h2", size="xl"),
-        "h3": lambda value: Heading.create(value, as_="h3", size="lg"),
-        "h4": lambda value: Heading.create(value, as_="h4", size="md"),
-        "h5": lambda value: Heading.create(value, as_="h5", size="sm"),
-        "h6": lambda value: Heading.create(value, as_="h6", size="xs"),
-        "p": lambda value: Text.create(value),
-        "ul": lambda value: UnorderedList.create(value),  # type: ignore
-        "ol": lambda value: OrderedList.create(value),  # type: ignore
+        "h1": lambda value: Heading.create(
+            value, as_="h1", size="2xl", margin_y="0.5em"
+        ),
+        "h2": lambda value: Heading.create(
+            value, as_="h2", size="xl", margin_y="0.5em"
+        ),
+        "h3": lambda value: Heading.create(
+            value, as_="h3", size="lg", margin_y="0.5em"
+        ),
+        "h4": lambda value: Heading.create(
+            value, as_="h4", size="md", margin_y="0.5em"
+        ),
+        "h5": lambda value: Heading.create(
+            value, as_="h5", size="sm", margin_y="0.5em"
+        ),
+        "h6": lambda value: Heading.create(
+            value, as_="h6", size="xs", margin_y="0.5em"
+        ),
+        "p": lambda value: Text.create(value, margin_y="1em"),
+        "ul": lambda value: UnorderedList.create(value, margin_y="1em"),  # type: ignore
+        "ol": lambda value: OrderedList.create(value, margin_y="1em"),  # type: ignore
         "li": lambda value: ListItem.create(value),
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
-        "codeblock": lambda *children, **props: CodeBlock.create(
-            *children, theme="light", **props
+        "codeblock": lambda *_, **props: CodeBlock.create(
+            theme="light", margin_y="1em", **props
         ),
     }
 
@@ -61,7 +73,7 @@ def get_base_component_map() -> dict[str, Callable]:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@^8.0.7"
+    library = "react-markdown@8.0.7"
 
     tag = "ReactMarkdown"
 
@@ -94,7 +106,7 @@ class Markdown(Component):
                 "rx.markdown custom_styles",
                 "Use the component_map prop instead.",
                 "0.2.9",
-                "0.2.11",
+                "0.3.1",
             )
 
         # Update the base component map with the custom component map.
@@ -120,14 +132,14 @@ class Markdown(Component):
         imports.update(
             {
                 "": {ImportVar(tag="katex/dist/katex.min.css")},
-                "remark-math@^5.1.1": {
+                "remark-math@5.1.1": {
                     ImportVar(tag=_REMARK_MATH.name, is_default=True)
                 },
-                "remark-gfm@^3.0.1": {ImportVar(tag=_REMARK_GFM.name, is_default=True)},
-                "rehype-katex@^6.0.3": {
+                "remark-gfm@3.0.1": {ImportVar(tag=_REMARK_GFM.name, is_default=True)},
+                "rehype-katex@6.0.3": {
                     ImportVar(tag=_REHYPE_KATEX.name, is_default=True)
                 },
-                "rehype-raw@^6.1.1": {ImportVar(tag=_REHYPE_RAW.name, is_default=True)},
+                "rehype-raw@6.1.1": {ImportVar(tag=_REHYPE_RAW.name, is_default=True)},
             }
         )
 
@@ -206,10 +218,10 @@ class Markdown(Component):
         ] = f"""{{({{inline, className, {_CHILDREN.name}, {_PROPS.name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
-    return !inline ? (
-        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False), children=Var.create_safe("String(children)", _var_is_local=False))}
-    ) : (
+    return inline ? (
         {self.format_component("code")}
+    ) : (
+        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False), children=Var.create_safe("String(children)", _var_is_local=False))}
     );
       }}}}""".replace(
             "\n", " "

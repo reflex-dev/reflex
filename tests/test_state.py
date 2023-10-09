@@ -1625,7 +1625,7 @@ class BackgroundTaskState(State):
     """A state with a background task."""
 
     order: List[str] = []
-    dict_list: Dict[str, List[int]] = {"foo": []}
+    dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
 
     @rx.background
     async def background_task(self):
@@ -1657,6 +1657,9 @@ class BackgroundTaskState(State):
                 pass  # update proxy instance
 
         async with self:
+            # Methods on ImmutableMutableProxy should return their wrapped return value.
+            assert self.dict_list.pop("foo") == [1, 2, 3]
+
             self.order.append("background_task:stop")
             self.other()  # direct calling event handlers works in context
             self._private_method()

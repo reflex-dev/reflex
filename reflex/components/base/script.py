@@ -90,8 +90,8 @@ def client_side(javascript_code) -> Var[EventChain]:
     """
     console.deprecate(
         feature_name="rx.client_side",
-        reason="Replaced by rx.call_script, which can be used from backend EventHandler too",
+        reason="and has been replaced by rx.call_script, which can be used from backend EventHandler too",
         deprecation_version="0.2.9",
-        removal_version="0.2.10",
+        removal_version="0.3.0",
     )
     return BaseVar(_var_name=f"...args => {{{javascript_code}}}", _var_type=EventChain)
