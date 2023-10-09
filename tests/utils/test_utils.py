@@ -1,7 +1,7 @@
 import os
 import typing
 from pathlib import Path
-from typing import Any, List, Union, Literal
+from typing import Any, List, Literal, Union
 
 import pytest
 import typer
