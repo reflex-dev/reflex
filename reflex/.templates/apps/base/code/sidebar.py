@@ -67,7 +67,6 @@ def sidebar_footer():
                 ),
                 bg="transparent",
                 border_radius=border_radius,
-                on_click=State.toggle_sidebar,
                 _hover={
                     "bg": "#F5EFFE",
                 },
