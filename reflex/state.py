@@ -211,7 +211,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(cls)
+            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
+                cls
+            )
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }

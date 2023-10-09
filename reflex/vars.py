@@ -7,7 +7,6 @@ import dis
 import json
 import random
 import string
-from abc import ABC
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -24,7 +23,7 @@ from typing import (
     get_type_hints,
 )
 
-from pydantic.fields import ModelField, PrivateAttr
+from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
@@ -80,7 +79,7 @@ def get_unique_variable_name() -> str:
 
 
 @dataclasses.dataclass
-class Var():
+class Var:
     """An abstract var."""
 
     # The name of the var.
@@ -132,7 +131,12 @@ class Var():
             )
         name = name if isinstance(name, str) else format.json_dumps(name)
 
-        return BaseVar(_var_name=name, _var_type=type_, _var_is_local=_var_is_local, _var_is_string=_var_is_string)
+        return BaseVar(
+            _var_name=name,
+            _var_type=type_,
+            _var_is_local=_var_is_local,
+            _var_is_string=_var_is_string,
+        )
 
     @classmethod
     def create_safe(
@@ -147,7 +151,9 @@ class Var():
         Returns:
             The var.
         """
-        var = cls.create(value, _var_is_local=_var_is_local, _var_is_string=_var_is_string)
+        var = cls.create(
+            value, _var_is_local=_var_is_local, _var_is_string=_var_is_string
+        )
         assert var is not None
         return var
 
@@ -223,7 +229,11 @@ class Var():
         Returns:
             The wrapped var, i.e. {state.var}.
         """
-        out = self._var_full_name if self._var_is_local else format.wrap(self._var_full_name, "{")
+        out = (
+            self._var_full_name
+            if self._var_is_local
+            else format.wrap(self._var_full_name, "{")
+        )
         if self._var_is_string:
             out = format.format_string(out)
         return out
@@ -293,7 +303,12 @@ class Var():
 
         # Convert any vars to local vars.
         if isinstance(i, Var):
-            i = BaseVar(_var_name=i._var_name, _var_type=i._var_type, _var_state=i._var_state, _var_is_local=True)
+            i = BaseVar(
+                _var_name=i._var_name,
+                _var_type=i._var_type,
+                _var_state=i._var_state,
+                _var_is_local=True,
+            )
 
         # Handle list/tuple/str indexing.
         if types._issubclass(self._var_type, Union[List, Tuple, str]):
@@ -337,11 +352,16 @@ class Var():
         # Dictionary / dataframe indexing.
         # Tuples are currently not supported as indexes.
         if (
-            (types._issubclass(self._var_type, Dict) or types.is_dataframe(self._var_type))
+            (
+                types._issubclass(self._var_type, Dict)
+                or types.is_dataframe(self._var_type)
+            )
             and not isinstance(i, types.get_args(Union[int, str, float, Var]))
         ) or (
             isinstance(i, Var)
-            and not types._issubclass(i._var_type, types.get_args(Union[int, str, float]))
+            and not types._issubclass(
+                i._var_type, types.get_args(Union[int, str, float])
+            )
         ):
             raise TypeError(
                 "Index must be one of the following types: int, str, int or str Var"
@@ -350,7 +370,9 @@ class Var():
         if isinstance(i, str):
             i = format.wrap(i, '"')
         type_ = (
-            types.get_args(self._var_type)[1] if types.is_generic_alias(self._var_type) else Any
+            types.get_args(self._var_type)[1]
+            if types.is_generic_alias(self._var_type)
+            else Any
         )
 
         # Use normal indexing here.
@@ -361,7 +383,7 @@ class Var():
             _var_is_local=self._var_is_local,
         )
 
-    def ___getattribute__(self, name: str) -> Var:
+    def __getattr__(self, name: str) -> Var:
         """Get a var attribute.
 
         Args:
@@ -374,37 +396,43 @@ class Var():
             AttributeError: If the var is wrongly annotated or can't find attribute.
             TypeError: If an annotation to the var isn't provided.
         """
-        try:
-            return super().__getattribute__(name)
-        except Exception as e:
-            if name in ("full_name", "name", "state", "type_", "is_local", "is_string", "set_state"):
-                raise
-            else:
-                try:
-                    return self.dict()[name]
-                except KeyError:
-                    breakpoint()
-            # Check if the attribute is one of the class fields.
-            if not name.startswith("_"):
-                if self._var_type == Any:
-                    raise TypeError(
-                        f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
-                    ) from None
-                if hasattr(self._var_type, "__fields__") and name in self._var_type.__fields__:
-                    type_ = self._var_type.__fields__[name].outer_type_
-                    if isinstance(type_, ModelField):
-                        type_ = type_.type_
-                    return BaseVar(
-                        _var_name=f"{self._var_name}.{name}",
-                        _var_type=type_,
-                        _var_state=self._var_state,
-                        _var_is_local=self._var_is_local,
-                    )
+        # Check if the attribute is one of the class fields.
+        if not name.startswith("_"):
+            if self._var_type == Any:
+                raise TypeError(
+                    f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
+                ) from None
+            if (
+                hasattr(self._var_type, "__fields__")
+                and name in self._var_type.__fields__
+            ):
+                type_ = self._var_type.__fields__[name].outer_type_
+                if isinstance(type_, ModelField):
+                    type_ = type_.type_
+                return BaseVar(
+                    _var_name=f"{self._var_name}.{name}",
+                    _var_type=type_,
+                    _var_state=self._var_state,
+                    _var_is_local=self._var_is_local,
+                )
+
+            if name in (
+                "full_name",
+                "name",
+                "state",
+                "type_",
+                "is_local",
+                "is_string",
+                "set_state",
+            ):
+                raise AttributeError(f"Field {name} is no longer available on Var")
+
             raise AttributeError(
                 f"The State var `{self._var_full_name}` has no attribute '{name}' or may have been annotated "
                 f"wrongly.\n"
-                f"original message: {e.args[0]}"
-            ) from e
+            )
+
+        return super().__getattr__(name)
 
     def operation(
         self,
@@ -956,7 +984,9 @@ class Var():
                 f"Var {self._var_full_name} of type {self._var_type} does not support contains check."
             )
         method = (
-            "hasOwnProperty" if types.get_base_class(self._var_type) == dict else "includes"
+            "hasOwnProperty"
+            if types.get_base_class(self._var_type) == dict
+            else "includes"
         )
         if isinstance(other, str):
             other = Var.create(json.dumps(other), _var_is_string=True)
@@ -1133,7 +1163,11 @@ class Var():
         Returns:
             The full name of the var.
         """
-        return self._var_name if self._var_state == "" else ".".join([self._var_state, self._var_name])
+        return (
+            self._var_name
+            if self._var_state == ""
+            else ".".join([self._var_state, self._var_name])
+        )
 
     def _var_set_state(self, state: Type[State]) -> Any:
         """Set the state of the var.
@@ -1169,7 +1203,9 @@ class BaseVar(Var):
             ImportError: If the var is a dataframe and pandas is not installed.
         """
         type_ = (
-            self._var_type.__origin__ if types.is_generic_alias(self._var_type) else self._var_type
+            self._var_type.__origin__
+            if types.is_generic_alias(self._var_type)
+            else self._var_type
         )
         if issubclass(type_, str):
             return ""
@@ -1260,9 +1296,10 @@ class ComputedVar(Var, property):
             doc: The docstring.
             **kwargs: additional attributes to set on the instance
         """
-        kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
-        Var.__init__(self, **kwargs)
         property.__init__(self, fget, fset, doc)
+        kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
+        kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
+        Var.__init__(self, **kwargs)
 
     @property
     def _cache_attr(self) -> str:
@@ -1378,10 +1415,9 @@ class ComputedVar(Var, property):
             instance: the state instance that needs to recompute the value.
         """
         with contextlib.suppress(AttributeError):
-            delattr(instance, self.cache_attr)
+            delattr(instance, self._cache_attr)
 
-    @property
-    def type_(self):
+    def _determine_var_type(self):
         """Get the type of the var.
 
         Returns:
@@ -1471,7 +1507,9 @@ def get_local_storage(key: Var | str | None = None) -> BaseVar:
         removal_version="0.3.0",
     )
     if key is not None:
-        if not (isinstance(key, Var) and key._var_type == str) and not isinstance(key, str):
+        if not (isinstance(key, Var) and key._var_type == str) and not isinstance(
+            key, str
+        ):
             type_ = type(key) if not isinstance(key, Var) else key._var_type
             raise TypeError(
                 f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."

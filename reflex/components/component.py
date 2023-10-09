@@ -808,7 +808,9 @@ class CustomComponent(Component):
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
                 try:
-                    value = BaseVar(_var_name=value.json(), _var_type=type_, _var_is_local=True)
+                    value = BaseVar(
+                        _var_name=value.json(), _var_type=type_, _var_is_local=True
+                    )
                 except Exception:
                     value = Var.create(value)
             else:

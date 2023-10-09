@@ -416,7 +416,9 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(BaseVar(_var_name="num3", _var_type=int)._var_type(TestState))
+    TestState._set_var(
+        BaseVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
+    )
     var = TestState.num3  # type: ignore
     assert var._var_name == "num3"
     assert var._var_type == int

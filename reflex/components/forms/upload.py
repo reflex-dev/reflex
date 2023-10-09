@@ -11,10 +11,14 @@ from reflex.event import EventChain
 from reflex.vars import BaseVar, Var
 
 files_state: str = "const [files, setFiles] = useState([]);"
-upload_file: BaseVar = BaseVar(_var_name="e => setFiles((files) => e)", _var_type=EventChain)
+upload_file: BaseVar = BaseVar(
+    _var_name="e => setFiles((files) => e)", _var_type=EventChain
+)
 
 # Use this var along with the Upload component to render the list of selected files.
-selected_files: BaseVar = BaseVar(_var_name="files.map((f) => f.name)", _var_type=List[str])
+selected_files: BaseVar = BaseVar(
+    _var_name="files.map((f) => f.name)", _var_type=List[str]
+)
 
 clear_selected_files: BaseVar = BaseVar(
     _var_name="_e => setFiles((files) => [])", _var_type=EventChain
@@ -77,7 +81,9 @@ class Upload(Component):
         }
         # The file input to use.
         upload = Input.create(type_="file")
-        upload.special_props = {BaseVar(_var_name="{...getInputProps()}", _var_type=None)}
+        upload.special_props = {
+            BaseVar(_var_name="{...getInputProps()}", _var_type=None)
+        }
 
         # The dropzone to use.
         zone = Box.create(

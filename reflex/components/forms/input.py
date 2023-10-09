@@ -3,7 +3,8 @@
 from typing import Any, Dict
 
 from reflex.components.component import Component
-#from reflex.components.forms.debounce import DebounceInput
+
+# from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.constants import EventTriggers
 from reflex.utils import imports
@@ -87,11 +88,11 @@ class Input(ChakraComponent):
             isinstance(props.get("value"), Var) and props.get("on_change")
         ) or "debounce_timeout" in props:
             # Currently default to 50ms, which appears to be a good balance
-            debounce_timeout = props.pop("debounce_timeout", 50)
+            props.pop("debounce_timeout", 50)
             # create a debounced input if the user requests full control to avoid typing jank
-            #return DebounceInput.create(
+            # return DebounceInput.create(
             #    super().create(*children, **props), debounce_timeout=debounce_timeout
-            #)
+            # )
         return super().create(*children, **props)
 
 

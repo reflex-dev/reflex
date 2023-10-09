@@ -262,7 +262,9 @@ def format_cond(
         prop1 = Var.create_safe(true_value, _var_is_string=type(true_value) is str).set(
             _var_is_local=True
         )  # type: ignore
-        prop2 = Var.create_safe(false_value, _var_is_string=type(false_value) is str).set(
+        prop2 = Var.create_safe(
+            false_value, _var_is_string=type(false_value) is str
+        ).set(
             _var_is_local=True
         )  # type: ignore
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
@@ -414,7 +416,12 @@ def format_event(event_spec: EventSpec) -> str:
     args = ",".join(
         [
             ":".join(
-                (name._var_name, json.dumps(val._var_name) if val._var_is_string else val._var_full_name)
+                (
+                    name._var_name,
+                    json.dumps(val._var_name)
+                    if val._var_is_string
+                    else val._var_full_name,
+                )
             )
             for name, val in event_spec.args
         ]
