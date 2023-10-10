@@ -78,24 +78,23 @@ def get_unique_variable_name() -> str:
     return get_unique_variable_name()
 
 
-@dataclasses.dataclass
 class Var:
     """An abstract var."""
 
     # The name of the var.
-    _var_name: str = dataclasses.field()
+    _var_name: str
 
     # The type of the var.
-    _var_type: Type = dataclasses.field(default=Any)
+    _var_type: Type
 
     # The name of the enclosing state.
-    _var_state: str = dataclasses.field(default="")
+    _var_state: str
 
     # Whether this is a local javascript variable.
-    _var_is_local: bool = dataclasses.field(default=False)
+    _var_is_local: bool
 
     # Whether the var is a string literal.
-    _var_is_string: bool = dataclasses.field(default=False)
+    _var_is_string: bool
 
     @classmethod
     def create(
@@ -1183,8 +1182,24 @@ class Var:
         return self
 
 
+@dataclasses.dataclass(eq=False, slots=True)
 class BaseVar(Var):
     """A base (non-computed) var of the app state."""
+
+    # The name of the var.
+    _var_name: str = dataclasses.field()
+
+    # The type of the var.
+    _var_type: Type = dataclasses.field(default=Any)
+
+    # The name of the enclosing state.
+    _var_state: str = dataclasses.field(default="")
+
+    # Whether this is a local javascript variable.
+    _var_is_local: bool = dataclasses.field(default=False)
+
+    # Whether the var is a string literal.
+    _var_is_string: bool = dataclasses.field(default=False)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -1300,7 +1315,7 @@ class ComputedVar(Var, property):
         property.__init__(self, fget, fset, doc)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
-        Var.__init__(self, **kwargs)
+        BaseVar.__init__(self, **kwargs)
 
     @property
     def _cache_attr(self) -> str:
