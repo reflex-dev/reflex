@@ -4,8 +4,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Callable, Dict, Optional
 
-from icecream import ic
-
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.layout import Box
@@ -14,6 +12,7 @@ from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
 
 
+# TODO: Fix the serialization issue for custom types.
 class GridColumnIcons(str, Enum):
     """An Enum for the available icons in DataEditor."""
 
@@ -43,6 +42,16 @@ class GridColumnIcons(str, Enum):
     Time = "time"
     Uri = "uri"
     VideoUri = "video_uri"
+
+
+class GridRowMarkers(str, Enum):
+    """Grid Row Markers."""
+
+    NUMBER = "number"
+    NONE = "none"
+    CHECKBOX = "checkbox"
+    BOTH = "both"
+    CLICKABLE_NUMBER = "clickable-number"
 
 
 @serializer
@@ -90,6 +99,73 @@ class DataEditor(NoSSRComponent):
 
     onPaste: Var[bool]
 
+    # Controls the drawing of the focus ring.
+    drawFocusRing: Var[bool]
+
+    # Enables or disables the overlay shadow when scrolling horizontally.
+    fixedShadowX: Var[bool]
+
+    # Enables or disables the overlay shadow when scrolling vertically.
+    fixedShadowY: Var[bool]
+
+    # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
+    freezeColumns: Var[int]
+
+    # Controls the header of the group header row.
+    groupHeaderHeight: Var[int]
+
+    # Controls the height of the header row.
+    headerHeight: Var[int]
+
+    # Additional header icons: (TODO: must be a map of name: svg)
+    headerIcons: Var[Any]
+
+    # The maximum width a column can be automatically sized to.
+    maxColumnAutoWidth: Var[int]
+
+    # The maximum width a column can be resized to.
+    maxColumnWidth: Var[int]
+
+    # The minimum width a column can be resized to.
+    minColumnWidth: Var[int]
+
+    # Determins the height of each row.
+    rowHeight: Var[int]
+
+    # kind of raw marker (use Literal API ?)
+    rowMarkers: Var[str]
+
+    # Changes the starting index for row markers.
+    rowMarkerStartIndex: Var[int]
+
+    # Sets the width of row markers in pixels, if unset row markers will automatically size.
+    rowMarkerWidth: Var[int]
+
+    # enable horizontal smooth scrolling
+    smoothScrollX: Var[bool]
+
+    # enable vertical smooth scrolling
+    smoothScrollY: Var[bool]
+
+    # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
+    # TODO: need to support a mapping (dict[int, bool] for handling separate columns)
+    verticalBorder: Var[bool]
+
+    columnSelect: Var[str]
+
+    #
+    preventDiagonalScrolling: Var[bool]
+
+    overscrollX: Var[int]
+
+    overscrollY: Var[int]
+
+    scrollOffsetX: Var[int]
+    scrollOffsetY: Var[int]
+
+    # global theme
+    theme: Var[dict]
+
     is_default = True
 
     def _get_imports(self):
@@ -114,8 +190,26 @@ class DataEditor(NoSSRComponent):
         Returns:
             The dict describing the event triggers.
         """
+
+        def edit_sig(pos, data: dict[str, Any]):
+            return [pos, data]
+
         return {
-            "onCellEdited": lambda pos, data: [pos, data],
+            "onCellEdited": edit_sig,
+            "onGroupHeaderClicked": edit_sig,
+            "onGroupHeaderContextMenu": lambda grp_idx, data: [grp_idx, data],
+            "onCellActivated": lambda pos: [pos],
+            "onCellClicked": lambda pos: [pos],
+            "onCellContextMenu": lambda pos: [pos],
+            "onGroupHeaderRenamed": lambda idx, val: [idx, val],
+            "onHeaderClicked": lambda pos: [pos],
+            "onHeaderContextMenu": lambda pos: [pos],
+            "onHeaderMenuClick": lambda col, pos: [col, pos],
+            "onItemHovered": lambda pos: [pos],
+            "onDelete": lambda selection: [selection],
+            "onFinishedEditing": lambda new_value, movement: [new_value, movement],
+            "onRowAppended": lambda: [],
+            "onSelectionCleared": lambda: [],
         }
 
     def _get_hooks(self) -> str | None:
@@ -124,7 +218,6 @@ class DataEditor(NoSSRComponent):
         self.getCellContent = Var.create(data_callback, is_local=False)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
-        # ic(self.columns, self.data)
 
         code.extend(
             [
@@ -184,13 +277,11 @@ class DataEditor(NoSSRComponent):
                     format.format_data_editor_column(col) for col in columns
                 ]
         else:
-            # props["columns"] = Foreach.create(
-            #     columns, lambda col: format.format_data_editor_column(col)
-            # )
             ...
 
         if isinstance(data, Var):
-            ic(data.type_)
+            # ic(data.type_)
+            ...
 
         props.setdefault("getCellForSelection", True)
         props.setdefault("onPaste", False)

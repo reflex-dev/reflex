@@ -27,7 +27,7 @@ export function formatCell(value, column) {
                 data: value,
                 displayData: value + "",
                 readonly: false,
-                allowOverlay: true
+                allowOverlay: false
             }
         case "datetime":
         // value = moment format?
@@ -47,11 +47,10 @@ export function formatCell(value, column) {
                 // allowOverlay: true
             }
         default:
-        // console.log(column.type, value);
+            return {
+                kind: GridCellKind.Text,
+                data: value,
+                displayData: "type not specified in column definition"
+            }
     };
-    return {
-        kind: GridCellKind.Text,
-        data: value,
-        displayData: "unknown render method"
-    }
 };
