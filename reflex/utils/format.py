@@ -260,13 +260,15 @@ def format_cond(
     # Format prop conds.
     if is_prop:
         prop1 = Var.create_safe(
-            true_value, _var_is_string=type(true_value) is str, _var_is_local=True
+            true_value,
+            _var_is_string=type(true_value) is str,
         )
+        prop1._var_is_local = True
         prop2 = Var.create_safe(
             false_value,
             _var_is_string=type(false_value) is str,
-            _var_is_local=True,
         )
+        prop2._var_is_local = True
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
     # Format component conds.
