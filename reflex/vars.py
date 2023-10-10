@@ -141,7 +141,8 @@ class Var:
     def create_safe(
         cls, value: Any, _var_is_local: bool = True, _var_is_string: bool = False
     ) -> Var:
-        """Create a var from a value, guaranteeing that it is not None.
+        """Create a var from a value, asserting that it is not None.
+
         Args:
             value: The value to create the var from.
             _var_is_local: Whether the var is local.
@@ -151,7 +152,9 @@ class Var:
             The var.
         """
         var = cls.create(
-            value, _var_is_local=_var_is_local, _var_is_string=_var_is_string
+            value,
+            _var_is_local=_var_is_local,
+            _var_is_string=_var_is_string,
         )
         assert var is not None
         return var
@@ -432,7 +435,9 @@ class Var:
                 f"wrongly."
             )
 
-        return super().__getattr__(name)
+        raise AttributeError(
+            f"The State var has no attribute '{name}' or may have been annotated wrongly.",
+        )
 
     def operation(
         self,
@@ -1290,7 +1295,7 @@ class BaseVar(Var):
         return setter
 
 
-@dataclasses.dataclass(init=False)
+@dataclasses.dataclass(init=False, eq=False)
 class ComputedVar(Var, property):
     """A field with computed getters."""
 
@@ -1301,6 +1306,7 @@ class ComputedVar(Var, property):
         self,
         fget: Callable[[State], Any],
         fset: Callable[[State, Any], None] | None = None,
+        fdel: Callable[[State], Any] | None = None,
         doc: str | None = None,
         **kwargs,
     ):
@@ -1309,13 +1315,14 @@ class ComputedVar(Var, property):
         Args:
             fget: The getter function.
             fset: The setter function.
+            fdel: The deleter function.
             doc: The docstring.
             **kwargs: additional attributes to set on the instance
         """
-        property.__init__(self, fget, fset, doc)
+        property.__init__(self, fget, fset, fdel, doc)
         kwargs["_var_name"] = kwargs.pop("_var_name", fget.__name__)
         kwargs["_var_type"] = kwargs.pop("_var_type", self._determine_var_type())
-        BaseVar.__init__(self, **kwargs)
+        BaseVar.__init__(self, **kwargs)  # type: ignore
 
     @property
     def _cache_attr(self) -> str:
@@ -1433,7 +1440,7 @@ class ComputedVar(Var, property):
         with contextlib.suppress(AttributeError):
             delattr(instance, self._cache_attr)
 
-    def _determine_var_type(self):
+    def _determine_var_type(self) -> Type:
         """Get the type of the var.
 
         Returns:
