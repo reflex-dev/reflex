@@ -31,7 +31,7 @@ class Button(ChakraComponent):
     # "lg" | "md" | "sm" | "xs"
     size: Var[Literal["sm", "md", "lg", "xs"]]
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
-    variant: Var[Literal["outline", "solid", "link", "unstyled"]]
+    variant: Var[Literal["ghost","outline", "solid", "link", "unstyled"]]
 
     # Built in color scheme for ease of use.
     # Options:
@@ -90,4 +90,4 @@ class ButtonGroup(ChakraComponent):
     size: Var[Literal["sm", "md", "lg", "xs"]]
 
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
-    variant: Var[Literal["outline", "solid", "link", "unstyled"]]
+    variant: Var[Literal["ghost","outline", "solid", "link", "unstyled"]]
