@@ -64,6 +64,18 @@ OPERATION_MAPPING = {
     (list, list): {"+", ">", "<", "<=", ">="},
 }
 
+# These names were changed in reflex 0.3.0
+REPLACED_NAMES = {
+    "full_name": "_var_full_name",
+    "name": "_var_name",
+    "state": "_var_state",
+    "type_": "_var_type",
+    "is_local": "_var_is_local",
+    "is_string": "_var_is_string",
+    "set_state": "_var_set_state",
+    "deps": "_deps",
+}
+
 
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
@@ -418,17 +430,10 @@ class Var:
                     _var_is_local=self._var_is_local,
                 )
 
-            if name in (
-                "full_name",
-                "name",
-                "state",
-                "type_",
-                "is_local",
-                "is_string",
-                "set_state",
-                "deps",
-            ):
-                raise AttributeError(f"Field {name} is no longer available on Var")
+            if name in REPLACED_NAMES:
+                raise AttributeError(
+                    f"Field {name!r} was renamed to {REPLACED_NAMES[name]!r}"
+                )
 
             raise AttributeError(
                 f"The State var `{self._var_full_name}` has no attribute '{name}' or may have been annotated "
