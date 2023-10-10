@@ -1045,7 +1045,7 @@ class Var:
             )
 
         return BaseVar(
-            name=f"{self._var_full_name}.toLowerCase()",
+            _var_name=f"{self._var_full_name}.toLowerCase()",
             _var_type=str,
             _var_is_local=self._var_is_local,
         )
@@ -1065,7 +1065,7 @@ class Var:
             )
 
         return BaseVar(
-            name=f"{self._var_full_name}.toUpperCase()",
+            _var_name=f"{self._var_full_name}.toUpperCase()",
             _var_type=str,
             _var_is_local=self._var_is_local,
         )
@@ -1088,7 +1088,7 @@ class Var:
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
         return BaseVar(
-            name=f"{self._var_full_name}.split({other._var_full_name})",
+            _var_name=f"{self._var_full_name}.split({other._var_full_name})",
             _var_type=list[str],
             _var_is_local=self._var_is_local,
         )
@@ -1116,7 +1116,7 @@ class Var:
             other = Var.create_safe(other)
 
         return BaseVar(
-            name=f"{self._var_full_name}.join({other._var_full_name})",
+            _var_name=f"{self._var_full_name}.join({other._var_full_name})",
             _var_type=str,
             _var_is_local=self._var_is_local,
         )
@@ -1131,11 +1131,11 @@ class Var:
             A var representing foreach operation.
         """
         arg = BaseVar(
-            name=get_unique_variable_name(),
+            _var_name=get_unique_variable_name(),
             _var_type=self._var_type,
         )
         return BaseVar(
-            name=f"{self._var_full_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
+            _var_name=f"{self._var_full_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
             _var_type=self._var_type,
             _var_is_local=self._var_is_local,
         )
