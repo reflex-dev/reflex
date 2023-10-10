@@ -114,7 +114,7 @@ class CodeBlock(Component):
         out = super()._render()
         if self.theme is not None:
             out.add_props(
-                style=Var.create(self.theme.name, _var_is_local=False)
+                style=Var.create(self.theme._var_name, _var_is_local=False)
             ).remove_props("theme")
         return out
 
