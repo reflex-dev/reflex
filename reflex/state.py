@@ -595,9 +595,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            func._var_name = (
-                func.fget.__name__
-            ) = param  # to allow passing as a prop # type: ignore
+            # to allow passing as a prop
+            func._var_name = param
             cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
