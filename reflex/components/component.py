@@ -164,7 +164,7 @@ class Component(Base, ABC):
                         allowed_values = expected_type.__args__
                         if value not in allowed_values:
                             raise ValueError(
-                                f"prop value for {key} should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
+                                f"prop value for {key} of the `{type(self).__name__}` component should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
                             )
 
                     # Get the passed type and the var type.

@@ -23,4 +23,4 @@ class Spinner(ChakraComponent):
     thickness: Var[int]
 
     # "xs" | "sm" | "md" | "lg" | "xl"
-    size: Var[Literal["sm", "md", "lg", "xs"]]
+    size: Var[Literal["sm", "md", "lg", "xs", "xl"]]

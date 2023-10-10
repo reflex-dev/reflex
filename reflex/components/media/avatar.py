@@ -34,7 +34,7 @@ class Avatar(ChakraComponent):
     src_set: Var[str]
 
     # "2xs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "full"
-    size: Var[Literal["sm", "md", "lg", "xs", "2xl", "2xs", "full"]]
+    size: Var[Literal["sm", "md", "lg", "xl", "xs", "2xl", "2xs", "full"]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.

@@ -59,6 +59,10 @@ class Drawer(ChakraComponent):
     # Variant of drawer
     variant: Var[str]
 
+    # Color scheme of the Drawer
+    # Options:
+    # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
+    # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     color_scheme: Var[
         Literal[
             "gray",

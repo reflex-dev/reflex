@@ -165,6 +165,7 @@ class Label(Recharts):
     # The position of label which can be specified by this props or the children of <Label />
     position: Var[
         Literal[
+            "top",
             "left",
             "right",
             "bottom",
@@ -199,6 +200,7 @@ class LabelList(Recharts):
     # The position of each label relative to it view box。op" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
     position: Var[
         Literal[
+            "top",
             "left",
             "right",
             "bottom",
