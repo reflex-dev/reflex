@@ -155,7 +155,7 @@ class Component(Base, ABC):
                         raise TypeError
 
                     # Get the passed type and the var type.
-                    passed_type = kwargs[key].type_
+                    passed_type = kwargs[key]._var_type
                     expected_type = fields[key].outer_type_.__args__[0]
                 except TypeError:
                     # If it is not a valid var, check the base types.
@@ -222,7 +222,7 @@ class Component(Base, ABC):
 
         # If it's an event chain var, return it.
         if isinstance(value, Var):
-            if value.type_ is not EventChain:
+            if value._var_type is not EventChain:
                 raise ValueError(f"Invalid event chain: {value}")
             return value
 
@@ -887,8 +887,8 @@ class CustomComponent(Component):
         """
         return [
             BaseVar(
-                name=name,
-                type_=prop.type_ if types._isinstance(prop, Var) else type(prop),
+                _var_name=name,
+                _var_type=prop.type_ if types._isinstance(prop, Var) else type(prop),
             )
             for name, prop in self.props.items()
         ]

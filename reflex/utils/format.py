@@ -205,7 +205,7 @@ def format_var(var: Var) -> str:
     """
     if not var._var_is_local or var._var_is_string:
         return str(var)
-    if types._issubclass(var.type_, str):
+    if types._issubclass(var._var_type, str):
         return format_string(var._var_full_name)
     if is_wrapped(var._var_full_name, "{"):
         return var._var_full_name
@@ -296,7 +296,7 @@ def format_prop(
         if isinstance(prop, Var):
             if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
-            if types._issubclass(prop.type_, str):
+            if types._issubclass(prop._var_type, str):
                 return format_string(prop._var_full_name)
             prop = prop._var_full_name
 
@@ -455,7 +455,7 @@ def format_event_chain(
     if isinstance(event_chain, Var):
         from reflex.event import EventChain
 
-        if event_chain.type_ is not EventChain:
+        if event_chain._var_type is not EventChain:
             raise ValueError(f"Invalid event chain: {event_chain}")
         return "".join(
             [
