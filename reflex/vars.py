@@ -7,6 +7,7 @@ import dis
 import json
 import random
 import string
+import sys
 from types import CodeType, FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -1192,7 +1193,10 @@ class Var:
         return self
 
 
-@dataclasses.dataclass(eq=False, slots=True)
+@dataclasses.dataclass(
+    eq=False,
+    **{"slots": True} if sys.version_info >= (3, 10) else {},
+)
 class BaseVar(Var):
     """A base (non-computed) var of the app state."""
 
