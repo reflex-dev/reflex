@@ -1,9 +1,9 @@
 """Polar charts in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 
-from reflex.constants import EventTriggers
+from reflex.constants import EventTriggers, props
 from reflex.vars import Var
 
 from .recharts import Recharts
@@ -121,7 +121,7 @@ class Radar(Recharts):
     animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[str]
+    animation_easing: Var[Literal[*props.ANIMATION_EASING]]
 
     # Valid children components
     valid_children: List[str] = ["LabelList"]
@@ -253,7 +253,7 @@ class PolarGrid(Recharts):
     polar_radius: Var[List[int]]
 
     # The type of polar grids. 'polygon' | 'circle'
-    grid_type: Var[str]
+    grid_type: Var[Literal[*props.GRID_TYPE]]
 
     # Valid children components
     valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
@@ -270,7 +270,7 @@ class PolarRadiusAxis(Recharts):
     angle: Var[int]
 
     # The type of axis line. 'number' | 'category'
-    type_: Var[str]
+    type_: Var[Literal[*props.POLAR_RAIUS_TYPE]]
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
     allow_duplicated_category: Var[bool]
@@ -285,7 +285,7 @@ class PolarRadiusAxis(Recharts):
     reversed: Var[bool]
 
     # The orientation of axis text.
-    orientation: Var[str]
+    orientation: Var[Literal[*props.ORIENTATION_LEFT_RIGHT_MIDDLE]]
 
     # If false set, axis line will not be drawn. If true set, axis line will be drawn which have the props calculated internally. If object set, axis line will be drawn which have the props mergered by the internal calculated props and the option.
     axis_line: Var[Union[bool, Dict[str, Any]]]
@@ -297,7 +297,7 @@ class PolarRadiusAxis(Recharts):
     tick_count: Var[int]
 
     # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
-    scale: Var[str]
+    scale: Var[Literal[*props.SCALE]]
 
     # Valid children components
     valid_children: List[str] = ["Label"]

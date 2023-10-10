@@ -1,11 +1,11 @@
 """A module that defines the chart components in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.graphing.recharts.general import ResponsiveContainer
-from reflex.constants import EventTriggers
+from reflex.constants import EventTriggers, props
 from reflex.vars import Var
 
 from .recharts import RechartsCharts
@@ -21,7 +21,7 @@ class ChartBase(RechartsCharts):
     sync_id: Var[str]
 
     # When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
-    sync_method: Var[str]
+    sync_method: Var[Literal["index", "value"]]
 
     # The width of chart container. String or Integer
     width: Var[Union[str, int]] = "100%"  # type: ignore
@@ -30,13 +30,13 @@ class ChartBase(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[str]
+    layout: Var[Literal[*props.LAYOUT]]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[str]
+    stack_offset: Var[Literal[*props.STACK_OFFSET]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -77,10 +77,10 @@ class AreaChart(ChartBase):
     alias = "RechartsAreaChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-    base_value: Var[Union[int, str]]
+    base_value: Var[Union[int, Literal[*props.COMPOSED_CHART_BASE_VALUE]]]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[str]
+    stack_offset: Var[Literal[*props.STACK_OFFSET]]
 
     # Valid children components
     valid_children: List[str] = [
@@ -117,7 +117,7 @@ class BarChart(ChartBase):
     max_bar_size: Var[int]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[str]
+    stack_offset: Var[Literal[*props.BAR_CHART_STACK_OFFSET]]
 
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
     reverse_stack_order: Var[bool]
@@ -167,7 +167,7 @@ class ComposedChart(ChartBase):
     alias = "RechartsComposedChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-    base_value: Var[Union[int, str]]
+    base_value: Var[Union[int, Literal[*props.COMPOSED_CHART_BASE_VALUE]]]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
     bar_category_gap: Var[Union[str, int]]  # type: ignore
@@ -396,13 +396,13 @@ class FunnelChart(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[str]
+    layout: Var[Literal[*props.LAYOUT]]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[str]
+    stack_offset: Var[Literal[*props.STACK_OFFSET]]
 
     # The layout of bars in the chart. centeric
     layout: Var[str]
@@ -456,7 +456,7 @@ class Treemap(RechartsCharts):
     animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[str]
+    animation_easing: Var[Literal[*props.ANIMATION_EASING]]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

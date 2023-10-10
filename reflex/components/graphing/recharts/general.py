@@ -1,9 +1,9 @@
 """General components for Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 
-from reflex.constants import EventTriggers
+from reflex.constants import EventTriggers, props
 from reflex.vars import Var
 
 from .recharts import Recharts
@@ -62,19 +62,19 @@ class Legend(Recharts):
     height: Var[int]
 
     # The layout of legend items. 'horizontal' | 'vertical'
-    layout: Var[str]
+    layout: Var[Literal[*props.LAYOUT]]
 
     # The alignment of legend items in 'horizontal' direction, which can be 'left', 'center', 'right'.
-    align: Var[str]
+    align: Var[Literal[*props.LEGEND_ALIGN]]
 
     # The alignment of legend items in 'vertical' direction, which can be 'top', 'middle', 'bottom'.
-    vertical_align: Var[str]
+    vertical_align: Var[Literal[*props.VERTICAL_ALIGN]]
 
     # The size of icon in each legend item.
     icon_size: Var[int]
 
     # The type of icon in each legend item. 'line' | 'plainline' | 'square' | 'rect' | 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye'
-    icon_type: Var[str]
+    icon_type: Var[Literal[*props.ICON_TYPE]]
 
     # The width of chart container, usually calculated internally.
     chart_width: Var[int]
@@ -150,7 +150,7 @@ class Label(Recharts):
     offset: Var[int]
 
     # The position of label which can be specified by this props or the children of <Label />
-    position: Var[str]
+    position: Var[Literal[*props.POSITION]]
 
 
 class LabelList(Recharts):
@@ -164,7 +164,7 @@ class LabelList(Recharts):
     data_key: Var[Union[str, int]]
 
     # The position of each label relative to it view box。op" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
-    position: Var[str]
+    position: Var[Literal[*props.POSITION]]
 
     # The offset to the specified "position"
     offset: Var[int]
