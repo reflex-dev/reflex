@@ -2,7 +2,6 @@
 from typing import Literal
 
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -24,4 +23,4 @@ class Spinner(ChakraComponent):
     thickness: Var[int]
 
     # "xs" | "sm" | "md" | "lg" | "xl"
-    size: Var[Literal[*props.SPINNER_SIZE]]
+    size: Var[Literal["sm", "md", "lg", "xs"]]

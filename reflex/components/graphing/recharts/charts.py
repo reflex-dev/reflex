@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.graphing.recharts.general import ResponsiveContainer
-from reflex.constants import EventTriggers, props
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from .recharts import RechartsCharts
@@ -30,13 +30,13 @@ class ChartBase(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[Literal[*props.LAYOUT]]
+    layout: Var[Literal["horizontal", "vertical"]]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[Literal[*props.STACK_OFFSET]]
+    stack_offset: Var[Literal["expand", "none", "wiggle", "silhouette"]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -77,10 +77,10 @@ class AreaChart(ChartBase):
     alias = "RechartsAreaChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-    base_value: Var[Union[int, Literal[*props.COMPOSED_CHART_BASE_VALUE]]]
+    base_value: Var[Union[int, Literal["dataMin", "dataMax", "auto"]]]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[Literal[*props.STACK_OFFSET]]
+    stack_offset: Var[Literal["expand", "none", "wiggle", "silhouette"]]
 
     # Valid children components
     valid_children: List[str] = [
@@ -117,7 +117,7 @@ class BarChart(ChartBase):
     max_bar_size: Var[int]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape.
-    stack_offset: Var[Literal[*props.BAR_CHART_STACK_OFFSET]]
+    stack_offset: Var[Literal["expand", "none", "wiggle", "silhouette"]]
 
     # If false set, stacked items will be rendered left to right. If true set, stacked items will be rendered right to left. (Render direction affects SVG layering, not x position.)
     reverse_stack_order: Var[bool]
@@ -167,7 +167,7 @@ class ComposedChart(ChartBase):
     alias = "RechartsComposedChart"
 
     # The base value of area. Number | 'dataMin' | 'dataMax' | 'auto'
-    base_value: Var[Union[int, Literal[*props.COMPOSED_CHART_BASE_VALUE]]]
+    base_value: Var[Union[int, Literal["dataMin", "dataMax", "auto"]]]
 
     # The gap between two bar categories, which can be a percent value or a fixed value. Percentage | Number
     bar_category_gap: Var[Union[str, int]]  # type: ignore
@@ -396,13 +396,13 @@ class FunnelChart(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[Literal[*props.LAYOUT]]
+    layout: Var[Literal["horizontal", "vertical"]]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
 
     # The type of offset function used to generate the lower and upper values in the series array. The four types are built-in offsets in d3-shape. 'expand' | 'none' | 'wiggle' | 'silhouette'
-    stack_offset: Var[Literal[*props.STACK_OFFSET]]
+    stack_offset: Var[Literal["expand", "none", "wiggle", "silhouette"]]
 
     # The layout of bars in the chart. centeric
     layout: Var[str]
@@ -456,7 +456,9 @@ class Treemap(RechartsCharts):
     animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[Literal[*props.ANIMATION_EASING]]
+    animation_easing: Var[
+        Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+    ]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

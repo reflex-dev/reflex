@@ -4,7 +4,6 @@ from typing import List, Literal, Optional, Tuple
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -14,7 +13,7 @@ class Tabs(ChakraComponent):
     tag = "Tabs"
 
     # The alignment of the tabs ("center" | "end" | "start").
-    align: Var[Literal[*props.TABS_ALIGN]]
+    align: Var[Literal["center", "end", "start"]]
 
     # The initial index of the selected tab (in uncontrolled mode).
     default_index: Var[int]
@@ -35,10 +34,40 @@ class Tabs(ChakraComponent):
     orientation: Var[str]
 
     # "line" | "enclosed" | "enclosed-colored" | "soft-rounded" | "solid-rounded" | "unstyled"
-    variant: Var[Literal[*props.TABS_VARIANT]]
+    variant: Var[
+        Literal[
+            "line",
+            "enclosed",
+            "enclosed-colored",
+            "soft-rounded",
+            "solid-rounded",
+            "unstyled",
+        ]
+    ]
 
     # The color scheme of the tabs.
-    color_scheme: Var[Literal[*props.COLOR_SCHEME]]
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "whiteAlpha",
+            "blackAlpha",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     @classmethod
     def create(

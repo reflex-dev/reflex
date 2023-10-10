@@ -4,7 +4,6 @@ from typing import Literal, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -45,17 +44,38 @@ class Card(ChakraComponent):
     #  "green" | "teal" | "blue" | "cyan" | "purple" | "pink" | "linkedin" |
     #  "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     # default: "gray"
-    color_scheme: Var[Literal[*props.COLOR_SCHEME]]
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "whiteAlpha",
+            "blackAlpha",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     # The size of the Card
     # options: "sm" | "md" | "lg"
     # default: "md"
-    size: Var[Literal[*props.TAG_SIZE]]
+    size: Var[Literal["sm", "md", "lg"]]
 
     # The variant of the Card
     # options: "elevated" | "outline" | "filled" | "unstyled"
     # default: "elevated"
-    variant: Var[Literal[*props.CARD_VARIANT]]
+    variant: Var[Literal["outline", "filled", "elevated", "unstyled"]]
 
     @classmethod
     def create(

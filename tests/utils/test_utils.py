@@ -191,9 +191,8 @@ def test_is_backend_variable(input, output):
 def test_issubclass(cls: type, cls_check: type, expected: bool):
     assert types._issubclass(cls, cls_check) == expected
 
-@pytest.mark.parametrize(
-    "cls", [Literal["test", 1], Literal[1, "test"]]
-)
+
+@pytest.mark.parametrize("cls", [Literal["test", 1], Literal[1, "test"]])
 def test_unsupported_literals(cls: type):
     with pytest.raises(TypeError):
         types.get_base_class(cls)

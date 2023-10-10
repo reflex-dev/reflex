@@ -6,7 +6,7 @@ from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.typography.text import Text
-from reflex.constants import EventTriggers, props
+from reflex.constants import EventTriggers
 from reflex.utils.types import _issubclass
 from reflex.vars import Var
 
@@ -41,7 +41,7 @@ class Select(ChakraComponent):
     is_required: Var[bool]
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[Literal[*props.INPUT_VARIANT]]
+    variant: Var[Literal["outline", "filled", "flushed", "unstyled"]]
 
     # The size of the select.
     size: Var[str]

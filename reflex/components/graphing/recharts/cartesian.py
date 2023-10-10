@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Union
 
-from reflex.constants import EventTriggers, props
+from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from .recharts import Recharts
@@ -19,10 +19,10 @@ class Axis(Recharts):
     hide: Var[bool]
 
     # The orientation of axis 'top' | 'bottom'
-    orientation: Var[Literal[*props.ORIENTATION_TOP_BOTTOM]]
+    orientation: Var[Literal["top", "bottom"]]
 
     # The type of axis 'number' | 'category'
-    type_: Var[Literal[*props.AXIS_TYPE]]
+    type_: Var[Literal["number", "category"]]
 
     # Allow the ticks of XAxis to be decimals or not.
     allow_decimals: Var[bool]
@@ -46,7 +46,25 @@ class Axis(Recharts):
     reversed: Var[bool]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold' | Function
-    scale: Var[Literal[*props.SCALE]]
+    scale: Var[
+        Literal[
+            "auto",
+            "linear",
+            "pow",
+            "sqrt",
+            "log",
+            "identity",
+            "time",
+            "band",
+            "point",
+            "ordinal",
+            "quantile",
+            "quantize",
+            "utc",
+            "sequential",
+            "threshold",
+        ]
+    ]
 
     # The unit of data displayed in the axis. This option will be used to represent an index unit in a scatter chart.
     unit: Var[Union[str, int]]
@@ -109,7 +127,25 @@ class ZAxis(Recharts):
     name: Var[Union[str, int]]
 
     # If 'auto' set, the scale function is decided by the type of chart, and the props type.
-    scale: Var[Literal[*props.SCALE]]
+    scale: Var[
+        Literal[
+            "auto",
+            "linear",
+            "pow",
+            "sqrt",
+            "log",
+            "identity",
+            "time",
+            "band",
+            "point",
+            "ordinal",
+            "quantile",
+            "quantize",
+            "utc",
+            "sequential",
+            "threshold",
+        ]
+    ]
 
 
 class Brush(Recharts):
@@ -167,7 +203,7 @@ class Cartesian(Recharts):
     """A base class for cartesian charts in Recharts."""
 
     # The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
-    layout: Var[Literal[*props.LAYOUT]]
+    layout: Var[Literal["horizontal", "vertical"]]
 
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]
@@ -179,7 +215,21 @@ class Cartesian(Recharts):
     y_axis_id: Var[Union[str, int]]
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
-    legend_type: Var[Literal[*props.LEGEND_TYPE]]
+    legend_type: Var[
+        Literal[
+            "line",
+            "plainline",
+            "square",
+            "rect",
+            "circle",
+            "cross",
+            "diamond",
+            "star",
+            "triangle",
+            "wye",
+            "none",
+        ]
+    ]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -214,7 +264,25 @@ class Area(Cartesian):
     fill: Var[str]
 
     # The interpolation type of area. And customized interpolation function can be set to type. 'basis' | 'basisClosed' | 'basisOpen' | 'bumpX' | 'bumpY' | 'bump' | 'linear' | 'linearClosed' | 'natural' | 'monotoneX' | 'monotoneY' | 'monotone' | 'step' | 'stepBefore' | 'stepAfter' |
-    type_: Var[Literal[*props.AREA_TYPE]]
+    type_: Var[
+        Literal[
+            "basis",
+            "basisClosed",
+            "basisOpen",
+            "bumpX",
+            "bumpY",
+            "bump",
+            "linear",
+            "linearClosed",
+            "natural",
+            "monotoneX",
+            "monotoneY",
+            "monotone",
+            "step",
+            "stepBefore",
+            "stepAfter",
+        ]
+    ]
 
     # If false set, dots will not be drawn. If true set, dots will be drawn which have the props calculated internally.
     dot: Var[bool]
@@ -275,7 +343,25 @@ class Line(Cartesian):
     alias = "RechartsLine"
 
     # The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
-    type_: Var[Literal[*props.AREA_TYPE]]
+    type_: Var[
+        Literal[
+            "basis",
+            "basisClosed",
+            "basisOpen",
+            "bumpX",
+            "bumpY",
+            "bump",
+            "linear",
+            "linearClosed",
+            "natural",
+            "monotoneX",
+            "monotoneY",
+            "monotone",
+            "step",
+            "stepBefore",
+            "stepAfter",
+        ]
+    ]
 
     # The color of the line stroke.
     stroke: Var[str]
@@ -319,10 +405,12 @@ class Scatter(Cartesian):
     line: Var[bool]
 
     # If a string set, specified symbol will be used to show scatter item. 'circle' | 'cross' | 'diamond' | 'square' | 'star' | 'triangle' | 'wye'
-    shape: Var[Literal[*props.SHAPE]]
+    shape: Var[
+        Literal["square", "circle", "cross", "diamond", "star", "triangle", "wye"]
+    ]
 
     # If 'joint' set, line will generated by just jointing all the points. If 'fitting' set, line will be generated by fitting algorithm. 'joint' | 'fitting'
-    line_type: Var[Literal[*props.LINE_TYPE]]
+    line_type: Var[Literal["joint", "fitting"]]
 
     # The fill
     fill: Var[str]
@@ -351,7 +439,9 @@ class Funnel(Cartesian):
     animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[Literal[*props.ANIMATION_EASING]]
+    animation_easing: Var[
+        Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
+    ]
 
     # Valid children components
     valid_children: List[str] = ["LabelList", "Cell"]
@@ -365,7 +455,7 @@ class ErrorBar(Recharts):
     alias = "RechartsErrorBar"
 
     # The direction of error bar. 'x' | 'y' | 'both'
-    direction: Var[Literal[*props.DIRECTION]]
+    direction: Var[Literal["x", "y", "both"]]
 
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]
@@ -396,7 +486,7 @@ class Reference(Recharts):
     y: Var[str]
 
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
-    if_overflow: Var[Literal[*props.IF_OVERFLOW]]
+    if_overflow: Var[Literal["discard", "hidden", "visible", "extendDomain"]]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc.
     is_front: Var[bool]
@@ -477,7 +567,7 @@ class ReferenceArea(Recharts):
     y2: Var[Union[str, int]]
 
     # Defines how to draw the reference line if it falls partly outside the canvas. If set to 'discard', the reference line will not be drawn at all. If set to 'hidden', the reference line will be clipped to the canvas. If set to 'visible', the reference line will be drawn completely. If set to 'extendDomain', the domain of the overflown axis will be extended such that the reference line fits into the canvas.
-    if_overflow: Var[Literal[*props.IF_OVERFLOW]]
+    if_overflow: Var[Literal["discard", "hidden", "visible", "extendDomain"]]
 
     # If set true, the line will be rendered in front of bars in BarChart, etc.
     is_front: Var[bool]
@@ -533,7 +623,7 @@ class CartesianAxis(Grid):
     alias = "RechartsCartesianAxis"
 
     # The orientation of axis 'top' | 'bottom' | 'left' | 'right'
-    orientation: Var[Literal[*props.ORIENTATION_TOP_BOTTOM_LEFT_RIGHT]]
+    orientation: Var[Literal["left", "right", "middle"]]
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
     axis_line: Var[bool]
@@ -545,7 +635,7 @@ class CartesianAxis(Grid):
     tick_size: Var[int]
 
     # If set 0, all the ticks will be shown. If set preserveStart", "preserveEnd" or "preserveStartEnd", the ticks which is to be shown or hidden will be calculated automatically.
-    interval: Var[Literal[*props.INTERVAL]]
+    interval: Var[Literal["preserveStart", "preserveEnd", "preserveStartEnd"]]
 
     # If set false, no ticks will be drawn.
     ticks: Var[bool]

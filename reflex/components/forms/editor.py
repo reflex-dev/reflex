@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.constants import EventTriggers, props
+from reflex.constants import EventTriggers
 from reflex.utils.format import to_camel_case
 from reflex.vars import ImportVar, Var
 
@@ -86,7 +86,31 @@ class Editor(NoSSRComponent):
     # options: "en" | "da" | "de" | "es" | "fr" | "ja" | "ko" | "pt_br" |
     #  "ru" | "zh_cn" | "ro" | "pl" | "ckb" | "lv" | "se" | "ua" | "he" | "it"
     # default : "en"
-    lang: Var[Union[Literal[*props.LANGUAGE], dict]]
+    lang: Var[
+        Union[
+            Literal[
+                "en",
+                "da",
+                "de",
+                "es",
+                "fr",
+                "ja",
+                "ko",
+                "pt_br",
+                "ru",
+                "zh_cn",
+                "ro",
+                "pl",
+                "ckb",
+                "lv",
+                "se",
+                "ua",
+                "he",
+                "it",
+            ],
+            dict,
+        ]
+    ]
 
     # This is used to set the HTML form name of the editor.
     # This means on HTML form submission,

@@ -96,6 +96,9 @@ def get_base_class(cls: GenericType) -> Type:
 
     Returns:
         The base class of the class.
+
+    Raises:
+        TypeError: If a literal has multiple types.
     """
     if is_literal(cls):
         # only literals of the same type are supported.

@@ -3,7 +3,6 @@ from typing import Literal, Optional
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -40,17 +39,30 @@ class Tag(ChakraComponent):
     # options: "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" |
     #  "cyan" | "purple" | "pink"
     # default: "gray"
-    color_scheme: Var[Literal[*props.TAG_COLOR_SCHEME]]
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+        ]
+    ]
 
     # The size of the tag
     # options: "sm" | "md" | "lg"
     # default: "md"
-    size: Var[Literal[*props.TAG_SIZE]]
+    size: Var[Literal["sm", "md", "lg"]]
 
     # The variant of the tag
     # options: "solid" | "subtle" | "outline"
     # default: "solid"
-    variant: Var[Literal[*props.VARIANT]]
+    variant: Var[Literal["solid", "subtle", "outline"]]
 
     @classmethod
     def create(
