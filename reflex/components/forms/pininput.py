@@ -6,7 +6,7 @@ from typing import Any, Literal, Optional, Union
 from reflex.components.component import Component
 from reflex.components.layout import Foreach
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import EventTriggers
+from reflex.constants import EventTriggers, props
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -56,7 +56,7 @@ class PinInput(ChakraComponent):
     type_: Var[str]
 
     # "outline" | "flushed" | "filled" | "unstyled"
-    variant: Var[Literal["outline", "filled", "flushed", "unstyled"]]
+    variant: Var[Literal[*props.INPUT_VARIANT]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.

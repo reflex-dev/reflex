@@ -3,6 +3,7 @@ from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -12,10 +13,10 @@ class Alert(ChakraComponent):
     tag = "Alert"
 
     # The status of the alert ("success" | "info" | "warning" | "error")
-    status: Var[Literal["success", "info", "warning", "error"]]
+    status: Var[Literal[*props.STATUS]]
 
     # "subtle" | "left-accent" | "top-accent" | "solid"
-    variant: Var[Literal["subtle", "left-accent", "top-accent", "solid"]]
+    variant: Var[Literal[*props.ALERT_VARIANT]]
 
     @classmethod
     def create(

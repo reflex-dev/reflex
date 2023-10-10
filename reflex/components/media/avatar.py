@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Literal, Union
 
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -34,7 +35,7 @@ class Avatar(ChakraComponent):
     src_set: Var[str]
 
     # "2xs" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "full"
-    size: Var[Literal["lg", "md", "sm", "xs", "2xs", "2xl", "full"]]
+    size: Var[Literal[*props.AVATAR_SIZES]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.

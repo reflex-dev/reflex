@@ -5,6 +5,7 @@ from typing import Any, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -38,7 +39,7 @@ class Popover(ChakraComponent):
     default_is_open: Var[bool]
 
     # Theme direction ltr or rtl. Popper's placement will be set accordingly
-    direction: Var[str]
+    direction: Var[Literal[*props.SLIDER_DIRECTION]]
 
     # If true, the popper will change its placement and flip when it's about to overflow its boundary area.
     flip: Var[bool]
@@ -71,7 +72,7 @@ class Popover(ChakraComponent):
     return_focus_on_close: Var[bool]
 
     # The CSS positioning strategy to use. ("fixed" | "absolute")
-    strategy: Var[Literal["fixed", "absolute"]]
+    strategy: Var[Literal[*props.MENU_STRATEGY]]
 
     # The interaction that triggers the popover. hover - means the popover will open when you hover with mouse or focus with keyboard on the popover trigger click - means the popover will open on click or press Enter to Space on keyboard ("click" | "hover")
     trigger: Var[str]

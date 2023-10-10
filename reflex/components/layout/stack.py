@@ -1,6 +1,9 @@
 """Container to stack elements with spacing."""
 
+from typing import Literal, Union, List
+
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -13,7 +16,7 @@ class Stack(ChakraComponent):
     align_items: Var[str]
 
     # The direction to stack the items.
-    direction: Var[str]
+    direction: Var[Union[Literal[*props.STACK_DIRECTION], List[str]]]
 
     # If true the items will be stacked horizontally.
     is_inline: Var[bool]

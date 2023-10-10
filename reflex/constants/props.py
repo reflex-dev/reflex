@@ -1,4 +1,3 @@
-
 # RECHARTS
 ANIMATION_EASING = ["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
 IF_OVERFLOW = ["discard", "hidden", "visible", "extendDomain"]
@@ -25,7 +24,6 @@ SCALE = [
     "sequential",
     "threshold",
 ]
-
 
 POLAR_RAIUS_TYPE = ["number", "category"]
 GRID_TYPE = ["polygon", "circle"]
@@ -96,3 +94,114 @@ AREA_TYPE = [
 DIRECTION = ["x", "y", "both"]
 
 INTERVAL = ["preserveStart", "preserveEnd", "preserveStartEnd"]
+
+# CHAKRA
+VARIANT = ["solid", "subtle", "outline"]
+DIVIDER_VARIANT = ["solid", "dashed"]
+THEME = ["light", "dark"]
+TAG_COLOR_SCHEME = [
+    "gray",
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "teal",
+    "blue",
+    "cyan",
+    "purple",
+    "pink",
+]
+TAG_SIZE = ["sm", "md", "lg"]
+TABS_ALIGN = ["center", "end", "start"]
+TABS_VARIANT = [
+    "line",
+    "enclosed",
+    "enclosed-colored",
+    "soft-rounded",
+    "solid-rounded",
+    "unstyled",
+]
+
+COLOR_SCHEME = [
+    *TAG_COLOR_SCHEME,
+    "whiteAlpha",
+    "blackAlpha",
+    "linkedin",
+    "facebook",
+    "messenger",
+    "whatsapp",
+    "twitter",
+    "telegram",
+]
+
+STATUS = ["success", "info", "warning", "error"]
+ALERT_VARIANT = ["subtle", "left-accent", "top-accent", "solid"]
+
+SPINNER_SIZE = [*TAG_SIZE, "xs"]
+
+BUTTON_VARIANT = ["outline", "solid", "link", "unstyled"]
+SPINNER_PLACEMENT = ["start", "end"]
+
+LANGUAGE = [
+    "en",
+    "da",
+    "de",
+    "es",
+    "fr",
+    "ja",
+    "ko",
+    "pt_br",
+    "ru",
+    "zh_cn",
+    "ro",
+    "pl",
+    "ckb",
+    "lv",
+    "se",
+    "ua",
+    "he",
+    "it",
+]
+
+INPUT_VARIANT = ["outline", "filled", "flushed", "unstyled"]
+
+NUMBER_INPUT_MODE = [
+    "text",
+    "search",
+    "none",
+    "tel",
+    "url",
+    "email",
+    "numeric",
+    "decimal",
+]
+
+SLIDER_DIRECTION = ["ltr", "rtl"]
+
+CARD_VARIANT = ["outline", "filled", "elevated", "unstyled"]
+
+STACK_DIRECTION = ["row", "column"]
+
+AVATAR_SIZES = ["lg", "md", "sm", "xs", "2xs", "2xl", "full"]
+
+IMAGE_LOADING = ["eager", "lazy"]
+
+ALERT_DIALOG_SIZES = [*AVATAR_SIZES, "3xl", "4xl", "5xl", "6xl"]
+MODAL_SIZE = [
+    "lg",
+    "md",
+    "sm",
+    "xs",
+    "2xl",
+    "3xl",
+    "4xl",
+    "5xl",
+    "6xl",
+    "full",
+]  # TODO: check this with alert sizes
+
+DRAWER_SIZE = ["lg", "md", "sm", "xs", "xl", "full"]
+
+MENU_STRATEGY = ["fixed", "absolute"]
+
+MENU_OPTION = ["checkbox", "radio"]

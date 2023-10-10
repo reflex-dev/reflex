@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import base64
 import io
-from typing import Any, Optional, Union
+from typing import Any, Optional, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import props
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
@@ -38,7 +39,7 @@ class Image(ChakraComponent):
     ignore_fallback: Var[bool]
 
     # "eager" | "lazy"
-    loading: Var[str]
+    loading: Var[Literal[*props.IMAGE_LOADING]]
 
     # The path/url to the image or PIL image object.
     src: Var[Any]

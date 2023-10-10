@@ -2,6 +2,7 @@
 from typing import List, Literal
 
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -29,41 +30,20 @@ class Button(ChakraComponent):
     loading_text: Var[str]
 
     # "lg" | "md" | "sm" | "xs"
-    size: Var[Literal["lg", "md", "sm", "xs"]]
+    size: Var[Literal[*props.SPINNER_SIZE]]
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
-    variant: Var[Literal["outline", "solid", "link", "unstyled"]]
+    variant: Var[Literal[*props.BUTTON_VARIANT]]
 
     # Built in color scheme for ease of use.
     # Options:
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[
-        Literal[
-            "whiteAlpha",
-            "blackAlpha",
-            "gray",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "teal",
-            "blue",
-            "cyan",
-            "purple",
-            "pink",
-            "linkedin",
-            "facebook",
-            "messenger",
-            "whatsapp",
-            "twitter",
-            "telegram",
-        ]
-    ]
+    color_scheme: Var[Literal[*props.COLOR_SCHEME]]
 
     # Position of the loading spinner.
     # Options:
     # "start" | "end"
-    spinner_placement: Var[Literal["start", "end"]]
+    spinner_placement: Var[Literal[*props.SPINNER_PLACEMENT]]
 
     # The type of button.
     type_: Var[str]
@@ -87,7 +67,7 @@ class ButtonGroup(ChakraComponent):
     spacing: Var[int]
 
     # "lg" | "md" | "sm" | "xs"
-    size: Var[str]
+    size: Var[Literal[*props.SPINNER_SIZE]]
 
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
-    variant: Var[str]
+    variant: Var[Literal[*props.BUTTON_VARIANT]]

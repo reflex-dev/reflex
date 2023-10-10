@@ -7,6 +7,7 @@ from reflex.components.forms import Button
 from reflex.components.layout import Box
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.media import Icon
+from reflex.constants import props
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import imports
@@ -24,7 +25,7 @@ class CodeBlock(Component):
     tag = "Prism"
 
     # The theme to use ("light" or "dark").
-    theme: Var[Literal["light", "dark"]]
+    theme: Var[Literal[*props.THEME]]
 
     # The language to use.
     language: Var[str]
@@ -59,7 +60,7 @@ class CodeBlock(Component):
         *children,
         can_copy: Optional[bool] = False,
         copy_button: Optional[Union[bool, Component]] = None,
-        **props
+        **props,
     ):
         """Create a text component.
 

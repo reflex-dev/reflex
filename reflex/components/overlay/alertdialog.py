@@ -6,6 +6,7 @@ from typing import Any, Literal, Union
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.media.icon import Icon
+from reflex.constants import props
 from reflex.vars import Var
 
 
@@ -48,9 +49,7 @@ class AlertDialog(ChakraComponent):
     return_focus_on_close: Var[bool]
 
     # "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "full"
-    size: Var[
-        Literal["lg", "md", "sm", "xs", "2xl", "3xl", "4xl", "5xl", "6xl", "full"]
-    ]
+    size: Var[*props.ALERT_DIALOG_SIZES]
 
     # If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
     use_inert: Var[bool]
