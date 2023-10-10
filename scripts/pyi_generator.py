@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, get_args  # NOQA
 import black
 
 from reflex.components.component import Component
-from reflex.constants import props # NOQA
+from reflex.constants import props  # NOQA
 from reflex.utils import format
 from reflex.utils import types as rx_types
 from reflex.vars import Var

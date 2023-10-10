@@ -1,3 +1,6 @@
+# General
+LAYOUT = ["horizontal", "vertical"]
+
 # RECHARTS
 ANIMATION_EASING = ["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
 IF_OVERFLOW = ["discard", "hidden", "visible", "extendDomain"]
@@ -27,7 +30,6 @@ SCALE = [
 
 POLAR_RAIUS_TYPE = ["number", "category"]
 GRID_TYPE = ["polygon", "circle"]
-
 POSITION = [
     "left",
     "right",
@@ -47,9 +49,6 @@ POSITION = [
     "end",
     "center",
 ]
-
-LAYOUT = ["horizontal", "vertical"]
-
 ICON_TYPE = [
     "line",
     "plainline",
@@ -65,14 +64,10 @@ ICON_TYPE = [
 LEGEND_TYPE = [*ICON_TYPE, "none"]
 LEGEND_ALIGN = ["left", "center", "right"]
 VERTICAL_ALIGN = ["top", "middle", "bottom"]
-
 STACK_OFFSET = ["expand", "none", "wiggle", "silhouette"]
 BAR_CHART_STACK_OFFSET = [*STACK_OFFSET, "sign"]
-
 COMPOSED_CHART_BASE_VALUE = ["dataMin", "dataMax", "auto"]
-
 AXIS_TYPE = ["number", "category"]
-
 AREA_TYPE = [
     "basis",
     "basisClosed",
@@ -87,12 +82,10 @@ AREA_TYPE = [
     "monotoneY",
     "monotone",
     "step",
-    "stepBeffore",
+    "stepBefore",
     "stepAfter",
 ]
-
 DIRECTION = ["x", "y", "both"]
-
 INTERVAL = ["preserveStart", "preserveEnd", "preserveStartEnd"]
 
 # CHAKRA
@@ -111,7 +104,6 @@ TAG_COLOR_SCHEME = [
     "purple",
     "pink",
 ]
-TAG_SIZE = ["sm", "md", "lg"]
 TABS_ALIGN = ["center", "end", "start"]
 TABS_VARIANT = [
     "line",
@@ -121,7 +113,6 @@ TABS_VARIANT = [
     "solid-rounded",
     "unstyled",
 ]
-
 COLOR_SCHEME = [
     *TAG_COLOR_SCHEME,
     "whiteAlpha",
@@ -133,15 +124,10 @@ COLOR_SCHEME = [
     "twitter",
     "telegram",
 ]
-
 STATUS = ["success", "info", "warning", "error"]
 ALERT_VARIANT = ["subtle", "left-accent", "top-accent", "solid"]
-
-SPINNER_SIZE = [*TAG_SIZE, "xs"]
-
 BUTTON_VARIANT = ["outline", "solid", "link", "unstyled"]
 SPINNER_PLACEMENT = ["start", "end"]
-
 LANGUAGE = [
     "en",
     "da",
@@ -162,9 +148,7 @@ LANGUAGE = [
     "he",
     "it",
 ]
-
 INPUT_VARIANT = ["outline", "filled", "flushed", "unstyled"]
-
 NUMBER_INPUT_MODE = [
     "text",
     "search",
@@ -175,33 +159,16 @@ NUMBER_INPUT_MODE = [
     "numeric",
     "decimal",
 ]
-
-SLIDER_DIRECTION = ["ltr", "rtl"]
-
+CHAKRA_DIRECTION = ["ltr", "rtl"]
 CARD_VARIANT = ["outline", "filled", "elevated", "unstyled"]
-
 STACK_DIRECTION = ["row", "column"]
-
-AVATAR_SIZES = ["lg", "md", "sm", "xs", "2xs", "2xl", "full"]
-
 IMAGE_LOADING = ["eager", "lazy"]
-
-ALERT_DIALOG_SIZES = [*AVATAR_SIZES, "3xl", "4xl", "5xl", "6xl"]
-MODAL_SIZE = [
-    "lg",
-    "md",
-    "sm",
-    "xs",
-    "2xl",
-    "3xl",
-    "4xl",
-    "5xl",
-    "6xl",
-    "full",
-]  # TODO: check this with alert sizes
-
-DRAWER_SIZE = ["lg", "md", "sm", "xs", "xl", "full"]
+TAG_SIZE = ["sm", "md", "lg"]
+SPINNER_SIZE = [*TAG_SIZE, "xs"]
+AVATAR_SIZES = [*TAG_SIZE, "xs", "2xl", "full", "2xs"]
+# Applies to AlertDialog and Modal
+ALERT_DIALOG_SIZES = [*AVATAR_SIZES[:-1], "3xl", "4xl", "5xl", "6xl"]
+DRAWER_SIZE = [*SPINNER_SIZE, "xl", "full"]
 
 MENU_STRATEGY = ["fixed", "absolute"]
-
 MENU_OPTION = ["checkbox", "radio"]

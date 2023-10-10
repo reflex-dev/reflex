@@ -24,7 +24,7 @@ class Slider(ChakraComponent):
     default_value: Var[int]
 
     # The writing mode ("ltr" | "rtl")
-    direction: Var[Literal[*props.SLIDER_DIRECTION]]
+    direction: Var[Literal[*props.CHAKRA_DIRECTION]]
 
     # If false, the slider handle will not capture focus when value changes.
     focus_thumb_on_change: Var[bool]

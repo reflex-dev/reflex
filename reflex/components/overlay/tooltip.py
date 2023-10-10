@@ -38,7 +38,7 @@ class Tooltip(ChakraComponent):
     default_is_open: Var[bool]
 
     # Theme direction ltr or rtl. Popper's placement will be set accordingly
-    direction: Var[Literal[*props.SLIDER_DIRECTION]]
+    direction: Var[Literal[*props.CHAKRA_DIRECTION]]
 
     # The distance or margin between the reference and popper. It is used internally to create an offset modifier. NB: If you define offset prop, it'll override the gutter.
     gutter: Var[int]

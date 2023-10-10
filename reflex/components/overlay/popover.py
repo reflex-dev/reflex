@@ -39,7 +39,7 @@ class Popover(ChakraComponent):
     default_is_open: Var[bool]
 
     # Theme direction ltr or rtl. Popper's placement will be set accordingly
-    direction: Var[Literal[*props.SLIDER_DIRECTION]]
+    direction: Var[Literal[*props.CHAKRA_DIRECTION]]
 
     # If true, the popper will change its placement and flip when it's about to overflow its boundary area.
     flip: Var[bool]
