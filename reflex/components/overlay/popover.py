@@ -74,7 +74,7 @@ class Popover(ChakraComponent):
     strategy: Var[Literal["fixed", "absolute"]]
 
     # The interaction that triggers the popover. hover - means the popover will open when you hover with mouse or focus with keyboard on the popover trigger click - means the popover will open on click or press Enter to Space on keyboard ("click" | "hover")
-    trigger: Var[str]
+    trigger: Var[Literal["click", "hover"]]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.

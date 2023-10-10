@@ -41,7 +41,7 @@ class Checkbox(ChakraComponent):
     ]
 
     # "sm" | "md" | "lg"
-    size: Var[str]
+    size: Var[Literal["sm", "md", "lg"]]
 
     # If true, the checkbox will be checked.
     is_checked: Var[bool]

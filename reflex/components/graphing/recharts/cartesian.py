@@ -623,7 +623,7 @@ class CartesianAxis(Grid):
     alias = "RechartsCartesianAxis"
 
     # The orientation of axis 'top' | 'bottom' | 'left' | 'right'
-    orientation: Var[Literal["left", "right", "middle"]]
+    orientation: Var[Literal["top", "bottom", "left", "right"]]
 
     # If set false, no axis line will be drawn. If set a object, the option is the configuration of axis line.
     axis_line: Var[bool]

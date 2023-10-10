@@ -49,7 +49,7 @@ class AlertDialog(ChakraComponent):
 
     # "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "full"
     size: Var[
-        Literal["sm", "md", "lg", "xs", "2xl", "3xl", "4xl", "5xl", "6xl", "full"]
+        Literal["sm", "md", "lg", "xl" ,"xs", "2xl", "3xl", "4xl", "5xl", "6xl", "full"]
     ]
 
     # If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**

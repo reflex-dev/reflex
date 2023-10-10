@@ -119,7 +119,7 @@ class LabelList(Recharts):
         Args:
             *children: The children of the component.
             data_key: The key of a group of label values in data.
-            position: The position of each label relative to it view box。op" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
+            position: The position of each label relative to it view box。"Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
             offset: The offset to the specified "position"
             fill: Color of the fill
             stroke: Color of the stroke
