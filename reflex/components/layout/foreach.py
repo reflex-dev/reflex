@@ -35,18 +35,18 @@ class Foreach(Component):
         """
         try:
             type_ = (
-                iterable.type_
-                if iterable.type_.mro()[0] == dict
-                else iterable.type_.__args__[0]
+                iterable._var_type
+                if iterable._var_type.mro()[0] == dict
+                else iterable._var_type.__args__[0]
             )
         except Exception:
             type_ = Any
         iterable = Var.create(iterable)  # type: ignore
-        if iterable.type_ == Any:
+        if iterable._var_type == Any:
             raise TypeError(
                 f"Could not foreach over var of type Any. (If you are trying to foreach over a state var, add a type annotation to the var.)"
             )
-        arg = BaseVar(name="_", type_=type_, is_local=True)
+        arg = BaseVar(_var_name="_", _var_type=type_, _var_is_local=True)
         return cls(
             iterable=iterable,
             render_fn=render_fn,
@@ -66,15 +66,15 @@ class Foreach(Component):
         tag = self._render()
         try:
             type_ = (
-                self.iterable.type_
-                if self.iterable.type_.mro()[0] == dict
-                else self.iterable.type_.__args__[0]
+                self.iterable._var_type
+                if self.iterable._var_type.mro()[0] == dict
+                else self.iterable._var_type.__args__[0]
             )
         except Exception:
             type_ = Any
         arg = BaseVar(
-            name=get_unique_variable_name(),
-            type_=type_,
+            _var_name=get_unique_variable_name(),
+            _var_type=type_,
         )
         index_arg = tag.get_index_var_arg()
         component = tag.render_component(self.render_fn, arg)
@@ -89,8 +89,8 @@ class Foreach(Component):
                 children=[component.render()],
                 props=tag.format_props(),
             ),
-            iterable_state=tag.iterable.full_name,
-            arg_name=arg.name,
+            iterable_state=tag.iterable._var_full_name,
+            arg_name=arg._var_name,
             arg_index=index_arg,
-            iterable_type=tag.iterable.type_.mro()[0].__name__,
+            iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )

@@ -51,7 +51,9 @@ def test_render_child_props():
     )._render()
     assert tag.props["sx"] == {"foo": "bar", "baz": "quuc"}
     assert tag.props["value"].equals(
-        BaseVar(name="real", type_=str, is_local=True, is_string=False)
+        BaseVar(
+            _var_name="real", _var_type=str, _var_is_local=True, _var_is_string=False
+        )
     )
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
@@ -86,11 +88,13 @@ def test_render_child_props_recursive():
     )._render()
     assert tag.props["sx"] == {"foo": "bar", "baz": "quuc"}
     assert tag.props["value"].equals(
-        BaseVar(name="outer", type_=str, is_local=True, is_string=False)
+        BaseVar(
+            _var_name="outer", _var_type=str, _var_is_local=True, _var_is_string=False
+        )
     )
-    assert tag.props["forceNotifyOnBlur"].name == "false"
-    assert tag.props["forceNotifyByEnter"].name == "false"
-    assert tag.props["debounceTimeout"].name == "42"
+    assert tag.props["forceNotifyOnBlur"]._var_name == "false"
+    assert tag.props["forceNotifyByEnter"]._var_name == "false"
+    assert tag.props["debounceTimeout"]._var_name == "42"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -102,7 +106,7 @@ def test_full_control_implicit_debounce():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"].name == "50"
+    assert tag.props["debounceTimeout"]._var_name == "50"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""
@@ -114,7 +118,7 @@ def test_full_control_implicit_debounce_text_area():
         value=S.value,
         on_change=S.on_change,
     )._render()
-    assert tag.props["debounceTimeout"].name == "50"
+    assert tag.props["debounceTimeout"]._var_name == "50"
     assert len(tag.props["onChange"].events) == 1
     assert tag.props["onChange"].events[0].handler == S.on_change
     assert tag.contents == ""

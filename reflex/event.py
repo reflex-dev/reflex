@@ -153,7 +153,7 @@ class EventHandler(Base):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg, is_string=type(arg) is str))
+                values.append(Var.create(arg, _var_is_string=type(arg) is str))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -241,7 +241,7 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
-            (Var.create_safe(k), Var.create_safe(v, is_string=type(v) is str))
+            (Var.create_safe(k), Var.create_safe(v, _var_is_string=type(v) is str))
             for k, v in kwargs.items()
         ),
     )
@@ -560,9 +560,9 @@ def parse_args_spec(arg_spec: ArgsSpec):
     return arg_spec(
         *[
             BaseVar(
-                name=f"_{l_arg}",
-                type_=spec.annotations.get(l_arg, FrontendEvent),
-                is_local=True,
+                _var_name=f"_{l_arg}",
+                _var_type=spec.annotations.get(l_arg, FrontendEvent),
+                _var_is_local=True,
             )
             for l_arg in spec.args
         ]
@@ -675,7 +675,7 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        payload = {k.name: v._decode() for k, v in e.args}  # type: ignore
+        payload = {k._var_name: v._decode() for k, v in e.args}  # type: ignore
 
         # Create an event and append it to the list.
         out.append(

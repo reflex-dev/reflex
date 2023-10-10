@@ -424,6 +424,7 @@ class Var:
                 "is_local",
                 "is_string",
                 "set_state",
+                "deps",
             ):
                 raise AttributeError(f"Field {name} is no longer available on Var")
 

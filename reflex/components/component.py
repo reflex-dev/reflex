@@ -888,7 +888,9 @@ class CustomComponent(Component):
         return [
             BaseVar(
                 _var_name=name,
-                _var_type=prop.type_ if types._isinstance(prop, Var) else type(prop),
+                _var_type=prop._var_type
+                if types._isinstance(prop, Var)
+                else type(prop),
             )
             for name, prop in self.props.items()
         ]

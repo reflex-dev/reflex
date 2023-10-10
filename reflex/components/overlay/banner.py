@@ -18,7 +18,7 @@ has_connection_error: Var = Var.create_safe(
     value="connectError !== null",
     _var_is_string=False,
 )
-has_connection_error.type_ = bool
+has_connection_error._var_type = bool
 
 
 def default_connection_error() -> list[str | Var]:

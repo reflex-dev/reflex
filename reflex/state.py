@@ -695,8 +695,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for prop_name in self.base_vars:
             field = fields[prop_name]
             if isinstance(field.default, ClientStorageBase) or (
-                isinstance(field._var_type, type)
-                and issubclass(field._var_type, ClientStorageBase)
+                isinstance(field.type_, type)
+                and issubclass(field.type_, ClientStorageBase)
             ):
                 setattr(self, prop_name, copy.deepcopy(field.default))
 
