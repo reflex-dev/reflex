@@ -105,7 +105,7 @@ def test_cond_no_else():
     comp = comp.children[0]
     assert isinstance(comp, Cond)
     assert comp.cond._decode() is True  # type: ignore
-    assert comp.comp1 == Fragment.create(Text.create("hello"))
+    assert comp.comp1.render() == Fragment.create(Text.create("hello")).render()
     assert comp.comp2 == Fragment.create()
 
     # Props do not support the use of cond without else
