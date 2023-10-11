@@ -91,7 +91,6 @@ class State(rx.State):
         self.image_url = response["data"][0]["url"]
         self.processing, self.complete = False, True
         
-
 def index():
     return rx.center(
         rx.vstack(
@@ -144,7 +143,7 @@ Utilizziamo diversi componenti come `center`, `vstack`, `input`, e `button` per 
 
 Reflex offre [più di 60 componenti integrati](https://reflex.dev/docs/library) per aiutarti a iniziare. Stiamo attivamente aggiungendo più componenti ed è facile [creare i tuoi componenti](https://reflex.dev/docs/advanced-guide/wrapping-react).
 
-### **Stato**
+### **Stato (State)**
 
 Reflex rappresenta la tua UI come una funzione del tuo stato.
 
@@ -161,7 +160,7 @@ Lo stato definisce tutte le variabili (chiamate vars) in un'app che possono camb
 
 Qui lo stato è composto da un `prompt` e `image_url`. Ci sono anche i booleani `processing` e `complete` per indicare quando mostrare l'andamento circolare e l'immagine.
 
-### **Gestori di Eventi**
+### **Gestori di Eventi (Event Handlers)**
 
 ```python
 def get_image(self):
@@ -180,7 +179,7 @@ Dentro lo stato, definiamo funzioni chiamate gestori di eventi che cambiano le v
 
 La nostra app DALL·E ha un gestore di eventi, `get_image` con cui ottiene questa immagine dall'API OpenAI. Utilizzando `yield`  nel mezzo di un gestore di eventi farà sì che l'UI venga aggiornata. Altrimenti, l'UI verrà aggiornata alla fine del gestore di eventi.
 
-### **Routing**
+### **Instradamento (Routing)**
 
 Infine, definiamo la nostra app.
 
