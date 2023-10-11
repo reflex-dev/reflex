@@ -12,7 +12,6 @@ from .app import UploadFile as UploadFile
 from .base import Base as Base
 from .compiler.utils import get_asset_path
 from .components import *
-from .components.base.script import client_side
 from .components.component import custom_component as memo
 from .components.graphing import recharts as recharts
 from .components.graphing.victory import data as data
