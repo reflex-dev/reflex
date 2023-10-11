@@ -33,7 +33,6 @@ from .event import remove_local_storage as remove_local_storage
 from .event import set_clipboard as set_clipboard
 from .event import set_cookie as set_cookie
 from .event import set_focus as set_focus
-from .event import set_local_storage as set_local_storage
 from .event import set_value as set_value
 from .event import window_alert as window_alert
 from .middleware import Middleware as Middleware

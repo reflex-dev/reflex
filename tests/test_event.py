@@ -257,21 +257,6 @@ def test_remove_cookie_with_options():
     )
 
 
-def test_set_local_storage():
-    """Test the event set_local_storage."""
-    spec = event.set_local_storage("testkey", "testvalue")
-    assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_set_local_storage"
-    assert spec.args[0][0].equals(Var.create_safe("key"))
-    assert spec.args[0][1].equals(Var.create_safe("testkey"))
-    assert spec.args[1][0].equals(Var.create_safe("value"))
-    assert spec.args[1][1].equals(Var.create_safe("testvalue"))
-    assert (
-        format.format_event(spec)
-        == 'Event("_set_local_storage", {key:"testkey",value:"testvalue"})'
-    )
-
-
 def test_clear_local_storage():
     """Test the event clear_local_storage."""
     spec = event.clear_local_storage()

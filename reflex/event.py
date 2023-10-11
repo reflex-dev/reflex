@@ -362,30 +362,6 @@ def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa:
     )
 
 
-def set_local_storage(key: str, value: str) -> EventSpec:
-    """Set a value in the local storage on the frontend.
-
-    Args:
-        key: The key identifying the variable in the local storage.
-        value: The value contained in the local storage.
-
-    Returns:
-        EventSpec: An event to set a key-value in local storage.
-    """
-    console.deprecate(
-        feature_name=f"rx.set_local_storage",
-        reason="and has been replaced by rx.LocalStorage, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.3.0",
-    )
-    return server_side(
-        "_set_local_storage",
-        get_fn_signature(set_local_storage),
-        key=key,
-        value=value,
-    )
-
-
 def clear_local_storage() -> EventSpec:
     """Set a value in the local storage on the frontend.
 
