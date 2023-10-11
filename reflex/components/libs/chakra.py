@@ -23,6 +23,8 @@ class ChakraComponent(Component):
 
 
 class Global(Component):
+    """The emotion/react Global styling component."""
+
     library = "@emotion/react@11.11.0"
     lib_dependencies: List[str] = [
         "@emotion/styled@11.11.0",
@@ -34,12 +36,19 @@ class Global(Component):
 
 
 class ChakraProvider(ChakraComponent):
+    """Top level Chakra provider must be included in any app using chakra components."""
+
     tag = "ChakraProvider"
 
     theme: Var[str]
 
     @classmethod
     def create(cls) -> Component:
+        """Create a new ChakraProvider component.
+
+        Returns:
+            A new ChakraProvider component.
+        """
         return super().create(
             Global.create(styles=Var.create("GlobalStyles", is_local=False)),
             theme=Var.create("extendTheme(theme)", is_local=False),
@@ -47,13 +56,13 @@ class ChakraProvider(ChakraComponent):
 
     def _get_imports(self) -> imports.ImportDict:
         imports = super()._get_imports()
-        imports.setdefault(self.library, set()).add(
+        imports.setdefault(self.__fields__["library"].default, set()).add(
             ImportVar(tag="extendTheme", is_default=False),
         )
         imports.setdefault("/utils/theme.js", set()).add(
             ImportVar(tag="theme", is_default=False),
         )
-        imports.setdefault(Global.create().library, set()).add(
+        imports.setdefault(Global.__fields__["library"].default, set()).add(
             ImportVar(tag="css", is_default=False),
         )
         return imports
@@ -78,6 +87,8 @@ const GlobalStyles = css`
 
 
 class ChakraColorModeProvider(Component):
+    """Next-themes integration for chakra colorModeProvider."""
+
     library = "/components/reflex/chakra_color_mode_provider.js"
     tag = "ChakraColorModeProvider"
     is_default = True

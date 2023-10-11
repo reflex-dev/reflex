@@ -263,6 +263,9 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
 def compile_app(app_root: Component) -> tuple[str, str]:
     """Compile the app root.
 
+    Args:
+        app_root: The app root component to compile.
+
     Returns:
         The path and code of the compiled app wrapper.
     """

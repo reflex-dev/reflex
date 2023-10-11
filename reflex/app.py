@@ -615,9 +615,11 @@ class App(Base):
         all_imports = {}
         page_futures = []
         app_wrappers: Dict[tuple[int, str], Component] = {
+            # Default app wrap component renders {children}
             (0, "AppWrap"): AppWrap.create()
         }
         if self.theme is not None:
+            # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
         with progress:

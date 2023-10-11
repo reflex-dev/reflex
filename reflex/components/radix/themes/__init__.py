@@ -1,10 +1,10 @@
+"""Namespace for components provided by the @radix-ui/themes library."""
 from .base import (
     Theme,
     ThemePanel,
 )
 from .components import (
     Button,
-    Select,
     Switch,
     TextField,
 )
@@ -30,7 +30,6 @@ kbd = Kbd.create
 link = Link.create
 quote = Quote.create
 section = Section.create
-select = Select.create
 strong = Strong.create
 switch = Switch.create
 text = Text.create

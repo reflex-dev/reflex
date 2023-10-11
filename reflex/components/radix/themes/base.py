@@ -1,3 +1,5 @@
+"""Base classes for radix-themes components."""
+
 from __future__ import annotations
 
 from reflex.base import Base
@@ -32,12 +34,28 @@ class CommonMarginProps(Base):
 
 
 class RadixThemesComponent(Component):
+    """Base class for all @radix-ui/themes components."""
+
     library = "@radix-ui/themes@^2.0.0"
 
     @classmethod
     def create(cls, *children, **props) -> Component:
+        """Create a new component instance.
+
+        Will prepend "RadixThemes" to the component tag to avoid conflicts with
+        other UI libraries for common names, like Text and Button.
+
+        Args:
+            *children: Child components.
+            **props: Component properties.
+
+        Returns:
+            A new component instance.
+        """
         component = super().create(*children, **props)
-        component.alias = "RadixThemes" + component.tag
+        component.alias = "RadixThemes" + (
+            component.tag or component.__class__.__name__
+        )
         return component
 
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
@@ -48,6 +66,15 @@ class RadixThemesComponent(Component):
 
 
 class Theme(RadixThemesComponent):
+    """A theme provider for radix components.
+
+    This should be applied as `App.theme` to apply the theme to all radix
+    components in the app with the given settings.
+
+    It can also be used in a normal page to apply specified properties to all
+    child elements as an override of the main theme.
+    """
+
     tag = "Theme"
 
     # Whether to apply the themes background color to the theme node.
@@ -90,6 +117,8 @@ class ThemePanel(RadixThemesComponent):
 
 
 class RadixThemesColorModeProvider(Component):
+    """Next-themes integration for radix themes components."""
+
     library = "/components/reflex/radix_themes_color_mode_provider.js"
     tag = "RadixThemesColorModeProvider"
     is_default = True
