@@ -73,7 +73,7 @@ def get_base_component_map() -> dict[str, Callable]:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@^8.0.7"
+    library = "react-markdown@8.0.7"
 
     tag = "ReactMarkdown"
 
@@ -106,7 +106,7 @@ class Markdown(Component):
                 "rx.markdown custom_styles",
                 "Use the component_map prop instead.",
                 "0.2.9",
-                "0.2.11",
+                "0.3.1",
             )
 
         # Update the base component map with the custom component map.
@@ -132,14 +132,14 @@ class Markdown(Component):
         imports.update(
             {
                 "": {ImportVar(tag="katex/dist/katex.min.css")},
-                "remark-math@^5.1.1": {
+                "remark-math@5.1.1": {
                     ImportVar(tag=_REMARK_MATH.name, is_default=True)
                 },
-                "remark-gfm@^3.0.1": {ImportVar(tag=_REMARK_GFM.name, is_default=True)},
-                "rehype-katex@^6.0.3": {
+                "remark-gfm@3.0.1": {ImportVar(tag=_REMARK_GFM.name, is_default=True)},
+                "rehype-katex@6.0.3": {
                     ImportVar(tag=_REHYPE_KATEX.name, is_default=True)
                 },
-                "rehype-raw@^6.1.1": {ImportVar(tag=_REHYPE_RAW.name, is_default=True)},
+                "rehype-raw@6.1.1": {ImportVar(tag=_REHYPE_RAW.name, is_default=True)},
             }
         )
 

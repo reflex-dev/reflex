@@ -330,6 +330,12 @@ def set_cookie(key: str, value: str) -> EventSpec:
     Returns:
         EventSpec: An event to set a cookie.
     """
+    console.deprecate(
+        feature_name=f"rx.set_cookie",
+        reason="and has been replaced by rx.Cookie, which can be used as a state var",
+        deprecation_version="0.2.9",
+        removal_version="0.3.0",
+    )
     return server_side(
         "_set_cookie",
         get_fn_signature(set_cookie),
@@ -366,6 +372,12 @@ def set_local_storage(key: str, value: str) -> EventSpec:
     Returns:
         EventSpec: An event to set a key-value in local storage.
     """
+    console.deprecate(
+        feature_name=f"rx.set_local_storage",
+        reason="and has been replaced by rx.LocalStorage, which can be used as a state var",
+        deprecation_version="0.2.9",
+        removal_version="0.3.0",
+    )
     return server_side(
         "_set_local_storage",
         get_fn_signature(set_local_storage),
@@ -525,7 +537,7 @@ def call_event_handler(
             feature_name="EVENT_ARG API for triggers",
             reason="Replaced by new API using lambda allow arbitrary number of args",
             deprecation_version="0.2.8",
-            removal_version="0.2.9",
+            removal_version="0.3.0",
         )
         if len(args) == 1:
             return event_handler()

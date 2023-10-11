@@ -411,8 +411,8 @@ class App(Base):
             console.deprecate(
                 feature_name="Passing script tags to add_page",
                 reason="Add script components as children to the page component instead",
-                deprecation_version="v0.2.9",
-                removal_version="v0.2.11",
+                deprecation_version="0.2.9",
+                removal_version="0.3.1",
             )
             component.children.extend(script_tags)
 
