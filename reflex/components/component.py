@@ -772,11 +772,11 @@ class Component(Base, ABC):
         components = self._get_app_wrap_components()
 
         for component in tuple(components.values()):
-            components |= component.get_app_wrap_components()
+            components.update(component.get_app_wrap_components())
 
         # Add the app wrap components for the children.
         for child in self.children:
-            components |= child.get_app_wrap_components()
+            components.update(child.get_app_wrap_components())
 
         # Return the components.
         return components
