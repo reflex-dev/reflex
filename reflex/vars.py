@@ -1518,4 +1518,3 @@ class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
 
     render: Optional[bool] = False
-

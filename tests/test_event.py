@@ -206,21 +206,6 @@ def test_set_value():
     )
 
 
-def test_set_cookie():
-    """Test the event set_cookie."""
-    spec = event.set_cookie("testkey", "testvalue")
-    assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_set_cookie"
-    assert spec.args[0][0].equals(Var.create_safe("key"))
-    assert spec.args[0][1].equals(Var.create_safe("testkey"))
-    assert spec.args[1][0].equals(Var.create_safe("value"))
-    assert spec.args[1][1].equals(Var.create_safe("testvalue"))
-    assert (
-        format.format_event(spec)
-        == 'Event("_set_cookie", {key:"testkey",value:"testvalue"})'
-    )
-
-
 def test_remove_cookie():
     """Test the event remove_cookie."""
     spec = event.remove_cookie("testkey")

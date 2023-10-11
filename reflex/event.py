@@ -320,30 +320,6 @@ def set_value(ref: str, value: Any) -> EventSpec:
     )
 
 
-def set_cookie(key: str, value: str) -> EventSpec:
-    """Set a cookie on the frontend.
-
-    Args:
-        key: The key identifying the cookie.
-        value: The value contained in the cookie.
-
-    Returns:
-        EventSpec: An event to set a cookie.
-    """
-    console.deprecate(
-        feature_name=f"rx.set_cookie",
-        reason="and has been replaced by rx.Cookie, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.3.0",
-    )
-    return server_side(
-        "_set_cookie",
-        get_fn_signature(set_cookie),
-        key=key,
-        value=value,
-    )
-
-
 def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa: B006
     """Remove a cookie on the frontend.
 
