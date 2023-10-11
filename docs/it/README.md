@@ -20,7 +20,7 @@
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) |
 [Italian](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md)
 ---
-<!-- TODO -->
+
 ## ⚙️ Installazione
 
 Apri un terminale ed esegui (Richiede Python 3.7+):
@@ -28,7 +28,7 @@ Apri un terminale ed esegui (Richiede Python 3.7+):
 ```bash
 pip install reflex
 ```
-<!-- TODO -->
+
 ## 🥳 Crea la tua prima app
 
 Installando `reflex` si installa anche lo strumento da riga di comando `reflex`.
@@ -51,17 +51,16 @@ reflex run
 
 Dovresti vedere la tua app in esecuzione su http://localhost:3000.
 
-Ora puoi modificare il codice sorgente in `my_app_name/my_app_name.py`. Reflex offre aggiornamenti rapidi, così puoi vedere le tue modifiche istantaneamente quando salvi il tuo codice.
+Ora puoi modificare il codice sorgente in `nome_app/nome_app.py`. Reflex offre aggiornamenti rapidi, così puoi vedere le tue modifiche istantaneamente quando salvi il tuo codice.
 
-<!-- TODO -->
-## 🫧 Esempio di App
+## 🫧 Esempio App
 
-Let's go over an example: creating an image generation UI around DALL·E. For simplicity, we just call the OpenAI API, but you could replace this with an ML model run locally.
+Esaminiamo un esempio: creare un'interfaccia utente per la generazione di immagini attorno a DALL·E. Per semplicità, chiamiamo semplicemente l'API OpenAI, ma potresti sostituirla con un modello ML eseguito localmente.
 
 &nbsp;
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="A frontend wrapper for DALL·E, shown in the process of generating an image." width="550" />
+<img src="https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/images/dalle.gif" alt="Un wrapper frontend per DALL·E, mostrato nel processo di generazione di un'immagine." width="550" />
 </div>
 
 &nbsp;
@@ -72,19 +71,19 @@ Ecco il codice completo per crearlo, Tutto fatto in un unico file Python!
 import reflex as rx
 import openai
 
-openai.api_key = "YOUR_API_KEY"
+openai.api_key = "TUA_API_KEY"
 
 class State(rx.State):
-    """The app state."""
+    """Lo stato dell'app."""
     prompt = ""
     image_url = ""
     processing = False
     complete = False
 
     def get_image(self):
-        """Get the image from the prompt."""
+        """Ottieni l'immagine dal prompt."""
         if self.prompt == "":
-            return rx.window_alert("Prompt Empty")
+            return rx.window_alert("Prompt Vuoto")
 
         self.processing, self.complete = True, False
         yield
@@ -97,9 +96,9 @@ def index():
     return rx.center(
         rx.vstack(
             rx.heading("DALL·E"),
-            rx.input(placeholder="Enter a prompt", on_blur=State.set_prompt),
+            rx.input(placeholder="Prompt Vuoto", on_blur=State.set_prompt),
             rx.button(
-                "Generate Image",
+                "Genera Immagine",
                 on_click=State.get_image,
                 is_loading=State.processing,
                 width="100%",
@@ -120,17 +119,17 @@ def index():
         height="100vh",
     )
 
-# Add state and page to the app.
+# Aggiungi stato e pagina all'app.
 app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
 app.compile()
 ```
-<!-- TODO -->
+
 ## Analizziamolo
 
 ### **Reflex UI**
 
-Let's start with the UI.
+Cominciamo con l'UI.
 
 ```python
 def index():
@@ -139,37 +138,36 @@ def index():
     )
 ```
 
-This `index` function defines the frontend of the app.
+Questo `index` definisce il frontend dell'app.
 
-We use different components such as `center`, `vstack`, `input`, and `button` to build the frontend. Components can be nested within each other
-to create complex layouts. And you can use keyword args to style them with the full power of CSS.
+Utilizziamo diversi componenti come `center`, `vstack`, `input`, e `button` per costruire il frontend. I componenti possono essere annidati gli uni negli altri per creare layout complessi. Puoi utilizzare argomenti chiave per stilizzarli con tutta la potenza di CSS.
 
-Reflex comes with [60+ built-in components](https://reflex.dev/docs/library) to help you get started. We are actively adding more components, and it's easy to [create your own components](https://reflex.dev/docs/advanced-guide/wrapping-react).
+Reflex offre [più di 60 componenti integrati](https://reflex.dev/docs/library) per aiutarti a iniziare. Stiamo attivamente aggiungendo più componenti ed è facile [creare i tuoi componenti](https://reflex.dev/docs/advanced-guide/wrapping-react).
 
-### **State**
+### **Stato**
 
-Reflex represents your UI as a function of your state.
+Reflex rappresenta la tua UI come una funzione del tuo stato.
 
 ```python
 class State(rx.State):
-    """The app state."""
+    """Lo stato dell'app."""
     prompt = ""
     image_url = ""
     processing = False
     complete = False
 ```
 
-The state defines all the variables (called vars) in an app that can change and the functions that change them.
+Lo stato definisce tutte le variabili (chiamate vars) in un'app che possono cambiare e le funzioni che le cambiano.
 
-Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to show the circular progress and image.
+Qui lo stato è composto da un `prompt` e `image_url`. Ci sono anche i booleani `processing` e `complete` per indicare quando mostrare l'andamento circolare e l'immagine.
 
-### **Event Handlers**
+### **Gestori di Eventi**
 
 ```python
 def get_image(self):
-    """Get the image from the prompt."""
+    """Ottieni l'immagine dal prompt."""
     if self.prompt == "":
-        return rx.window_alert("Prompt Empty")
+        return rx.window_alert("Prompt Vuoto")
 
     self.processing, self.complete = True, False
     yield
@@ -178,47 +176,45 @@ def get_image(self):
     self.processing, self.complete = False, True
 ```
 
-Within the state, we define functions called event handlers that change the state vars. Event handlers are the way that we can modify the state in Reflex. They can be called in response to user actions, such as clicking a button or typing in a text box. These actions are called events.
+Dentro lo stato, definiamo funzioni chiamate gestori di eventi che cambiano le vars dello stato. I gestori di eventi sono il modo in cui possiamo modificare lo stato in Reflex. Possono essere chiamati in risposta alle azioni dell'utente, come fare clic su un pulsante o digitare in una casella di testo. Queste azioni vengono chiamate eventi.
 
-Our DALL·E. app has an event handler, `get_image` to which get this image from the OpenAI API. Using `yield` in the middle of an event handler will cause the UI to update. Otherwise the UI will update at the end of the event handler.
+La nostra app DALL·E ha un gestore di eventi, `get_image` con cui ottiene questa immagine dall'API OpenAI. Utilizzando `yield`  nel mezzo di un gestore di eventi farà sì che l'UI venga aggiornata. Altrimenti, l'UI verrà aggiornata alla fine del gestore di eventi.
 
 ### **Routing**
 
-Finally, we define our app.
+Infine, definiamo la nostra app.
 
 ```python
 app = rx.App()
 ```
 
-We add a page from the root of the app to the index component. We also add a title that will show up in the page preview/browser tab.
+Possiamo aggiungere una pagina dalla radice dell'app al componente dell'indice. Aggiungiamo anche un titolo che apparirà nell'anteprima della pagina/scheda del browser
 
 ```python
 app.add_page(index, title="DALL-E")
 app.compile()
 ```
 
-You can create a multi-page app by adding more pages.
+Puoi creare un'app multi-pagina aggiungendo altre pagine.
 
-<!-- TODO -->
 ## 📑 Risorse
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Immagini](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Distribuzione](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [Documentazione](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Libreria Componenti](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Immagini](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Distribuzione](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
 
 </div>
 
-<!-- TODO -->
 ## ✅ Stato
 
 Reflex è stato lanciato nel dicembre 2022 con il nome Pynecone.
 
 Da luglio 2023, siamo nella fase di Beta Pubblica.
 
--   :white_check_mark: **Public Alpha**: Chiunque può installare e utilizzare Reflex. Potrebbero esserci dei problemi, ma stiamo lavorando per risolverli attivamente.
--   :large_orange_diamond: **Public Beta**: Abbastanza stabile per casi d'uso non aziendali.
--   **Public Hosting Beta**: _Opzionalmente_, distribuisci e ospita le tue app su Reflex! 
--   **Public**: Reflex è pronto per la produzione. 
+-   :white_check_mark: **Alfa Pubblica**: Chiunque può installare e utilizzare Reflex. Potrebbero esserci dei problemi, ma stiamo lavorando per risolverli attivamente.
+-   :large_orange_diamond: **Beta Pubblica**: Abbastanza stabile per casi d'uso non aziendali.
+-   **Beta Hosting Pubblico**: _Opzionalmente_, distribuisci e ospita le tue app su Reflex! 
+-   **Pubblicot**: Reflex è pronto per la produzione. 
 
 Reflex ha nuove versioni e funzionalità in arrivo ogni settimana! Assicurati di :star: mettere una stella e :eyes: osservare questa repository per rimanere aggiornato.
 
