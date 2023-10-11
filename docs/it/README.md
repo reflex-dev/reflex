@@ -1,5 +1,5 @@
 ```diff
-+ Stai cercando Pynecone? Sei nel repository giusto. Pynecone è stato rinominato in Reflex. +
++ Stai cercando Pynecone? Sei nella repository giusto. Pynecone è stato rinominato in Reflex. +
 ```
 
 <div align="center">
@@ -8,7 +8,7 @@
 
 <hr>
 
-### **✨ App web performanti e personalizzabili in puro Python. Pubblica in pochi secondi. ✨**
+### **✨ App web performanti e personalizzabili in puro Python. Distribuisci in pochi secondi. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
@@ -18,7 +18,7 @@
 
 ---
 [English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) |
-[Italian](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md)
+[Italiano](https://github.com/reflex-dev/reflex/blob/main/docs/it/README.md)
 ---
 
 ## ⚙️ Installazione
@@ -188,7 +188,7 @@ Infine, definiamo la nostra app.
 app = rx.App()
 ```
 
-Possiamo aggiungere una pagina dalla radice dell'app al componente dell'indice. Aggiungiamo anche un titolo che apparirà nell'anteprima della pagina/scheda del browser
+Possiamo aggiungere una pagina dalla radice dell'app al componente dell'indice.Aggiungiamo anche un titolo che apparirà nell'anteprima della pagina/scheda del browser
 
 ```python
 app.add_page(index, title="DALL-E")
@@ -214,7 +214,7 @@ Da luglio 2023, siamo nella fase di Beta Pubblica.
 -   :white_check_mark: **Alfa Pubblica**: Chiunque può installare e utilizzare Reflex. Potrebbero esserci dei problemi, ma stiamo lavorando per risolverli attivamente.
 -   :large_orange_diamond: **Beta Pubblica**: Abbastanza stabile per casi d'uso non aziendali.
 -   **Beta Hosting Pubblico**: _Opzionalmente_, distribuisci e ospita le tue app su Reflex! 
--   **Pubblicot**: Reflex è pronto per la produzione. 
+-   **Pubblico**: Reflex è pronto per la produzione. 
 
 Reflex ha nuove versioni e funzionalità in arrivo ogni settimana! Assicurati di :star: mettere una stella e :eyes: osservare questa repository per rimanere aggiornato.
 
