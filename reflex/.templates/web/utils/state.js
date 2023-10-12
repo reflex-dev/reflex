@@ -488,17 +488,19 @@ export const useEventLoop = (
     if (!router.isReady) {
       return;
     }
-
-    // Initialize the websocket connection.
-    if (!socket.current) {
-      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
-    }
-    (async () => {
-      // Process all outstanding events.
-      while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current)
+    // only use websockets if state is present
+    if (Object.keys(initial_state).length > 0) {
+      // Initialize the websocket connection.
+      if (!socket.current) {
+        connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
       }
-    })()
+      (async () => {
+        // Process all outstanding events.
+        while (event_queue.length > 0 && !event_processing) {
+          await processEvent(socket.current)
+        }
+      })()
+    }
   })
   return [state, addEvents, connectError]
 }
