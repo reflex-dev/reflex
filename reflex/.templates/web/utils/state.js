@@ -68,6 +68,24 @@ export const getToken = () => {
 };
 
 /**
+ * Get the URL for the websocket connection
+ * @returns The websocket URL object.
+ */
+export const getEventURL = () => {
+  // Get backend URL object from the endpoint.
+  const endpoint = new URL(EVENTURL);
+  if (endpoint.hostname === "localhost") {
+    // If the backend URL references localhost, and the frontend is not on localhost,
+    // then use the frontend host.
+    const frontend_hostname = window.location.hostname;
+    if (frontend_hostname !== "localhost") {
+      endpoint.hostname = frontend_hostname;
+    }
+  }
+  return endpoint
+}
+
+/**
  * Apply a delta to the state.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
@@ -289,9 +307,10 @@ export const connect = async (
   client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
-  const endpoint = new URL(EVENTURL);
+  const endpoint = getEventURL()
+
   // Create the socket.
-  socket.current = io(EVENTURL, {
+  socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
     autoUnref: false,
