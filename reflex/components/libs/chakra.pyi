@@ -6,6 +6,7 @@
 from typing import Literal, Optional, Union, overload
 from reflex.components.component import Component
 from reflex.vars import Var, BaseVar, ComputedVar
+from reflex.base import Base
 from reflex.event import EventHandler, EventChain, EventSpec
 
 class ChakraComponent(Component):
@@ -25,3 +26,5 @@ class ChakraComponent(Component):
             TypeError: If an invalid child is passed.
         """
         ...
+
+class ChakraComponentColorSchemeMixin(Base): ...
