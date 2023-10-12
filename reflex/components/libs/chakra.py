@@ -27,9 +27,9 @@ class ChakraComponent(Component):
 class Global(Component):
     """The emotion/react Global styling component."""
 
-    library = "@emotion/react@11.11.0"
+    library = "@emotion/react@^11.11.0"
     lib_dependencies: List[str] = [
-        "@emotion/styled@11.11.0",
+        "@emotion/styled@^11.11.0",
     ]
 
     tag = "Global"
@@ -62,7 +62,7 @@ class ChakraProvider(ChakraComponent):
             ImportVar(tag="extendTheme", is_default=False),
         )
         imports.setdefault("/utils/theme.js", set()).add(
-            ImportVar(tag="theme", is_default=False),
+            ImportVar(tag="theme", is_default=True),
         )
         imports.setdefault(Global.__fields__["library"].default, set()).add(
             ImportVar(tag="css", is_default=False),
