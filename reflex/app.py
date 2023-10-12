@@ -142,6 +142,7 @@ class App(Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(*args, **kwargs)
+        # breakpoint()
         state_subclasses = State.__subclasses__()
         inferred_state = state_subclasses[-1]
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
@@ -203,16 +204,15 @@ class App(Base):
             # Mount the socket app with the API.
             self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
-            # If a State is not used and no overlay_component is specified, do not render the connection modal
-            if (
-                # self.state is DefaultState
-                self.overlay_component
-                is default_overlay_component
-            ):
-                self.overlay_component = None
-
         # Set up the admin dash.
         self.setup_admin_dash()
+
+        # If a State is not used and no overlay_component is specified, do not render the connection modal
+        if (
+            self.state is DefaultState
+            and self.overlay_component is default_overlay_component
+        ):
+            self.overlay_component = None
 
     def __repr__(self) -> str:
         """Get the string representation of the app.
