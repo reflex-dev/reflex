@@ -14,6 +14,8 @@ class Pie(Recharts):
 
     tag = "Pie"
 
+    alias = "RechartsPie"
+
     # data
     data: Var[List[Dict[str, Any]]]
 
@@ -86,6 +88,8 @@ class Radar(Recharts):
 
     tag = "Radar"
 
+    alias = "RechartsRadar"
+
     # The key of a group of data which should be unique in a radar chart.
     data_key: Var[Union[str, int]]
 
@@ -128,6 +132,8 @@ class RadialBar(Recharts):
 
     tag = "RadialBar"
 
+    alias = "RechartsRadialBar"
+
     # The source data which each element is an object.
     data: Var[List[Dict[str, Any]]]
 
@@ -166,6 +172,8 @@ class PolarAngleAxis(Recharts):
     """A PolarAngleAxis component in Recharts."""
 
     tag = "PolarAngleAxis"
+
+    alias = "RechartsPolarAngleAxis"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
     data_key: Var[Union[str, int]]
@@ -224,6 +232,8 @@ class PolarGrid(Recharts):
 
     tag = "PolarGrid"
 
+    alias = "RechartsPolarGrid"
+
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
     cx: Var[Union[int, str]]
 
@@ -253,6 +263,8 @@ class PolarRadiusAxis(Recharts):
     """A PolarRadiusAxis component in Recharts."""
 
     tag = "PolarRadiusAxis"
+
+    alias = "RechartsPolarRadiusAxis"
 
     # The angle of radial direction line to display axis text.
     angle: Var[int]
