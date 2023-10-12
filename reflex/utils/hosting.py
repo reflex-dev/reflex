@@ -5,6 +5,7 @@ from http import HTTPStatus
 from typing import Dict, List, Optional, Tuple
 
 import httpx
+import websockets
 from pydantic import BaseModel, Field, ValidationError, root_validator
 
 from reflex import constants
@@ -22,6 +23,7 @@ POST_VALIDATE_ME_ENDPOINT = f"{config.cp_backend_url}/authenticate/me"
 FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/authenticate"
 DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
 
 
 def get_existing_access_token() -> Tuple[str, str]:
@@ -652,4 +654,33 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
         )
     except Exception as ex:
         console.debug(f"Unable to get deployment status due to {ex}.")
+        raise Exception("internal errors") from ex
+
+
+async def get_logs(key: str):
+    """Get the deployment logs and stream on console.
+
+    Args:
+        key: The deployment name.
+
+    Raises:
+        ValueError: If the key is not provided.
+        Exception: If the operation fails. The exception message is the reason.
+
+    """
+    if not (token := authenticated_token()):
+        raise Exception("not authenticated")
+    if not key:
+        raise ValueError("Valid key is required for querying logs.")
+    try:
+        _ws = websockets.connect(f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs/{token}")  # type: ignore
+        async with _ws as ws:
+            while True:
+                row = json.loads(await ws.recv())
+                if row and isinstance(row, dict):
+                    console.print(" | ".join(row.values()))
+                # else case is empty dict sent from CP to keep alive
+    except Exception as ex:
+        console.debug(f"Unable to get deployment logs due to {ex}.")
+        print({ex})
         raise Exception("internal errors") from ex

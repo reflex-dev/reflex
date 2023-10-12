@@ -1,5 +1,6 @@
 """Reflex CLI to create, run, and deploy apps."""
 
+import asyncio
 import atexit
 import json
 import os
@@ -773,6 +774,17 @@ def get_deployment_status(
     except Exception as ex:
         console.error(f"Unable to get deployment status due to: {ex}")
         raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="logs")
+def get_deployment_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    asyncio.run(hosting.get_logs(key))
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
