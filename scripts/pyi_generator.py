@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Literal, Optional, Union, get_args  # NOQA
 
 import black
 
-from reflex.base import Base
 from reflex.components.component import Component
 from reflex.utils import format
 from reflex.utils import types as rx_types
@@ -130,11 +129,7 @@ class PyiGenerator:
             else:
                 definition += f"{kwarg}, "
 
-        _class_annotations = _class.__annotations__
-        # Include annotations of parents.
-        _class_annotations.update(self.get_parent_base_annotations(_class))
-
-        for name, value in _class_annotations.items():
+        for name, value in _class.__annotations__.items():
             if name in create_spec.kwonlyargs:
                 continue
             definition += f"{name}: {_get_type_hint(value)} = None, "
@@ -144,100 +139,41 @@ class PyiGenerator:
 
         definition = definition.rstrip(", ")
         definition += f", **props) -> '{_class.__name__}': # type: ignore\n"
-        definition += self._generate_docstrings(_class, _class_annotations.keys())
+
+        definition += self._generate_docstrings(_class, _class.__annotations__.keys())
         lines.append(definition)
         lines.append("        ...")
         return lines
 
-    @staticmethod
-    def is_valid_parent_class(parent_cls, cls):
-        """Check if a parent class is valid(is a mixin).
-
-        A parent of a class is valid if:
-         - it inherits from rx.Base but isnt rx.Base.
-         - Is not a subclass of component(the class is already a Component so need to check)
-
-
-        Args:
-            parent_cls: Parent class.
-            cls: The class.
-
-        Returns:
-            If a Parent class is valid
-
-        """
-        return (
-            parent_cls is not cls
-            and not issubclass(parent_cls, Component)
-            and issubclass(parent_cls, Base)
-            and parent_cls is not Base
-        )
-
-    def get_parent_base_annotations(self, cls):
-        """Get the annotations of the base Parents of a class.
-
-        Args:
-            cls: the class
-
-        Returns:
-            The annotations of the base parent
-
-        """
-        _class_annotations = {}
-        for parent_cls in cls.mro():
-            if self.is_valid_parent_class(parent_cls, cls):
-                _class_annotations.update(parent_cls.__annotations__)
-        return _class_annotations
-
-    def get_parent_source(self, cls):
-        """Get the source code of valid parents.
-
-        Args:
-            cls: The class.
-
-        Returns:
-            The source code of valid parents
-
-        """
-        source_lines = []
-        for parent_cls in cls.mro():
-            if self.is_valid_parent_class(parent_cls, cls):
-                source_lines.extend(inspect.getsource(parent_cls).splitlines())
-        return source_lines
-
     def _generate_docstrings(self, _class, _props):
         props_comments = {}
         comments = []
-        source_lines = inspect.getsource(_class).splitlines()
-        parent_source_lines = self.get_parent_source(_class)
+        for _i, line in enumerate(inspect.getsource(_class).splitlines()):
+            reached_functions = re.search("def ", line)
+            if reached_functions:
+                # We've reached the functions, so stop.
+                break
 
-        for source in [source_lines, parent_source_lines]:
-            for _i, line in enumerate(source):
-                reached_functions = re.search("def ", line)
-                if reached_functions:
-                    # We've reached the functions, so stop.
-                    break
+            # Get comments for prop
+            if line.strip().startswith("#"):
+                comments.append(line)
+                continue
 
-                # Get comments for prop
-                if line.strip().startswith("#"):
-                    comments.append(line)
-                    continue
+            # Check if this line has a prop.
+            match = re.search("\\w+:", line)
+            if match is None:
+                # This line doesn't have a var, so continue.
+                continue
 
-                # Check if this line has a prop.
-                match = re.search("\\w+:", line)
-                if match is None:
-                    # This line doesn't have a var, so continue.
-                    continue
-
-                # Get the prop.
-                prop = match.group(0).strip(":")
-                if prop in _props:
-                    # This isn't a prop, so continue.
-                    props_comments[prop] = "\n".join(
-                        [comment.strip().strip("#") for comment in comments]
-                    )
-                    comments.clear()
-                    continue
+            # Get the prop.
+            prop = match.group(0).strip(":")
+            if prop in _props:
+                # This isn't a prop, so continue.
+                props_comments[prop] = "\n".join(
+                    [comment.strip().strip("#") for comment in comments]
+                )
+                comments.clear()
+                continue
         new_docstring = []
         for i, line in enumerate(_class.create.__doc__.splitlines()):
             if i == 0:

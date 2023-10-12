@@ -5,15 +5,14 @@
 
 from typing import List, Literal, Optional, Union, overload
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.components.libs.chakra import ChakraComponentColorSchemeMixin
 from reflex.components.component import Component
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventHandler, EventChain, EventSpec
 
-class Button(ChakraComponent, ChakraComponentColorSchemeMixin):
+class Button(ChakraComponent):
     @overload
     @classmethod
-    def create(cls, *children, icon_spacing: Optional[Union[Var[int], int]] = None, is_active: Optional[Union[Var[bool], bool]] = None, is_disabled: Optional[Union[Var[bool], bool]] = None, is_full_width: Optional[Union[Var[bool], bool]] = None, is_loading: Optional[Union[Var[bool], bool]] = None, loading_text: Optional[Union[Var[str], str]] = None, size: Optional[Union[Var[Literal["sm", "md", "lg", "xs"]], Literal["sm", "md", "lg", "xs"]]] = None, variant: Optional[Union[Var[Literal["ghost", "outline", "solid", "link", "unstyled"]], Literal["ghost", "outline", "solid", "link", "unstyled"]]] = None, spinner_placement: Optional[Union[Var[Literal["start", "end"]], Literal["start", "end"]]] = None, type_: Optional[Union[Var[str], str]] = None, invalid_children: Optional[List[str]] = None, color_scheme: Optional[Union[Var[Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]], Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]]] = None, on_blur: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_context_menu: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_double_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_focus: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_down: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_up: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_scroll: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_unmount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Button":  # type: ignore
+    def create(cls, *children, icon_spacing: Optional[Union[Var[int], int]] = None, is_active: Optional[Union[Var[bool], bool]] = None, is_disabled: Optional[Union[Var[bool], bool]] = None, is_full_width: Optional[Union[Var[bool], bool]] = None, is_loading: Optional[Union[Var[bool], bool]] = None, loading_text: Optional[Union[Var[str], str]] = None, size: Optional[Union[Var[Literal["sm", "md", "lg", "xs"]], Literal["sm", "md", "lg", "xs"]]] = None, variant: Optional[Union[Var[Literal["ghost", "outline", "solid", "link", "unstyled"]], Literal["ghost", "outline", "solid", "link", "unstyled"]]] = None, color_scheme: Optional[Union[Var[Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]], Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]]] = None, spinner_placement: Optional[Union[Var[Literal["start", "end"]], Literal["start", "end"]]] = None, type_: Optional[Union[Var[str], str]] = None, invalid_children: Optional[List[str]] = None, on_blur: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_context_menu: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_double_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_focus: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_down: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_up: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_scroll: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_unmount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Button":  # type: ignore
         """Create the component.
 
                Args:
@@ -26,15 +25,15 @@ class Button(ChakraComponent, ChakraComponentColorSchemeMixin):
                    loading_text: The label to show in the button when isLoading is true If no text is passed, it only shows the spinner.
                    size: "lg" | "md" | "sm" | "xs"
                    variant: "ghost" | "outline" | "solid" | "link" | "unstyled"
+                   color_scheme: Built in color scheme for ease of use.
+        Options:
+        "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
+        | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
                    spinner_placement: Position of the loading spinner.
         Options:
         "start" | "end"
                    type_: The type of button.
                    invalid_children: Components that are not allowed as children.
-                   color_scheme: Built in color scheme for ease of use.
-        Options:
-        "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
-        | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
                    **props: The props of the component.
 
                Returns:

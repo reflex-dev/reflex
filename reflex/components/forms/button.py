@@ -1,14 +1,11 @@
 """A button component."""
 from typing import List, Literal
 
-from reflex.components.libs.chakra import (
-    ChakraComponent,
-    ChakraComponentColorSchemeMixin,
-)
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
 
 
-class Button(ChakraComponent, ChakraComponentColorSchemeMixin):
+class Button(ChakraComponent):
     """The Button component is used to trigger an event or event, such as submitting a form, opening a dialog, canceling an event, or performing a delete operation."""
 
     tag = "Button"
@@ -35,6 +32,33 @@ class Button(ChakraComponent, ChakraComponentColorSchemeMixin):
     size: Var[Literal["sm", "md", "lg", "xs"]]
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
     variant: Var[Literal["ghost", "outline", "solid", "link", "unstyled"]]
+
+    # Built in color scheme for ease of use.
+    # Options:
+    # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
+    # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "whiteAlpha",
+            "blackAlpha",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     # Position of the loading spinner.
     # Options:

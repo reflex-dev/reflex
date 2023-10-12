@@ -1,17 +1,14 @@
 """A switch component."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Literal, Union
 
-from reflex.components.libs.chakra import (
-    ChakraComponent,
-    ChakraComponentColorSchemeMixin,
-)
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
-class Switch(ChakraComponent, ChakraComponentColorSchemeMixin):
+class Switch(ChakraComponent):
     """Toggleable switch component."""
 
     tag = "Switch"
@@ -42,6 +39,30 @@ class Switch(ChakraComponent, ChakraComponentColorSchemeMixin):
 
     # The placeholder text.
     placeholder: Var[str]
+
+    # The color scheme of the switch (e.g. "blue", "green", "red", etc.)
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "whiteAlpha",
+            "blackAlpha",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.

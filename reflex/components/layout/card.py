@@ -3,10 +3,7 @@
 from typing import Literal, Optional
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
-    ChakraComponent,
-    ChakraComponentColorSchemeMixin,
-)
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
 
 
@@ -28,7 +25,7 @@ class CardFooter(ChakraComponent):
     tag = "CardFooter"
 
 
-class Card(ChakraComponent, ChakraComponentColorSchemeMixin):
+class Card(ChakraComponent):
     """The parent wrapper that provides context for its children."""
 
     tag = "Card"
@@ -41,6 +38,34 @@ class Card(ChakraComponent, ChakraComponentColorSchemeMixin):
 
     # [required] The flex distribution of the card
     justify: Var[str]
+
+    # The visual color appearance of the component.
+    # options: "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" |
+    #  "green" | "teal" | "blue" | "cyan" | "purple" | "pink" | "linkedin" |
+    #  "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
+    # default: "gray"
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "whiteAlpha",
+            "blackAlpha",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     # The size of the Card
     # options: "sm" | "md" | "lg"

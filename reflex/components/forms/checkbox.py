@@ -3,18 +3,42 @@ from __future__ import annotations
 
 from typing import Any, Literal, Union
 
-from reflex.components.libs.chakra import (
-    ChakraComponent,
-    ChakraComponentColorSchemeMixin,
-)
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
-class Checkbox(ChakraComponent, ChakraComponentColorSchemeMixin):
+class Checkbox(ChakraComponent):
     """The Checkbox component is used in forms when a user needs to select multiple values from several options."""
 
     tag = "Checkbox"
+
+    # Color scheme for checkbox.
+    # Options:
+    # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
+    # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
+    color_scheme: Var[
+        Literal[
+            "gray",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "teal",
+            "blue",
+            "cyan",
+            "purple",
+            "pink",
+            "whiteAlpha",
+            "blackAlpha",
+            "linkedin",
+            "facebook",
+            "messenger",
+            "whatsapp",
+            "twitter",
+            "telegram",
+        ]
+    ]
 
     # "sm" | "md" | "lg"
     size: Var[Literal["sm", "md", "lg"]]
