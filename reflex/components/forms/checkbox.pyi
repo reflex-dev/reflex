@@ -5,22 +5,19 @@
 
 from typing import Any, Literal, Optional, Union, overload
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponentColorSchemeMixin
 from reflex.components.component import Component
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventHandler, EventChain, EventSpec
 
-class Checkbox(ChakraComponent):
+class Checkbox(ChakraComponent, ChakraComponentColorSchemeMixin):
     @overload
     @classmethod
-    def create(cls, *children, color_scheme: Optional[Union[Var[Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]], Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]]] = None, size: Optional[Union[Var[Literal["sm", "md", "lg"]], Literal["sm", "md", "lg"]]] = None, is_checked: Optional[Union[Var[bool], bool]] = None, is_disabled: Optional[Union[Var[bool], bool]] = None, is_focusable: Optional[Union[Var[bool], bool]] = None, is_indeterminate: Optional[Union[Var[bool], bool]] = None, is_invalid: Optional[Union[Var[bool], bool]] = None, is_read_only: Optional[Union[Var[bool], bool]] = None, is_required: Optional[Union[Var[bool], bool]] = None, name: Optional[Union[Var[str], str]] = None, spacing: Optional[Union[Var[str], str]] = None, on_blur: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_change: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_context_menu: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_double_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_focus: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_down: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_up: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_scroll: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_unmount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Checkbox":  # type: ignore
+    def create(cls, *children, size: Optional[Union[Var[Literal["sm", "md", "lg"]], Literal["sm", "md", "lg"]]] = None, is_checked: Optional[Union[Var[bool], bool]] = None, is_disabled: Optional[Union[Var[bool], bool]] = None, is_focusable: Optional[Union[Var[bool], bool]] = None, is_indeterminate: Optional[Union[Var[bool], bool]] = None, is_invalid: Optional[Union[Var[bool], bool]] = None, is_read_only: Optional[Union[Var[bool], bool]] = None, is_required: Optional[Union[Var[bool], bool]] = None, name: Optional[Union[Var[str], str]] = None, spacing: Optional[Union[Var[str], str]] = None, color_scheme: Optional[Union[Var[Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]], Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]]] = None, on_blur: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_change: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_context_menu: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_double_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_focus: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_down: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_up: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_scroll: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_unmount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Checkbox":  # type: ignore
         """Create the component.
 
                Args:
                    *children: The children of the component.
-                   color_scheme: Color scheme for checkbox.
-        Options:
-        "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
-        | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
                    size: "sm" | "md" | "lg"
                    is_checked: If true, the checkbox will be checked.
                    is_disabled: If true, the checkbox will be disabled
@@ -31,6 +28,10 @@ class Checkbox(ChakraComponent):
                    is_required: If true, the checkbox input is marked as required, and required attribute will be added
                    name: The name of the input field in a checkbox (Useful for form submission).
                    spacing: The spacing between the checkbox and its label text (0.5rem)
+                   color_scheme: Built in color scheme for ease of use.
+        Options:
+        "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
+        | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
                    **props: The props of the component.
 
                Returns:

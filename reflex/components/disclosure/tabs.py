@@ -3,11 +3,14 @@
 from typing import List, Literal, Optional, Tuple
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    ChakraComponentColorSchemeMixin,
+)
 from reflex.vars import Var
 
 
-class Tabs(ChakraComponent):
+class Tabs(ChakraComponent, ChakraComponentColorSchemeMixin):
     """An accessible tabs component that provides keyboard interactions and ARIA attributes described in the WAI-ARIA Tabs Design Pattern. Tabs, provides context and state for all components."""
 
     tag = "Tabs"
@@ -42,30 +45,6 @@ class Tabs(ChakraComponent):
             "soft-rounded",
             "solid-rounded",
             "unstyled",
-        ]
-    ]
-
-    # The color scheme of the tabs.
-    color_scheme: Var[
-        Literal[
-            "gray",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "teal",
-            "blue",
-            "cyan",
-            "purple",
-            "pink",
-            "whiteAlpha",
-            "blackAlpha",
-            "linkedin",
-            "facebook",
-            "messenger",
-            "whatsapp",
-            "twitter",
-            "telegram",
         ]
     ]
 

@@ -5,11 +5,12 @@
 
 from typing import Any, Literal, Optional, Union, overload
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponentColorSchemeMixin
 from reflex.components.component import Component
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventHandler, EventChain, EventSpec
 
-class Drawer(ChakraComponent):
+class Drawer(ChakraComponent, ChakraComponentColorSchemeMixin):
     @overload
     @classmethod
     def create(cls, *children, header, body, footer, close_button, is_open: Optional[Union[Var[bool], bool]] = None, allow_pinch_zoom: Optional[Union[Var[bool], bool]] = None, auto_focus: Optional[Union[Var[bool], bool]] = None, block_scroll_on_mount: Optional[Union[Var[bool], bool]] = None, close_on_esc: Optional[Union[Var[bool], bool]] = None, close_on_overlay_click: Optional[Union[Var[bool], bool]] = None, is_centered: Optional[Union[Var[bool], bool]] = None, is_full_height: Optional[Union[Var[bool], bool]] = None, lock_focus_across_frames: Optional[Union[Var[bool], bool]] = None, placement: Optional[Union[Var[str], str]] = None, preserve_scroll_bar_gap: Optional[Union[Var[bool], bool]] = None, return_focus_on_close: Optional[Union[Var[bool], bool]] = None, size: Optional[Union[Var[Literal["sm", "md", "lg", "xs", "xl", "full"]], Literal["sm", "md", "lg", "xs", "xl", "full"]]] = None, use_inert: Optional[Union[Var[bool], bool]] = None, variant: Optional[Union[Var[str], str]] = None, color_scheme: Optional[Union[Var[Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]], Literal["gray", "red", "orange", "yellow", "green", "teal", "blue", "cyan", "purple", "pink", "whiteAlpha", "blackAlpha", "linkedin", "facebook", "messenger", "whatsapp", "twitter", "telegram"]]] = None, on_blur: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_close: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_close_complete: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_context_menu: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_double_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_esc: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_focus: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_down: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_up: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_overlay_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_scroll: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_unmount: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Drawer":  # type: ignore
@@ -32,7 +33,7 @@ class Drawer(ChakraComponent):
                    size: "xs" | "sm" | "md" | "lg" | "xl" | "full"
                    use_inert: A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
                    variant: Variant of drawer
-                   color_scheme: Color scheme of the Drawer
+                   color_scheme: Built in color scheme for ease of use.
         Options:
         "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
         | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"

@@ -4,12 +4,15 @@ from __future__ import annotations
 from typing import Any, Literal, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    ChakraComponentColorSchemeMixin,
+)
 from reflex.components.media.icon import Icon
 from reflex.vars import Var
 
 
-class Drawer(ChakraComponent):
+class Drawer(ChakraComponent, ChakraComponentColorSchemeMixin):
     """A drawer component."""
 
     tag = "Drawer"
@@ -58,33 +61,6 @@ class Drawer(ChakraComponent):
 
     # Variant of drawer
     variant: Var[str]
-
-    # Color scheme of the Drawer
-    # Options:
-    # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
-    # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[
-        Literal[
-            "gray",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "teal",
-            "blue",
-            "cyan",
-            "purple",
-            "pink",
-            "whiteAlpha",
-            "blackAlpha",
-            "linkedin",
-            "facebook",
-            "messenger",
-            "whatsapp",
-            "twitter",
-            "telegram",
-        ]
-    ]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.
