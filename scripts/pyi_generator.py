@@ -7,14 +7,16 @@ import re
 import sys
 from inspect import getfullargspec
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, get_args  # NOQA
+from typing import Any, Dict, List, Optional, Set, Union, get_args  # NOQA
 
 import black
 
 from reflex.components.component import Component
+from reflex.event import EventChain
+from reflex.style import Style
 from reflex.vars import Var
 
-ruff_dont_remove = [Var, Optional, Dict, List]
+ruff_dont_remove = [Var, Optional, Dict, List, EventChain, Style]
 
 EXCLUDED_FILES = [
     "__init__.py",
@@ -25,7 +27,21 @@ EXCLUDED_FILES = [
     "multiselect.py",
 ]
 
-DEFAULT_TYPING_IMPORTS = {"overload", "Optional", "Union"}
+# These props exist on the base component, but should not be exposed in create methods.
+EXCLUDED_PROPS = [
+    "alias",
+    "children",
+    "event_triggers",
+    "invalid_children",
+    "library",
+    "lib_dependencies",
+    "tag",
+    "is_default",
+    "special_props",
+    "valid_children",
+]
+
+DEFAULT_TYPING_IMPORTS = {"overload", "Any", "Dict", "List", "Optional", "Union"}
 
 
 def _get_type_hint(value, top_level=True, no_union=False):
@@ -102,6 +118,7 @@ class PyiGenerator:
             *[f"from {base.__module__} import {base.__name__}" for base in bases],
             "from reflex.vars import Var, BaseVar, ComputedVar",
             "from reflex.event import EventHandler, EventChain, EventSpec",
+            "from reflex.style import Style",
         ]
 
     def _generate_pyi_class(self, _class: type[Component]):
@@ -110,7 +127,7 @@ class PyiGenerator:
             "",
             f"class {_class.__name__}({', '.join([base.__name__ for base in _class.__bases__])}):",
         ]
-        definition = f"    @overload\n    @classmethod\n    def create(cls, *children, "
+        definition = f"    @overload\n    @classmethod\n    def create(  # type: ignore\n        cls, *children, "
 
         for kwarg in create_spec.kwonlyargs:
             if kwarg in create_spec.annotations:
@@ -118,51 +135,64 @@ class PyiGenerator:
             else:
                 definition += f"{kwarg}, "
 
-        for name, value in _class.__annotations__.items():
-            if name in create_spec.kwonlyargs:
-                continue
-            definition += f"{name}: {_get_type_hint(value)} = None, "
+        all_classes = [c for c in _class.__mro__ if issubclass(c, Component)]
+        all_props = []
+        for target_class in all_classes:
+            for name, value in target_class.__annotations__.items():
+                if (
+                    name in create_spec.kwonlyargs
+                    or name in EXCLUDED_PROPS
+                    or name in all_props
+                ):
+                    continue
+                all_props.append(name)
+                definition += f"{name}: {_get_type_hint(value)} = None, "
 
         for trigger in sorted(_class().get_event_triggers().keys()):
             definition += f"{trigger}: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, "
 
         definition = definition.rstrip(", ")
-        definition += f", **props) -> '{_class.__name__}': # type: ignore\n"
+        definition += f", **props) -> '{_class.__name__}':\n"
 
-        definition += self._generate_docstrings(_class, _class.__annotations__.keys())
+        definition += self._generate_docstrings(all_classes, all_props)
         lines.append(definition)
         lines.append("        ...")
         return lines
 
-    def _generate_docstrings(self, _class, _props):
+    def _generate_docstrings(self, _classes, _props):
         props_comments = {}
         comments = []
-        for _i, line in enumerate(inspect.getsource(_class).splitlines()):
-            reached_functions = re.search("def ", line)
-            if reached_functions:
-                # We've reached the functions, so stop.
-                break
+        for _class in _classes:
+            for _i, line in enumerate(inspect.getsource(_class).splitlines()):
+                reached_functions = re.search("def ", line)
+                if reached_functions:
+                    # We've reached the functions, so stop.
+                    break
 
-            # Get comments for prop
-            if line.strip().startswith("#"):
-                comments.append(line)
-                continue
+                # Get comments for prop
+                if line.strip().startswith("#"):
+                    comments.append(line)
+                    continue
 
-            # Check if this line has a prop.
-            match = re.search("\\w+:", line)
-            if match is None:
-                # This line doesn't have a var, so continue.
-                continue
+                # Check if this line has a prop.
+                match = re.search("\\w+:", line)
+                if match is None:
+                    # This line doesn't have a var, so continue.
+                    continue
 
-            # Get the prop.
-            prop = match.group(0).strip(":")
-            if prop in _props:
-                # This isn't a prop, so continue.
-                props_comments[prop] = "\n".join(
-                    [comment.strip().strip("#") for comment in comments]
-                )
-                comments.clear()
-                continue
+                # Get the prop.
+                prop = match.group(0).strip(":")
+                if prop in _props:
+                    if not comments:  # do not include undocumented props
+                        continue
+                    props_comments[prop] = "\n".join(
+                        [comment.strip().strip("#") for comment in comments]
+                    )
+                    comments.clear()
+                    continue
+                if prop in EXCLUDED_PROPS:
+                    comments.clear()  # throw away comments for excluded props
+        _class = _classes[0]
         new_docstring = []
         for i, line in enumerate(_class.create.__doc__.splitlines()):
             if i == 0:
