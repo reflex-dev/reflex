@@ -6,7 +6,7 @@ import importlib
 import os
 import sys
 import urllib.parse
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import pydantic
 
@@ -194,7 +194,7 @@ class Config(Base):
     username: Optional[str] = None
 
     # Attributes that were explicitly set by the user.
-    _non_default_attributes: set[str] = pydantic.PrivateAttr(set())
+    _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
 
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
