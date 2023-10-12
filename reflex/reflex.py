@@ -784,7 +784,11 @@ def get_deployment_logs(
     ),
 ):
     """Get the logs for a deployment."""
-    asyncio.run(hosting.get_logs(key))
+    try:
+        asyncio.run(hosting.get_logs(key))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs due to: {ex}")
+        raise typer.Exit(1) from ex
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")

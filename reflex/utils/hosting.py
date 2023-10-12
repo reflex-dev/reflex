@@ -673,14 +673,13 @@ async def get_logs(key: str):
     if not key:
         raise ValueError("Valid key is required for querying logs.")
     try:
-        _ws = websockets.connect(f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs/{token}")  # type: ignore
+        _ws = websockets.connect(f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}")  # type: ignore
         async with _ws as ws:
             while True:
                 row = json.loads(await ws.recv())
                 if row and isinstance(row, dict):
-                    console.print(" | ".join(row.values()))
+                    print(" | ".join(row.values()))
                 # else case is empty dict sent from CP to keep alive
     except Exception as ex:
         console.debug(f"Unable to get deployment logs due to {ex}.")
-        print({ex})
         raise Exception("internal errors") from ex
