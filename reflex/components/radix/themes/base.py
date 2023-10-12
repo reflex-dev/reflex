@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from reflex.base import Base
 from reflex.components import Component
 from reflex.utils import imports
 from reflex.vars import ImportVar, Var
 
 
-class CommonMarginProps(Base):
+class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
     # Margin: "0" - "9"
@@ -53,6 +52,8 @@ class RadixThemesComponent(Component):
             A new component instance.
         """
         component = super().create(*children, **props)
+        if component.library is None:
+            component.library = RadixThemesComponent.__fields__["library"].default
         component.alias = "RadixThemes" + (
             component.tag or component.__class__.__name__
         )

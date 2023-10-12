@@ -7,6 +7,8 @@ from .components import (
     Button,
     Switch,
     TextField,
+    TextFieldRoot,
+    TextFieldSlot,
 )
 from .layout import (
     Box,
@@ -34,5 +36,7 @@ strong = Strong.create
 switch = Switch.create
 text = Text.create
 text_field = TextField.create
+text_field_root = TextFieldRoot.create
+text_field_slot = TextFieldSlot.create
 theme = Theme.create
 theme_panel = ThemePanel.create

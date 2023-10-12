@@ -148,11 +148,10 @@ class TextField(TextFieldRoot, el.Input):
         }
 
 
-TextFieldInput = TextField
-
-
 class TextFieldSlot(RadixThemesComponent):
     """Contains icons or buttons associated with an Input."""
+
+    tag = "TextField.Slot"
 
     # Override theme color for text field slot
     color: Var[str]
