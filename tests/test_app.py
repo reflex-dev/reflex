@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os.path
 import sys
+import unittest.mock
 import uuid
 from pathlib import Path
 from typing import Generator, List, Tuple, Type
@@ -1145,6 +1146,7 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
     web_dir.mkdir(parents=True)
     (web_dir / "package.json").touch()
     app = App()
+    app.get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
 
