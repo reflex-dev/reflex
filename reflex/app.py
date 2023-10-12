@@ -142,7 +142,6 @@ class App(Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(*args, **kwargs)
-        # breakpoint()
         state_subclasses = State.__subclasses__()
         inferred_state = state_subclasses[-1]
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
