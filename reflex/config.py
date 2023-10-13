@@ -6,7 +6,9 @@ import importlib
 import os
 import sys
 import urllib.parse
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
+
+import pydantic
 
 from reflex import constants
 from reflex.base import Base
@@ -199,6 +201,9 @@ class Config(Base):
     # The username.
     username: Optional[str] = None
 
+    # Attributes that were explicitly set by the user.
+    _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
+
     def __init__(self, *args, **kwargs):
         """Initialize the config values.
 
@@ -212,7 +217,14 @@ class Config(Base):
         self.check_deprecated_values(**kwargs)
 
         # Update the config from environment variables.
-        self.update_from_env()
+        env_kwargs = self.update_from_env()
+        for key, env_value in env_kwargs.items():
+            setattr(self, key, env_value)
+
+        # Update default URLs if ports were set
+        kwargs.update(env_kwargs)
+        self._non_default_attributes.update(kwargs)
+        self._replace_defaults(**kwargs)
 
     @staticmethod
     def check_deprecated_values(**kwargs):
@@ -235,13 +247,16 @@ class Config(Base):
                 "env_path is deprecated - use environment variables instead"
             )
 
-    def update_from_env(self):
+    def update_from_env(self) -> dict[str, Any]:
         """Update the config from environment variables.
 
+        Returns:
+            The updated config values.
 
         Raises:
             ValueError: If an environment variable is set to an invalid type.
         """
+        updated_values = {}
         # Iterate over the fields.
         for key, field in self.__fields__.items():
             # The env var name is the key in uppercase.
@@ -268,7 +283,9 @@ class Config(Base):
                     raise
 
                 # Set the value.
-                setattr(self, key, env_var)
+                updated_values[key] = env_var
+
+        return updated_values
 
     def get_event_namespace(self) -> str | None:
         """Get the websocket event namespace.
@@ -281,6 +298,34 @@ class Config(Base):
 
         event_url = constants.Endpoint.EVENT.get_url()
         return urllib.parse.urlsplit(event_url).path
+
+    def _replace_defaults(self, **kwargs):
+        """Replace formatted defaults when the caller provides updates.
+
+        Args:
+            **kwargs: The kwargs passed to the config or from the env.
+        """
+        if "api_url" not in self._non_default_attributes and "backend_port" in kwargs:
+            self.api_url = f"http://localhost:{kwargs['backend_port']}"
+
+        if (
+            "deploy_url" not in self._non_default_attributes
+            and "frontend_port" in kwargs
+        ):
+            self.deploy_url = f"http://localhost:{kwargs['frontend_port']}"
+
+    def _set_persistent(self, **kwargs):
+        """Set values in this config and in the environment so they persist into subprocess.
+
+        Args:
+            **kwargs: The kwargs passed to the config.
+        """
+        for key, value in kwargs.items():
+            if value is not None:
+                os.environ[key.upper()] = str(value)
+            setattr(self, key, value)
+        self._non_default_attributes.update(kwargs)
+        self._replace_defaults(**kwargs)
 
 
 def get_config(reload: bool = False) -> Config:
