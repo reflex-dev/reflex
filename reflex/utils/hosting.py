@@ -83,6 +83,43 @@ def validate_token(token: str):
         raise Exception("internal errors") from ex
 
 
+def delete_token_from_config():
+    """Delete the invalid token from the config file if applicable."""
+    if os.path.exists(constants.Hosting.HOSTING_JSON):
+        hosting_config = {}
+        try:
+            with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
+                hosting_config = json.load(config_file)
+                del hosting_config["access_token"]
+                json.dump(hosting_config, config_file)
+        except Exception as ex:
+            # Best efforts removing invalid token is OK
+            console.debug(
+                f"Unable to delete the invalid token from config file, err: {ex}"
+            )
+
+
+def save_token_to_config(token: str, code: Optional[str] = None):
+    """Cache the token, and optionally invitation code to the config file.
+
+    Args:
+        token: The access token to save.
+        code: The invitation code to save if exists.
+
+    Raise:
+        Exception: if runs into any issues, file not exist, etc.
+    """
+    hosting_config = {}
+    hosting_config["access_token"] = token
+    if code:
+        hosting_config["code"] = code
+    try:
+        with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
+            json.dump(hosting_config, config_file)
+    except Exception as ex:
+        console.warn(f"Unable to write to the hosting config file due to: {ex}")
+
+
 def authenticated_token() -> Optional[str]:
     """Fetch the access token from the existing config if applicable and validate it.
 
@@ -679,7 +716,20 @@ async def get_logs(key: str):
                 row = json.loads(await ws.recv())
                 if row and isinstance(row, dict):
                     print(" | ".join(row.values()))
-                # else case is empty dict sent from CP to keep alive
+                else:
+                    console.debug("Server responded, no new logs found")
     except Exception as ex:
         console.debug(f"Unable to get deployment logs due to {ex}.")
         raise Exception("internal errors") from ex
+
+
+def check_requirements_txt_exist():
+    """Check if requirements.txt exists in the current directory.
+
+    Raises:
+        Exception: If the requirements.txt does not exist.
+    """
+    if not os.path.exists(constants.RequirementsTxt.FILE):
+        raise Exception(
+            f"Unable to find {constants.RequirementsTxt.FILE} in the current directory."
+        )

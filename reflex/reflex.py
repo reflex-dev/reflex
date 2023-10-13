@@ -105,6 +105,9 @@ def init(
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
 
+    # Initialize the requirements.txt.
+    prerequisites.initialize_requirements_txt()
+
     # Finish initializing the app.
     console.success(f"Initialized {app_name}")
 
@@ -309,16 +312,7 @@ def login(
                 break
             except ValueError as ve:
                 console.error(f"Access denied")
-                if os.path.exists(constants.Hosting.HOSTING_JSON):
-                    hosting_config = {}
-                    try:
-                        with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
-                            hosting_config = json.load(config_file)
-                            del hosting_config["access_token"]
-                            json.dump(hosting_config, config_file)
-                    except Exception:
-                        # Best efforts removing invalid token is OK
-                        pass
+                hosting.delete_token_from_config()
                 raise typer.Exit(1) from ve
             except Exception as ex:
                 console.debug(f"Unable to validate token due to: {ex}")
@@ -328,19 +322,21 @@ def login(
         raise typer.Exit(1)
 
     if not using_existing_token:
-        hosting_config = {}
-        hosting_config["access_token"] = token
-        if code:
-            hosting_config["code"] = code
-        try:
-            with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
-                json.dump(hosting_config, config_file)
-        except Exception as ex:
-            console.warn(f"Unable to write to the hosting config file due to: {ex}")
-
+        hosting.save_token_to_config(token, code)
         console.print("Successfully logged in.")
     else:
         console.print("You already logged in.")
+
+
+@cli.command()
+def logout(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Log out of access to Reflex hosting service."""
+    console.set_log_level(loglevel)
+    # TODO:
 
 
 db_cli = typer.Typer()
@@ -447,9 +443,8 @@ def deploy(
     frontend_hostname: Optional[str] = typer.Option(
         None, "--frontend-hostname", help="The hostname of the frontend."
     ),
-    non_interactive: Optional[bool] = typer.Option(
-        False,
-        "--non-interactive",
+    interactive: Optional[bool] = typer.Option(
+        True,
         help="Whether to list configuration options and ask for confirmation.",
     ),
     loglevel: constants.LogLevel = typer.Option(
@@ -460,21 +455,14 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    if non_interactive and not key:
+    if not interactive and not key:
         console.error("Please provide a deployment key when not in interactive mode.")
         raise typer.Exit(1)
 
-    # Check if the user is authenticated
     try:
-        token, _ = hosting.get_existing_access_token()
+        hosting.check_requirements_txt_exist()
     except Exception as ex:
-        console.debug("Unable to get existing access token due to: {ex}")
-        console.print("Please authenticate using `reflex login` first.")
-        raise typer.Exit(1) from ex
-    try:
-        hosting.validate_token(token)
-    except Exception as ex:
-        console.error(f"Unable to authenticate: {ex}.")
+        console.error(f"{constants.RequirementsTxt.FILE} required for deployment")
         raise typer.Exit(1) from ex
 
     # Check if we are set up.
@@ -492,7 +480,7 @@ def deploy(
     # The app prefix should not change during the time of preparation
     app_prefix = pre_deploy_response.app_prefix
     overwrite_existing = False
-    if non_interactive:
+    if not interactive:
         # in this case, the key was supplied for the pre_deploy call, at this point the reply is expected
         if not (reply := pre_deploy_response.reply):
             console.error(f"Unable to deploy at this name {key}.")
@@ -603,23 +591,24 @@ def deploy(
         export(frontend=True, backend=True, zipping=True, loglevel=loglevel)
     except ImportError as ie:
         # TODO: maybe show the missing dependency as well?
-        console.error(f"Encountered ImportError, did you install all the dependencies?")
+        console.error(
+            f"Encountered ImportError, did you install all the dependencies? {ie}"
+        )
         raise typer.Exit(1) from ie
-    # config.api_url = save_api_url
 
     frontend_file_name = constants.ComponentName.FRONTEND.zip()
     backend_file_name = constants.ComponentName.BACKEND.zip()
 
     console.print("Uploading code ...")
-    datetime.now()
+    _deploy_requested_at = datetime.now().astimezone()
     try:
         deploy_response = hosting.deploy(
-            frontend_file_name,
-            backend_file_name,
-            key,
-            app_name,
-            regions,
-            app_prefix,
+            frontend_file_name=frontend_file_name,
+            backend_file_name=backend_file_name,
+            key=key,
+            app_name=app_name,
+            regions=regions,
+            app_prefix=app_prefix,
             cpus=cpus,
             memory_mb=memory_mb,
             auto_start=auto_start,
@@ -633,7 +622,7 @@ def deploy(
         raise typer.Exit(1) from ex
 
     # Deployment will actually start when data plane reconciles this request
-    datetime.now()
+    _deploy_confirmed_at = datetime.now().astimezone()
 
     console.debug(f"deploy_response: {deploy_response}")
     console.print("Deployment will start shortly.")
@@ -653,10 +642,9 @@ def deploy(
                 break
             time.sleep(1)
     if not backend_up:
-        console.print("Backend ❌")
+        console.print("Backend unreachable")
     else:
-        # TODO: what is a universal tick mark?
-        console.print("Backend ✅")
+        console.print("Backend is up")
 
     with console.status("Checking frontend ..."):
         for _ in range(constants.Hosting.FRONTEND_POLL_TIMEOUT):
@@ -664,10 +652,9 @@ def deploy(
                 break
             time.sleep(1)
     if not frontend_up:
-        console.print("frontend ❌")
+        console.print("frontend is unreachable")
     else:
-        # TODO: what is a universal tick mark?
-        console.print("frontend ✅")
+        console.print("frontend is up")
 
     # TODO: below is a bit hacky, refactor
     hosting.clean_up()
@@ -677,7 +664,7 @@ def deploy(
         )
         return
     console.warn(
-        "Your deployment is taking unusually long. Check back later using this command: `reflex deployments status`"
+        "Your deployment is taking unusually long. Check back later on its status: `reflex deployments status`"
     )
 
 
@@ -784,6 +771,9 @@ def get_deployment_logs(
     ),
 ):
     """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+
+    console.print("Note: there is a few seconds delay for logs to be available.")
     try:
         asyncio.run(hosting.get_logs(key))
     except Exception as ex:

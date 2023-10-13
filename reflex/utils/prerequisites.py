@@ -200,6 +200,38 @@ def initialize_gitignore():
         f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
 
+def initialize_requirements_txt():
+    """Initialize the requirements.txt file if applicable."""
+    # If the requirements.txt file already exists, return.
+    if os.path.exists(constants.RequirementsTxt.FILE):
+        try:
+            with open(constants.RequirementsTxt.FILE, "a+") as f:
+                for req in f:
+                    if re.match(r"^reflex[^a-zA-Z0-9]", req):
+                        console.debug(
+                            f"{constants.RequirementsTxt.FILE} already has reflex as dependency."
+                        )
+                        return
+                f.write(
+                    f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+                )
+        except Exception:
+            console.info(
+                f"Unable to check {constants.RequirementsTxt.FILE} for reflex dependency."
+            )
+            return
+    else:
+        try:
+            with open(constants.RequirementsTxt.FILE, "w") as f:
+                f.write(
+                    f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+                )
+        except Exception:
+            console.info(
+                "Unable to add a requirements.txt file. Please add one manually."
+            )
+
+
 def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     """Initialize the app directory on reflex init.
 
