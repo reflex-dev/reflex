@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from typing import Optional
 
+from reflex.components.base.bare import Bare
 from reflex.components.component import Component
 from reflex.components.layout import Box, Cond
 from reflex.components.overlay.modal import Modal
 from reflex.components.typography import Text
-from reflex.vars import Var
+from reflex.utils import imports
+from reflex.vars import ImportVar, Var
 
 connection_error: Var = Var.create_safe(
     value="(connectError !== null) ? connectError.message : ''",
@@ -21,19 +23,35 @@ has_connection_error: Var = Var.create_safe(
 has_connection_error.type_ = bool
 
 
-def default_connection_error() -> list[str | Var]:
+class WebsocketTargetURL(Bare):
+    """A component that renders the websocket target URL."""
+
+    def _get_imports(self) -> imports.ImportDict:
+        return {
+            "/utils/state.js": {ImportVar(tag="getEventURL")},
+        }
+
+    @classmethod
+    def create(cls) -> Component:
+        """Create a websocket target URL component.
+
+        Returns:
+            The websocket target URL component.
+        """
+        return super().create(contents="{getEventURL().href}")
+
+
+def default_connection_error() -> list[str | Var | Component]:
     """Get the default connection error message.
 
     Returns:
         The default connection error message.
     """
-    from reflex.config import get_config
-
     return [
         "Cannot connect to server: ",
         connection_error,
         ". Check if server is reachable at ",
-        get_config().api_url or "<API_URL not set>",
+        WebsocketTargetURL.create(),
     ]
 
 
