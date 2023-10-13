@@ -2,6 +2,7 @@
 
 import asyncio
 import atexit
+import contextlib
 import json
 import os
 import re
@@ -271,10 +272,9 @@ def login(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # TODO: maybe do not need this
     # Check if feature is enabled:
-    # if not hosting.is_set_up():
-    #     return
+    if not hosting.feature_enabled():
+        return
 
     # Check if the user is already logged in.
     token = None
@@ -342,6 +342,9 @@ def logout(
 ):
     """Log out of access to Reflex hosting service."""
     console.set_log_level(loglevel)
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
     # TODO:
 
 
@@ -460,6 +463,9 @@ def deploy(
     """Deploy the app to the Reflex hosting service."""
     # Set the log level.
     console.set_log_level(loglevel)
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
 
     if not interactive and not key:
         console.error("Please provide a deployment key when not in interactive mode.")
@@ -596,7 +602,6 @@ def deploy(
     try:
         export(frontend=True, backend=True, zipping=True, loglevel=loglevel)
     except ImportError as ie:
-        # TODO: maybe show the missing dependency as well?
         console.error(
             f"Encountered ImportError, did you install all the dependencies? {ie}"
         )
@@ -624,7 +629,9 @@ def deploy(
         )
     except Exception as ex:
         console.error(f"Unable to deploy due to: {ex}")
-        hosting.clean_up()
+        with contextlib.suppress(Exception):
+            hosting.clean_up()
+
         raise typer.Exit(1) from ex
 
     # Deployment will actually start when data plane reconciles this request
@@ -688,6 +695,9 @@ def list_deployments(
 ):
     """List all the hosted instances for the specified app."""
     console.set_log_level(loglevel)
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
     try:
         deployments = hosting.list_deployments()
     except Exception as ex:
@@ -715,7 +725,9 @@ def delete_deployment(
 ):
     """Delete a hosted instance."""
     console.set_log_level(loglevel)
-
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
     try:
         hosting.delete_deployment(key)
     except Exception as ex:
@@ -733,6 +745,9 @@ def get_deployment_status(
 ):
     """Check the status of a deployment."""
     console.set_log_level(loglevel)
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
 
     def _convert_to_local_time(iso_timestamp: str) -> str:
         if not iso_timestamp:
@@ -778,6 +793,9 @@ def get_deployment_logs(
 ):
     """Get the logs for a deployment."""
     console.set_log_level(loglevel)
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
 
     console.print("Note: there is a few seconds delay for logs to be available.")
     try:

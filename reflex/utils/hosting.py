@@ -14,6 +14,7 @@ from reflex.utils import console
 
 config = get_config()
 
+
 POST_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 POST_APPS_ENDPOINT = f"{config.cp_backend_url}/apps"
 GET_APPS_ENDPOINT = f"{config.cp_backend_url}/apps"
@@ -39,12 +40,14 @@ def get_existing_access_token() -> Tuple[str, str]:
     try:
         with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
             hosting_config = json.load(config_file)
-        access_token = hosting_config["access_token"]
-        assert access_token
+
+        assert (
+            access_token := hosting_config.get("access_token", "")
+        ), "no access token found or empty token"
         return access_token, hosting_config.get("code")
     except Exception as ex:
         console.debug(
-            f"Unable to fetch token from the hosting config file due to: {ex}"
+            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
         raise Exception("no existing login found") from ex
 
@@ -59,7 +62,6 @@ def validate_token(token: str):
         ValueError: if access denied.
         Exception: if runs into timeout, failed requests, unexpected errors. These should be tried again.
     """
-    config = get_config()
     try:
         response = httpx.post(
             POST_VALIDATE_ME_ENDPOINT,
@@ -69,17 +71,17 @@ def validate_token(token: str):
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise ValueError
         response.raise_for_status()
-    except httpx.TimeoutException as te:
-        console.debug("Unable to validate the token due to request timeout.")
-        raise Exception("request timeout") from te
+    except httpx.RequestError as re:
+        console.debug(f"Request to auth server failed due to {re}")
+        raise Exception("request error") from re
     except httpx.HTTPError as ex:
-        console.debug(f"Unable to validate the token due to: {ex}.")
+        console.debug(f"Unable to validate the token due to: {ex}")
         raise Exception("server error") from ex
     except ValueError as ve:
-        console.debug(f"Access denied {token}.")
+        console.debug(f"Access denied for {token}")
         raise ValueError("access denied") from ve
     except Exception as ex:
-        console.debug(f"Unexpected error: {ex}.")
+        console.debug(f"Unexpected error: {ex}")
         raise Exception("internal errors") from ex
 
 
@@ -109,15 +111,16 @@ def save_token_to_config(token: str, code: Optional[str] = None):
     Raise:
         Exception: if runs into any issues, file not exist, etc.
     """
-    hosting_config = {}
-    hosting_config["access_token"] = token
+    hosting_config: Dict[str, str] = {"access_token": token}
     if code:
         hosting_config["code"] = code
     try:
         with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
-        console.warn(f"Unable to write to the hosting config file due to: {ex}")
+        console.warn(
+            f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
+        )
 
 
 def authenticated_token() -> Optional[str]:
@@ -136,8 +139,8 @@ def authenticated_token() -> Optional[str]:
         return token
     except Exception as ex:
         console.debug(f"Unable to validate the token from the existing config: {ex}")
-        console.debug("Try to delete the invalid token from config file")
         try:
+            console.debug("Try to delete the invalid token from config file")
             with open(constants.Hosting.HOSTING_JSON, "rw") as config_file:
                 hosting_config = json.load(config_file)
                 del hosting_config["access_token"]
@@ -147,13 +150,13 @@ def authenticated_token() -> Optional[str]:
         return None
 
 
-def is_set_up() -> bool:
+def feature_enabled() -> bool:
     """Check if the hosting config is set up.
 
     Returns:
         True if the hosting config is set up, False otherwise.
     """
-    if get_config().cp_web_url is None:
+    if config.cp_web_url is None or config.cp_backend_url is None:
         console.info("This feature is coming soon!")
         return False
     return True
@@ -206,33 +209,13 @@ class DeploymentPrepareResponse(BaseModel):
         """
         if (
             values.get("reply") is None
-            and not values.get("existing")
+            and not values.get("existing")  # existing cannot be an empty list either
             and values.get("suggestion") is None
         ):
             raise ValueError(
                 "At least one set of params for deploy is required from control plane."
             )
         return values
-
-
-class DeploymentGetResponse(BaseModel):
-    """The params/settings returned from the GET endpoint."""
-
-    key: str
-    regions: List[str]
-    app_name: str
-    vm_type: str
-    cpus: int
-    memory_mb: int
-    url: str
-    envs: List[str]
-
-
-class DeploymentPostResponse(BaseModel):
-    """The URL for the deployed site."""
-
-    frontend_url: str = Field(..., regex=r"^https?://", min_length=8)
-    backend_url: str = Field(..., regex=r"^https?://", min_length=8)
 
 
 class DeploymentsPreparePostParam(BaseModel):
@@ -243,55 +226,6 @@ class DeploymentsPreparePostParam(BaseModel):
     frontend_hostname: Optional[str] = None
 
 
-class AppsPostParam(BaseModel):
-    """Params for project creation POST request."""
-
-    name: str
-    description: Optional[str] = None
-
-
-class AppsGetParam(BaseModel):
-    """Params for projects GET request."""
-
-    name: str
-
-
-class AppGetResponse(BaseModel):
-    """The params/settings returned from the GET endpoint."""
-
-    name: str
-
-
-class DeploymentsPostParam(BaseModel):
-    """Params for hosted instance deployment POST request."""
-
-    # key is the name of the deployment, it becomes part of the URL
-    key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
-    app_name: str = Field(..., min_length=1)
-    regions_json: str = Field(..., min_length=1)
-    app_prefix: str = Field(..., min_length=1)
-    reflex_version: str = Field(..., min_length=1)
-    cpus: Optional[int] = None
-    memory_mb: Optional[int] = None
-    auto_start: Optional[bool] = None
-    auto_stop: Optional[bool] = None
-    frontend_hostname: Optional[str] = None
-    description: Optional[str] = None
-    envs_json: Optional[str] = None
-
-
-class DeploymentsGetParam(BaseModel):
-    """Params for hosted instance GET request."""
-
-    app_name: Optional[str]
-
-
-class DeploymentDeleteParam(BaseModel):
-    """Params for hosted instance DELETE request."""
-
-    key: str
-
-
 def prepare_deploy(
     app_name: str,
     key: Optional[str] = None,
@@ -299,7 +233,7 @@ def prepare_deploy(
 ) -> DeploymentPrepareResponse:
     """Send a POST request to Control Plane to prepare a new deployment.
     Control Plane checks if there is conflict with the key if provided.
-    If the key is absent, it will return existing deployments and a suggested name based on the app_name in the response.
+    If the key is absent, it will return existing deployments and a suggested name based on the app_name in the request.
 
     Args:
         key: The deployment name.
@@ -337,9 +271,9 @@ def prepare_deploy(
             suggestion=response_json["suggestion"],
             existing=response_json["existing"],
         )
-    except httpx.TimeoutException as te:
-        console.debug("Unable to prepare launch due to request timeout.")
-        raise Exception("request timeout") from te
+    except httpx.RequestError as re:
+        console.debug(f"Unable to prepare launch due to {re}.")
+        raise Exception("request error") from re
     except httpx.HTTPError as he:
         console.debug(f"Unable to prepare deploy due to {he}.")
         raise Exception(f"{he}") from he
@@ -350,11 +284,36 @@ def prepare_deploy(
         console.debug(f"The server response format is unexpected {kve}")
         raise Exception("internal errors") from kve
     except ValueError as ve:
-        # This is a recognized client error
+        # This is a recognized client error, currently indicates forbidden
         raise Exception(f"{ve}") from ve
     except Exception as ex:
         console.debug(f"Unexpected error: {ex}.")
         raise Exception("internal errors") from ex
+
+
+class DeploymentPostResponse(BaseModel):
+    """The URL for the deployed site."""
+
+    frontend_url: str = Field(..., regex=r"^https?://", min_length=8)
+    backend_url: str = Field(..., regex=r"^https?://", min_length=8)
+
+
+class DeploymentsPostParam(BaseModel):
+    """Params for hosted instance deployment POST request."""
+
+    # key is the name of the deployment, it becomes part of the URL
+    key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
+    app_name: str = Field(..., min_length=1)
+    regions_json: str = Field(..., min_length=1)
+    app_prefix: str = Field(..., min_length=1)
+    reflex_version: str = Field(..., min_length=1)
+    cpus: Optional[int] = None
+    memory_mb: Optional[int] = None
+    auto_start: Optional[bool] = None
+    auto_stop: Optional[bool] = None
+    frontend_hostname: Optional[str] = None
+    description: Optional[str] = None
+    envs_json: Optional[str] = None
 
 
 def deploy(
@@ -399,20 +358,20 @@ def deploy(
     if not (token := authenticated_token()):
         raise Exception("not authenticated")
 
-    params = DeploymentsPostParam(
-        key=key,
-        app_name=app_name,
-        regions_json=json.dumps(regions),
-        app_prefix=app_prefix,
-        cpus=cpus,
-        memory_mb=memory_mb,
-        auto_start=auto_start,
-        auto_stop=auto_stop,
-        envs_json=json.dumps(envs) if envs else None,
-        frontend_hostname=frontend_hostname,
-        reflex_version=constants.Reflex.VERSION,
-    )
     try:
+        params = DeploymentsPostParam(
+            key=key,
+            app_name=app_name,
+            regions_json=json.dumps(regions),
+            app_prefix=app_prefix,
+            cpus=cpus,
+            memory_mb=memory_mb,
+            auto_start=auto_start,
+            auto_stop=auto_stop,
+            envs_json=json.dumps(envs) if envs else None,
+            frontend_hostname=frontend_hostname,
+            reflex_version=constants.Reflex.VERSION,
+        )
         with open(frontend_file_name, "rb") as frontend_file, open(
             backend_file_name, "rb"
         ) as backend_file:
@@ -433,9 +392,9 @@ def deploy(
             frontend_url=response_json["frontend_url"],
             backend_url=response_json["backend_url"],
         )
-    except httpx.TimeoutException as te:
-        console.debug("Unable to deploy due to request timeout.")
-        raise Exception("request timeout") from te
+    except httpx.RequestError as re:
+        console.debug(f"Unable to deploy due to request error: {re}")
+        raise Exception("request error") from re
     except httpx.HTTPError as he:
         console.debug(f"Unable to deploy due to {he}.")
         raise Exception("internal errors") from he
@@ -443,11 +402,30 @@ def deploy(
         console.debug(f"Server did not respond with valid json: {jde}")
         raise Exception("internal errors") from jde
     except (KeyError, ValidationError) as kve:
-        console.debug(f"Server response format unexpected: {kve}")
+        console.debug(f"Post params or server response format unexpected: {kve}")
         raise Exception("internal errors") from kve
     except Exception as ex:
         console.debug(f"Unable to deploy due to internal errors: {ex}.")
         raise Exception("internal errors") from ex
+
+
+class DeploymentsGetParam(BaseModel):
+    """Params for hosted instance GET request."""
+
+    app_name: Optional[str]
+
+
+class DeploymentGetResponse(BaseModel):
+    """The params/settings returned from the GET endpoint."""
+
+    key: str
+    regions: List[str]
+    app_name: str
+    vm_type: str
+    cpus: int
+    memory_mb: int
+    url: str
+    envs: List[str]
 
 
 def list_deployments(
@@ -490,9 +468,9 @@ def list_deployments(
             ).dict()
             for deployment in response.json()
         ]
-    except httpx.TimeoutException as te:
-        console.debug("Unable to list deployments due to request timeout.")
-        raise Exception("request timeout") from te
+    except httpx.RequestError as re:
+        console.debug(f"Unable to list deployments due to request error: {re}")
+        raise Exception("request timeout") from re
     except httpx.HTTPError as he:
         console.debug(f"Unable to list deployments due to {he}.")
         raise Exception("internal errors") from he
@@ -521,12 +499,12 @@ def fetch_token(request_id: str) -> Tuple[str, str]:
             f"{FETCH_TOKEN_ENDPOINT}/{request_id}", timeout=config.http_request_timeout
         )
         resp.raise_for_status()
-        return resp.json()["access_token"], resp.json().get("code", "")
-    except httpx.TimeoutException as te:
-        console.debug("Unable to fetch token due to request timeout.")
-        raise Exception("request timeout") from te
+        return (resp_json := resp.json())["access_token"], resp_json.get("code", "")
+    except httpx.RequestError as re:
+        console.debug(f"Unable to fetch token due to request error: {re}")
+        raise Exception("request timeout") from re
     except httpx.HTTPError as he:
-        console.debug(f"Unable to fetch token due to {he}.")
+        console.debug(f"Unable to fetch token due to {he}")
         raise Exception("not found") from he
     except json.JSONDecodeError as jde:
         console.debug(f"Server did not respond with valid json: {jde}")
@@ -583,6 +561,12 @@ def clean_up():
         os.remove(frontend_zip)
     if os.path.exists(backend_zip):
         os.remove(backend_zip)
+
+
+class DeploymentDeleteParam(BaseModel):
+    """Params for hosted instance DELETE request."""
+
+    key: str
 
 
 def delete_deployment(key: str):
@@ -665,10 +649,11 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
     Returns:
         The deployment status response including backend and frontend.
     """
-    if not (token := authenticated_token()):
-        raise Exception("not authenticated")
     if not key:
         raise ValueError("Valid key is required for the delete.")
+
+    if not (token := authenticated_token()):
+        raise Exception("not authenticated")
 
     try:
         response = httpx.get(
@@ -677,16 +662,17 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
             timeout=config.http_request_timeout,
         )
         response.raise_for_status()
+        response_json = response.json()
         return DeploymentStatusResponse(
             frontend=SiteStatus(
-                frontend_url=response.json()["frontend"]["url"],
-                reachable=response.json()["frontend"]["reachable"],
-                updated_at=response.json()["frontend"]["updated_at"],
+                frontend_url=response_json["frontend"]["url"],
+                reachable=response_json["frontend"]["reachable"],
+                updated_at=response_json["frontend"]["updated_at"],
             ),
             backend=SiteStatus(
-                backend_url=response.json()["backend"]["url"],
-                reachable=response.json()["backend"]["reachable"],
-                updated_at=response.json()["backend"]["updated_at"],
+                backend_url=response_json["backend"]["url"],
+                reachable=response_json["backend"]["reachable"],
+                updated_at=response_json["backend"]["updated_at"],
             ),
         )
     except Exception as ex:

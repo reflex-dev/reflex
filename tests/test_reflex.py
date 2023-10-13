@@ -11,6 +11,12 @@ from reflex.utils.hosting import DeploymentPrepInfo
 runner = CliRunner()
 
 
+# Module level patch to enable hosting feature
+@pytest.fixture(scope="module")
+def hosting_enabled(mocker):
+    mocker.patch("reflex.utils.hosting.feature_enabled", return_value=True)
+
+
 def test_login_success(mocker):
     mock_get_existing_access_token = mocker.patch(
         "reflex.utils.hosting.get_existing_access_token",
