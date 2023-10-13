@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 
 from reflex.components.tags.tag import Tag
-from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
@@ -288,24 +288,6 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
                 "b": BaseVar(_var_name="val", _var_type="str"),
             },
             r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
-        ),
-        (
-            EventChain(
-                events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
-            ),
-            '{_e => addEvents([Event("mock_event", {})], _e)}',
-        ),
-        (
-            EventChain(
-                events=[
-                    EventSpec(
-                        handler=EventHandler(fn=mock_event),
-                        args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
-                    )
-                ],
-                args_spec=None,
-            ),
-            '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e)}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(_var_name="var", _var_type="int"), "{var}"),

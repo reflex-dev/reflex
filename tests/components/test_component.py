@@ -7,7 +7,7 @@ from reflex.base import Base
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
-from reflex.event import EVENT_ARG, EventHandler
+from reflex.event import EventHandler
 from reflex.state import State
 from reflex.style import Style
 from reflex.utils import imports
@@ -64,15 +64,16 @@ def component2() -> Type[Component]:
         # A test list prop.
         arr: Var[List[str]]
 
-        def get_controlled_triggers(self) -> Dict[str, Var]:
+        def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
                 Test controlled triggers.
             """
             return {
-                "on_open": EVENT_ARG,
-                "on_close": EVENT_ARG,
+                **super().get_event_triggers(),
+                "on_open": lambda e0: [e0],
+                "on_close": lambda e0: [e0],
             }
 
         def _get_imports(self) -> imports.ImportDict:
@@ -359,17 +360,6 @@ def test_var_props(component1, test_state):
     """
     c1 = component1.create(text="hello", number=test_state.num)
     assert c1.number.equals(test_state.num)
-
-
-def test_get_controlled_triggers(component1, component2):
-    """Test that we can get the controlled triggers of a component.
-
-    Args:
-        component1: A test component.
-        component2: A test component.
-    """
-    assert component1().get_controlled_triggers() == dict()
-    assert set(component2().get_controlled_triggers()) == {"on_open", "on_close"}
 
 
 def test_get_event_triggers(component1, component2):

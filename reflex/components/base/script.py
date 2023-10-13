@@ -7,9 +7,7 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.event import EventChain
-from reflex.utils import console
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 
 class Script(Component):
