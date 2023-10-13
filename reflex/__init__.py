@@ -18,7 +18,6 @@ from .components.graphing.victory import data as data
 from .config import Config as Config
 from .config import DBConfig as DBConfig
 from .constants import Env as Env
-from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
 from .event import background as background

@@ -210,10 +210,6 @@ class FrontendEvent(Base):
     value: Any = None
 
 
-# The default event argument.
-EVENT_ARG = BaseVar(_var_name="_e", _var_type=FrontendEvent, _var_is_local=True)
-
-
 class FileUpload(Base):
     """Class to represent a file upload."""
 
