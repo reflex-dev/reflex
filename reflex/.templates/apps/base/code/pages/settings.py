@@ -1,10 +1,15 @@
 """The settings page for the template."""
 import reflex as rx
+
 from ..styles import *
 
 
-def settings_page():
-    """The UI for the settings page."""
+def settings_page() -> rx.Component:
+    """The UI for the settings page.
+
+    Returns:
+        rx.Component: The UI for the settings page.
+    """
     return rx.box(
         rx.vstack(
             rx.heading(

@@ -1,10 +1,15 @@
 """The dashboard page for the template."""
 import reflex as rx
+
 from ..styles import *
 
 
-def dashboard_page():
-    """The UI for the dashboard page."""
+def dashboard_page() -> rx.Component:
+    """The UI for the dashboard page.
+
+    Returns:
+        rx.Component: The UI for the dashboard page.
+    """
     return rx.box(
         rx.vstack(
             rx.heading(

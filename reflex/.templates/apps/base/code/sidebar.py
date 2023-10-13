@@ -1,12 +1,17 @@
 """Sidebar component for the app."""
 
 import reflex as rx
+
 from .state import State
 from .styles import *
 
 
-def sidebar_header():
-    """Sidebar header."""
+def sidebar_header() -> rx.Component:
+    """Sidebar header.
+
+    Returns:
+        rx.Component: The sidebar header component.
+    """
     return rx.hstack(
         rx.image(
             src="/icon.svg",
@@ -35,8 +40,12 @@ def sidebar_header():
     )
 
 
-def sidebar_footer():
-    """Sidebar footer."""
+def sidebar_footer() -> rx.Component:
+    """Sidebar footer.
+
+    Returns:
+        rx.Component: The sidebar footer component.
+    """
     return rx.hstack(
         rx.link(
             rx.center(
@@ -73,7 +82,16 @@ def sidebar_footer():
 
 
 def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
-    """Sidebar item."""
+    """Sidebar item.
+
+    Args:
+        text (str): The text of the item.
+        icon (str): The icon of the item.
+        url (str): The URL of the item.
+
+    Returns:
+        rx.Component: The sidebar item component.
+    """
     return rx.link(
         rx.hstack(
             rx.image(
@@ -104,8 +122,12 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
     )
 
 
-def sidebar():
-    """Sidebar."""
+def sidebar() -> rx.Component:
+    """Sidebar.
+
+    Returns:
+        rx.Component: The sidebar component.
+    """
     return rx.box(
         rx.vstack(
             sidebar_header(),

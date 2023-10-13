@@ -1,13 +1,22 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 from typing import Callable
+
 import reflex as rx
+
 from .pages import dashboard_page, home_page, settings_page
 from .sidebar import sidebar
 from .styles import *
 
 
 def template(main_content: Callable[[], rx.Component]) -> rx.Component:
-    """The template for each page of the app."""
+    """The template for each page of the app.
+
+    Args:
+        main_content (Callable[[], rx.Component]): The main content of the page.
+
+    Returns:
+        rx.Component: The template for each page of the app.
+    """
     menu_button = rx.box(
         rx.menu(
             rx.menu_button(
@@ -41,22 +50,34 @@ def template(main_content: Callable[[], rx.Component]) -> rx.Component:
 
 @rx.page("/")
 @template
-def home():
-    """Home page."""
+def home() -> rx.Component:
+    """Home page.
+
+    Returns:
+        rx.Component: The home page.
+    """
     return home_page()
 
 
 @rx.page("/settings")
 @template
-def settings():
-    """Settings page."""
+def settings() -> rx.Component:
+    """Settings page.
+
+    Returns:
+        rx.Component: The settings page.
+    """
     return settings_page()
 
 
 @rx.page("/dashboard")
 @template
-def dashboard():
-    """Dashboard page."""
+def dashboard() -> rx.Component:
+    """Dashboard page.
+
+    Returns:
+        rx.Component: The dashboard page.
+    """
     return dashboard_page()
 
 
