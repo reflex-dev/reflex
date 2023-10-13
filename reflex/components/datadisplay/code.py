@@ -1,6 +1,6 @@
 """A code component."""
 
-from typing import Dict, Literal, Optional, Union
+from typing import Dict, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.forms import Button

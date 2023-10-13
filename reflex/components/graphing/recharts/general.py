@@ -1,12 +1,19 @@
 """General components for Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import Recharts, LiteralPosition,  LiteralLegendAlign, LiteralVerticalAlign, LiteralIconType, LiteralLayout
+from .recharts import (
+    LiteralIconType,
+    LiteralLayout,
+    LiteralLegendAlign,
+    LiteralPosition,
+    LiteralVerticalAlign,
+    Recharts,
+)
 
 
 class ResponsiveContainer(Recharts):

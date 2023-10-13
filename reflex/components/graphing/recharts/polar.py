@@ -1,12 +1,18 @@
 """Polar charts in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import Recharts, LiteralAnimationEasing, LiteralPolarRadiusType, LiteralScale, LiteralGridType
+from .recharts import (
+    LiteralAnimationEasing,
+    LiteralGridType,
+    LiteralPolarRadiusType,
+    LiteralScale,
+    Recharts,
+)
 
 
 class Pie(Recharts):

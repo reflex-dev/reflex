@@ -1,11 +1,16 @@
 """Menu components."""
 from __future__ import annotations
 
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.forms.button import Button
-from reflex.components.libs.chakra import ChakraComponent, LiteralMenuOption, LiteralChakraDirection, LiteralMenuStrategy
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralChakraDirection,
+    LiteralMenuOption,
+    LiteralMenuStrategy,
+)
 from reflex.vars import Var
 
 

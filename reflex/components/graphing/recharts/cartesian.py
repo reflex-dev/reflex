@@ -1,12 +1,26 @@
 """Cartesian charts in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Union
 
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import Recharts, LiteralOrientationTopBottom, LiteralPolarRadiusType, LiteralScale, LiteralLegendType, LiteralAreaType, LiteralShape, LiteralLineType, LiteralAnimationEasing, LiteralDirection, LiteralIfOverflow, LiteralOrientationTopBottomLeftRight, LiteralInterval, LiteralLayout
+from .recharts import (
+    LiteralAnimationEasing,
+    LiteralAreaType,
+    LiteralDirection,
+    LiteralIfOverflow,
+    LiteralInterval,
+    LiteralLayout,
+    LiteralLineType,
+    LiteralOrientationTopBottom,
+    LiteralOrientationTopBottomLeftRight,
+    LiteralPolarRadiusType,
+    LiteralScale,
+    LiteralShape,
+    Recharts,
+)
 
 
 class Axis(Recharts):

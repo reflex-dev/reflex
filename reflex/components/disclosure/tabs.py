@@ -1,9 +1,14 @@
 """Tab components."""
 
-from typing import List, Literal, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralTagAlign, LiteralTabsVariant, LiteralColorScheme
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralColorScheme,
+    LiteralTabsVariant,
+    LiteralTagAlign,
+)
 from reflex.vars import Var
 
 
@@ -37,9 +42,7 @@ class Tabs(ChakraComponent):
     variant: Var[LiteralTabsVariant]
 
     # The color scheme of the tabs.
-    color_scheme: Var[
-        LiteralColorScheme
-    ]
+    color_scheme: Var[LiteralColorScheme]
 
     @classmethod
     def create(

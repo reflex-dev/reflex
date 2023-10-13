@@ -1,6 +1,6 @@
 """A select component."""
 
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.layout.foreach import Foreach

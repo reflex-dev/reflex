@@ -1,10 +1,14 @@
 """Container to stack elements with spacing."""
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme, LiteralDrawerSize
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralColorScheme,
+    LiteralDrawerSize,
+)
 from reflex.components.media.icon import Icon
 from reflex.vars import Var
 
@@ -63,9 +67,7 @@ class Drawer(ChakraComponent):
     # Options:
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[
-        LiteralColorScheme
-    ]
+    color_scheme: Var[LiteralColorScheme]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.

@@ -1,5 +1,4 @@
 """Badge component."""
-from typing import Literal
 
 from reflex.components.libs.chakra import ChakraComponent, LiteralVariant
 from reflex.vars import Var

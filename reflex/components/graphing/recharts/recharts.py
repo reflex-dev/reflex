@@ -18,7 +18,9 @@ class RechartsCharts(NoSSRComponent):
 
 LiteralAnimationEasing = Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]
 LiteralIfOverflow = Literal["discard", "hidden", "visible", "extendDomain"]
-LiteralShape = Literal["square", "circle", "cross", "diamond", "star", "triangle", "wye"]
+LiteralShape = Literal[
+    "square", "circle", "cross", "diamond", "star", "triangle", "wye"
+]
 LiteralLineType = Literal["joint", "fitting"]
 LiteralOrientation = Literal["top", "bottom", "left", "right", "middle"]
 LiteralOrientationLeftRightMiddle = Literal["left", "right", "middle"]
@@ -87,7 +89,8 @@ LiteralLegendType = [
     "star",
     "triangle",
     "wye",
-    "none"]
+    "none",
+]
 LiteralLegendAlign = Literal["left", "center", "right"]
 LiteralVerticalAlign = Literal["top", "middle", "bottom"]
 LiteralStackOffset = Literal["expand", "none", "wiggle", "silhouette"]

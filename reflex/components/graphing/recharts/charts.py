@@ -1,14 +1,21 @@
 """A module that defines the chart components in Recharts."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.graphing.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import RechartsCharts, LiteralSyncMethod, LiteralStackOffset, LiteralComposedChartBaseValue, LiteralAnimationEasing, LiteralLayout
+from .recharts import (
+    LiteralAnimationEasing,
+    LiteralComposedChartBaseValue,
+    LiteralLayout,
+    LiteralStackOffset,
+    LiteralSyncMethod,
+    RechartsCharts,
+)
 
 
 class ChartBase(RechartsCharts):
@@ -456,9 +463,7 @@ class Treemap(RechartsCharts):
     animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[
-        LiteralAnimationEasing
-    ]
+    animation_easing: Var[LiteralAnimationEasing]
 
     @classmethod
     def create(cls, *children, **props) -> Component:

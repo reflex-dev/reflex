@@ -1,13 +1,14 @@
 """A slider component."""
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any, Union
 
 from reflex.components.component import Component
+from reflex.components.graphing.recharts.recharts import LiteralLayout
 from reflex.components.libs.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from reflex.components.graphing.recharts.recharts import LiteralLayout
+
 
 class Slider(ChakraComponent):
     """The wrapper that provides context and functionality for all children."""

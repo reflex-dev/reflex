@@ -12,13 +12,84 @@ from typing import Any, Dict, List, Literal, Optional, Union, get_args  # NOQA
 import black
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import LiteralInputVariant, LiteralColorScheme, LiteralChakraDirection, LiteralTagSize, LiteralDrawerSize, LiteralMenuStrategy, LiteralMenuOption, LiteralAlertDialogSize, LiteralAvatarSize, LiteralImageLoading # NOQA
-from reflex.components.graphing.recharts.recharts import LiteralLayout, LiteralAnimationEasing, LiteralGridType, LiteralPolarRadiusType, LiteralScale, LiteralSyncMethod, LiteralStackOffset,LiteralComposedChartBaseValue, LiteralOrientationTopBottom, LiteralAreaType, LiteralShape, LiteralLineType, LiteralDirection, LiteralIfOverflow, LiteralOrientationTopBottomLeftRight, LiteralInterval , LiteralLegendAlign, LiteralVerticalAlign , LiteralIconType, LiteralPosition # NOQA
+
+# NOQA
+from reflex.components.graphing.recharts.recharts import (
+    LiteralAnimationEasing,
+    LiteralAreaType,
+    LiteralComposedChartBaseValue,
+    LiteralDirection,
+    LiteralGridType,
+    LiteralIconType,
+    LiteralIfOverflow,
+    LiteralInterval,
+    LiteralLayout,
+    LiteralLegendAlign,
+    LiteralLineType,
+    LiteralOrientationTopBottom,
+    LiteralOrientationTopBottomLeftRight,
+    LiteralPolarRadiusType,
+    LiteralPosition,
+    LiteralScale,
+    LiteralShape,
+    LiteralStackOffset,
+    LiteralSyncMethod,
+    LiteralVerticalAlign,
+)
+from reflex.components.libs.chakra import (
+    LiteralAlertDialogSize,
+    LiteralAvatarSize,
+    LiteralChakraDirection,
+    LiteralColorScheme,
+    LiteralDrawerSize,
+    LiteralImageLoading,
+    LiteralInputVariant,
+    LiteralMenuOption,
+    LiteralMenuStrategy,
+    LiteralTagSize,
+)
+
+# NOQA
 from reflex.utils import format
 from reflex.utils import types as rx_types
 from reflex.vars import Var
 
-ruff_dont_remove = [Var, Optional, Dict, List]
+ruff_dont_remove = [
+    Var,
+    Optional,
+    Dict,
+    List,
+    LiteralInputVariant,
+    LiteralColorScheme,
+    LiteralChakraDirection,
+    LiteralTagSize,
+    LiteralDrawerSize,
+    LiteralMenuStrategy,
+    LiteralMenuOption,
+    LiteralAlertDialogSize,
+    LiteralAvatarSize,
+    LiteralImageLoading,
+    LiteralLayout,
+    LiteralAnimationEasing,
+    LiteralGridType,
+    LiteralPolarRadiusType,
+    LiteralScale,
+    LiteralSyncMethod,
+    LiteralStackOffset,
+    LiteralComposedChartBaseValue,
+    LiteralOrientationTopBottom,
+    LiteralAreaType,
+    LiteralShape,
+    LiteralLineType,
+    LiteralDirection,
+    LiteralIfOverflow,
+    LiteralOrientationTopBottomLeftRight,
+    LiteralInterval,
+    LiteralLegendAlign,
+    LiteralVerticalAlign,
+    LiteralIconType,
+    LiteralPosition,
+]
 
 EXCLUDED_FILES = [
     "__init__.py",

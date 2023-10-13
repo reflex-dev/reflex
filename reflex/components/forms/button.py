@@ -1,7 +1,13 @@
 """A button component."""
-from typing import List, Literal
+from typing import List
 
-from reflex.components.libs.chakra import ChakraComponent, LiteralButtonSize, LiteralButtonVariant, LiteralColorScheme, LiteralSpinnerPlacement
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralButtonSize,
+    LiteralButtonVariant,
+    LiteralColorScheme,
+    LiteralSpinnerPlacement,
+)
 from reflex.vars import Var
 
 
@@ -37,9 +43,7 @@ class Button(ChakraComponent):
     # Options:
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
-    color_scheme: Var[
-        LiteralColorScheme
-    ]
+    color_scheme: Var[LiteralColorScheme]
 
     # Position of the loading spinner.
     # Options:

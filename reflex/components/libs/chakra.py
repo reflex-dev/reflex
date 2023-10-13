@@ -1,7 +1,8 @@
 """Components that are based on Chakra-UI."""
 
-from reflex.components.component import Component
 from typing import Literal
+
+from reflex.components.component import Component
 
 
 class ChakraComponent(Component):
@@ -9,26 +10,27 @@ class ChakraComponent(Component):
 
     library = "@chakra-ui/react"
 
+
 LiteralColorScheme = Literal[
-            "gray",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "teal",
-            "blue",
-            "cyan",
-            "purple",
-            "pink",
-            "whiteAlpha",
-            "blackAlpha",
-            "linkedin",
-            "facebook",
-            "messenger",
-            "whatsapp",
-            "twitter",
-            "telegram",
-        ]
+    "gray",
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "teal",
+    "blue",
+    "cyan",
+    "purple",
+    "pink",
+    "whiteAlpha",
+    "blackAlpha",
+    "linkedin",
+    "facebook",
+    "messenger",
+    "whatsapp",
+    "twitter",
+    "telegram",
+]
 
 
 LiteralVariant = Literal["solid", "subtle", "outline"]
@@ -58,7 +60,7 @@ LiteralTabsVariant = Literal[
 
 LiteralStatus = Literal["success", "info", "warning", "error"]
 LiteralAlertVariant = Literal["subtle", "left-accent", "top-accent", "solid"]
-LiteralButtonVariant = Literal["ghost","outline", "solid", "link", "unstyled"]
+LiteralButtonVariant = Literal["ghost", "outline", "solid", "link", "unstyled"]
 LiteralSpinnerPlacement = Literal["start", "end"]
 LiteralLanguage = Literal[
     "en",
@@ -100,7 +102,9 @@ LiteralSpinnerSize = Literal[Literal[LiteralTagSize], "xs"]
 LiteralAvatarSize = Literal[Literal[LiteralTagSize], "xs", "2xl", "full", "2xs"]
 LiteralButtonSize = Literal["sm", "md", "lg", "xs"]
 # Applies to AlertDialog and Modal
-LiteralAlertDialogSize = Literal["sm", "md", "lg","xs", "2xl", "full", "3xl", "4xl", "5xl", "6xl"]
+LiteralAlertDialogSize = Literal[
+    "sm", "md", "lg", "xs", "2xl", "full", "3xl", "4xl", "5xl", "6xl"
+]
 LiteralDrawerSize = Literal[Literal[LiteralSpinnerSize], "xl", "full"]
 
 LiteralMenuStrategy = Literal["fixed", "absolute"]

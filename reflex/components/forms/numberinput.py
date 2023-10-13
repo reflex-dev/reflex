@@ -1,10 +1,13 @@
 """A number input component."""
 
 from numbers import Number
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralInputNumberMode, LiteralInputVariant
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralInputVariant,
+)
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

@@ -1,7 +1,7 @@
 """A pin input component."""
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.layout import Foreach

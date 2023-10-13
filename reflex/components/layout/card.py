@@ -1,9 +1,14 @@
 """Chakra Card component."""
 
-from typing import Literal, Optional
+from typing import Optional
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme, LiteralTagSize, LiteralCardVariant
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralCardVariant,
+    LiteralColorScheme,
+    LiteralTagSize,
+)
 from reflex.vars import Var
 
 
@@ -44,9 +49,7 @@ class Card(ChakraComponent):
     #  "green" | "teal" | "blue" | "cyan" | "purple" | "pink" | "linkedin" |
     #  "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     # default: "gray"
-    color_scheme: Var[
-        LiteralColorScheme
-    ]
+    color_scheme: Var[LiteralColorScheme]
 
     # The size of the Card
     # options: "sm" | "md" | "lg"
