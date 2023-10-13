@@ -12,6 +12,8 @@ from typing import Any, Dict, List, Literal, Optional, Union, get_args  # NOQA
 import black
 
 from reflex.components.component import Component
+from reflex.components.libs.chakra import LiteralInputVariant, LiteralColorScheme, LiteralChakraDirection, LiteralTagSize, LiteralDrawerSize, LiteralMenuStrategy, LiteralMenuOption, LiteralAlertDialogSize, LiteralAvatarSize, LiteralImageLoading # NOQA
+from reflex.components.graphing.recharts.recharts import LiteralLayout, LiteralAnimationEasing, LiteralGridType, LiteralPolarRadiusType, LiteralScale, LiteralSyncMethod, LiteralStackOffset,LiteralComposedChartBaseValue, LiteralOrientationTopBottom, LiteralAreaType, LiteralShape, LiteralLineType, LiteralDirection, LiteralIfOverflow, LiteralOrientationTopBottomLeftRight, LiteralInterval , LiteralLegendAlign, LiteralVerticalAlign , LiteralIconType, LiteralPosition # NOQA
 from reflex.utils import format
 from reflex.utils import types as rx_types
 from reflex.vars import Var

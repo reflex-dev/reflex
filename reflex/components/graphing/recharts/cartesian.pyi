@@ -133,7 +133,7 @@ class Brush(Recharts):
 class Cartesian(Recharts):
     @overload
     @classmethod
-    def create(cls, *children, layout: Optional[Union[Var[Literal["horizontal", "vertical"]], Literal["horizontal", "vertical"]]] = None, data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, legend_type: Optional[Union[Var[Literal["line", "plainline", "square", "rect", "circle", "cross", "diamond", "star", "triangle", "wye", "none"]], Literal["line", "plainline", "square", "rect", "circle", "cross", "diamond", "star", "triangle", "wye", "none"]]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Cartesian":  # type: ignore
+    def create(cls, *children, layout: Optional[Union[Var[Literal["horizontal", "vertical"]], Literal["horizontal", "vertical"]]] = None, data_key: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, x_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, y_axis_id: Optional[Union[Var[Union[str, int]], Union[str, int]]] = None, on_click: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_enter: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_leave: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_move: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_out: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, on_mouse_over: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, **props) -> "Cartesian":  # type: ignore
         """Create the component.
 
         Args:
@@ -142,7 +142,6 @@ class Cartesian(Recharts):
             data_key: The key of a group of data which should be unique in an area chart.
             x_axis_id: The id of x-axis which is corresponding to the data.
             y_axis_id: The id of y-axis which is corresponding to the data.
-            legend_type: The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
             **props: The props of the component.
 
         Returns:
