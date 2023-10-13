@@ -64,7 +64,7 @@ class DataTable(Gridjs):
 
         # The annotation should be provided if data is a computed var. We need this to know how to
         # render pandas dataframes.
-        if isinstance(data, ComputedVar) and data.type_ == Any:
+        if isinstance(data, ComputedVar) and data._var_type == Any:
             raise ValueError(
                 "Annotation of the computed var assigned to the data field should be provided."
             )
@@ -72,7 +72,7 @@ class DataTable(Gridjs):
         if (
             columns is not None
             and isinstance(columns, ComputedVar)
-            and columns.type_ == Any
+            and columns._var_type == Any
         ):
             raise ValueError(
                 "Annotation of the computed var assigned to the column field should be provided."
@@ -81,7 +81,7 @@ class DataTable(Gridjs):
         # If data is a pandas dataframe and columns are provided throw an error.
         if (
             types.is_dataframe(type(data))
-            or (isinstance(data, Var) and types.is_dataframe(data.type_))
+            or (isinstance(data, Var) and types.is_dataframe(data._var_type))
         ) and columns is not None:
             raise ValueError(
                 "Cannot pass in both a pandas dataframe and columns to the data_table component."
@@ -89,7 +89,7 @@ class DataTable(Gridjs):
 
         # If data is a list and columns are not provided, throw an error
         if (
-            (isinstance(data, Var) and types._issubclass(data.type_, List))
+            (isinstance(data, Var) and types._issubclass(data._var_type, List))
             or issubclass(type(data), List)
         ) and columns is None:
             raise ValueError(
@@ -109,16 +109,16 @@ class DataTable(Gridjs):
         )
 
     def _render(self) -> Tag:
-        if isinstance(self.data, Var) and types.is_dataframe(self.data.type_):
+        if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
             self.columns = BaseVar(
-                name=f"{self.data.name}.columns",
-                type_=List[Any],
-                state=self.data.state,
+                _var_name=f"{self.data._var_name}.columns",
+                _var_type=List[Any],
+                _var_state=self.data._var_state,
             )
             self.data = BaseVar(
-                name=f"{self.data.name}.data",
-                type_=List[List[Any]],
-                state=self.data.state,
+                _var_name=f"{self.data._var_name}.data",
+                _var_type=List[List[Any]],
+                _var_state=self.data._var_state,
             )
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
