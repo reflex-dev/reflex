@@ -99,7 +99,7 @@ LiteralStackDirection = Literal["row", "column"]
 LiteralImageLoading = Literal["eager", "lazy"]
 LiteralTagSize = Literal["sm", "md", "lg"]
 LiteralSpinnerSize = Literal[Literal[LiteralTagSize], "xs", "xl"]
-LiteralAvatarSize = Literal[Literal[LiteralTagSize], "xl","xs", "2xl", "full", "2xs"]
+LiteralAvatarSize = Literal[Literal[LiteralTagSize], "xl", "xs", "2xl", "full", "2xs"]
 LiteralButtonSize = Literal["sm", "md", "lg", "xs"]
 # Applies to AlertDialog and Modal
 LiteralAlertDialogSize = Literal[
