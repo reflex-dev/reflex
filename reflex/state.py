@@ -122,6 +122,25 @@ class SessionData(Base):
             self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
 
 
+class RouterData(Base):
+    """An object containing RouterData."""
+
+    session: SessionData = SessionData()
+    headers: HeaderData = HeaderData()
+    page: PageData = PageData()
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initialize the RouterData object.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        self.session = SessionData(router_data)
+        self.headers = HeaderData(router_data)
+        self.page = PageData(router_data)
+
+
 class State(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -170,14 +189,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # Per-instance copy of backend variable values
     _backend_vars: Dict[str, Any] = {}
 
-    # A built-in base var containing the connexion headers
-    headers: HeaderData = HeaderData()
-
-    # A built-in base var containing some session data
-    session: SessionData = SessionData()
-
-    # A built-in base var containing the page data
-    page: PageData = PageData()
+    # The router data for the current page
+    router: RouterData = RouterData()
 
     def __init__(self, *args, parent_state: State | None = None, **kwargs):
         """Initialize the state.
@@ -625,17 +638,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
         return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
 
-    def _update_router_data(self, router_data: dict) -> None:
-        self.router_data = router_data
-        self.headers = HeaderData(
-            **self.router_data.get(constants.RouteVar.HEADERS, {})
-        )
-        self.page = self._get_page()
-        self.session = SessionData(router_data)
-
-    def _get_page(self) -> PageData:
-        return PageData(router_data=self.router_data)
-
     def get_current_page(self, origin=False) -> str:
         """Obtain the path of current page from the router data.
 
@@ -703,14 +705,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         def argsingle_factory(param):
             @ComputedVar
             def inner_func(self) -> str:
-                return self.get_query_params().get(param, "")
+                return self.router.page.params.get(param, "")
 
             return inner_func
 
         def arglist_factory(param):
             @ComputedVar
             def inner_func(self) -> List:
-                return self.get_query_params().get(param, [])
+                return self.router.page.params.get(param, [])
 
             return inner_func
 
