@@ -486,6 +486,10 @@ def test_invalid_event_handler_args(component2, test_state):
     # This is not okay.
     with pytest.raises(ValueError):
         component2.create(on_click=test_state.do_something_arg)
+        component2.create(on_open=test_state.do_something)
+        component2.create(
+            on_open=[test_state.do_something_arg, test_state.do_something]
+        )
     # However lambdas are okay.
     component2.create(on_click=lambda: test_state.do_something_arg(1))
     component2.create(
@@ -498,10 +502,6 @@ def test_invalid_event_handler_args(component2, test_state):
     # Controlled event handlers should take args.
     # This is okay.
     component2.create(on_open=test_state.do_something_arg)
-
-    # do_something is allowed and will simply run while ignoring the arg
-    component2.create(on_open=test_state.do_something)
-    component2.create(on_open=[test_state.do_something_arg, test_state.do_something])
 
 
 def test_get_hooks_nested(component1, component2, component3):
