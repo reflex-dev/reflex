@@ -109,7 +109,7 @@ def test_format_cond_tag():
     tag = CondTag(
         true_value=dict(Tag(name="h1", contents="True content")),
         false_value=dict(Tag(name="h2", contents="False content")),
-        cond=BaseVar(name="logged_in", type_=bool),
+        cond=BaseVar(_var_name="logged_in", _var_type=bool),
     )
     tag_dict = dict(tag)
     cond, true_value, false_value = (
@@ -117,8 +117,8 @@ def test_format_cond_tag():
         tag_dict["true_value"],
         tag_dict["false_value"],
     )
-    assert cond.name == "logged_in"
-    assert cond.type_ == bool
+    assert cond._var_name == "logged_in"
+    assert cond._var_type == bool
 
     assert true_value["name"] == "h1"
     assert true_value["contents"] == "True content"

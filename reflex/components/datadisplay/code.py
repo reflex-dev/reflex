@@ -48,7 +48,8 @@ class CodeBlock(Component):
         merged_imports = super()._get_imports()
         if self.theme is not None:
             merged_imports = imports.merge_imports(
-                merged_imports, {PRISM_STYLES_PATH: {ImportVar(tag=self.theme.name)}}
+                merged_imports,
+                {PRISM_STYLES_PATH: {ImportVar(tag=self.theme._var_name)}},
             )
         return merged_imports
 
@@ -113,7 +114,7 @@ class CodeBlock(Component):
         out = super()._render()
         if self.theme is not None:
             out.add_props(
-                style=Var.create(self.theme.name, is_local=False)
+                style=Var.create(self.theme._var_name, _var_is_local=False)
             ).remove_props("theme")
         return out
 

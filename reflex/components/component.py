@@ -155,7 +155,7 @@ class Component(Base, ABC):
                         raise TypeError
 
                     # Get the passed type and the var type.
-                    passed_type = kwargs[key].type_
+                    passed_type = kwargs[key]._var_type
                     expected_type = fields[key].outer_type_.__args__[0]
                 except TypeError:
                     # If it is not a valid var, check the base types.
@@ -222,7 +222,7 @@ class Component(Base, ABC):
 
         # If it's an event chain var, return it.
         if isinstance(value, Var):
-            if value.type_ is not EventChain:
+            if value._var_type is not EventChain:
                 raise ValueError(f"Invalid event chain: {value}")
             return value
 
@@ -388,7 +388,7 @@ class Component(Base, ABC):
         # Add ref to element if `id` is not None.
         ref = self.get_ref()
         if ref is not None:
-            props["ref"] = Var.create(ref, is_local=False)
+            props["ref"] = Var.create(ref, _var_is_local=False)
 
         return tag.add_props(**props)
 
@@ -440,7 +440,7 @@ class Component(Base, ABC):
         children = [
             child
             if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, is_string=True))
+            else Bare.create(contents=Var.create(child, _var_is_string=True))
             for child in children
         ]
 
@@ -808,11 +808,13 @@ class CustomComponent(Component):
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
                 try:
-                    value = BaseVar(name=value.json(), type_=type_, is_local=True)
+                    value = BaseVar(
+                        _var_name=value.json(), _var_type=type_, _var_is_local=True
+                    )
                 except Exception:
                     value = Var.create(value)
             else:
-                value = Var.create(value, is_string=type(value) is str)
+                value = Var.create(value, _var_is_string=type(value) is str)
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value
@@ -888,8 +890,10 @@ class CustomComponent(Component):
         """
         return [
             BaseVar(
-                name=name,
-                type_=prop.type_ if types._isinstance(prop, Var) else type(prop),
+                _var_name=name,
+                _var_type=prop._var_type
+                if types._isinstance(prop, Var)
+                else type(prop),
             )
             for name, prop in self.props.items()
         ]
