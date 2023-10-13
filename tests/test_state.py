@@ -14,6 +14,7 @@ import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
+from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
@@ -1528,23 +1529,24 @@ async def test_state_manager_lock_expire_contend(
 
 
 @pytest.fixture(scope="function")
-def mock_app(monkeypatch, app: rx.App, state_manager: StateManager) -> rx.App:
+def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
     """Mock app fixture.
 
     Args:
         monkeypatch: Pytest monkeypatch object.
-        app: An app.
         state_manager: A state manager.
 
     Returns:
         The app, after mocking out prerequisites.get_app()
     """
+    app = App(state=TestState)
+
     app_module = Mock()
+
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
     app.state_manager = state_manager
-    assert app.event_namespace is not None
-    app.event_namespace.emit = AsyncMock()
+    app.event_namespace.emit = AsyncMock()  # type: ignore
     monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
     return app
 
