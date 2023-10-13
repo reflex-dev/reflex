@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, Union
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -42,26 +42,7 @@ class Switch(ChakraComponent):
 
     # The color scheme of the switch (e.g. "blue", "green", "red", etc.)
     color_scheme: Var[
-        Literal[
-            "gray",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "teal",
-            "blue",
-            "cyan",
-            "purple",
-            "pink",
-            "whiteAlpha",
-            "blackAlpha",
-            "linkedin",
-            "facebook",
-            "messenger",
-            "whatsapp",
-            "twitter",
-            "telegram",
-        ]
+        LiteralColorScheme
     ]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:

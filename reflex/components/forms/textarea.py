@@ -5,7 +5,7 @@ from typing import Any, Literal, Union
 
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralInputVariant
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -43,7 +43,7 @@ class TextArea(ChakraComponent):
     is_required: Var[bool]
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[Literal["outline", "filled", "flushed", "unstyled"]]
+    variant: Var[LiteralInputVariant]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.

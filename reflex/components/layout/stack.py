@@ -2,7 +2,7 @@
 
 from typing import List, Literal, Union
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralStackDirection
 from reflex.vars import Var
 
 
@@ -15,7 +15,7 @@ class Stack(ChakraComponent):
     align_items: Var[str]
 
     # The direction to stack the items.
-    direction: Var[Union[Literal["row", "column"], List[str]]]
+    direction: Var[Union[LiteralStackDirection, List[str]]]
 
     # If true the items will be stacked horizontally.
     is_inline: Var[bool]

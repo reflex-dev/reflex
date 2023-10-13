@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Literal, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import Recharts
+from .recharts import Recharts, LiteralPosition,  LiteralLegendAlign, LiteralVerticalAlign, LiteralIconType, LiteralLayout
 
 
 class ResponsiveContainer(Recharts):
@@ -62,32 +62,19 @@ class Legend(Recharts):
     height: Var[int]
 
     # The layout of legend items. 'horizontal' | 'vertical'
-    layout: Var[Literal["horizontal", "vertical"]]
+    layout: Var[LiteralLayout]
 
     # The alignment of legend items in 'horizontal' direction, which can be 'left', 'center', 'right'.
-    align: Var[Literal["left", "center", "right"]]
+    align: Var[LiteralLegendAlign]
 
     # The alignment of legend items in 'vertical' direction, which can be 'top', 'middle', 'bottom'.
-    vertical_align: Var[Literal["top", "middle", "bottom"]]
+    vertical_align: Var[LiteralVerticalAlign]
 
     # The size of icon in each legend item.
     icon_size: Var[int]
 
     # The type of icon in each legend item. 'line' | 'plainline' | 'square' | 'rect' | 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye'
-    icon_type: Var[
-        Literal[
-            "line",
-            "plainline",
-            "square",
-            "rect",
-            "circle",
-            "cross",
-            "diamond",
-            "star",
-            "triangle",
-            "wye",
-        ]
-    ]
+    icon_type: Var[LiteralIconType]
 
     # The width of chart container, usually calculated internally.
     chart_width: Var[int]
@@ -163,28 +150,7 @@ class Label(Recharts):
     offset: Var[int]
 
     # The position of label which can be specified by this props or the children of <Label />
-    position: Var[
-        Literal[
-            "top",
-            "left",
-            "right",
-            "bottom",
-            "inside",
-            "outside",
-            "insideLeft",
-            "insideRight",
-            "insideTop",
-            "insideBottom",
-            "insideTopLeft",
-            "insideBottomLeft",
-            "insideTopRight",
-            "insideBottomRight",
-            "insideStart",
-            "insideEnd",
-            "end",
-            "center",
-        ]
-    ]
+    position: Var[LiteralPosition]
 
 
 class LabelList(Recharts):
@@ -198,28 +164,7 @@ class LabelList(Recharts):
     data_key: Var[Union[str, int]]
 
     # The position of each label relative to it view box。"Top" | "left" | "right" | "bottom" | "inside" | "outside" | "insideLeft" | "insideRight" | "insideTop" | "insideBottom" | "insideTopLeft" | "insideBottomLeft" | "insideTopRight" | "insideBottomRight" | "insideStart" | "insideEnd" | "end" | "center"
-    position: Var[
-        Literal[
-            "top",
-            "left",
-            "right",
-            "bottom",
-            "inside",
-            "outside",
-            "insideLeft",
-            "insideRight",
-            "insideTop",
-            "insideBottom",
-            "insideTopLeft",
-            "insideBottomLeft",
-            "insideTopRight",
-            "insideBottomRight",
-            "insideStart",
-            "insideEnd",
-            "end",
-            "center",
-        ]
-    ]
+    position: Var[LiteralPosition]
 
     # The offset to the specified "position"
     offset: Var[int]

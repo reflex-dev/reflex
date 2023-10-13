@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Literal, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme, LiteralDrawerSize
 from reflex.components.media.icon import Icon
 from reflex.vars import Var
 
@@ -51,7 +51,7 @@ class Drawer(ChakraComponent):
     return_focus_on_close: Var[bool]
 
     # "xs" | "sm" | "md" | "lg" | "xl" | "full"
-    size: Var[Literal["sm", "md", "lg", "xs", "xl", "full"]]
+    size: Var[LiteralDrawerSize]
 
     # A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
     use_inert: Var[bool]
@@ -64,26 +64,7 @@ class Drawer(ChakraComponent):
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     color_scheme: Var[
-        Literal[
-            "gray",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "teal",
-            "blue",
-            "cyan",
-            "purple",
-            "pink",
-            "whiteAlpha",
-            "blackAlpha",
-            "linkedin",
-            "facebook",
-            "messenger",
-            "whatsapp",
-            "twitter",
-            "telegram",
-        ]
+        LiteralColorScheme
     ]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, List, Literal, Optional, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.constants import EventTriggers
 from reflex.utils import format
 from reflex.vars import Var
@@ -22,7 +22,7 @@ class RangeSlider(ChakraComponent):
     default_value: Var[List[int]]
 
     # The writing mode ("ltr" | "rtl")
-    direction: Var[Literal["ltr", "rtl"]]
+    direction: Var[LiteralChakraDirection]
 
     # If false, the slider handle will not capture focus when value changes.
     focus_thumb_on_change: Var[bool]

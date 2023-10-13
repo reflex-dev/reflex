@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralHeadingSize
 from reflex.vars import Var
 
 
@@ -15,4 +15,4 @@ class Heading(ChakraComponent):
     as_: Var[str]
 
     # "4xl" | "3xl" | "2xl" | "xl" | "lg" | "md" | "sm" | "xs"
-    size: Var[Literal["lg", "md", "sm", "xs", "xl", "2xl", "3xl", "4xl"]]
+    size: Var[LiteralHeadingSize]

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, Union
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme, LiteralTagSize
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -18,30 +18,11 @@ class Checkbox(ChakraComponent):
     # "whiteAlpha" | "blackAlpha" | "gray" | "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "cyan"
     # | "purple" | "pink" | "linkedin" | "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     color_scheme: Var[
-        Literal[
-            "gray",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "teal",
-            "blue",
-            "cyan",
-            "purple",
-            "pink",
-            "whiteAlpha",
-            "blackAlpha",
-            "linkedin",
-            "facebook",
-            "messenger",
-            "whatsapp",
-            "twitter",
-            "telegram",
-        ]
+        LiteralColorScheme
     ]
 
     # "sm" | "md" | "lg"
-    size: Var[Literal["sm", "md", "lg"]]
+    size: Var[LiteralTagSize]
 
     # If true, the checkbox will be checked.
     is_checked: Var[bool]

@@ -40,6 +40,33 @@ from .polar import (
     RadialBar,
 )
 
+from .recharts import (
+LiteralAnimationEasing,
+LiteralIfOverflow,
+LiteralShape,
+LiteralLineType,
+LiteralOrientation,
+LiteralOrientationLeftRightMiddle,
+LiteralOrientationTopBottom,
+LiteralOrientationTopBottomLeftRight,
+LiteralScale,
+LiteralLayout,
+LiteralPolarRadiusType,
+LiteralGridType,
+LiteralIconType,
+LiteralLegendType,
+LiteralLegendAlign,
+LiteralVerticalAlign,
+LiteralStackOffset,
+LiteralBarChartStackOffset,
+LiteralComposedChartBaseValue,
+LiteralAxisType,
+LiteralAreaType,
+LiteralDirection,
+LiteralInterval,
+LiteralSyncMethod,
+)
+
 area_chart = AreaChart.create
 bar_chart = BarChart.create
 line_chart = LineChart.create
