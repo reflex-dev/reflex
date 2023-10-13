@@ -1,33 +1,12 @@
-import reflex as rx
+"""Sidebar component for the app."""
 
+import reflex as rx
 from .state import State
 from .styles import *
 
 
-def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
-    return rx.hstack(
-        rx.image(
-            src=icon,
-            height="2.5em",
-            padding="0.5em",
-        ),
-        rx.text(
-            text,
-        ),
-        bg=rx.cond(State.current_page == text, accent_color, "transparent"),
-        color=rx.cond(State.current_page == text, accent_text_color, text_color),
-        border_radius=border_radius,
-        border="1px solid transparent",
-        width="100%",
-        padding_x="1em",
-        _hover={
-            "box_shadow": box_shadow,
-        },
-        on_click=lambda: State.set_page(text),
-    )
-
-
 def sidebar_header():
+    """Sidebar header."""
     return rx.hstack(
         rx.image(
             src="/icon.svg",
@@ -45,7 +24,7 @@ def sidebar_header():
                 bg="transparent",
                 border_radius=border_radius,
                 _hover={
-                    "bg": "#F5EFFE",
+                    "bg": accent_color,
                 },
             ),
             href="https://github.com/reflex-dev/reflex",
@@ -57,6 +36,7 @@ def sidebar_header():
 
 
 def sidebar_footer():
+    """Sidebar footer."""
     return rx.hstack(
         rx.link(
             rx.center(
@@ -68,7 +48,7 @@ def sidebar_footer():
                 bg="transparent",
                 border_radius=border_radius,
                 _hover={
-                    "bg": "#F5EFFE",
+                    "bg": accent_color,
                 },
             ),
             href="https://github.com/reflex-dev/reflex",
@@ -92,7 +72,40 @@ def sidebar_footer():
     )
 
 
+def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
+    """Sidebar item."""
+    return rx.link(
+        rx.hstack(
+            rx.image(
+                src=icon,
+                height="2.5em",
+                padding="0.5em",
+            ),
+            rx.text(
+                text,
+            ),
+            bg=rx.cond(
+                State.origin_url == "/" + text.lower() + "/",
+                accent_color,
+                "transparent",
+            ),
+            color=rx.cond(
+                State.origin_url == "/" + text.lower() + "/",
+                accent_text_color,
+                text_color,
+            ),
+            border_radius=border_radius,
+            box_shadow=box_shadow,
+            width="100%",
+            padding_x="1em",
+        ),
+        href=url,
+        width="100%",
+    )
+
+
 def sidebar():
+    """Sidebar."""
     return rx.box(
         rx.vstack(
             sidebar_header(),
@@ -100,12 +113,12 @@ def sidebar():
                 sidebar_item(
                     "Dashboard",
                     "/github.svg",
-                    "docs_url",
+                    "/dashboard",
                 ),
                 sidebar_item(
                     "Settings",
                     "/github.svg",
-                    "docs_url",
+                    "/settings",
                 ),
                 width="100%",
                 align_items="flex-start",

@@ -1,39 +1,14 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
+from typing import Callable
 import reflex as rx
-
+from .pages import dashboard_page, home_page, settings_page
 from .sidebar import sidebar
 from .styles import *
 
 
-def content():
-    return rx.box(
-        rx.vstack(
-            rx.heading(
-                "Dashboard",
-                size="3em",
-            ),
-            rx.text(
-                "Welcome to Reflex!",
-            ),
-            rx.text(
-                "You can use this template to get started with Reflex.",
-            ),
-            width="100%",
-            align_items="flex-start",
-            height="90%",
-            box_shadow="0px 0px 0px 1px rgba(84, 82, 95, 0.14)",
-            border_radius=border_radius,
-            padding="1em",
-        ),
-        height="100vh",
-        width="100%",
-        padding_top="5em",
-        padding_x="2em",
-    )
-
-
-def menu_button():
-    return rx.box(
+def template(main_content: Callable[[], rx.Component]) -> rx.Component:
+    """The template for each page of the app."""
+    menu_button = rx.box(
         rx.menu(
             rx.menu_button(
                 rx.icon(
@@ -55,18 +30,36 @@ def menu_button():
         z_index="500",
     )
 
-
-def index() -> rx.Component:
     return rx.hstack(
         sidebar(),
-        content(),
+        main_content(),
         rx.spacer(),
-        menu_button(),
+        menu_button,
         align_items="flex-start",
     )
 
 
+@rx.page("/")
+@template
+def home():
+    """Home page."""
+    return home_page()
+
+
+@rx.page("/settings")
+@template
+def settings():
+    """Settings page."""
+    return settings_page()
+
+
+@rx.page("/dashboard")
+@template
+def dashboard():
+    """Dashboard page."""
+    return dashboard_page()
+
+
 # Add state and page to the app.
 app = rx.App(style=base_style)
-app.add_page(index)
 app.compile()
