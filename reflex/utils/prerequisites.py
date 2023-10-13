@@ -205,13 +205,14 @@ def initialize_requirements_txt():
     # If the requirements.txt file already exists, return.
     if os.path.exists(constants.RequirementsTxt.FILE):
         try:
-            with open(constants.RequirementsTxt.FILE, "a+") as f:
-                for req in f:
+            with open(constants.RequirementsTxt.FILE, "r") as f:
+                for req in f.readlines():
                     if re.match(r"^reflex[^a-zA-Z0-9]", req):
                         console.debug(
                             f"{constants.RequirementsTxt.FILE} already has reflex as dependency."
                         )
                         return
+            with open(constants.RequirementsTxt.FILE, "a") as f:
                 f.write(
                     f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
                 )
