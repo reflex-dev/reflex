@@ -540,7 +540,7 @@ class Component(Base, ABC):
             if self.valid_children:
                 validate_valid_child(name)
 
-    def _get_custom_code(self) -> Optional[str]:
+    def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
 
         Returns:
@@ -569,7 +569,7 @@ class Component(Base, ABC):
         # Return the code.
         return code
 
-    def _get_dynamic_imports(self) -> Optional[str]:
+    def _get_dynamic_imports(self) -> str | None:
         """Get dynamic import for the component.
 
         Returns:
@@ -667,7 +667,7 @@ class Component(Base, ABC):
             if hook
         )
 
-    def _get_hooks(self) -> Optional[str]:
+    def _get_hooks(self) -> str | None:
         """Get the React hooks for this component.
 
         Downstream components should override this method to add their own hooks.
@@ -697,7 +697,7 @@ class Component(Base, ABC):
 
         return code
 
-    def get_ref(self) -> Optional[str]:
+    def get_ref(self) -> str | None:
         """Get the name of the ref for the component.
 
         Returns:
@@ -723,7 +723,7 @@ class Component(Base, ABC):
         return refs
 
     def get_custom_components(
-        self, seen: Optional[Set[str]] = None
+        self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -848,7 +848,7 @@ class CustomComponent(Component):
         return set()
 
     def get_custom_components(
-        self, seen: Optional[Set[str]] = None
+        self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -877,7 +877,10 @@ class CustomComponent(Component):
         Returns:
             The tag to render.
         """
-        return Tag(name=self.tag).add_props(**self.props)
+        return Tag(
+            name=self.tag if not self.alias else self.alias,
+            special_props=self.special_props,
+        ).add_props(**self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.
@@ -918,6 +921,8 @@ def custom_component(
 
     @wraps(component_fn)
     def wrapper(*children, **props) -> CustomComponent:
+        # Remove the children from the props.
+        props.pop("children", None)
         return CustomComponent(component_fn=component_fn, children=children, **props)
 
     return wrapper

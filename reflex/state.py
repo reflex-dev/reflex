@@ -41,7 +41,7 @@ from reflex.event import (
     fix_events,
     window_alert,
 )
-from reflex.utils import format, prerequisites, types
+from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.vars import BaseVar, ComputedVar, Var
 
@@ -550,6 +550,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
                 The dict of cookies.
         """
+        console.deprecate(
+            feature_name=f"rx.get_cookies",
+            reason="and has been replaced by rx.Cookie, which can be used as a state var",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         cookie_dict = {}
         cookies = self.get_headers().get(constants.RouteVar.COOKIE, "").split(";")
 
