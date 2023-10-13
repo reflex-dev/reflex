@@ -397,7 +397,23 @@ class AppHarness:
             )
         if self.frontend_url is None:
             raise RuntimeError("Frontend is not running.")
-        driver = driver_clz() if driver_clz is not None else webdriver.Chrome()
+        want_headless = False
+        options = None
+        if os.environ.get("APP_HARNESS_HEADLESS"):
+            want_headless = True
+        if driver_clz is None:
+            requested_driver = os.environ.get("APP_HARNESS_DRIVER", "Chrome")
+            driver_clz = getattr(webdriver, requested_driver)
+        if driver_clz is webdriver.Chrome and want_headless:
+            options = webdriver.ChromeOptions()
+            options.add_argument("--headless=new")
+        elif driver_clz is webdriver.Firefox and want_headless:
+            options = webdriver.FirefoxOptions()
+            options.add_argument("-headless")
+        elif driver_clz is webdriver.Edge and want_headless:
+            options = webdriver.EdgeOptions()
+            options.add_argument("headless")
+        driver = driver_clz(options=options)  # type: ignore
         driver.get(self.frontend_url)
         self._frontends.append(driver)
         return driver
