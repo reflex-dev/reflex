@@ -901,15 +901,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         hydrate_event = _event(name=get_hydrate_event(state), val=exp_val)
-        exp_router_data = RouterData(
-            {
-                "headers": {},
-                "ip": client_ip,
-                "sid": sid,
-                "token": token,
-                **hydrate_event.router_data,
-            }
-        )
+        exp_router_data = {
+            "headers": {},
+            "ip": client_ip,
+            "sid": sid,
+            "token": token,
+            **hydrate_event.router_data,
+        }
+        exp_router = RouterData(exp_router_data)
         process_coro = process(
             app,
             event=hydrate_event,
@@ -918,7 +917,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             client_ip=client_ip,
         )
         update = await process_coro.__anext__()  # type: ignore
-
         # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
             delta={
@@ -928,6 +926,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     constants.CompileVars.IS_HYDRATED: False,
                     "loaded": exp_index,
                     "counter": exp_index,
+                    "router": exp_router,
                     # "side_effect_counter": exp_index,
                 }
             },
@@ -935,13 +934,13 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 _dynamic_state_event(
                     name="on_load",
                     val=exp_val,
-                    router=exp_router_data,
+                    router_data=exp_router_data,
                 ),
                 _dynamic_state_event(
                     name="set_is_hydrated",
                     payload={"value": True},
                     val=exp_val,
-                    router=exp_router_data,
+                    router_data=exp_router_data,
                 ),
             ],
         )
