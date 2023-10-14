@@ -13,14 +13,14 @@ from reflex.vars import ImportVar, Var
 
 connection_error: Var = Var.create_safe(
     value="(connectError !== null) ? connectError.message : ''",
-    is_local=False,
-    is_string=False,
+    _var_is_local=False,
+    _var_is_string=False,
 )
 has_connection_error: Var = Var.create_safe(
     value="connectError !== null",
-    is_string=False,
+    _var_is_string=False,
 )
-has_connection_error.type_ = bool
+has_connection_error._var_type = bool
 
 
 class WebsocketTargetURL(Bare):

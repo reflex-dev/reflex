@@ -250,7 +250,7 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"].deps(objclass=DefaultState) == {
+    assert app.state.computed_vars["dynamic"]._deps(objclass=DefaultState) == {
         constants.ROUTER_DATA
     }
     assert constants.ROUTER_DATA in app.state().computed_var_dependencies
@@ -869,7 +869,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
     assert arg_name in app.state.vars
     assert arg_name in app.state.computed_vars
-    assert app.state.computed_vars[arg_name].deps(objclass=DynamicState) == {
+    assert app.state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
         constants.ROUTER_DATA
     }
     assert constants.ROUTER_DATA in app.state().computed_var_dependencies

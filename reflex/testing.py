@@ -106,6 +106,7 @@ class AppHarness:
     app_instance: Optional[reflex.App] = None
     frontend_process: Optional[subprocess.Popen] = None
     frontend_url: Optional[str] = None
+    frontend_output_thread: Optional[threading.Thread] = None
     backend_thread: Optional[threading.Thread] = None
     backend: Optional[uvicorn.Server] = None
     state_manager: Optional[StateManagerMemory | StateManagerRedis] = None
@@ -230,6 +231,18 @@ class AppHarness:
         if self.frontend_url is None:
             raise RuntimeError("Frontend did not start")
 
+        def consume_frontend_output():
+            while True:
+                line = (
+                    self.frontend_process.stdout.readline()  # pyright: ignore [reportOptionalMemberAccess]
+                )
+                if not line:
+                    break
+                print(line)
+
+        self.frontend_output_thread = threading.Thread(target=consume_frontend_output)
+        self.frontend_output_thread.start()
+
     def start(self) -> "AppHarness":
         """Start the backend in a new thread and dev frontend as a separate process.
 
@@ -278,6 +291,8 @@ class AppHarness:
             self.frontend_process.communicate()
         if self.backend_thread is not None:
             self.backend_thread.join()
+        if self.frontend_output_thread is not None:
+            self.frontend_output_thread.join()
         for driver in self._frontends:
             driver.quit()
 
