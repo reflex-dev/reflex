@@ -39,6 +39,7 @@ from .installer import (
 )
 from .route import (
     ROUTE_NOT_FOUND,
+    ROUTER,
     ROUTER_DATA,
     DefaultPage,
     Page404,
@@ -77,9 +78,10 @@ __ALL__ = [
     PYTEST_CURRENT_TEST,
     PRODUCTION_BACKEND_URL,
     Reflex,
-    RouteVar,
-    RouteRegex,
     RouteArgType,
+    RouteRegex,
+    RouteVar,
+    ROUTER,
     ROUTER_DATA,
     ROUTE_NOT_FOUND,
     SETTER_PREFIX,

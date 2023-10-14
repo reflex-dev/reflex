@@ -590,7 +590,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         console.deprecate(
             feature_name="get_token",
-            reason="replaced by `State.session.client_token`",
+            reason="replaced by `State.router.session.client_token`",
             deprecation_version="0.3.0",
             removal_version="0.3.1",
         )
@@ -604,7 +604,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         console.deprecate(
             feature_name="get_sid",
-            reason="replaced by `State.session.session_id`",
+            reason="replaced by `State.router.session.session_id`",
             deprecation_version="0.3.0",
             removal_version="0.3.1",
         )
@@ -618,7 +618,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         console.deprecate(
             feature_name="get_headers",
-            reason="replaced by `State.headers`",
+            reason="replaced by `State.router.headers`",
             deprecation_version="0.3.0",
             removal_version="0.3.1",
         )
@@ -632,7 +632,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         console.deprecate(
             feature_name="get_client_ip",
-            reason="replaced by `State.session.client_ip`",
+            reason="replaced by `State.router.session.client_ip`",
             deprecation_version="0.3.0",
             removal_version="0.3.1",
         )
@@ -649,12 +649,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         console.deprecate(
             feature_name="get_current_page",
-            reason="replaced by the page BaseVar (use with State.page / self.page)",
+            reason="replaced by State.router.page / self.router.page",
             deprecation_version="0.3.0",
             removal_version="0.3.1",
         )
 
-        return self.page.raw_path if origin else self.page.path
+        return self.router.page.raw_path if origin else self.router.page.path
 
     def get_query_params(self) -> dict[str, str]:
         """Obtain the query parameters for the queried page.
@@ -666,7 +666,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         console.deprecate(
             feature_name="get_query_params",
-            reason="replaced by `State.page.params`",
+            reason="replaced by `State.router.page.params`",
             deprecation_version="0.3.0",
             removal_version="0.3.1",
         )

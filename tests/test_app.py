@@ -31,7 +31,7 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import State, StateManagerRedis, StateUpdate
+from reflex.state import RouterData, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -251,9 +251,9 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
     assert app.state.computed_vars["dynamic"].deps(objclass=DefaultState) == {
-        constants.ROUTER_DATA
+        constants.ROUTER
     }
-    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state().computed_var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -870,9 +870,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert arg_name in app.state.vars
     assert arg_name in app.state.computed_vars
     assert app.state.computed_vars[arg_name].deps(objclass=DynamicState) == {
-        constants.ROUTER_DATA
+        constants.ROUTER
     }
-    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state().computed_var_dependencies
 
     sid = "mock_sid"
     client_ip = "127.0.0.1"
@@ -901,13 +901,15 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         hydrate_event = _event(name=get_hydrate_event(state), val=exp_val)
-        exp_router_data = {
-            "headers": {},
-            "ip": client_ip,
-            "sid": sid,
-            "token": token,
-            **hydrate_event.router_data,
-        }
+        exp_router_data = RouterData(
+            {
+                "headers": {},
+                "ip": client_ip,
+                "sid": sid,
+                "token": token,
+                **hydrate_event.router_data,
+            }
+        )
         process_coro = process(
             app,
             event=hydrate_event,
@@ -933,13 +935,13 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                 _dynamic_state_event(
                     name="on_load",
                     val=exp_val,
-                    router_data=exp_router_data,
+                    router=exp_router_data,
                 ),
                 _dynamic_state_event(
                     name="set_is_hydrated",
                     payload={"value": True},
                     val=exp_val,
-                    router_data=exp_router_data,
+                    router=exp_router_data,
                 ),
             ],
         )
