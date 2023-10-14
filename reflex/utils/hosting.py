@@ -1,6 +1,8 @@
 """Hosting related utilities."""
+
 import json
 import os
+from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, List, Optional, Tuple
 
@@ -680,6 +682,23 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
         raise Exception("internal errors") from ex
 
 
+def convert_to_local_time(iso_timestamp: str) -> str:
+    """Convert the iso timestamp to local time.
+
+    Args:
+        iso_timestamp: The iso timestamp to convert.
+
+    Returns:
+        The converted timestamp string.
+    """
+    try:
+        local_dt = datetime.fromisoformat(iso_timestamp).astimezone()
+        return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
+    except Exception as ex:
+        console.debug(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
+        return iso_timestamp
+
+
 async def get_logs(key: str):
     """Get the deployment logs and stream on console.
 
@@ -699,9 +718,13 @@ async def get_logs(key: str):
         _ws = websockets.connect(f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}")  # type: ignore
         async with _ws as ws:
             while True:
-                row = json.loads(await ws.recv())
-                if row and isinstance(row, dict):
-                    print(" | ".join(row.values()))
+                row_json = json.loads(await ws.recv())
+                console.debug(f"Server responded with logs: {row_json}")
+                if row_json and isinstance(row_json, dict):
+                    for k, v in row_json.items():
+                        if k == "timestamp":
+                            row_json[k] = convert_to_local_time(v)
+                    print(" | ".join(row_json.values()))
                 else:
                     console.debug("Server responded, no new logs found")
     except Exception as ex:

@@ -119,7 +119,8 @@ def test_initialize_requirements_txt(mocker):
     open_mock = mock_open(read_data="random-package=1.2.3")
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
-    assert open_mock.call_count == 1
+    # Currently open for read, then open for append
+    assert open_mock.call_count == 2
     assert open_mock().write.call_count == 1
     assert (
         open_mock().write.call_args[0][0]

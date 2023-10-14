@@ -749,22 +749,13 @@ def get_deployment_status(
     if not hosting.feature_enabled():
         return
 
-    def _convert_to_local_time(iso_timestamp: str) -> str:
-        if not iso_timestamp:
-            return "N/A"
-        return (
-            datetime.fromisoformat(iso_timestamp)
-            .astimezone()
-            .strftime("%Y-%m-%d %H:%M:%S %Z")
-        )
-
     try:
         console.print(f"Getting status for [ {key} ] ...\n")
         status = hosting.get_deployment_status(key)
 
         # TODO: refactor all these tabulate calls
-        status.backend.updated_at = _convert_to_local_time(
-            status.backend.updated_at or ""
+        status.backend.updated_at = hosting.convert_to_local_time(
+            status.backend.updated_at or "N/A"
         )
         backend_status = status.backend.dict(exclude_none=True)
         headers = list(backend_status.keys())
@@ -772,8 +763,8 @@ def get_deployment_status(
         console.print(tabulate([table], headers=headers))
         # Add a new line in console
         console.print("\n")
-        status.frontend.updated_at = _convert_to_local_time(
-            status.frontend.updated_at or ""
+        status.frontend.updated_at = hosting.convert_to_local_time(
+            status.frontend.updated_at or "N/A"
         )
         frontend_status = status.frontend.dict(exclude_none=True)
         headers = list(frontend_status.keys())
