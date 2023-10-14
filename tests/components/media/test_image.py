@@ -43,7 +43,7 @@ try:
             pil_image: The image to serialize.
         """
         image = Image.create(src=pil_image)
-        assert str(image.src.name) == serialize_image(pil_image)  # type: ignore
+        assert str(image.src._var_name) == serialize_image(pil_image)  # type: ignore
 
     def test_render(pil_image: Img):
         """Test that rendering an image works.
@@ -52,7 +52,7 @@ try:
             pil_image: The image to serialize.
         """
         image = Image.create(src=pil_image)
-        assert image.src.is_string  # type: ignore
+        assert image.src._var_is_string  # type: ignore
 
 except ImportError:
 

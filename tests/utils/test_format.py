@@ -211,11 +211,11 @@ def test_format_string(input: str, output: str):
     "input,output",
     [
         (Var.create(value="test"), "{`test`}"),
-        (Var.create(value="test", is_local=True), "{`test`}"),
-        (Var.create(value="test", is_local=False), "{test}"),
-        (Var.create(value="test", is_string=True), "{`test`}"),
-        (Var.create(value="test", is_string=False), "{`test`}"),
-        (Var.create(value="test", is_local=False, is_string=False), "{test}"),
+        (Var.create(value="test", _var_is_local=True), "{`test`}"),
+        (Var.create(value="test", _var_is_local=False), "{test}"),
+        (Var.create(value="test", _var_is_string=True), "{`test`}"),
+        (Var.create(value="test", _var_is_string=False), "{`test`}"),
+        (Var.create(value="test", _var_is_local=False, _var_is_string=False), "{test}"),
     ],
 )
 def test_format_var(input: Var, output: str):
@@ -285,7 +285,7 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         (
             {
                 "a": 'foo "{ "bar" }" baz',
-                "b": BaseVar(name="val", type_="str"),
+                "b": BaseVar(_var_name="val", _var_type="str"),
             },
             r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
         ),
@@ -308,22 +308,25 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
             '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e)}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
-        (BaseVar(name="var", type_="int"), "{var}"),
+        (BaseVar(_var_name="var", _var_type="int"), "{var}"),
         (
             BaseVar(
-                name="_",
-                type_=Any,
-                state="",
-                is_local=True,
-                is_string=False,
+                _var_name="_",
+                _var_type=Any,
+                _var_state="",
+                _var_is_local=True,
+                _var_is_string=False,
             ),
             "{_}",
         ),
-        (BaseVar(name='state.colors["a"]', type_="str"), '{state.colors["a"]}'),
-        ({"a": BaseVar(name="val", type_="str")}, '{{"a": val}}'),
-        ({"a": BaseVar(name='"val"', type_="str")}, '{{"a": "val"}}'),
         (
-            {"a": BaseVar(name='state.colors["val"]', type_="str")},
+            BaseVar(_var_name='state.colors["a"]', _var_type="str"),
+            '{state.colors["a"]}',
+        ),
+        ({"a": BaseVar(_var_name="val", _var_type="str")}, '{{"a": val}}'),
+        ({"a": BaseVar(_var_name='"val"', _var_type="str")}, '{{"a": "val"}}'),
+        (
+            {"a": BaseVar(_var_name='state.colors["val"]', _var_type="str")},
             '{{"a": state.colors["val"]}}',
         ),
         # tricky real-world case from markdown component

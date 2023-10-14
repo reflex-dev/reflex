@@ -176,32 +176,33 @@ class App(Base):
         self.add_cors()
         self.add_default_endpoints()
 
-        # Set up the Socket.IO AsyncServer.
-        self.sio = AsyncServer(
-            async_mode="asgi",
-            cors_allowed_origins="*"
-            if config.cors_allowed_origins == ["*"]
-            else config.cors_allowed_origins,
-            cors_credentials=True,
-            max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-            ping_interval=constants.Ping.INTERVAL,
-            ping_timeout=constants.Ping.TIMEOUT,
-        )
+        if self.state is not DefaultState:
+            # Set up the Socket.IO AsyncServer.
+            self.sio = AsyncServer(
+                async_mode="asgi",
+                cors_allowed_origins="*"
+                if config.cors_allowed_origins == ["*"]
+                else config.cors_allowed_origins,
+                cors_credentials=True,
+                max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
+                ping_interval=constants.Ping.INTERVAL,
+                ping_timeout=constants.Ping.TIMEOUT,
+            )
 
-        # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        self.socket_app = ASGIApp(self.sio, socketio_path="")
-        namespace = config.get_event_namespace()
+            # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
+            self.socket_app = ASGIApp(self.sio, socketio_path="")
+            namespace = config.get_event_namespace()
 
-        if not namespace:
-            raise ValueError("event namespace must be provided in the config.")
+            if not namespace:
+                raise ValueError("event namespace must be provided in the config.")
 
-        # Create the event namespace and attach the main app. Not related to any paths.
-        self.event_namespace = EventNamespace(namespace, self)
+            # Create the event namespace and attach the main app. Not related to any paths.
+            self.event_namespace = EventNamespace(namespace, self)
 
-        # Register the event namespace with the socket.
-        self.sio.register_namespace(self.event_namespace)
-        # Mount the socket app with the API.
-        self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
+            # Register the event namespace with the socket.
+            self.sio.register_namespace(self.event_namespace)
+            # Mount the socket app with the API.
+            self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
         # Set up the admin dash.
         self.setup_admin_dash()

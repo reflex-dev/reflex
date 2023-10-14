@@ -1,7 +1,7 @@
 """ Generated with stubgen from mypy, then manually edited, do not regen."""
 
+from dataclasses import dataclass
 from _typeshed import Incomplete
-from abc import ABC
 from reflex import constants as constants
 from reflex.base import Base as Base
 from reflex.state import State as State
@@ -23,19 +23,19 @@ USED_VARIABLES: Incomplete
 
 def get_unique_variable_name() -> str: ...
 
-class Var(ABC):
-    name: str
-    type_: Type
-    state: str = ""
-    is_local: bool = False
-    is_string: bool = False
+class Var:
+    _var_name: str
+    _var_type: Type
+    _var_state: str = ""
+    _var_is_local: bool = False
+    _var_is_string: bool = False
     @classmethod
     def create(
-        cls, value: Any, is_local: bool = False, is_string: bool = False
+        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
     ) -> Optional[Var]: ...
     @classmethod
     def create_safe(
-        cls, value: Any, is_local: bool = False, is_string: bool = False
+        cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
     ) -> Var: ...
     @classmethod
     def __class_getitem__(cls, type_: str) -> _GenericAlias: ...
@@ -87,31 +87,31 @@ class Var(ABC):
     def foreach(self, fn: Callable) -> Var: ...
     def to(self, type_: Type) -> Var: ...
     @property
-    def full_name(self) -> str: ...
-    def set_state(self, state: Type[State]) -> Any: ...
+    def _var_full_name(self) -> str: ...
+    def _var_set_state(self, state: Type[State]) -> Any: ...
 
-class BaseVar(Var, Base):
-    name: str
-    type_: Any
-    state: str = ""
-    is_local: bool = False
-    is_string: bool = False
+@dataclass(eq=False)
+class BaseVar(Var):
+    _var_name: str
+    _var_type: Any
+    _var_state: str = ""
+    _var_is_local: bool = False
+    _var_is_string: bool = False
     def __hash__(self) -> int: ...
     def get_default_value(self) -> Any: ...
     def get_setter_name(self, include_state: bool = ...) -> str: ...
     def get_setter(self) -> Callable[[State, Any], None]: ...
 
+@dataclass(init=False)
 class ComputedVar(Var):
-    cache: bool
+    _var_cache: bool
+    fget: FunctionType
     @property
-    def name(self) -> str: ...
-    @property
-    def cache_attr(self) -> str: ...
+    def _cache_attr(self) -> str: ...
     def __get__(self, instance, owner): ...
-    def deps(self, objclass: Type, obj: Optional[FunctionType] = ...) -> Set[str]: ...
+    def _deps(self, objclass: Type, obj: Optional[FunctionType] = ...) -> Set[str]: ...
     def mark_dirty(self, instance) -> None: ...
-    @property
-    def type_(self): ...
+    def _determine_var_type(self) -> Type: ...
     def __init__(self, func) -> None: ...
 
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...

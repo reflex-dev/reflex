@@ -131,8 +131,8 @@ def EventChain():
     @app.add_page
     def index():
         return rx.fragment(
-            rx.input(value=State.token, readonly=True, id="token"),
-            rx.input(value=State.interim_value, readonly=True, id="interim_value"),
+            rx.input(value=State.token, is_read_only=True, id="token"),
+            rx.input(value=State.interim_value, is_read_only=True, id="interim_value"),
             rx.button(
                 "Return Event",
                 id="return_event",

@@ -6,7 +6,7 @@ import textwrap
 from typing import Any, Callable, Dict, Union
 
 from reflex.compiler import utils
-from reflex.components.component import Component
+from reflex.components.component import Component, CustomComponent
 from reflex.components.datadisplay.list import ListItem, OrderedList, UnorderedList
 from reflex.components.navigation import Link
 from reflex.components.tags.tag import Tag
@@ -17,17 +17,18 @@ from reflex.utils import console, imports, types
 from reflex.vars import ImportVar, Var
 
 # Special vars used in the component map.
-_CHILDREN = Var.create_safe("children", is_local=False)
-_PROPS = Var.create_safe("...props", is_local=False)
+_CHILDREN = Var.create_safe("children", _var_is_local=False)
+_PROPS = Var.create_safe("...props", _var_is_local=False)
+_MOCK_ARG = Var.create_safe("")
 
 # Special remark plugins.
-_REMARK_MATH = Var.create_safe("remarkMath", is_local=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", is_local=False)
+_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False)
 _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM])
 
 # Special rehype plugins.
-_REHYPE_KATEX = Var.create_safe("rehypeKatex", is_local=False)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", is_local=False)
+_REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
 # Component Mapping
@@ -122,6 +123,25 @@ class Markdown(Component):
         # Create the component.
         return super().create(src, component_map=component_map, **props)
 
+    def get_custom_components(
+        self, seen: set[str] | None = None
+    ) -> set[CustomComponent]:
+        """Get all the custom components used by the component.
+
+        Args:
+            seen: The tags of the components that have already been seen.
+
+        Returns:
+            The set of custom components.
+        """
+        custom_components = super().get_custom_components(seen=seen)
+
+        # Get the custom components for each tag.
+        for component in self.component_map.values():
+            custom_components |= component(_MOCK_ARG).get_custom_components(seen=seen)
+
+        return custom_components
+
     def _get_imports(self) -> imports.ImportDict:
         # Import here to avoid circular imports.
         from reflex.components.datadisplay.code import Code, CodeBlock
@@ -133,21 +153,23 @@ class Markdown(Component):
             {
                 "": {ImportVar(tag="katex/dist/katex.min.css")},
                 "remark-math@5.1.1": {
-                    ImportVar(tag=_REMARK_MATH.name, is_default=True)
+                    ImportVar(tag=_REMARK_MATH._var_name, is_default=True)
                 },
-                "remark-gfm@3.0.1": {ImportVar(tag=_REMARK_GFM.name, is_default=True)},
+                "remark-gfm@3.0.1": {
+                    ImportVar(tag=_REMARK_GFM._var_name, is_default=True)
+                },
                 "rehype-katex@6.0.3": {
-                    ImportVar(tag=_REHYPE_KATEX.name, is_default=True)
+                    ImportVar(tag=_REHYPE_KATEX._var_name, is_default=True)
                 },
-                "rehype-raw@6.1.1": {ImportVar(tag=_REHYPE_RAW.name, is_default=True)},
+                "rehype-raw@6.1.1": {
+                    ImportVar(tag=_REHYPE_RAW._var_name, is_default=True)
+                },
             }
         )
 
         # Get the imports for each component.
         for component in self.component_map.values():
-            imports = utils.merge_imports(
-                imports, component(Var.create("")).get_imports()
-            )
+            imports = utils.merge_imports(imports, component(_MOCK_ARG).get_imports())
 
         # Get the imports for the code components.
         imports = utils.merge_imports(
@@ -208,20 +230,20 @@ class Markdown(Component):
             The formatted component map.
         """
         components = {
-            tag: f"{{({{{_CHILDREN.name}, {_PROPS.name}}}) => {self.format_component(tag)}}}"
+            tag: f"{{({{{_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
         components[
             "code"
-        ] = f"""{{({{inline, className, {_CHILDREN.name}, {_PROPS.name}}}) => {{
+        ] = f"""{{({{inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     return inline ? (
         {self.format_component("code")}
     ) : (
-        {self.format_component("codeblock", language=Var.create_safe("language", is_local=False), children=Var.create_safe("String(children)", is_local=False))}
+        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False), children=Var.create_safe("String(children)", _var_is_local=False))}
     );
       }}}}""".replace(
             "\n", " "

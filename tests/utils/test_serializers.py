@@ -105,16 +105,16 @@ def test_add_serializer():
         ([1, 2, 3], "[1, 2, 3]"),
         ([1, "2", 3.0], '[1, "2", 3.0]'),
         (
-            [1, Var.create_safe("hi"), Var.create_safe("bye", is_local=False)],
+            [1, Var.create_safe("hi"), Var.create_safe("bye", _var_is_local=False)],
             '[1, "hi", bye]',
         ),
         (
-            (1, Var.create_safe("hi"), Var.create_safe("bye", is_local=False)),
+            (1, Var.create_safe("hi"), Var.create_safe("bye", _var_is_local=False)),
             '[1, "hi", bye]',
         ),
         ({1: 2, 3: 4}, '{"1": 2, "3": 4}'),
         (
-            {1: Var.create_safe("hi"), 3: Var.create_safe("bye", is_local=False)},
+            {1: Var.create_safe("hi"), 3: Var.create_safe("bye", _var_is_local=False)},
             '{"1": "hi", "3": bye}',
         ),
         (datetime.datetime(2021, 1, 1, 1, 1, 1, 1), "2021-01-01 01:01:01.000001"),
