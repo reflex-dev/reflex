@@ -137,3 +137,11 @@ jobs:
           # Check that npm is home
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
+
+      - name: run Lighthouse CI
+        working-directory: ./reflex-web/.web
+        run: |
+          npm install -g @lhci/cli@0.3.x
+          lhci autorun --upload.target=temporary-public-storage || echo "LHCI failed!"
+        env:
+          LHCI_GITHUB_APP_TOKEN: $
