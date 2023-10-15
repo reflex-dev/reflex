@@ -1,4 +1,4 @@
-name: integration-tests
+name: lighthouse-tests
 
 on:
   push:
