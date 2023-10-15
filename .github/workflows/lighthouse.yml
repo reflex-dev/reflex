@@ -67,7 +67,7 @@ jobs:
       - name: Install LightHouse Pre-reqs
         working-directory: ./reflex-web/.web
         run: |
-          poetry run bash scripts/lighthouse.sh
+          poetry run bash scripts/lighthouse.sh ./reflex-web/.web
       - name: run Lighthouse CI
         working-directory: ./reflex-web/.web
         run: |
