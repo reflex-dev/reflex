@@ -32,6 +32,7 @@ from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
+from reflex.components.base.app_wrap import AppWrap
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
 from reflex.components.navigation.client_side_routing import (
@@ -124,6 +125,9 @@ class App(Base):
 
     # Background tasks that are currently running
     background_tasks: Set[asyncio.Task] = set()
+
+    # The radix theme for the entire app
+    theme: Optional[Component] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -569,6 +573,15 @@ class App(Base):
         page_imports.update(_frontend_packages)
         prerequisites.install_frontend_packages(page_imports)
 
+    def _app_root(self, app_wrappers):
+        order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
+        root = parent = app_wrappers[order[0]]
+        for key in order[1:]:
+            child = app_wrappers[key]
+            parent.children.append(child)
+            parent = child
+        return root
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
         if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
@@ -601,12 +614,21 @@ class App(Base):
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
         all_imports = {}
+        page_futures = []
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            # Default app wrap component renders {children}
+            (0, "AppWrap"): AppWrap.create()
+        }
+        if self.theme is not None:
+            # If a theme component was provided, wrap the app with it
+            app_wrappers[(20, "Theme")] = self.theme
+
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
                 component.add_style(self.style)
-                compile_results.append(
+                page_futures.append(
                     thread_pool.apply_async(
                         compiler.compile_page,
                         args=(
@@ -619,14 +641,22 @@ class App(Base):
                 # add component.get_imports() to all_imports
                 all_imports.update(component.get_imports())
 
+                # add the app wrappers from this component
+                app_wrappers.update(component.get_app_wrap_components())
+
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
 
         thread_pool.close()
         thread_pool.join()
 
-        # Get the results.
-        compile_results = [result.get() for result in compile_results]
+        # Compile the app wrapper.
+        app_root = self._app_root(app_wrappers=app_wrappers)
+        all_imports.update(app_root.get_imports())
+        compile_results.append(compiler.compile_app(app_root))
+
+        # Get the compiled pages.
+        compile_results.extend(result.get() for result in page_futures)
 
         # TODO the compile tasks below may also benefit from parallelization too
 
@@ -644,7 +674,7 @@ class App(Base):
         compile_results.append(compiler.compile_document_root(self.head_components))
 
         # Compile the theme.
-        compile_results.append(compiler.compile_theme(self.style))
+        compile_results.append(compiler.compile_theme(style=self.style))
 
         # Compile the contexts.
         compile_results.append(compiler.compile_contexts(self.state))
