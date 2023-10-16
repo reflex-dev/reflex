@@ -1,7 +1,7 @@
 """Components that are based on Chakra-UI."""
 from __future__ import annotations
 
-from typing import List
+from typing import List, Literal
 
 from reflex.components.component import Component
 from reflex.utils import imports
@@ -52,8 +52,8 @@ class ChakraProvider(ChakraComponent):
             A new ChakraProvider component.
         """
         return super().create(
-            Global.create(styles=Var.create("GlobalStyles", is_local=False)),
-            theme=Var.create("extendTheme(theme)", is_local=False),
+            Global.create(styles=Var.create("GlobalStyles", _var_is_local=False)),
+            theme=Var.create("extendTheme(theme)", _var_is_local=False),
         )
 
     def _get_imports(self) -> imports.ImportDict:
@@ -94,3 +94,106 @@ class ChakraColorModeProvider(Component):
     library = "/components/reflex/chakra_color_mode_provider.js"
     tag = "ChakraColorModeProvider"
     is_default = True
+
+
+LiteralColorScheme = Literal[
+    "gray",
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "teal",
+    "blue",
+    "cyan",
+    "purple",
+    "pink",
+    "whiteAlpha",
+    "blackAlpha",
+    "linkedin",
+    "facebook",
+    "messenger",
+    "whatsapp",
+    "twitter",
+    "telegram",
+]
+
+
+LiteralVariant = Literal["solid", "subtle", "outline"]
+LiteralDividerVariant = Literal["solid", "dashed"]
+LiteralTheme = Literal["light", "dark"]
+LiteralTagColorScheme = Literal[
+    "gray",
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "teal",
+    "blue",
+    "cyan",
+    "purple",
+    "pink",
+]
+LiteralTagAlign = Literal["center", "end", "start"]
+LiteralTabsVariant = Literal[
+    "line",
+    "enclosed",
+    "enclosed-colored",
+    "soft-rounded",
+    "solid-rounded",
+    "unstyled",
+]
+
+LiteralStatus = Literal["success", "info", "warning", "error"]
+LiteralAlertVariant = Literal["subtle", "left-accent", "top-accent", "solid"]
+LiteralButtonVariant = Literal["ghost", "outline", "solid", "link", "unstyled"]
+LiteralSpinnerPlacement = Literal["start", "end"]
+LiteralLanguage = Literal[
+    "en",
+    "da",
+    "de",
+    "es",
+    "fr",
+    "ja",
+    "ko",
+    "pt_br",
+    "ru",
+    "zh_cn",
+    "ro",
+    "pl",
+    "ckb",
+    "lv",
+    "se",
+    "ua",
+    "he",
+    "it",
+]
+LiteralInputVariant = Literal["outline", "filled", "flushed", "unstyled"]
+LiteralInputNumberMode = [
+    "text",
+    "search",
+    "none",
+    "tel",
+    "url",
+    "email",
+    "numeric",
+    "decimal",
+]
+LiteralChakraDirection = Literal["ltr", "rtl"]
+LiteralCardVariant = Literal["outline", "filled", "elevated", "unstyled"]
+LiteralStackDirection = Literal["row", "column"]
+LiteralImageLoading = Literal["eager", "lazy"]
+LiteralTagSize = Literal["sm", "md", "lg"]
+LiteralSpinnerSize = Literal[Literal[LiteralTagSize], "xs", "xl"]
+LiteralAvatarSize = Literal[Literal[LiteralTagSize], "xl", "xs", "2xl", "full", "2xs"]
+LiteralButtonSize = Literal["sm", "md", "lg", "xs"]
+# Applies to AlertDialog and Modal
+LiteralAlertDialogSize = Literal[
+    "sm", "md", "lg", "xs", "2xl", "full", "3xl", "4xl", "5xl", "6xl"
+]
+LiteralDrawerSize = Literal[Literal[LiteralSpinnerSize], "xl", "full"]
+
+LiteralMenuStrategy = Literal["fixed", "absolute"]
+LiteralMenuOption = Literal["checkbox", "radio"]
+LiteralPopOverTrigger = Literal["click", "hover"]
+
+LiteralHeadingSize = Literal["lg", "md", "sm", "xs", "xl", "2xl", "3xl", "4xl"]

@@ -41,7 +41,7 @@ from reflex.event import (
     fix_events,
     window_alert,
 )
-from reflex.utils import format, prerequisites, types
+from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.vars import BaseVar, ComputedVar, Var
 
@@ -132,7 +132,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
-            for var in cvar.deps(objclass=type(self)):
+            for var in cvar._deps(objclass=type(self)):
                 self.computed_var_dependencies[var].add(cvar_name)
                 if var in inherited_vars:
                     # track that this substate depends on its parent for this var
@@ -211,12 +211,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(name=f.name, type_=f.outer_type_).set_state(cls)
+            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
+                cls
+            )
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v.name: v.set_state(cls)
+            v._var_name: v._var_set_state(cls)
             for v in cls.__dict__.values()
             if isinstance(v, ComputedVar)
         }
@@ -389,12 +391,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             TypeError: if the variable has an incorrect type
         """
-        if not types.is_valid_var_type(prop.type_):
+        if not types.is_valid_var_type(prop._var_type):
             raise TypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
-                f'Found var "{prop.name}" with type {prop.type_}.'
+                f'Found var "{prop._var_name}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
         cls._create_setter(prop)
@@ -421,8 +423,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = BaseVar(name=name, type_=type_)
-        var.set_state(cls)
+        var = BaseVar(_var_name=name, _var_type=type_)
+        var._var_set_state(cls)
 
         # add the pydantic field dynamically (must be done before _init_var)
         cls.add_field(var, default_value)
@@ -444,7 +446,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var instance to set.
         """
-        setattr(cls, prop.name, prop)
+        setattr(cls, prop._var_name, prop)
 
     @classmethod
     def _create_setter(cls, prop: BaseVar):
@@ -467,7 +469,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        field = cls.get_fields()[prop.name]
+        field = cls.get_fields()[prop._var_name]
         default_value = prop.get_default_value()
         if field.required and default_value is not None:
             field.required = False
@@ -548,6 +550,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
                 The dict of cookies.
         """
+        console.deprecate(
+            feature_name=f"rx.get_cookies",
+            reason="and has been replaced by rx.Cookie, which can be used as a state var",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         cookie_dict = {}
         cookies = self.get_headers().get(constants.RouteVar.COOKIE, "").split(";")
 
@@ -593,8 +601,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            func.fget.__name__ = param  # to allow passing as a prop # type: ignore
-            cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
+            # to allow passing as a prop
+            func._var_name = param
+            cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
     def __getattribute__(self, name: str) -> Any:
@@ -906,7 +915,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         return set(
             cvar_name
             for cvar_name, cvar in self.computed_vars.items()
-            if not cvar.cache
+            if not cvar._cache
         )
 
     def _mark_dirty_computed_vars(self) -> None:

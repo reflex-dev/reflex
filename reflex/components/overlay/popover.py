@@ -4,7 +4,12 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralChakraDirection,
+    LiteralMenuStrategy,
+    LiteralPopOverTrigger,
+)
 from reflex.vars import Var
 
 
@@ -38,7 +43,7 @@ class Popover(ChakraComponent):
     default_is_open: Var[bool]
 
     # Theme direction ltr or rtl. Popper's placement will be set accordingly
-    direction: Var[str]
+    direction: Var[LiteralChakraDirection]
 
     # If true, the popper will change its placement and flip when it's about to overflow its boundary area.
     flip: Var[bool]
@@ -71,10 +76,10 @@ class Popover(ChakraComponent):
     return_focus_on_close: Var[bool]
 
     # The CSS positioning strategy to use. ("fixed" | "absolute")
-    strategy: Var[str]
+    strategy: Var[LiteralMenuStrategy]
 
     # The interaction that triggers the popover. hover - means the popover will open when you hover with mouse or focus with keyboard on the popover trigger click - means the popover will open on click or press Enter to Space on keyboard ("click" | "hover")
-    trigger: Var[str]
+    trigger: Var[LiteralPopOverTrigger]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers for the component.

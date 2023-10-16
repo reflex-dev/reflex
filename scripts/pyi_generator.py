@@ -7,16 +7,93 @@ import re
 import sys
 from inspect import getfullargspec
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union, get_args  # NOQA
+from typing import Any, Dict, List, Literal, Optional, Set, Union, get_args  # NOQA
 
 import black
 
 from reflex.components.component import Component
+
+# NOQA
+from reflex.components.graphing.recharts.recharts import (
+    LiteralAnimationEasing,
+    LiteralAreaType,
+    LiteralComposedChartBaseValue,
+    LiteralDirection,
+    LiteralGridType,
+    LiteralIconType,
+    LiteralIfOverflow,
+    LiteralInterval,
+    LiteralLayout,
+    LiteralLegendAlign,
+    LiteralLineType,
+    LiteralOrientationTopBottom,
+    LiteralOrientationTopBottomLeftRight,
+    LiteralPolarRadiusType,
+    LiteralPosition,
+    LiteralScale,
+    LiteralShape,
+    LiteralStackOffset,
+    LiteralSyncMethod,
+    LiteralVerticalAlign,
+)
+from reflex.components.libs.chakra import (
+    LiteralAlertDialogSize,
+    LiteralAvatarSize,
+    LiteralChakraDirection,
+    LiteralColorScheme,
+    LiteralDrawerSize,
+    LiteralImageLoading,
+    LiteralInputVariant,
+    LiteralMenuOption,
+    LiteralMenuStrategy,
+    LiteralTagSize,
+)
+
+# NOQA
 from reflex.event import EventChain
 from reflex.style import Style
+from reflex.utils import format
+from reflex.utils import types as rx_types
 from reflex.vars import Var
 
-ruff_dont_remove = [Var, Optional, Dict, List, EventChain, Style]
+ruff_dont_remove = [
+    Var,
+    Optional,
+    Dict,
+    List,
+    EventChain,
+    Style,
+    LiteralInputVariant,
+    LiteralColorScheme,
+    LiteralChakraDirection,
+    LiteralTagSize,
+    LiteralDrawerSize,
+    LiteralMenuStrategy,
+    LiteralMenuOption,
+    LiteralAlertDialogSize,
+    LiteralAvatarSize,
+    LiteralImageLoading,
+    LiteralLayout,
+    LiteralAnimationEasing,
+    LiteralGridType,
+    LiteralPolarRadiusType,
+    LiteralScale,
+    LiteralSyncMethod,
+    LiteralStackOffset,
+    LiteralComposedChartBaseValue,
+    LiteralOrientationTopBottom,
+    LiteralAreaType,
+    LiteralShape,
+    LiteralLineType,
+    LiteralDirection,
+    LiteralIfOverflow,
+    LiteralOrientationTopBottomLeftRight,
+    LiteralInterval,
+    LiteralLegendAlign,
+    LiteralVerticalAlign,
+    LiteralIconType,
+    LiteralPosition,
+]
 
 EXCLUDED_FILES = [
     "__init__.py",
@@ -48,7 +125,16 @@ def _get_type_hint(value, top_level=True, no_union=False):
     res = ""
     args = get_args(value)
     if args:
-        res = f"{value.__name__}[{', '.join([_get_type_hint(arg, top_level=False) for arg in args if arg is not type(None)])}]"
+        inner_container_type_args = (
+            [format.wrap(arg, '"') for arg in args]
+            if rx_types.is_literal(value)
+            else [
+                _get_type_hint(arg, top_level=False)
+                for arg in args
+                if arg is not type(None)
+            ]
+        )
+        res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
             types = [res] + [
@@ -289,7 +375,7 @@ class PyiGenerator:
         ]
         if not class_names:
             return
-        print(f"Parsed {file}: Found {[n for n,_ in class_names]}")
+        print(f"Parsed {file}: Found {[n for n, _ in class_names]}")
         self._write_pyi_file(local_variables, functions, class_names)
 
     def _scan_folder(self, folder):

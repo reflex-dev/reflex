@@ -58,7 +58,7 @@ class DebounceInput(Component):
             raise ValueError("DebounceInput child requires an on_change handler")
         child_ref = child.get_ref()
         if child_ref and not props.get("ref"):
-            props["input_ref"] = Var.create(child_ref, is_local=False)
+            props["input_ref"] = Var.create(child_ref, _var_is_local=False)
         self.children = []
         tag = super()._render()
         tag.add_props(
@@ -69,8 +69,8 @@ class DebounceInput(Component):
             class_name=child.class_name,
             element=Var.create(
                 "{%s}" % (child.alias or child.tag),
-                is_local=False,
-                is_string=False,
+                _var_is_local=False,
+                _var_is_string=False,
             ),
         )
         # do NOT render the child, DebounceInput will create it
