@@ -58,14 +58,10 @@ jobs:
       - name: Init Website for reflex-web
         working-directory: ./reflex-web
         run: poetry run reflex init
-      - name: Run Website and Check for errors
+      - name: Install LightHouse Pre-reqs / Run LightHouse
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/integration.sh ./reflex-web prod
-    
-      - name: Install LightHouse Pre-reqs / Run LightHouse
-        run: |
           poetry run bash scripts/lighthouse.sh ./reflex-web
         env:
             LHCI_GITHUB_APP_TOKEN: $

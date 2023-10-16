@@ -6,21 +6,6 @@ shift
 pushd "$project_dir" || exit 1
 echo "Changed directory to $project_dir"
 
-# Create a lighthouserc.js file
-cat << EOF > lighthouserc.js
-module.exports = {
-  ci: {
-    collect: {
-     staticDistDir: './public',
-     numberOfRuns: 1,
-     url: ['http://localhost:3000']
-    },
-    upload: {
-      target: 'temporary-public-storage',
-    },
-  },
-};
-EOF
 
 # So we get stdout / stderr from Python ASAP. Without this, delays can be very long (e.g. on Windows, Github Actions)
 export PYTHONUNBUFFERED=1
@@ -43,6 +28,24 @@ echo "Started server with PID $pid"
 
 # Change to .web directory
 cd .web
+
+# Create a lighthouserc.js file
+cat << EOF > lighthouserc.js
+module.exports = {
+  ci: {
+    collect: {
+     staticDistDir: './public',
+     numberOfRuns: 1,
+     url: ['http://localhost:3000']
+    },
+    upload: {
+      target: 'temporary-public-storage',
+    },
+  },
+};
+EOF
+
+# Install and Run LHCI
 npm install -g @lhci/cli@0.3.x
 lhci autorun --upload.target=temporary-public-storage || echo "LHCI failed!"
 
