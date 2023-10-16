@@ -42,7 +42,7 @@ python scripts/wait_for_listening_port.py $check_ports --timeout=600 --server-pi
 if curl --output /dev/null --silent --head --fail "http://localhost:3000"; then
   echo "URL exists: http://localhost:3000"
 else
-  echo "URL does not exist: http://localhost:3000"
+  echo "URL does not exist: https://localhost:3000"
 fi
 
 # Change to .web directory
@@ -59,7 +59,7 @@ module.exports = {
     collect: {
      staticDistDir: './public',
      numberOfRuns: 1,
-     url: ['http://localhost:3000']
+     url: ['https://localhost:3000']
     },
     upload: {
       target: 'temporary-public-storage',
