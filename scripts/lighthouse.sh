@@ -98,15 +98,21 @@ for json_file in "$json_dir"/*.json; do
         # Construct the event name with the JSON file name
         event="Lighthouse CI - $file_name"
 
-        # Construct the JSON payload
+        # Create a temporary file for the payload
+        tmpfile=$(mktemp)
+
+        # Construct the JSON payload and write it to the temporary file
         payload="{\"api_key\": \"$api_key\", \"event\": \"$event\", \"properties\": $json_data, \"timestamp\": \"$timestamp\"}"
+        echo "$payload" > "$tmpfile"
 
         # Send the POST request with the constructed payload using curl
-        response=$(curl -X POST -H "Content-Type: application/json" -d "$payload" "$base_url")
+        response=$(curl -X POST -H "Content-Type: application/json" --data @"$tmpfile" "$base_url")
+
+        # Clean up the temporary file
+        rm "$tmpfile"
 
         # Print the response for each file
         echo "Response for $json_file:"
         echo "$response"
     fi
-done
 done
