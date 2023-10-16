@@ -57,7 +57,6 @@ cat << EOF > lighthouserc.js
 module.exports = {
   ci: {
     collect: {
-     staticDistDir: './public',
      isSinglePageApplication: true,
      numberOfRuns: 1,
      url: ['https://localhost:3000/index.html']
