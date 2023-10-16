@@ -37,6 +37,14 @@ fi
 
 python scripts/wait_for_listening_port.py $check_ports --timeout=600 --server-pid "$pid"
 
+
+# Check if something is running on port 3000
+if curl --output /dev/null --silent --head --fail "http://localhost:3000"; then
+  echo "URL exists: http://localhost:3000"
+else
+  echo "URL does not exist: http://localhost:3000"
+fi
+
 # Change to .web directory
 project_dir=$1
 shift
