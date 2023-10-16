@@ -54,7 +54,7 @@ def init(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
     template: constants.Templates.Kind = typer.Option(
-        constants.Templates.Kind.DEFAULT,
+        constants.Templates.Kind.DEFAULT.value,
         help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
