@@ -77,7 +77,7 @@ class ChartBase(RechartsCharts):
             return
         if isinstance(value, str) and value.endswith("%"):
             return
-        if isinstance(value, Var) and issubclass(value.type_, int):
+        if isinstance(value, Var) and issubclass(value._var_type, int):
             return
         raise ValueError(
             f"Chart {name} must be specified as int pixels or percentage, not {value!r}. "
@@ -112,7 +112,7 @@ class ChartBase(RechartsCharts):
 
         return ResponsiveContainer.create(
             super().create(*children, **props),
-            **dim_props,
+            **dim_props,  # type: ignore
         )
 
 
