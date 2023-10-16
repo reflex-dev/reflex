@@ -59,7 +59,7 @@ module.exports = {
     collect: {
      isSinglePageApplication: true,
      numberOfRuns: 1,
-     url: ['https://localhost:3000/index.html']
+     url: ['http://localhost:3000']
     },
     upload: {
       target: 'temporary-public-storage',
