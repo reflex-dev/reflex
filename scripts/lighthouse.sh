@@ -102,7 +102,7 @@ for json_file in "$json_dir"/*.json; do
         event="Lighthouse CI - $file_name"
 
         # Construct the JSON payload with the random distinct_id
-        payload="{\"api_key\": \"$api_key\", \"event\": \"$event\", \"properties\": {\"distinct_id\": $distinct_id, $json_data}, \"timestamp\": \"$timestamp\"}"
+        payload="{\"api_key\": \"$api_key\", \"event\": \"$event\", \"timestamp\": \"$timestamp\", \"distinct_id\": $distinct_id, \"properties\": $json_data}"
 
         # Create a temporary file for the payload
         tmpfile=$(mktemp)
