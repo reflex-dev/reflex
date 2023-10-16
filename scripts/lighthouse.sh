@@ -14,7 +14,7 @@ module.exports = {
      numberOfRuns: 1
     },
     upload: {
-      /* Add configuration here */
+      target: 'temporary-public-storage',
     },
   },
 };
