@@ -26,7 +26,22 @@ trap "kill -INT $pid_in_bash ||:" EXIT
 
 echo "Started server with PID $pid"
 
+# Assume we run from the root of the repo
+popd
+
+# In Windows, our Python script below needs to work with the WINPID
+if [ -f /proc/$pid/winpid ]; then
+  pid=$(cat /proc/$pid/winpid)
+  echo "Windows detected, passing winpid $pid to port waiter"
+fi
+
+python scripts/wait_for_listening_port.py $check_ports --timeout=600 --server-pid "$pid"
+
 # Change to .web directory
+project_dir=$1
+shift
+pushd "$project_dir" || exit 1
+echo "Changed directory to $project_dir"
 cd .web
 
 # Create a lighthouserc.js file
@@ -47,15 +62,4 @@ EOF
 
 # Install and Run LHCI
 npm install -g @lhci/cli@0.3.x
-lhci autorun --upload.target=temporary-public-storage || echo "LHCI failed!"
-
-# Assume we run from the root of the repo
-popd
-
-# In Windows, our Python script below needs to work with the WINPID
-if [ -f /proc/$pid/winpid ]; then
-  pid=$(cat /proc/$pid/winpid)
-  echo "Windows detected, passing winpid $pid to port waiter"
-fi
-
-python scripts/wait_for_listening_port.py $check_ports --timeout=600 --server-pid "$pid"
+lhci autorun || echo "LHCI failed!"
