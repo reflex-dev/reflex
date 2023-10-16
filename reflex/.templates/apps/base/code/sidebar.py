@@ -103,12 +103,12 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
                 text,
             ),
             bg=rx.cond(
-                State.origin_url == "/" + text.lower() + "/",
+                State.origin_url == f"/{text.lower()}/",
                 accent_color,
                 "transparent",
             ),
             color=rx.cond(
-                State.origin_url == "/" + text.lower() + "/",
+                State.origin_url == f"/{text.lower()}/",
                 accent_text_color,
                 text_color,
             ),

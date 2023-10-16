@@ -29,8 +29,12 @@ def template(main_content: Callable[[], rx.Component]) -> rx.Component:
             rx.menu_list(
                 rx.menu_item(rx.link("Home", href="/", width="100%")),
                 rx.menu_divider(),
-                rx.menu_item(rx.link("About", href="https://github.com/reflex-dev", width="100%")),
-                rx.menu_item(rx.link("Contact", href="mailto:founders@=reflex.dev", width="100%")),
+                rx.menu_item(
+                    rx.link("About", href="https://github.com/reflex-dev", width="100%")
+                ),
+                rx.menu_item(
+                    rx.link("Contact", href="mailto:founders@=reflex.dev", width="100%")
+                ),
             ),
         ),
         position="fixed",
