@@ -740,15 +740,7 @@ class Component(Base, ABC):
         return refs
 
     def get_custom_components(
-<<<<<<< HEAD
-<<<<<<< HEAD
         self, seen: set[str] | None = None
-=======
-            self, seen: Optional[Set[str]] = None
->>>>>>> ecc97ac (Props as Literals)
-=======
-        self, seen: Optional[Set[str]] = None
->>>>>>> c099890 (lint)
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -873,15 +865,7 @@ class CustomComponent(Component):
         return set()
 
     def get_custom_components(
-<<<<<<< HEAD
-<<<<<<< HEAD
         self, seen: set[str] | None = None
-=======
-            self, seen: Optional[Set[str]] = None
->>>>>>> ecc97ac (Props as Literals)
-=======
-        self, seen: Optional[Set[str]] = None
->>>>>>> c099890 (lint)
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
