@@ -23,7 +23,7 @@ function AppWrap({children}) {
 
 export default function MyApp({ Component, pageProps }) {
   return (
-    <ThemeProvider storageKey="chakra-ui-color-mode" attribute="class">
+    <ThemeProvider defaultTheme="light" storageKey="chakra-ui-color-mode" attribute="class">
       <AppWrap>
         <EventLoopProvider>
           <Component {...pageProps} />
