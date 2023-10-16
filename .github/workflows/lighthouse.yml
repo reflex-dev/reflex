@@ -64,13 +64,9 @@ jobs:
           npm -v
           poetry run bash scripts/integration.sh ./reflex-web prod
     
-      - name: Install LightHouse Pre-reqs
+      - name: Install LightHouse Pre-reqs / Run LightHouse
         run: |
-          poetry run bash scripts/lighthouse.sh ./reflex-web/.web
-      - name: run Lighthouse CI
-        working-directory: ./reflex-web/.web
-        run: |
-          npm install -g @lhci/cli@0.3.x
-          lhci autorun --upload.target=temporary-public-storage || echo "LHCI failed!"
+          poetry run bash scripts/lighthouse.sh ./reflex-web
         env:
-          LHCI_GITHUB_APP_TOKEN: $
+            LHCI_GITHUB_APP_TOKEN: $
+        
