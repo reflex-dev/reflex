@@ -106,6 +106,7 @@ class Component(Base, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
+            ValueError: If a prop value is invalid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -154,9 +155,25 @@ class Component(Base, ABC):
                     if kwargs[key] is None:
                         raise TypeError
 
-                    # Get the passed type and the var type.
-                    passed_type = kwargs[key].type_
                     expected_type = fields[key].outer_type_.__args__[0]
+
+                    if (
+                        types.is_literal(expected_type)
+                        and value not in expected_type.__args__
+                    ):
+                        allowed_values = expected_type.__args__
+                        if value not in allowed_values:
+                            raise ValueError(
+                                f"prop value for {key} of the `{type(self).__name__}` component should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
+                            )
+
+                    # Get the passed type and the var type.
+                    passed_type = kwargs[key]._var_type
+                    expected_type = (
+                        type(expected_type.__args__[0])
+                        if types.is_literal(expected_type)
+                        else expected_type
+                    )
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -222,7 +239,7 @@ class Component(Base, ABC):
 
         # If it's an event chain var, return it.
         if isinstance(value, Var):
-            if value.type_ is not EventChain:
+            if value._var_type is not EventChain:
                 raise ValueError(f"Invalid event chain: {value}")
             return value
         elif isinstance(value, EventChain):
@@ -244,7 +261,7 @@ class Component(Base, ABC):
                     feature_name="EventChain",
                     reason="to avoid confusion, only use yield API",
                     deprecation_version="0.2.8",
-                    removal_version="0.2.9",
+                    removal_version="0.3.0",
                 )
             events: list[EventSpec] = []
             for v in value:
@@ -305,7 +322,7 @@ class Component(Base, ABC):
                 feature_name=f"get_triggers ({self.__class__.__name__})",
                 reason="replaced by get_event_triggers",
                 deprecation_version="0.2.8",
-                removal_version="0.2.9",
+                removal_version="0.3.1",
             )
             deprecated_triggers = {
                 trigger: lambda: [] for trigger in deprecated_triggers
@@ -319,7 +336,7 @@ class Component(Base, ABC):
                 feature_name=f"get_controlled_triggers ({self.__class__.__name__})",
                 reason="replaced by get_event_triggers",
                 deprecation_version="0.2.8",
-                removal_version="0.2.9",
+                removal_version="0.3.0",
             )
 
         return {
@@ -397,7 +414,7 @@ class Component(Base, ABC):
         # Add ref to element if `id` is not None.
         ref = self.get_ref()
         if ref is not None:
-            props["ref"] = Var.create(ref, is_local=False)
+            props["ref"] = Var.create(ref, _var_is_local=False)
 
         return tag.add_props(**props)
 
@@ -449,7 +466,7 @@ class Component(Base, ABC):
         children = [
             child
             if isinstance(child, Component)
-            else Bare.create(contents=Var.create(child, is_string=True))
+            else Bare.create(contents=Var.create(child, _var_is_string=True))
             for child in children
         ]
 
@@ -549,7 +566,7 @@ class Component(Base, ABC):
             if self.valid_children:
                 validate_valid_child(name)
 
-    def _get_custom_code(self) -> Optional[str]:
+    def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
 
         Returns:
@@ -578,7 +595,7 @@ class Component(Base, ABC):
         # Return the code.
         return code
 
-    def _get_dynamic_imports(self) -> Optional[str]:
+    def _get_dynamic_imports(self) -> str | None:
         """Get dynamic import for the component.
 
         Returns:
@@ -676,7 +693,7 @@ class Component(Base, ABC):
             if hook
         )
 
-    def _get_hooks(self) -> Optional[str]:
+    def _get_hooks(self) -> str | None:
         """Get the React hooks for this component.
 
         Downstream components should override this method to add their own hooks.
@@ -706,7 +723,7 @@ class Component(Base, ABC):
 
         return code
 
-    def get_ref(self) -> Optional[str]:
+    def get_ref(self) -> str | None:
         """Get the name of the ref for the component.
 
         Returns:
@@ -732,7 +749,7 @@ class Component(Base, ABC):
         return refs
 
     def get_custom_components(
-        self, seen: Optional[Set[str]] = None
+        self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -817,11 +834,13 @@ class CustomComponent(Component):
             # Handle subclasses of Base.
             if types._issubclass(type_, Base):
                 try:
-                    value = BaseVar(name=value.json(), type_=type_, is_local=True)
+                    value = BaseVar(
+                        _var_name=value.json(), _var_type=type_, _var_is_local=True
+                    )
                 except Exception:
                     value = Var.create(value)
             else:
-                value = Var.create(value, is_string=type(value) is str)
+                value = Var.create(value, _var_is_string=type(value) is str)
 
             # Set the prop.
             self.props[format.to_camel_case(key)] = value
@@ -855,7 +874,7 @@ class CustomComponent(Component):
         return set()
 
     def get_custom_components(
-        self, seen: Optional[Set[str]] = None
+        self, seen: set[str] | None = None
     ) -> Set[CustomComponent]:
         """Get all the custom components used by the component.
 
@@ -884,7 +903,10 @@ class CustomComponent(Component):
         Returns:
             The tag to render.
         """
-        return Tag(name=self.tag).add_props(**self.props)
+        return Tag(
+            name=self.tag if not self.alias else self.alias,
+            special_props=self.special_props,
+        ).add_props(**self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.
@@ -894,8 +916,10 @@ class CustomComponent(Component):
         """
         return [
             BaseVar(
-                name=name,
-                type_=prop.type_ if types._isinstance(prop, Var) else type(prop),
+                _var_name=name,
+                _var_type=prop._var_type
+                if types._isinstance(prop, Var)
+                else type(prop),
             )
             for name, prop in self.props.items()
         ]
@@ -923,6 +947,8 @@ def custom_component(
 
     @wraps(component_fn)
     def wrapper(*children, **props) -> CustomComponent:
+        # Remove the children from the props.
+        props.pop("children", None)
         return CustomComponent(component_fn=component_fn, children=children, **props)
 
     return wrapper
@@ -952,7 +978,7 @@ class NoSSRComponent(Component):
             import_name_parts[0] if import_name_parts[0] != "@" else self.library
         )
 
-        library_import = f"const {self.tag} = dynamic(() => import('{import_name}')"
+        library_import = f"const {self.alias if self.alias else self.tag} = dynamic(() => import('{import_name}')"
         mod_import = (
             # https://nextjs.org/docs/pages/building-your-application/optimizing/lazy-loading#with-named-exports
             f".then((mod) => mod.{self.tag})"

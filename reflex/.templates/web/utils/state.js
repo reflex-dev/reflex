@@ -68,6 +68,24 @@ export const getToken = () => {
 };
 
 /**
+ * Get the URL for the websocket connection
+ * @returns The websocket URL object.
+ */
+export const getEventURL = () => {
+  // Get backend URL object from the endpoint.
+  const endpoint = new URL(EVENTURL);
+  if (endpoint.hostname === "localhost") {
+    // If the backend URL references localhost, and the frontend is not on localhost,
+    // then use the frontend host.
+    const frontend_hostname = window.location.hostname;
+    if (frontend_hostname !== "localhost") {
+      endpoint.hostname = frontend_hostname;
+    }
+  }
+  return endpoint
+}
+
+/**
  * Apply a delta to the state.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
@@ -114,7 +132,10 @@ export const getAllLocalStorageItems = () => {
 export const applyEvent = async (event, socket) => {
   // Handle special events
   if (event.name == "_redirect") {
-    Router.push(event.payload.path);
+    if (event.payload.external)
+      window.open(event.payload.path, "_blank");
+    else
+      Router.push(event.payload.path);
     return false;
   }
 
@@ -185,7 +206,7 @@ export const applyEvent = async (event, socket) => {
   if (event.name == "_call_script") {
     try {
       eval(event.payload.javascript_code);
-    } catch(e) {
+    } catch (e) {
       console.log("_call_script", e);
     }
     return false;
@@ -286,9 +307,10 @@ export const connect = async (
   client_storage = {},
 ) => {
   // Get backend URL object from the endpoint.
-  const endpoint = new URL(EVENTURL);
+  const endpoint = getEventURL()
+
   // Create the socket.
-  socket.current = io(EVENTURL, {
+  socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
     transports: transports,
     autoUnref: false,
@@ -490,17 +512,19 @@ export const useEventLoop = (
     if (!router.isReady) {
       return;
     }
-
-    // Initialize the websocket connection.
-    if (!socket.current) {
-      connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
-    }
-    (async () => {
-      // Process all outstanding events.
-      while (event_queue.length > 0 && !event_processing) {
-        await processEvent(socket.current)
+    // only use websockets if state is present
+    if (Object.keys(state).length > 0) {
+      // Initialize the websocket connection.
+      if (!socket.current) {
+        connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
       }
-    })()
+      (async () => {
+        // Process all outstanding events.
+        while (event_queue.length > 0 && !event_processing) {
+          await processEvent(socket.current)
+        }
+      })()
+    }
   })
   return [state, addEvents, connectError]
 }

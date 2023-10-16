@@ -15,9 +15,11 @@ permissions:
 
 env:
   TELEMETRY_ENABLED: false
+  NODE_OPTIONS: "--max_old_space_size=4096"
 
 jobs:
   example-counter-wsl:
+    timeout-minutes: 30
     # 2019 is more stable with WSL in GH actions
     # https://github.com/actions/runner-images/issues/5151
     # Confirmed through trial and error. 2022 has >80% failure rate (probably BSOD)

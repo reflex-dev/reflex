@@ -11,20 +11,24 @@ from reflex.event import EventChain
 from reflex.vars import BaseVar, Var
 
 files_state: str = "const [files, setFiles] = useState([]);"
-upload_file: BaseVar = BaseVar(name="e => setFiles((files) => e)", type_=EventChain)
+upload_file: BaseVar = BaseVar(
+    _var_name="e => setFiles((files) => e)", _var_type=EventChain
+)
 
 # Use this var along with the Upload component to render the list of selected files.
-selected_files: BaseVar = BaseVar(name="files.map((f) => f.name)", type_=List[str])
+selected_files: BaseVar = BaseVar(
+    _var_name="files.map((f) => f.name)", _var_type=List[str]
+)
 
 clear_selected_files: BaseVar = BaseVar(
-    name="_e => setFiles((files) => [])", type_=EventChain
+    _var_name="_e => setFiles((files) => [])", _var_type=EventChain
 )
 
 
 class Upload(Component):
     """A file upload component."""
 
-    library = "react-dropzone@^14.2.3"
+    library = "react-dropzone@14.2.3"
 
     tag = "ReactDropzone"
 
@@ -77,7 +81,9 @@ class Upload(Component):
         }
         # The file input to use.
         upload = Input.create(type_="file")
-        upload.special_props = {BaseVar(name="{...getInputProps()}", type_=None)}
+        upload.special_props = {
+            BaseVar(_var_name="{...getInputProps()}", _var_type=None)
+        }
 
         # The dropzone to use.
         zone = Box.create(
@@ -85,7 +91,7 @@ class Upload(Component):
             *children,
             **{k: v for k, v in props.items() if k not in supported_props},
         )
-        zone.special_props = {BaseVar(name="{...getRootProps()}", type_=None)}
+        zone.special_props = {BaseVar(_var_name="{...getRootProps()}", _var_type=None)}
 
         # Create the component.
         return super().create(zone, on_drop=upload_file, **upload_props)

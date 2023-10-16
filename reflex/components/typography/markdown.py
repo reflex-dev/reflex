@@ -6,7 +6,7 @@ import textwrap
 from typing import Any, Callable, Dict, Union
 
 from reflex.compiler import utils
-from reflex.components.component import Component
+from reflex.components.component import Component, CustomComponent
 from reflex.components.datadisplay.list import ListItem, OrderedList, UnorderedList
 from reflex.components.navigation import Link
 from reflex.components.tags.tag import Tag
@@ -17,17 +17,18 @@ from reflex.utils import console, imports, types
 from reflex.vars import ImportVar, Var
 
 # Special vars used in the component map.
-_CHILDREN = Var.create_safe("children", is_local=False)
-_PROPS = Var.create_safe("...props", is_local=False)
+_CHILDREN = Var.create_safe("children", _var_is_local=False)
+_PROPS = Var.create_safe("...props", _var_is_local=False)
+_MOCK_ARG = Var.create_safe("")
 
 # Special remark plugins.
-_REMARK_MATH = Var.create_safe("remarkMath", is_local=False)
-_REMARK_GFM = Var.create_safe("remarkGfm", is_local=False)
+_REMARK_MATH = Var.create_safe("remarkMath", _var_is_local=False)
+_REMARK_GFM = Var.create_safe("remarkGfm", _var_is_local=False)
 _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM])
 
 # Special rehype plugins.
-_REHYPE_KATEX = Var.create_safe("rehypeKatex", is_local=False)
-_REHYPE_RAW = Var.create_safe("rehypeRaw", is_local=False)
+_REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
+_REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
 # Component Mapping
@@ -40,20 +41,32 @@ def get_base_component_map() -> dict[str, Callable]:
     from reflex.components.datadisplay.code import Code, CodeBlock
 
     return {
-        "h1": lambda value: Heading.create(value, as_="h1", size="2xl"),
-        "h2": lambda value: Heading.create(value, as_="h2", size="xl"),
-        "h3": lambda value: Heading.create(value, as_="h3", size="lg"),
-        "h4": lambda value: Heading.create(value, as_="h4", size="md"),
-        "h5": lambda value: Heading.create(value, as_="h5", size="sm"),
-        "h6": lambda value: Heading.create(value, as_="h6", size="xs"),
-        "p": lambda value: Text.create(value),
-        "ul": lambda value: UnorderedList.create(value),  # type: ignore
-        "ol": lambda value: OrderedList.create(value),  # type: ignore
+        "h1": lambda value: Heading.create(
+            value, as_="h1", size="2xl", margin_y="0.5em"
+        ),
+        "h2": lambda value: Heading.create(
+            value, as_="h2", size="xl", margin_y="0.5em"
+        ),
+        "h3": lambda value: Heading.create(
+            value, as_="h3", size="lg", margin_y="0.5em"
+        ),
+        "h4": lambda value: Heading.create(
+            value, as_="h4", size="md", margin_y="0.5em"
+        ),
+        "h5": lambda value: Heading.create(
+            value, as_="h5", size="sm", margin_y="0.5em"
+        ),
+        "h6": lambda value: Heading.create(
+            value, as_="h6", size="xs", margin_y="0.5em"
+        ),
+        "p": lambda value: Text.create(value, margin_y="1em"),
+        "ul": lambda value: UnorderedList.create(value, margin_y="1em"),  # type: ignore
+        "ol": lambda value: OrderedList.create(value, margin_y="1em"),  # type: ignore
         "li": lambda value: ListItem.create(value),
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
-        "codeblock": lambda *children, **props: CodeBlock.create(
-            *children, theme="light", **props
+        "codeblock": lambda *_, **props: CodeBlock.create(
+            theme="light", margin_y="1em", **props
         ),
     }
 
@@ -61,7 +74,7 @@ def get_base_component_map() -> dict[str, Callable]:
 class Markdown(Component):
     """A markdown component."""
 
-    library = "react-markdown@^8.0.7"
+    library = "react-markdown@8.0.7"
 
     tag = "ReactMarkdown"
 
@@ -94,7 +107,7 @@ class Markdown(Component):
                 "rx.markdown custom_styles",
                 "Use the component_map prop instead.",
                 "0.2.9",
-                "0.2.11",
+                "0.3.1",
             )
 
         # Update the base component map with the custom component map.
@@ -110,6 +123,25 @@ class Markdown(Component):
         # Create the component.
         return super().create(src, component_map=component_map, **props)
 
+    def get_custom_components(
+        self, seen: set[str] | None = None
+    ) -> set[CustomComponent]:
+        """Get all the custom components used by the component.
+
+        Args:
+            seen: The tags of the components that have already been seen.
+
+        Returns:
+            The set of custom components.
+        """
+        custom_components = super().get_custom_components(seen=seen)
+
+        # Get the custom components for each tag.
+        for component in self.component_map.values():
+            custom_components |= component(_MOCK_ARG).get_custom_components(seen=seen)
+
+        return custom_components
+
     def _get_imports(self) -> imports.ImportDict:
         # Import here to avoid circular imports.
         from reflex.components.datadisplay.code import Code, CodeBlock
@@ -120,22 +152,24 @@ class Markdown(Component):
         imports.update(
             {
                 "": {ImportVar(tag="katex/dist/katex.min.css")},
-                "remark-math@^5.1.1": {
-                    ImportVar(tag=_REMARK_MATH.name, is_default=True)
+                "remark-math@5.1.1": {
+                    ImportVar(tag=_REMARK_MATH._var_name, is_default=True)
                 },
-                "remark-gfm@^3.0.1": {ImportVar(tag=_REMARK_GFM.name, is_default=True)},
-                "rehype-katex@^6.0.3": {
-                    ImportVar(tag=_REHYPE_KATEX.name, is_default=True)
+                "remark-gfm@3.0.1": {
+                    ImportVar(tag=_REMARK_GFM._var_name, is_default=True)
                 },
-                "rehype-raw@^6.1.1": {ImportVar(tag=_REHYPE_RAW.name, is_default=True)},
+                "rehype-katex@6.0.3": {
+                    ImportVar(tag=_REHYPE_KATEX._var_name, is_default=True)
+                },
+                "rehype-raw@6.1.1": {
+                    ImportVar(tag=_REHYPE_RAW._var_name, is_default=True)
+                },
             }
         )
 
         # Get the imports for each component.
         for component in self.component_map.values():
-            imports = utils.merge_imports(
-                imports, component(Var.create("")).get_imports()
-            )
+            imports = utils.merge_imports(imports, component(_MOCK_ARG).get_imports())
 
         # Get the imports for the code components.
         imports = utils.merge_imports(
@@ -196,20 +230,20 @@ class Markdown(Component):
             The formatted component map.
         """
         components = {
-            tag: f"{{({{{_CHILDREN.name}, {_PROPS.name}}}) => {self.format_component(tag)}}}"
+            tag: f"{{({{{_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
         components[
             "code"
-        ] = f"""{{({{inline, className, {_CHILDREN.name}, {_PROPS.name}}}) => {{
+        ] = f"""{{({{inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
-    return !inline ? (
-        {self.format_component("codeblock", language=Var.create_safe("language", is_local=False), children=Var.create_safe("String(children)", is_local=False))}
-    ) : (
+    return inline ? (
         {self.format_component("code")}
+    ) : (
+        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False), children=Var.create_safe("String(children)", _var_is_local=False))}
     );
       }}}}""".replace(
             "\n", " "

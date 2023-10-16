@@ -41,7 +41,7 @@ from reflex.event import (
     fix_events,
     window_alert,
 )
-from reflex.utils import format, prerequisites, types
+from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.vars import BaseVar, ComputedVar, Var
 
@@ -132,7 +132,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
-            for var in cvar.deps(objclass=type(self)):
+            for var in cvar._deps(objclass=type(self)):
                 self.computed_var_dependencies[var].add(cvar_name)
                 if var in inherited_vars:
                     # track that this substate depends on its parent for this var
@@ -211,12 +211,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(name=f.name, type_=f.outer_type_).set_state(cls)
+            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
+                cls
+            )
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v.name: v.set_state(cls)
+            v._var_name: v._var_set_state(cls)
             for v in cls.__dict__.values()
             if isinstance(v, ComputedVar)
         }
@@ -389,12 +391,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             TypeError: if the variable has an incorrect type
         """
-        if not types.is_valid_var_type(prop.type_):
+        if not types.is_valid_var_type(prop._var_type):
             raise TypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
-                f'Found var "{prop.name}" with type {prop.type_}.'
+                f'Found var "{prop._var_name}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
         cls._create_setter(prop)
@@ -421,8 +423,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = BaseVar(name=name, type_=type_)
-        var.set_state(cls)
+        var = BaseVar(_var_name=name, _var_type=type_)
+        var._var_set_state(cls)
 
         # add the pydantic field dynamically (must be done before _init_var)
         cls.add_field(var, default_value)
@@ -444,7 +446,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var instance to set.
         """
-        setattr(cls, prop.name, prop)
+        setattr(cls, prop._var_name, prop)
 
     @classmethod
     def _create_setter(cls, prop: BaseVar):
@@ -467,7 +469,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        field = cls.get_fields()[prop.name]
+        field = cls.get_fields()[prop._var_name]
         default_value = prop.get_default_value()
         if field.required and default_value is not None:
             field.required = False
@@ -548,6 +550,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
                 The dict of cookies.
         """
+        console.deprecate(
+            feature_name=f"rx.get_cookies",
+            reason="and has been replaced by rx.Cookie, which can be used as a state var",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         cookie_dict = {}
         cookies = self.get_headers().get(constants.RouteVar.COOKIE, "").split(";")
 
@@ -593,8 +601,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            func.fget.__name__ = param  # to allow passing as a prop # type: ignore
-            cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
+            # to allow passing as a prop
+            func._var_name = param
+            cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
     def __getattribute__(self, name: str) -> Any:
@@ -679,7 +688,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Reset the base vars.
         fields = self.get_fields()
         for prop_name in self.base_vars:
-            setattr(self, prop_name, fields[prop_name].default)
+            setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -696,7 +705,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 isinstance(field.type_, type)
                 and issubclass(field.type_, ClientStorageBase)
             ):
-                setattr(self, prop_name, field.default)
+                setattr(self, prop_name, copy.deepcopy(field.default))
 
         # Recursively reset the substate client storage.
         for substate in self.substates.values():
@@ -906,7 +915,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         return set(
             cvar_name
             for cvar_name, cvar in self.computed_vars.items()
-            if not cvar.cache
+            if not cvar._cache
         )
 
     def _mark_dirty_computed_vars(self) -> None:
@@ -1007,6 +1016,21 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Clean this state.
         self.dirty_vars = set()
         self.dirty_substates = set()
+
+    def get_value(self, key: str) -> Any:
+        """Get the value of a field (without proxying).
+
+        The returned value will NOT track dirty state updates.
+
+        Args:
+            key: The key of the field.
+
+        Returns:
+            The value of the field.
+        """
+        if isinstance(key, MutableProxy):
+            return super().get_value(key.__wrapped__)
+        return super().get_value(key)
 
     def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
@@ -1853,7 +1877,13 @@ class ImmutableMutableProxy(MutableProxy):
     to modify the wrapped object when the StateProxy is immutable.
     """
 
-    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None):
+    def _mark_dirty(
+        self,
+        wrapped=None,
+        instance=None,
+        args=tuple(),
+        kwargs=None,
+    ) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -1864,6 +1894,9 @@ class ImmutableMutableProxy(MutableProxy):
             args: The args for the wrapped function.
             kwargs: The kwargs for the wrapped function.
 
+        Returns:
+            The result of the wrapped function.
+
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
@@ -1872,6 +1905,6 @@ class ImmutableMutableProxy(MutableProxy):
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        super()._mark_dirty(
+        return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )
