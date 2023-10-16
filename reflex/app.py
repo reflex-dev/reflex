@@ -150,14 +150,14 @@ class App(Base):
 
         # Special case to allow test cases have multiple subclasses of rx.State.
         if not is_testing_env:
-            # Only the default state and the client state should be allowed as subclasses.
-            if len(state_subclasses) > 2:
+            # Only one State class is allowed.
+            if len(state_subclasses) > 1:
                 raise ValueError(
                     "rx.State has been subclassed multiple times. Only one subclass is allowed"
                 )
 
             # verify that provided state is valid
-            if self.state and self.state is not inferred_state:
+            if self.state and inferred_state and self.state is not inferred_state:
                 console.warn(
                     f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
                     f" Defaulting to root state: ({inferred_state.__name__})"
