@@ -92,17 +92,22 @@ for json_file in "$json_dir"/*.json; do
         # Extract the file name without the extension
         file_name=$(basename "$json_file" .json)
 
+        # Generate a random distinct_id (a random number)
+        distinct_id=$((RANDOM))
+
         # Read the contents of the JSON file
         json_data=$(cat "$json_file")
 
         # Construct the event name with the JSON file name
         event="Lighthouse CI - $file_name"
 
+        # Construct the JSON payload with the random distinct_id
+        payload="{\"api_key\": \"$api_key\", \"event\": \"$event\", \"properties\": {\"distinct_id\": $distinct_id, $json_data}, \"timestamp\": \"$timestamp\"}"
+
         # Create a temporary file for the payload
         tmpfile=$(mktemp)
 
-        # Construct the JSON payload and write it to the temporary file
-        payload="{\"api_key\": \"$api_key\", \"event\": \"$event\", \"properties\": $json_data, \"timestamp\": \"$timestamp\"}"
+        # Write the payload to the temporary file
         echo "$payload" > "$tmpfile"
 
         # Send the POST request with the constructed payload using curl
