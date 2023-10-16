@@ -71,3 +71,42 @@ EOF
 # Install and Run LHCI
 npm install -g @lhci/cli
 lhci autorun || echo "LHCI failed!"
+
+#!/bin/bash
+
+# Define the base URL where you want to send the POST requests
+base_url="https://app.posthog.com/capture/"
+
+# Directory containing JSON files
+json_dir=".lighthouseci"
+
+# API Key
+api_key="$POSTHOG"
+
+# Get the current timestamp
+timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Loop through each JSON file in the directory
+for json_file in "$json_dir"/*.json; do
+    if [ -f "$json_file" ]; then
+        # Extract the file name without the extension
+        file_name=$(basename "$json_file" .json)
+
+        # Read the contents of the JSON file
+        json_data=$(cat "$json_file")
+
+        # Construct the event name with the JSON file name
+        event="Lighthouse CI - $file_name"
+
+        # Construct the JSON payload
+        payload="{\"api_key\": \"$api_key\", \"event\": \"$event\", \"properties\": $json_data, \"timestamp\": \"$timestamp\"}"
+
+        # Send the POST request with the constructed payload using curl
+        response=$(curl -X POST -H "Content-Type: application/json" -d "$payload" "$base_url")
+
+        # Print the response for each file
+        echo "Response for $json_file:"
+        echo "$response"
+    fi
+done
+done

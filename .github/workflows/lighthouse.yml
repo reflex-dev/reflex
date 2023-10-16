@@ -65,4 +65,5 @@ jobs:
           poetry run bash scripts/lighthouse.sh ./reflex-web prod
         env:
             LHCI_GITHUB_APP_TOKEN: $
+            POSTHOG: $
         
