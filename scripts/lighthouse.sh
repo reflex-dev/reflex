@@ -59,7 +59,7 @@ module.exports = {
     collect: {
      staticDistDir: './public',
      numberOfRuns: 1,
-     url: ['https://localhost:3000']
+     url: ['https://localhost:3000/index.html']
     },
     upload: {
       target: 'temporary-public-storage',
@@ -69,5 +69,5 @@ module.exports = {
 EOF
 
 # Install and Run LHCI
-npm install -g @lhci/cli@0.3.x
+npm install -g @lhci/cli
 lhci autorun || echo "LHCI failed!"
