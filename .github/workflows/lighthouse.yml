@@ -62,7 +62,7 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/lighthouse.sh ./reflex-web
+          poetry run bash scripts/lighthouse.sh ./reflex-web prod
         env:
             LHCI_GITHUB_APP_TOKEN: $
         
