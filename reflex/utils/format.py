@@ -65,11 +65,11 @@ def is_wrapped(text: str, open: str, close: str | None = None) -> bool:
 
 
 def wrap(
-    text: str,
-    open: str,
-    close: str | None = None,
-    check_first: bool = True,
-    num: int = 1,
+        text: str,
+        open: str,
+        close: str | None = None,
+        check_first: bool = True,
+        num: int = 1,
 ) -> str:
     """Wrap the given text in the given open and close characters.
 
@@ -235,10 +235,10 @@ def format_route(route: str, format_case=True) -> str:
 
 
 def format_cond(
-    cond: str,
-    true_value: str,
-    false_value: str = '""',
-    is_prop=False,
+        cond: str,
+        true_value: str,
+        false_value: str = '""',
+        is_prop=False,
 ) -> str:
     """Format a conditional expression.
 
@@ -276,7 +276,7 @@ def format_cond(
 
 
 def format_prop(
-    prop: Union[Var, EventChain, ComponentStyle, str],
+        prop: Union[Var, EventChain, ComponentStyle, str],
 ) -> Union[int, float, str]:
     """Format a prop.
 
@@ -304,8 +304,7 @@ def format_prop(
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-
-            sig = inspect.signature(prop.args_spec)
+            sig = inspect.signature(prop.args_spec)  # type: ignore
             if sig.parameters:
                 arg_def = ",".join(f"_{p}" for p in sig.parameters)
                 arg_def = f"({arg_def})"
@@ -437,8 +436,8 @@ def format_event(event_spec: EventSpec) -> str:
 
 
 def format_event_chain(
-    event_chain: EventChain | Var[EventChain],
-    event_arg: Var | None = None,
+        event_chain: EventChain | Var[EventChain],
+        event_arg: Var | None = None,
 ) -> str:
     """Format an event chain as a javascript invocation.
 
