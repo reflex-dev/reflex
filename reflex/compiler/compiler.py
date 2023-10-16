@@ -98,11 +98,15 @@ def _compile_contexts(state: Type[State]) -> str:
     Returns:
         The compiled context file.
     """
-    return templates.CONTEXT.render(
-        initial_state=utils.compile_state(state),
-        state_name=state.get_name(),
-        client_storage=utils.compile_client_storage(state),
-        is_dev_mode=os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",
+    return (
+        templates.CONTEXT.render(
+            initial_state=utils.compile_state(state),
+            state_name=state.get_name(),
+            client_storage=utils.compile_client_storage(state),
+            is_dev_mode=os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",
+        )
+        if state
+        else templates.CONTEXT.render()
     )
 
 
@@ -125,14 +129,17 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    return templates.PAGE.render(
-        imports=imports,
-        dynamic_imports=component.get_dynamic_imports(),
-        custom_codes=component.get_custom_code(),
-        state_name=state.get_name(),
-        hooks=component.get_hooks(),
-        render=component.render(),
-    )
+    kwargs = {
+        "imports": imports,
+        "dynamic_imports": component.get_dynamic_imports(),
+        "custom_codes": component.get_custom_code(),
+        "hooks": component.get_hooks(),
+        "render": component.render(),
+    }
+    if state:
+        kwargs["state_name"] = state.get_name()
+
+    return templates.PAGE.render(**kwargs)
 
 
 def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:

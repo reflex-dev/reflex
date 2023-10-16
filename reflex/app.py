@@ -53,10 +53,8 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import (
-    DefaultState,
     State,
     StateManager,
-    StateManagerMemory,
     StateUpdate,
 )
 from reflex.utils import console, format, prerequisites, types
@@ -95,10 +93,10 @@ class App(Base):
     socket_app: Optional[ASGIApp] = None
 
     # The state class to use for the app.
-    state: Type[State] = DefaultState
+    state: Optional[Type[State]] = None
 
     # Class to manage many client states.
-    state_manager: StateManager = StateManagerMemory(state=DefaultState)
+    state_manager: Optional[StateManager] = None
 
     # The styling to apply to each component.
     style: ComponentStyle = {}
@@ -147,7 +145,7 @@ class App(Base):
             )
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
-        inferred_state = state_subclasses[-1]
+        inferred_state = state_subclasses[-1] if state_subclasses else None
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
         # Special case to allow test cases have multiple subclasses of rx.State.
@@ -159,7 +157,7 @@ class App(Base):
                 )
 
             # verify that provided state is valid
-            if self.state not in [DefaultState, inferred_state]:
+            if self.state and self.state is not inferred_state:
                 console.warn(
                     f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
                     f" Defaulting to root state: ({inferred_state.__name__})"
@@ -171,15 +169,15 @@ class App(Base):
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
-        # Set up the state manager.
-        self.state_manager = StateManager.create(state=self.state)
-
         # Set up the API.
         self.api = FastAPI()
         self.add_cors()
         self.add_default_endpoints()
 
-        if self.state is not DefaultState:
+        if self.state:
+            # Set up the state manager.
+            self.state_manager = StateManager.create(state=self.state)
+
             # Set up the Socket.IO AsyncServer.
             self.sio = AsyncServer(
                 async_mode="asgi",
@@ -211,10 +209,7 @@ class App(Base):
         self.setup_admin_dash()
 
         # If a State is not used and no overlay_component is specified, do not render the connection modal
-        if (
-            self.state is DefaultState
-            and self.overlay_component is default_overlay_component
-        ):
+        if not self.state and self.overlay_component is default_overlay_component:
             self.overlay_component = None
 
     def __repr__(self) -> str:
@@ -384,7 +379,8 @@ class App(Base):
         verify_route_validity(route)
 
         # Apply dynamic args to the route.
-        self.state.setup_dynamic_args(get_route_args(route))
+        if self.state:
+            self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
         component = self._generate_component(component)

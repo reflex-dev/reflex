@@ -1234,12 +1234,6 @@ class StateProxy(wrapt.ObjectProxy):
         super().__setattr__(name, value)
 
 
-class DefaultState(State):
-    """The default empty state."""
-
-    pass
-
-
 class StateUpdate(Base):
     """A state update sent to the frontend."""
 
@@ -1260,7 +1254,7 @@ class StateManager(Base, ABC):
     state: Type[State]
 
     @classmethod
-    def create(cls, state: Type[State] = DefaultState):
+    def create(cls, state: Type[State]):
         """Create a new state manager.
 
         Args:

@@ -8,7 +8,9 @@
 
 {% block export %}
 export default function Component() {
-  const {{state_name}} = useContext(StateContext)
+  {% if state_name %}
+    export const state_name = {{ initial_state|json_dumps }}
+   {% endif %}
   const {{const.router}} = useRouter()
   const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
   const focusRef = useRef();
