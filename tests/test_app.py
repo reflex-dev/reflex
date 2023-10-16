@@ -3,8 +3,10 @@ from __future__ import annotations
 import io
 import os.path
 import sys
+import unittest.mock
 import uuid
-from typing import List, Tuple, Type
+from pathlib import Path
+from typing import Generator, List, Tuple, Type
 
 if sys.version_info.major >= 3 and sys.version_info.minor > 7:
     from unittest.mock import AsyncMock  # type: ignore
@@ -18,6 +20,7 @@ from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
+import reflex.components.radix.themes as rdxt
 from reflex import AdminDash, constants
 from reflex.app import (
     App,
@@ -36,6 +39,7 @@ from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
 
+from .conftest import chdir
 from .states import (
     ChildFileUploadState,
     FileUploadState,
@@ -1122,3 +1126,105 @@ def test_overlay_component(
         assert exp_page_child in children_types
     else:
         assert len(page.children) == 2
+
+
+@pytest.fixture
+def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
+    """Fixture for an app that can be compiled.
+
+    Args:
+        tmp_path: Temporary path.
+
+    Yields:
+        Tuple containing (app instance, Path to ".web" directory)
+
+        The working directory is set to the app dir (parent of .web),
+        allowing app.compile() to be called.
+    """
+    app_path = tmp_path / "app"
+    web_dir = app_path / ".web"
+    web_dir.mkdir(parents=True)
+    (web_dir / "package.json").touch()
+    app = App()
+    app.get_frontend_packages = unittest.mock.Mock()
+    with chdir(app_path):
+        yield app, web_dir
+
+
+def test_app_wrap_compile_theme(compilable_app):
+    """Test that the radix theme component wraps the app.
+
+    Args:
+        compilable_app: compilable_app fixture.
+    """
+    app, web_dir = compilable_app
+    app.theme = rdxt.theme(accent_color="plum")
+    app.compile()
+    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
+    app_js_lines = [
+        line.strip() for line in app_js_contents.splitlines() if line.strip()
+    ]
+    assert (
+        "function AppWrap({children}) {"
+        "return ("
+        "<RadixThemesTheme accentColor={`plum`}>"
+        "{children}"
+        "</RadixThemesTheme>"
+        ")"
+        "}"
+    ) in "".join(app_js_lines)
+
+
+def test_app_wrap_priority(compilable_app):
+    """Test that the app wrap components are wrapped in the correct order.
+
+    Args:
+        compilable_app: compilable_app fixture.
+    """
+    app, web_dir = compilable_app
+
+    class Fragment1(Component):
+        tag = "Fragment1"
+
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+            return {(99, "Box"): Box.create()}
+
+    class Fragment2(Component):
+        tag = "Fragment2"
+
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+            return {(50, "Text"): Text.create()}
+
+    class Fragment3(Component):
+        tag = "Fragment3"
+
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+            return {(10, "Fragment2"): Fragment2.create()}
+
+    def page():
+        return Fragment1.create(Fragment3.create())
+
+    app.add_page(page)
+    app.compile()
+    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
+    app_js_lines = [
+        line.strip() for line in app_js_contents.splitlines() if line.strip()
+    ]
+    assert (
+        "function AppWrap({children}) {"
+        "return ("
+        "<Box>"
+        "<ChakraProvider theme={extendTheme(theme)}>"
+        "<Global styles={GlobalStyles}/>"
+        "<ChakraColorModeProvider>"
+        "<Text>"
+        "<Fragment2>"
+        "{children}"
+        "</Fragment2>"
+        "</Text>"
+        "</ChakraColorModeProvider>"
+        "</ChakraProvider>"
+        "</Box>"
+        ")"
+        "}"
+    ) in "".join(app_js_lines)

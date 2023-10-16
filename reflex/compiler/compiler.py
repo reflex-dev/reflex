@@ -39,13 +39,9 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="EventLoopContext"),
         ImportVar(tag="initialEvents"),
         ImportVar(tag="StateContext"),
+        ImportVar(tag="ColorModeContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
-    "@chakra-ui/react": {
-        ImportVar(tag=constants.ColorMode.USE),
-        ImportVar(tag="Box"),
-        ImportVar(tag="Text"),
-    },
 }
 
 
@@ -61,6 +57,23 @@ def _compile_document_root(root: Component) -> str:
     return templates.DOCUMENT_ROOT.render(
         imports=utils.compile_imports(root.get_imports()),
         document=root.render(),
+    )
+
+
+def _compile_app(app_root: Component) -> str:
+    """Compile the app template component.
+
+    Args:
+        app_root: The app root to compile.
+
+    Returns:
+        The compiled app.
+    """
+    return templates.APP_ROOT.render(
+        imports=utils.compile_imports(app_root.get_imports()),
+        custom_codes=app_root.get_custom_code(),
+        hooks=app_root.get_hooks(),
+        render=app_root.render(),
     )
 
 
@@ -89,6 +102,7 @@ def _compile_contexts(state: Type[State]) -> str:
         initial_state=utils.compile_state(state),
         state_name=state.get_name(),
         client_storage=utils.compile_client_storage(state),
+        is_dev_mode=os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",
     )
 
 
@@ -243,6 +257,23 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
 
     # Compile the document root.
     code = _compile_document_root(document_root)
+    return output_path, code
+
+
+def compile_app(app_root: Component) -> tuple[str, str]:
+    """Compile the app root.
+
+    Args:
+        app_root: The app root component to compile.
+
+    Returns:
+        The path and code of the compiled app wrapper.
+    """
+    # Get the path for the output file.
+    output_path = utils.get_page_path(constants.PageNames.APP_ROOT)
+
+    # Compile the document root.
+    code = _compile_app(app_root)
     return output_path, code
 
 
