@@ -18,7 +18,7 @@ class Progress(ChakraComponent):
         Args:
             *children: The children of the component.
             has_stripe: If true, the progress bar will show stripe
-            is_animated: If true, and hasStripe is true, the stripes will be animated
+            is_animated: If true, and has_stripe is true, the stripes will be animated
             is_indeterminate: If true, the progress will be indeterminate and the value prop will be ignored
             max_: The maximum value of the progress
             min_: The minimum value of the progress

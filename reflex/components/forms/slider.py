@@ -4,7 +4,8 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.graphing.recharts.recharts import LiteralLayout
+from reflex.components.libs.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -24,7 +25,7 @@ class Slider(ChakraComponent):
     default_value: Var[int]
 
     # The writing mode ("ltr" | "rtl")
-    direction: Var[str]
+    direction: Var[LiteralChakraDirection]
 
     # If false, the slider handle will not capture focus when value changes.
     focus_thumb_on_change: Var[bool]
@@ -51,7 +52,7 @@ class Slider(ChakraComponent):
     min_steps_between_thumbs: Var[int]
 
     # Oreintation of the slider vertical | horizontal.
-    orientation: Var[str]
+    orientation: Var[LiteralLayout]
 
     # Minimum height of the slider.
     min_h: Var[str]
