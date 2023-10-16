@@ -47,7 +47,7 @@ from .states import (
 )
 
 
-class DefaultState(State):
+class EmptyState(State):
     """An empty state."""
 
     pass
@@ -250,7 +250,7 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
-    app = App(state=DefaultState)
+    app = App(state=EmptyState)
     route = "/test/[dynamic]"
     if windows_platform:
         route.lstrip("/").replace("/", "\\")
@@ -258,7 +258,7 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"]._deps(objclass=DefaultState) == {
+    assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
         constants.ROUTER_DATA
     }
     assert constants.ROUTER_DATA in app.state().computed_var_dependencies
