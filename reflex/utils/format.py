@@ -203,13 +203,13 @@ def format_var(var: Var) -> str:
     Returns:
         The formatted Var.
     """
-    if not var.is_local or var.is_string:
+    if not var._var_is_local or var._var_is_string:
         return str(var)
-    if types._issubclass(var.type_, str):
-        return format_string(var.full_name)
-    if is_wrapped(var.full_name, "{"):
-        return var.full_name
-    return json_dumps(var.full_name)
+    if types._issubclass(var._var_type, str):
+        return format_string(var._var_full_name)
+    if is_wrapped(var._var_full_name, "{"):
+        return var._var_full_name
+    return json_dumps(var._var_full_name)
 
 
 def format_route(route: str, format_case=True) -> str:
@@ -259,12 +259,16 @@ def format_cond(
 
     # Format prop conds.
     if is_prop:
-        prop1 = Var.create_safe(true_value, is_string=type(true_value) is str).set(
-            is_local=True
-        )  # type: ignore
-        prop2 = Var.create_safe(false_value, is_string=type(false_value) is str).set(
-            is_local=True
-        )  # type: ignore
+        prop1 = Var.create_safe(
+            true_value,
+            _var_is_string=type(true_value) is str,
+        )
+        prop1._var_is_local = True
+        prop2 = Var.create_safe(
+            false_value,
+            _var_is_string=type(false_value) is str,
+        )
+        prop2._var_is_local = True
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
     # Format component conds.
@@ -292,11 +296,11 @@ def format_prop(
     try:
         # Handle var props.
         if isinstance(prop, Var):
-            if not prop.is_local or prop.is_string:
+            if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
-            if types._issubclass(prop.type_, str):
-                return format_string(prop.full_name)
-            prop = prop.full_name
+            if types._issubclass(prop._var_type, str):
+                return format_string(prop._var_full_name)
+            prop = prop._var_full_name
 
         # Handle event props.
         elif isinstance(prop, EventChain):
@@ -415,10 +419,10 @@ def format_event(event_spec: EventSpec) -> str:
         [
             ":".join(
                 (
-                    name.name,
-                    wrap(json.dumps(val.name).strip('"'), "`")
-                    if val.is_string
-                    else val.full_name,
+                    name._var_name,
+                    wrap(json.dumps(val._var_name).strip('"'), "`")
+                    if val._var_is_string
+                    else val._var_full_name,
                 )
             )
             for name, val in event_spec.args
@@ -453,7 +457,7 @@ def format_event_chain(
     if isinstance(event_chain, Var):
         from reflex.event import EventChain
 
-        if event_chain.type_ is not EventChain:
+        if event_chain._var_type is not EventChain:
             raise ValueError(f"Invalid event chain: {event_chain}")
         return "".join(
             [
@@ -545,7 +549,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
-        idx.is_local = True
+        idx._var_is_local = True
         return f"refs_{clean_ref}[{idx}]"
     return f"refs_{clean_ref}"
 

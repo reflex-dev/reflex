@@ -1,4 +1,5 @@
 """Container to stack elements with spacing."""
+from typing import Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
@@ -23,7 +24,7 @@ class CircularProgress(ChakraComponent):
     min_: Var[int]
 
     # This defines the stroke width of the svg circle.
-    thickness: Var[str]
+    thickness: Var[Union[str, int]]
 
     # The color name of the progress track. Use a color key in the theme object
     track_color: Var[str]

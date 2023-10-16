@@ -101,7 +101,9 @@ class Thead(ChakraComponent):
         if (
             (
                 isinstance(headers, Var)
-                and not types.check_type_in_allowed_types(headers.type_, allowed_types)
+                and not types.check_type_in_allowed_types(
+                    headers._var_type, allowed_types
+                )
             )
             or not isinstance(headers, Var)
             and not types.check_type_in_allowed_types(type(headers), allowed_types)
@@ -156,7 +158,7 @@ class Tbody(ChakraComponent):
         """
         allowed_subclasses = (List, Tuple)
         if isinstance(rows, Var):
-            outer_type = rows.type_
+            outer_type = rows._var_type
             inner_type = (
                 outer_type.__args__[0] if hasattr(outer_type, "__args__") else None
             )
@@ -222,7 +224,9 @@ class Tfoot(ChakraComponent):
         if (
             (
                 isinstance(footers, Var)
-                and not types.check_type_in_allowed_types(footers.type_, allowed_types)
+                and not types.check_type_in_allowed_types(
+                    footers._var_type, allowed_types
+                )
             )
             or not isinstance(footers, Var)
             and not types.check_type_in_allowed_types(type(footers), allowed_types)

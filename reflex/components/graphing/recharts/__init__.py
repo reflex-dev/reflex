@@ -39,6 +39,32 @@ from .polar import (
     Radar,
     RadialBar,
 )
+from .recharts import (
+    LiteralAnimationEasing,
+    LiteralAreaType,
+    LiteralAxisType,
+    LiteralBarChartStackOffset,
+    LiteralComposedChartBaseValue,
+    LiteralDirection,
+    LiteralGridType,
+    LiteralIconType,
+    LiteralIfOverflow,
+    LiteralInterval,
+    LiteralLayout,
+    LiteralLegendAlign,
+    LiteralLegendType,
+    LiteralLineType,
+    LiteralOrientation,
+    LiteralOrientationLeftRightMiddle,
+    LiteralOrientationTopBottom,
+    LiteralOrientationTopBottomLeftRight,
+    LiteralPolarRadiusType,
+    LiteralScale,
+    LiteralShape,
+    LiteralStackOffset,
+    LiteralSyncMethod,
+    LiteralVerticalAlign,
+)
 
 area_chart = AreaChart.create
 bar_chart = BarChart.create

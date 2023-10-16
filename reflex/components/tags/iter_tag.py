@@ -31,8 +31,8 @@ class IterTag(Tag):
             The index var.
         """
         return BaseVar(
-            name=INDEX_VAR,
-            type_=int,
+            _var_name=INDEX_VAR,
+            _var_type=int,
         )
 
     @staticmethod
@@ -43,9 +43,9 @@ class IterTag(Tag):
             The index var.
         """
         return BaseVar(
-            name=INDEX_VAR,
-            type_=int,
-            is_local=True,
+            _var_name=INDEX_VAR,
+            _var_type=int,
+            _var_is_local=True,
         )
 
     @staticmethod

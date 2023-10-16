@@ -54,7 +54,7 @@ def init(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
     template: constants.Templates.Kind = typer.Option(
-        constants.Templates.Kind.DEFAULT,
+        constants.Templates.Kind.DEFAULT.value,
         help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
@@ -139,6 +139,12 @@ def run(
 
     if backend and processes.is_process_on_port(backend_port):
         backend_port = processes.change_or_terminate_port(backend_port, "backend")
+
+    # Apply the new ports to the config.
+    if frontend_port != str(config.frontend_port):
+        config._set_persistent(frontend_port=frontend_port)
+    if backend_port != str(config.backend_port):
+        config._set_persistent(backend_port=backend_port)
 
     console.rule("[bold]Starting Reflex App")
 
