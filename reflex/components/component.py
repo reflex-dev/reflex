@@ -168,7 +168,7 @@ class Component(Base, ABC):
                             )
 
                     # Get the passed type and the var type.
-                    passed_type = kwargs[key].var_type_
+                    passed_type = kwargs[key]._var_type
                     expected_type = (
                         type(expected_type.__args__[0])
                         if types.is_literal(expected_type)
