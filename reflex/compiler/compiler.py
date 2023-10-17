@@ -89,7 +89,7 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Type[State]) -> str:
+def _compile_contexts(state: Optional[Type[State]]) -> str:
     """Compile the initial state and contexts.
 
     Args:
