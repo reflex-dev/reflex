@@ -95,26 +95,26 @@ def test_add_serializer():
     assert not serializers.has_serializer(Foo)
 
 
-class TestEnum(str, Enum):
-    """TestEnum."""
+class StrEnum(str, Enum):
+    """An enum also inheriting from str."""
 
     FOO = "foo"
     BAR = "bar"
 
 
-class TestEnum2(Enum):
-    """TestEnum2."""
+class EnumWithPrefix(Enum):
+    """An enum with a serializer adding a prefix."""
 
     FOO = "foo"
     BAR = "bar"
 
 
 @serializers.serializer
-def serialize_TestEnum2(enum: TestEnum2) -> str:
+def serialize_EnumWithPrefix(enum: EnumWithPrefix) -> str:
     return "prefix_" + enum.value
 
 
-class TestBase(Base):
+class BaseSubclass(Base):
     """A class inheriting from Base for testing."""
 
     ts: datetime.timedelta = datetime.timedelta(1, 1, 1)
@@ -132,19 +132,22 @@ class TestBase(Base):
         ([1, 2, 3], "[1, 2, 3]"),
         ([1, "2", 3.0], '[1, "2", 3.0]'),
         ([{"key": 1}, {"key": 2}], '[{"key": 1}, {"key": 2}]'),
-        (TestEnum.FOO, "foo"),
-        ([TestEnum.FOO, TestEnum.BAR], '["foo", "bar"]'),
+        (StrEnum.FOO, "foo"),
+        ([StrEnum.FOO, StrEnum.BAR], '["foo", "bar"]'),
         (
-            {"key1": [1, 2, 3], "key2": [TestEnum.FOO, TestEnum.BAR]},
+            {"key1": [1, 2, 3], "key2": [StrEnum.FOO, StrEnum.BAR]},
             '{"key1": [1, 2, 3], "key2": ["foo", "bar"]}',
         ),
-        (TestEnum2.FOO, "prefix_foo"),
-        ([TestEnum2.FOO, TestEnum2.BAR], '["prefix_foo", "prefix_bar"]'),
+        (EnumWithPrefix.FOO, "prefix_foo"),
+        ([EnumWithPrefix.FOO, EnumWithPrefix.BAR], '["prefix_foo", "prefix_bar"]'),
         (
-            {"key1": TestEnum2.FOO, "key2": TestEnum2.BAR},
+            {"key1": EnumWithPrefix.FOO, "key2": EnumWithPrefix.BAR},
             '{"key1": "prefix_foo", "key2": "prefix_bar"}',
         ),
-        (TestBase(ts=datetime.timedelta(1, 1, 1)), '{"ts": "1 day, 0:00:01.000001"}'),
+        (
+            BaseSubclass(ts=datetime.timedelta(1, 1, 1)),
+            '{"ts": "1 day, 0:00:01.000001"}',
+        ),
         (
             [1, Var.create_safe("hi"), Var.create_safe("bye", is_local=False)],
             '[1, "hi", bye]',
