@@ -218,7 +218,7 @@ class App(Base):
         Returns:
             The string representation of the app.
         """
-        return f"<App state={self.state.__name__}>"
+        return f"<App state={self.state.__name__ if self.state else None}>"
 
     def __call__(self) -> FastAPI:
         """Run the backend api instance.
@@ -245,6 +245,15 @@ class App(Base):
             allow_headers=["*"],
             allow_origins=["*"],
         )
+
+    def validate_state_manager(self):
+        """Check that the state manager is valid or not None.
+
+        Raises:
+            ValueError: if the state manager has not been initialized.
+        """
+        if self.state_manager is None:
+            raise ValueError("The state manager has not been initialized.")
 
     async def preprocess(self, state: State, event: Event) -> StateUpdate | None:
         """Preprocess the event.
@@ -710,8 +719,10 @@ class App(Base):
         """
         if self.event_namespace is None:
             raise RuntimeError("App has not been initialized yet.")
+
+        self.validate_state_manager()
         # Get exclusive access to the state.
-        async with self.state_manager.modify_state(token) as state:
+        async with self.state_manager.modify_state(token) as state:  # type: ignore
             # No other event handler can modify the state while in this context.
             yield state
             delta = state.get_delta()
@@ -792,8 +803,9 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         }
     )
+    app.validate_state_manager()
     # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.token) as state:
+    async with app.state_manager.modify_state(event.token) as state:  # type: ignore
         # re-assign only when the value is different
         if state.router_data != router_data:
             # assignment will recurse into substates and force recalculation of
@@ -856,6 +868,10 @@ def upload(app: App):
         for file in files:
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
+
+        if app.state_manager is None:
+            raise ValueError("The state manager has not been initialized.")
+
         # Get the state for the session.
         async with app.state_manager.modify_state(token) as state:
             # get the current session ID

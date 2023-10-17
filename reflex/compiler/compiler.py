@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Type
+from typing import Optional, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -303,7 +303,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_contexts(state: Type[State]) -> tuple[str, str]:
+def compile_contexts(state: Optional[Type[State]]) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
