@@ -48,6 +48,99 @@ from reflex.vars import BaseVar, ComputedVar, Var
 Delta = Dict[str, Any]
 
 
+class HeaderData(Base):
+    """An object containing headers data."""
+
+    host: str = ""
+    origin: str = ""
+    upgrade: str = ""
+    connection: str = ""
+    pragma: str = ""
+    cache_control: str = ""
+    user_agent: str = ""
+    sec_websocket_version: str = ""
+    sec_websocket_key: str = ""
+    sec_websocket_extensions: str = ""
+    accept_encoding: str = ""
+    accept_language: str = ""
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initalize the HeaderData object based on router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        if router_data:
+            for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
+                setattr(self, format.to_snake_case(k), v)
+
+
+class PageData(Base):
+    """An object containing page data."""
+
+    host: str = ""  #  repeated with self.headers.origin (remove or keep the duplicate?)
+    path: str = ""
+    raw_path: str = ""
+    full_path: str = ""
+    full_raw_path: str = ""
+    params: dict = {}
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initalize the PageData object based on router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        if router_data:
+            self.host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin")
+            self.path = router_data.get(constants.RouteVar.PATH, "")
+            self.raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
+            self.full_path = f"{self.host}{self.path}"
+            self.full_raw_path = f"{self.host}{self.raw_path}"
+            self.params = router_data.get(constants.RouteVar.QUERY, {})
+
+
+class SessionData(Base):
+    """An object containing session data."""
+
+    client_token: str = ""
+    client_ip: str = ""
+    session_id: str = ""
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initalize the SessionData object based on router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        if router_data:
+            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
+            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+
+
+class RouterData(Base):
+    """An object containing RouterData."""
+
+    session: SessionData = SessionData()
+    headers: HeaderData = HeaderData()
+    page: PageData = PageData()
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initialize the RouterData object.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        self.session = SessionData(router_data)
+        self.headers = HeaderData(router_data)
+        self.page = PageData(router_data)
+
+
 class State(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -95,6 +188,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     # Per-instance copy of backend variable values
     _backend_vars: Dict[str, Any] = {}
+
+    # The router data for the current page
+    router: RouterData = RouterData()
 
     def __init__(self, *args, parent_state: State | None = None, **kwargs):
         """Initialize the state.
@@ -494,6 +590,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The token of the client.
         """
+        console.deprecate(
+            feature_name="get_token",
+            reason="replaced by `State.router.session.client_token`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
 
     def get_sid(self) -> str:
@@ -502,6 +604,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The session ID of the client.
         """
+        console.deprecate(
+            feature_name="get_sid",
+            reason="replaced by `State.router.session.session_id`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.SESSION_ID, "")
 
     def get_headers(self) -> Dict:
@@ -510,6 +618,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The headers of the client.
         """
+        console.deprecate(
+            feature_name="get_headers",
+            reason="replaced by `State.router.headers`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.HEADERS, {})
 
     def get_client_ip(self) -> str:
@@ -518,6 +632,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The IP of the client.
         """
+        console.deprecate(
+            feature_name="get_client_ip",
+            reason="replaced by `State.router.session.client_ip`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
 
     def get_current_page(self, origin=False) -> str:
@@ -529,10 +649,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The current page.
         """
-        if origin:
-            return self.router_data.get(constants.RouteVar.ORIGIN, "")
-        else:
-            return self.router_data.get(constants.RouteVar.PATH, "")
+        console.deprecate(
+            feature_name="get_current_page",
+            reason="replaced by State.router.page / self.router.page",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
+
+        return self.router.page.raw_path if origin else self.router.page.path
 
     def get_query_params(self) -> dict[str, str]:
         """Obtain the query parameters for the queried page.
@@ -542,6 +666,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The dict of query parameters.
         """
+        console.deprecate(
+            feature_name="get_query_params",
+            reason="replaced by `State.router.page.params`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.QUERY, {})
 
     def get_cookies(self) -> dict[str, str]:
@@ -583,14 +713,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         def argsingle_factory(param):
             @ComputedVar
             def inner_func(self) -> str:
-                return self.get_query_params().get(param, "")
+                return self.router.page.params.get(param, "")
 
             return inner_func
 
         def arglist_factory(param):
             @ComputedVar
             def inner_func(self) -> List:
-                return self.get_query_params().get(param, [])
+                return self.router.page.params.get(param, [])
 
             return inner_func
 
