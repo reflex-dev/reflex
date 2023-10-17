@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, Optional
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
-from reflex.components.layout import Box
+from reflex.components.layout import Fragment
 from reflex.utils import console, format, imports, types
 from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
@@ -291,7 +291,7 @@ class DataEditor(NoSSRComponent):
                 "getCellContent is not parametrable, user value will be discarded"
             )
         grid = super().create(*children, **props)
-        return Box.create(grid, Div.create(id="portal"))
+        return Fragment.create(grid, Div.create(id="portal"))
 
     # def _render(self) -> Tag:
     #     if isinstance(self.data, Var) and types.is_dataframe(self.data.type_):
