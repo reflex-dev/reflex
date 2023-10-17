@@ -79,7 +79,8 @@ class DataEditor(NoSSRComponent):
     """The DataEditor Component."""
 
     tag = "DataEditor"
-    library: str = "@glideapps/glide-data-grid"
+    is_default = True
+    library: str = "@glideapps/glide-data-grid@^5.3.0"
     lib_dependencies: list[str] = ["lodash", "marked", "react-responsive-carousel"]
 
     # number of rows
@@ -92,81 +93,78 @@ class DataEditor(NoSSRComponent):
     data: Var[Any]
 
     # the name of the callback used to find the data to display
-    getCellContent: Var[str]
+    get_cell_content: Var[str]
 
     # allow copy paste or not
-    getCellForSelection: Var[bool]
+    get_cell_for_selection: Var[bool]
 
-    onPaste: Var[bool]
+    on_paste: Var[bool]
 
     # Controls the drawing of the focus ring.
-    drawFocusRing: Var[bool]
+    draw_focus_ring: Var[bool]
 
     # Enables or disables the overlay shadow when scrolling horizontally.
-    fixedShadowX: Var[bool]
+    fixed_shadow_x: Var[bool]
 
     # Enables or disables the overlay shadow when scrolling vertically.
-    fixedShadowY: Var[bool]
+    fixed_shadow_y: Var[bool]
 
     # The number of columns which should remain in place when scrolling horizontally. Doesn't include rowMarkers.
-    freezeColumns: Var[int]
+    freeze_columns: Var[int]
 
     # Controls the header of the group header row.
-    groupHeaderHeight: Var[int]
+    group_header_height: Var[int]
 
     # Controls the height of the header row.
-    headerHeight: Var[int]
+    header_height: Var[int]
 
     # Additional header icons: (TODO: must be a map of name: svg)
-    headerIcons: Var[Any]
+    header_icons: Var[Any]
 
     # The maximum width a column can be automatically sized to.
-    maxColumnAutoWidth: Var[int]
+    max_column_auto_width: Var[int]
 
     # The maximum width a column can be resized to.
-    maxColumnWidth: Var[int]
+    max_column_width: Var[int]
 
     # The minimum width a column can be resized to.
-    minColumnWidth: Var[int]
+    min_column_width: Var[int]
 
     # Determins the height of each row.
-    rowHeight: Var[int]
+    row_height: Var[int]
 
     # kind of raw marker (use Literal API ?)
-    rowMarkers: Var[str]
+    row_markers: Var[str]
 
     # Changes the starting index for row markers.
-    rowMarkerStartIndex: Var[int]
+    row_marker_start_index: Var[int]
 
     # Sets the width of row markers in pixels, if unset row markers will automatically size.
-    rowMarkerWidth: Var[int]
+    row_marker_width: Var[int]
 
     # enable horizontal smooth scrolling
-    smoothScrollX: Var[bool]
+    smooth_scroll_x: Var[bool]
 
     # enable vertical smooth scrolling
-    smoothScrollY: Var[bool]
+    smooth_scroll_y: Var[bool]
 
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
     # TODO: need to support a mapping (dict[int, bool] for handling separate columns)
-    verticalBorder: Var[bool]
+    vertical_border: Var[bool]
 
-    columnSelect: Var[str]
+    column_select: Var[str]
 
-    #
-    preventDiagonalScrolling: Var[bool]
+    prevent_diagonal_scrolling: Var[bool]
 
-    overscrollX: Var[int]
+    overscroll_x: Var[int]
 
-    overscrollY: Var[int]
+    overscroll_y: Var[int]
 
-    scrollOffsetX: Var[int]
-    scrollOffsetY: Var[int]
+    scroll_offset_x: Var[int]
+    scroll_offset_y: Var[int]
 
     # global theme
     theme: Var[dict]
-
-    is_default = True
 
     def _get_imports(self):
         return imports.merge_imports(
@@ -195,36 +193,36 @@ class DataEditor(NoSSRComponent):
             return [pos, data]
 
         return {
-            "onCellEdited": edit_sig,
-            "onGroupHeaderClicked": edit_sig,
-            "onGroupHeaderContextMenu": lambda grp_idx, data: [grp_idx, data],
-            "onCellActivated": lambda pos: [pos],
-            "onCellClicked": lambda pos: [pos],
-            "onCellContextMenu": lambda pos: [pos],
-            "onGroupHeaderRenamed": lambda idx, val: [idx, val],
-            "onHeaderClicked": lambda pos: [pos],
-            "onHeaderContextMenu": lambda pos: [pos],
-            "onHeaderMenuClick": lambda col, pos: [col, pos],
-            "onItemHovered": lambda pos: [pos],
-            "onDelete": lambda selection: [selection],
-            "onFinishedEditing": lambda new_value, movement: [new_value, movement],
-            "onRowAppended": lambda: [],
-            "onSelectionCleared": lambda: [],
+            "on_cell_activated": lambda pos: [pos],
+            "on_cell_clicked": lambda pos: [pos],
+            "on_cell_context_menu": lambda pos: [pos],
+            "on_cell_edited": edit_sig,
+            "on_group_header_clicked": edit_sig,
+            "on_group_header_context_menu": lambda grp_idx, data: [grp_idx, data],
+            "on_group_header_renamed": lambda idx, val: [idx, val],
+            "on_header_clicked": lambda pos: [pos],
+            "on_header_context_menu": lambda pos: [pos],
+            "on_header_menu_click": lambda col, pos: [col, pos],
+            "on_item_hovered": lambda pos: [pos],
+            "on_delete": lambda selection: [selection],
+            "on_finished_editing": lambda new_value, movement: [new_value, movement],
+            "on_row_appended": lambda: [],
+            "on_selection_cleared": lambda: [],
         }
 
     def _get_hooks(self) -> str | None:
         editor_id = get_unique_variable_name()
         data_callback = f"getData_{editor_id}"
-        self.getCellContent = Var.create(data_callback, is_local=False)  # type: ignore
+        self.get_cell_content = Var.create(data_callback, _var_is_local=False)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
         code.extend(
             [
-                f"  if (row < {self.data.full_name}.length && col < {self.columns.full_name}.length)"
+                f"  if (row < {self.data._var_full_name}.length && col < {self.columns._var_full_name}.length)"
                 " {",
-                f"    const column = getDEColumn({self.columns.full_name}, col);",
-                f"    const rowData = getDERow({self.data.full_name}, row);",
+                f"    const column = getDEColumn({self.columns._var_full_name}, col);",
+                f"    const rowData = getDERow({self.data._var_full_name}, row);",
                 f"    const cellData = locateCell(rowData, column);",
                 "    return formatCell(cellData, column);",
                 "  }",
@@ -267,7 +265,7 @@ class DataEditor(NoSSRComponent):
             if (
                 types.is_dataframe(type(data))
                 or isinstance(data, Var)
-                and types.is_dataframe(data.type_)
+                and types.is_dataframe(data._var_type)
             ):
                 raise ValueError(
                     "Cannot pass in both a pandas dataframe and columns to the data_editor component."
@@ -288,7 +286,7 @@ class DataEditor(NoSSRComponent):
 
         if props.pop("getCellContent", None) is not None:
             console.warn(
-                "getCellContent is not parametrable, user value will be discarded"
+                "getCellContent is not user configurable, the provided value will be discarded"
             )
         grid = super().create(*children, **props)
         return Fragment.create(grid, Div.create(id="portal"))
