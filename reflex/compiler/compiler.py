@@ -98,15 +98,16 @@ def _compile_contexts(state: Optional[Type[State]]) -> str:
     Returns:
         The compiled context file.
     """
+    is_dev_mode = (os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",)
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
-            is_dev_mode=os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",
+            is_dev_mode=is_dev_mode,
         )
         if state
-        else templates.CONTEXT.render()
+        else templates.CONTEXT.render(is_dev_mode=is_dev_mode)
     )
 
 

@@ -97,7 +97,7 @@ class App(Base):
     state: Optional[Type[State]] = None
 
     # Class to manage many client states.
-    state_manager: Optional[StateManager] = None
+    _state_manager: Optional[StateManager] = None
 
     # The styling to apply to each component.
     style: ComponentStyle = {}
@@ -177,7 +177,7 @@ class App(Base):
 
         if self.state:
             # Set up the state manager.
-            self.state_manager = StateManager.create(state=self.state)
+            self._state_manager = StateManager.create(state=self.state)
 
             # Set up the Socket.IO AsyncServer.
             self.sio = AsyncServer(
@@ -247,14 +247,19 @@ class App(Base):
             allow_origins=["*"],
         )
 
-    def validate_state_manager(self):
-        """Check that the state manager is valid or not None.
+    @property
+    def state_manager(self) -> StateManager:
+        """Get the state manager.
+
+        Returns:
+            The initialized state manager.
 
         Raises:
-            ValueError: if the state manager has not been initialized.
+            ValueError: if the state has not been initialized.
         """
-        if self.state_manager is None:
+        if self._state_manager is None:
             raise ValueError("The state manager has not been initialized.")
+        return self._state_manager
 
     async def preprocess(self, state: State, event: Event) -> StateUpdate | None:
         """Preprocess the event.
@@ -721,9 +726,8 @@ class App(Base):
         if self.event_namespace is None:
             raise RuntimeError("App has not been initialized yet.")
 
-        self.validate_state_manager()
         # Get exclusive access to the state.
-        async with self.state_manager.modify_state(token) as state:  # type: ignore
+        async with self.state_manager.modify_state(token) as state:
             # No other event handler can modify the state while in this context.
             yield state
             delta = state.get_delta()
@@ -804,9 +808,8 @@ async def process(
             constants.RouteVar.CLIENT_IP: client_ip,
         }
     )
-    app.validate_state_manager()
     # Get the state for the session exclusively.
-    async with app.state_manager.modify_state(event.token) as state:  # type: ignore
+    async with app.state_manager.modify_state(event.token) as state:
         # re-assign only when the value is different
         if state.router_data != router_data:
             # assignment will recurse into substates and force recalculation of
@@ -870,9 +873,6 @@ def upload(app: App):
         for file in files:
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
-
-        if app.state_manager is None:
-            raise ValueError("The state manager has not been initialized.")
 
         # Get the state for the session.
         async with app.state_manager.modify_state(token) as state:
