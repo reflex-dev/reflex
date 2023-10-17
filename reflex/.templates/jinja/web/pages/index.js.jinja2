@@ -25,7 +25,7 @@ export default function Component() {
 
   // Route after the initial page hydration.
   useEffect(() => {
-    const change_complete = () => addEvents(initialEvents.map((e) => ({...e})))
+    const change_complete = () => addEvents(initialEvents())
     {{const.router}}.events.on('routeChangeComplete', change_complete)
     return () => {
       {{const.router}}.events.off('routeChangeComplete', change_complete)

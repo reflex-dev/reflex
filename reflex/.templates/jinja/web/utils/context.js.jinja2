@@ -6,7 +6,7 @@ export const ColorModeContext = createContext(null);
 export const StateContext = createContext(null);
 export const EventLoopContext = createContext(null);
 export const clientStorage = {{ client_storage|json_dumps }}
-export const initialEvents = [
+export const initialEvents = () => [
     Event('{{state_name}}.{{const.hydrate}}', hydrateClientStorage(clientStorage)),
 ]
 export const isDevMode = {{ is_dev_mode|json_dumps }}
