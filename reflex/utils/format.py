@@ -420,7 +420,7 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    json.dumps(val._var_name)
+                    wrap(json.dumps(val._var_name).strip('"'), "`")
                     if val._var_is_string
                     else val._var_full_name,
                 )
@@ -597,7 +597,7 @@ def json_dumps(obj: Any) -> str:
     Returns:
         A string
     """
-    return json.dumps(obj, ensure_ascii=False, default=list)
+    return json.dumps(obj, ensure_ascii=False, default=serialize)
 
 
 def unwrap_vars(value: str) -> str:

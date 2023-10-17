@@ -53,6 +53,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import (
+    RouterData,
     State,
     StateManager,
     StateUpdate,
@@ -811,6 +812,7 @@ async def process(
             # assignment will recurse into substates and force recalculation of
             # dependent ComputedVar (dynamic route variables)
             state.router_data = router_data
+            state.router = RouterData(router_data)
 
         # Preprocess the event.
         update = await app.preprocess(state, event)

@@ -13,6 +13,7 @@ class RouteArgType(SimpleNamespace):
 
 
 # the name of the backend var containing path and client information
+ROUTER = "router"
 ROUTER_DATA = "router_data"
 
 

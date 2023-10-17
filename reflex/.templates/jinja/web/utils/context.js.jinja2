@@ -17,11 +17,11 @@ export const clientStorage = {}
 {% endif %}
 
 {% if state_name %}
-export const initialEvents = [
+export const initialEvents = () => [
     Event('{{state_name}}.{{const.hydrate}}', hydrateClientStorage(clientStorage)),
 ]
 {% else %}
-export const initialEvents = []
+export const initialEvents = () => []
 {% endif %}
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
