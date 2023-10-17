@@ -129,17 +129,16 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
-    kwargs = {
-        "imports": imports,
-        "dynamic_imports": component.get_dynamic_imports(),
-        "custom_codes": component.get_custom_code(),
-        "hooks": component.get_hooks(),
-        "render": component.render(),
-    }
-    if state:
-        kwargs["state_name"] = state.get_name()
+    kwargs = {"state_name": state.get_name()} if state else {}
 
-    return templates.PAGE.render(**kwargs)
+    return templates.PAGE.render(
+        imports=imports,
+        dynamic_imports=component.get_dynamic_imports(),
+        custom_codes=component.get_custom_code(),
+        hooks=component.get_hooks(),
+        render=component.render(),
+        **kwargs,
+    )
 
 
 def compile_root_stylesheet(stylesheets: list[str]) -> tuple[str, str]:
