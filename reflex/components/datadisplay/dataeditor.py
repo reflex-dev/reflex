@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.layout import Fragment
@@ -80,13 +80,13 @@ class DataEditor(NoSSRComponent):
     tag = "DataEditor"
     is_default = True
     library: str = "@glideapps/glide-data-grid@^5.3.0"
-    lib_dependencies: list[str] = ["lodash", "marked", "react-responsive-carousel"]
+    lib_dependencies: List[str] = ["lodash", "marked", "react-responsive-carousel"]
 
     # number of rows
     rows: Var[int]
 
     # headers of the columns for the data grid
-    columns: Var[list[dict[str, Any]]]
+    columns: Var[List[Dict[str, Any]]]
 
     # the data
     data: Var[Any]
