@@ -446,6 +446,33 @@ def test_format_query_params(input, output):
     assert format.format_query_params(input) == output
 
 
+formatted_router = {
+    "session": {"client_token": "", "client_ip": "", "session_id": ""},
+    "headers": {
+        "host": "",
+        "origin": "",
+        "upgrade": "",
+        "connection": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "",
+        "sec_websocket_version": "",
+        "sec_websocket_key": "",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "",
+        "accept_language": "",
+    },
+    "page": {
+        "host": "",
+        "path": "",
+        "raw_path": "",
+        "full_path": "",
+        "full_raw_path": "",
+        "params": {},
+    },
+}
+
+
 @pytest.mark.parametrize(
     "input, output",
     [
@@ -474,6 +501,7 @@ def test_format_query_params(input, output):
                 "obj": {"prop1": 42, "prop2": "hello"},
                 "sum": 3.14,
                 "upper": "",
+                "router": formatted_router,
             },
         ),
         (
@@ -484,6 +512,7 @@ def test_format_query_params(input, output):
                 "is_hydrated": False,
                 "t": "18:53:00+01:00",
                 "td": "11 days, 0:11:00",
+                "router": formatted_router,
             },
         ),
     ],

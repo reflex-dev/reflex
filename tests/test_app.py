@@ -34,7 +34,7 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import State, StateManagerRedis, StateUpdate
+from reflex.state import RouterData, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -255,9 +255,9 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
     assert app.state.computed_vars["dynamic"]._deps(objclass=DefaultState) == {
-        constants.ROUTER_DATA
+        constants.ROUTER
     }
-    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state().computed_var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -874,9 +874,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert arg_name in app.state.vars
     assert arg_name in app.state.computed_vars
     assert app.state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
-        constants.ROUTER_DATA
+        constants.ROUTER
     }
-    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state().computed_var_dependencies
 
     sid = "mock_sid"
     client_ip = "127.0.0.1"
@@ -912,6 +912,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             "token": token,
             **hydrate_event.router_data,
         }
+        exp_router = RouterData(exp_router_data)
         process_coro = process(
             app,
             event=hydrate_event,
@@ -920,7 +921,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             client_ip=client_ip,
         )
         update = await process_coro.__anext__()  # type: ignore
-
         # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
             delta={
@@ -930,6 +930,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     constants.CompileVars.IS_HYDRATED: False,
                     "loaded": exp_index,
                     "counter": exp_index,
+                    "router": exp_router,
                     # "side_effect_counter": exp_index,
                 }
             },
