@@ -961,7 +961,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The valid StateUpdate containing the events and final flag.
         """
-        token = self.get_token()
+        token = self.router.session.client_token
 
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
@@ -1273,7 +1273,9 @@ class StateProxy(wrapt.ObjectProxy):
         Returns:
             This StateProxy instance in mutable mode.
         """
-        self._self_actx = self._self_app.modify_state(self.__wrapped__.get_token())
+        self._self_actx = self._self_app.modify_state(
+            self.__wrapped__.router.session.client_token
+        )
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
             "__wrapped__", mutable_state.get_substate(self._self_substate_path)
