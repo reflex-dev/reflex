@@ -10,7 +10,7 @@ export const initialState = {}
 export const ColorModeContext = createContext(null);
 export const StateContext = createContext(null);
 export const EventLoopContext = createContext(null);
-{% if clientStorage %}
+{% if client_storage %}
 export const clientStorage = {{ client_storage|json_dumps }}
 {% else %}
 export const clientStorage = {}
