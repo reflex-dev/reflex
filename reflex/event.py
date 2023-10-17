@@ -316,10 +316,13 @@ def set_value(ref: str, value: Any) -> EventSpec:
     )
 
 
-def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa: B006
+def remove_cookie(
+    key: str, options: dict[str, Any] = {}, path: str = "/"
+) -> EventSpec:  # noqa: B006
     """Remove a cookie on the frontend.
 
     Args:
+        path: The cookie path
         key: The key identifying the cookie to be removed.
         options: Support all the cookie options from RFC 6265
 
@@ -331,6 +334,7 @@ def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa:
         get_fn_signature(remove_cookie),
         key=key,
         options=options,
+        path=path,
     )
 
 
@@ -357,7 +361,7 @@ def remove_local_storage(key: str) -> EventSpec:
     """
     return server_side(
         "_remove_local_storage",
-        get_fn_signature(clear_local_storage),
+        get_fn_signature(remove_local_storage),
         key=key,
     )
 
