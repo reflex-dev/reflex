@@ -21,10 +21,6 @@ def ClientSide():
         state_var: str = ""
         input_value: str = ""
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
         c1: str = rx.Cookie()
@@ -59,7 +55,11 @@ def ClientSide():
 
     def index():
         return rx.fragment(
-            rx.input(value=ClientSideState.token, is_read_only=True, id="token"),
+            rx.input(
+                value=ClientSideState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
             rx.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,

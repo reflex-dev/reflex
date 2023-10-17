@@ -24,10 +24,6 @@ def EventChain():
         event_order: list[str] = []
         interim_value: str = ""
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
         def event_no_args(self):
             self.event_order.append("event_no_args")
 
@@ -128,10 +124,14 @@ def EventChain():
 
     app = rx.App(state=State)
 
+    token_input = rx.input(
+        value=State.router.session.client_token, is_read_only=True, id="token"
+    )
+
     @app.add_page
     def index():
         return rx.fragment(
-            rx.input(value=State.token, is_read_only=True, id="token"),
+            token_input,
             rx.input(value=State.interim_value, is_read_only=True, id="interim_value"),
             rx.button(
                 "Return Event",
@@ -203,13 +203,13 @@ def EventChain():
     def on_load_return_chain():
         return rx.fragment(
             rx.text("return"),
-            rx.input(value=State.token, readonly=True, id="token"),
+            token_input,
         )
 
     def on_load_yield_chain():
         return rx.fragment(
             rx.text("yield"),
-            rx.input(value=State.token, readonly=True, id="token"),
+            token_input,
         )
 
     def on_mount_return_chain():
@@ -219,7 +219,7 @@ def EventChain():
                 on_mount=State.on_load_return_chain,
                 on_unmount=lambda: State.event_arg("unmount"),  # type: ignore
             ),
-            rx.input(value=State.token, readonly=True, id="token"),
+            token_input,
             rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
         )
 
@@ -233,7 +233,7 @@ def EventChain():
                 ],
                 on_unmount=State.event_no_args,
             ),
-            rx.input(value=State.token, readonly=True, id="token"),
+            token_input,
             rx.button("Unmount", on_click=rx.redirect("/"), id="unmount"),
         )
 
@@ -278,6 +278,27 @@ def driver(event_chain: AppHarness) -> Generator[WebDriver, None, None]:
         yield driver
     finally:
         driver.quit()
+
+
+def assert_token(event_chain: AppHarness, driver: WebDriver) -> str:
+    """Get the token associated with backend state.
+
+    Args:
+        event_chain: harness for EventChain app.
+        driver: WebDriver instance.
+
+    Returns:
+        The token visible in the driver browser.
+    """
+    assert event_chain.app_instance is not None
+    token_input = driver.find_element(By.ID, "token")
+    assert token_input
+
+    # wait for the backend connection to send the token
+    token = event_chain.poll_for_value(token_input)
+    assert token is not None
+
+    return token
 
 
 @pytest.mark.parametrize(
@@ -375,14 +396,8 @@ async def test_event_chain_click(
         button_id: the ID of the button to click
         exp_event_order: the expected events recorded in the State
     """
-    token_input = driver.find_element(By.ID, "token")
+    token = assert_token(event_chain, driver)
     btn = driver.find_element(By.ID, button_id)
-    assert token_input
-    assert btn
-
-    token = event_chain.poll_for_value(token_input)
-    assert token is not None
-
     btn.click()
 
     async def _has_all_events():
@@ -435,11 +450,7 @@ async def test_event_chain_on_load(
     """
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
-
-    token = event_chain.poll_for_value(token_input)
-    assert token is not None
+    token = assert_token(event_chain, driver)
 
     async def _has_all_events():
         return len((await event_chain.get_state(token)).event_order) == len(
@@ -511,11 +522,7 @@ async def test_event_chain_on_mount(
     """
     assert event_chain.frontend_url is not None
     driver.get(event_chain.frontend_url + uri)
-    token_input = driver.find_element(By.ID, "token")
-    assert token_input
-
-    token = event_chain.poll_for_value(token_input)
-    assert token is not None
+    token = assert_token(event_chain, driver)
 
     unmount_button = driver.find_element(By.ID, "unmount")
     assert unmount_button
@@ -546,9 +553,8 @@ def test_yield_state_update(event_chain: AppHarness, driver: WebDriver, button_i
         driver: selenium WebDriver open to the app
         button_id: the ID of the button to click
     """
-    token_input = driver.find_element(By.ID, "token")
     interim_value_input = driver.find_element(By.ID, "interim_value")
-    assert event_chain.poll_for_value(token_input)
+    assert_token(event_chain, driver)
 
     btn = driver.find_element(By.ID, button_id)
     btn.click()
