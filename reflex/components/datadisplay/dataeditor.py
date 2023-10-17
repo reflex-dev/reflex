@@ -2,9 +2,8 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 
-from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.layout import Fragment
 from reflex.utils import console, format, imports, types
@@ -12,7 +11,7 @@ from reflex.vars import ImportVar, Var, get_unique_variable_name
 
 
 # TODO: Fix the serialization issue for custom types.
-class GridColumnIcons(str, Enum):
+class GridColumnIcons(Enum):
     """An Enum for the available icons in DataEditor."""
 
     Array = "array"
@@ -43,14 +42,15 @@ class GridColumnIcons(str, Enum):
     VideoUri = "video_uri"
 
 
-class GridRowMarkers(str, Enum):
-    """Grid Row Markers."""
+# replace below with Literal
+# class GridRowMarkers(str, Enum):
+#     """Grid Row Markers."""
 
-    NUMBER = "number"
-    NONE = "none"
-    CHECKBOX = "checkbox"
-    BOTH = "both"
-    CLICKABLE_NUMBER = "clickable-number"
+#     NUMBER = "number"
+#     NONE = "none"
+#     CHECKBOX = "checkbox"
+#     BOTH = "both"
+#     CLICKABLE_NUMBER = "clickable-number"
 
 
 # @serializer
@@ -66,12 +66,12 @@ class GridRowMarkers(str, Enum):
 #     return "prefix" + str(icon)
 
 
-class DataEditorColumn(Base):
-    """Column."""
+# class DataEditorColumn(Base):
+#     """Column."""
 
-    title: str
-    id: Optional[str] = None
-    type: str = "str"
+#     title: str
+#     id: Optional[str] = None
+#     type_: str = "str"
 
 
 class DataEditor(NoSSRComponent):
