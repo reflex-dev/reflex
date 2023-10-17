@@ -210,7 +210,7 @@ class App(Base):
         self.setup_admin_dash()
 
         # If a State is not used and no overlay_component is specified, do not render the connection modal
-        if not self.state and self.overlay_component is default_overlay_component:
+        if self.state is None and self.overlay_component is default_overlay_component:
             self.overlay_component = None
 
     def __repr__(self) -> str:
