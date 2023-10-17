@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 
 import pytest
@@ -604,6 +605,14 @@ def test_format_library_name(input: str, output: str):
         ([1, 2, 3], "[1, 2, 3]"),
         ({}, "{}"),
         ({"k1": False, "k2": True}, '{"k1": false, "k2": true}'),
+        (
+            [datetime.timedelta(1, 1, 1), datetime.timedelta(1, 1, 2)],
+            '["1 day, 0:00:01.000001", "1 day, 0:00:01.000002"]',
+        ),
+        (
+            {"key1": datetime.timedelta(1, 1, 1), "key2": datetime.timedelta(1, 1, 2)},
+            '{"key1": "1 day, 0:00:01.000001", "key2": "1 day, 0:00:01.000002"}',
+        ),
     ],
 )
 def test_json_dumps(input, output):
