@@ -21,13 +21,11 @@ def RadixThemesApp():
         v: str = ""
         checked: bool = False
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     def index() -> rx.Component:
         return rdxt.box(
-            rdxt.text_field(id="token", value=State.token, read_only=True),
+            rdxt.text_field(
+                id="token", value=State.router.session.client_token, read_only=True
+            ),
             rdxt.text_field(id="tf-bare", value=State.v, on_change=State.set_v),  # type: ignore
             rdxt.text_field_root(
                 rdxt.text_field_slot("🧸"),
