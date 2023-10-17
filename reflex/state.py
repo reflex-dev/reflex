@@ -818,6 +818,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Reset the base vars.
         fields = self.get_fields()
         for prop_name in self.base_vars:
+            if prop_name == constants.ROUTER:
+                continue  # never reset the router data
             setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
 
         # Recursively reset the substates.
