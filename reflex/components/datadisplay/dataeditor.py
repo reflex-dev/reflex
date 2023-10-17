@@ -8,7 +8,6 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.layout import Fragment
 from reflex.utils import console, format, imports, types
-from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
 
 
@@ -54,17 +53,17 @@ class GridRowMarkers(str, Enum):
     CLICKABLE_NUMBER = "clickable-number"
 
 
-@serializer
-def serialize_gridcolumn_icon(icon: GridColumnIcons) -> str:
-    """Serialize grid column icon.
+# @serializer
+# def serialize_gridcolumn_icon(icon: GridColumnIcons) -> str:
+#     """Serialize grid column icon.
 
-    Args:
-        icon: the Icon to serialize.
+#     Args:
+#         icon: the Icon to serialize.
 
-    Returns:
-        The serialized value.
-    """
-    return "prefix" + str(icon)
+#     Returns:
+#         The serialized value.
+#     """
+#     return "prefix" + str(icon)
 
 
 class DataEditorColumn(Base):
