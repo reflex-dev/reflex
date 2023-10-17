@@ -643,7 +643,6 @@ def test_reset(test_state, child_state):
         "map_key",
         "mapping",
         "dt",
-        "router",
     }
 
     # The dirty vars should be reset.
