@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Type
 
 import pytest
 
+from reflex.base import Base
 from reflex.utils import serializers
 from reflex.vars import Var
 
@@ -101,7 +102,7 @@ class TestEnum(str, Enum):
     BAR = "bar"
 
 
-class TestEnum2(str, Enum):
+class TestEnum2(Enum):
     """TestEnum2."""
 
     FOO = "foo"
@@ -111,6 +112,12 @@ class TestEnum2(str, Enum):
 @serializers.serializer
 def serialize_TestEnum2(enum: TestEnum2) -> str:
     return "prefix_" + enum.value
+
+
+class TestBase(Base):
+    """A class inheriting from Base for testing."""
+
+    ts: datetime.timedelta = datetime.timedelta(1, 1, 1)
 
 
 @pytest.mark.parametrize(
@@ -137,6 +144,7 @@ def serialize_TestEnum2(enum: TestEnum2) -> str:
             {"key1": TestEnum2.FOO, "key2": TestEnum2.BAR},
             '{"key1": "prefix_foo", "key2": "prefix_bar"}',
         ),
+        (TestBase(ts=datetime.timedelta(1, 1, 1)), '{"ts": "1 day, 0:00:01.000001"}'),
         (
             [1, Var.create_safe("hi"), Var.create_safe("bye", is_local=False)],
             '[1, "hi", bye]',
@@ -154,6 +162,10 @@ def serialize_TestEnum2(enum: TestEnum2) -> str:
         (datetime.date(2021, 1, 1), "2021-01-01"),
         (datetime.time(1, 1, 1, 1), "01:01:01.000001"),
         (datetime.timedelta(1, 1, 1), "1 day, 0:00:01.000001"),
+        (
+            [datetime.timedelta(1, 1, 1), datetime.timedelta(1, 1, 2)],
+            '["1 day, 0:00:01.000001", "1 day, 0:00:01.000002"]',
+        ),
     ],
 )
 def test_serialize(value: Any, expected: str):
