@@ -25,7 +25,6 @@ from reflex import AdminDash, constants
 from reflex.app import (
     App,
     ComponentCallable,
-    DefaultState,
     default_overlay_component,
     process,
     upload,
@@ -47,6 +46,12 @@ from .states import (
     GenState,
     GrandChildFileUploadState,
 )
+
+
+class EmptyState(State):
+    """An empty state."""
+
+    pass
 
 
 @pytest.fixture
@@ -192,7 +197,6 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app.state() == DefaultState()
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
@@ -240,14 +244,14 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     assert set(app.pages.keys()) == {"test"}
 
 
-def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
-        app: The app to test.
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
+    app = App(state=EmptyState)
     route = "/test/[dynamic]"
     if windows_platform:
         route.lstrip("/").replace("/", "\\")
@@ -255,7 +259,7 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"]._deps(objclass=DefaultState) == {
+    assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
         constants.ROUTER
     }
     assert constants.ROUTER in app.state().computed_var_dependencies
@@ -1093,9 +1097,9 @@ async def test_process_events(mocker, token: str):
 @pytest.mark.parametrize(
     ("state", "overlay_component", "exp_page_child"),
     [
-        (DefaultState, default_overlay_component, None),
-        (DefaultState, None, None),
-        (DefaultState, Text.create("foo"), Text),
+        (None, default_overlay_component, None),
+        (None, None, None),
+        (None, Text.create("foo"), Text),
         (State, default_overlay_component, Fragment),
         (State, None, None),
         (State, Text.create("foo"), Text),
