@@ -165,9 +165,9 @@ class AppHarness:
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance.state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
-            self._state_manager = StateManagerRedis.create(self.app_instance.state)
+            self.state_manager = StateManagerRedis.create(self.app_instance.state)
         else:
-            self._state_manager = self.app_instance.state_manager
+            self.state_manager = self.app_instance.state_manager
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
