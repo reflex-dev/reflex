@@ -3,8 +3,10 @@ from __future__ import annotations
 import io
 import os.path
 import sys
+import unittest.mock
 import uuid
-from typing import List, Tuple, Type
+from pathlib import Path
+from typing import Generator, List, Tuple, Type
 
 if sys.version_info.major >= 3 and sys.version_info.minor > 7:
     from unittest.mock import AsyncMock  # type: ignore
@@ -18,11 +20,11 @@ from starlette_admin.auth import AuthProvider
 from starlette_admin.contrib.sqla.admin import Admin
 from starlette_admin.contrib.sqla.view import ModelView
 
+import reflex.components.radix.themes as rdxt
 from reflex import AdminDash, constants
 from reflex.app import (
     App,
     ComponentCallable,
-    DefaultState,
     default_overlay_component,
     process,
     upload,
@@ -31,17 +33,25 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import State, StateManagerRedis, StateUpdate
+from reflex.state import RouterData, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
 
+from .conftest import chdir
 from .states import (
     ChildFileUploadState,
+    FileStateBase1,
     FileUploadState,
     GenState,
     GrandChildFileUploadState,
 )
+
+
+class EmptyState(State):
+    """An empty state."""
+
+    pass
 
 
 @pytest.fixture
@@ -187,7 +197,6 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app.state() == DefaultState()
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
@@ -235,14 +244,14 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     assert set(app.pages.keys()) == {"test"}
 
 
-def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
-        app: The app to test.
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
+    app = App(state=EmptyState)
     route = "/test/[dynamic]"
     if windows_platform:
         route.lstrip("/").replace("/", "\\")
@@ -250,10 +259,10 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"].deps(objclass=DefaultState) == {
-        constants.ROUTER_DATA
+    assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
+        constants.ROUTER
     }
-    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state().computed_var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -731,7 +740,8 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    app = App(state=state)
+    # The App state must be the "root" of the state tree
+    app = App(state=state if state is FileUploadState else FileStateBase1)
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(token)
     data = b"This is binary data"
@@ -740,12 +750,15 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     bio = io.BytesIO()
     bio.write(data)
 
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
+    handler_prefix = f"{token}:{state_name}"
+
     file1 = UploadFile(
-        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image1.jpg",
+        filename=f"{handler_prefix}.multi_handle_upload:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image2.jpg",
+        filename=f"{handler_prefix}.multi_handle_upload:True:image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)
@@ -753,9 +766,13 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     state_update = StateUpdate(delta=delta, events=[], final=True)
 
     app.event_namespace.emit.assert_called_with(  # type: ignore
-        "event", state_update.json(), to=current_state.get_sid()
+        "event", state_update.json(), to=current_state.router.session.session_id
     )
-    assert (await app.state_manager.get_state(token)).dict()["img_list"] == [
+    current_state = await app.state_manager.get_state(token)
+    state_dict = current_state.dict()
+    for substate in state.get_full_name().split(".")[1:]:
+        state_dict = state_dict[substate]
+    assert state_dict["img_list"] == [
         "image1.jpg",
         "image2.jpg",
     ]
@@ -784,14 +801,18 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
     bio.write(data)
 
     state._tmp_path = tmp_path
-    app = App(state=state)
+    # The App state must be the "root" of the state tree
+    app = App(state=state if state is FileUploadState else FileStateBase1)
+
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
+    handler_prefix = f"{token}:{state_name}"
 
     file1 = UploadFile(
-        filename=f"{token}:{state.get_name()}.handle_upload2:True:image1.jpg",
+        filename=f"{handler_prefix}.handle_upload2:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{token}:{state.get_name()}.handle_upload2:True:image2.jpg",
+        filename=f"{handler_prefix}.handle_upload2:True:image2.jpg",
         file=bio,
     )
     fn = upload(app)
@@ -799,7 +820,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         await fn([file1, file2])
     assert (
         err.value.args[0]
-        == f"`{state.get_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+        == f"`{state_name}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
@@ -869,10 +890,10 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     app.add_page(index_page, route=route, on_load=DynamicState.on_load)  # type: ignore
     assert arg_name in app.state.vars
     assert arg_name in app.state.computed_vars
-    assert app.state.computed_vars[arg_name].deps(objclass=DynamicState) == {
-        constants.ROUTER_DATA
+    assert app.state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
+        constants.ROUTER
     }
-    assert constants.ROUTER_DATA in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state().computed_var_dependencies
 
     sid = "mock_sid"
     client_ip = "127.0.0.1"
@@ -908,6 +929,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             "token": token,
             **hydrate_event.router_data,
         }
+        exp_router = RouterData(exp_router_data)
         process_coro = process(
             app,
             event=hydrate_event,
@@ -916,16 +938,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             client_ip=client_ip,
         )
         update = await process_coro.__anext__()  # type: ignore
-
         # route change triggers: [full state dict, call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
                     arg_name: exp_val,
                     f"comp_{arg_name}": exp_val,
-                    constants.IS_HYDRATED: False,
+                    constants.CompileVars.IS_HYDRATED: False,
                     "loaded": exp_index,
                     "counter": exp_index,
+                    "router": exp_router,
                     # "side_effect_counter": exp_index,
                 }
             },
@@ -1075,9 +1097,9 @@ async def test_process_events(mocker, token: str):
 @pytest.mark.parametrize(
     ("state", "overlay_component", "exp_page_child"),
     [
-        (DefaultState, default_overlay_component, None),
-        (DefaultState, None, None),
-        (DefaultState, Text.create("foo"), Text),
+        (None, default_overlay_component, None),
+        (None, None, None),
+        (None, Text.create("foo"), Text),
         (State, default_overlay_component, Fragment),
         (State, None, None),
         (State, Text.create("foo"), Text),
@@ -1122,3 +1144,105 @@ def test_overlay_component(
         assert exp_page_child in children_types
     else:
         assert len(page.children) == 2
+
+
+@pytest.fixture
+def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
+    """Fixture for an app that can be compiled.
+
+    Args:
+        tmp_path: Temporary path.
+
+    Yields:
+        Tuple containing (app instance, Path to ".web" directory)
+
+        The working directory is set to the app dir (parent of .web),
+        allowing app.compile() to be called.
+    """
+    app_path = tmp_path / "app"
+    web_dir = app_path / ".web"
+    web_dir.mkdir(parents=True)
+    (web_dir / "package.json").touch()
+    app = App()
+    app.get_frontend_packages = unittest.mock.Mock()
+    with chdir(app_path):
+        yield app, web_dir
+
+
+def test_app_wrap_compile_theme(compilable_app):
+    """Test that the radix theme component wraps the app.
+
+    Args:
+        compilable_app: compilable_app fixture.
+    """
+    app, web_dir = compilable_app
+    app.theme = rdxt.theme(accent_color="plum")
+    app.compile()
+    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
+    app_js_lines = [
+        line.strip() for line in app_js_contents.splitlines() if line.strip()
+    ]
+    assert (
+        "function AppWrap({children}) {"
+        "return ("
+        "<RadixThemesTheme accentColor={`plum`}>"
+        "{children}"
+        "</RadixThemesTheme>"
+        ")"
+        "}"
+    ) in "".join(app_js_lines)
+
+
+def test_app_wrap_priority(compilable_app):
+    """Test that the app wrap components are wrapped in the correct order.
+
+    Args:
+        compilable_app: compilable_app fixture.
+    """
+    app, web_dir = compilable_app
+
+    class Fragment1(Component):
+        tag = "Fragment1"
+
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+            return {(99, "Box"): Box.create()}
+
+    class Fragment2(Component):
+        tag = "Fragment2"
+
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+            return {(50, "Text"): Text.create()}
+
+    class Fragment3(Component):
+        tag = "Fragment3"
+
+        def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+            return {(10, "Fragment2"): Fragment2.create()}
+
+    def page():
+        return Fragment1.create(Fragment3.create())
+
+    app.add_page(page)
+    app.compile()
+    app_js_contents = (web_dir / "pages" / "_app.js").read_text()
+    app_js_lines = [
+        line.strip() for line in app_js_contents.splitlines() if line.strip()
+    ]
+    assert (
+        "function AppWrap({children}) {"
+        "return ("
+        "<Box>"
+        "<ChakraProvider theme={extendTheme(theme)}>"
+        "<Global styles={GlobalStyles}/>"
+        "<ChakraColorModeProvider>"
+        "<Text>"
+        "<Fragment2>"
+        "{children}"
+        "</Fragment2>"
+        "</Text>"
+        "</ChakraColorModeProvider>"
+        "</ChakraProvider>"
+        "</Box>"
+        ")"
+        "}"
+    ) in "".join(app_js_lines)

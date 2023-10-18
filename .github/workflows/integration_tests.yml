@@ -25,9 +25,11 @@ env:
   # - Best effort print lines that contain illegal chars (map to some default char, etc.)
   PYTHONIOENCODING: "utf8"
   TELEMETRY_ENABLED: false
+  NODE_OPTIONS: "--max_old_space_size=4096"
 
 jobs:
   example-counter:
+    timeout-minutes: 30
     strategy:
       # Prioritize getting more information out of the workflow (even if something fails)
       fail-fast: false

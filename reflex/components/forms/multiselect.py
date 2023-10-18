@@ -309,7 +309,9 @@ class Select(Component):
         return {
             **super().get_event_triggers(),
             EventTriggers.ON_CHANGE: (
-                lambda e0: [Var.create_safe(f"{e0}.map(e => e.value)", is_local=True)]
+                lambda e0: [
+                    Var.create_safe(f"{e0}.map(e => e.value)", _var_is_local=True)
+                ]
                 if self.is_multi.equals(Var.create_safe(True))
                 else lambda e0: [e0]
             ),

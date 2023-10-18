@@ -108,3 +108,95 @@ def test_event_namespace(mocker, kwargs, expected):
     config = reflex.config.get_config()
     assert conf == config
     assert config.get_event_namespace() == expected
+
+
+DEFAULT_CONFIG = rx.Config(app_name="a")
+
+
+@pytest.mark.parametrize(
+    ("config_kwargs", "env_vars", "set_persistent_vars", "exp_config_values"),
+    [
+        (
+            {},
+            {},
+            {},
+            {
+                "api_url": DEFAULT_CONFIG.api_url,
+                "backend_port": DEFAULT_CONFIG.backend_port,
+                "deploy_url": DEFAULT_CONFIG.deploy_url,
+                "frontend_port": DEFAULT_CONFIG.frontend_port,
+            },
+        ),
+        # Ports set in config kwargs
+        (
+            {"backend_port": 8001, "frontend_port": 3001},
+            {},
+            {},
+            {
+                "api_url": "http://localhost:8001",
+                "backend_port": 8001,
+                "deploy_url": "http://localhost:3001",
+                "frontend_port": 3001,
+            },
+        ),
+        # Ports set in environment take precendence
+        (
+            {"backend_port": 8001, "frontend_port": 3001},
+            {"BACKEND_PORT": 8002},
+            {},
+            {
+                "api_url": "http://localhost:8002",
+                "backend_port": 8002,
+                "deploy_url": "http://localhost:3001",
+                "frontend_port": 3001,
+            },
+        ),
+        # Ports set on the command line take precendence
+        (
+            {"backend_port": 8001, "frontend_port": 3001},
+            {"BACKEND_PORT": 8002},
+            {"frontend_port": "3005"},
+            {
+                "api_url": "http://localhost:8002",
+                "backend_port": 8002,
+                "deploy_url": "http://localhost:3005",
+                "frontend_port": 3005,
+            },
+        ),
+        # api_url / deploy_url already set should not be overridden
+        (
+            {"api_url": "http://foo.bar:8900", "deploy_url": "http://foo.bar:3001"},
+            {"BACKEND_PORT": 8002},
+            {"frontend_port": "3005"},
+            {
+                "api_url": "http://foo.bar:8900",
+                "backend_port": 8002,
+                "deploy_url": "http://foo.bar:3001",
+                "frontend_port": 3005,
+            },
+        ),
+    ],
+)
+def test_replace_defaults(
+    monkeypatch,
+    config_kwargs,
+    env_vars,
+    set_persistent_vars,
+    exp_config_values,
+):
+    """Test that the config replaces defaults with values from the environment.
+
+    Args:
+        monkeypatch: The pytest monkeypatch object.
+        config_kwargs: The config kwargs.
+        env_vars: The environment variables.
+        set_persistent_vars: The values passed to config._set_persistent variables.
+        exp_config_values: The expected config values.
+    """
+    mock_os_env = os.environ.copy()
+    monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)  # type: ignore
+    mock_os_env.update({k: str(v) for k, v in env_vars.items()})
+    c = rx.Config(app_name="a", **config_kwargs)
+    c._set_persistent(**set_persistent_vars)
+    for key, value in exp_config_values.items():
+        assert getattr(c, key) == value

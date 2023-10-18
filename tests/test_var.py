@@ -16,11 +16,11 @@ from reflex.vars import (
 )
 
 test_vars = [
-    BaseVar(name="prop1", type_=int),
-    BaseVar(name="key", type_=str),
-    BaseVar(name="value", type_=str, state="state"),
-    BaseVar(name="local", type_=str, state="state", is_local=True),
-    BaseVar(name="local2", type_=str, is_local=True),
+    BaseVar(_var_name="prop1", _var_type=int),
+    BaseVar(_var_name="key", _var_type=str),
+    BaseVar(_var_name="value", _var_type=str, _var_state="state"),
+    BaseVar(_var_name="local", _var_type=str, _var_state="state", _var_is_local=True),
+    BaseVar(_var_name="local2", _var_type=str, _var_is_local=True),
 ]
 
 test_import_vars = [ImportVar(tag="DataGrid"), ImportVar(tag="DataGrid", alias="Grid")]
@@ -124,7 +124,7 @@ def test_full_name(prop, expected):
         prop: The var to test.
         expected: The expected full name.
     """
-    assert prop.full_name == expected
+    assert prop._var_full_name == expected
 
 
 @pytest.mark.parametrize(
@@ -147,14 +147,14 @@ def test_str(prop, expected):
 @pytest.mark.parametrize(
     "prop,expected",
     [
-        (BaseVar(name="p", type_=int), 0),
-        (BaseVar(name="p", type_=float), 0.0),
-        (BaseVar(name="p", type_=str), ""),
-        (BaseVar(name="p", type_=bool), False),
-        (BaseVar(name="p", type_=list), []),
-        (BaseVar(name="p", type_=dict), {}),
-        (BaseVar(name="p", type_=tuple), ()),
-        (BaseVar(name="p", type_=set), set()),
+        (BaseVar(_var_name="p", _var_type=int), 0),
+        (BaseVar(_var_name="p", _var_type=float), 0.0),
+        (BaseVar(_var_name="p", _var_type=str), ""),
+        (BaseVar(_var_name="p", _var_type=bool), False),
+        (BaseVar(_var_name="p", _var_type=list), []),
+        (BaseVar(_var_name="p", _var_type=dict), {}),
+        (BaseVar(_var_name="p", _var_type=tuple), ()),
+        (BaseVar(_var_name="p", _var_type=set), set()),
     ],
 )
 def test_default_value(prop, expected):
@@ -194,13 +194,13 @@ def test_get_setter(prop, expected):
     "value,expected",
     [
         (None, None),
-        (1, BaseVar(name="1", type_=int, is_local=True)),
-        ("key", BaseVar(name="key", type_=str, is_local=True)),
-        (3.14, BaseVar(name="3.14", type_=float, is_local=True)),
-        ([1, 2, 3], BaseVar(name="[1, 2, 3]", type_=list, is_local=True)),
+        (1, BaseVar(_var_name="1", _var_type=int, _var_is_local=True)),
+        ("key", BaseVar(_var_name="key", _var_type=str, _var_is_local=True)),
+        (3.14, BaseVar(_var_name="3.14", _var_type=float, _var_is_local=True)),
+        ([1, 2, 3], BaseVar(_var_name="[1, 2, 3]", _var_type=list, _var_is_local=True)),
         (
             {"a": 1, "b": 2},
-            BaseVar(name='{"a": 1, "b": 2}', type_=dict, is_local=True),
+            BaseVar(_var_name='{"a": 1, "b": 2}', _var_type=dict, _var_is_local=True),
         ),
     ],
 )
@@ -232,9 +232,9 @@ def test_create_type_error():
 
 def v(value) -> Var:
     val = (
-        Var.create(json.dumps(value), is_string=True, is_local=False)
+        Var.create(json.dumps(value), _var_is_string=True, _var_is_local=False)
         if isinstance(value, str)
-        else Var.create(value, is_local=False)
+        else Var.create(value, _var_is_local=False)
     )
     assert val is not None
     return val
@@ -264,7 +264,8 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
     assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
     assert (
-        str(BaseVar(name="foo", state="state", type_=TestObj).bar) == "{state.foo.bar}"
+        str(BaseVar(_var_name="foo", _var_state="state", _var_type=TestObj).bar)
+        == "{state.foo.bar}"
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
     assert str(v([1, 2, 3]).length()) == "{[1, 2, 3].length}"
@@ -274,10 +275,13 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
     assert str(v(["1", "2", "3"]).reverse()) == '{[...["1", "2", "3"]].reverse()}'
     assert (
-        str(BaseVar(name="foo", state="state", type_=list).reverse())
+        str(BaseVar(_var_name="foo", _var_state="state", _var_type=list).reverse())
         == "{[...state.foo].reverse()}"
     )
-    assert str(BaseVar(name="foo", type_=list).reverse()) == "{[...foo].reverse()}"
+    assert (
+        str(BaseVar(_var_name="foo", _var_type=list).reverse())
+        == "{[...foo].reverse()}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -285,12 +289,12 @@ def test_basic_operations(TestObj):
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
-        (BaseVar(name="foo", state="state", type_=list), "state.foo"),
-        (BaseVar(name="foo", type_=list), "foo"),
+        (BaseVar(_var_name="foo", _var_state="state", _var_type=list), "state.foo"),
+        (BaseVar(_var_name="foo", _var_type=list), "foo"),
         (v((1, 2, 3)), "[1, 2, 3]"),
         (v(("1", "2", "3")), '["1", "2", "3"]'),
-        (BaseVar(name="foo", state="state", type_=tuple), "state.foo"),
-        (BaseVar(name="foo", type_=tuple), "foo"),
+        (BaseVar(_var_name="foo", _var_state="state", _var_type=tuple), "state.foo"),
+        (BaseVar(_var_name="foo", _var_type=tuple), "foo"),
     ],
 )
 def test_list_tuple_contains(var, expected):
@@ -298,8 +302,8 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
     assert str(var.contains(v(1))) == f"{{{expected}.includes(1)}}"
     assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(name="other", state="state", type_=str)
-    other_var = BaseVar(name="other", type_=str)
+    other_state_var = BaseVar(_var_name="other", _var_state="state", _var_type=str)
+    other_var = BaseVar(_var_name="other", _var_type=str)
     assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
     assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
 
@@ -308,15 +312,15 @@ def test_list_tuple_contains(var, expected):
     "var, expected",
     [
         (v("123"), json.dumps("123")),
-        (BaseVar(name="foo", state="state", type_=str), "state.foo"),
-        (BaseVar(name="foo", type_=str), "foo"),
+        (BaseVar(_var_name="foo", _var_state="state", _var_type=str), "state.foo"),
+        (BaseVar(_var_name="foo", _var_type=str), "foo"),
     ],
 )
 def test_str_contains(var, expected):
     assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
     assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(name="other", state="state", type_=str)
-    other_var = BaseVar(name="other", type_=str)
+    other_state_var = BaseVar(_var_name="other", _var_state="state", _var_type=str)
+    other_var = BaseVar(_var_name="other", _var_type=str)
     assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
     assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
 
@@ -325,8 +329,8 @@ def test_str_contains(var, expected):
     "var, expected",
     [
         (v({"a": 1, "b": 2}), '{"a": 1, "b": 2}'),
-        (BaseVar(name="foo", state="state", type_=dict), "state.foo"),
-        (BaseVar(name="foo", type_=dict), "foo"),
+        (BaseVar(_var_name="foo", _var_state="state", _var_type=dict), "state.foo"),
+        (BaseVar(_var_name="foo", _var_type=dict), "foo"),
     ],
 )
 def test_dict_contains(var, expected):
@@ -334,8 +338,8 @@ def test_dict_contains(var, expected):
     assert str(var.contains("1")) == f'{{{expected}.hasOwnProperty("1")}}'
     assert str(var.contains(v(1))) == f"{{{expected}.hasOwnProperty(1)}}"
     assert str(var.contains(v("1"))) == f'{{{expected}.hasOwnProperty("1")}}'
-    other_state_var = BaseVar(name="other", state="state", type_=str)
-    other_var = BaseVar(name="other", type_=str)
+    other_state_var = BaseVar(_var_name="other", _var_state="state", _var_type=str)
+    other_var = BaseVar(_var_name="other", _var_type=str)
     assert (
         str(var.contains(other_state_var))
         == f"{{{expected}.hasOwnProperty(state.other)}}"
@@ -346,9 +350,9 @@ def test_dict_contains(var, expected):
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(name="list", type_=List[int]),
-        BaseVar(name="tuple", type_=Tuple[int, int]),
-        BaseVar(name="str", type_=str),
+        BaseVar(_var_name="list", _var_type=List[int]),
+        BaseVar(_var_name="tuple", _var_type=Tuple[int, int]),
+        BaseVar(_var_name="str", _var_type=str),
     ],
 )
 def test_var_indexing_lists(var):
@@ -358,49 +362,70 @@ def test_var_indexing_lists(var):
         var : The str, list or tuple base var.
     """
     # Test basic indexing.
-    assert str(var[0]) == f"{{{var.name}.at(0)}}"
-    assert str(var[1]) == f"{{{var.name}.at(1)}}"
+    assert str(var[0]) == f"{{{var._var_name}.at(0)}}"
+    assert str(var[1]) == f"{{{var._var_name}.at(1)}}"
 
     # Test negative indexing.
-    assert str(var[-1]) == f"{{{var.name}.at(-1)}}"
+    assert str(var[-1]) == f"{{{var._var_name}.at(-1)}}"
 
 
 @pytest.mark.parametrize(
     "var, index",
     [
-        (BaseVar(name="lst", type_=List[int]), [1, 2]),
-        (BaseVar(name="lst", type_=List[int]), {"name": "dict"}),
-        (BaseVar(name="lst", type_=List[int]), {"set"}),
+        (BaseVar(_var_name="lst", _var_type=List[int]), [1, 2]),
+        (BaseVar(_var_name="lst", _var_type=List[int]), {"name": "dict"}),
+        (BaseVar(_var_name="lst", _var_type=List[int]), {"set"}),
         (
-            BaseVar(name="lst", type_=List[int]),
+            BaseVar(_var_name="lst", _var_type=List[int]),
             (
                 1,
                 2,
             ),
         ),
-        (BaseVar(name="lst", type_=List[int]), 1.5),
-        (BaseVar(name="lst", type_=List[int]), "str"),
-        (BaseVar(name="lst", type_=List[int]), BaseVar(name="string_var", type_=str)),
-        (BaseVar(name="lst", type_=List[int]), BaseVar(name="float_var", type_=float)),
+        (BaseVar(_var_name="lst", _var_type=List[int]), 1.5),
+        (BaseVar(_var_name="lst", _var_type=List[int]), "str"),
         (
-            BaseVar(name="lst", type_=List[int]),
-            BaseVar(name="list_var", type_=List[int]),
+            BaseVar(_var_name="lst", _var_type=List[int]),
+            BaseVar(_var_name="string_var", _var_type=str),
         ),
-        (BaseVar(name="lst", type_=List[int]), BaseVar(name="set_var", type_=Set[str])),
         (
-            BaseVar(name="lst", type_=List[int]),
-            BaseVar(name="dict_var", type_=Dict[str, str]),
+            BaseVar(_var_name="lst", _var_type=List[int]),
+            BaseVar(_var_name="float_var", _var_type=float),
         ),
-        (BaseVar(name="str", type_=str), [1, 2]),
-        (BaseVar(name="lst", type_=str), {"name": "dict"}),
-        (BaseVar(name="lst", type_=str), {"set"}),
-        (BaseVar(name="lst", type_=str), BaseVar(name="string_var", type_=str)),
-        (BaseVar(name="lst", type_=str), BaseVar(name="float_var", type_=float)),
-        (BaseVar(name="str", type_=Tuple[str]), [1, 2]),
-        (BaseVar(name="lst", type_=Tuple[str]), {"name": "dict"}),
-        (BaseVar(name="lst", type_=Tuple[str]), {"set"}),
-        (BaseVar(name="lst", type_=Tuple[str]), BaseVar(name="string_var", type_=str)),
-        (BaseVar(name="lst", type_=Tuple[str]), BaseVar(name="float_var", type_=float)),
+        (
+            BaseVar(_var_name="lst", _var_type=List[int]),
+            BaseVar(_var_name="list_var", _var_type=List[int]),
+        ),
+        (
+            BaseVar(_var_name="lst", _var_type=List[int]),
+            BaseVar(_var_name="set_var", _var_type=Set[str]),
+        ),
+        (
+            BaseVar(_var_name="lst", _var_type=List[int]),
+            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
+        ),
+        (BaseVar(_var_name="str", _var_type=str), [1, 2]),
+        (BaseVar(_var_name="lst", _var_type=str), {"name": "dict"}),
+        (BaseVar(_var_name="lst", _var_type=str), {"set"}),
+        (
+            BaseVar(_var_name="lst", _var_type=str),
+            BaseVar(_var_name="string_var", _var_type=str),
+        ),
+        (
+            BaseVar(_var_name="lst", _var_type=str),
+            BaseVar(_var_name="float_var", _var_type=float),
+        ),
+        (BaseVar(_var_name="str", _var_type=Tuple[str]), [1, 2]),
+        (BaseVar(_var_name="lst", _var_type=Tuple[str]), {"name": "dict"}),
+        (BaseVar(_var_name="lst", _var_type=Tuple[str]), {"set"}),
+        (
+            BaseVar(_var_name="lst", _var_type=Tuple[str]),
+            BaseVar(_var_name="string_var", _var_type=str),
+        ),
+        (
+            BaseVar(_var_name="lst", _var_type=Tuple[str]),
+            BaseVar(_var_name="float_var", _var_type=float),
+        ),
     ],
 )
 def test_var_unsupported_indexing_lists(var, index):
@@ -417,9 +442,9 @@ def test_var_unsupported_indexing_lists(var, index):
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(name="lst", type_=List[int]),
-        BaseVar(name="tuple", type_=Tuple[int, int]),
-        BaseVar(name="str", type_=str),
+        BaseVar(_var_name="lst", _var_type=List[int]),
+        BaseVar(_var_name="tuple", _var_type=Tuple[int, int]),
+        BaseVar(_var_name="str", _var_type=str),
     ],
 )
 def test_var_list_slicing(var):
@@ -428,14 +453,14 @@ def test_var_list_slicing(var):
     Args:
         var : The str, list or tuple base var.
     """
-    assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
-    assert str(var[:1]) == f"{{{var.name}.slice(0, 1)}}"
-    assert str(var[:]) == f"{{{var.name}.slice(0, undefined)}}"
+    assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
+    assert str(var[:1]) == f"{{{var._var_name}.slice(0, 1)}}"
+    assert str(var[:]) == f"{{{var._var_name}.slice(0, undefined)}}"
 
 
 def test_dict_indexing():
     """Test that we can index into dict vars."""
-    dct = BaseVar(name="dct", type_=Dict[str, int])
+    dct = BaseVar(_var_name="dct", _var_type=Dict[str, int])
 
     # Check correct indexing.
     assert str(dct["a"]) == '{dct["a"]}'
@@ -446,66 +471,66 @@ def test_dict_indexing():
     "var, index",
     [
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
+            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
             [1, 2],
         ),
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
+            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
             {"name": "dict"},
         ),
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
+            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
             {"set"},
         ),
         (
-            BaseVar(name="dict", type_=Dict[str, str]),
+            BaseVar(_var_name="dict", _var_type=Dict[str, str]),
             (
                 1,
                 2,
             ),
         ),
         (
-            BaseVar(name="lst", type_=Dict[str, str]),
-            BaseVar(name="list_var", type_=List[int]),
+            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
+            BaseVar(_var_name="list_var", _var_type=List[int]),
         ),
         (
-            BaseVar(name="lst", type_=Dict[str, str]),
-            BaseVar(name="set_var", type_=Set[str]),
+            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
+            BaseVar(_var_name="set_var", _var_type=Set[str]),
         ),
         (
-            BaseVar(name="lst", type_=Dict[str, str]),
-            BaseVar(name="dict_var", type_=Dict[str, str]),
+            BaseVar(_var_name="lst", _var_type=Dict[str, str]),
+            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
+            BaseVar(_var_name="df", _var_type=DataFrame),
             [1, 2],
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
+            BaseVar(_var_name="df", _var_type=DataFrame),
             {"name": "dict"},
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
+            BaseVar(_var_name="df", _var_type=DataFrame),
             {"set"},
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
+            BaseVar(_var_name="df", _var_type=DataFrame),
             (
                 1,
                 2,
             ),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="list_var", type_=List[int]),
+            BaseVar(_var_name="df", _var_type=DataFrame),
+            BaseVar(_var_name="list_var", _var_type=List[int]),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="set_var", type_=Set[str]),
+            BaseVar(_var_name="df", _var_type=DataFrame),
+            BaseVar(_var_name="set_var", _var_type=Set[str]),
         ),
         (
-            BaseVar(name="df", type_=DataFrame),
-            BaseVar(name="dict_var", type_=Dict[str, str]),
+            BaseVar(_var_name="df", _var_type=DataFrame),
+            BaseVar(_var_name="dict_var", _var_type=Dict[str, str]),
         ),
     ],
 )
@@ -577,8 +602,7 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         state.var_with_annotation.foo
     assert (
         err.value.args[0]
-        == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly.\n"
-        f"original message: 'ComputedVar' object has no attribute 'foo'"
+        == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
     )
 
 
@@ -605,16 +629,19 @@ def test_import_var(import_var, expected):
 @pytest.mark.parametrize(
     "key, expected",
     [
-        ("test_key", BaseVar(name="localStorage.getItem('test_key')", type_=str)),
         (
-            BaseVar(name="key_var", type_=str),
-            BaseVar(name="localStorage.getItem(key_var)", type_=str),
+            "test_key",
+            BaseVar(_var_name="localStorage.getItem('test_key')", _var_type=str),
+        ),
+        (
+            BaseVar(_var_name="key_var", _var_type=str),
+            BaseVar(_var_name="localStorage.getItem(key_var)", _var_type=str),
         ),
         (
             BaseState.val,
-            BaseVar(name="localStorage.getItem(base_state.val)", type_=str),
+            BaseVar(_var_name="localStorage.getItem(base_state.val)", _var_type=str),
         ),
-        (None, BaseVar(name="getAllLocalStorageItems()", type_=Dict)),
+        (None, BaseVar(_var_name="getAllLocalStorageItems()", _var_type=Dict)),
     ],
 )
 def test_get_local_storage(key, expected):
@@ -626,8 +653,8 @@ def test_get_local_storage(key, expected):
 
     """
     local_storage = get_local_storage(key)
-    assert local_storage.name == expected.name
-    assert local_storage.type_ == expected.type_
+    assert local_storage._var_name == expected._var_name
+    assert local_storage._var_type == expected._var_type
 
 
 @pytest.mark.parametrize(
@@ -636,8 +663,8 @@ def test_get_local_storage(key, expected):
         ["list", "values"],
         {"name": "dict"},
         10,
-        BaseVar(name="key_var", type_=List),
-        BaseVar(name="key_var", type_=Dict[str, str]),
+        BaseVar(_var_name="key_var", _var_type=List),
+        BaseVar(_var_name="key_var", _var_type=Dict[str, str]),
     ],
 )
 def test_get_local_storage_raise_error(key):
@@ -648,7 +675,7 @@ def test_get_local_storage_raise_error(key):
     """
     with pytest.raises(TypeError) as err:
         get_local_storage(key)
-    type_ = type(key) if not isinstance(key, Var) else key.type_
+    type_ = type(key) if not isinstance(key, Var) else key._var_type
     assert (
         err.value.args[0]
         == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
@@ -658,13 +685,13 @@ def test_get_local_storage_raise_error(key):
 @pytest.mark.parametrize(
     "out, expected",
     [
-        (f"{BaseVar(name='var', type_=str)}", "${var}"),
+        (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
         (
-            f"testing f-string with {BaseVar(name='myvar', state='state', type_=int)}",
+            f"testing f-string with {BaseVar(_var_name='myvar', _var_state='state', _var_type=int)}",
             "testing f-string with ${state.myvar}",
         ),
         (
-            f"testing local f-string {BaseVar(name='x', is_local=True, type_=str)}",
+            f"testing local f-string {BaseVar(_var_name='x', _var_is_local=True, _var_type=str)}",
             "testing local f-string x",
         ),
     ],
@@ -676,14 +703,14 @@ def test_fstrings(out, expected):
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(name="var", type_=int),
-        BaseVar(name="var", type_=float),
-        BaseVar(name="var", type_=str),
-        BaseVar(name="var", type_=bool),
-        BaseVar(name="var", type_=dict),
-        BaseVar(name="var", type_=tuple),
-        BaseVar(name="var", type_=set),
-        BaseVar(name="var", type_=None),
+        BaseVar(_var_name="var", _var_type=int),
+        BaseVar(_var_name="var", _var_type=float),
+        BaseVar(_var_name="var", _var_type=str),
+        BaseVar(_var_name="var", _var_type=bool),
+        BaseVar(_var_name="var", _var_type=dict),
+        BaseVar(_var_name="var", _var_type=tuple),
+        BaseVar(_var_name="var", _var_type=set),
+        BaseVar(_var_name="var", _var_type=None),
     ],
 )
 def test_unsupported_types_for_reverse(var):
@@ -700,11 +727,11 @@ def test_unsupported_types_for_reverse(var):
 @pytest.mark.parametrize(
     "var",
     [
-        BaseVar(name="var", type_=int),
-        BaseVar(name="var", type_=float),
-        BaseVar(name="var", type_=bool),
-        BaseVar(name="var", type_=set),
-        BaseVar(name="var", type_=None),
+        BaseVar(_var_name="var", _var_type=int),
+        BaseVar(_var_name="var", _var_type=float),
+        BaseVar(_var_name="var", _var_type=bool),
+        BaseVar(_var_name="var", _var_type=set),
+        BaseVar(_var_name="var", _var_type=None),
     ],
 )
 def test_unsupported_types_for_contains(var):
@@ -717,34 +744,34 @@ def test_unsupported_types_for_contains(var):
         assert var.contains(1)
     assert (
         err.value.args[0]
-        == f"Var var of type {var.type_} does not support contains check."
+        == f"Var var of type {var._var_type} does not support contains check."
     )
 
 
 @pytest.mark.parametrize(
     "other",
     [
-        BaseVar(name="other", type_=int),
-        BaseVar(name="other", type_=float),
-        BaseVar(name="other", type_=bool),
-        BaseVar(name="other", type_=list),
-        BaseVar(name="other", type_=dict),
-        BaseVar(name="other", type_=tuple),
-        BaseVar(name="other", type_=set),
+        BaseVar(_var_name="other", _var_type=int),
+        BaseVar(_var_name="other", _var_type=float),
+        BaseVar(_var_name="other", _var_type=bool),
+        BaseVar(_var_name="other", _var_type=list),
+        BaseVar(_var_name="other", _var_type=dict),
+        BaseVar(_var_name="other", _var_type=tuple),
+        BaseVar(_var_name="other", _var_type=set),
     ],
 )
 def test_unsupported_types_for_string_contains(other):
     with pytest.raises(TypeError) as err:
-        assert BaseVar(name="var", type_=str).contains(other)
+        assert BaseVar(_var_name="var", _var_type=str).contains(other)
     assert (
         err.value.args[0]
-        == f"'in <string>' requires string as left operand, not {other.type_}"
+        == f"'in <string>' requires string as left operand, not {other._var_type}"
     )
 
 
 def test_unsupported_default_contains():
     with pytest.raises(TypeError) as err:
-        assert 1 in BaseVar(name="var", type_=str)
+        assert 1 in BaseVar(_var_name="var", _var_type=str)
     assert (
         err.value.args[0]
         == "'in' operator not supported for Var types, use Var.contains() instead."

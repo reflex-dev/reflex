@@ -39,7 +39,7 @@ def get_reflex_version() -> str:
     Returns:
         The Reflex version.
     """
-    return constants.VERSION
+    return constants.Reflex.VERSION
 
 
 def get_cpu_count() -> int:
@@ -90,7 +90,7 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     try:
         telemetry = Telemetry()
-        with open(constants.REFLEX_JSON) as f:  # type: ignore
+        with open(constants.Dirs.REFLEX_JSON) as f:
             reflex_json = json.load(f)
             distinct_id = reflex_json["project_hash"]
         post_hog = {

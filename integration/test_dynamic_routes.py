@@ -19,12 +19,10 @@ def DynamicRoute():
         page_id: str = ""
 
         def on_load(self):
-            self.order.append(
-                f"{self.get_current_page()}-{self.page_id or 'no page id'}"
-            )
+            self.order.append(f"{self.router.page.path}-{self.page_id or 'no page id'}")
 
         def on_load_redir(self):
-            query_params = self.get_query_params()
+            query_params = self.router.page.params
             self.order.append(f"on_load_redir-{query_params}")
             return rx.redirect(f"/page/{query_params['page_id']}")
 
@@ -35,13 +33,13 @@ def DynamicRoute():
             except ValueError:
                 return "0"
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     def index():
         return rx.fragment(
-            rx.input(value=DynamicState.token, is_read_only=True, id="token"),  # type: ignore
+            rx.input(
+                value=DynamicState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
             rx.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
             rx.link("index", href="/", id="link_index"),
             rx.link("page_X", href="/static/x", id="link_page_x"),
@@ -212,7 +210,7 @@ async def test_on_load_navigate(
     with poll_for_navigation(driver):
         driver.get(f"{driver.current_url}?foo=bar")
     await poll_for_order(exp_order)
-    assert (await dynamic_route.get_state(token)).get_query_params()["foo"] == "bar"
+    assert (await dynamic_route.get_state(token)).router.page.params["foo"] == "bar"
 
     # hit a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]

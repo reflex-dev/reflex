@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import typing
-from types import LambdaType
-from typing import Any, Callable, Type, Union, _GenericAlias  # type: ignore
+from typing import Any, Callable, Literal, Type, Union, _GenericAlias  # type: ignore
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -18,7 +17,8 @@ PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]
 
-ArgsSpec = LambdaType
+# ArgsSpec = Callable[[Var], list[Var]]
+ArgsSpec = Callable
 
 
 def get_args(alias: _GenericAlias) -> tuple[Type, ...]:
@@ -76,6 +76,18 @@ def is_union(cls: GenericType) -> bool:
     return cls.__origin__ == Union if is_generic_alias(cls) else False
 
 
+def is_literal(cls: GenericType) -> bool:
+    """Check if a class is a Literal.
+
+    Args:
+        cls: The class to check.
+
+    Returns:
+        Whether the class is a literal.
+    """
+    return hasattr(cls, "__origin__") and cls.__origin__ is Literal
+
+
 def get_base_class(cls: GenericType) -> Type:
     """Get the base class of a class.
 
@@ -84,7 +96,17 @@ def get_base_class(cls: GenericType) -> Type:
 
     Returns:
         The base class of the class.
+
+    Raises:
+        TypeError: If a literal has multiple types.
     """
+    if is_literal(cls):
+        # only literals of the same type are supported.
+        arg_type = type(get_args(cls)[0])
+        if not all(type(arg) == arg_type for arg in get_args(cls)):
+            raise TypeError("only literals of the same type are supported")
+        return type(get_args(cls)[0])
+
     if is_union(cls):
         return tuple(get_base_class(arg) for arg in get_args(cls))
 
@@ -100,11 +122,14 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
 
     Returns:
         Whether the class is a subclass of the other class.
+
+    Raises:
+        TypeError: If the base class is not valid for issubclass.
     """
     # Special check for Any.
     if cls_check == Any:
         return True
-    if cls in [Any, Callable]:
+    if cls in [Any, Callable, None]:
         return False
 
     # Get the base classes.
@@ -116,7 +141,12 @@ def _issubclass(cls: GenericType, cls_check: GenericType) -> bool:
         return False
 
     # Check if the types match.
-    return cls_check_base == Any or issubclass(cls_base, cls_check_base)
+    try:
+        return cls_check_base == Any or issubclass(cls_base, cls_check_base)
+    except TypeError as te:
+        # These errors typically arise from bad annotations and are hard to
+        # debug without knowing the type that we tried to compare.
+        raise TypeError(f"Invalid type for issubclass: {cls_base}") from te
 
 
 def _isinstance(obj: Any, cls: GenericType) -> bool:
@@ -168,6 +198,21 @@ def is_backend_variable(name: str) -> bool:
         bool: The result of the check
     """
     return name.startswith("_") and not name.startswith("__")
+
+
+def check_type_in_allowed_types(
+    value_type: Type, allowed_types: typing.Iterable
+) -> bool:
+    """Check that a value type is found in a list of allowed types.
+
+    Args:
+        value_type: Type of value.
+        allowed_types: Iterable of allowed types.
+
+    Returns:
+        If the type is found in the allowed types.
+    """
+    return get_base_class(value_type) in allowed_types
 
 
 # Store this here for performance.

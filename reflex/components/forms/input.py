@@ -4,7 +4,11 @@ from typing import Any, Dict
 
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralButtonSize,
+    LiteralInputVariant,
+)
 from reflex.constants import EventTriggers
 from reflex.utils import imports
 from reflex.vars import ImportVar, Var
@@ -46,10 +50,10 @@ class Input(ChakraComponent):
     is_required: Var[bool]
 
     # "outline" | "filled" | "flushed" | "unstyled"
-    variant: Var[str]
+    variant: Var[LiteralInputVariant]
 
     # "lg" | "md" | "sm" | "xs"
-    size: Var[str]
+    size: Var[LiteralButtonSize]
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(

@@ -100,6 +100,7 @@ editable = Editable.create
 editable_input = EditableInput.create
 editable_preview = EditablePreview.create
 editable_textarea = EditableTextarea.create
+editor = Editor.create
 form = Form.create
 form_control = FormControl.create
 form_error_message = FormErrorMessage.create

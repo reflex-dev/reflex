@@ -14,6 +14,7 @@ from .compiler.utils import get_asset_path
 from .components import *
 from .components.base.script import client_side
 from .components.component import custom_component as memo
+from .components.graphing import recharts as recharts
 from .components.graphing.victory import data as data
 from .config import Config as Config
 from .config import DBConfig as DBConfig
@@ -22,6 +23,7 @@ from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
 from .event import background as background
+from .event import call_script as call_script
 from .event import clear_local_storage as clear_local_storage
 from .event import console_log as console_log
 from .event import download as download

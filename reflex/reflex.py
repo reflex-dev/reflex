@@ -29,7 +29,7 @@ def version(value: bool):
         typer.Exit: If the version flag was passed.
     """
     if value:
-        console.print(constants.VERSION)
+        console.print(constants.Reflex.VERSION)
         raise typer.Exit()
 
 
@@ -53,8 +53,9 @@ def init(
     name: str = typer.Option(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
-    template: constants.Template = typer.Option(
-        constants.Template.DEFAULT, help="The template to initialize the app with."
+    template: constants.Templates.Kind = typer.Option(
+        constants.Templates.Kind.DEFAULT.value,
+        help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
@@ -78,7 +79,7 @@ def init(
     prerequisites.migrate_to_reflex()
 
     # Set up the app directory, only if the config doesn't exist.
-    if not os.path.exists(constants.CONFIG_FILE):
+    if not os.path.exists(constants.Config.FILE):
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
         telemetry.send("init")
@@ -118,6 +119,9 @@ def run(
     # Set the log level.
     console.set_log_level(loglevel)
 
+    # Set env mode in the environment
+    os.environ["REFLEX_ENV_MODE"] = env.value
+
     # Show system info
     exec.output_system_info()
 
@@ -138,6 +142,12 @@ def run(
 
     if backend and processes.is_process_on_port(backend_port):
         backend_port = processes.change_or_terminate_port(backend_port, "backend")
+
+    # Apply the new ports to the config.
+    if frontend_port != str(config.frontend_port):
+        config._set_persistent(frontend_port=frontend_port)
+    if backend_port != str(config.backend_port):
+        config._set_persistent(backend_port=backend_port)
 
     console.rule("[bold]Starting Reflex App")
 
@@ -193,7 +203,7 @@ def run(
 def deploy(
     dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        console._LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
@@ -223,10 +233,10 @@ def deploy(
     backend = response["backend_resources_url"]
 
     # Upload the frontend and backend.
-    with open(constants.FRONTEND_ZIP, "rb") as f:
+    with open(constants.ComponentName.FRONTEND.zip(), "rb") as f:
         httpx.put(frontend, data=f)  # type: ignore
 
-    with open(constants.BACKEND_ZIP, "rb") as f:
+    with open(constants.ComponentName.BACKEND.zip(), "rb") as f:
         httpx.put(backend, data=f)  # type: ignore
 
 
@@ -242,7 +252,7 @@ def export(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
     loglevel: constants.LogLevel = typer.Option(
-        console.LOG_LEVEL, help="The log level to use."
+        console._LOG_LEVEL, help="The log level to use."
     ),
 ):
     """Export the app to a zip file."""

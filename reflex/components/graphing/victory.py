@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from reflex.components.component import Component
 from reflex.style import Style
+from reflex.utils import console
 from reflex.vars import Var
 
 
@@ -307,6 +308,13 @@ def data(graph: str, x: List, y: Optional[List] = None, **kwargs) -> List:
         ValueError: If graph is not provided.
         ValueError: If graph is not supported.
     """
+    console.deprecate(
+        "Victory Chart",
+        "Use the Recharts library instead under rx.recharts",
+        "0.2.9",
+        "0.3.0",
+    )
+
     if graph == "area":
         return format_area(x, y, **kwargs)  # type: ignore
     elif graph == "bar":
@@ -389,6 +397,13 @@ class Victory(Component):
         Returns:
             The chart component.
         """
+        console.deprecate(
+            "Victory Chart",
+            "Use the Recharts library instead under rx.recharts",
+            "0.2.9",
+            "0.3.0",
+        )
+
         # This component handles style in a special prop.
         custom_style = props.pop("style", {})
 

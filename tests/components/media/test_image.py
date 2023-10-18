@@ -34,7 +34,7 @@ try:
     def test_set_src_str():
         """Test that setting the src works."""
         image = rx.image(src="pic2.jpeg")
-        assert str(image.src) == "pic2.jpeg"  # type: ignore
+        assert str(image.src) == "{`pic2.jpeg`}"  # type: ignore
 
     def test_set_src_img(pil_image: Img):
         """Test that setting the src works.
@@ -43,7 +43,7 @@ try:
             pil_image: The image to serialize.
         """
         image = Image.create(src=pil_image)
-        assert str(image.src) == serialize_image(pil_image)  # type: ignore
+        assert str(image.src._var_name) == serialize_image(pil_image)  # type: ignore
 
     def test_render(pil_image: Img):
         """Test that rendering an image works.
@@ -52,9 +52,7 @@ try:
             pil_image: The image to serialize.
         """
         image = Image.create(src=pil_image)
-        assert not image.src.is_string  # type: ignore
-        image._render()
-        assert image.src.is_string  # type: ignore
+        assert image.src._var_is_string  # type: ignore
 
 except ImportError:
 

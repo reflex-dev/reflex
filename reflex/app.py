@@ -32,6 +32,7 @@ from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
+from reflex.components.base.app_wrap import AppWrap
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
 from reflex.components.navigation.client_side_routing import (
@@ -52,10 +53,9 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import (
-    DefaultState,
+    RouterData,
     State,
     StateManager,
-    StateManagerMemory,
     StateUpdate,
 )
 from reflex.utils import console, format, prerequisites, types
@@ -94,10 +94,10 @@ class App(Base):
     socket_app: Optional[ASGIApp] = None
 
     # The state class to use for the app.
-    state: Type[State] = DefaultState
+    state: Optional[Type[State]] = None
 
     # Class to manage many client states.
-    state_manager: StateManager = StateManagerMemory(state=DefaultState)
+    _state_manager: Optional[StateManager] = None
 
     # The styling to apply to each component.
     style: ComponentStyle = {}
@@ -114,6 +114,9 @@ class App(Base):
     # The async server name space
     event_namespace: Optional[EventNamespace] = None
 
+    # Components to add to the head of every page.
+    head_components: List[Component] = []
+
     # A component that is present on every page.
     overlay_component: Optional[
         Union[Component, ComponentCallable]
@@ -121,6 +124,9 @@ class App(Base):
 
     # Background tasks that are currently running
     background_tasks: Set[asyncio.Task] = set()
+
+    # The radix theme for the entire app
+    theme: Optional[Component] = None
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -140,19 +146,19 @@ class App(Base):
             )
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
-        inferred_state = state_subclasses[-1]
+        inferred_state = state_subclasses[-1] if state_subclasses else None
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
         # Special case to allow test cases have multiple subclasses of rx.State.
         if not is_testing_env:
-            # Only the default state and the client state should be allowed as subclasses.
-            if len(state_subclasses) > 2:
+            # Only one State class is allowed.
+            if len(state_subclasses) > 1:
                 raise ValueError(
                     "rx.State has been subclassed multiple times. Only one subclass is allowed"
                 )
 
             # verify that provided state is valid
-            if self.state not in [DefaultState, inferred_state]:
+            if self.state and inferred_state and self.state is not inferred_state:
                 console.warn(
                     f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
                     f" Defaulting to root state: ({inferred_state.__name__})"
@@ -164,49 +170,47 @@ class App(Base):
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
-        # Set up the state manager.
-        self.state_manager = StateManager.create(state=self.state)
-
         # Set up the API.
         self.api = FastAPI()
         self.add_cors()
         self.add_default_endpoints()
 
-        # Set up the Socket.IO AsyncServer.
-        self.sio = AsyncServer(
-            async_mode="asgi",
-            cors_allowed_origins="*"
-            if config.cors_allowed_origins == ["*"]
-            else config.cors_allowed_origins,
-            cors_credentials=True,
-            max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
-            ping_interval=constants.PING_INTERVAL,
-            ping_timeout=constants.PING_TIMEOUT,
-        )
+        if self.state:
+            # Set up the state manager.
+            self._state_manager = StateManager.create(state=self.state)
 
-        # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
-        self.socket_app = ASGIApp(self.sio, socketio_path="")
-        namespace = config.get_event_namespace()
+            # Set up the Socket.IO AsyncServer.
+            self.sio = AsyncServer(
+                async_mode="asgi",
+                cors_allowed_origins="*"
+                if config.cors_allowed_origins == ["*"]
+                else config.cors_allowed_origins,
+                cors_credentials=True,
+                max_http_buffer_size=constants.POLLING_MAX_HTTP_BUFFER_SIZE,
+                ping_interval=constants.Ping.INTERVAL,
+                ping_timeout=constants.Ping.TIMEOUT,
+            )
 
-        if not namespace:
-            raise ValueError("event namespace must be provided in the config.")
+            # Create the socket app. Note event endpoint constant replaces the default 'socket.io' path.
+            self.socket_app = ASGIApp(self.sio, socketio_path="")
+            namespace = config.get_event_namespace()
 
-        # Create the event namespace and attach the main app. Not related to any paths.
-        self.event_namespace = EventNamespace(namespace, self)
+            if not namespace:
+                raise ValueError("event namespace must be provided in the config.")
 
-        # Register the event namespace with the socket.
-        self.sio.register_namespace(self.event_namespace)
-        # Mount the socket app with the API.
-        self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
+            # Create the event namespace and attach the main app. Not related to any paths.
+            self.event_namespace = EventNamespace(namespace, self)
+
+            # Register the event namespace with the socket.
+            self.sio.register_namespace(self.event_namespace)
+            # Mount the socket app with the API.
+            self.api.mount(str(constants.Endpoint.EVENT), self.socket_app)
 
         # Set up the admin dash.
         self.setup_admin_dash()
 
         # If a State is not used and no overlay_component is specified, do not render the connection modal
-        if (
-            self.state is DefaultState
-            and self.overlay_component is default_overlay_component
-        ):
+        if self.state is None and self.overlay_component is default_overlay_component:
             self.overlay_component = None
 
     def __repr__(self) -> str:
@@ -215,7 +219,7 @@ class App(Base):
         Returns:
             The string representation of the app.
         """
-        return f"<App state={self.state.__name__}>"
+        return f"<App state={self.state.__name__ if self.state else None}>"
 
     def __call__(self) -> FastAPI:
         """Run the backend api instance.
@@ -242,6 +246,20 @@ class App(Base):
             allow_headers=["*"],
             allow_origins=["*"],
         )
+
+    @property
+    def state_manager(self) -> StateManager:
+        """Get the state manager.
+
+        Returns:
+            The initialized state manager.
+
+        Raises:
+            ValueError: if the state has not been initialized.
+        """
+        if self._state_manager is None:
+            raise ValueError("The state manager has not been initialized.")
+        return self._state_manager
 
     async def preprocess(self, state: State, event: Event) -> StateUpdate | None:
         """Preprocess the event.
@@ -337,14 +355,14 @@ class App(Base):
         self,
         component: Component | ComponentCallable,
         route: str | None = None,
-        title: str = constants.DEFAULT_TITLE,
-        description: str = constants.DEFAULT_DESCRIPTION,
-        image=constants.DEFAULT_IMAGE,
+        title: str = constants.DefaultPage.TITLE,
+        description: str = constants.DefaultPage.DESCRIPTION,
+        image: str = constants.DefaultPage.IMAGE,
         on_load: EventHandler
         | EventSpec
         | list[EventHandler | EventSpec]
         | None = None,
-        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
+        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
         script_tags: list[Component] | None = None,
     ):
         """Add a page to the app.
@@ -376,7 +394,8 @@ class App(Base):
         verify_route_validity(route)
 
         # Apply dynamic args to the route.
-        self.state.setup_dynamic_args(get_route_args(route))
+        if self.state:
+            self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
         component = self._generate_component(component)
@@ -401,6 +420,12 @@ class App(Base):
 
         # Add script tags if given
         if script_tags:
+            console.deprecate(
+                feature_name="Passing script tags to add_page",
+                reason="Add script components as children to the page component instead",
+                deprecation_version="0.2.9",
+                removal_version="0.3.1",
+            )
             component.children.extend(script_tags)
 
         # Add the page.
@@ -424,7 +449,7 @@ class App(Base):
         """
         route = route.lstrip("/")
         if route == "":
-            route = constants.INDEX_ROUTE
+            route = constants.PageNames.INDEX_ROUTE
         return self.load_events.get(route, [])
 
     def _check_routes_conflict(self, new_route: str):
@@ -463,14 +488,14 @@ class App(Base):
     def add_custom_404_page(
         self,
         component: Component | ComponentCallable | None = None,
-        title: str = constants.TITLE_404,
-        image: str = constants.FAVICON_404,
-        description: str = constants.DESCRIPTION_404,
+        title: str = constants.Page404.TITLE,
+        image: str = constants.Page404.IMAGE,
+        description: str = constants.Page404.DESCRIPTION,
         on_load: EventHandler
         | EventSpec
         | list[EventHandler | EventSpec]
         | None = None,
-        meta: list[dict[str, str]] = constants.DEFAULT_META_LIST,
+        meta: list[dict[str, str]] = constants.DefaultPage.META_LIST,
     ):
         """Define a custom 404 page for any url having no match.
 
@@ -489,10 +514,10 @@ class App(Base):
             component = Default404Page.create()
         self.add_page(
             component=wait_for_client_redirect(self._generate_component(component)),
-            route=constants.SLUG_404,
-            title=title or constants.TITLE_404,
-            image=image or constants.FAVICON_404,
-            description=description or constants.DESCRIPTION_404,
+            route=constants.Page404.SLUG,
+            title=title or constants.Page404.TITLE,
+            image=image or constants.Page404.IMAGE,
+            description=description or constants.Page404.DESCRIPTION,
             on_load=on_load,
             meta=meta,
         )
@@ -532,11 +557,13 @@ class App(Base):
         page_imports = {
             i
             for i, tags in imports.items()
-            if i not in compiler.DEFAULT_IMPORTS.keys()
-            and i != "focus-visible/dist/focus-visible"
-            and "next" not in i
-            and not i.startswith("/")
-            and not i.startswith(".")
+            if i
+            not in [
+                *compiler.DEFAULT_IMPORTS.keys(),
+                *constants.PackageJson.DEPENDENCIES.keys(),
+                *constants.PackageJson.DEV_DEPENDENCIES.keys(),
+            ]
+            and not any(i.startswith(prefix) for prefix in ["/", ".", "next/"])
             and i != ""
             and any(tag.install for tag in tags)
         }
@@ -557,6 +584,15 @@ class App(Base):
         page_imports.update(_frontend_packages)
         prerequisites.install_frontend_packages(page_imports)
 
+    def _app_root(self, app_wrappers):
+        order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
+        root = parent = app_wrappers[order[0]]
+        for key in order[1:]:
+            child = app_wrappers[key]
+            parent.children.append(child)
+            parent = child
+        return root
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
         if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
@@ -572,7 +608,7 @@ class App(Base):
             self.add_page(render, **kwargs)
 
         # Render a default 404 page if the user didn't supply one
-        if constants.SLUG_404 not in self.pages:
+        if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
 
         task = progress.add_task("Compiling: ", total=len(self.pages))
@@ -589,12 +625,21 @@ class App(Base):
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
         all_imports = {}
+        page_futures = []
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            # Default app wrap component renders {children}
+            (0, "AppWrap"): AppWrap.create()
+        }
+        if self.theme is not None:
+            # If a theme component was provided, wrap the app with it
+            app_wrappers[(20, "Theme")] = self.theme
+
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
                 component.add_style(self.style)
-                compile_results.append(
+                page_futures.append(
                     thread_pool.apply_async(
                         compiler.compile_page,
                         args=(
@@ -607,14 +652,22 @@ class App(Base):
                 # add component.get_imports() to all_imports
                 all_imports.update(component.get_imports())
 
+                # add the app wrappers from this component
+                app_wrappers.update(component.get_app_wrap_components())
+
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
 
         thread_pool.close()
         thread_pool.join()
 
-        # Get the results.
-        compile_results = [result.get() for result in compile_results]
+        # Compile the app wrapper.
+        app_root = self._app_root(app_wrappers=app_wrappers)
+        all_imports.update(app_root.get_imports())
+        compile_results.append(compiler.compile_app(app_root))
+
+        # Get the compiled pages.
+        compile_results.extend(result.get() for result in page_futures)
 
         # TODO the compile tasks below may also benefit from parallelization too
 
@@ -629,10 +682,10 @@ class App(Base):
         compile_results.append(compiler.compile_root_stylesheet(self.stylesheets))
 
         # Compile the root document.
-        compile_results.append(compiler.compile_document_root())
+        compile_results.append(compiler.compile_document_root(self.head_components))
 
         # Compile the theme.
-        compile_results.append(compiler.compile_theme(self.style))
+        compile_results.append(compiler.compile_theme(style=self.style))
 
         # Compile the contexts.
         compile_results.append(compiler.compile_contexts(self.state))
@@ -640,7 +693,7 @@ class App(Base):
         # Compile the Tailwind config.
         if config.tailwind is not None:
             config.tailwind["content"] = config.tailwind.get(
-                "content", constants.TAILWIND_CONTENT
+                "content", constants.Tailwind.CONTENT
             )
             compile_results.append(compiler.compile_tailwind(config.tailwind))
 
@@ -672,6 +725,7 @@ class App(Base):
         """
         if self.event_namespace is None:
             raise RuntimeError("App has not been initialized yet.")
+
         # Get exclusive access to the state.
         async with self.state_manager.modify_state(token) as state:
             # No other event handler can modify the state while in this context.
@@ -682,7 +736,7 @@ class App(Base):
                 state._clean()
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
-                    sid=state.get_sid(),
+                    sid=state.router.session.session_id,
                 )
 
     def _process_background(self, state: State, event: Event) -> asyncio.Task | None:
@@ -718,7 +772,7 @@ class App(Base):
                 # Send the update to the client.
                 await self.event_namespace.emit_update(
                     update=update,
-                    sid=state.get_sid(),
+                    sid=state.router.session.session_id,
                 )
 
         task = asyncio.create_task(_coro())
@@ -761,6 +815,7 @@ async def process(
             # assignment will recurse into substates and force recalculation of
             # dependent ComputedVar (dynamic route variables)
             state.router_data = router_data
+            state.router = RouterData(router_data)
 
         # Preprocess the event.
         update = await app.preprocess(state, event)
@@ -818,10 +873,11 @@ def upload(app: App):
         for file in files:
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
+
         # Get the state for the session.
         async with app.state_manager.modify_state(token) as state:
             # get the current session ID
-            sid = state.get_sid()
+            sid = state.router.session.session_id
             # get the current state(parent state/substate)
             path = handler.split(".")[:-1]
             current_state = state.get_substate(path)

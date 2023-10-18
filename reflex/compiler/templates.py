@@ -19,26 +19,26 @@ class ReflexJinjaEnvironment(Environment):
         )
         self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
-        self.loader = FileSystemLoader(constants.JINJA_TEMPLATE_DIR)
+        self.loader = FileSystemLoader(constants.Templates.Dirs.JINJA_TEMPLATE)
         self.globals["const"] = {
-            "socket": constants.SOCKET,
-            "result": constants.RESULT,
-            "router": constants.ROUTER,
+            "socket": constants.CompileVars.SOCKET,
+            "result": constants.CompileVars.RESULT,
+            "router": constants.CompileVars.ROUTER,
             "event_endpoint": constants.Endpoint.EVENT.name,
-            "events": constants.EVENTS,
-            "state": constants.STATE,
-            "final": constants.FINAL,
-            "processing": constants.PROCESSING,
+            "events": constants.CompileVars.EVENTS,
+            "state": constants.CompileVars.STATE,
+            "final": constants.CompileVars.FINAL,
+            "processing": constants.CompileVars.PROCESSING,
             "initial_result": {
-                constants.STATE: None,
-                constants.EVENTS: [],
-                constants.FINAL: True,
-                constants.PROCESSING: False,
+                constants.CompileVars.STATE: None,
+                constants.CompileVars.EVENTS: [],
+                constants.CompileVars.FINAL: True,
+                constants.CompileVars.PROCESSING: False,
             },
-            "color_mode": constants.COLOR_MODE,
-            "toggle_color_mode": constants.TOGGLE_COLOR_MODE,
-            "use_color_mode": constants.USE_COLOR_MODE,
-            "hydrate": constants.HYDRATE,
+            "color_mode": constants.ColorMode.NAME,
+            "toggle_color_mode": constants.ColorMode.TOGGLE,
+            "use_color_mode": constants.ColorMode.USE,
+            "hydrate": constants.CompileVars.HYDRATE,
         }
 
 
@@ -59,6 +59,9 @@ RXCONFIG = get_template("app/rxconfig.py.jinja2")
 
 # Code to render a NextJS Document root.
 DOCUMENT_ROOT = get_template("web/pages/_document.js.jinja2")
+
+# Code to render NextJS App root.
+APP_ROOT = get_template("web/pages/_app.js.jinja2")
 
 # Template for the theme file.
 THEME = get_template("web/utils/theme.js.jinja2")

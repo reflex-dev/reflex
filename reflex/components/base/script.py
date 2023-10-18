@@ -8,6 +8,7 @@ from typing import Any, Union
 
 from reflex.components.component import Component
 from reflex.event import EventChain
+from reflex.utils import console
 from reflex.vars import BaseVar, Var
 
 
@@ -87,4 +88,10 @@ def client_side(javascript_code) -> Var[EventChain]:
         An EventChain, passable to any component, that will execute the client side javascript
         when triggered.
     """
-    return BaseVar(name=f"...args => {{{javascript_code}}}", type_=EventChain)
+    console.deprecate(
+        feature_name="rx.client_side",
+        reason="and has been replaced by rx.call_script, which can be used from backend EventHandler too",
+        deprecation_version="0.2.9",
+        removal_version="0.3.0",
+    )
+    return BaseVar(_var_name=f"...args => {{{javascript_code}}}", _var_type=EventChain)

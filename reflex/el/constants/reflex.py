@@ -33,7 +33,7 @@ def attr_to_prop(attr_name: str) -> str:
 
 
 # Names of HTML attributes that are provided by Reflex out of the box.
-PYNECONE_PROVIDED_ATTRS = {"class", "id", "style"}
+REFLEX_PROVIDED_ATTRS = {"class", "id", "style"}
 
 # ATTR_TO_ELEMENTS contains HTML attribute names, which might be invalid as
 # Reflex prop names. PROP_TO_ELEMENTS contains the corresponding Reflex
@@ -41,7 +41,7 @@ PYNECONE_PROVIDED_ATTRS = {"class", "id", "style"}
 PROP_TO_ELEMENTS = {
     attr_to_prop(attr_name): elements
     for attr_name, elements in ATTR_TO_ELEMENTS.items()
-    if attr_name not in PYNECONE_PROVIDED_ATTRS
+    if attr_name not in REFLEX_PROVIDED_ATTRS
 }
 
 # Invert PROP_TO_ELEMENTS to enable easier lookup.

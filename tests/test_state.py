@@ -14,13 +14,15 @@ import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
+from reflex.app import App
 from reflex.base import Base
-from reflex.constants import APP_VAR, IS_HYDRATED, RouteVar, SocketEvent
+from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
     ImmutableStateError,
     LockExpiredError,
     MutableProxy,
+    RouterData,
     State,
     StateManager,
     StateManagerMemory,
@@ -28,7 +30,8 @@ from reflex.state import (
     StateProxy,
     StateUpdate,
 )
-from reflex.utils import format, prerequisites
+from reflex.utils import prerequisites
+from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
 from .states import GenState
@@ -36,6 +39,33 @@ from .states import GenState
 CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2000 if CI else 100
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.2
+
+
+formatted_router = {
+    "session": {"client_token": "", "client_ip": "", "session_id": ""},
+    "headers": {
+        "host": "",
+        "origin": "",
+        "upgrade": "",
+        "connection": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "",
+        "sec_websocket_version": "",
+        "sec_websocket_key": "",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "",
+        "accept_language": "",
+    },
+    "page": {
+        "host": "",
+        "path": "",
+        "raw_path": "",
+        "full_path": "",
+        "full_raw_path": "",
+        "params": {},
+    },
+}
 
 
 class Object(Base):
@@ -118,6 +148,15 @@ class GrandchildState(ChildState):
         pass
 
 
+class DateTimeState(State):
+    """A State with some datetime fields."""
+
+    d: datetime.date = datetime.date.fromisoformat("1989-11-09")
+    dt: datetime.datetime = datetime.datetime.fromisoformat("1989-11-09T18:53:00+01:00")
+    t: datetime.time = datetime.time.fromisoformat("18:53:00+01:00")
+    td: datetime.timedelta = datetime.timedelta(days=11, minutes=11)
+
+
 @pytest.fixture
 def test_state() -> TestState:
     """A state.
@@ -187,11 +226,11 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, BaseVar)
-        assert prop.name == field
+        assert prop._var_name == field
 
-    assert cls.num1.type_ == int
-    assert cls.num2.type_ == float
-    assert cls.key.type_ == str
+    assert cls.num1._var_type == int
+    assert cls.num2._var_type == float
+    assert cls.key._var_type == str
 
 
 def test_computed_class_var(test_state):
@@ -201,7 +240,7 @@ def test_computed_class_var(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    vars = [(prop.name, prop.type_) for prop in cls.computed_vars.values()]
+    vars = [(prop._var_name, prop._var_type) for prop in cls.computed_vars.values()]
     assert ("sum", float) in vars
     assert ("upper", str) in vars
 
@@ -214,7 +253,8 @@ def test_class_vars(test_state):
     """
     cls = type(test_state)
     assert set(cls.vars.keys()) == {
-        IS_HYDRATED,  # added by hydrate_middleware to all State
+        CompileVars.IS_HYDRATED,  # added by hydrate_middleware to all State
+        "router",
         "num1",
         "num2",
         "key",
@@ -290,58 +330,6 @@ def test_dict(test_state):
         set(test_state.dict(include_computed=False).keys())
         == set(test_state.base_vars) | substates
     )
-
-
-def test_format_state(test_state):
-    """Test that the format state is correct.
-
-    Args:
-        test_state: A state.
-    """
-    formatted_state = format.format_state(test_state.dict())
-    exp_formatted_state = {
-        "array": [1, 2, 3.14],
-        "child_state": {"count": 23, "grandchild_state": {"value2": ""}, "value": ""},
-        "child_state2": {"value": ""},
-        "complex": {
-            1: {"prop1": 42, "prop2": "hello"},
-            2: {"prop1": 42, "prop2": "hello"},
-        },
-        "dt": "1989-11-09 18:53:00+01:00",
-        "fig": [],
-        "is_hydrated": False,
-        "key": "",
-        "map_key": "a",
-        "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
-        "num1": 0,
-        "num2": 3.14,
-        "obj": {"prop1": 42, "prop2": "hello"},
-        "sum": 3.14,
-        "upper": "",
-    }
-    assert formatted_state == exp_formatted_state
-
-
-def test_format_state_datetime():
-    """Test that the format state is correct for datetime classes."""
-
-    class DateTimeState(State):
-        d: datetime.date = datetime.date.fromisoformat("1989-11-09")
-        dt: datetime.datetime = datetime.datetime.fromisoformat(
-            "1989-11-09T18:53:00+01:00"
-        )
-        t: datetime.time = datetime.time.fromisoformat("18:53:00+01:00")
-        td: datetime.timedelta = datetime.timedelta(days=11, minutes=11)
-
-    formatted_state = format.format_state(DateTimeState().dict())
-    exp_formatted_state = {
-        "d": "1989-11-09",
-        "dt": "1989-11-09 18:53:00+01:00",
-        "is_hydrated": False,
-        "t": "18:53:00+01:00",
-        "td": "11 days, 0:11:00",
-    }
-    assert formatted_state == exp_formatted_state
 
 
 def test_default_setters(test_state):
@@ -458,11 +446,13 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(BaseVar(name="num3", type_=int).set_state(TestState))
+    TestState._set_var(
+        BaseVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
+    )
     var = TestState.num3  # type: ignore
-    assert var.name == "num3"
-    assert var.type_ == int
-    assert var.state == TestState.get_full_name()
+    assert var._var_name == "num3"
+    assert var._var_type == int
+    assert var._var_state == TestState.get_full_name()
 
 
 def test_set_parent_and_substates(test_state, child_state, grandchild_state):
@@ -750,21 +740,6 @@ async def test_process_event_generator():
     assert count == 6
 
 
-def test_format_event_handler():
-    """Test formatting an event handler."""
-    assert (
-        format.format_event_handler(TestState.do_something) == "test_state.do_something"  # type: ignore
-    )
-    assert (
-        format.format_event_handler(ChildState.change_both)  # type: ignore
-        == "test_state.child_state.change_both"
-    )
-    assert (
-        format.format_event_handler(GrandchildState.do_nothing)  # type: ignore
-        == "test_state.child_state.grandchild_state.do_nothing"
-    )
-
-
 def test_get_token(test_state, mocker, router_data):
     """Test that the token obtained from the router_data is correct.
 
@@ -841,7 +816,7 @@ def test_get_current_page(test_state):
     assert test_state.get_current_page() == ""
 
     route = "mypage/subpage"
-    test_state.router_data = {RouteVar.PATH: route}
+    test_state.router = RouterData({RouteVar.PATH: route})
 
     assert test_state.get_current_page() == route
 
@@ -1041,7 +1016,7 @@ def test_conditional_computed_vars():
     assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
-    assert ms.computed_vars["rendered_var"].deps(objclass=MainState) == {
+    assert ms.computed_vars["rendered_var"]._deps(objclass=MainState) == {
         "flag",
         "t1",
         "t2",
@@ -1184,17 +1159,20 @@ def test_computed_var_depends_on_parent_non_cached():
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 2},
         "no_cache_v": 1,
-        IS_HYDRATED: False,
+        CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 4},
         "no_cache_v": 3,
-        IS_HYDRATED: False,
+        CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 6},
         "no_cache_v": 5,
-        IS_HYDRATED: False,
+        CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert counter == 6
 
@@ -1583,23 +1561,24 @@ async def test_state_manager_lock_expire_contend(
 
 
 @pytest.fixture(scope="function")
-def mock_app(monkeypatch, app: rx.App, state_manager: StateManager) -> rx.App:
+def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
     """Mock app fixture.
 
     Args:
         monkeypatch: Pytest monkeypatch object.
-        app: An app.
         state_manager: A state manager.
 
     Returns:
         The app, after mocking out prerequisites.get_app()
     """
+    app = App(state=TestState)
+
     app_module = Mock()
-    setattr(app_module, APP_VAR, app)
+
+    setattr(app_module, CompileVars.APP, app)
     app.state = TestState
     app.state_manager = state_manager
-    assert app.event_namespace is not None
-    app.event_namespace.emit = AsyncMock()
+    app.event_namespace.emit = AsyncMock()  # type: ignore
     monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
     return app
 
@@ -1682,7 +1661,7 @@ class BackgroundTaskState(State):
     """A state with a background task."""
 
     order: List[str] = []
-    dict_list: Dict[str, List[int]] = {"foo": []}
+    dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
 
     @rx.background
     async def background_task(self):
@@ -1714,6 +1693,9 @@ class BackgroundTaskState(State):
                 pass  # update proxy instance
 
         async with self:
+            # Methods on ImmutableMutableProxy should return their wrapped return value.
+            assert self.dict_list.pop("foo") == [1, 2, 3]
+
             self.order.append("background_task:stop")
             self.other()  # direct calling event handlers works in context
             self._private_method()
@@ -1916,6 +1898,15 @@ def test_mutable_list(mutable_state):
     assert_array_dirty()
     assert isinstance(mutable_state.array[0], MutableProxy)
 
+    # Test proxy returned from __iter__
+    mutable_state.array = [{}]
+    assert_array_dirty()
+    assert isinstance(mutable_state.array[0], MutableProxy)
+    for item in mutable_state.array:
+        assert isinstance(item, MutableProxy)
+        item["foo"] = "bar"
+        assert_array_dirty()
+
 
 def test_mutable_dict(mutable_state):
     """Test that mutable dicts are tracked correctly.
@@ -1933,9 +1924,13 @@ def test_mutable_dict(mutable_state):
     # Test all dict operations
     mutable_state.hashmap.update({"new_key": 43})
     assert_hashmap_dirty()
-    mutable_state.hashmap.setdefault("another_key", 66)
+    assert mutable_state.hashmap.setdefault("another_key", 66) == "another_value"
     assert_hashmap_dirty()
-    mutable_state.hashmap.pop("new_key")
+    assert mutable_state.hashmap.setdefault("setdefault_key", 67) == 67
+    assert_hashmap_dirty()
+    assert mutable_state.hashmap.setdefault("setdefault_key", 68) == 67
+    assert_hashmap_dirty()
+    assert mutable_state.hashmap.pop("new_key") == 43
     assert_hashmap_dirty()
     mutable_state.hashmap.popitem()
     assert_hashmap_dirty()
@@ -1961,6 +1956,31 @@ def test_mutable_dict(mutable_state):
     mutable_state.hashmap["dict"]["dict"] = {}
     assert_hashmap_dirty()
     mutable_state.hashmap["dict"]["dict"]["key"] = 43
+    assert_hashmap_dirty()
+
+    # Test proxy returned from `setdefault` and `get`
+    mutable_value = mutable_state.hashmap.setdefault("setdefault_mutable_key", [])
+    assert_hashmap_dirty()
+    assert mutable_value == []
+    assert isinstance(mutable_value, MutableProxy)
+    mutable_value.append("foo")
+    assert_hashmap_dirty()
+    mutable_value_other_ref = mutable_state.hashmap.get("setdefault_mutable_key")
+    assert isinstance(mutable_value_other_ref, MutableProxy)
+    assert mutable_value is not mutable_value_other_ref
+    assert mutable_value == mutable_value_other_ref
+    assert not mutable_state.dirty_vars
+    mutable_value_other_ref.append("bar")
+    assert_hashmap_dirty()
+
+    # `pop` should NOT return a proxy, because the returned value is no longer in the dict
+    mutable_value_third_ref = mutable_state.hashmap.pop("setdefault_mutable_key")
+    assert not isinstance(mutable_value_third_ref, MutableProxy)
+    assert_hashmap_dirty()
+    mutable_value_third_ref.append("baz")
+    assert not mutable_state.dirty_vars
+    # Unfortunately previous refs still will mark the state dirty... nothing doing about that
+    assert mutable_value.pop()
     assert_hashmap_dirty()
 
 
@@ -2109,3 +2129,56 @@ def test_mutable_copy_vars(mutable_state, copy_func):
 def test_duplicate_substate_class(duplicate_substate):
     with pytest.raises(ValueError):
         duplicate_substate()
+
+
+class Foo(Base):
+    """A class containing a list of str."""
+
+    tags: List[str] = ["123", "456"]
+
+
+def test_json_dumps_with_mutables():
+    """Test that json.dumps works with Base vars inside mutable types."""
+
+    class MutableContainsBase(State):
+        items: List[Foo] = [Foo()]
+
+    dict_val = MutableContainsBase().dict()
+    assert isinstance(dict_val["items"][0], dict)
+    val = json_dumps(dict_val)
+    f_items = '[{"tags": ["123", "456"]}]'
+    f_formatted_router = str(formatted_router).replace("'", '"')
+    assert (
+        val
+        == f'{{"is_hydrated": false, "items": {f_items}, "router": {f_formatted_router}}}'
+    )
+
+
+def test_reset_with_mutables():
+    """Calling reset should always reset fields to a copy of the defaults."""
+    default = [[0, 0], [0, 1], [1, 1]]
+    copied_default = copy.deepcopy(default)
+
+    class MutableResetState(State):
+        items: List[List[int]] = default
+
+    instance = MutableResetState()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
+
+    instance.reset()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
+
+    instance.reset()
+    assert instance.items.__wrapped__ is not default  # type: ignore
+    assert instance.items == default == copied_default
+    instance.items.append([3, 3])
+    assert instance.items != default
+    assert instance.items != copied_default
