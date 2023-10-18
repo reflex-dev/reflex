@@ -264,11 +264,6 @@ class DataFrame:
     pass
 
 
-@serializer
-def serialize_dataframe(df: DataFrame) -> dict:
-    return {}
-
-
 @pytest.mark.parametrize(
     "class_type,expected",
     [
