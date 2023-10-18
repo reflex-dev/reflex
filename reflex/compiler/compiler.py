@@ -98,7 +98,7 @@ def _compile_contexts(state: Optional[Type[State]]) -> str:
     Returns:
         The compiled context file.
     """
-    is_dev_mode = (os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",)
+    is_dev_mode = os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
     return (
         templates.CONTEXT.render(
             initial_state=utils.compile_state(state),
