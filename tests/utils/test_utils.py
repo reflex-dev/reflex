@@ -273,7 +273,6 @@ class DataFrame:
         (DataFrame, True),
         (typing.Any, False),
         (typing.List, False),
-        # (Var.create(value=DataFrame()), True),
     ],
 )
 def test_is_dataframe(class_type, expected):
