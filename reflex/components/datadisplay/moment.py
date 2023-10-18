@@ -1,6 +1,6 @@
 """Moment component for humanized date rendering."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from reflex.components.component import NoSSRComponent
 from reflex.vars import Var
@@ -12,7 +12,7 @@ class Moment(NoSSRComponent):
     tag: str = "Moment"
     is_default = True
     library: str = "react-moment"
-    lib_dependencies: list[str] = ["moment"]
+    lib_dependencies: List[str] = ["moment"]
 
     # interval (how often time update / 0 to disable)
     interval: Var[int]
