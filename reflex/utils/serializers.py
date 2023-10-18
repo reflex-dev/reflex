@@ -93,7 +93,7 @@ def get_serializer(type_: Type) -> Serializer | None:
         return serializer
 
     # If the type is not registered, check if it is a subclass of a registered type.
-    for registered_type, serializer in SERIALIZERS.items():
+    for registered_type, serializer in reversed(SERIALIZERS.items()):
         if types._issubclass(type_, registered_type):
             return serializer
 
@@ -127,16 +127,29 @@ def serialize_str(value: str) -> str:
 
 
 @serializer
-def serialize_primitive(value: Union[bool, int, float, Base, None]) -> str:
+def serialize_primitive(value: Union[bool, int, float, None]) -> str:
     """Serialize a primitive type.
 
     Args:
-        value: The number to serialize.
+        value: The number/bool/None to serialize.
 
     Returns:
-        The serialized number.
+        The serialized number/bool/None.
     """
     return format.json_dumps(value)
+
+
+@serializer
+def serialize_base(value: Base) -> str:
+    """Serialize a Base instance.
+
+    Args:
+        value : The Base to serialize.
+
+    Returns:
+        The serialized Base.
+    """
+    return value.json()
 
 
 @serializer

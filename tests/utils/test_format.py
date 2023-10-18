@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 
 import pytest
@@ -428,6 +429,33 @@ def test_format_query_params(input, output):
     assert format.format_query_params(input) == output
 
 
+formatted_router = {
+    "session": {"client_token": "", "client_ip": "", "session_id": ""},
+    "headers": {
+        "host": "",
+        "origin": "",
+        "upgrade": "",
+        "connection": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "",
+        "sec_websocket_version": "",
+        "sec_websocket_key": "",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "",
+        "accept_language": "",
+    },
+    "page": {
+        "host": "",
+        "path": "",
+        "raw_path": "",
+        "full_path": "",
+        "full_raw_path": "",
+        "params": {},
+    },
+}
+
+
 @pytest.mark.parametrize(
     "input, output",
     [
@@ -456,6 +484,7 @@ def test_format_query_params(input, output):
                 "obj": {"prop1": 42, "prop2": "hello"},
                 "sum": 3.14,
                 "upper": "",
+                "router": formatted_router,
             },
         ),
         (
@@ -466,6 +495,7 @@ def test_format_query_params(input, output):
                 "is_hydrated": False,
                 "t": "18:53:00+01:00",
                 "td": "11 days, 0:11:00",
+                "router": formatted_router,
             },
         ),
     ],
@@ -557,6 +587,14 @@ def test_format_library_name(input: str, output: str):
         ([1, 2, 3], "[1, 2, 3]"),
         ({}, "{}"),
         ({"k1": False, "k2": True}, '{"k1": false, "k2": true}'),
+        (
+            [datetime.timedelta(1, 1, 1), datetime.timedelta(1, 1, 2)],
+            '["1 day, 0:00:01.000001", "1 day, 0:00:01.000002"]',
+        ),
+        (
+            {"key1": datetime.timedelta(1, 1, 1), "key2": datetime.timedelta(1, 1, 2)},
+            '{"key1": "1 day, 0:00:01.000001", "key2": "1 day, 0:00:01.000002"}',
+        ),
     ],
 )
 def test_json_dumps(input, output):

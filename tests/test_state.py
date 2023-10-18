@@ -22,6 +22,7 @@ from reflex.state import (
     ImmutableStateError,
     LockExpiredError,
     MutableProxy,
+    RouterData,
     State,
     StateManager,
     StateManagerMemory,
@@ -38,6 +39,33 @@ from .states import GenState
 CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2000 if CI else 100
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.2
+
+
+formatted_router = {
+    "session": {"client_token": "", "client_ip": "", "session_id": ""},
+    "headers": {
+        "host": "",
+        "origin": "",
+        "upgrade": "",
+        "connection": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "",
+        "sec_websocket_version": "",
+        "sec_websocket_key": "",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "",
+        "accept_language": "",
+    },
+    "page": {
+        "host": "",
+        "path": "",
+        "raw_path": "",
+        "full_path": "",
+        "full_raw_path": "",
+        "params": {},
+    },
+}
 
 
 class Object(Base):
@@ -226,6 +254,7 @@ def test_class_vars(test_state):
     cls = type(test_state)
     assert set(cls.vars.keys()) == {
         CompileVars.IS_HYDRATED,  # added by hydrate_middleware to all State
+        "router",
         "num1",
         "num2",
         "key",
@@ -787,7 +816,7 @@ def test_get_current_page(test_state):
     assert test_state.get_current_page() == ""
 
     route = "mypage/subpage"
-    test_state.router_data = {RouteVar.PATH: route}
+    test_state.router = RouterData({RouteVar.PATH: route})
 
     assert test_state.get_current_page() == route
 
@@ -1131,16 +1160,19 @@ def test_computed_var_depends_on_parent_non_cached():
         cs.get_name(): {"dep_v": 2},
         "no_cache_v": 1,
         CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 4},
         "no_cache_v": 3,
         CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 6},
         "no_cache_v": 5,
         CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert counter == 6
 
@@ -2114,7 +2146,12 @@ def test_json_dumps_with_mutables():
     dict_val = MutableContainsBase().dict()
     assert isinstance(dict_val["items"][0], dict)
     val = json_dumps(dict_val)
-    assert val == '{"is_hydrated": false, "items": [{"tags": ["123", "456"]}]}'
+    f_items = '[{"tags": ["123", "456"]}]'
+    f_formatted_router = str(formatted_router).replace("'", '"')
+    assert (
+        val
+        == f'{{"is_hydrated": false, "items": {f_items}, "router": {f_formatted_router}}}'
+    )
 
 
 def test_reset_with_mutables():

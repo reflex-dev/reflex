@@ -495,13 +495,13 @@ class AppHarness:
         if isinstance(self.state_manager, StateManagerRedis):
             # Temporarily replace the app's state manager with our own, since
             # the redis connection is on the backend_thread event loop
-            self.app_instance.state_manager = self.state_manager
+            self.app_instance._state_manager = self.state_manager
         try:
             async with self.app_instance.modify_state(token) as state:
                 yield state
         finally:
             if isinstance(self.state_manager, StateManagerRedis):
-                self.app_instance.state_manager = app_state_manager
+                self.app_instance._state_manager = app_state_manager
                 await self.state_manager.redis.close()
 
     def poll_for_content(

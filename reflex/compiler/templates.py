@@ -60,6 +60,9 @@ RXCONFIG = get_template("app/rxconfig.py.jinja2")
 # Code to render a NextJS Document root.
 DOCUMENT_ROOT = get_template("web/pages/_document.js.jinja2")
 
+# Code to render NextJS App root.
+APP_ROOT = get_template("web/pages/_app.js.jinja2")
+
 # Template for the theme file.
 THEME = get_template("web/utils/theme.js.jinja2")
 

@@ -32,6 +32,7 @@ from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
+from reflex.components.base.app_wrap import AppWrap
 from reflex.components.component import Component, ComponentStyle
 from reflex.components.layout.fragment import Fragment
 from reflex.components.navigation.client_side_routing import (
@@ -52,10 +53,9 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import (
-    DefaultState,
+    RouterData,
     State,
     StateManager,
-    StateManagerMemory,
     StateUpdate,
 )
 from reflex.utils import console, format, prerequisites, types
@@ -94,10 +94,10 @@ class App(Base):
     socket_app: Optional[ASGIApp] = None
 
     # The state class to use for the app.
-    state: Type[State] = DefaultState
+    state: Optional[Type[State]] = None
 
     # Class to manage many client states.
-    state_manager: StateManager = StateManagerMemory(state=DefaultState)
+    _state_manager: Optional[StateManager] = None
 
     # The styling to apply to each component.
     style: ComponentStyle = {}
@@ -125,6 +125,9 @@ class App(Base):
     # Background tasks that are currently running
     background_tasks: Set[asyncio.Task] = set()
 
+    # The radix theme for the entire app
+    theme: Optional[Component] = None
+
     def __init__(self, *args, **kwargs):
         """Initialize the app.
 
@@ -143,19 +146,19 @@ class App(Base):
             )
         super().__init__(*args, **kwargs)
         state_subclasses = State.__subclasses__()
-        inferred_state = state_subclasses[-1]
+        inferred_state = state_subclasses[-1] if state_subclasses else None
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
         # Special case to allow test cases have multiple subclasses of rx.State.
         if not is_testing_env:
-            # Only the default state and the client state should be allowed as subclasses.
-            if len(state_subclasses) > 2:
+            # Only one State class is allowed.
+            if len(state_subclasses) > 1:
                 raise ValueError(
                     "rx.State has been subclassed multiple times. Only one subclass is allowed"
                 )
 
             # verify that provided state is valid
-            if self.state not in [DefaultState, inferred_state]:
+            if self.state and inferred_state and self.state is not inferred_state:
                 console.warn(
                     f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
                     f" Defaulting to root state: ({inferred_state.__name__})"
@@ -167,15 +170,15 @@ class App(Base):
         # Add middleware.
         self.middleware.append(HydrateMiddleware())
 
-        # Set up the state manager.
-        self.state_manager = StateManager.create(state=self.state)
-
         # Set up the API.
         self.api = FastAPI()
         self.add_cors()
         self.add_default_endpoints()
 
-        if self.state is not DefaultState:
+        if self.state:
+            # Set up the state manager.
+            self._state_manager = StateManager.create(state=self.state)
+
             # Set up the Socket.IO AsyncServer.
             self.sio = AsyncServer(
                 async_mode="asgi",
@@ -207,10 +210,7 @@ class App(Base):
         self.setup_admin_dash()
 
         # If a State is not used and no overlay_component is specified, do not render the connection modal
-        if (
-            self.state is DefaultState
-            and self.overlay_component is default_overlay_component
-        ):
+        if self.state is None and self.overlay_component is default_overlay_component:
             self.overlay_component = None
 
     def __repr__(self) -> str:
@@ -219,7 +219,7 @@ class App(Base):
         Returns:
             The string representation of the app.
         """
-        return f"<App state={self.state.__name__}>"
+        return f"<App state={self.state.__name__ if self.state else None}>"
 
     def __call__(self) -> FastAPI:
         """Run the backend api instance.
@@ -246,6 +246,20 @@ class App(Base):
             allow_headers=["*"],
             allow_origins=["*"],
         )
+
+    @property
+    def state_manager(self) -> StateManager:
+        """Get the state manager.
+
+        Returns:
+            The initialized state manager.
+
+        Raises:
+            ValueError: if the state has not been initialized.
+        """
+        if self._state_manager is None:
+            raise ValueError("The state manager has not been initialized.")
+        return self._state_manager
 
     async def preprocess(self, state: State, event: Event) -> StateUpdate | None:
         """Preprocess the event.
@@ -380,7 +394,8 @@ class App(Base):
         verify_route_validity(route)
 
         # Apply dynamic args to the route.
-        self.state.setup_dynamic_args(get_route_args(route))
+        if self.state:
+            self.state.setup_dynamic_args(get_route_args(route))
 
         # Generate the component if it is a callable.
         component = self._generate_component(component)
@@ -569,6 +584,15 @@ class App(Base):
         page_imports.update(_frontend_packages)
         prerequisites.install_frontend_packages(page_imports)
 
+    def _app_root(self, app_wrappers):
+        order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
+        root = parent = app_wrappers[order[0]]
+        for key in order[1:]:
+            child = app_wrappers[key]
+            parent.children.append(child)
+            parent = child
+        return root
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
         if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
@@ -601,12 +625,21 @@ class App(Base):
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
         thread_pool = ThreadPool()
         all_imports = {}
+        page_futures = []
+        app_wrappers: Dict[tuple[int, str], Component] = {
+            # Default app wrap component renders {children}
+            (0, "AppWrap"): AppWrap.create()
+        }
+        if self.theme is not None:
+            # If a theme component was provided, wrap the app with it
+            app_wrappers[(20, "Theme")] = self.theme
+
         with progress:
             for route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
                 component.add_style(self.style)
-                compile_results.append(
+                page_futures.append(
                     thread_pool.apply_async(
                         compiler.compile_page,
                         args=(
@@ -619,14 +652,22 @@ class App(Base):
                 # add component.get_imports() to all_imports
                 all_imports.update(component.get_imports())
 
+                # add the app wrappers from this component
+                app_wrappers.update(component.get_app_wrap_components())
+
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
 
         thread_pool.close()
         thread_pool.join()
 
-        # Get the results.
-        compile_results = [result.get() for result in compile_results]
+        # Compile the app wrapper.
+        app_root = self._app_root(app_wrappers=app_wrappers)
+        all_imports.update(app_root.get_imports())
+        compile_results.append(compiler.compile_app(app_root))
+
+        # Get the compiled pages.
+        compile_results.extend(result.get() for result in page_futures)
 
         # TODO the compile tasks below may also benefit from parallelization too
 
@@ -644,7 +685,7 @@ class App(Base):
         compile_results.append(compiler.compile_document_root(self.head_components))
 
         # Compile the theme.
-        compile_results.append(compiler.compile_theme(self.style))
+        compile_results.append(compiler.compile_theme(style=self.style))
 
         # Compile the contexts.
         compile_results.append(compiler.compile_contexts(self.state))
@@ -684,6 +725,7 @@ class App(Base):
         """
         if self.event_namespace is None:
             raise RuntimeError("App has not been initialized yet.")
+
         # Get exclusive access to the state.
         async with self.state_manager.modify_state(token) as state:
             # No other event handler can modify the state while in this context.
@@ -694,7 +736,7 @@ class App(Base):
                 state._clean()
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
-                    sid=state.get_sid(),
+                    sid=state.router.session.session_id,
                 )
 
     def _process_background(self, state: State, event: Event) -> asyncio.Task | None:
@@ -730,7 +772,7 @@ class App(Base):
                 # Send the update to the client.
                 await self.event_namespace.emit_update(
                     update=update,
-                    sid=state.get_sid(),
+                    sid=state.router.session.session_id,
                 )
 
         task = asyncio.create_task(_coro())
@@ -773,6 +815,7 @@ async def process(
             # assignment will recurse into substates and force recalculation of
             # dependent ComputedVar (dynamic route variables)
             state.router_data = router_data
+            state.router = RouterData(router_data)
 
         # Preprocess the event.
         update = await app.preprocess(state, event)
@@ -830,10 +873,11 @@ def upload(app: App):
         for file in files:
             assert file.filename is not None
             file.filename = file.filename.split(":")[-1]
+
         # Get the state for the session.
         async with app.state_manager.modify_state(token) as state:
             # get the current session ID
-            sid = state.get_sid()
+            sid = state.router.session.session_id
             # get the current state(parent state/substate)
             path = handler.split(".")[:-1]
             current_state = state.get_substate(path)
