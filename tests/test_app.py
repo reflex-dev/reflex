@@ -736,6 +736,7 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         token: a Token.
     """
     state._tmp_path = tmp_path
+    # The App state must be the "root" of the state tree
     app = App(state=state if state is FileUploadState else FileStateBase1)
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(token)
@@ -745,10 +746,8 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     bio = io.BytesIO()
     bio.write(data)
 
-    if state is FileUploadState:
-        handler_prefix = f"{token}:{state.get_name()}"
-    else:
-        handler_prefix = f"{token}:{state.get_full_name().partition('.')[2]}"
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
+    handler_prefix = f"{token}:{state_name}"
 
     file1 = UploadFile(
         filename=f"{handler_prefix}.multi_handle_upload:True:image1.jpg",
@@ -763,7 +762,7 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     state_update = StateUpdate(delta=delta, events=[], final=True)
 
     app.event_namespace.emit.assert_called_with(  # type: ignore
-        "event", state_update.json(), to=current_state.get_sid()
+        "event", state_update.json(), to=current_state.router.session.session_id
     )
     current_state = await app.state_manager.get_state(token)
     state_dict = current_state.dict()
@@ -798,12 +797,10 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
     bio.write(data)
 
     state._tmp_path = tmp_path
+    # The App state must be the "root" of the state tree
     app = App(state=state if state is FileUploadState else FileStateBase1)
 
-    if state is FileUploadState:
-        state_name = state.get_name()
-    else:
-        state_name = state.get_full_name().partition(".")[2]
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
     handler_prefix = f"{token}:{state_name}"
 
     file1 = UploadFile(
