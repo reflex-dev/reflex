@@ -41,6 +41,7 @@ from reflex.vars import ComputedVar
 from .conftest import chdir
 from .states import (
     ChildFileUploadState,
+    FileStateBase1,
     FileUploadState,
     GenState,
     GrandChildFileUploadState,
@@ -739,7 +740,7 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    app = App(state=state)
+    app = App(state=state if state is FileUploadState else FileStateBase1)
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(token)
     data = b"This is binary data"
@@ -748,12 +749,17 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     bio = io.BytesIO()
     bio.write(data)
 
+    if state is FileUploadState:
+        handler_prefix = f"{token}:{state.get_name()}"
+    else:
+        handler_prefix = f"{token}:{state.get_full_name().partition('.')[2]}"
+
     file1 = UploadFile(
-        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image1.jpg",
+        filename=f"{handler_prefix}.multi_handle_upload:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image2.jpg",
+        filename=f"{handler_prefix}.multi_handle_upload:True:image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)
@@ -763,7 +769,11 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     app.event_namespace.emit.assert_called_with(  # type: ignore
         "event", state_update.json(), to=current_state.get_sid()
     )
-    assert (await app.state_manager.get_state(token)).dict()["img_list"] == [
+    current_state = await app.state_manager.get_state(token)
+    state_dict = current_state.dict()
+    for substate in state.get_full_name().split(".")[1:]:
+        state_dict = state_dict[substate]
+    assert state_dict["img_list"] == [
         "image1.jpg",
         "image2.jpg",
     ]
@@ -792,14 +802,20 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
     bio.write(data)
 
     state._tmp_path = tmp_path
-    app = App(state=state)
+    app = App(state=state if state is FileUploadState else FileStateBase1)
+
+    if state is FileUploadState:
+        state_name = state.get_name()
+    else:
+        state_name = state.get_full_name().partition(".")[2]
+    handler_prefix = f"{token}:{state_name}"
 
     file1 = UploadFile(
-        filename=f"{token}:{state.get_name()}.handle_upload2:True:image1.jpg",
+        filename=f"{handler_prefix}.handle_upload2:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{token}:{state.get_name()}.handle_upload2:True:image2.jpg",
+        filename=f"{handler_prefix}.handle_upload2:True:image2.jpg",
         file=bio,
     )
     fn = upload(app)
@@ -807,7 +823,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         await fn([file1, file2])
     assert (
         err.value.args[0]
-        == f"`{state.get_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+        == f"`{state_name}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
     if isinstance(app.state_manager, StateManagerRedis):

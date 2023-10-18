@@ -19,16 +19,16 @@ def FormSubmit():
         def form_submit(self, form_data: dict):
             self.form_data = form_data
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     app = rx.App(state=FormState)
 
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(value=FormState.token, is_read_only=True, id="token"),
+            rx.input(
+                value=FormState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
             rx.form(
                 rx.vstack(
                     rx.input(id="name_input"),

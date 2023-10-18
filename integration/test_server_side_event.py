@@ -33,16 +33,14 @@ def ServerSideEvent():
         def set_value_return_c(self):
             return rx.set_value("c", "")
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     app = rx.App(state=SSState)
 
     @app.add_page
     def index():
         return rx.fragment(
-            rx.input(id="token", value=SSState.token, is_read_only=True),
+            rx.input(
+                id="token", value=SSState.router.session.client_token, is_read_only=True
+            ),
             rx.input(default_value="a", id="a"),
             rx.input(default_value="b", id="b"),
             rx.input(default_value="c", id="c"),

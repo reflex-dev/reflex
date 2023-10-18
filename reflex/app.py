@@ -736,7 +736,7 @@ class App(Base):
                 state._clean()
                 await self.event_namespace.emit_update(
                     update=StateUpdate(delta=delta),
-                    sid=state.get_sid(),
+                    sid=state.router.session.session_id,
                 )
 
     def _process_background(self, state: State, event: Event) -> asyncio.Task | None:
@@ -772,7 +772,7 @@ class App(Base):
                 # Send the update to the client.
                 await self.event_namespace.emit_update(
                     update=update,
-                    sid=state.get_sid(),
+                    sid=state.router.session.session_id,
                 )
 
         task = asyncio.create_task(_coro())
@@ -877,7 +877,7 @@ def upload(app: App):
         # Get the state for the session.
         async with app.state_manager.modify_state(token) as state:
             # get the current session ID
-            sid = state.get_sid()
+            sid = state.router.session.session_id
             # get the current state(parent state/substate)
             path = handler.split(".")[:-1]
             current_state = state.get_substate(path)
