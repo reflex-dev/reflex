@@ -316,25 +316,23 @@ def set_value(ref: str, value: Any) -> EventSpec:
     )
 
 
-def remove_cookie(
-    key: str, options: dict[str, Any] = {}, path: str = "/"
-) -> EventSpec:  # noqa: B006
+def remove_cookie(key: str, options: dict[str, Any] | None = None) -> EventSpec:
     """Remove a cookie on the frontend.
 
     Args:
-        path: The cookie path
         key: The key identifying the cookie to be removed.
         options: Support all the cookie options from RFC 6265
 
     Returns:
         EventSpec: An event to remove a cookie.
     """
+    options = options or {}
+    options["path"] = options.get("path", "/")
     return server_side(
         "_remove_cookie",
         get_fn_signature(remove_cookie),
         key=key,
         options=options,
-        path=path,
     )
 
 

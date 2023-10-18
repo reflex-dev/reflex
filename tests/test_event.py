@@ -214,17 +214,17 @@ def test_remove_cookie():
     assert spec.args[0][0].equals(Var.create_safe("key"))
     assert spec.args[0][1].equals(Var.create_safe("testkey"))
     assert spec.args[1][0].equals(Var.create_safe("options"))
-    assert spec.args[1][1].equals(Var.create_safe({}))
+    assert spec.args[1][1].equals(Var.create_safe({"path": "/"}))
     assert (
         format.format_event(spec)
-        == 'Event("_remove_cookie", {key:`testkey`,options:{}})'
+        == 'Event("_remove_cookie", {key:`testkey`,options:{"path": "/"}})'
     )
 
 
 def test_remove_cookie_with_options():
     """Test the event remove_cookie with options."""
     options = {
-        "path": "/",
+        "path": "/foo",
         "domain": "example.com",
         "secure": True,
         "sameSite": "strict",
