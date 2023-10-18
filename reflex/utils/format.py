@@ -644,7 +644,8 @@ def format_data_editor_column(col: str | dict):
     """
     if isinstance(col, str):
         return {"title": col, "id": col.lower(), "type": "str"}
-    elif isinstance(col, (dict,)):
+
+    if isinstance(col, (dict,)):
         if "id" not in col:
             col["id"] = col["title"].lower()
         if "type" not in col:
@@ -652,8 +653,10 @@ def format_data_editor_column(col: str | dict):
         if "overlayIcon" not in col:
             col["overlayIcon"] = None
         return col
-    elif isinstance(col, BaseVar):
+
+    if isinstance(col, BaseVar):
         return col
+
     raise ValueError(
         f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
     )
@@ -668,5 +671,4 @@ def format_data_editor_cell(cell: Any):
     Returns:
         The formatted cell.
     """
-    type(cell)
     return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}

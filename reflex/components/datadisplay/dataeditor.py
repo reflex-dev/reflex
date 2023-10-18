@@ -82,21 +82,22 @@ class DataEditor(NoSSRComponent):
     library: str = "@glideapps/glide-data-grid@^5.3.0"
     lib_dependencies: List[str] = ["lodash", "marked", "react-responsive-carousel"]
 
-    # number of rows
+    # Number of rows.
     rows: Var[int]
 
-    # headers of the columns for the data grid
+    # Headers of the columns for the data grid.
     columns: Var[List[Dict[str, Any]]]
 
-    # the data
-    data: Var[Any]
+    # The data.
+    data: Var[List[List[Any]]]
 
-    # the name of the callback used to find the data to display
+    # The name of the callback used to find the data to display.
     get_cell_content: Var[str]
 
-    # allow copy paste or not
+    # Allow selection for copying.
     get_cell_for_selection: Var[bool]
 
+    # Allow paste.
     on_paste: Var[bool]
 
     # Controls the drawing of the focus ring.
@@ -117,8 +118,8 @@ class DataEditor(NoSSRComponent):
     # Controls the height of the header row.
     header_height: Var[int]
 
-    # Additional header icons: (TODO: must be a map of name: svg)
-    header_icons: Var[Any]
+    # Additional header icons:
+    # header_icons: Var[Any] # (TODO: must be a map of name: svg)
 
     # The maximum width a column can be automatically sized to.
     max_column_auto_width: Var[int]
@@ -132,8 +133,8 @@ class DataEditor(NoSSRComponent):
     # Determins the height of each row.
     row_height: Var[int]
 
-    # kind of raw marker (use Literal API ?)
-    row_markers: Var[str]
+    # Kind of row markers.
+    row_markers: Var[str]  # TODO: use Literal API ?
 
     # Changes the starting index for row markers.
     row_marker_start_index: Var[int]
@@ -141,25 +142,31 @@ class DataEditor(NoSSRComponent):
     # Sets the width of row markers in pixels, if unset row markers will automatically size.
     row_marker_width: Var[int]
 
-    # enable horizontal smooth scrolling
+    # Enable horizontal smooth scrolling.
     smooth_scroll_x: Var[bool]
 
-    # enable vertical smooth scrolling
+    # Enable vertical smooth scrolling.
     smooth_scroll_y: Var[bool]
 
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
-    # TODO: need to support a mapping (dict[int, bool] for handling separate columns)
-    vertical_border: Var[bool]
+    vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
+    # Allow columns selections. ("none", "single", "multiple")
     column_select: Var[str]
 
+    # Prevent diagonal scrolling.
     prevent_diagonal_scrolling: Var[bool]
 
+    # Allow to scroll past the limit of the actual content on the horizontal axis.
     overscroll_x: Var[int]
 
+    # Allow to scroll past the limit of the actual content on the vertical axis.
     overscroll_y: Var[int]
 
+    # Initial scroll offset on the horizontal axis.
     scroll_offset_x: Var[int]
+
+    # Initial scroll offset on the vertical axis.
     scroll_offset_y: Var[int]
 
     # global theme
@@ -169,7 +176,11 @@ class DataEditor(NoSSRComponent):
         return imports.merge_imports(
             super()._get_imports(),
             {
-                "": {ImportVar(tag=f"{self.library}/dist/index.css")},
+                "": {
+                    ImportVar(
+                        tag=f"{format.format_library_name(self.library)}/dist/index.css"
+                    )
+                },
                 self.library: {ImportVar(tag="GridCellKind")},
                 "/utils/helpers/dataeditor.js": {
                     ImportVar(tag=f"getDEColumn", is_default=False, install=False),
@@ -210,7 +221,10 @@ class DataEditor(NoSSRComponent):
         }
 
     def _get_hooks(self) -> str | None:
+        # Define the id of the component in case multiple are used in the same page.
         editor_id = get_unique_variable_name()
+
+        # Define the name of the getData callback associated with this component and assign to get_cell_content.
         data_callback = f"getData_{editor_id}"
         self.get_cell_content = Var.create(data_callback, _var_is_local=False)  # type: ignore
 
@@ -252,10 +266,11 @@ class DataEditor(NoSSRComponent):
         columns = props.get("columns", [])
         data = props.get("data", [])
         rows = props.get("rows", None)
-        # if rows is not provided, determine from data
+
+        # If rows is not provided, determine from data.
         if rows is None:
             props["rows"] = (
-                5  # BaseVar.create(value=f"{data}.length()", is_local=False)
+                data.length  # BaseVar.create(value=f"{data}.length()", is_local=False)
                 if isinstance(data, Var)
                 else len(data)
             )
@@ -273,14 +288,11 @@ class DataEditor(NoSSRComponent):
                 props["columns"] = [
                     format.format_data_editor_column(col) for col in columns
                 ]
-        else:
-            ...
 
-        if isinstance(data, Var):
-            # ic(data.type_)
-            ...
-
+        # Allow by default to select a region of cells in the grid.
         props.setdefault("getCellForSelection", True)
+
+        # Disable on_paste by default if not provided.
         props.setdefault("onPaste", False)
 
         if props.pop("getCellContent", None) is not None:
