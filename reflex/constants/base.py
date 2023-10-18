@@ -45,6 +45,8 @@ class Dirs(SimpleNamespace):
     WEB_ASSETS = os.path.join(WEB, "public")
     # The env json file.
     ENV_JSON = os.path.join(WEB, "env.json")
+    # The reflex json file.
+    REFLEX_JSON = os.path.join(WEB, "reflex.json")
 
 
 class Reflex(SimpleNamespace):
