@@ -18,7 +18,7 @@ from reflex.utils import (
     types,
 )
 from reflex.utils import exec as utils_exec
-from reflex.utils.serializers import serialize, serializer
+from reflex.utils.serializers import serialize
 from reflex.vars import Var
 
 
