@@ -48,6 +48,7 @@ class Select(Component):
 
     library = "chakra-react-select"
     tag = "Select"
+    alias = "MultiSelect"
 
     # Focus the control when it is mounted
     auto_focus: Var[bool]
