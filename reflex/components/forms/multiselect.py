@@ -46,7 +46,7 @@ class Select(Component):
     Props added by chakra-react-select are marked with "[chakra]".
     """
 
-    library = "chakra-react-select"
+    library = "chakra-react-select@4.7.5"
     tag = "Select"
     alias = "MultiSelect"
 
