@@ -566,10 +566,11 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_name]
-        default_value = prop.get_default_value()
-        if field.required and default_value is not None:
-            field.required = False
-            field.default = default_value
+        if field.required:
+            default_value = prop.get_default_value()
+            if default_value is not None:
+                field.required = False
+                field.default = default_value
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
