@@ -31,15 +31,15 @@ def LoginSample():
         return rx.Cond.create(
             State.is_hydrated & State.auth_token,  # type: ignore
             rx.vstack(
-                rx.heading(State.auth_token),
-                rx.button("Logout", on_click=State.logout),
+                rx.heading(State.auth_token, id="auth-token"),
+                rx.button("Logout", on_click=State.logout, id="logout"),
             ),
-            rx.button("Login", on_click=rx.redirect("/login")),
+            rx.button("Login", on_click=rx.redirect("/login"), id="login"),
         )
 
     def login():
         return rx.vstack(
-            rx.button("Do it", on_click=State.login),
+            rx.button("Do it", on_click=State.login, id="doit"),
         )
 
     app = rx.App(state=State)
@@ -112,33 +112,30 @@ def test_login_flow(
     local_storage.clear()
 
     with pytest.raises(NoSuchElementException):
-        driver.find_element(By.TAG_NAME, "h2")
+        driver.find_element(By.ID, "auth-token")
 
-    login_button = driver.find_element(By.TAG_NAME, "button")
-    assert login_button.text == "Login"
+    login_button = driver.find_element(By.ID, "login")
     with utils.poll_for_navigation(driver):
         login_button.click()
     assert driver.current_url.endswith("/login/")
 
-    do_it_button = driver.find_element(By.TAG_NAME, "button")
-    assert do_it_button.text == "Do it"
+    do_it_button = driver.find_element(By.ID, "doit")
     with utils.poll_for_navigation(driver):
         do_it_button.click()
     assert driver.current_url == login_sample.frontend_url + "/"
 
     def check_auth_token_header():
         try:
-            auth_token_header = driver.find_element(By.TAG_NAME, "h2")
+            auth_token_header = driver.find_element(By.ID, "auth-token")
         except NoSuchElementException:
             return False
         return auth_token_header.text
 
     assert login_sample._poll_for(check_auth_token_header) == "12345"
 
-    logout_button = driver.find_element(By.TAG_NAME, "button")
-    assert logout_button.text == "Logout"
+    logout_button = driver.find_element(By.ID, "logout")
     logout_button.click()
 
     assert login_sample._poll_for(lambda: local_storage["state.auth_token"] == "")
     with pytest.raises(NoSuchElementException):
-        driver.find_element(By.TAG_NAME, "h2")
+        driver.find_element(By.ID, "auth-token")
