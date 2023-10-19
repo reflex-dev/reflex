@@ -21,7 +21,7 @@
 ---
 ## ⚙️ İndirme
 
-Bir terminal açın ve çalıştırın (Python 3.7+ gerekir):
+Bir terminal açın ve çalıştırın (Python 3.8+ gerekir):
 
 ```bash
 pip install reflex
