@@ -50,7 +50,7 @@ alembic = "^1.11.1"
 platformdirs = "^3.10.0"
 distro = {version = "^1.8.0", platform = "linux"}
 python-engineio = "!=4.6.0"
-wrapt = "^1.15.0"
+wrapt = "^1.11.0"
 packaging = "^23.1"
 
 [tool.poetry.group.dev.dependencies]
