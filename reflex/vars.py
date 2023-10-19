@@ -1418,7 +1418,10 @@ class ComputedVar(Var, property):
                 "LOAD_ATTR",
                 "LOAD_METHOD",
             ):
-                ref_obj = getattr(objclass, instruction.argval)
+                try:
+                    ref_obj = getattr(objclass, instruction.argval)
+                except Exception:
+                    ref_obj = None
                 if callable(ref_obj):
                     # recurse into callable attributes
                     d.update(
