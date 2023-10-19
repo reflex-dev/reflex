@@ -1414,17 +1414,22 @@ class ComputedVar(Var, property):
                 # is referencing an attribute on self
                 self_is_top_of_stack = True
                 continue
-            if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
-                # direct attribute access
-                d.add(instruction.argval)
-            elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
-                # method call on self
-                d.update(
-                    self._deps(
-                        objclass=objclass,
-                        obj=getattr(objclass, instruction.argval),
+            if self_is_top_of_stack and instruction.opname in (
+                "LOAD_ATTR",
+                "LOAD_METHOD",
+            ):
+                ref_obj = getattr(objclass, instruction.argval)
+                if callable(ref_obj):
+                    # recurse into callable attributes
+                    d.update(
+                        self._deps(
+                            objclass=objclass,
+                            obj=ref_obj,
+                        )
                     )
-                )
+                else:
+                    # normal attribute access
+                    d.add(instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
             ):
