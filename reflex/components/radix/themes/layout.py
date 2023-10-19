@@ -76,6 +76,8 @@ class Flex(LayoutComponent):
 class Grid(RadixThemesComponent):
     """Component for creating grid layouts."""
 
+    tag = "Grid"
+
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
 
@@ -113,12 +115,16 @@ class Container(LayoutComponent):
     See https://www.radix-ui.com/themes/docs/components/container
     """
 
+    tag = "Container"
+
     # The size of the container: "1" - "4" (default "4")
     size: Var[str]
 
 
 class Section(LayoutComponent):
     """Denotes a section of page content."""
+
+    tag = "Section"
 
     # The size of the section: "1" - "3" (default "3")
     size: Var[str]
