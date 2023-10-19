@@ -594,9 +594,9 @@ class App(Base):
             return False
 
         # Check the nocompile file.
-        if os.path.exists(constants.compiler.NOCOMPILE_FILE):
+        if os.path.exists(constants.NOCOMPILE_FILE):
             # Delete the nocompile file
-            os.remove(constants.compiler.NOCOMPILE_FILE)
+            os.remove(constants.NOCOMPILE_FILE)
             return False
 
         # By default, compile the app.
