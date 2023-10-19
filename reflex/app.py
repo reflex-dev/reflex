@@ -593,10 +593,30 @@ class App(Base):
             parent = child
         return root
 
+    def _should_compile(self) -> bool:
+        """Check if the app should be compiled.
+
+        Returns:
+            Whether the app should be compiled.
+        """
+        # Check the environment variable.
+        if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
+            return False
+
+        # Check the nocompile file.
+        if os.path.exists(constants.NOCOMPILE_FILE):
+            # Delete the nocompile file
+            os.remove(constants.NOCOMPILE_FILE)
+            return False
+
+        # By default, compile the app.
+        return True
+
     def compile(self):
         """Compile the app and output it to the pages folder."""
-        if os.environ.get(constants.SKIP_COMPILE_ENV_VAR) == "yes":
+        if not self._should_compile():
             return
+
         # Create a progress bar.
         progress = Progress(
             *Progress.get_default_columns()[:-1],

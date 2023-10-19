@@ -17,6 +17,7 @@ from .base import (
     Templates,
 )
 from .compiler import (
+    NOCOMPILE_FILE,
     SETTER_PREFIX,
     CompileVars,
     ComponentName,
@@ -70,6 +71,7 @@ __ALL__ = [
     LogLevel,
     Next,
     Node,
+    NOCOMPILE_FILE,
     PackageJson,
     PageNames,
     Page404,
