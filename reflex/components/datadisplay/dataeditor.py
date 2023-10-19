@@ -270,7 +270,7 @@ class DataEditor(NoSSRComponent):
         # If rows is not provided, determine from data.
         if rows is None:
             props["rows"] = (
-                data.length  # BaseVar.create(value=f"{data}.length()", is_local=False)
+                data.length()  # BaseVar.create(value=f"{data}.length()", is_local=False)
                 if isinstance(data, Var)
                 else len(data)
             )
