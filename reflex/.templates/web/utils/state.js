@@ -144,18 +144,8 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_set_cookie") {
-    cookies.set(event.payload.key, event.payload.value, { path: "/" });
-    return false;
-  }
-
   if (event.name == "_remove_cookie") {
-    cookies.remove(event.payload.key, { path: "/", ...event.payload.options })
-    return false;
-  }
-
-  if (event.name == "_set_local_storage") {
-    localStorage.setItem(event.payload.key, event.payload.value);
+    cookies.remove(event.payload.key, { ...event.payload.options })
     return false;
   }
 
