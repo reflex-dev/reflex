@@ -15,12 +15,15 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
     Union,
     _GenericAlias,  # type: ignore
     cast,
+    get_args,
+    get_origin,
     get_type_hints,
 )
 
@@ -1233,10 +1236,13 @@ class BaseVar(Var):
             ImportError: If the var is a dataframe and pandas is not installed.
         """
         type_ = (
-            self._var_type.__origin__
+            get_origin(self._var_type)
             if types.is_generic_alias(self._var_type)
             else self._var_type
         )
+        if type_ is Literal:
+            args = get_args(self._var_type)
+            return args[0] if args else None
         if issubclass(type_, str):
             return ""
         if issubclass(type_, types.get_args(Union[int, float])):
