@@ -63,7 +63,8 @@ pytest-cov = "^4.0.0"
 black = "^22.10.0"
 ruff = "^0.0.244"
 pandas = [
-    {version = "^1.5.3", python = ">=3.8,<4.0"},
+    {version = "^2.1.1", python = ">=3.9,<3.13"},
+    {version = "^1.5.3", python = ">=3.8,<3.9"},
 ]
 pillow = [
     {version = "^10.0.0", python = ">=3.8,<4.0"}
