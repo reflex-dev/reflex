@@ -214,7 +214,7 @@ def initialize_requirements_txt():
                         return
             with open(constants.RequirementsTxt.FILE, "a") as f:
                 f.write(
-                    f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+                    f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
                 )
         except Exception:
             console.info(

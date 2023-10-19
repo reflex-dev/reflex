@@ -1,5 +1,6 @@
 """Hosting related utilities."""
 
+import enum
 import json
 import os
 from datetime import datetime
@@ -699,11 +700,31 @@ def convert_to_local_time(iso_timestamp: str) -> str:
         return iso_timestamp
 
 
-async def get_logs(key: str):
+class LogType(enum.StrEnum):
+    """Enum for log types."""
+
+    # Logs printed from the user code, the "app"
+    APP_LOG = "app"
+    # Build logs are the server messages while building/running user deployment
+    BUILD_LOG = "build"
+    # Deploy logs are specifically for the messages at deploy time
+    # returned to the user the current stage of the deployment, such as building, uploading.
+    DEPLOY_LOG = "deploy"
+    # All the logs which can be printed by all above types.
+    ALL_LOG = "all"
+
+
+async def get_logs(
+    key: str, log_type: LogType = LogType.APP_LOG, from_time: Optional[datetime] = None
+):
     """Get the deployment logs and stream on console.
 
     Args:
         key: The deployment name.
+        log_type: The type of logs to query from server.
+                  See the LogType definitions for how they are used.
+        from_time: An optional timestamp with timezone info to limit
+                   where the log queries should start from.
 
     Raises:
         ValueError: If the key is not provided.
@@ -715,7 +736,10 @@ async def get_logs(key: str):
     if not key:
         raise ValueError("Valid key is required for querying logs.")
     try:
-        _ws = websockets.connect(f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}")  # type: ignore
+        logs_endpoint = f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type}"
+        if from_time is not None:
+            logs_endpoint += f"&from_time={from_time.astimezone().isoformat()}"
+        _ws = websockets.connect(logs_endpoint)  # type: ignore
         async with _ws as ws:
             while True:
                 row_json = json.loads(await ws.recv())

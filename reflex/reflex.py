@@ -796,6 +796,49 @@ def get_deployment_logs(
         raise typer.Exit(1) from ex
 
 
+@deployments_cli.command(name="all-logs")
+def get_deployment_all_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
+
+    console.print("Note: there is a few seconds delay for logs to be available.")
+    try:
+        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.ALL_LOG))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs due to: {ex}")
+        raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="deploy-logs")
+def get_deployment_deploy_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+    # Check if feature is enabled:
+    if not hosting.feature_enabled():
+        return
+
+    console.print("Note: there is a few seconds delay for logs to be available.")
+    try:
+        # TODO: we need to pass in the from time stamp
+        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.DEPLOY_LOG))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs due to: {ex}")
+        raise typer.Exit(1) from ex
+
+
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(
     deployments_cli,
