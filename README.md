@@ -21,7 +21,7 @@
 ---
 ## ⚙️ Installation
 
-Open a terminal and run (Requires Python 3.7+):
+Open a terminal and run (Requires Python 3.8+):
 
 ```bash
 pip install reflex
