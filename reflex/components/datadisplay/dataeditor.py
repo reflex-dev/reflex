@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Any, Callable, Dict, List
 
 from reflex.components.component import Component, NoSSRComponent
-from reflex.components.layout import Fragment
 from reflex.utils import console, format, imports, types
 from reflex.vars import ImportVar, Var, get_unique_variable_name
 
@@ -300,7 +299,12 @@ class DataEditor(NoSSRComponent):
                 "getCellContent is not user configurable, the provided value will be discarded"
             )
         grid = super().create(*children, **props)
-        return Fragment.create(grid, Div.create(id="portal"))
+        return Div.create(
+            grid,
+            Div.create(id="portal"),
+            width=props.pop("width", "100%"),
+            height=props.pop("height", "100%"),
+        )
 
     # def _render(self) -> Tag:
     #     if isinstance(self.data, Var) and types.is_dataframe(self.data.type_):
