@@ -115,6 +115,7 @@ def test_login_flow(
         driver.find_element(By.ID, "auth-token")
 
     login_button = driver.find_element(By.ID, "login")
+    login_sample.poll_for_content(login_button)
     with utils.poll_for_navigation(driver):
         login_button.click()
     assert driver.current_url.endswith("/login/")
