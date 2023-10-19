@@ -1,9 +1,19 @@
 """Declarative layout and common spacing props."""
 from __future__ import annotations
 
+from typing import Literal
+
 from reflex.vars import Var
 
-from .base import CommonMarginProps, RadixThemesComponent
+from .base import (
+    CommonMarginProps,
+    LiteralAlign,
+    LiteralJustify,
+    LiteralSize,
+    RadixThemesComponent,
+)
+
+LiteralBoolNumber = Literal["0", "1"]
 
 
 class LayoutComponent(CommonMarginProps, RadixThemesComponent):
@@ -13,37 +23,42 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
     """
 
     # Padding: "0" - "9"
-    p: Var[str]
+    p: Var[LiteralSize]
 
     # Padding horizontal: "0" - "9"
-    px: Var[str]
+    px: Var[LiteralSize]
 
     # Padding vertical: "0" - "9"
-    py: Var[str]
+    py: Var[LiteralSize]
 
     # Padding top: "0" - "9"
-    pt: Var[str]
+    pt: Var[LiteralSize]
 
     # Padding right: "0" - "9"
-    pr: Var[str]
+    pr: Var[LiteralSize]
 
     # Padding bottom: "0" - "9"
-    pb: Var[str]
+    pb: Var[LiteralSize]
 
     # Padding left: "0" - "9"
-    pl: Var[str]
+    pl: Var[LiteralSize]
 
     # Whether the element will take up the smallest possible space: "0" | "1"
-    shrink: Var[str]
+    shrink: Var[LiteralBoolNumber]
 
     # Whether the element will take up the largest possible space: "0" | "1"
-    grow: Var[str]
+    grow: Var[LiteralBoolNumber]
 
 
 class Box(LayoutComponent):
     """A fundamental layout building block, based on <div>."""
 
     tag = "Box"
+
+
+LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
+LiteralFlexDisplay = Literal["none", "inline-flex", "flex"]
+LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 
 
 class Flex(LayoutComponent):
@@ -55,22 +70,26 @@ class Flex(LayoutComponent):
     as_child: Var[bool]
 
     # How to display the element: "none" | "inline-flex" | "flex"
-    display: Var[str]
+    display: Var[LiteralFlexDisplay]
 
     # How child items are layed out: "row" | "column" | "row-reverse" | "column-reverse"
-    direction: Var[str]
+    direction: Var[LiteralFlexDirection]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: Var[str]
+    align: Var[LiteralAlign]
 
     # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: Var[str]
+    justify: Var[LiteralJustify]
 
     # Whether children should wrap when they reach the end of their container: "nowrap" | "wrap" | "wrap-reverse"
-    wrap: Var[str]
+    wrap: Var[LiteralFlexWrap]
 
     # Gap between children: "0" - "9"
-    gap: Var[str]
+    gap: Var[LiteralSize]
+
+
+LiteralGridDisplay = Literal["none", "inline-grid", "grid"]
+LiteralGridFlow = Literal["row", "column", "dense", "row-dense", "column-dense"]
 
 
 class Grid(RadixThemesComponent):
@@ -82,7 +101,7 @@ class Grid(RadixThemesComponent):
     as_child: Var[bool]
 
     # How to display the element: "none" | "inline-grid" | "grid"
-    display: Var[str]
+    display: Var[LiteralGridDisplay]
 
     # Number of columns
     columns: Var[str]
@@ -91,22 +110,25 @@ class Grid(RadixThemesComponent):
     rows: Var[str]
 
     # How the grid items are layed out: "row" | "column" | "dense" | "row-dense" | "column-dense"
-    flow: Var[str]
+    flow: Var[LiteralGridFlow]
 
     # Alignment of children along the main axis: "start" | "center" | "end" | "baseline" | "stretch"
-    align: Var[str]
+    align: Var[LiteralAlign]
 
     # Alignment of children along the cross axis: "start" | "center" | "end" | "between"
-    justify: Var[str]
+    justify: Var[LiteralJustify]
 
     # Gap between children: "0" - "9"
-    gap: Var[str]
+    gap: Var[LiteralSize]
 
     # Gap between children horizontal: "0" - "9"
-    gap_x: Var[str]
+    gap_x: Var[LiteralSize]
 
     # Gap between children vertical: "0" - "9"
-    gap_x: Var[str]
+    gap_x: Var[LiteralSize]
+
+
+LiteralContainerSize = Literal["1", "2", "3", "4"]
 
 
 class Container(LayoutComponent):
@@ -118,7 +140,10 @@ class Container(LayoutComponent):
     tag = "Container"
 
     # The size of the container: "1" - "4" (default "4")
-    size: Var[str]
+    size: Var[LiteralContainerSize]
+
+
+LiteralSectionSize = Literal["1", "2", "3"]
 
 
 class Section(LayoutComponent):
@@ -127,4 +152,4 @@ class Section(LayoutComponent):
     tag = "Section"
 
     # The size of the section: "1" - "3" (default "3")
-    size: Var[str]
+    size: Var[LiteralSectionSize]

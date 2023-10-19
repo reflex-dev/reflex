@@ -48,6 +48,39 @@ from reflex.components.libs.chakra import (
     LiteralMenuStrategy,
     LiteralTagSize,
 )
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralAlign,
+    LiteralAppearance,
+    LiteralGrayColor,
+    LiteralJustify,
+    LiteralPanelBackground,
+    LiteralRadius,
+    LiteralScaling,
+    LiteralSize,
+    LiteralVariant,
+)
+from reflex.components.radix.themes.components import (
+    LiteralButtonSize,
+    LiteralSwitchSize,
+)
+from reflex.components.radix.themes.layout import (
+    LiteralBoolNumber,
+    LiteralContainerSize,
+    LiteralFlexDirection,
+    LiteralFlexDisplay,
+    LiteralFlexWrap,
+    LiteralGridDisplay,
+    LiteralGridFlow,
+    LiteralSectionSize,
+)
+from reflex.components.radix.themes.typography import (
+    LiteralLinkUnderline,
+    LiteralTextAlign,
+    LiteralTextSize,
+    LiteralTextTrim,
+    LiteralTextWeight,
+)
 
 # NOQA
 from reflex.event import EventChain
@@ -93,6 +126,31 @@ ruff_dont_remove = [
     LiteralVerticalAlign,
     LiteralIconType,
     LiteralPosition,
+    LiteralAccentColor,
+    LiteralAlign,
+    LiteralAppearance,
+    LiteralBoolNumber,
+    LiteralButtonSize,
+    LiteralContainerSize,
+    LiteralFlexDirection,
+    LiteralFlexDisplay,
+    LiteralFlexWrap,
+    LiteralGrayColor,
+    LiteralGridDisplay,
+    LiteralGridFlow,
+    LiteralJustify,
+    LiteralLinkUnderline,
+    LiteralPanelBackground,
+    LiteralRadius,
+    LiteralScaling,
+    LiteralSectionSize,
+    LiteralSize,
+    LiteralSwitchSize,
+    LiteralTextAlign,
+    LiteralTextSize,
+    LiteralTextTrim,
+    LiteralTextWeight,
+    LiteralVariant,
 ]
 
 EXCLUDED_FILES = [

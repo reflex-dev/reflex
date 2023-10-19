@@ -2,34 +2,41 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from reflex.components import Component
 from reflex.utils import imports
 from reflex.vars import ImportVar, Var
+
+LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
+LiteralJustify = Literal["start", "center", "end", "between"]
+LiteralSize = Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralVariant = Literal["solid", "soft", "outline", "ghost"]
 
 
 class CommonMarginProps(Component):
     """Many radix-themes elements accept shorthand margin props."""
 
     # Margin: "0" - "9"
-    m: Var[str]
+    m: Var[LiteralSize]
 
     # Margin horizontal: "0" - "9"
-    mx: Var[str]
+    mx: Var[LiteralSize]
 
     # Margin vertical: "0" - "9"
-    my: Var[str]
+    my: Var[LiteralSize]
 
     # Margin top: "0" - "9"
-    mt: Var[str]
+    mt: Var[LiteralSize]
 
     # Margin right: "0" - "9"
-    mr: Var[str]
+    mr: Var[LiteralSize]
 
     # Margin bottom: "0" - "9"
-    mb: Var[str]
+    mb: Var[LiteralSize]
 
     # Margin left: "0" - "9"
-    ml: Var[str]
+    ml: Var[LiteralSize]
 
 
 class RadixThemesComponent(Component):
@@ -66,6 +73,41 @@ class RadixThemesComponent(Component):
         }
 
 
+LiteralAccentColor = Literal[
+    "tomato",
+    "red",
+    "ruby",
+    "crimson",
+    "pink",
+    "plum",
+    "purple",
+    "violet",
+    "iris",
+    "indigo",
+    "blue",
+    "cyan",
+    "teal",
+    "jade",
+    "green",
+    "grass",
+    "brown",
+    "orange",
+    "sky",
+    "mint",
+    "lime",
+    "yellow",
+    "amber",
+    "gold",
+    "bronze",
+    "gray",
+]
+LiteralAppearance = Literal["inherit", "light", "dark"]
+LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
+LiteralPanelBackground = Literal["solid", "transparent"]
+LiteralRadius = Literal["none", "small", "medium", "large", "full"]
+LiteralScaling = Literal["90%", "95%", "100%", "105%", "110%"]
+
+
 class Theme(RadixThemesComponent):
     """A theme provider for radix components.
 
@@ -82,22 +124,22 @@ class Theme(RadixThemesComponent):
     has_background: Var[bool]
 
     # Override light or dark mode theme: "inherit" | "light" | "dark"
-    appearance: Var[str]
+    appearance: Var[LiteralAppearance]
 
     # The color used for default buttons, typography, backgrounds, etc
-    accent_color: Var[str]
+    accent_color: Var[LiteralAccentColor]
 
     # The shade of gray
-    gray_color: Var[str]
+    gray_color: Var[LiteralGrayColor]
 
     # Whether panel backgrounds are transparent: "solid" | "transparent" (default)
-    panel_background: Var[str]
+    panel_background: Var[LiteralPanelBackground]
 
     # Element border radius: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[str]
+    radius: Var[LiteralRadius]
 
     # Scale of all theme items: "90%" | "95%" | "100%" | "105%" | "110%"
-    scaling: Var[str]
+    scaling: Var[LiteralScaling]
 
     def _get_imports(self) -> imports.ImportDict:
         return {
