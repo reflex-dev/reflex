@@ -29,12 +29,17 @@ class Hosting:
     GET_DEPLOYMENT_STATUS_ENDPOINT = f"{CP_BACKEND_URL}/deployments"
     # Websocket endpoint to stream logs of a deployment
     DEPLOYMENT_LOGS_ENDPOINT = f'{CP_BACKEND_URL.replace("http", "ws")}/deployments'
-    # The time to wait for the user to complete web authentication. In seconds.
+    # The number of times to try and wait for the user to complete web authentication.
     WEB_AUTH_RETRIES = 60
     # The time to sleep between requests to check if for authentication completion. In seconds.
-    WEB_AUTH_SLEEP = 5
-
+    WEB_AUTH_SLEEP_DURATION = 5
+    # The expected number of milestones
+    MILESTONES_COUNT = 6
+    # Expected server response time to new deployment request. In seconds.
+    DEPLOYMENT_PICKUP_DELAY = 35
     # The time to wait for the backend to come up after user initiates deployment. In seconds.
-    BACKEND_POLL_RETRIES = 60
+    BACKEND_POLL_RETRIES = 30
     # The time to wait for the frontend to come up after user initiates deployment. In seconds.
-    FRONTEND_POLL_RETRIES = 60
+    FRONTEND_POLL_RETRIES = 30
+    # End of deployment workflow message. Used to determine if it is the last message from server.
+    END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]

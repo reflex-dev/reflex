@@ -1,6 +1,7 @@
 """Hosting service related utilities."""
 from __future__ import annotations
 
+import contextlib
 import enum
 import json
 import os
@@ -464,7 +465,7 @@ def list_deployments(
     """Send a GET request to Control Plane to list deployments.
 
     Args:
-        app_name: An optional app name as the filter when listing deployments.
+        app_name: the app name as an optional filter when listing deployments.
 
     Raises:
         Exception: If the operation fails. The exception message shows the reason.
@@ -519,7 +520,7 @@ def fetch_token(request_id: str) -> tuple[str, str]:
         request_id: The request ID used when the user opens the browser for authentication.
 
     Raises:
-        Exception: for request timeout, failed requests, ill-formed responses, unexpected errors.
+        Exception: For request timeout, failed requests, ill-formed responses, unexpected errors.
 
     Returns:
         The access token if it exists, None otherwise.
@@ -750,7 +751,9 @@ class LogType(str, enum.Enum):
 
 
 async def get_logs(
-    key: str, log_type: LogType = LogType.APP_LOG, from_time: datetime | None = None
+    key: str,
+    log_type: LogType = LogType.APP_LOG,
+    from_iso_timestamp: datetime | None = None,
 ):
     """Get the deployment logs and stream on console.
 
@@ -758,8 +761,8 @@ async def get_logs(
         key: The deployment name.
         log_type: The type of logs to query from server.
                   See the LogType definitions for how they are used.
-        from_time: An optional timestamp with timezone info to limit
-                   where the log queries should start from.
+        from_iso_timestamp: An optional timestamp with timezone info to limit
+                            where the log queries should start from.
 
     Raises:
         ValueError: If the key is not provided.
@@ -771,18 +774,22 @@ async def get_logs(
     if not key:
         raise ValueError("Valid key is required for querying logs.")
     try:
-        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type}"
-        if from_time is not None:
-            logs_endpoint += f"&from_time={from_time.astimezone().isoformat()}"
+        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type.value}"
+        console.debug(f"log server endpoint: {logs_endpoint}")
+        if from_iso_timestamp is not None:
+            logs_endpoint += (
+                f"&from_iso_timestamp={from_iso_timestamp.astimezone().isoformat()}"
+            )
         _ws = websockets.connect(logs_endpoint)  # type: ignore
         async with _ws as ws:
             while True:
                 row_json = json.loads(await ws.recv())
                 console.debug(f"Server responded with logs: {row_json}")
                 if row_json and isinstance(row_json, dict):
-                    for k, v in row_json.items():
-                        if k == "timestamp":
-                            row_json[k] = convert_to_local_time(v)
+                    if "timestamp" in row_json:
+                        row_json["timestamp"] = convert_to_local_time(
+                            row_json["timestamp"]
+                        )
                     print(" | ".join(row_json.values()))
                 else:
                     console.debug("Server responded, no new logs, this is normal")
@@ -822,7 +829,6 @@ def authenticate_on_browser(
     """
     console.print(f"Opening {constants.Hosting.CP_WEB_URL} ...")
     request_id = uuid.uuid4().hex
-    # TODO: use urlunparse for below
     if not webbrowser.open(
         f"{constants.Hosting.CP_WEB_URL}?request-id={request_id}&code={invitation_code}"
     ):
@@ -836,7 +842,7 @@ def authenticate_on_browser(
                 return fetch_token(request_id)
             except Exception:
                 pass
-            time.sleep(constants.Hosting.WEB_AUTH_SLEEP)
+            time.sleep(constants.Hosting.WEB_AUTH_SLEEP_DURATION)
 
     return None, None
 
@@ -864,7 +870,7 @@ def validate_token_with_retries(access_token: str) -> bool:
                 raise SystemExit("Access denied") from ve
             except Exception as ex:
                 console.debug(f"Unable to validate token due to: {ex}")
-                time.sleep(constants.Hosting.WEB_AUTH_SLEEP)
+                time.sleep(constants.Hosting.WEB_AUTH_SLEEP_DURATION)
     return False
 
 
@@ -950,3 +956,77 @@ def process_envs(envs: list[str]) -> dict[str, str]:
             )
         processed_envs[kv[0]] = kv[1]
     return processed_envs
+
+
+def log_out_on_browser():
+    """Open the browser to authenticate the user.
+
+    Raises:
+        SystemExit: If the browser cannot be opened.
+    """
+    # Fetching existing invitation code so user sees the log out page without having to enter it
+    invitation_code = None
+    with contextlib.suppress(Exception):
+        _, invitation_code = get_existing_access_token()
+        console.debug("Found existing invitation code in config")
+    console.print(f"Opening {constants.Hosting.CP_WEB_URL} ...")
+    if not webbrowser.open(f"{constants.Hosting.CP_WEB_URL}?code={invitation_code}"):
+        raise SystemExit(
+            f"Unable to open the browser to log out. Please contact support."
+        )
+
+
+async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
+    """Display the deploy milestone messages reported back from the hosting server.
+
+    Args:
+        key: The deployment key.
+        from_iso_timestamp: The timestamp of the deployment request time, this helps with the milestone query.
+
+    Raises:
+        ValueError: If a non-empty key is not provided.
+        Exception: If the user is not authenticated.
+    """
+    if not key:
+        raise ValueError("Non-empty key is required for querying deploy status.")
+    if not (token := authenticated_token()):
+        raise Exception("not authenticated")
+
+    try:
+        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={LogType.DEPLOY_LOG.value}&from_iso_timestamp={from_iso_timestamp.astimezone().isoformat()}"
+        console.debug(f"log server endpoint: {logs_endpoint}")
+        _ws = websockets.connect(logs_endpoint)  # type: ignore
+        async with _ws as ws:
+            # Stream back the deploy events reported back from the server
+            while True:
+                row_json = json.loads(await ws.recv())
+                console.debug(f"Server responded with: {row_json}")
+                if row_json and isinstance(row_json, dict):
+                    # Only show the timestamp and actual message
+                    console.print(
+                        " | ".join(
+                            [
+                                convert_to_local_time(row_json["timestamp"]),
+                                row_json["message"],
+                            ]
+                        )
+                    )
+                    if any(
+                        msg in row_json["message"].lower()
+                        for msg in constants.Hosting.END_OF_DEPLOYMENT_MESSAGES
+                    ):
+                        console.debug(
+                            "Received end of deployment message, exist event message streaming"
+                        )
+                        return
+                else:
+                    console.debug("Server responded, no new events yet, this is normal")
+    except Exception as ex:
+        console.debug(f"Unable to get more deployment events due to {ex}.")
+
+
+def wait_for_server_to_pick_up_request():
+    """Wait for server to pick up the request. Right now is just sleep."""
+    with console.status("Waiting for server to pick up request, ~ 30 seconds ..."):
+        for _ in range(constants.Hosting.DEPLOYMENT_PICKUP_DELAY):
+            time.sleep(1)

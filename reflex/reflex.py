@@ -328,6 +328,7 @@ def login(
     with contextlib.suppress(Exception):
         access_token, invitation_code = hosting.get_existing_access_token()
         using_existing_token = True
+        console.debug("Existing token found, proceed to validate")
 
     # If not already logged in, open a browser window/tab to the login page.
     if not using_existing_token:
@@ -339,9 +340,11 @@ def login(
         )
         raise typer.Exit(1)
 
-    if not hosting.validate_token(access_token):
+    try:
+        hosting.validate_token(access_token)
+    except Exception as ex:
         console.error(f"Unable to validate token. Please try again or contact support.")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from ex
 
     if not using_existing_token:
         hosting.save_token_to_config(access_token, invitation_code)
@@ -359,7 +362,9 @@ def logout(
     """Log out of access to Reflex hosting service."""
     console.set_log_level(loglevel)
 
-    # TODO:
+    hosting.log_out_on_browser()
+    console.debug("Deleting access token from config locally")
+    hosting.delete_token_from_config()
 
 
 db_cli = typer.Typer()
@@ -580,8 +585,8 @@ def deploy(
     frontend_file_name = constants.ComponentName.FRONTEND.zip()
     backend_file_name = constants.ComponentName.BACKEND.zip()
 
-    console.print("Uploading code ...")
-    _deploy_requested_at = datetime.now().astimezone()
+    console.print("Uploading code and sending request ...")
+    deploy_requested_at = datetime.now().astimezone()
     try:
         deploy_response = hosting.deploy(
             frontend_file_name=frontend_file_name,
@@ -596,29 +601,30 @@ def deploy(
             auto_stop=auto_stop,
             frontend_hostname=frontend_hostname,
             envs=processed_envs,
+            with_metrics=with_metrics,
+            with_tracing=with_tracing,
         )
     except Exception as ex:
         console.error(f"Unable to deploy due to: {ex}")
         with contextlib.suppress(Exception):
             hosting.clean_up()
-
         raise typer.Exit(1) from ex
 
     # Deployment will actually start when data plane reconciles this request
-    _deploy_confirmed_at = datetime.now().astimezone()
-
     console.debug(f"deploy_response: {deploy_response}")
+    console.rule("[bold]Deploying production app.")
     console.print(
-        "Deployment will start shortly. Closing this command now will not affect your deployment."
+        "[bold]Deployment will start shortly. Closing this command now will not affect your deployment."
     )
 
-    if overwrite_existing:
-        console.print("Waiting for the old deployment to come down")
-        with console.status("this is a TODO"):
-            for _ in range(60):
-                time.sleep(1)
+    # It takes a few seconds for the deployment request to be picked up by server
+    hosting.wait_for_server_to_pick_up_request()
 
-    # Stream the key events such as build, deploy, etc
+    console.print("Waiting for server to report progress ...")
+    # Display the key events such as build, deploy, etc
+    asyncio.get_event_loop().run_until_complete(
+        hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
+    )
 
     console.print("Waiting for the new deployment to come up")
     backend_up = frontend_up = False
