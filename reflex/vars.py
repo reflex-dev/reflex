@@ -24,8 +24,6 @@ from typing import (
     get_type_hints,
 )
 
-from pydantic.fields import ModelField
-
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, serializers, types
@@ -417,15 +415,12 @@ class Var:
                 raise TypeError(
                     f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
                 ) from None
-            if (
-                hasattr(self._var_type, "__fields__")
-                and name in self._var_type.__fields__
-            ):
-                type_ = self._var_type.__fields__[name].outer_type_
-                if isinstance(type_, ModelField):
-                    type_ = type_.type_
+            is_optional = types.is_optional(self._var_type)
+            type_ = types.can_access_attribute(self._var_type, name)
+
+            if type_ is not None:
                 return BaseVar(
-                    _var_name=f"{self._var_name}.{name}",
+                    _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
                     _var_state=self._var_state,
                     _var_is_local=self._var_is_local,
@@ -1232,6 +1227,9 @@ class BaseVar(Var):
         Raises:
             ImportError: If the var is a dataframe and pandas is not installed.
         """
+        if types.is_optional(self._var_type):
+            return None
+
         type_ = (
             self._var_type.__origin__
             if types.is_generic_alias(self._var_type)
