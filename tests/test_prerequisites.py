@@ -115,6 +115,8 @@ def test_initialize_requirements_txt(mocker):
     assert open_mock.call_count == 1
     assert open_mock().write.call_count == 0
 
+
+def test_initialize_requirements_txt_missing_reflex(mocker):
     # File exists, reflex is not included, add reflex
     open_mock = mock_open(read_data="random-package=1.2.3")
     mocker.patch("builtins.open", open_mock)
