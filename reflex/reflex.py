@@ -7,6 +7,7 @@ import atexit
 import contextlib
 import json
 import os
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -271,6 +272,11 @@ def export(
     backend: bool = typer.Option(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
+    zip_dest_dir: str = typer.Option(
+        os.getcwd(),
+        help="The directory to export the zip files to.",
+        show_default=False,
+    ),
     loglevel: constants.LogLevel = typer.Option(
         console._LOG_LEVEL, help="The log level to use."
     ),
@@ -299,6 +305,7 @@ def export(
         backend=backend,
         frontend=frontend,
         zip=zipping,
+        zip_dest_dir=zip_dest_dir,
         deploy_url=config.deploy_url,
     )
 
@@ -575,7 +582,14 @@ def deploy(
     config.api_url = api_url
     config.deploy_url = deploy_url
     try:
-        export(frontend=True, backend=True, zipping=True, loglevel=loglevel)
+        tmp_dir = tempfile.mkdtemp()
+        export(
+            frontend=True,
+            backend=True,
+            zipping=True,
+            zip_dest_dir=tmp_dir,
+            loglevel=loglevel,
+        )
     except ImportError as ie:
         console.error(
             f"Encountered ImportError, did you install all the dependencies? {ie}"
@@ -591,6 +605,7 @@ def deploy(
         deploy_response = hosting.deploy(
             frontend_file_name=frontend_file_name,
             backend_file_name=backend_file_name,
+            export_dir=tmp_dir,
             key=key,
             app_name=app_name,
             regions=regions,
@@ -606,8 +621,6 @@ def deploy(
         )
     except Exception as ex:
         console.error(f"Unable to deploy due to: {ex}")
-        with contextlib.suppress(Exception):
-            hosting.clean_up()
         raise typer.Exit(1) from ex
 
     # Deployment will actually start when data plane reconciles this request
@@ -649,7 +662,6 @@ def deploy(
     else:
         console.print("frontend is up")
 
-    hosting.clean_up()
     if frontend_up and backend_up:
         console.print(
             f"Your site [ {key} ] at {regions} is up: {deploy_response.frontend_url}"

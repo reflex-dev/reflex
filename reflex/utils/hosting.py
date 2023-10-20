@@ -337,6 +337,7 @@ class DeploymentsPostParam(Base):
 def deploy(
     frontend_file_name: str,
     backend_file_name: str,
+    export_dir: str,
     key: str,
     app_name: str,
     regions: list[str],
@@ -356,6 +357,7 @@ def deploy(
     Args:
         frontend_file_name: The frontend file name.
         backend_file_name: The backend file name.
+        export_dir: The directory where the frontend/backend zip files are exported.
         key: The deployment name.
         app_name: The app name.
         regions: The list of regions to deploy to.
@@ -393,9 +395,13 @@ def deploy(
             envs_json=json.dumps(envs) if envs else None,
             frontend_hostname=frontend_hostname,
             reflex_version=constants.Reflex.VERSION,
+            reflex_cli_entrypoint=with_tracing,
+            metrics_endpoint=with_metrics,
         )
-        with open(frontend_file_name, "rb") as frontend_file, open(
-            backend_file_name, "rb"
+        with open(
+            os.path.join(export_dir, frontend_file_name), "rb"
+        ) as frontend_file, open(
+            os.path.join(export_dir, backend_file_name), "rb"
         ) as backend_file:
             # https://docs.python-requests.org/en/latest/user/advanced/#post-multiple-multipart-encoded-files
             files = [
@@ -583,16 +589,6 @@ def poll_frontend(frontend_url: str) -> bool:
         return True
     except httpx.HTTPError:
         return False
-
-
-def clean_up():
-    """Helper function to perform cleanup before exiting."""
-    frontend_zip = constants.ComponentName.FRONTEND.zip()
-    backend_zip = constants.ComponentName.BACKEND.zip()
-    if os.path.exists(frontend_zip):
-        os.remove(frontend_zip)
-    if os.path.exists(backend_zip):
-        os.remove(backend_zip)
 
 
 class DeploymentDeleteParam(Base):
@@ -1027,6 +1023,6 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
 
 def wait_for_server_to_pick_up_request():
     """Wait for server to pick up the request. Right now is just sleep."""
-    with console.status("Waiting for server to pick up request, ~ 30 seconds ..."):
+    with console.status("Waiting for server to pick up request ~ 30 seconds ..."):
         for _ in range(constants.Hosting.DEPLOYMENT_PICKUP_DELAY):
             time.sleep(1)
