@@ -5,16 +5,10 @@ from __future__ import annotations
 import os
 import platform
 from enum import Enum
+from importlib import metadata
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
-
-# importlib is only available for Python 3.8+ so we need the backport for Python 3.7
-try:
-    from importlib import metadata
-except ImportError:
-    import importlib_metadata as metadata  # pyright: ignore[reportMissingImports]
-
 
 IS_WINDOWS = platform.system() == "Windows"
 

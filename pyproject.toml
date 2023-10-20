@@ -26,7 +26,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 cloudpickle = "^2.2.1"
 fastapi = "^0.96.0"
 gunicorn = "^20.1.0"
@@ -45,7 +45,6 @@ watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
 websockets = "^10.4"
 starlette-admin = "^0.9.0"
-importlib-metadata = {version = "^6.7.0", python = ">=3.7, <3.8"}
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
 distro = {version = "^1.8.0", platform = "linux"}
@@ -68,7 +67,6 @@ black = "^22.10.0"
 ruff = "^0.0.244"
 pandas = [
     {version = "^1.5.3", python = ">=3.8,<4.0"},
-    {version = "^1.1", python = ">=3.7, <3.8"}
 ]
 pillow = [
     {version = "^10.0.0", python = ">=3.8,<4.0"}

@@ -2,17 +2,12 @@ from __future__ import annotations
 
 import io
 import os.path
-import sys
 import unittest.mock
 import uuid
 from pathlib import Path
 from typing import Generator, List, Tuple, Type
+from unittest.mock import AsyncMock
 
-if sys.version_info.major >= 3 and sys.version_info.minor > 7:
-    from unittest.mock import AsyncMock  # type: ignore
-else:
-    # python 3.7 doesn't ship with unittest.mock
-    from asynctest import CoroutineMock as AsyncMock
 import pytest
 import sqlmodel
 from fastapi import UploadFile
