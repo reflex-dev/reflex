@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Iterable,
     Literal,
+    Optional,
     Type,
     Union,
     _GenericAlias,  # type: ignore
@@ -113,9 +114,12 @@ def can_access_attribute(cls: GenericType, name: str) -> GenericType | None:
 
     # pydantic models
     if hasattr(cls, "__fields__") and name in cls.__fields__:
-        type_ = cls.__fields__[name].outer_type_
+        field = cls.__fields__[name]
+        type_ = field.outer_type_
         if isinstance(type_, ModelField):
-            return type_.type_
+            type_ = type_.type_
+        if not field.required and field.default is None:
+            type_ = Optional[type_]
         return type_
     elif isinstance(cls, type) and issubclass(cls, Model):
         # check in the annotations directly
