@@ -113,6 +113,7 @@ def export(
     backend: bool = True,
     frontend: bool = True,
     zip: bool = False,
+    zip_dest_dir: str = os.getcwd(),
     deploy_url: str | None = None,
 ):
     """Export the app for deployment.
@@ -121,6 +122,7 @@ def export(
         backend: Whether to zip up the backend app.
         frontend: Whether to zip up the frontend app.
         zip: Whether to zip the app.
+        zip_dest_dir: The destination directory for created zip files (if any)
         deploy_url: The URL of the deployed app.
     """
     # Remove the static folder.
@@ -163,14 +165,18 @@ def export(
         if frontend:
             _zip(
                 component_name=constants.ComponentName.FRONTEND,
-                target=constants.ComponentName.FRONTEND.zip(),
+                target=os.path.join(
+                    zip_dest_dir, constants.ComponentName.FRONTEND.zip()
+                ),
                 root_dir=".web/_static",
                 files_to_exclude=files_to_exclude,
             )
         if backend:
             _zip(
                 component_name=constants.ComponentName.BACKEND,
-                target=constants.ComponentName.BACKEND.zip(),
+                target=os.path.join(
+                    zip_dest_dir, constants.ComponentName.BACKEND.zip()
+                ),
                 root_dir=".",
                 dirs_to_exclude={"assets", "__pycache__"},
                 files_to_exclude=files_to_exclude,
