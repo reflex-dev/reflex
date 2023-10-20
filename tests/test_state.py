@@ -7,7 +7,7 @@ import functools
 import json
 import os
 import sys
-from typing import Dict, Generator, List
+from typing import Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -30,7 +30,7 @@ from reflex.state import (
     StateProxy,
     StateUpdate,
 )
-from reflex.utils import prerequisites
+from reflex.utils import prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
@@ -2182,3 +2182,52 @@ def test_reset_with_mutables():
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
+
+
+class Custom1(Base):
+    """A custom class with a str field."""
+
+    foo: str
+
+
+class Custom2(Base):
+    """A custom class with a Custom1 field."""
+
+    c1: Optional[Custom1] = None
+    c1r: Custom1
+
+
+class Custom3(Base):
+    """A custom class with a Custom2 field."""
+
+    c2: Optional[Custom2] = None
+    c2r: Custom2
+
+
+def test_state_union_optional():
+    """Test that state can be defined with Union and Optional vars."""
+
+    class UnionState(State):
+        int_float: Union[int, float] = 0
+        opt_int: Optional[int]
+        c3: Optional[Custom3]
+        c3i: Custom3  # implicitly required
+        c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
+        custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
+
+    assert UnionState.c3.c2._var_name == "c3?.c2"  # type: ignore
+    assert UnionState.c3.c2.c1._var_name == "c3?.c2?.c1"  # type: ignore
+    assert UnionState.c3.c2.c1.foo._var_name == "c3?.c2?.c1?.foo"  # type: ignore
+    assert UnionState.c3.c2.c1r.foo._var_name == "c3?.c2?.c1r.foo"  # type: ignore
+    assert UnionState.c3.c2r.c1._var_name == "c3?.c2r.c1"  # type: ignore
+    assert UnionState.c3.c2r.c1.foo._var_name == "c3?.c2r.c1?.foo"  # type: ignore
+    assert UnionState.c3.c2r.c1r.foo._var_name == "c3?.c2r.c1r.foo"  # type: ignore
+    assert UnionState.c3i.c2._var_name == "c3i.c2"  # type: ignore
+    assert UnionState.c3r.c2._var_name == "c3r.c2"  # type: ignore
+    assert UnionState.custom_union.foo is not None  # type: ignore
+    assert UnionState.custom_union.c1 is not None  # type: ignore
+    assert UnionState.custom_union.c1r is not None  # type: ignore
+    assert UnionState.custom_union.c2 is not None  # type: ignore
+    assert UnionState.custom_union.c2r is not None  # type: ignore
+    assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
+    assert types.is_union(UnionState.int_float._var_type)  # type: ignore
