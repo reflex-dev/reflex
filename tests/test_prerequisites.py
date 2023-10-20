@@ -124,7 +124,7 @@ def test_initialize_requirements_txt(mocker):
     assert open_mock().write.call_count == 1
     assert (
         open_mock().write.call_args[0][0]
-        == f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
     )
 
     # File does not exist, create file with reflex
@@ -132,9 +132,9 @@ def test_initialize_requirements_txt(mocker):
     open_mock = mock_open()
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
-    assert open_mock.call_count == 1
+    assert open_mock.call_count == 2
     assert open_mock().write.call_count == 1
     assert (
         open_mock().write.call_args[0][0]
-        == f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
     )

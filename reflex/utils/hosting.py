@@ -735,7 +735,7 @@ def convert_to_local_time(iso_timestamp: str) -> str:
         return iso_timestamp
 
 
-class LogType(enum.StrEnum):
+class LogType(str, enum.Enum):
     """Enum for log types."""
 
     # Logs printed from the user code, the "app"
