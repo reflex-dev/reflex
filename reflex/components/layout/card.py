@@ -3,7 +3,12 @@
 from typing import Optional
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralCardVariant,
+    LiteralColorScheme,
+    LiteralTagSize,
+)
 from reflex.vars import Var
 
 
@@ -44,17 +49,17 @@ class Card(ChakraComponent):
     #  "green" | "teal" | "blue" | "cyan" | "purple" | "pink" | "linkedin" |
     #  "facebook" | "messenger" | "whatsapp" | "twitter" | "telegram"
     # default: "gray"
-    color_scheme: Var[str]
+    color_scheme: Var[LiteralColorScheme]
 
     # The size of the Card
     # options: "sm" | "md" | "lg"
     # default: "md"
-    size: Var[str]
+    size: Var[LiteralTagSize]
 
     # The variant of the Card
     # options: "elevated" | "outline" | "filled" | "unstyled"
     # default: "elevated"
-    variant: Var[str]
+    variant: Var[LiteralCardVariant]
 
     @classmethod
     def create(
@@ -63,7 +68,7 @@ class Card(ChakraComponent):
         *,
         header: Optional[Component] = None,
         footer: Optional[Component] = None,
-        **props
+        **props,
     ) -> Component:
         """Creates a Chakra Card with a body and optionally header and/or footer, and returns it.
         If header, body or footer are not already instances of Chead, Cbody or Cfoot respectively,

@@ -22,7 +22,7 @@
 ---
 ## ⚙️ 安裝
 
-開啟一個終端機並且執行 (需要 Python 3.7+):
+開啟一個終端機並且執行 (需要 Python 3.8+):
 
 ```bash
 pip install reflex

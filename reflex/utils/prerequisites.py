@@ -234,13 +234,17 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     """
     console.log("Initializing the app directory.")
     path_ops.cp(
-        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value), app_name
+        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "code"),
+        app_name,
     )
     path_ops.mv(
         os.path.join(app_name, template.value + ".py"),
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
-    path_ops.cp(constants.Templates.Dirs.ASSETS_TEMPLATE, constants.Dirs.APP_ASSETS)
+    path_ops.cp(
+        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "assets"),
+        constants.Dirs.APP_ASSETS,
+    )
 
 
 def initialize_web_directory():

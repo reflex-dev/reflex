@@ -154,6 +154,13 @@ def run_backend(
     """
     config = get_config()
     app_module = f"{config.app_name}.{config.app_name}:{constants.CompileVars.APP}"
+
+    # Create a .nocompile file to skip compile for backend.
+    if os.path.exists(constants.Dirs.WEB):
+        with open(constants.NOCOMPILE_FILE, "w"):
+            pass
+
+    # Run the backend in development mode.
     uvicorn.run(
         app=f"{app_module}.{constants.CompileVars.API}",
         host=host,

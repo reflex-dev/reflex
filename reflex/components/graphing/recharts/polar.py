@@ -6,7 +6,13 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import Recharts
+from .recharts import (
+    LiteralAnimationEasing,
+    LiteralGridType,
+    LiteralPolarRadiusType,
+    LiteralScale,
+    Recharts,
+)
 
 
 class Pie(Recharts):
@@ -121,7 +127,7 @@ class Radar(Recharts):
     animation_duration: Var[int]
 
     # The type of easing function. 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear'
-    animation_easing: Var[str]
+    animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
     valid_children: List[str] = ["LabelList"]
@@ -253,7 +259,7 @@ class PolarGrid(Recharts):
     polar_radius: Var[List[int]]
 
     # The type of polar grids. 'polygon' | 'circle'
-    grid_type: Var[str]
+    grid_type: Var[LiteralGridType]
 
     # Valid children components
     valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
@@ -270,7 +276,7 @@ class PolarRadiusAxis(Recharts):
     angle: Var[int]
 
     # The type of axis line. 'number' | 'category'
-    type_: Var[str]
+    type_: Var[LiteralPolarRadiusType]
 
     # Allow the axis has duplicated categorys or not when the type of axis is "category".
     allow_duplicated_category: Var[bool]
@@ -297,7 +303,7 @@ class PolarRadiusAxis(Recharts):
     tick_count: Var[int]
 
     # If 'auto' set, the scale funtion is linear scale. 'auto' | 'linear' | 'pow' | 'sqrt' | 'log' | 'identity' | 'time' | 'band' | 'point' | 'ordinal' | 'quantile' | 'quantize' | 'utc' | 'sequential' | 'threshold'
-    scale: Var[str]
+    scale: Var[LiteralScale]
 
     # Valid children components
     valid_children: List[str] = ["Label"]

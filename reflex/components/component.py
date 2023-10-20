@@ -106,6 +106,7 @@ class Component(Base, ABC):
 
         Raises:
             TypeError: If an invalid prop is passed.
+            ValueError: If a prop value is invalid.
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
@@ -154,9 +155,25 @@ class Component(Base, ABC):
                     if kwargs[key] is None:
                         raise TypeError
 
+                    expected_type = fields[key].outer_type_.__args__[0]
+
+                    if (
+                        types.is_literal(expected_type)
+                        and value not in expected_type.__args__
+                    ):
+                        allowed_values = expected_type.__args__
+                        if value not in allowed_values:
+                            raise ValueError(
+                                f"prop value for {key} of the `{type(self).__name__}` component should be one of the following: {','.join(allowed_values)}. Got '{value}' instead"
+                            )
+
                     # Get the passed type and the var type.
                     passed_type = kwargs[key]._var_type
-                    expected_type = fields[key].outer_type_.__args__[0]
+                    expected_type = (
+                        type(expected_type.__args__[0])
+                        if types.is_literal(expected_type)
+                        else expected_type
+                    )
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
@@ -290,29 +307,6 @@ class Component(Base, ABC):
         Returns:
             The event triggers.
         """
-        deprecated_triggers = self.get_triggers()
-        if deprecated_triggers:
-            console.deprecate(
-                feature_name=f"get_triggers ({self.__class__.__name__})",
-                reason="replaced by get_event_triggers",
-                deprecation_version="0.2.8",
-                removal_version="0.3.1",
-            )
-            deprecated_triggers = {
-                trigger: lambda: [] for trigger in deprecated_triggers
-            }
-        else:
-            deprecated_triggers = {}
-
-        deprecated_controlled_triggers = self.get_controlled_triggers()
-        if deprecated_controlled_triggers:
-            console.deprecate(
-                feature_name=f"get_controlled_triggers ({self.__class__.__name__})",
-                reason="replaced by get_event_triggers",
-                deprecation_version="0.2.8",
-                removal_version="0.3.0",
-            )
-
         return {
             EventTriggers.ON_FOCUS: lambda: [],
             EventTriggers.ON_BLUR: lambda: [],
@@ -329,25 +323,7 @@ class Component(Base, ABC):
             EventTriggers.ON_SCROLL: lambda: [],
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
-            **deprecated_triggers,
-            **deprecated_controlled_triggers,
         }
-
-    def get_triggers(self) -> Set[str]:
-        """Get the triggers for non controlled events [DEPRECATED].
-
-        Returns:
-            A set of non controlled triggers.
-        """
-        return set()
-
-    def get_controlled_triggers(self) -> Dict[str, Var]:
-        """Get the event triggers that pass the component's value to the handler [DEPRECATED].
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {}
 
     def __repr__(self) -> str:
         """Represent the component in React.
@@ -749,7 +725,37 @@ class Component(Base, ABC):
         Returns:
             An import var.
         """
-        return ImportVar(tag=self.tag, is_default=self.is_default, alias=self.alias)
+        # If the tag is dot-qualified, only import the left-most name.
+        tag = self.tag.partition(".")[0] if self.tag else None
+        alias = self.alias.partition(".")[0] if self.alias else None
+        return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the component.
+
+        Returns:
+            The app wrap components.
+        """
+        return {}
+
+    def get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the component and its children.
+
+        Returns:
+            The app wrap components.
+        """
+        # Store the components in a set to avoid duplicates.
+        components = self._get_app_wrap_components()
+
+        for component in tuple(components.values()):
+            components.update(component.get_app_wrap_components())
+
+        # Add the app wrap components for the children.
+        for child in self.children:
+            components.update(child.get_app_wrap_components())
+
+        # Return the components.
+        return components
 
 
 # Map from component to styling.

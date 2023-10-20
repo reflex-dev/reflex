@@ -57,13 +57,11 @@ def BackgroundTask():
         async def non_blocking_pause(self):
             await asyncio.sleep(0.02)
 
-        @rx.cached_var
-        def token(self) -> str:
-            return self.get_token()
-
     def index() -> rx.Component:
         return rx.vstack(
-            rx.input(id="token", value=State.token, is_read_only=True),
+            rx.input(
+                id="token", value=State.router.session.client_token, is_read_only=True
+            ),
             rx.heading(State.counter, id="counter"),
             rx.input(
                 id="iterations",

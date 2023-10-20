@@ -6,7 +6,7 @@ import io
 from typing import Any, Optional, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralImageLoading
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
@@ -38,7 +38,7 @@ class Image(ChakraComponent):
     ignore_fallback: Var[bool]
 
     # "eager" | "lazy"
-    loading: Var[str]
+    loading: Var[LiteralImageLoading]
 
     # The path/url to the image or PIL image object.
     src: Var[Any]

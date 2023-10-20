@@ -7,7 +7,7 @@ from reflex.base import Base
 from reflex.components.component import Component, CustomComponent, custom_component
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
-from reflex.event import EVENT_ARG, EventHandler
+from reflex.event import EventHandler
 from reflex.state import State
 from reflex.style import Style
 from reflex.utils import imports
@@ -64,15 +64,16 @@ def component2() -> Type[Component]:
         # A test list prop.
         arr: Var[List[str]]
 
-        def get_controlled_triggers(self) -> Dict[str, Var]:
+        def get_event_triggers(self) -> Dict[str, Any]:
             """Test controlled triggers.
 
             Returns:
                 Test controlled triggers.
             """
             return {
-                "on_open": EVENT_ARG,
-                "on_close": EVENT_ARG,
+                **super().get_event_triggers(),
+                "on_open": lambda e0: [e0],
+                "on_close": lambda e0: [e0],
             }
 
         def _get_imports(self) -> imports.ImportDict:
@@ -361,17 +362,6 @@ def test_var_props(component1, test_state):
     assert c1.number.equals(test_state.num)
 
 
-def test_get_controlled_triggers(component1, component2):
-    """Test that we can get the controlled triggers of a component.
-
-    Args:
-        component1: A test component.
-        component2: A test component.
-    """
-    assert component1().get_controlled_triggers() == dict()
-    assert set(component2().get_controlled_triggers()) == {"on_open", "on_close"}
-
-
 def test_get_event_triggers(component1, component2):
     """Test that we can get the triggers of a component.
 
@@ -496,6 +486,10 @@ def test_invalid_event_handler_args(component2, test_state):
     # This is not okay.
     with pytest.raises(ValueError):
         component2.create(on_click=test_state.do_something_arg)
+        component2.create(on_open=test_state.do_something)
+        component2.create(
+            on_open=[test_state.do_something_arg, test_state.do_something]
+        )
     # However lambdas are okay.
     component2.create(on_click=lambda: test_state.do_something_arg(1))
     component2.create(
@@ -508,10 +502,6 @@ def test_invalid_event_handler_args(component2, test_state):
     # Controlled event handlers should take args.
     # This is okay.
     component2.create(on_open=test_state.do_something_arg)
-
-    # do_something is allowed and will simply run while ignoring the arg
-    component2.create(on_open=test_state.do_something)
-    component2.create(on_open=[test_state.do_something_arg, test_state.do_something])
 
 
 def test_get_hooks_nested(component1, component2, component3):

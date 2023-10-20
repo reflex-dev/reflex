@@ -291,7 +291,7 @@ def format_prop(
         TypeError: If the prop is not valid.
     """
     # import here to avoid circular import.
-    from reflex.event import EVENT_ARG, EventChain
+    from reflex.event import EventChain
 
     try:
         # Handle var props.
@@ -304,17 +304,14 @@ def format_prop(
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-            if prop.args_spec is None:
-                arg_def = f"{EVENT_ARG}"
+            sig = inspect.signature(prop.args_spec)  # type: ignore
+            if sig.parameters:
+                arg_def = ",".join(f"_{p}" for p in sig.parameters)
+                arg_def = f"({arg_def})"
             else:
-                sig = inspect.signature(prop.args_spec)
-                if sig.parameters:
-                    arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                    arg_def = f"({arg_def})"
-                else:
-                    # add a default argument for addEvents if none were specified in prop.args_spec
-                    # used to trigger the preventDefault() on the event.
-                    arg_def = "(_e)"
+                # add a default argument for addEvents if none were specified in prop.args_spec
+                # used to trigger the preventDefault() on the event.
+                arg_def = "(_e)"
 
             chain = ",".join([format_event(event) for event in prop.events])
             event = f"addEvents([{chain}], {arg_def})"
@@ -420,7 +417,7 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    json.dumps(val._var_name)
+                    wrap(json.dumps(val._var_name).strip('"'), "`")
                     if val._var_is_string
                     else val._var_full_name,
                 )
@@ -597,7 +594,7 @@ def json_dumps(obj: Any) -> str:
     Returns:
         A string
     """
-    return json.dumps(obj, ensure_ascii=False, default=list)
+    return json.dumps(obj, ensure_ascii=False, default=serialize)
 
 
 def unwrap_vars(value: str) -> str:

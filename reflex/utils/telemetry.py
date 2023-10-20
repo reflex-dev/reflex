@@ -90,7 +90,7 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     try:
         telemetry = Telemetry()
-        with open(constants.REFLEX_JSON) as f:  # type: ignore
+        with open(constants.Dirs.REFLEX_JSON) as f:
             reflex_json = json.load(f)
             distinct_id = reflex_json["project_hash"]
         post_hog = {

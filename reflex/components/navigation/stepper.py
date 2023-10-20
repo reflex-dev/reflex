@@ -3,7 +3,7 @@
 from typing import List, Optional, Tuple
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme
 from reflex.vars import Var
 
 
@@ -13,7 +13,7 @@ class Stepper(ChakraComponent):
     tag = "Stepper"
 
     # The color scheme to use for the stepper; default is blue.
-    colorScheme: Var[str]
+    colorScheme: Var[LiteralColorScheme]
 
     # Chakra provides a useSteps hook to control the stepper.
     # Instead, use an integer state value to set progress in the stepper.

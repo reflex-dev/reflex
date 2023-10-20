@@ -22,13 +22,13 @@ def UploadFile():
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     def index():
         return rx.vstack(
-            rx.input(value=UploadState.token, is_read_only=True, id="token"),
+            rx.input(
+                value=UploadState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
             rx.upload(
                 rx.vstack(
                     rx.button("Select File"),
