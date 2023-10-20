@@ -129,6 +129,8 @@ def test_initialize_requirements_txt_missing_reflex(mocker):
         == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
     )
 
+
+def test_initialize_requirements_txt_not_exist(mocker):
     # File does not exist, create file with reflex
     mocker.patch("os.path.exists", return_value=False)
     open_mock = mock_open()
