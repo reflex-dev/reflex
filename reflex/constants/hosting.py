@@ -9,12 +9,32 @@ class Hosting:
 
     # The hosting config json file
     HOSTING_JSON = os.path.join(Reflex.DIR, "config.json")
+    # The hosting service backend URL
+    CP_BACKEND_URL = "https://rxcp-dev-control-plane.fly.dev"
+    # The hosting service webpage URL
+    CP_WEB_URL = "https://control-plane.dev.reflexcorp.run"
+    # Endpoint to create or update a deployment
+    POST_DEPLOYMENTS_ENDPOINT = f"{CP_BACKEND_URL}/deployments"
+    # Endpoint to get all deployments for the user
+    GET_DEPLOYMENTS_ENDPOINT = f"{CP_BACKEND_URL}/deployments"
+    # Endpoint to fetch information from backend in preparation of a deployment
+    POST_DEPLOYMENTS_PREPARE_ENDPOINT = f"{CP_BACKEND_URL}/deployments/prepare"
+    # Endpoint to authenticate current user
+    POST_VALIDATE_ME_ENDPOINT = f"{CP_BACKEND_URL}/authenticate/me"
+    # Endpoint to fetch a login token after user completes authentication on web
+    FETCH_TOKEN_ENDPOINT = f"{CP_BACKEND_URL}/authenticate"
+    # Endpoint to delete a deployment
+    DELETE_DEPLOYMENTS_ENDPOINT = f"{CP_BACKEND_URL}/deployments"
+    # Endpoint to get deployment status
+    GET_DEPLOYMENT_STATUS_ENDPOINT = f"{CP_BACKEND_URL}/deployments"
+    # Websocket endpoint to stream logs of a deployment
+    DEPLOYMENT_LOGS_ENDPOINT = f'{CP_BACKEND_URL.replace("http", "ws")}/deployments'
     # The time to wait for the user to complete web authentication. In seconds.
-    WEB_AUTH_TIMEOUT = 60
+    WEB_AUTH_RETRIES = 60
+    # The time to sleep between requests to check if for authentication completion. In seconds.
+    WEB_AUTH_SLEEP = 5
+
     # The time to wait for the backend to come up after user initiates deployment. In seconds.
-    # As of 9/29, it takes ~90 seconds for the backend to come up.
-    BACKEND_POLL_TIMEOUT = 180
+    BACKEND_POLL_RETRIES = 60
     # The time to wait for the frontend to come up after user initiates deployment. In seconds.
-    # As of 9/29, the backend is deployed before frontend.
-    # So likely when the backend is up, the frontend is pretty much up, since they're just static files.
-    FRONTEND_POLL_TIMEOUT = 60
+    FRONTEND_POLL_RETRIES = 60

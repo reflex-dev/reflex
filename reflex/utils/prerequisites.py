@@ -201,36 +201,28 @@ def initialize_gitignore():
 
 
 def initialize_requirements_txt():
-    """Initialize the requirements.txt file if applicable."""
-    # If the requirements.txt file already exists, return.
-    if os.path.exists(constants.RequirementsTxt.FILE):
-        try:
-            with open(constants.RequirementsTxt.FILE, "r") as f:
-                for req in f.readlines():
-                    if re.match(r"^reflex[^a-zA-Z0-9]", req):
-                        console.debug(
-                            f"{constants.RequirementsTxt.FILE} already has reflex as dependency."
-                        )
-                        return
-            with open(constants.RequirementsTxt.FILE, "a") as f:
-                f.write(
-                    f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-                )
-        except Exception:
-            console.info(
-                f"Unable to check {constants.RequirementsTxt.FILE} for reflex dependency."
+    """Initialize the requirements.txt file.
+    If absent, generate one for the user.
+    If the requirements.txt does not have reflex as dependency,
+    generate a requirement pinning current version and append to
+    the requirements.txt file.
+    """
+    fp = Path(constants.RequirementsTxt.FILE)
+    fp.touch(exist_ok=True)
+
+    try:
+        with open(fp, "r") as f:
+            for req in f.readlines():
+                # Check if we have a package name that is reflex
+                if re.match(r"^reflex[^a-zA-Z0-9]", req):
+                    console.debug(f"{fp} already has reflex as dependency.")
+                    return
+        with open(fp, "a") as f:
+            f.write(
+                f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
             )
-            return
-    else:
-        try:
-            with open(constants.RequirementsTxt.FILE, "w") as f:
-                f.write(
-                    f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
-                )
-        except Exception:
-            console.info(
-                "Unable to add a requirements.txt file. Please add one manually."
-            )
+    except Exception:
+        console.info(f"Unable to check {fp} for reflex dependency.")
 
 
 def initialize_app_directory(app_name: str, template: constants.Templates.Kind):

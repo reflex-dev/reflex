@@ -1,36 +1,29 @@
-"""Hosting related utilities."""
+"""Hosting service related utilities."""
+from __future__ import annotations
 
 import enum
 import json
 import os
+import re
+import time
+import uuid
+import webbrowser
 from datetime import datetime
 from http import HTTPStatus
-from typing import Dict, List, Optional, Tuple
 
 import httpx
 import websockets
-from pydantic import BaseModel, Field, ValidationError, root_validator
+from pydantic import Field, ValidationError, root_validator
 
 from reflex import constants
-from reflex.config import get_config
+from reflex.base import Base
 from reflex.utils import console
 
-config = get_config()
+# Timeout limit for http requests
+HTTP_REQUEST_TIMEOUT = 5  # seconds
 
 
-POST_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
-POST_APPS_ENDPOINT = f"{config.cp_backend_url}/apps"
-GET_APPS_ENDPOINT = f"{config.cp_backend_url}/apps"
-GET_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
-POST_DEPLOYMENTS_PREPARE_ENDPOINT = f"{config.cp_backend_url}/deployments/prepare"
-POST_VALIDATE_ME_ENDPOINT = f"{config.cp_backend_url}/authenticate/me"
-FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/authenticate"
-DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
-GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
-DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
-
-
-def get_existing_access_token() -> Tuple[str, str]:
+def get_existing_access_token() -> tuple[str, str]:
     """Fetch the access token from the existing config if applicable.
 
     Raises:
@@ -67,9 +60,9 @@ def validate_token(token: str):
     """
     try:
         response = httpx.post(
-            POST_VALIDATE_ME_ENDPOINT,
+            constants.Hosting.POST_VALIDATE_ME_ENDPOINT,
             headers=authorization_header(token),
-            timeout=config.http_request_timeout,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise ValueError
@@ -104,7 +97,7 @@ def delete_token_from_config():
             )
 
 
-def save_token_to_config(token: str, code: Optional[str] = None):
+def save_token_to_config(token: str, code: str | None = None):
     """Cache the token, and optionally invitation code to the config file.
 
     Args:
@@ -114,7 +107,7 @@ def save_token_to_config(token: str, code: Optional[str] = None):
     Raise:
         Exception: if runs into any issues, file not exist, etc.
     """
-    hosting_config: Dict[str, str] = {"access_token": token}
+    hosting_config: dict[str, str] = {"access_token": token}
     if code:
         hosting_config["code"] = code
     try:
@@ -126,7 +119,7 @@ def save_token_to_config(token: str, code: Optional[str] = None):
         )
 
 
-def authenticated_token() -> Optional[str]:
+def authenticated_token() -> str | None:
     """Fetch the access token from the existing config if applicable and validate it.
 
     Returns:
@@ -153,19 +146,7 @@ def authenticated_token() -> Optional[str]:
         return None
 
 
-def feature_enabled() -> bool:
-    """Check if the hosting config is set up.
-
-    Returns:
-        True if the hosting config is set up, False otherwise.
-    """
-    if config.cp_web_url is None or config.cp_backend_url is None:
-        console.info("This feature is coming soon!")
-        return False
-    return True
-
-
-def authorization_header(token: str) -> Dict[str, str]:
+def authorization_header(token: str) -> dict[str, str]:
     """Construct an authorization header with the specified token as bearer token.
 
     Args:
@@ -177,25 +158,38 @@ def authorization_header(token: str) -> Dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-class DeploymentPrepInfo(BaseModel):
+class DeploymentPrepInfo(Base):
     """The params/settings returned from the prepare endpoint
-    including the deployment key and the frontend/backend URLs based on the key.
+    including the deployment key and the frontend/backend URLs once deployed.
+    The key becomes part of both frontend and backend URLs.
     """
 
+    # The deployment key
     key: str
+    # The backend URL
     api_url: str
+    # The frontend URL
     deploy_url: str
 
 
-class DeploymentPrepareResponse(BaseModel):
+class DeploymentPrepareResponse(Base):
     """The params/settings returned from the prepare endpoint,
     used in the CLI for the subsequent launch request.
     """
 
+    # The app prefix, used on the server side only
     app_prefix: str
-    reply: Optional[DeploymentPrepInfo] = None
-    existing: Optional[List[DeploymentPrepInfo]] = None
-    suggestion: Optional[DeploymentPrepInfo] = None
+    # The reply from the server for a prepare request to deploy over a particular key
+    # If reply is not None, it means server confirms the key is available for use.
+    reply: DeploymentPrepInfo | None = None
+    # The list of existing deployments by the user under the same app name.
+    # This is used to allow easy upgrade case when user attempts to deploy
+    # in the same named app directory, user intends to upgrade the existing deployment.
+    existing: list[DeploymentPrepInfo] | None = None
+    # The suggested key name based on the app name.
+    # This is for a new deployment, user has not deployed this app before.
+    # The server returns key suggestion based on the app name.
+    suggestion: DeploymentPrepInfo | None = None
 
     @root_validator(pre=True)
     def ensure_at_least_one_deploy_params(cls, values):
@@ -221,18 +215,21 @@ class DeploymentPrepareResponse(BaseModel):
         return values
 
 
-class DeploymentsPreparePostParam(BaseModel):
+class DeploymentsPreparePostParam(Base):
     """Params for app API URL creation backend API."""
 
+    # The app name which is found in the config
     app_name: str
-    key: Optional[str] = None  #  name of the deployment
-    frontend_hostname: Optional[str] = None
+    # The deployment key
+    key: str | None = None  #  name of the deployment
+    # The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
+    frontend_hostname: str | None = None
 
 
 def prepare_deploy(
     app_name: str,
-    key: Optional[str] = None,
-    frontend_hostname: Optional[str] = None,
+    key: str | None = None,
+    frontend_hostname: str | None = None,
 ) -> DeploymentPrepareResponse:
     """Send a POST request to Control Plane to prepare a new deployment.
     Control Plane checks if there is conflict with the key if provided.
@@ -254,12 +251,12 @@ def prepare_deploy(
         raise Exception("not authenticated")
     try:
         response = httpx.post(
-            POST_DEPLOYMENTS_PREPARE_ENDPOINT,
+            constants.Hosting.POST_DEPLOYMENTS_PREPARE_ENDPOINT,
             headers=authorization_header(token),
             json=DeploymentsPreparePostParam(
                 app_name=app_name, key=key, frontend_hostname=frontend_hostname
             ).dict(exclude_none=True),
-            timeout=config.http_request_timeout,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
 
         response_json = response.json()
@@ -294,29 +291,46 @@ def prepare_deploy(
         raise Exception("internal errors") from ex
 
 
-class DeploymentPostResponse(BaseModel):
+class DeploymentPostResponse(Base):
     """The URL for the deployed site."""
 
+    # The frontend URL
     frontend_url: str = Field(..., regex=r"^https?://", min_length=8)
+    # The backend URL
     backend_url: str = Field(..., regex=r"^https?://", min_length=8)
 
 
-class DeploymentsPostParam(BaseModel):
+class DeploymentsPostParam(Base):
     """Params for hosted instance deployment POST request."""
 
-    # key is the name of the deployment, it becomes part of the URL
+    # Key is the name of the deployment, it becomes part of the URL
     key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
+    # Name of the app
     app_name: str = Field(..., min_length=1)
+    # json encoded list of regions to deploy to
     regions_json: str = Field(..., min_length=1)
+    # The app prefix, used on the server side only
     app_prefix: str = Field(..., min_length=1)
+    # The version of reflex CLI used to deploy
     reflex_version: str = Field(..., min_length=1)
-    cpus: Optional[int] = None
-    memory_mb: Optional[int] = None
-    auto_start: Optional[bool] = None
-    auto_stop: Optional[bool] = None
-    frontend_hostname: Optional[str] = None
-    description: Optional[str] = None
-    envs_json: Optional[str] = None
+    # The number of CPUs
+    cpus: int | None = None
+    # The memory in MB
+    memory_mb: int | None = None
+    # Whether to auto start the hosted deployment
+    auto_start: bool | None = None
+    # Whether to auto stop the hosted deployment when idling
+    auto_stop: bool | None = None
+    # The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
+    frontend_hostname: str | None = None
+    # The description of the deployment
+    description: str | None = None
+    # The json encoded list of environment variables
+    envs_json: str | None = None
+    # The command line prefix for tracing
+    reflex_cli_entrypoint: str | None = None
+    # The metrics endpoint
+    metrics_endpoint: str | None = None
 
 
 def deploy(
@@ -324,15 +338,17 @@ def deploy(
     backend_file_name: str,
     key: str,
     app_name: str,
-    regions: List[str],
+    regions: list[str],
     app_prefix: str,
-    vm_type: Optional[str] = None,
-    cpus: Optional[int] = None,
-    memory_mb: Optional[int] = None,
-    auto_start: Optional[bool] = None,
-    auto_stop: Optional[bool] = None,
-    frontend_hostname: Optional[str] = None,
-    envs: Optional[Dict[str, str]] = None,
+    vm_type: str | None = None,
+    cpus: int | None = None,
+    memory_mb: int | None = None,
+    auto_start: bool | None = None,
+    auto_stop: bool | None = None,
+    frontend_hostname: str | None = None,
+    envs: dict[str, str] | None = None,
+    with_tracing: str | None = None,
+    with_metrics: str | None = None,
 ) -> DeploymentPostResponse:
     """Send a POST request to Control Plane to launch a new deployment.
 
@@ -350,6 +366,8 @@ def deploy(
         auto_stop: Whether to auto stop.
         frontend_hostname: The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
         envs: The environment variables.
+        with_tracing: A string indicating the command line prefix for tracing.
+        with_metrics: A string indicating the metrics endpoint.
 
     Raises:
         Exception: If the operation fails. The exception message is the reason.
@@ -384,7 +402,7 @@ def deploy(
                 ("files", (backend_file_name, backend_file)),
             ]
             response = httpx.post(
-                POST_DEPLOYMENTS_ENDPOINT,
+                constants.Hosting.POST_DEPLOYMENTS_ENDPOINT,
                 headers=authorization_header(token),
                 data=params.dict(exclude_none=True),
                 files=files,
@@ -412,35 +430,44 @@ def deploy(
         raise Exception("internal errors") from ex
 
 
-class DeploymentsGetParam(BaseModel):
+class DeploymentsGetParam(Base):
     """Params for hosted instance GET request."""
 
-    app_name: Optional[str]
+    # The app name which is found in the config
+    app_name: str | None
 
 
-class DeploymentGetResponse(BaseModel):
+class DeploymentGetResponse(Base):
     """The params/settings returned from the GET endpoint."""
 
+    # The deployment key
     key: str
-    regions: List[str]
+    # The list of regions to deploy to
+    regions: list[str]
+    # The app name which is found in the config
     app_name: str
+    # The VM type
     vm_type: str
+    # The number of CPUs
     cpus: int
+    # The memory in MB
     memory_mb: int
+    # The site URL
     url: str
-    envs: List[str]
+    # The list of environment variable names (values are never shown)
+    envs: list[str]
 
 
 def list_deployments(
-    app_name: Optional[str] = None,
-) -> List[Dict]:
+    app_name: str | None = None,
+) -> list[dict]:
     """Send a GET request to Control Plane to list deployments.
 
     Args:
         app_name: An optional app name as the filter when listing deployments.
 
     Raises:
-        Exception: If the operation fails. The exception message is the reason.
+        Exception: If the operation fails. The exception message shows the reason.
 
     Returns:
         The list of deployments if successful, None otherwise.
@@ -452,10 +479,10 @@ def list_deployments(
 
     try:
         response = httpx.get(
-            GET_DEPLOYMENTS_ENDPOINT,
+            constants.Hosting.GET_DEPLOYMENTS_ENDPOINT,
             headers=authorization_header(token),
             params=params.dict(exclude_none=True),
-            timeout=config.http_request_timeout,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         return [
@@ -485,7 +512,7 @@ def list_deployments(
         raise Exception("internal errors") from ex
 
 
-def fetch_token(request_id: str) -> Tuple[str, str]:
+def fetch_token(request_id: str) -> tuple[str, str]:
     """Fetch the access token for the request_id from Control Plane.
 
     Args:
@@ -499,7 +526,8 @@ def fetch_token(request_id: str) -> Tuple[str, str]:
     """
     try:
         resp = httpx.get(
-            f"{FETCH_TOKEN_ENDPOINT}/{request_id}", timeout=config.http_request_timeout
+            f"{constants.Hosting.FETCH_TOKEN_ENDPOINT}/{request_id}",
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         resp.raise_for_status()
         return (resp_json := resp.json())["access_token"], resp_json.get("code", "")
@@ -531,7 +559,7 @@ def poll_backend(backend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling backend at {backend_url}")
-        resp = httpx.get(f"{backend_url}/ping", timeout=config.http_request_timeout)
+        resp = httpx.get(f"{backend_url}/ping", timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -549,7 +577,7 @@ def poll_frontend(frontend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling frontend at {frontend_url}")
-        resp = httpx.get(f"{frontend_url}", timeout=config.http_request_timeout)
+        resp = httpx.get(f"{frontend_url}", timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -566,9 +594,10 @@ def clean_up():
         os.remove(backend_zip)
 
 
-class DeploymentDeleteParam(BaseModel):
+class DeploymentDeleteParam(Base):
     """Params for hosted instance DELETE request."""
 
+    # key is the name of the deployment, it becomes part of the site URL
     key: str
 
 
@@ -589,9 +618,9 @@ def delete_deployment(key: str):
 
     try:
         response = httpx.delete(
-            f"{DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
+            f"{constants.Hosting.DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
             headers=authorization_header(token),
-            timeout=config.http_request_timeout,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
 
@@ -606,13 +635,17 @@ def delete_deployment(key: str):
         raise Exception("internal errors") from ex
 
 
-class SiteStatus(BaseModel):
+class SiteStatus(Base):
     """Deployment status info."""
 
-    frontend_url: Optional[str] = None
-    backend_url: Optional[str] = None
+    # The frontend URL
+    frontend_url: str | None = None
+    # The backend URL
+    backend_url: str | None = None
+    # Whether the frontend/backend URL is reachable
     reachable: bool
-    updated_at: Optional[str] = None  # iso-formatted datetime string if reachable
+    # The last updated iso formatted timestamp if site is reachable
+    updated_at: str | None = None
 
     @root_validator(pre=True)
     def ensure_one_of_urls(cls, values):
@@ -632,10 +665,12 @@ class SiteStatus(BaseModel):
         return values
 
 
-class DeploymentStatusResponse(BaseModel):
+class DeploymentStatusResponse(Base):
     """Response for deployment status request."""
 
+    # The frontend status
     frontend: SiteStatus
+    # The backend status
     backend: SiteStatus
 
 
@@ -660,9 +695,9 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
 
     try:
         response = httpx.get(
-            f"{GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
+            f"{constants.Hosting.GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
             headers=authorization_header(token),
-            timeout=config.http_request_timeout,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         response_json = response.json()
@@ -715,7 +750,7 @@ class LogType(enum.StrEnum):
 
 
 async def get_logs(
-    key: str, log_type: LogType = LogType.APP_LOG, from_time: Optional[datetime] = None
+    key: str, log_type: LogType = LogType.APP_LOG, from_time: datetime | None = None
 ):
     """Get the deployment logs and stream on console.
 
@@ -736,7 +771,7 @@ async def get_logs(
     if not key:
         raise ValueError("Valid key is required for querying logs.")
     try:
-        logs_endpoint = f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type}"
+        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type}"
         if from_time is not None:
             logs_endpoint += f"&from_time={from_time.astimezone().isoformat()}"
         _ws = websockets.connect(logs_endpoint)  # type: ignore
@@ -750,10 +785,13 @@ async def get_logs(
                             row_json[k] = convert_to_local_time(v)
                     print(" | ".join(row_json.values()))
                 else:
-                    console.debug("Server responded, no new logs found")
+                    console.debug("Server responded, no new logs, this is normal")
     except Exception as ex:
-        console.debug(f"Unable to get deployment logs due to {ex}.")
-        raise Exception("internal errors") from ex
+        console.debug(f"Unable to get more deployment logs due to {ex}.")
+        console.print("Log server disconnected ...")
+        console.print(
+            "Note that the server has limit to only stream logs for several minutes to conserve resources"
+        )
 
 
 def check_requirements_txt_exist():
@@ -766,3 +804,149 @@ def check_requirements_txt_exist():
         raise Exception(
             f"Unable to find {constants.RequirementsTxt.FILE} in the current directory."
         )
+
+
+def authenticate_on_browser(
+    invitation_code: str | None,
+) -> tuple[str | None, str | None]:
+    """Open the browser to authenticate the user.
+
+    Args:
+        invitation_code: The invitation code if it exists.
+
+    Raises:
+        SystemExit: If the browser cannot be opened.
+
+    Returns:
+        The access token and invitation if valid, Nones otherwise.
+    """
+    console.print(f"Opening {constants.Hosting.CP_WEB_URL} ...")
+    request_id = uuid.uuid4().hex
+    # TODO: use urlunparse for below
+    if not webbrowser.open(
+        f"{constants.Hosting.CP_WEB_URL}?request-id={request_id}&code={invitation_code}"
+    ):
+        console.error(
+            f"Unable to open the browser to authenticate. Please contact support."
+        )
+        raise SystemExit("Unable to open browser for authentication.")
+    with console.status("Waiting for access token ..."):
+        for _ in range(constants.Hosting.WEB_AUTH_RETRIES):
+            try:
+                return fetch_token(request_id)
+            except Exception:
+                pass
+            time.sleep(constants.Hosting.WEB_AUTH_SLEEP)
+
+    return None, None
+
+
+def validate_token_with_retries(access_token: str) -> bool:
+    """Validate the access token with retries.
+
+    Args:
+        access_token: The access token to validate.
+
+    Raises:
+        SystemExit: If the token is confirmed invalid by server.
+
+    Returns:
+        True if the token is valid, False otherwise.
+    """
+    with console.status("Validating access token ..."):
+        for _ in range(constants.Hosting.WEB_AUTH_RETRIES):
+            try:
+                validate_token(access_token)
+                return True
+            except ValueError as ve:
+                console.error(f"Access denied")
+                delete_token_from_config()
+                raise SystemExit("Access denied") from ve
+            except Exception as ex:
+                console.debug(f"Unable to validate token due to: {ex}")
+                time.sleep(constants.Hosting.WEB_AUTH_SLEEP)
+    return False
+
+
+def interactive_get_deployment_key_from_user_input(
+    pre_deploy_response: DeploymentPrepareResponse,
+    app_name: str,
+    frontend_hostname: str | None = None,
+) -> tuple[str, str, str, bool]:
+    """Interactive get the deployment key from user input.
+
+    Args:
+        pre_deploy_response: The response from the initial prepare call to server.
+        app_name: The app name.
+        frontend_hostname: The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
+
+    Returns:
+        The deployment key, backend URL, frontend URL, and this is a case that overwrites existing deployment.
+    """
+    key_candidate = api_url = deploy_url = ""
+    overwrite_existing = False
+    if reply := pre_deploy_response.reply:
+        api_url = reply.api_url
+        deploy_url = reply.deploy_url
+        key_candidate = reply.key
+    elif pre_deploy_response.existing:
+        # validator already checks existing field is not empty list
+        # Note: keeping this simple as we only allow one deployment per app
+        existing = pre_deploy_response.existing[0]
+        console.print(f"Overwrite deployment [ {existing.key} ] ...")
+        key_candidate = existing.key
+        api_url = existing.api_url
+        deploy_url = existing.deploy_url
+        overwrite_existing = True
+    elif suggestion := pre_deploy_response.suggestion:
+        key_candidate = suggestion.key
+        api_url = suggestion.api_url
+        deploy_url = suggestion.deploy_url
+
+        # If user takes the suggestion, we will use the suggested key and proceed
+        while key_input := console.ask(f"Name of deployment", default=key_candidate):
+            try:
+                pre_deploy_response = prepare_deploy(
+                    app_name,
+                    key=key_input,
+                    frontend_hostname=frontend_hostname,
+                )
+                assert pre_deploy_response.reply is not None
+                assert key_input == pre_deploy_response.reply.key
+                key_candidate = pre_deploy_response.reply.key
+                api_url = pre_deploy_response.reply.api_url
+                deploy_url = pre_deploy_response.reply.deploy_url
+                # we get the confirmation, so break from the loop
+                break
+            except Exception:
+                console.error(
+                    "Cannot deploy at this name, try picking a different name"
+                )
+
+    return key_candidate, api_url, deploy_url, overwrite_existing
+
+
+def process_envs(envs: list[str]) -> dict[str, str]:
+    """Process the environment variables.
+
+    Args:
+        envs: The environment variables expected in key=value format.
+
+    Raises:
+        SystemExit: If the envs are not in valid format.
+
+    Returns:
+        The processed environment variables in a dict.
+    """
+    processed_envs = {}
+    for env in envs:
+        kv = env.split("=", maxsplit=1)
+        if len(kv) != 2:
+            raise SystemExit("Invalid env format: should be <key>=<value>.")
+
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", kv[0]):
+            raise SystemExit(
+                "Invalid env name: should start with a letter or underscore, followed by letters, digits, or underscores."
+            )
+        processed_envs[kv[0]] = kv[1]
+    return processed_envs

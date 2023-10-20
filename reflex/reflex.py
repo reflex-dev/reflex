@@ -1,18 +1,18 @@
 """Reflex CLI to create, run, and deploy apps."""
 
+from __future__ import annotations
+
 import asyncio
 import atexit
 import contextlib
 import json
 import os
-import re
 import time
-import uuid
-import webbrowser
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
+import httpx
 import typer
 from alembic.util.exc import CommandError
 from tabulate import tabulate
@@ -217,6 +217,47 @@ def run(
 
 
 @cli.command()
+def deploy_legacy(
+    dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
+    loglevel: constants.LogLevel = typer.Option(
+        console._LOG_LEVEL, help="The log level to use."
+    ),
+):
+    """Deploy the app to the Reflex hosting service."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
+    # Show system info
+    exec.output_system_info()
+
+    # Check if the deploy url is set.
+    if config.rxdeploy_url is None:
+        console.info("This feature is coming soon!")
+        return
+
+    # Compile the app in production mode.
+    export(loglevel=loglevel)
+
+    # Exit early if this is a dry run.
+    if dry_run:
+        return
+
+    # Deploy the app.
+    data = {"userId": config.username, "projectId": config.app_name}
+    original_response = httpx.get(config.rxdeploy_url, params=data)
+    response = original_response.json()
+    frontend = response["frontend_resources_url"]
+    backend = response["backend_resources_url"]
+
+    # Upload the frontend and backend.
+    with open(constants.ComponentName.FRONTEND.zip(), "rb") as f:
+        httpx.put(frontend, data=f)  # type: ignore
+
+    with open(constants.ComponentName.BACKEND.zip(), "rb") as f:
+        httpx.put(backend, data=f)  # type: ignore
+
+
+@cli.command()
 def export(
     zipping: bool = typer.Option(
         True, "--no-zip", help="Disable zip for backend and frontend exports."
@@ -268,67 +309,39 @@ def login(
         config.loglevel, help="The log level to use."
     ),
 ):
-    """Authenticate with Reflex control plane."""
+    """Authenticate with Reflex hosting service."""
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
-
     # Check if the user is already logged in.
-    token = None
-    code = ""
+    # Token is the access token, a JWT token obtained from auth provider
+    # after user completes authentication on web
+    access_token = None
+    # For initial hosting offering, it is by invitation only
+    # The login page is enabled only after a valid invitation code is entered
+    invitation_code = ""
     using_existing_token = False
-    try:
-        token, code = hosting.get_existing_access_token()
+
+    with contextlib.suppress(Exception):
+        access_token, invitation_code = hosting.get_existing_access_token()
         using_existing_token = True
-    except Exception as ex:
-        # If not already logged in, open a browser window/tab to the login page.
-        console.print(f"Opening {config.cp_web_url} ...")
-        request_id = uuid.uuid4().hex
-        if not webbrowser.open(
-            f"{config.cp_web_url}?request-id={request_id}&code={code}"
-        ):
-            console.error(
-                f"Unable to open the browser to authenticate. Please contact support."
-            )
-            raise typer.Exit(1) from ex
-        with console.status("Waiting for access token ..."):
-            for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
-                try:
-                    token, code = hosting.fetch_token(request_id)
-                    break
-                except Exception:
-                    pass
-                time.sleep(5)
 
-        if not token:
-            console.error(
-                f"Unable to fetch access token. Please try again or contact support."
-            )
-            raise typer.Exit(1) from None
+    # If not already logged in, open a browser window/tab to the login page.
+    if not using_existing_token:
+        access_token, invitation_code = hosting.authenticate_on_browser(invitation_code)
 
-    token_valid = False
-    with console.status("Validating access token ..."):
-        for _ in range(constants.Hosting.WEB_AUTH_TIMEOUT):
-            try:
-                hosting.validate_token(token)
-                token_valid = True
-                break
-            except ValueError as ve:
-                console.error(f"Access denied")
-                hosting.delete_token_from_config()
-                raise typer.Exit(1) from ve
-            except Exception as ex:
-                console.debug(f"Unable to validate token due to: {ex}")
-                time.sleep(5)
-    if not token_valid:
+    if not access_token:
+        console.error(
+            f"Unable to fetch access token. Please try again or contact support."
+        )
+        raise typer.Exit(1)
+
+    if not hosting.validate_token(access_token):
         console.error(f"Unable to validate token. Please try again or contact support.")
         raise typer.Exit(1)
 
     if not using_existing_token:
-        hosting.save_token_to_config(token, code)
+        hosting.save_token_to_config(access_token, invitation_code)
         console.print("Successfully logged in.")
     else:
         console.print("You already logged in.")
@@ -342,9 +355,7 @@ def logout(
 ):
     """Log out of access to Reflex hosting service."""
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
+
     # TODO:
 
 
@@ -424,24 +435,20 @@ def deploy(
         "--app-name",
         help="The name of the App to deploy under.",
     ),
-    # TODO: make this in a list of choices
-    regions: List[str] = typer.Option(
+    regions: list[str] = typer.Option(
         list(),
         "-r",
         "--region",
-        help="The regions to deploy to. For multiple regions, repeat this option followed by the region name.",
+        help="The regions to deploy to.",
     ),
-    envs: List[str] = typer.Option(
+    envs: list[str] = typer.Option(
         list(),
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option followed by the env name.",
     ),
-    # TODO: the VM types, cpus, mem should come from CP, since they are enums
-    cpus: Optional[int] = typer.Option(
-        None, help="The number of CPUs to allocate. List the available types here."
-    ),
+    cpus: Optional[int] = typer.Option(None, help="The number of CPUs to allocate."),
     memory_mb: Optional[int] = typer.Option(
-        None, help="The amount of memory to allocate. List the available types here."
+        None, help="The amount of memory to allocate."
     ),
     auto_start: Optional[bool] = typer.Option(
         True, help="Whether to auto start the instance."
@@ -456,6 +463,14 @@ def deploy(
         True,
         help="Whether to list configuration options and ask for confirmation.",
     ),
+    with_metrics: Optional[str] = typer.Option(
+        None,
+        help="Setting for metrics scraping for the deployment. Setup required in user code.",
+    ),
+    with_tracing: Optional[str] = typer.Option(
+        None,
+        help="Setting to export tracing for the deployment. Setup required in user code.",
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -463,9 +478,6 @@ def deploy(
     """Deploy the app to the Reflex hosting service."""
     # Set the log level.
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
 
     if not interactive and not key:
         console.error("Please provide a deployment key when not in interactive mode.")
@@ -478,10 +490,14 @@ def deploy(
         raise typer.Exit(1) from ex
 
     # Check if we are set up.
-    # TODO: export will check again with frontend==True, refactor
     prerequisites.check_initialized(frontend=True)
 
     try:
+        # Send a request to server to obtain necessary information
+        # in preparation of a deployment. For example,
+        # server can return confirmation of a particular deployment key,
+        # is available, or suggest a new key, or return an existing deployment.
+        # Some of these are used in the interactive mode.
         pre_deploy_response = hosting.prepare_deploy(
             app_name, key=key, frontend_hostname=frontend_hostname
         )
@@ -500,48 +516,14 @@ def deploy(
         api_url = reply.api_url
         deploy_url = reply.deploy_url
     else:
-        key_candidate = api_url = deploy_url = ""
-        if reply := pre_deploy_response.reply:
-            api_url = reply.api_url
-            deploy_url = reply.deploy_url
-            key_candidate = reply.key
-        elif pre_deploy_response.existing:
-            # validator already checks existing field is not empty list
-            # Note: keeping this simple as we only allow one deployment per app
-            existing = pre_deploy_response.existing[0]
-            console.print(f"Overwrite deployment [ {existing.key} ] ...")
-            key_candidate = existing.key
-            api_url = existing.api_url
-            deploy_url = existing.deploy_url
-            overwrite_existing = True
-        elif suggestion := pre_deploy_response.suggestion:
-            key_candidate = suggestion.key
-            api_url = suggestion.api_url
-            deploy_url = suggestion.deploy_url
-
-            # If user takes the suggestion, we will use the suggested key and proceed
-            while key_input := console.ask(
-                f"Name of deployment", default=key_candidate
-            ):
-                try:
-                    pre_deploy_response = hosting.prepare_deploy(
-                        app_name,
-                        key=key_input,
-                        frontend_hostname=frontend_hostname,
-                    )
-                    assert pre_deploy_response.reply is not None
-                    assert key_input == pre_deploy_response.reply.key
-                    key_candidate = pre_deploy_response.reply.key
-                    api_url = pre_deploy_response.reply.api_url
-                    deploy_url = pre_deploy_response.reply.deploy_url
-                    # we get the confirmation, so break from the loop
-                    break
-                except Exception:
-                    console.error(
-                        "Cannot deploy at this name, try picking a different name"
-                    )
-
-        # We have pydantic validator to ensure key_candidate is provided
+        (
+            key_candidate,
+            api_url,
+            deploy_url,
+            overwrite_existing,
+        ) = hosting.interactive_get_deployment_key_from_user_input(
+            pre_deploy_response, app_name, frontend_hostname=frontend_hostname
+        )
         if not key_candidate or not api_url or not deploy_url:
             console.error("Unable to find a suitable deployment key.")
             raise typer.Exit(1)
@@ -549,7 +531,6 @@ def deploy(
         # Now copy over the candidate to the key
         key = key_candidate
 
-        # TODO: let control plane suggest a region?
         # Then CP needs to know the user's location, which requires user permission
         region_input = console.ask(
             "Region to deploy to", default=regions[0] if regions else "sjc"
@@ -580,21 +561,7 @@ def deploy(
         console.error("Please provide all the required parameters.")
         raise typer.Exit(1)
 
-    processed_envs = None
-    if envs:
-        # check format
-        processed_envs = {}
-        for env in envs:
-            kv = env.split("=", maxsplit=1)
-            if len(kv) != 2:
-                console.error("Invalid env format: should be <key>=<value>.")
-                raise typer.Exit(1)
-            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", kv[0]):
-                console.error(
-                    "Invalid env name: should start with a letter or underscore, followed by letters, digits, or underscores."
-                )
-                raise typer.Exit(1)
-            processed_envs[kv[0]] = kv[1]
+    processed_envs = hosting.process_envs(envs) if envs else None
 
     # Compile the app in production mode.
     config.api_url = api_url
@@ -638,19 +605,23 @@ def deploy(
     _deploy_confirmed_at = datetime.now().astimezone()
 
     console.debug(f"deploy_response: {deploy_response}")
-    console.print("Deployment will start shortly.")
+    console.print(
+        "Deployment will start shortly. Closing this command now will not affect your deployment."
+    )
 
     if overwrite_existing:
         console.print("Waiting for the old deployment to come down")
         with console.status("this is a TODO"):
             for _ in range(60):
                 time.sleep(1)
+
+    # Stream the key events such as build, deploy, etc
+
     console.print("Waiting for the new deployment to come up")
-    # TODO: for overwrite case, poll for the old site to come down
     backend_up = frontend_up = False
 
     with console.status("Checking backend ..."):
-        for _ in range(constants.Hosting.BACKEND_POLL_TIMEOUT):
+        for _ in range(constants.Hosting.BACKEND_POLL_RETRIES):
             if backend_up := hosting.poll_backend(deploy_response.backend_url):
                 break
             time.sleep(1)
@@ -660,7 +631,7 @@ def deploy(
         console.print("Backend is up")
 
     with console.status("Checking frontend ..."):
-        for _ in range(constants.Hosting.FRONTEND_POLL_TIMEOUT):
+        for _ in range(constants.Hosting.FRONTEND_POLL_RETRIES):
             if frontend_up := hosting.poll_frontend(deploy_response.frontend_url):
                 break
             time.sleep(1)
@@ -669,7 +640,6 @@ def deploy(
     else:
         console.print("frontend is up")
 
-    # TODO: below is a bit hacky, refactor
     hosting.clean_up()
     if frontend_up and backend_up:
         console.print(
@@ -693,11 +663,8 @@ def list_deployments(
         False, "-j", "--json", help="Whether to output the result in json format."
     ),
 ):
-    """List all the hosted instances for the specified app."""
+    """List all the hosted deployments of the authenticated user."""
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
     try:
         deployments = hosting.list_deployments()
     except Exception as ex:
@@ -707,12 +674,12 @@ def list_deployments(
     if as_json:
         console.print(json.dumps(deployments))
         return
-    try:
+    if deployments:
         headers = list(deployments[0].keys())
         table = [list(deployment.values()) for deployment in deployments]
         console.print(tabulate(table, headers=headers))
-    except Exception as ex:
-        console.debug(f"Unable to tabulate the deployments due to: {ex}")
+    else:
+        # If returned empty list, print the empty
         console.print(str(deployments))
 
 
@@ -725,9 +692,6 @@ def delete_deployment(
 ):
     """Delete a hosted instance."""
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
     try:
         hosting.delete_deployment(key)
     except Exception as ex:
@@ -745,9 +709,6 @@ def get_deployment_status(
 ):
     """Check the status of a deployment."""
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
 
     try:
         console.print(f"Getting status for [ {key} ] ...\n")
@@ -784,13 +745,9 @@ def get_deployment_logs(
 ):
     """Get the logs for a deployment."""
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
-
     console.print("Note: there is a few seconds delay for logs to be available.")
     try:
-        asyncio.run(hosting.get_logs(key))
+        asyncio.get_event_loop().run_until_complete(hosting.get_logs(key))
     except Exception as ex:
         console.error(f"Unable to get deployment logs due to: {ex}")
         raise typer.Exit(1) from ex
@@ -805,9 +762,6 @@ def get_deployment_all_logs(
 ):
     """Get the logs for a deployment."""
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
 
     console.print("Note: there is a few seconds delay for logs to be available.")
     try:
@@ -826,9 +780,6 @@ def get_deployment_deploy_logs(
 ):
     """Get the logs for a deployment."""
     console.set_log_level(loglevel)
-    # Check if feature is enabled:
-    if not hosting.feature_enabled():
-        return
 
     console.print("Note: there is a few seconds delay for logs to be available.")
     try:
