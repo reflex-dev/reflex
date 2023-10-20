@@ -46,8 +46,9 @@ class Select(Component):
     Props added by chakra-react-select are marked with "[chakra]".
     """
 
-    library = "chakra-react-select"
+    library = "chakra-react-select@4.7.5"
     tag = "Select"
+    alias = "MultiSelect"
 
     # Focus the control when it is mounted
     auto_focus: Var[bool]
@@ -311,7 +312,7 @@ class Select(Component):
                 lambda e0: [
                     Var.create_safe(f"{e0}.map(e => e.value)", _var_is_local=True)
                 ]
-                if self.is_multi
+                if self.is_multi.equals(Var.create_safe(True))
                 else lambda e0: [e0]
             ),
         }
@@ -341,10 +342,13 @@ class Select(Component):
             The `create` method is returning an instance of the `Select` class.
         """
         converted_options: List[Option] = []
-        for option in options:
-            if not isinstance(option, Option):
-                converted_options.append(Option(label=str(option), value=option))
-            else:
-                converted_options.append(option)
-        props["options"] = [o.dict() for o in converted_options]
+        if not isinstance(options, Var):
+            for option in options:
+                if not isinstance(option, Option):
+                    converted_options.append(Option(label=str(option), value=option))
+                else:
+                    converted_options.append(option)
+            props["options"] = [o.dict() for o in converted_options]
+        else:
+            props["options"] = options
         return super().create(*[], **props)
