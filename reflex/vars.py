@@ -1518,34 +1518,3 @@ class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
 
     render: Optional[bool] = False
-
-
-def get_local_storage(key: Var | str | None = None) -> BaseVar:
-    """Provide a base var as payload to get local storage item(s).
-
-    Args:
-        key: Key to obtain value in the local storage.
-
-    Returns:
-        A BaseVar of the local storage method/function to call.
-
-    Raises:
-        TypeError:  if the wrong key type is provided.
-    """
-    console.deprecate(
-        feature_name=f"rx.get_local_storage",
-        reason="and has been replaced by rx.LocalStorage, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.3.0",
-    )
-    if key is not None:
-        if not (isinstance(key, Var) and key._var_type == str) and not isinstance(
-            key, str
-        ):
-            type_ = type(key) if not isinstance(key, Var) else key._var_type
-            raise TypeError(
-                f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
-            )
-        key = key._var_full_name if isinstance(key, Var) else format.wrap(key, "'")
-        return BaseVar(_var_name=f"localStorage.getItem({key})", _var_type=str)
-    return BaseVar(_var_name="getAllLocalStorageItems()", _var_type=Dict)

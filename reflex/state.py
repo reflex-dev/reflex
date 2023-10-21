@@ -818,6 +818,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Reset the base vars.
         fields = self.get_fields()
         for prop_name in self.base_vars:
+            if prop_name == constants.ROUTER:
+                continue  # never reset the router data
             setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
 
         # Recursively reset the substates.
@@ -961,7 +963,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The valid StateUpdate containing the events and final flag.
         """
-        token = self.get_token()
+        token = self.router.session.client_token
 
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
@@ -1273,7 +1275,9 @@ class StateProxy(wrapt.ObjectProxy):
         Returns:
             This StateProxy instance in mutable mode.
         """
-        self._self_actx = self._self_app.modify_state(self.__wrapped__.get_token())
+        self._self_actx = self._self_app.modify_state(
+            self.__wrapped__.router.session.client_token
+        )
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
             "__wrapped__", mutable_state.get_substate(self._self_substate_path)
@@ -1364,12 +1368,6 @@ class StateProxy(wrapt.ObjectProxy):
         super().__setattr__(name, value)
 
 
-class DefaultState(State):
-    """The default empty state."""
-
-    pass
-
-
 class StateUpdate(Base):
     """A state update sent to the frontend."""
 
@@ -1390,7 +1388,7 @@ class StateManager(Base, ABC):
     state: Type[State]
 
     @classmethod
-    def create(cls, state: Type[State] = DefaultState):
+    def create(cls, state: Type[State]):
         """Create a new state manager.
 
         Args:

@@ -210,10 +210,6 @@ class FrontendEvent(Base):
     value: Any = None
 
 
-# The default event argument.
-EVENT_ARG = BaseVar(_var_name="_e", _var_type=FrontendEvent, _var_is_local=True)
-
-
 class FileUpload(Base):
     """Class to represent a file upload."""
 
@@ -320,31 +316,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     )
 
 
-def set_cookie(key: str, value: str) -> EventSpec:
-    """Set a cookie on the frontend.
-
-    Args:
-        key: The key identifying the cookie.
-        value: The value contained in the cookie.
-
-    Returns:
-        EventSpec: An event to set a cookie.
-    """
-    console.deprecate(
-        feature_name=f"rx.set_cookie",
-        reason="and has been replaced by rx.Cookie, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.3.0",
-    )
-    return server_side(
-        "_set_cookie",
-        get_fn_signature(set_cookie),
-        key=key,
-        value=value,
-    )
-
-
-def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa: B006
+def remove_cookie(key: str, options: dict[str, Any] | None = None) -> EventSpec:
     """Remove a cookie on the frontend.
 
     Args:
@@ -354,35 +326,13 @@ def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa:
     Returns:
         EventSpec: An event to remove a cookie.
     """
+    options = options or {}
+    options["path"] = options.get("path", "/")
     return server_side(
         "_remove_cookie",
         get_fn_signature(remove_cookie),
         key=key,
         options=options,
-    )
-
-
-def set_local_storage(key: str, value: str) -> EventSpec:
-    """Set a value in the local storage on the frontend.
-
-    Args:
-        key: The key identifying the variable in the local storage.
-        value: The value contained in the local storage.
-
-    Returns:
-        EventSpec: An event to set a key-value in local storage.
-    """
-    console.deprecate(
-        feature_name=f"rx.set_local_storage",
-        reason="and has been replaced by rx.LocalStorage, which can be used as a state var",
-        deprecation_version="0.2.9",
-        removal_version="0.3.0",
-    )
-    return server_side(
-        "_set_local_storage",
-        get_fn_signature(set_local_storage),
-        key=key,
-        value=value,
     )
 
 
@@ -409,7 +359,7 @@ def remove_local_storage(key: str) -> EventSpec:
     """
     return server_side(
         "_remove_local_storage",
-        get_fn_signature(clear_local_storage),
+        get_fn_signature(remove_local_storage),
         key=key,
     )
 

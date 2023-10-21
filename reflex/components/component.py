@@ -307,29 +307,6 @@ class Component(Base, ABC):
         Returns:
             The event triggers.
         """
-        deprecated_triggers = self.get_triggers()
-        if deprecated_triggers:
-            console.deprecate(
-                feature_name=f"get_triggers ({self.__class__.__name__})",
-                reason="replaced by get_event_triggers",
-                deprecation_version="0.2.8",
-                removal_version="0.3.1",
-            )
-            deprecated_triggers = {
-                trigger: lambda: [] for trigger in deprecated_triggers
-            }
-        else:
-            deprecated_triggers = {}
-
-        deprecated_controlled_triggers = self.get_controlled_triggers()
-        if deprecated_controlled_triggers:
-            console.deprecate(
-                feature_name=f"get_controlled_triggers ({self.__class__.__name__})",
-                reason="replaced by get_event_triggers",
-                deprecation_version="0.2.8",
-                removal_version="0.3.0",
-            )
-
         return {
             EventTriggers.ON_FOCUS: lambda: [],
             EventTriggers.ON_BLUR: lambda: [],
@@ -346,25 +323,7 @@ class Component(Base, ABC):
             EventTriggers.ON_SCROLL: lambda: [],
             EventTriggers.ON_MOUNT: lambda: [],
             EventTriggers.ON_UNMOUNT: lambda: [],
-            **deprecated_triggers,
-            **deprecated_controlled_triggers,
         }
-
-    def get_triggers(self) -> Set[str]:
-        """Get the triggers for non controlled events [DEPRECATED].
-
-        Returns:
-            A set of non controlled triggers.
-        """
-        return set()
-
-    def get_controlled_triggers(self) -> Dict[str, Var]:
-        """Get the event triggers that pass the component's value to the handler [DEPRECATED].
-
-        Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
-        """
-        return {}
 
     def __repr__(self) -> str:
         """Represent the component in React.

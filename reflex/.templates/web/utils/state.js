@@ -6,7 +6,7 @@ import env from "env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
-
+import { initialEvents } from "utils/context.js"
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT
@@ -144,28 +144,21 @@ export const applyEvent = async (event, socket) => {
     return false;
   }
 
-  if (event.name == "_set_cookie") {
-    cookies.set(event.payload.key, event.payload.value, { path: "/" });
-    return false;
-  }
-
   if (event.name == "_remove_cookie") {
-    cookies.remove(event.payload.key, { path: "/", ...event.payload.options })
-    return false;
-  }
-
-  if (event.name == "_set_local_storage") {
-    localStorage.setItem(event.payload.key, event.payload.value);
+    cookies.remove(event.payload.key, { ...event.payload.options })
+    queueEvents(initialEvents(), socket)
     return false;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
+    queueEvents(initialEvents(), socket)
     return false;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
+    queueEvents(initialEvents(), socket)
     return false;
   }
 

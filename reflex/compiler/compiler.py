@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Type
+from typing import Optional, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -89,7 +89,7 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Type[State]) -> str:
+def _compile_contexts(state: Optional[Type[State]]) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -98,11 +98,16 @@ def _compile_contexts(state: Type[State]) -> str:
     Returns:
         The compiled context file.
     """
-    return templates.CONTEXT.render(
-        initial_state=utils.compile_state(state),
-        state_name=state.get_name(),
-        client_storage=utils.compile_client_storage(state),
-        is_dev_mode=os.environ.get("REFLEX_ENV_MODE", "dev") == "dev",
+    is_dev_mode = os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
+    return (
+        templates.CONTEXT.render(
+            initial_state=utils.compile_state(state),
+            state_name=state.get_name(),
+            client_storage=utils.compile_client_storage(state),
+            is_dev_mode=is_dev_mode,
+        )
+        if state
+        else templates.CONTEXT.render(is_dev_mode=is_dev_mode)
     )
 
 
@@ -125,13 +130,15 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
+    kwargs = {"state_name": state.get_name()} if state else {}
+
     return templates.PAGE.render(
         imports=imports,
         dynamic_imports=component.get_dynamic_imports(),
         custom_codes=component.get_custom_code(),
-        state_name=state.get_name(),
         hooks=component.get_hooks(),
         render=component.render(),
+        **kwargs,
     )
 
 
@@ -296,7 +303,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_contexts(state: Type[State]) -> tuple[str, str]:
+def compile_contexts(state: Optional[Type[State]]) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:

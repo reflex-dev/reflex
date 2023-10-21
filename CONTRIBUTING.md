@@ -8,7 +8,7 @@ For an extensive guide on the different ways to contribute to Reflex see our [Co
 Here is a quick guide to how the run Reflex repo locally so you can start contributing to the project.
 
 **Prerequisites:**
-- Python >= 3.7
+- Python >= 3.8
 - Poetry version >= 1.4.0 and add it to your path (see [Poetry Docs](https://python-poetry.org/docs/#installation) for more info).
 
 

@@ -29,16 +29,16 @@ def VarOperations():
         dict1: dict = {1: 2}
         dict2: dict = {3: 4}
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     app = rx.App(state=VarOperationState)
 
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(id="token", value=VarOperationState.token, is_read_only=True),
+            rx.input(
+                id="token",
+                value=VarOperationState.router.session.client_token,
+                is_read_only=True,
+            ),
             # INT INT
             rx.text(
                 VarOperationState.int_var1 + VarOperationState.int_var2,

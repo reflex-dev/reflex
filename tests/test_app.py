@@ -2,17 +2,12 @@ from __future__ import annotations
 
 import io
 import os.path
-import sys
 import unittest.mock
 import uuid
 from pathlib import Path
 from typing import Generator, List, Tuple, Type
+from unittest.mock import AsyncMock
 
-if sys.version_info.major >= 3 and sys.version_info.minor > 7:
-    from unittest.mock import AsyncMock  # type: ignore
-else:
-    # python 3.7 doesn't ship with unittest.mock
-    from asynctest import CoroutineMock as AsyncMock
 import pytest
 import sqlmodel
 from fastapi import UploadFile
@@ -25,7 +20,6 @@ from reflex import AdminDash, constants
 from reflex.app import (
     App,
     ComponentCallable,
-    DefaultState,
     default_overlay_component,
     process,
     upload,
@@ -42,10 +36,17 @@ from reflex.vars import ComputedVar
 from .conftest import chdir
 from .states import (
     ChildFileUploadState,
+    FileStateBase1,
     FileUploadState,
     GenState,
     GrandChildFileUploadState,
 )
+
+
+class EmptyState(State):
+    """An empty state."""
+
+    pass
 
 
 @pytest.fixture
@@ -191,7 +192,6 @@ def test_default_app(app: App):
     Args:
         app: The app to test.
     """
-    assert app.state() == DefaultState()
     assert app.middleware == [HydrateMiddleware()]
     assert app.style == Style()
     assert app.admin_dash is None
@@ -239,14 +239,14 @@ def test_add_page_set_route(app: App, index_page, windows_platform: bool):
     assert set(app.pages.keys()) == {"test"}
 
 
-def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool):
+def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     """Test adding a page with dynamic route variable to an app.
 
     Args:
-        app: The app to test.
         index_page: The index page.
         windows_platform: Whether the system is windows.
     """
+    app = App(state=EmptyState)
     route = "/test/[dynamic]"
     if windows_platform:
         route.lstrip("/").replace("/", "\\")
@@ -254,7 +254,7 @@ def test_add_page_set_route_dynamic(app: App, index_page, windows_platform: bool
     app.add_page(index_page, route=route)
     assert set(app.pages.keys()) == {"test/[dynamic]"}
     assert "dynamic" in app.state.computed_vars
-    assert app.state.computed_vars["dynamic"]._deps(objclass=DefaultState) == {
+    assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
         constants.ROUTER
     }
     assert constants.ROUTER in app.state().computed_var_dependencies
@@ -735,7 +735,8 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         token: a Token.
     """
     state._tmp_path = tmp_path
-    app = App(state=state)
+    # The App state must be the "root" of the state tree
+    app = App(state=state if state is FileUploadState else FileStateBase1)
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(token)
     data = b"This is binary data"
@@ -744,12 +745,15 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     bio = io.BytesIO()
     bio.write(data)
 
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
+    handler_prefix = f"{token}:{state_name}"
+
     file1 = UploadFile(
-        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image1.jpg",
+        filename=f"{handler_prefix}.multi_handle_upload:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{token}:{state.get_name()}.multi_handle_upload:True:image2.jpg",
+        filename=f"{handler_prefix}.multi_handle_upload:True:image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)
@@ -757,9 +761,13 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     state_update = StateUpdate(delta=delta, events=[], final=True)
 
     app.event_namespace.emit.assert_called_with(  # type: ignore
-        "event", state_update.json(), to=current_state.get_sid()
+        "event", state_update.json(), to=current_state.router.session.session_id
     )
-    assert (await app.state_manager.get_state(token)).dict()["img_list"] == [
+    current_state = await app.state_manager.get_state(token)
+    state_dict = current_state.dict()
+    for substate in state.get_full_name().split(".")[1:]:
+        state_dict = state_dict[substate]
+    assert state_dict["img_list"] == [
         "image1.jpg",
         "image2.jpg",
     ]
@@ -788,14 +796,18 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
     bio.write(data)
 
     state._tmp_path = tmp_path
-    app = App(state=state)
+    # The App state must be the "root" of the state tree
+    app = App(state=state if state is FileUploadState else FileStateBase1)
+
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
+    handler_prefix = f"{token}:{state_name}"
 
     file1 = UploadFile(
-        filename=f"{token}:{state.get_name()}.handle_upload2:True:image1.jpg",
+        filename=f"{handler_prefix}.handle_upload2:True:image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{token}:{state.get_name()}.handle_upload2:True:image2.jpg",
+        filename=f"{handler_prefix}.handle_upload2:True:image2.jpg",
         file=bio,
     )
     fn = upload(app)
@@ -803,7 +815,7 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         await fn([file1, file2])
     assert (
         err.value.args[0]
-        == f"`{state.get_name()}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+        == f"`{state_name}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
@@ -1080,9 +1092,9 @@ async def test_process_events(mocker, token: str):
 @pytest.mark.parametrize(
     ("state", "overlay_component", "exp_page_child"),
     [
-        (DefaultState, default_overlay_component, None),
-        (DefaultState, None, None),
-        (DefaultState, Text.create("foo"), Text),
+        (None, default_overlay_component, None),
+        (None, None, None),
+        (None, Text.create("foo"), Text),
         (State, default_overlay_component, Fragment),
         (State, None, None),
         (State, Text.create("foo"), Text),
