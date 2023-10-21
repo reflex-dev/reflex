@@ -11,7 +11,7 @@ import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import httpx
 import typer
@@ -448,13 +448,13 @@ def deploy(
         "--app-name",
         help="The name of the App to deploy under.",
     ),
-    regions: list[str] = typer.Option(
+    regions: List[str] = typer.Option(
         list(),
         "-r",
         "--region",
         help="The regions to deploy to.",
     ),
-    envs: list[str] = typer.Option(
+    envs: List[str] = typer.Option(
         list(),
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option followed by the env name.",
