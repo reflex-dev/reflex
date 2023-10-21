@@ -21,9 +21,6 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import console
 
-# Timeout limit for http requests
-HTTP_REQUEST_TIMEOUT = 5  # seconds
-
 
 def get_existing_access_token() -> tuple[str, str]:
     """Fetch the access token from the existing config if applicable.
@@ -64,7 +61,7 @@ def validate_token(token: str):
         response = httpx.post(
             constants.Hosting.POST_VALIDATE_ME_ENDPOINT,
             headers=authorization_header(token),
-            timeout=HTTP_REQUEST_TIMEOUT,
+            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
         )
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise ValueError
@@ -258,7 +255,7 @@ def prepare_deploy(
             json=DeploymentsPreparePostParam(
                 app_name=app_name, key=key, frontend_hostname=frontend_hostname
             ).dict(exclude_none=True),
-            timeout=HTTP_REQUEST_TIMEOUT,
+            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
         )
 
         response_json = response.json()
@@ -490,7 +487,7 @@ def list_deployments(
             constants.Hosting.GET_DEPLOYMENTS_ENDPOINT,
             headers=authorization_header(token),
             params=params.dict(exclude_none=True),
-            timeout=HTTP_REQUEST_TIMEOUT,
+            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         return [
@@ -535,7 +532,7 @@ def fetch_token(request_id: str) -> tuple[str, str]:
     try:
         resp = httpx.get(
             f"{constants.Hosting.FETCH_TOKEN_ENDPOINT}/{request_id}",
-            timeout=HTTP_REQUEST_TIMEOUT,
+            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
         )
         resp.raise_for_status()
         return (resp_json := resp.json())["access_token"], resp_json.get("code", "")
@@ -567,7 +564,9 @@ def poll_backend(backend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling backend at {backend_url}")
-        resp = httpx.get(f"{backend_url}/ping", timeout=HTTP_REQUEST_TIMEOUT)
+        resp = httpx.get(
+            f"{backend_url}/ping", timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT
+        )
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -585,7 +584,9 @@ def poll_frontend(frontend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling frontend at {frontend_url}")
-        resp = httpx.get(f"{frontend_url}", timeout=HTTP_REQUEST_TIMEOUT)
+        resp = httpx.get(
+            f"{frontend_url}", timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT
+        )
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -618,7 +619,7 @@ def delete_deployment(key: str):
         response = httpx.delete(
             f"{constants.Hosting.DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
             headers=authorization_header(token),
-            timeout=HTTP_REQUEST_TIMEOUT,
+            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
 
@@ -697,7 +698,7 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
         response = httpx.get(
             f"{constants.Hosting.GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
             headers=authorization_header(token),
-            timeout=HTTP_REQUEST_TIMEOUT,
+            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         response_json = response.json()
@@ -995,7 +996,7 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
         _ws = websockets.connect(logs_endpoint)  # type: ignore
         async with _ws as ws:
             # Stream back the deploy events reported back from the server
-            while True:
+            for _ in range(constants.Hosting.DEPLOYMENT_EVENT_MESSAGES_RETRIES):
                 row_json = json.loads(await ws.recv())
                 console.debug(f"Server responded with: {row_json}")
                 if row_json and isinstance(row_json, dict):

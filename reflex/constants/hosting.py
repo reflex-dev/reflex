@@ -43,3 +43,7 @@ class Hosting:
     FRONTEND_POLL_RETRIES = 30
     # End of deployment workflow message. Used to determine if it is the last message from server.
     END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]
+    # How many iterations to try and print the deployment event messages from server during deployment.
+    DEPLOYMENT_EVENT_MESSAGES_RETRIES = 120
+    # Timeout limit for http requests
+    HTTP_REQUEST_TIMEOUT = 5  # seconds
