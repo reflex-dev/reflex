@@ -862,7 +862,7 @@ def validate_token_with_retries(access_token: str) -> bool:
         for _ in range(constants.Hosting.WEB_AUTH_RETRIES):
             try:
                 validate_token(access_token)
-
+                return True
             except ValueError as ve:
                 console.error(f"Access denied")
                 delete_token_from_config()
@@ -1025,7 +1025,7 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
 def wait_for_server_to_pick_up_request():
     """Wait for server to pick up the request. Right now is just sleep."""
     with console.status(
-        "Waiting for server to pick up request ~ {constants.Hosting.DEPLOYMENT_PICKUP_DELAY} seconds ..."
+        f"Waiting for server to pick up request ~ {constants.Hosting.DEPLOYMENT_PICKUP_DELAY} seconds ..."
     ):
         for _ in range(constants.Hosting.DEPLOYMENT_PICKUP_DELAY):
             time.sleep(1)
