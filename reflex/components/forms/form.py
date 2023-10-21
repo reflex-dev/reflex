@@ -10,6 +10,7 @@ from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
 from reflex.constants import EventTriggers
 from reflex.event import EventChain
+from reflex.utils import imports
 from reflex.utils.format import format_event_chain
 from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var, get_unique_variable_name
@@ -17,7 +18,7 @@ from reflex.vars import BaseVar, Var, get_unique_variable_name
 FORM_DATA = Var.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     """
-    const handleSubmit{{ handle_submit_unique_name }} = (ev) => {
+    const handleSubmit{{ handle_submit_unique_name }} = useCallback((ev) => {
         const $form = ev.target
         ev.preventDefault()
         const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
@@ -27,7 +28,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
         if ({{ reset_on_submit }}) {
             $form.reset()
         }
-    }
+    })
     """
 )
 
@@ -45,6 +46,12 @@ class Form(ChakraComponent):
 
     # The name used to make this form's submit handler function unique
     handle_submit_unique_name: Var[str] = get_unique_variable_name()  # type: ignore
+
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            {"react": {imports.ImportVar(tag="useCallback")}},
+        )
 
     def _get_hooks(self) -> str | None:
         return HANDLE_SUBMIT_JS_JINJA2.render(
