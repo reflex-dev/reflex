@@ -19,7 +19,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     const handleSubmit{{ handle_submit_unique_name }} = (ev) => {
         const $form = ev.target
         ev.preventDefault()
-        const form_data = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
+        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
 
         {{ on_submit_event_chain }}
 
@@ -48,6 +48,7 @@ class Form(ChakraComponent):
     def _get_hooks(self) -> str | None:
         return HANDLE_SUBMIT_JS_JINJA2.render(
             handle_submit_unique_name=self.handle_submit_unique_name,
+            form_data=FORM_DATA,
             field_ref_mapping=serialize(self._get_form_refs()),
             on_submit_event_chain=format_event_chain(
                 self.event_triggers[EventTriggers.ON_SUBMIT]
@@ -98,7 +99,7 @@ class Form(ChakraComponent):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_SUBMIT: lambda e0: [Var.create("form_data")],
+            EventTriggers.ON_SUBMIT: lambda e0: [FORM_DATA],
         }
 
 
