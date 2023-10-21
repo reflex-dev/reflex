@@ -1151,6 +1151,33 @@ class Var:
             _var_is_local=self._var_is_local,
         )
 
+    def range(self, start: Var | int = 0) -> Var:
+        """Return an array of indicies from from start ot this var.
+
+        Args:
+            start: The start of the range.
+
+        Returns:
+            A var representing range operation.
+
+        Raises:
+            TypeError: If the var is not an int.
+        """
+        if self._var_type != int:
+            raise TypeError(f"Cannot get range on non-int var {self._var_full_name}.")
+        if isinstance(start, int):
+            start = Var.create_safe(start)
+        if start._var_type != int:
+            raise TypeError(
+                f"Cannot get start of range on non-int var {start._var_full_name}."
+            )
+
+        return BaseVar(
+            _var_name=f"Array({self._var_full_name}).fill(0).map((_, i) => i + {start})",
+            _var_type=list[self._var_type],
+            _var_is_local=False,
+        )
+
     def forrange(self, fn: Callable) -> Var:
         """Return a list of components. after running fn the number of times specified by this var.
 
