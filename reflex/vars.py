@@ -1151,6 +1151,32 @@ class Var:
             _var_is_local=self._var_is_local,
         )
 
+    def forrange(self, fn: Callable) -> Var:
+        """Return a list of components. after running fn the number of times specified by this var.
+
+        Args:
+            fn: The function to call `self` times
+
+        Returns:
+            A var representing foreach operation.
+
+        Raises:
+            TypeError: If the var is not an int.
+        """
+        if self._var_type != int:
+            raise TypeError(
+                f"Cannot run forrange on non-int var {self._var_full_name}."
+            )
+        arg = BaseVar(
+            _var_name=get_unique_variable_name(),
+            _var_type=self._var_type,
+        )
+        return BaseVar(
+            _var_name=f"Array({self._var_full_name}).fill(0).map((_, {arg._var_name}) => {fn(arg)})",
+            _var_type=self._var_type,
+            _var_is_local=False,
+        )
+
     def to(self, type_: Type) -> Var:
         """Convert the type of the var.
 
