@@ -2,10 +2,33 @@
 
 from typing import Any, Dict
 
+from jinja2 import Environment
+
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.tags import Tag
 from reflex.constants import EventTriggers
-from reflex.vars import Var
+from reflex.event import EventChain
+from reflex.utils.format import format_event_chain
+from reflex.utils.serializers import serialize
+from reflex.vars import BaseVar, Var, get_unique_variable_name
+
+FORM_DATA = Var.create("form_data")
+HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
+    """
+    const handleSubmit{{ handle_submit_unique_name }} = (ev) => {
+        const $form = ev.target
+        ev.preventDefault()
+        const form_data = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}
+
+        {{ on_submit_event_chain }}
+
+        if ({{ reset_on_submit }}) {
+            $form.reset()
+        }
+    }
+    """
+)
 
 
 class Form(ChakraComponent):
@@ -16,12 +39,42 @@ class Form(ChakraComponent):
     # What the form renders to.
     as_: Var[str] = "form"  # type: ignore
 
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
+    # If true, the form will be cleared after submit.
+    reset_on_submit: Var[bool] = False  # type: ignore
+
+    # The name used to make this form's submit handler function unique
+    handle_submit_unique_name: Var[str] = get_unique_variable_name()  # type: ignore
+
+    def _get_hooks(self) -> str | None:
+        return HANDLE_SUBMIT_JS_JINJA2.render(
+            handle_submit_unique_name=self.handle_submit_unique_name,
+            field_ref_mapping=serialize(self._get_form_refs()),
+            on_submit_event_chain=format_event_chain(
+                self.event_triggers[EventTriggers.ON_SUBMIT]
+            ),
+            reset_on_submit=self.reset_on_submit,
+        )
+
+    def _render(self) -> Tag:
+        return (
+            super()
+            ._render()
+            .remove_props("reset_on_submit", "handle_submit_unique_name")
+        )
+
+    def render(self) -> dict:
+        """Render the component.
 
         Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
+            The rendered component.
         """
+        self.event_triggers[EventTriggers.ON_SUBMIT] = BaseVar(
+            _var_name=f"handleSubmit{self.handle_submit_unique_name}",
+            _var_type=EventChain,
+        )
+        return super().render()
+
+    def _get_form_refs(self) -> Dict[str, Any]:
         # Send all the input refs to the handler.
         form_refs = {}
         for ref in self.get_refs():
@@ -35,10 +88,17 @@ class Form(ChakraComponent):
                 form_refs[ref[4:]] = Var.create(
                     f"getRefValue({ref})", _var_is_local=False
                 )
+        return form_refs
 
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_SUBMIT: lambda e0: [form_refs],
+            EventTriggers.ON_SUBMIT: lambda e0: [Var.create("form_data")],
         }
 
 
