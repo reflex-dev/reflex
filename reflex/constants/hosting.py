@@ -36,7 +36,7 @@ class Hosting:
     # The expected number of milestones
     MILESTONES_COUNT = 6
     # Expected server response time to new deployment request. In seconds.
-    DEPLOYMENT_PICKUP_DELAY = 35
+    DEPLOYMENT_PICKUP_DELAY = 30
     # The time to wait for the backend to come up after user initiates deployment. In seconds.
     BACKEND_POLL_RETRIES = 30
     # The time to wait for the frontend to come up after user initiates deployment. In seconds.

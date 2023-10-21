@@ -347,11 +347,9 @@ def login(
         )
         raise typer.Exit(1)
 
-    try:
-        hosting.validate_token(access_token)
-    except Exception as ex:
+    if not hosting.validate_token_with_retries(access_token):
         console.error(f"Unable to validate token. Please try again or contact support.")
-        raise typer.Exit(1) from ex
+        raise typer.Exit(1)
 
     if not using_existing_token:
         hosting.save_token_to_config(access_token, invitation_code)
@@ -522,10 +520,9 @@ def deploy(
 
     # The app prefix should not change during the time of preparation
     app_prefix = pre_deploy_response.app_prefix
-    overwrite_existing = False
     if not interactive:
         # in this case, the key was supplied for the pre_deploy call, at this point the reply is expected
-        if not (reply := pre_deploy_response.reply):
+        if (reply := pre_deploy_response.reply) is None:
             console.error(f"Unable to deploy at this name {key}.")
             raise typer.Exit(1)
         api_url = reply.api_url
@@ -535,7 +532,6 @@ def deploy(
             key_candidate,
             api_url,
             deploy_url,
-            overwrite_existing,
         ) = hosting.interactive_get_deployment_key_from_user_input(
             pre_deploy_response, app_name, frontend_hostname=frontend_hostname
         )
@@ -553,22 +549,7 @@ def deploy(
         regions = regions or [region_input]
 
         # process the envs
-        envs_finished = False
-        env_key_prompt = "  Env name (enter to skip)"
-        console.print("Environment variables ...")
-        while not envs_finished:
-            env_key = console.ask(env_key_prompt)
-            env_key_prompt = "  env name (enter to finish)"
-            if not env_key:
-                envs_finished = True
-                if envs:
-                    console.print("Finished adding envs.")
-                else:
-                    console.print("No envs added. Continuing ...")
-                break
-            # If it possible to have empty values for env, so we do not check here
-            env_value = console.ask("  env value")
-            envs.append(f"{env_key}={env_value}")
+        envs = hosting.interactive_prompt_for_envs()
 
     # Check the required params are valid
     console.debug(f"{key=}, {regions=}, {app_name=}, {app_prefix=}, {api_url}")

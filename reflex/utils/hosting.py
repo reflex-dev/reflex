@@ -859,7 +859,7 @@ def validate_token_with_retries(access_token: str) -> bool:
         for _ in range(constants.Hosting.WEB_AUTH_RETRIES):
             try:
                 validate_token(access_token)
-                return True
+
             except ValueError as ve:
                 console.error(f"Access denied")
                 delete_token_from_config()
@@ -874,7 +874,7 @@ def interactive_get_deployment_key_from_user_input(
     pre_deploy_response: DeploymentPrepareResponse,
     app_name: str,
     frontend_hostname: str | None = None,
-) -> tuple[str, str, str, bool]:
+) -> tuple[str, str, str]:
     """Interactive get the deployment key from user input.
 
     Args:
@@ -883,10 +883,9 @@ def interactive_get_deployment_key_from_user_input(
         frontend_hostname: The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
 
     Returns:
-        The deployment key, backend URL, frontend URL, and this is a case that overwrites existing deployment.
+        The deployment key, backend URL, frontend URL.
     """
     key_candidate = api_url = deploy_url = ""
-    overwrite_existing = False
     if reply := pre_deploy_response.reply:
         api_url = reply.api_url
         deploy_url = reply.deploy_url
@@ -899,7 +898,6 @@ def interactive_get_deployment_key_from_user_input(
         key_candidate = existing.key
         api_url = existing.api_url
         deploy_url = existing.deploy_url
-        overwrite_existing = True
     elif suggestion := pre_deploy_response.suggestion:
         key_candidate = suggestion.key
         api_url = suggestion.api_url
@@ -925,7 +923,7 @@ def interactive_get_deployment_key_from_user_input(
                     "Cannot deploy at this name, try picking a different name"
                 )
 
-    return key_candidate, api_url, deploy_url, overwrite_existing
+    return key_candidate, api_url, deploy_url
 
 
 def process_envs(envs: list[str]) -> dict[str, str]:
@@ -1023,6 +1021,34 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
 
 def wait_for_server_to_pick_up_request():
     """Wait for server to pick up the request. Right now is just sleep."""
-    with console.status("Waiting for server to pick up request ~ 30 seconds ..."):
+    with console.status(
+        "Waiting for server to pick up request ~ {constants.Hosting.DEPLOYMENT_PICKUP_DELAY} seconds ..."
+    ):
         for _ in range(constants.Hosting.DEPLOYMENT_PICKUP_DELAY):
             time.sleep(1)
+
+
+def interactive_prompt_for_envs() -> list[str]:
+    """Interactive prompt for environment variables.
+
+    Returns:
+        The list of environment variables in key=value string format.
+    """
+    envs = []
+    envs_finished = False
+    env_key_prompt = "  Env name (enter to skip)"
+    console.print("Environment variables ...")
+    while not envs_finished:
+        env_key = console.ask(env_key_prompt)
+        env_key_prompt = "  env name (enter to finish)"
+        if not env_key:
+            envs_finished = True
+            if envs:
+                console.print("Finished adding envs.")
+            else:
+                console.print("No envs added. Continuing ...")
+            break
+        # If it possible to have empty values for env, so we do not check here
+        env_value = console.ask("  env value")
+        envs.append(f"{env_key}={env_value}")
+    return envs
