@@ -1,16 +1,32 @@
 """Reflex CLI to create, run, and deploy apps."""
 
+import asyncio
 import atexit
+import contextlib
+import json
 import os
+import tempfile
+import time
+from datetime import datetime
 from pathlib import Path
+from typing import List, Optional
 
 import httpx
 import typer
 from alembic.util.exc import CommandError
+from tabulate import tabulate
 
 from reflex import constants, model
 from reflex.config import get_config
-from reflex.utils import build, console, exec, prerequisites, processes, telemetry
+from reflex.utils import (
+    build,
+    console,
+    exec,
+    hosting,
+    prerequisites,
+    processes,
+    telemetry,
+)
 
 # Create the app.
 cli = typer.Typer(add_completion=False)
@@ -88,6 +104,9 @@ def init(
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
+
+    # Initialize the requirements.txt.
+    prerequisites.initialize_requirements_txt()
 
     # Finish initializing the app.
     console.success(f"Initialized {app_name}")
@@ -200,7 +219,7 @@ def run(
 
 
 @cli.command()
-def deploy(
+def deploy_legacy(
     dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
     loglevel: constants.LogLevel = typer.Option(
         console._LOG_LEVEL, help="The log level to use."
@@ -251,6 +270,11 @@ def export(
     backend: bool = typer.Option(
         True, "--frontend-only", help="Export only frontend.", show_default=False
     ),
+    zip_dest_dir: str = typer.Option(
+        os.getcwd(),
+        help="The directory to export the zip files to.",
+        show_default=False,
+    ),
     loglevel: constants.LogLevel = typer.Option(
         console._LOG_LEVEL, help="The log level to use."
     ),
@@ -279,11 +303,71 @@ def export(
         backend=backend,
         frontend=frontend,
         zip=zipping,
+        zip_dest_dir=zip_dest_dir,
         deploy_url=config.deploy_url,
     )
 
     # Post a telemetry event.
     telemetry.send("export")
+
+
+@cli.command()
+def login(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Authenticate with Reflex hosting service."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
+    # Check if the user is already logged in.
+    # Token is the access token, a JWT token obtained from auth provider
+    # after user completes authentication on web
+    access_token = None
+    # For initial hosting offering, it is by invitation only
+    # The login page is enabled only after a valid invitation code is entered
+    invitation_code = ""
+    using_existing_token = False
+
+    with contextlib.suppress(Exception):
+        access_token, invitation_code = hosting.get_existing_access_token()
+        using_existing_token = True
+        console.debug("Existing token found, proceed to validate")
+
+    # If not already logged in, open a browser window/tab to the login page.
+    if not using_existing_token:
+        access_token, invitation_code = hosting.authenticate_on_browser(invitation_code)
+
+    if not access_token:
+        console.error(
+            f"Unable to fetch access token. Please try again or contact support."
+        )
+        raise typer.Exit(1)
+
+    if not hosting.validate_token_with_retries(access_token):
+        console.error(f"Unable to validate token. Please try again or contact support.")
+        raise typer.Exit(1)
+
+    if not using_existing_token:
+        hosting.save_token_to_config(access_token, invitation_code)
+        console.print("Successfully logged in.")
+    else:
+        console.print("You already logged in.")
+
+
+@cli.command()
+def logout(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Log out of access to Reflex hosting service."""
+    console.set_log_level(loglevel)
+
+    hosting.log_out_on_browser()
+    console.debug("Deleting access token from config locally")
+    hosting.delete_token_from_config()
 
 
 db_cli = typer.Typer()
@@ -352,7 +436,366 @@ def makemigrations(
             )
 
 
+@cli.command()
+def deploy(
+    key: Optional[str] = typer.Option(
+        None, "-k", "--deployment-key", help="The name of the deployment."
+    ),
+    app_name: str = typer.Option(
+        config.app_name,
+        "--app-name",
+        help="The name of the App to deploy under.",
+    ),
+    regions: List[str] = typer.Option(
+        list(),
+        "-r",
+        "--region",
+        help="The regions to deploy to.",
+    ),
+    envs: List[str] = typer.Option(
+        list(),
+        "--env",
+        help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option followed by the env name.",
+    ),
+    cpus: Optional[int] = typer.Option(None, help="The number of CPUs to allocate."),
+    memory_mb: Optional[int] = typer.Option(
+        None, help="The amount of memory to allocate."
+    ),
+    auto_start: Optional[bool] = typer.Option(
+        True, help="Whether to auto start the instance."
+    ),
+    auto_stop: Optional[bool] = typer.Option(
+        True, help="Whether to auto stop the instance."
+    ),
+    frontend_hostname: Optional[str] = typer.Option(
+        None, "--frontend-hostname", help="The hostname of the frontend."
+    ),
+    interactive: Optional[bool] = typer.Option(
+        True,
+        help="Whether to list configuration options and ask for confirmation.",
+    ),
+    with_metrics: Optional[str] = typer.Option(
+        None,
+        help="Setting for metrics scraping for the deployment. Setup required in user code.",
+    ),
+    with_tracing: Optional[str] = typer.Option(
+        None,
+        help="Setting to export tracing for the deployment. Setup required in user code.",
+    ),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Deploy the app to the Reflex hosting service."""
+    # Set the log level.
+    console.set_log_level(loglevel)
+
+    if not interactive and not key:
+        console.error("Please provide a deployment key when not in interactive mode.")
+        raise typer.Exit(1)
+
+    try:
+        hosting.check_requirements_txt_exist()
+    except Exception as ex:
+        console.error(f"{constants.RequirementsTxt.FILE} required for deployment")
+        raise typer.Exit(1) from ex
+
+    # Check if we are set up.
+    prerequisites.check_initialized(frontend=True)
+
+    try:
+        # Send a request to server to obtain necessary information
+        # in preparation of a deployment. For example,
+        # server can return confirmation of a particular deployment key,
+        # is available, or suggest a new key, or return an existing deployment.
+        # Some of these are used in the interactive mode.
+        pre_deploy_response = hosting.prepare_deploy(
+            app_name, key=key, frontend_hostname=frontend_hostname
+        )
+    except Exception as ex:
+        console.error(f"Unable to prepare deployment due to: {ex}")
+        raise typer.Exit(1) from ex
+
+    # The app prefix should not change during the time of preparation
+    app_prefix = pre_deploy_response.app_prefix
+    if not interactive:
+        # in this case, the key was supplied for the pre_deploy call, at this point the reply is expected
+        if (reply := pre_deploy_response.reply) is None:
+            console.error(f"Unable to deploy at this name {key}.")
+            raise typer.Exit(1)
+        api_url = reply.api_url
+        deploy_url = reply.deploy_url
+    else:
+        (
+            key_candidate,
+            api_url,
+            deploy_url,
+        ) = hosting.interactive_get_deployment_key_from_user_input(
+            pre_deploy_response, app_name, frontend_hostname=frontend_hostname
+        )
+        if not key_candidate or not api_url or not deploy_url:
+            console.error("Unable to find a suitable deployment key.")
+            raise typer.Exit(1)
+
+        # Now copy over the candidate to the key
+        key = key_candidate
+
+        # Then CP needs to know the user's location, which requires user permission
+        region_input = console.ask(
+            "Region to deploy to", default=regions[0] if regions else "sjc"
+        )
+        regions = regions or [region_input]
+
+        # process the envs
+        envs = hosting.interactive_prompt_for_envs()
+
+    # Check the required params are valid
+    console.debug(f"{key=}, {regions=}, {app_name=}, {app_prefix=}, {api_url}")
+    if not key or not regions or not app_name or not app_prefix or not api_url:
+        console.error("Please provide all the required parameters.")
+        raise typer.Exit(1)
+
+    processed_envs = hosting.process_envs(envs) if envs else None
+
+    # Compile the app in production mode.
+    config.api_url = api_url
+    config.deploy_url = deploy_url
+    try:
+        tmp_dir = tempfile.mkdtemp()
+        export(
+            frontend=True,
+            backend=True,
+            zipping=True,
+            zip_dest_dir=tmp_dir,
+            loglevel=loglevel,
+        )
+    except ImportError as ie:
+        console.error(
+            f"Encountered ImportError, did you install all the dependencies? {ie}"
+        )
+        raise typer.Exit(1) from ie
+
+    frontend_file_name = constants.ComponentName.FRONTEND.zip()
+    backend_file_name = constants.ComponentName.BACKEND.zip()
+
+    console.print("Uploading code and sending request ...")
+    deploy_requested_at = datetime.now().astimezone()
+    try:
+        deploy_response = hosting.deploy(
+            frontend_file_name=frontend_file_name,
+            backend_file_name=backend_file_name,
+            export_dir=tmp_dir,
+            key=key,
+            app_name=app_name,
+            regions=regions,
+            app_prefix=app_prefix,
+            cpus=cpus,
+            memory_mb=memory_mb,
+            auto_start=auto_start,
+            auto_stop=auto_stop,
+            frontend_hostname=frontend_hostname,
+            envs=processed_envs,
+            with_metrics=with_metrics,
+            with_tracing=with_tracing,
+        )
+    except Exception as ex:
+        console.error(f"Unable to deploy due to: {ex}")
+        raise typer.Exit(1) from ex
+
+    # Deployment will actually start when data plane reconciles this request
+    console.debug(f"deploy_response: {deploy_response}")
+    console.rule("[bold]Deploying production app.")
+    console.print(
+        "[bold]Deployment will start shortly. Closing this command now will not affect your deployment."
+    )
+
+    # It takes a few seconds for the deployment request to be picked up by server
+    hosting.wait_for_server_to_pick_up_request()
+
+    console.print("Waiting for server to report progress ...")
+    # Display the key events such as build, deploy, etc
+    asyncio.get_event_loop().run_until_complete(
+        hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
+    )
+
+    console.print("Waiting for the new deployment to come up")
+    backend_up = frontend_up = False
+
+    with console.status("Checking backend ..."):
+        for _ in range(constants.Hosting.BACKEND_POLL_RETRIES):
+            if backend_up := hosting.poll_backend(deploy_response.backend_url):
+                break
+            time.sleep(1)
+    if not backend_up:
+        console.print("Backend unreachable")
+    else:
+        console.print("Backend is up")
+
+    with console.status("Checking frontend ..."):
+        for _ in range(constants.Hosting.FRONTEND_POLL_RETRIES):
+            if frontend_up := hosting.poll_frontend(deploy_response.frontend_url):
+                break
+            time.sleep(1)
+    if not frontend_up:
+        console.print("frontend is unreachable")
+    else:
+        console.print("frontend is up")
+
+    if frontend_up and backend_up:
+        console.print(
+            f"Your site [ {key} ] at {regions} is up: {deploy_response.frontend_url}"
+        )
+        return
+    console.warn(
+        "Your deployment is taking unusually long. Check back later on its status: `reflex deployments status`"
+    )
+
+
+deployments_cli = typer.Typer()
+
+
+@deployments_cli.command(name="list")
+def list_deployments(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+    as_json: bool = typer.Option(
+        False, "-j", "--json", help="Whether to output the result in json format."
+    ),
+):
+    """List all the hosted deployments of the authenticated user."""
+    console.set_log_level(loglevel)
+    try:
+        deployments = hosting.list_deployments()
+    except Exception as ex:
+        console.error(f"Unable to list deployments due to: {ex}")
+        raise typer.Exit(1) from ex
+
+    if as_json:
+        console.print(json.dumps(deployments))
+        return
+    if deployments:
+        headers = list(deployments[0].keys())
+        table = [list(deployment.values()) for deployment in deployments]
+        console.print(tabulate(table, headers=headers))
+    else:
+        # If returned empty list, print the empty
+        console.print(str(deployments))
+
+
+@deployments_cli.command(name="delete")
+def delete_deployment(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Delete a hosted instance."""
+    console.set_log_level(loglevel)
+    try:
+        hosting.delete_deployment(key)
+    except Exception as ex:
+        console.error(f"Unable to delete deployment due to: {ex}")
+        raise typer.Exit(1) from ex
+    console.print(f"Successfully deleted [ {key} ].")
+
+
+@deployments_cli.command(name="status")
+def get_deployment_status(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Check the status of a deployment."""
+    console.set_log_level(loglevel)
+
+    try:
+        console.print(f"Getting status for [ {key} ] ...\n")
+        status = hosting.get_deployment_status(key)
+
+        # TODO: refactor all these tabulate calls
+        status.backend.updated_at = hosting.convert_to_local_time(
+            status.backend.updated_at or "N/A"
+        )
+        backend_status = status.backend.dict(exclude_none=True)
+        headers = list(backend_status.keys())
+        table = list(backend_status.values())
+        console.print(tabulate([table], headers=headers))
+        # Add a new line in console
+        console.print("\n")
+        status.frontend.updated_at = hosting.convert_to_local_time(
+            status.frontend.updated_at or "N/A"
+        )
+        frontend_status = status.frontend.dict(exclude_none=True)
+        headers = list(frontend_status.keys())
+        table = list(frontend_status.values())
+        console.print(tabulate([table], headers=headers))
+    except Exception as ex:
+        console.error(f"Unable to get deployment status due to: {ex}")
+        raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="logs")
+def get_deployment_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+    console.print("Note: there is a few seconds delay for logs to be available.")
+    try:
+        asyncio.get_event_loop().run_until_complete(hosting.get_logs(key))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs due to: {ex}")
+        raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="all-logs")
+def get_deployment_all_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+
+    console.print("Note: there is a few seconds delay for logs to be available.")
+    try:
+        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.ALL_LOG))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs due to: {ex}")
+        raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="deploy-logs")
+def get_deployment_deploy_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+
+    console.print("Note: there is a few seconds delay for logs to be available.")
+    try:
+        # TODO: we need to pass in the from time stamp
+        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.DEPLOY_LOG))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs due to: {ex}")
+        raise typer.Exit(1) from ex
+
+
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
+cli.add_typer(
+    deployments_cli,
+    name="deployments",
+    help="Subcommands for managing the Deployments.",
+)
 
 if __name__ == "__main__":
     cli()

@@ -41,5 +41,14 @@ class GitIgnore(SimpleNamespace):
     DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]"}
 
 
+class RequirementsTxt(SimpleNamespace):
+    """Requirements.txt constants."""
+
+    # The requirements.txt file.
+    FILE = "requirements.txt"
+    # The partial text used to form requirement that pins a reflex version
+    DEFAULTS_STUB = "reflex=="
+
+
 # The deployment URL.
 PRODUCTION_BACKEND_URL = "https://{username}-{app_name}.api.pynecone.app"
