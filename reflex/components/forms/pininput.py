@@ -4,10 +4,11 @@ from __future__ import annotations
 from typing import Any, Optional, Union
 
 from reflex.components.component import Component
-from reflex.components.layout import Foreach
 from reflex.components.libs.chakra import ChakraComponent, LiteralInputVariant
+from reflex.components.tags.tag import Tag
 from reflex.constants import EventTriggers
 from reflex.utils import format
+from reflex.utils.imports import ImportDict, merge_imports
 from reflex.vars import Var
 
 
@@ -58,6 +59,20 @@ class PinInput(ChakraComponent):
     # "outline" | "flushed" | "filled" | "unstyled"
     variant: Var[LiteralInputVariant]
 
+    # The name of the form field
+    name: Var[str]
+
+    def _get_imports(self) -> ImportDict:
+        """Include PinInputField explicitly because it may not be a child component at compile time.
+
+        Returns:
+            The merged import dict.
+        """
+        return merge_imports(
+            super()._get_imports(),
+            PinInputField().get_imports(),  # type: ignore
+        )
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -70,13 +85,24 @@ class PinInput(ChakraComponent):
             EventTriggers.ON_COMPLETE: lambda e0: [e0],
         }
 
-    def get_ref(self):
-        """Return a reference because we actually attached the ref to the PinInputFields.
+    def get_ref(self) -> str | None:
+        """Override ref handling to handle array refs.
+
+        PinInputFields may be created dynamically, so it's not possible
+        to compute their ref at compile time, so we return a cheating
+        guess if the id is specified.
+
+        The `ref` for this outer component will always be stripped off, so what
+        is returned here only matters for form ref collection purposes.
 
         Returns:
             None.
         """
-        return None
+        if any(isinstance(c, PinInputField) for c in self.children):
+            return None
+        if self.id:
+            return format.format_array_ref(self.id, idx=self.length)
+        return super().get_ref()
 
     def _get_ref_hook(self) -> Optional[str]:
         """Override the base _get_ref_hook to handle array refs.
@@ -86,9 +112,21 @@ class PinInput(ChakraComponent):
         """
         if self.id:
             ref = format.format_array_ref(self.id, None)
+            refs_declaration = self.length.forrange(  # type: ignore
+                lambda _: Var.create_safe("useRef(null)", _var_is_string=False),
+            )
+            refs_declaration._var_is_local = True
             if ref:
-                return f"const {ref} = Array.from({{length:{self.length}}}, () => useRef(null));"
+                return f"const {ref} = {refs_declaration}"
             return super()._get_ref_hook()
+
+    def _render(self) -> Tag:
+        """Override the base _render to remove the fake get_ref.
+
+        Returns:
+            The rendered component.
+        """
+        return super()._render().remove_props("ref")
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -104,22 +142,17 @@ class PinInput(ChakraComponent):
         Returns:
             The pin input component.
         """
-        if not children and "length" in props:
-            _id = props.get("id", None)
-            length = props["length"]
-            if _id:
-                children = [
-                    Foreach.create(
-                        list(range(length)),  # type: ignore
-                        lambda ref, i: PinInputField.create(
-                            key=i,
-                            id=_id,
-                            index=i,
-                        ),
-                    )
-                ]
-            else:
-                children = [PinInputField()] * length
+        if children:
+            props.pop("length", None)
+        elif "length" in props:
+            field_props = {}
+            if "id" in props:
+                field_props["id"] = props["id"]
+            if "name" in props:
+                field_props["name"] = props["name"]
+            children = [
+                PinInputField.for_length(props["length"], **field_props),
+            ]
         return super().create(*children, **props)
 
 
@@ -131,6 +164,31 @@ class PinInputField(ChakraComponent):
     # the position of the PinInputField inside the PinInput.
     # Default to None because it is assigned by PinInput when created.
     index: Optional[Var[int]] = None
+
+    # The name of the form field
+    name: Var[str]
+
+    @classmethod
+    def for_length(cls, length: Var | int, **props) -> Var:
+        """Create a PinInputField for a PinInput with a given length.
+
+        Args:
+            length: The length of the PinInput.
+            props: The props of each PinInputField (name will become indexed).
+
+        Returns:
+            The PinInputField.
+        """
+        if isinstance(length, int):
+            length = Var.create_safe(length)
+        name = props.get("name")
+
+        def _create(i):
+            if name is not None:
+                props["name"] = f"{name}-{i}"
+            return PinInputField.create(**props, index=i, key=i)
+
+        return length.forrange(_create)  # type: ignore
 
     def _get_ref_hook(self) -> Optional[str]:
         return None
