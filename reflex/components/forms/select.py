@@ -46,6 +46,9 @@ class Select(ChakraComponent):
     # The size of the select.
     size: Var[str]
 
+    # The name of the form field
+    name: Var[str]
+
     def get_event_triggers(self) -> Dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
