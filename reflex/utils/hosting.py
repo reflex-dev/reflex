@@ -11,6 +11,7 @@ import uuid
 import webbrowser
 from datetime import datetime
 from http import HTTPStatus
+from typing import List, Optional
 
 import httpx
 import websockets
@@ -31,7 +32,7 @@ def get_existing_access_token() -> tuple[str, str]:
         Exception: if runs into any issues, file not exist, ill-formatted, etc.
 
     Returns:
-        The access token and optionally the invitation code if it is valid, otherwise empty string for the.
+        The access token and optionally the invitation code if valid, otherwise empty string.
     """
     console.debug("Fetching token from existing config...")
     try:
@@ -182,15 +183,15 @@ class DeploymentPrepareResponse(Base):
     app_prefix: str
     # The reply from the server for a prepare request to deploy over a particular key
     # If reply is not None, it means server confirms the key is available for use.
-    reply: DeploymentPrepInfo | None = None
+    reply: Optional[DeploymentPrepInfo] = None
     # The list of existing deployments by the user under the same app name.
     # This is used to allow easy upgrade case when user attempts to deploy
     # in the same named app directory, user intends to upgrade the existing deployment.
-    existing: list[DeploymentPrepInfo] | None = None
+    existing: Optional[List[DeploymentPrepInfo]] = None
     # The suggested key name based on the app name.
     # This is for a new deployment, user has not deployed this app before.
     # The server returns key suggestion based on the app name.
-    suggestion: DeploymentPrepInfo | None = None
+    suggestion: Optional[DeploymentPrepInfo] = None
 
     @root_validator(pre=True)
     def ensure_at_least_one_deploy_params(cls, values):
@@ -222,9 +223,9 @@ class DeploymentsPreparePostParam(Base):
     # The app name which is found in the config
     app_name: str
     # The deployment key
-    key: str | None = None  #  name of the deployment
+    key: Optional[str] = None  #  name of the deployment
     # The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
-    frontend_hostname: str | None = None
+    frontend_hostname: Optional[str] = None
 
 
 def prepare_deploy(
@@ -315,23 +316,23 @@ class DeploymentsPostParam(Base):
     # The version of reflex CLI used to deploy
     reflex_version: str = Field(..., min_length=1)
     # The number of CPUs
-    cpus: int | None = None
+    cpus: Optional[int] = None
     # The memory in MB
-    memory_mb: int | None = None
+    memory_mb: Optional[int] = None
     # Whether to auto start the hosted deployment
-    auto_start: bool | None = None
+    auto_start: Optional[bool] = None
     # Whether to auto stop the hosted deployment when idling
-    auto_stop: bool | None = None
+    auto_stop: Optional[bool] = None
     # The frontend hostname to deploy to. This is used to deploy at hostname not in the regular domain.
-    frontend_hostname: str | None = None
+    frontend_hostname: Optional[str] = None
     # The description of the deployment
-    description: str | None = None
+    description: Optional[str] = None
     # The json encoded list of environment variables
-    envs_json: str | None = None
+    envs_json: Optional[str] = None
     # The command line prefix for tracing
-    reflex_cli_entrypoint: str | None = None
+    reflex_cli_entrypoint: Optional[str] = None
     # The metrics endpoint
-    metrics_endpoint: str | None = None
+    metrics_endpoint: Optional[str] = None
 
 
 def deploy(
@@ -441,7 +442,7 @@ class DeploymentsGetParam(Base):
     """Params for hosted instance GET request."""
 
     # The app name which is found in the config
-    app_name: str | None
+    app_name: Optional[str]
 
 
 class DeploymentGetResponse(Base):
@@ -450,7 +451,7 @@ class DeploymentGetResponse(Base):
     # The deployment key
     key: str
     # The list of regions to deploy to
-    regions: list[str]
+    regions: List[str]
     # The app name which is found in the config
     app_name: str
     # The VM type
@@ -462,7 +463,7 @@ class DeploymentGetResponse(Base):
     # The site URL
     url: str
     # The list of environment variable names (values are never shown)
-    envs: list[str]
+    envs: List[str]
 
 
 def list_deployments(
@@ -636,13 +637,13 @@ class SiteStatus(Base):
     """Deployment status info."""
 
     # The frontend URL
-    frontend_url: str | None = None
+    frontend_url: Optional[str] = None
     # The backend URL
-    backend_url: str | None = None
+    backend_url: Optional[str] = None
     # Whether the frontend/backend URL is reachable
     reachable: bool
     # The last updated iso formatted timestamp if site is reachable
-    updated_at: str | None = None
+    updated_at: Optional[str] = None
 
     @root_validator(pre=True)
     def ensure_one_of_urls(cls, values):
@@ -685,7 +686,9 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
         The deployment status response including backend and frontend.
     """
     if not key:
-        raise ValueError("Valid key is required for the delete.")
+        raise ValueError(
+            "A non empty key is required for querying the deployment status."
+        )
 
     if not (token := authenticated_token()):
         raise Exception("not authenticated")
@@ -1010,7 +1013,7 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
                         for msg in constants.Hosting.END_OF_DEPLOYMENT_MESSAGES
                     ):
                         console.debug(
-                            "Received end of deployment message, exist event message streaming"
+                            "Received end of deployment message, stop event message streaming"
                         )
                         return
                 else:

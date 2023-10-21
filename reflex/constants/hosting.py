@@ -8,7 +8,7 @@ class Hosting:
     """Constants related to hosting."""
 
     # The hosting config json file
-    HOSTING_JSON = os.path.join(Reflex.DIR, "config.json")
+    HOSTING_JSON = os.path.join(Reflex.DIR, "hosting_v0.json")
     # The hosting service backend URL
     CP_BACKEND_URL = "https://rxcp-dev-control-plane.fly.dev"
     # The hosting service webpage URL
