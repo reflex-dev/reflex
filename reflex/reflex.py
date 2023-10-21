@@ -1,7 +1,5 @@
 """Reflex CLI to create, run, and deploy apps."""
 
-from __future__ import annotations
-
 import asyncio
 import atexit
 import contextlib
