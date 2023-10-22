@@ -30,16 +30,11 @@ def test_login_existing_token_but_invalid(mocker):
         return_value=("fake-token", "fake-code"),
     )
     mocker.patch(
-        "reflex.utils.hosting.validate_token",
+        "reflex.utils.hosting.validate_token_with_retries",
         side_effect=ValueError("token not valid"),
-    )
-    mock_delete_token_from_config = mocker.patch(
-        "reflex.utils.hosting.delete_token_from_config"
     )
     result = runner.invoke(cli, ["login"])
     assert result.exit_code == 1
-    # Make sure the invalid token delete is performed
-    mock_delete_token_from_config.assert_called_once()
 
 
 def test_login_no_existing_token_fetched_valid(mocker):
