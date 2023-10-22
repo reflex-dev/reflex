@@ -10,9 +10,9 @@ class Hosting:
     # The hosting config json file
     HOSTING_JSON = os.path.join(Reflex.DIR, "hosting_v0.json")
     # The hosting service backend URL
-    CP_BACKEND_URL = "https://rxcp-dev-control-plane.fly.dev"
+    CP_BACKEND_URL = "https://rxcp-prod-control-plane.fly.dev"
     # The hosting service webpage URL
-    CP_WEB_URL = "https://control-plane.dev.reflexcorp.run"
+    CP_WEB_URL = "https://control-plane.reflex.run"
 
     # The number of times to try and wait for the user to complete web authentication.
     WEB_AUTH_RETRIES = 60
