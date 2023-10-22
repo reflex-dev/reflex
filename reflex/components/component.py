@@ -20,6 +20,7 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import console, format, imports, types
+from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, ImportVar, Var
 
 
@@ -966,3 +967,17 @@ class NoSSRComponent(Component):
             else ""
         )
         return "".join((library_import, mod_import, opts_fragment))
+
+
+# We need to define it here instead of inside serializers.py to avoid circular import.
+@serializer
+def serialize_component(comp: Component):
+    """Serialize a component.
+
+    Args:
+        comp: The component to serialize.
+
+    Returns:
+        The serialized component.
+    """
+    return str(comp)
