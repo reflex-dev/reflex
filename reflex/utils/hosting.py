@@ -44,7 +44,7 @@ DEPLOYMENT_PICKUP_DELAY = 30
 # End of deployment workflow message. Used to determine if it is the last message from server.
 END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]
 # How many iterations to try and print the deployment event messages from server during deployment.
-DEPLOYMENT_EVENT_MESSAGES_RETRIES = 30
+DEPLOYMENT_EVENT_MESSAGES_RETRIES = 90
 # Timeout limit for http requests
 HTTP_REQUEST_TIMEOUT = 5  # seconds
 
@@ -885,7 +885,7 @@ def validate_token_with_retries(access_token: str) -> bool:
             except ValueError as ve:
                 console.error(f"Access denied")
                 delete_token_from_config()
-                raise SystemExit("Access denied") from ve
+                raise SystemExit from ve
             except Exception as ex:
                 console.debug(f"Unable to validate token due to: {ex}")
                 time.sleep(constants.Hosting.WEB_AUTH_SLEEP_DURATION)
