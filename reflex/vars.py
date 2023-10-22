@@ -366,6 +366,7 @@ class Var:
                 _var_type=type_,
                 _var_state=self._var_state,
                 _var_is_local=self._var_is_local,
+                _full_name=f"{self._full_name}.at({i})",
             )
 
         # Dictionary / dataframe indexing.
