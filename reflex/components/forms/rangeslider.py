@@ -75,7 +75,7 @@ class RangeSlider(ChakraComponent):
         if self.id:
             ref = format.format_array_ref(self.id, None)
             if ref:
-                return f"const {ref} = Array.from({{length:2}}, () => useRef(null));"
+                return f"refs['{ref}'] = Array.from({{length:2}}, () => useRef(null));"
             return super()._get_ref_hook()
 
     @classmethod

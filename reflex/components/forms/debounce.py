@@ -1,7 +1,7 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from reflex.components import Component
 from reflex.components.tags import Tag
@@ -58,7 +58,7 @@ class DebounceInput(Component):
             raise ValueError("DebounceInput child requires an on_change handler")
         child_ref = child.get_ref()
         if child_ref and not props.get("ref"):
-            props["input_ref"] = Var.create(child_ref, _var_is_local=False)
+            props["input_ref"] = Var.create(f"refs[`{child_ref}`]", _var_is_local=False)
         #self.children = []
         tag = super()._render()
         tag.add_props(
@@ -76,6 +76,23 @@ class DebounceInput(Component):
         # do NOT render the child, DebounceInput will create it
         object.__setattr__(child, "render", lambda: "")
         return tag
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a DebounceInput component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The DebounceInput component.
+        """
+        for child in children:
+            if isinstance(child, Component):
+                # skip memoizing on the child, debounce input will create it
+                object.__setattr__(child, "_get_memoized", lambda: None)
+        return super().create(*children, **props)
 
     def _get_memoized(self) -> str | None:
         base_state = None

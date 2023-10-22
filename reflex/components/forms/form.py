@@ -27,9 +27,10 @@ class Form(ChakraComponent):
         for ref in self.get_refs():
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
-            if ref.startswith("refs_"):
-                form_refs[ref[5:-6]] = Var.create(
-                    f"getRefValues(refs[`{ref}`])", _var_is_local=False
+            if ref.startswith("refs_") or ref.startswith("`refs_"):
+                ref_name, _, _ = ref.lstrip("`").partition("`][")
+                form_refs[ref_name[5:]] = Var.create(
+                    f"getRefValues(refs[`{ref_name}`])", _var_is_local=False
                 )
             else:
                 form_refs[ref[4:]] = Var.create(f"getRefValue(refs[`{ref}`])", _var_is_local=False)
