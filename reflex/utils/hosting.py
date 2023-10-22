@@ -19,7 +19,34 @@ from pydantic import Field, ValidationError, root_validator
 
 from reflex import constants
 from reflex.base import Base
+from reflex.config import get_config
 from reflex.utils import console
+
+config = get_config()
+# Endpoint to create or update a deployment
+POST_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Endpoint to get all deployments for the user
+GET_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Endpoint to fetch information from backend in preparation of a deployment
+POST_DEPLOYMENTS_PREPARE_ENDPOINT = f"{config.cp_backend_url}/deployments/prepare"
+# Endpoint to authenticate current user
+POST_VALIDATE_ME_ENDPOINT = f"{config.cp_backend_url}/authenticate/me"
+# Endpoint to fetch a login token after user completes authentication on web
+FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/authenticate"
+# Endpoint to delete a deployment
+DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Endpoint to get deployment status
+GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Websocket endpoint to stream logs of a deployment
+DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
+# Expected server response time to new deployment request. In seconds.
+DEPLOYMENT_PICKUP_DELAY = 30
+# End of deployment workflow message. Used to determine if it is the last message from server.
+END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]
+# How many iterations to try and print the deployment event messages from server during deployment.
+DEPLOYMENT_EVENT_MESSAGES_RETRIES = 30
+# Timeout limit for http requests
+HTTP_REQUEST_TIMEOUT = 5  # seconds
 
 
 def get_existing_access_token() -> tuple[str, str]:
@@ -59,9 +86,9 @@ def validate_token(token: str):
     """
     try:
         response = httpx.post(
-            constants.Hosting.POST_VALIDATE_ME_ENDPOINT,
+            POST_VALIDATE_ME_ENDPOINT,
             headers=authorization_header(token),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise ValueError
@@ -250,12 +277,12 @@ def prepare_deploy(
         raise Exception("not authenticated")
     try:
         response = httpx.post(
-            constants.Hosting.POST_DEPLOYMENTS_PREPARE_ENDPOINT,
+            POST_DEPLOYMENTS_PREPARE_ENDPOINT,
             headers=authorization_header(token),
             json=DeploymentsPreparePostParam(
                 app_name=app_name, key=key, frontend_hostname=frontend_hostname
             ).dict(exclude_none=True),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
 
         response_json = response.json()
@@ -407,7 +434,7 @@ def deploy(
                 ("files", (backend_file_name, backend_file)),
             ]
             response = httpx.post(
-                constants.Hosting.POST_DEPLOYMENTS_ENDPOINT,
+                POST_DEPLOYMENTS_ENDPOINT,
                 headers=authorization_header(token),
                 data=params.dict(exclude_none=True),
                 files=files,
@@ -484,10 +511,10 @@ def list_deployments(
 
     try:
         response = httpx.get(
-            constants.Hosting.GET_DEPLOYMENTS_ENDPOINT,
+            GET_DEPLOYMENTS_ENDPOINT,
             headers=authorization_header(token),
             params=params.dict(exclude_none=True),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         return [
@@ -531,8 +558,8 @@ def fetch_token(request_id: str) -> tuple[str, str]:
     """
     try:
         resp = httpx.get(
-            f"{constants.Hosting.FETCH_TOKEN_ENDPOINT}/{request_id}",
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            f"{FETCH_TOKEN_ENDPOINT}/{request_id}",
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         resp.raise_for_status()
         return (resp_json := resp.json())["access_token"], resp_json.get("code", "")
@@ -564,9 +591,7 @@ def poll_backend(backend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling backend at {backend_url}")
-        resp = httpx.get(
-            f"{backend_url}/ping", timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT
-        )
+        resp = httpx.get(f"{backend_url}/ping", timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -584,9 +609,7 @@ def poll_frontend(frontend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling frontend at {frontend_url}")
-        resp = httpx.get(
-            f"{frontend_url}", timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT
-        )
+        resp = httpx.get(f"{frontend_url}", timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -617,9 +640,9 @@ def delete_deployment(key: str):
 
     try:
         response = httpx.delete(
-            f"{constants.Hosting.DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
+            f"{DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
             headers=authorization_header(token),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
 
@@ -696,9 +719,9 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
 
     try:
         response = httpx.get(
-            f"{constants.Hosting.GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
+            f"{GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
             headers=authorization_header(token),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         response_json = response.json()
@@ -774,7 +797,7 @@ async def get_logs(
     if not key:
         raise ValueError("Valid key is required for querying logs.")
     try:
-        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type.value}"
+        logs_endpoint = f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type.value}"
         console.debug(f"log server endpoint: {logs_endpoint}")
         if from_iso_timestamp is not None:
             logs_endpoint += (
@@ -821,21 +844,16 @@ def authenticate_on_browser(
     Args:
         invitation_code: The invitation code if it exists.
 
-    Raises:
-        SystemExit: If the browser cannot be opened.
-
     Returns:
         The access token and invitation if valid, Nones otherwise.
     """
-    console.print(f"Opening {constants.Hosting.CP_WEB_URL} ...")
+    console.print(f"Opening {config.cp_web_url} ...")
     request_id = uuid.uuid4().hex
-    if not webbrowser.open(
-        f"{constants.Hosting.CP_WEB_URL}?request-id={request_id}&code={invitation_code}"
-    ):
-        console.error(
-            f"Unable to open the browser to authenticate. Please contact support."
+    auth_url = f"{config.cp_web_url}?request-id={request_id}&code={invitation_code}"
+    if not webbrowser.open(auth_url):
+        console.warn(
+            f"Unable to automatically open the browser. Please go to {auth_url} to authenticate."
         )
-        raise SystemExit("Unable to open browser for authentication.")
     with console.status("Waiting for access token ..."):
         for _ in range(constants.Hosting.WEB_AUTH_RETRIES):
             try:
@@ -957,20 +975,16 @@ def process_envs(envs: list[str]) -> dict[str, str]:
 
 
 def log_out_on_browser():
-    """Open the browser to authenticate the user.
-
-    Raises:
-        SystemExit: If the browser cannot be opened.
-    """
+    """Open the browser to authenticate the user."""
     # Fetching existing invitation code so user sees the log out page without having to enter it
     invitation_code = None
     with contextlib.suppress(Exception):
         _, invitation_code = get_existing_access_token()
         console.debug("Found existing invitation code in config")
-    console.print(f"Opening {constants.Hosting.CP_WEB_URL} ...")
-    if not webbrowser.open(f"{constants.Hosting.CP_WEB_URL}?code={invitation_code}"):
-        raise SystemExit(
-            f"Unable to open the browser to log out. Please contact support."
+    console.print(f"Opening {config.cp_web_url} ...")
+    if not webbrowser.open(f"{config.cp_web_url}?code={invitation_code}"):
+        console.warn(
+            f"Unable to open the browser automatically. Please go to {config.cp_web_url} to log out."
         )
 
 
@@ -991,12 +1005,12 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
         raise Exception("not authenticated")
 
     try:
-        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={LogType.DEPLOY_LOG.value}&from_iso_timestamp={from_iso_timestamp.astimezone().isoformat()}"
+        logs_endpoint = f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={LogType.DEPLOY_LOG.value}&from_iso_timestamp={from_iso_timestamp.astimezone().isoformat()}"
         console.debug(f"log server endpoint: {logs_endpoint}")
         _ws = websockets.connect(logs_endpoint)  # type: ignore
         async with _ws as ws:
             # Stream back the deploy events reported back from the server
-            for _ in range(constants.Hosting.DEPLOYMENT_EVENT_MESSAGES_RETRIES):
+            for _ in range(DEPLOYMENT_EVENT_MESSAGES_RETRIES):
                 row_json = json.loads(await ws.recv())
                 console.debug(f"Server responded with: {row_json}")
                 if row_json and isinstance(row_json, dict):
@@ -1011,7 +1025,7 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
                     )
                     if any(
                         msg in row_json["message"].lower()
-                        for msg in constants.Hosting.END_OF_DEPLOYMENT_MESSAGES
+                        for msg in END_OF_DEPLOYMENT_MESSAGES
                     ):
                         console.debug(
                             "Received end of deployment message, stop event message streaming"
@@ -1026,9 +1040,9 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
 def wait_for_server_to_pick_up_request():
     """Wait for server to pick up the request. Right now is just sleep."""
     with console.status(
-        f"Waiting for server to pick up request ~ {constants.Hosting.DEPLOYMENT_PICKUP_DELAY} seconds ..."
+        f"Waiting for server to pick up request ~ {DEPLOYMENT_PICKUP_DELAY} seconds ..."
     ):
-        for _ in range(constants.Hosting.DEPLOYMENT_PICKUP_DELAY):
+        for _ in range(DEPLOYMENT_PICKUP_DELAY):
             time.sleep(1)
 
 
