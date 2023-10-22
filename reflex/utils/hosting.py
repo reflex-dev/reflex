@@ -813,6 +813,9 @@ async def get_logs(
                         row_json["timestamp"] = convert_to_local_time(
                             row_json["timestamp"]
                         )
+                    for k, v in row_json.items():
+                        if v is None:
+                            row_json[k] = str(v)
                     print(" | ".join(row_json.values()))
                 else:
                     console.debug("Server responded, no new logs, this is normal")
