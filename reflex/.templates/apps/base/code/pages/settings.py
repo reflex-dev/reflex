@@ -14,7 +14,7 @@ def settings_page() -> rx.Component:
         rx.vstack(
             rx.heading(
                 "Settings",
-                size="3em",
+                font_size="3em",
             ),
             rx.text(
                 "Welcome to Reflex!",
