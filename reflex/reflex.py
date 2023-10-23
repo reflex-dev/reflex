@@ -2,7 +2,6 @@
 
 import asyncio
 import atexit
-import contextlib
 import json
 import os
 import tempfile
@@ -321,39 +320,19 @@ def login(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Check if the user is already logged in.
-    # Token is the access token, a JWT token obtained from auth provider
-    # after user completes authentication on web
-    access_token = None
-    # For initial hosting offering, it is by invitation only
-    # The login page is enabled only after a valid invitation code is entered
-    invitation_code = ""
-    using_existing_token = False
-
-    with contextlib.suppress(Exception):
-        access_token, invitation_code = hosting.get_existing_access_token()
-        using_existing_token = True
-        console.debug("Existing token found, proceed to validate")
+    access_token, invitation_code = hosting.authenticated_token()
+    if access_token:
+        console.print("You already logged in.")
+        return
 
     # If not already logged in, open a browser window/tab to the login page.
-    if not using_existing_token:
-        access_token, invitation_code = hosting.authenticate_on_browser(invitation_code)
+    access_token = hosting.authenticate_on_browser(invitation_code)
 
     if not access_token:
-        console.error(
-            f"Unable to fetch access token. Please try again or contact support."
-        )
+        console.error(f"Unable to authenticate. Please try again or contact support.")
         raise typer.Exit(1)
 
-    if not hosting.validate_token_with_retries(access_token):
-        console.error(f"Unable to validate token. Please try again or contact support.")
-        raise typer.Exit(1)
-
-    if not using_existing_token:
-        hosting.save_token_to_config(access_token, invitation_code)
-        console.print("Successfully logged in.")
-    else:
-        console.print("You already logged in.")
+    console.print("Successfully logged in.")
 
 
 @cli.command()
@@ -367,7 +346,7 @@ def logout(
 
     hosting.log_out_on_browser()
     console.debug("Deleting access token from config locally")
-    hosting.delete_token_from_config()
+    hosting.delete_token_from_config(include_invitation_code=True)
 
 
 db_cli = typer.Typer()
