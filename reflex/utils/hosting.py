@@ -824,7 +824,7 @@ async def get_logs(
         console.debug(f"Unable to get more deployment logs due to {ex}.")
         console.print("Log server disconnected ...")
         console.print(
-            "Note that the server has limit to only stream logs for several minutes to conserve resources"
+            "Note that the server has limit to only stream logs for several minutes"
         )
 
 
@@ -1062,11 +1062,11 @@ def interactive_prompt_for_envs() -> list[str]:
     """
     envs = []
     envs_finished = False
-    env_key_prompt = "  Env name (enter to skip)"
+    env_count = 1
+    env_key_prompt = f" * env-{env_count} name (enter to skip)"
     console.print("Environment variables ...")
     while not envs_finished:
         env_key = console.ask(env_key_prompt)
-        env_key_prompt = "  env name (enter to finish)"
         if not env_key:
             envs_finished = True
             if envs:
@@ -1075,6 +1075,8 @@ def interactive_prompt_for_envs() -> list[str]:
                 console.print("No envs added. Continuing ...")
             break
         # If it possible to have empty values for env, so we do not check here
-        env_value = console.ask("  env value")
+        env_value = console.ask(f"   env-{env_count} value")
         envs.append(f"{env_key}={env_value}")
+        env_count += 1
+        env_key_prompt = f" * env-{env_count} name (enter to skip)"
     return envs
