@@ -46,7 +46,7 @@ END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]
 # How many iterations to try and print the deployment event messages from server during deployment.
 DEPLOYMENT_EVENT_MESSAGES_RETRIES = 90
 # Timeout limit for http requests
-HTTP_REQUEST_TIMEOUT = 5  # seconds
+HTTP_REQUEST_TIMEOUT = 60  # seconds
 
 
 def get_existing_access_token() -> tuple[str, str]:
