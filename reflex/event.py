@@ -479,8 +479,8 @@ def call_event_handler(
         else:
             source = inspect.getsource(arg_spec)  # type: ignore
             raise ValueError(
-                f"number of arguments in {event_handler.fn.__name__} "
-                f"doesn't match the definition '{source.strip().strip(',')}'"
+                f"number of arguments in {event_handler.fn.__qualname__} "
+                f"doesn't match the definition of the event trigger '{source.strip().strip(',')}'"
             )
     else:
         console.deprecate(
