@@ -76,7 +76,7 @@ def sidebar_footer() -> rx.Component:
             href="https://reflex.dev/blog/",
         ),
         width="100%",
-        border_top=border,
+        border_y=border,
         padding="1em",
     )
 
