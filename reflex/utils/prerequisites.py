@@ -60,6 +60,19 @@ def get_node_version() -> version.Version | None:
         return None
 
 
+def get_fnm_version() -> version.Version | None:
+    """Get the version of fnm.
+
+    Returns:
+        The version of FNM.
+    """
+    try:
+        result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
+        return version.parse(result.stdout.split(" ")[1])  # type: ignore
+    except (FileNotFoundError, TypeError):
+        return None
+
+
 def get_bun_version() -> version.Version | None:
     """Get the version of bun.
 
