@@ -60,6 +60,19 @@ def get_node_version() -> version.Version | None:
         return None
 
 
+def get_fnm_version() -> version.Version | None:
+    """Get the version of fnm.
+
+    Returns:
+        The version of FNM.
+    """
+    try:
+        result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
+        return version.parse(result.stdout.split(" ")[1])  # type: ignore
+    except (FileNotFoundError, TypeError):
+        return None
+
+
 def get_bun_version() -> version.Version | None:
     """Get the version of bun.
 
@@ -83,7 +96,7 @@ def get_install_package_manager() -> str | None:
     """
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS:
-        return path_ops.get_npm_path()
+        return get_package_manager()
 
     # On other platforms, we use bun.
     return get_config().bun_path
@@ -96,7 +109,10 @@ def get_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    return path_ops.get_npm_path()
+    npm_path = path_ops.get_npm_path()
+    if npm_path is not None:
+        npm_path = str(Path(npm_path).resolve())
+    return npm_path
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -411,11 +427,13 @@ def install_node():
 
     if constants.IS_WINDOWS:
         # Install node
+        fnm_exe = Path(constants.Fnm.EXE).resolve()
+        fnm_dir = Path(constants.Fnm.DIR).resolve()
         process = processes.new_process(
             [
                 "powershell",
                 "-Command",
-                f'& "{constants.Fnm.EXE}" install {constants.Node.VERSION} --fnm-dir "{constants.Fnm.DIR}"',
+                f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
             ],
         )
     else:  # All other platforms (Linux, MacOS).
