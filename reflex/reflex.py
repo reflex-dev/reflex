@@ -626,7 +626,7 @@ def deploy(
         )
         return
     console.warn(
-        "Your deployment is taking unusually long. Check back later on its status: `reflex deployments status`"
+        f"Your deployment is taking unusually long. Check back later on its status: `reflex deployments status {key}`"
     )
 
 
