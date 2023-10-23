@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Literal, Optional
 
+from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.utils import console, format, imports, types
+from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
 
 
@@ -41,17 +43,6 @@ class GridColumnIcons(Enum):
     VideoUri = "video_uri"
 
 
-# replace below with Literal
-# class GridRowMarkers(str, Enum):
-#     """Grid Row Markers."""
-
-#     NUMBER = "number"
-#     NONE = "none"
-#     CHECKBOX = "checkbox"
-#     BOTH = "both"
-#     CLICKABLE_NUMBER = "clickable-number"
-
-
 # @serializer
 # def serialize_gridcolumn_icon(icon: GridColumnIcons) -> str:
 #     """Serialize grid column icon.
@@ -71,6 +62,46 @@ class GridColumnIcons(Enum):
 #     title: str
 #     id: Optional[str] = None
 #     type_: str = "str"
+
+
+class DataEditorTheme(Base):
+    """The theme for the DataEditor component."""
+
+    accentColor: Optional[str] = None
+    accentFg: Optional[str] = None
+    accentLight: Optional[str] = None
+    baseFontStyle: Optional[str] = None
+    bgBubble: Optional[str] = None
+    bgBubbleSelected: Optional[str] = None
+    bgCell: Optional[str] = None
+    bgCellMedium: Optional[str] = None
+    bgHeader: Optional[str] = None
+    bgHeaderHasFocus: Optional[str] = None
+    bgHeaderHovered: Optional[str] = None
+    bgIconHeader: Optional[str] = None
+    bgSearchResult: Optional[str] = None
+    borderColor: Optional[str] = None
+    cellHorizontalPadding: Optional[int] = None
+    cellVerticalPadding: Optional[int] = None
+    drilldownBorder: Optional[str] = None
+    editorFontSize: Optional[str] = None
+    fgIconHeader: Optional[str] = None
+    fontFamily: Optional[str] = None
+    headerBottomBorderColor: Optional[str] = None
+    headerFontStyle: Optional[str] = None
+    horizontalBorderColor: Optional[str] = None
+    lineHeight: Optional[int] = None
+    linkColor: Optional[str] = None
+    textBubble: Optional[str] = None
+    textDark: Optional[str] = None
+    textGroupHeader: Optional[str] = None
+    textHeader: Optional[str] = None
+    textHeaderSelected: Optional[str] = None
+    textLight: Optional[str] = None
+    textMedium: Optional[str] = None
+
+
+LiteralRowMarker = Literal["none", "number", "checkbox", "both", "clickable-number"]
 
 
 class DataEditor(NoSSRComponent):
@@ -133,7 +164,7 @@ class DataEditor(NoSSRComponent):
     row_height: Var[int]
 
     # Kind of row markers.
-    row_markers: Var[str]  # TODO: use Literal API ?
+    row_markers: Var[LiteralRowMarker]
 
     # Changes the starting index for row markers.
     row_marker_start_index: Var[int]
@@ -169,7 +200,7 @@ class DataEditor(NoSSRComponent):
     scroll_offset_y: Var[int]
 
     # global theme
-    theme: Var[dict]
+    theme: Var[DataEditorTheme]
 
     def _get_imports(self):
         return imports.merge_imports(
@@ -364,3 +395,16 @@ class DataEditor(NoSSRComponent):
 
 # except ImportError:
 #     pass
+
+
+@serializer
+def serialize_dataeditortheme(theme: DataEditorTheme):
+    """The serializer for the data editor theme.
+
+    Args:
+        theme: The theme to serialize.
+
+    Returns:
+        The serialized theme.
+    """
+    return format.json_dumps({k: v for k, v in theme.__dict__.items() if v is not None})
