@@ -780,6 +780,27 @@ def get_deployment_deploy_logs(
         raise typer.Exit(1) from ex
 
 
+@deployments_cli.command(name="regions")
+def get_deployment_regions(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+    as_json: bool = typer.Option(
+        False, "-j", "--json", help="Whether to output the result in json format."
+    ),
+):
+    """List all the regions of the hosting service."""
+    console.set_log_level(loglevel)
+    list_regions_info = hosting.get_regions()
+    if as_json:
+        console.print(json.dumps(list_regions_info))
+        return
+    if list_regions_info:
+        headers = list(list_regions_info[0].keys())
+        table = [list(deployment.values()) for deployment in list_regions_info]
+        console.print(tabulate(table, headers=headers))
+
+
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
 cli.add_typer(
     deployments_cli,

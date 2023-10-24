@@ -37,6 +37,8 @@ FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/authenticate"
 DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 # Endpoint to get deployment status
 GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Public endpoint to get the list of supported regions in hosting service
+GET_REGIONS_ENDPOINT = f"{config.cp_backend_url}/deployments/regions"
 # Websocket endpoint to stream logs of a deployment
 DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
 # Expected server response time to new deployment request. In seconds.
@@ -1087,3 +1089,29 @@ def interactive_prompt_for_envs() -> list[str]:
         env_count += 1
         env_key_prompt = f" * env-{env_count} name (enter to skip)"
     return envs
+
+
+def get_regions() -> list[dict]:
+    """Get the supported regions from the hosting server.
+
+    Returns:
+        A list of dict representation of the region information.
+    """
+    try:
+        response = httpx.get(
+            GET_REGIONS_ENDPOINT,
+            timeout=HTTP_REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        response_json = response.json()
+        assert response_json and isinstance(
+            response_json, list
+        ), "Expect server to return a list "
+        assert not response_json or (
+            response_json[0] is not None and isinstance(response_json[0], dict)
+        ), "Expect return values are dict's"
+
+        return response_json
+    except Exception as ex:
+        console.debug(f"Unable to get regions due to {ex}.")
+        return []
