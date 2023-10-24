@@ -405,7 +405,7 @@ def deploy(
         with_metrics: A string indicating the metrics endpoint.
 
     Raises:
-        OSError: If file IO related failure, re-raise it back to the client.
+        AssertionError: If the request is rejected by the hosting server.
         Exception: If the operation fails. The exception message is the reason.
 
     Returns:
@@ -449,9 +449,8 @@ def deploy(
             )
         # If the server explicitly states bad request,
         # display a different error
-        assert (
-            response.status_code != HTTPStatus.BAD_REQUEST
-        ), "Server rejected this request"
+        if response.status_code == HTTPStatus.BAD_REQUEST:
+            raise AssertionError("Server rejected this request")
         response.raise_for_status()
         response_json = response.json()
         return DeploymentPostResponse(
@@ -475,7 +474,8 @@ def deploy(
         raise Exception("internal errors") from kve
     except AssertionError as ve:
         console.debug(f"Unable to deploy due to request error: {ve}")
-        raise Exception("request error") from ve
+        # re-raise the error back to the user as client side error
+        raise
     except Exception as ex:
         console.debug(f"Unable to deploy due to internal errors: {ex}.")
         raise Exception("internal errors") from ex
@@ -955,8 +955,12 @@ def interactive_get_deployment_key_from_user_input(
                     key=key_input,
                     frontend_hostname=frontend_hostname,
                 )
-                assert pre_deploy_response.reply is not None
-                assert key_input == pre_deploy_response.reply.key
+                if (
+                    pre_deploy_response.reply is None
+                    or key_input != pre_deploy_response.reply.key
+                ):
+                    # Rejected by server, try again
+                    continue
                 key_candidate = pre_deploy_response.reply.key
                 api_url = pre_deploy_response.reply.api_url
                 deploy_url = pre_deploy_response.reply.deploy_url
@@ -1110,13 +1114,16 @@ def get_regions() -> list[dict]:
         )
         response.raise_for_status()
         response_json = response.json()
-        assert response_json and isinstance(
-            response_json, list
-        ), "Expect server to return a list "
-        assert not response_json or (
-            response_json[0] is not None and isinstance(response_json[0], dict)
-        ), "Expect return values are dict's"
-
+        if response_json is None or not isinstance(response_json, list):
+            console.debug("Expect server to return a list ")
+            return []
+        if (
+            response_json
+            and response_json[0] is not None
+            and isinstance(response_json[0], dict)
+        ):
+            console.debug("Expect return values are dict's")
+            return []
         return response_json
     except Exception as ex:
         console.debug(f"Unable to get regions due to {ex}.")
