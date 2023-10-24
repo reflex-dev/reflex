@@ -405,6 +405,7 @@ def deploy(
         with_metrics: A string indicating the metrics endpoint.
 
     Raises:
+        OSError: If file IO related failure, re-raise it back to the client.
         Exception: If the operation fails. The exception message is the reason.
 
     Returns:
@@ -448,14 +449,18 @@ def deploy(
             )
         # If the server explicitly states bad request,
         # display a different error
-        if response.status_code == HTTPStatus.BAD_REQUEST:
-            raise ValueError(response.json()["detail"])
+        assert (
+            response.status_code != HTTPStatus.BAD_REQUEST
+        ), "Server rejected this request"
         response.raise_for_status()
         response_json = response.json()
         return DeploymentPostResponse(
             frontend_url=response_json["frontend_url"],
             backend_url=response_json["backend_url"],
         )
+    except OSError as oe:
+        console.debug(f"Client side error related to file operation: {oe}")
+        raise
     except httpx.RequestError as re:
         console.debug(f"Unable to deploy due to request error: {re}")
         raise Exception("request error") from re
@@ -468,7 +473,7 @@ def deploy(
     except (KeyError, ValidationError) as kve:
         console.debug(f"Post params or server response format unexpected: {kve}")
         raise Exception("internal errors") from kve
-    except ValueError as ve:
+    except AssertionError as ve:
         console.debug(f"Unable to deploy due to request error: {ve}")
         raise Exception("request error") from ve
     except Exception as ex:
