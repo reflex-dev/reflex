@@ -113,6 +113,7 @@ input_left_addon = InputLeftAddon.create
 input_right_addon = InputRightAddon.create
 input_left_element = InputLeftElement.create
 input_right_element = InputRightElement.create
+moment = Moment.create
 multi_select = MultiSelect.create
 multi_select_option = MultiSelectOption
 number_decrement_stepper = NumberDecrementStepper.create

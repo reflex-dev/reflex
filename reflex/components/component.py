@@ -264,7 +264,12 @@ class Component(Base, ABC):
             for v in value:
                 if isinstance(v, EventHandler):
                     # Call the event handler to get the event.
-                    event = call_event_handler(v, arg_spec)  # type: ignore
+                    try:
+                        event = call_event_handler(v, arg_spec)  # type: ignore
+                    except ValueError as err:
+                        raise ValueError(
+                            f" {err} defined in the `{type(self).__name__}` component"
+                        ) from err
 
                     # Add the event to the chain.
                     events.append(event)
@@ -456,6 +461,14 @@ class Component(Base, ABC):
             child.add_style(style)
         return self
 
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        return {"sx": self.style}
+
     def render(self) -> Dict:
         """Render the component.
 
@@ -467,9 +480,9 @@ class Component(Base, ABC):
             tag.add_props(
                 **self.event_triggers,
                 key=self.key,
-                sx=self.style,
                 id=self.id,
                 class_name=self.class_name,
+                **self._get_style(),
                 **self.custom_attrs,
             ).set(
                 children=[child.render() for child in self.children],
@@ -937,14 +950,14 @@ def custom_component(
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
-    def _get_imports(self):
-        imports = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+    def _get_imports(self) -> imports.ImportDict:
+        dynamic_import = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
 
-        return {
-            **imports,
-            self.library: {ImportVar(tag=None, render=False)},
-            **self._get_dependencies_imports(),
-        }
+        return imports.merge_imports(
+            dynamic_import,
+            {self.library: {ImportVar(tag=None, render=False)}},
+            self._get_dependencies_imports(),
+        )
 
     def _get_dynamic_imports(self) -> str:
         opts_fragment = ", { ssr: false });"

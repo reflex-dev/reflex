@@ -30,8 +30,10 @@ from .config import (
     Config,
     Expiration,
     GitIgnore,
+    RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
+from .hosting import Hosting
 from .installer import (
     Bun,
     Fnm,
@@ -66,6 +68,7 @@ __ALL__ = [
     Ext,
     Fnm,
     GitIgnore,
+    RequirementsTxt,
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,
@@ -93,4 +96,5 @@ __ALL__ = [
     Tailwind,
     Templates,
     CompileVars,
+    Hosting,
 ]
