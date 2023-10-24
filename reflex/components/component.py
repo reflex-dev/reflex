@@ -477,8 +477,8 @@ class Component(Base, ABC):
                 key=self.key,
                 id=self.id,
                 class_name=self.class_name,
-                **self.custom_attrs,
                 **self._get_style(),
+                **self.custom_attrs,
             ).set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
