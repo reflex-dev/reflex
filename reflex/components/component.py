@@ -264,7 +264,12 @@ class Component(Base, ABC):
             for v in value:
                 if isinstance(v, EventHandler):
                     # Call the event handler to get the event.
-                    event = call_event_handler(v, arg_spec)  # type: ignore
+                    try:
+                        event = call_event_handler(v, arg_spec)  # type: ignore
+                    except ValueError as err:
+                        raise ValueError(
+                            f" {err} defined in the `{type(self).__name__}` component"
+                        ) from err
 
                     # Add the event to the chain.
                     events.append(event)
