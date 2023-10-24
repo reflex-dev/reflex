@@ -268,7 +268,7 @@ class Component(Base, ABC):
                         event = call_event_handler(v, arg_spec)  # type: ignore
                     except ValueError as err:
                         raise ValueError(
-                            f" {str(err)} defined in the `{type(self).__name__}` component"
+                            f" {err} defined in the `{type(self).__name__}` component"
                         ) from err
 
                     # Add the event to the chain.
