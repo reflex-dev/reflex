@@ -275,10 +275,10 @@ def export(
         help="The directory to export the zip files to.",
         show_default=False,
     ),
-    backend_exclude_sqlite_db_files: bool = typer.Option(
-        True,
+    upload_db_file: bool = typer.Option(
+        False,
         help="Whether to exclude sqlite db files when exporting backend.",
-        show_default=False,
+        hidden=True,
     ),
     loglevel: constants.LogLevel = typer.Option(
         console._LOG_LEVEL, help="The log level to use."
@@ -310,7 +310,7 @@ def export(
         zip=zipping,
         zip_dest_dir=zip_dest_dir,
         deploy_url=config.deploy_url,
-        backend_exclude_sqlite_db_files=backend_exclude_sqlite_db_files,
+        upload_db_file=upload_db_file,
     )
 
     # Post a telemetry event.
@@ -431,6 +431,7 @@ def deploy(
         config.app_name,
         "--app-name",
         help="The name of the App to deploy under.",
+        hidden=True,
     ),
     regions: List[str] = typer.Option(
         list(),
@@ -443,18 +444,27 @@ def deploy(
         "--env",
         help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option followed by the env name.",
     ),
-    cpus: Optional[int] = typer.Option(None, help="The number of CPUs to allocate."),
+    cpus: Optional[int] = typer.Option(
+        None, help="The number of CPUs to allocate.", hidden=True
+    ),
     memory_mb: Optional[int] = typer.Option(
-        None, help="The amount of memory to allocate."
+        None, help="The amount of memory to allocate.", hidden=True
     ),
     auto_start: Optional[bool] = typer.Option(
-        True, help="Whether to auto start the instance."
+        True,
+        help="Whether to auto start the instance.",
+        hidden=True,
     ),
     auto_stop: Optional[bool] = typer.Option(
-        True, help="Whether to auto stop the instance."
+        True,
+        help="Whether to auto stop the instance.",
+        hidden=True,
     ),
     frontend_hostname: Optional[str] = typer.Option(
-        None, "--frontend-hostname", help="The hostname of the frontend."
+        None,
+        "--frontend-hostname",
+        help="The hostname of the frontend.",
+        hidden=True,
     ),
     interactive: Optional[bool] = typer.Option(
         True,
@@ -463,14 +473,17 @@ def deploy(
     with_metrics: Optional[str] = typer.Option(
         None,
         help="Setting for metrics scraping for the deployment. Setup required in user code.",
+        hidden=True,
     ),
     with_tracing: Optional[str] = typer.Option(
         None,
         help="Setting to export tracing for the deployment. Setup required in user code.",
+        hidden=True,
     ),
-    backend_exclude_sqlite_db_files: bool = typer.Option(
-        True,
-        help="Whether to exclude sqlite db files from the backend export.",
+    upload_db_file: bool = typer.Option(
+        False,
+        help="Whether to include local sqlite db files when uploading to hosting service.",
+        hidden=True,
     ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
@@ -558,16 +571,15 @@ def deploy(
             zipping=True,
             zip_dest_dir=tmp_dir,
             loglevel=loglevel,
-            backend_exclude_sqlite_db_files=backend_exclude_sqlite_db_files,
+            upload_db_file=upload_db_file,
         )
     except ImportError as ie:
         console.error(
             f"Encountered ImportError, did you install all the dependencies? {ie}"
         )
-        raise typer.Exit(1) from ie
-    finally:
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
+        raise typer.Exit(1) from ie
 
     frontend_file_name = constants.ComponentName.FRONTEND.zip()
     backend_file_name = constants.ComponentName.BACKEND.zip()
@@ -745,43 +757,6 @@ def get_deployment_logs(
     console.print("Note: there is a few seconds delay for logs to be available.")
     try:
         asyncio.get_event_loop().run_until_complete(hosting.get_logs(key))
-    except Exception as ex:
-        console.error(f"Unable to get deployment logs due to: {ex}")
-        raise typer.Exit(1) from ex
-
-
-@deployments_cli.command(name="all-logs")
-def get_deployment_all_logs(
-    key: str = typer.Argument(..., help="The name of the deployment."),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
-):
-    """Get the logs for a deployment."""
-    console.set_log_level(loglevel)
-
-    console.print("Note: there is a few seconds delay for logs to be available.")
-    try:
-        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.ALL_LOG))
-    except Exception as ex:
-        console.error(f"Unable to get deployment logs due to: {ex}")
-        raise typer.Exit(1) from ex
-
-
-@deployments_cli.command(name="deploy-logs")
-def get_deployment_deploy_logs(
-    key: str = typer.Argument(..., help="The name of the deployment."),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
-):
-    """Get the logs for a deployment."""
-    console.set_log_level(loglevel)
-
-    console.print("Note: there is a few seconds delay for logs to be available.")
-    try:
-        # TODO: we need to pass in the from time stamp
-        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.DEPLOY_LOG))
     except Exception as ex:
         console.error(f"Unable to get deployment logs due to: {ex}")
         raise typer.Exit(1) from ex
