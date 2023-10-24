@@ -274,6 +274,11 @@ def export(
         help="The directory to export the zip files to.",
         show_default=False,
     ),
+    backend_exclude_sqlite_db_files: bool = typer.Option(
+        True,
+        help="Whether to exclude sqlite db files when exporting backend.",
+        show_default=False,
+    ),
     loglevel: constants.LogLevel = typer.Option(
         console._LOG_LEVEL, help="The log level to use."
     ),
@@ -304,6 +309,7 @@ def export(
         zip=zipping,
         zip_dest_dir=zip_dest_dir,
         deploy_url=config.deploy_url,
+        backend_exclude_sqlite_db_files=backend_exclude_sqlite_db_files,
     )
 
     # Post a telemetry event.
@@ -461,6 +467,10 @@ def deploy(
         None,
         help="Setting to export tracing for the deployment. Setup required in user code.",
     ),
+    backend_exclude_sqlite_db_files: bool = typer.Option(
+        True,
+        help="Whether to exclude sqlite db files from the backend export.",
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -547,6 +557,7 @@ def deploy(
             zipping=True,
             zip_dest_dir=tmp_dir,
             loglevel=loglevel,
+            backend_exclude_sqlite_db_files=backend_exclude_sqlite_db_files,
         )
     except ImportError as ie:
         console.error(

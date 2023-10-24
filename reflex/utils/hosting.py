@@ -444,6 +444,10 @@ def deploy(
                 data=params.dict(exclude_none=True),
                 files=files,
             )
+        # If the server explicitly states bad request,
+        # display a different error
+        if response.status_code == HTTPStatus.BAD_REQUEST:
+            raise ValueError(response.json()["detail"])
         response.raise_for_status()
         response_json = response.json()
         return DeploymentPostResponse(
@@ -462,6 +466,9 @@ def deploy(
     except (KeyError, ValidationError) as kve:
         console.debug(f"Post params or server response format unexpected: {kve}")
         raise Exception("internal errors") from kve
+    except ValueError as ve:
+        console.debug(f"Unable to deploy due to request error: {ve}")
+        raise Exception("request error") from ve
     except Exception as ex:
         console.debug(f"Unable to deploy due to internal errors: {ex}.")
         raise Exception("internal errors") from ex
