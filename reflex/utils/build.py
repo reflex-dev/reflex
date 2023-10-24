@@ -60,7 +60,7 @@ def _zip(
     target: str,
     root_dir: str,
     exclude_venv_dirs: bool,
-    exclude_sqlite_db_files: bool,
+    exclude_sqlite_db_files: bool = True,
     dirs_to_exclude: set[str] | None = None,
     files_to_exclude: set[str] | None = None,
 ) -> None:
@@ -127,6 +127,7 @@ def export(
     zip: bool = False,
     zip_dest_dir: str = os.getcwd(),
     deploy_url: str | None = None,
+    backend_exclude_sqlite_db_files: bool = True,
 ):
     """Export the app for deployment.
 
@@ -136,6 +137,7 @@ def export(
         zip: Whether to zip the app.
         zip_dest_dir: The destination directory for created zip files (if any)
         deploy_url: The URL of the deployed app.
+        backend_exclude_sqlite_db_files: Whether to exclude sqlite db files from the backend zip.
     """
     # Remove the static folder.
     path_ops.rm(constants.Dirs.WEB_STATIC)
@@ -183,7 +185,6 @@ def export(
                 root_dir=".web/_static",
                 files_to_exclude=files_to_exclude,
                 exclude_venv_dirs=False,
-                exclude_sqlite_db_files=False,
             )
         if backend:
             _zip(
@@ -195,7 +196,7 @@ def export(
                 dirs_to_exclude={"assets", "__pycache__"},
                 files_to_exclude=files_to_exclude,
                 exclude_venv_dirs=True,
-                exclude_sqlite_db_files=True,
+                exclude_sqlite_db_files=backend_exclude_sqlite_db_files,
             )
 
 

@@ -19,32 +19,57 @@ from pydantic import Field, ValidationError, root_validator
 
 from reflex import constants
 from reflex.base import Base
+from reflex.config import get_config
 from reflex.utils import console
+
+config = get_config()
+# Endpoint to create or update a deployment
+POST_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Endpoint to get all deployments for the user
+GET_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Endpoint to fetch information from backend in preparation of a deployment
+POST_DEPLOYMENTS_PREPARE_ENDPOINT = f"{config.cp_backend_url}/deployments/prepare"
+# Endpoint to authenticate current user
+POST_VALIDATE_ME_ENDPOINT = f"{config.cp_backend_url}/authenticate/me"
+# Endpoint to fetch a login token after user completes authentication on web
+FETCH_TOKEN_ENDPOINT = f"{config.cp_backend_url}/authenticate"
+# Endpoint to delete a deployment
+DELETE_DEPLOYMENTS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Endpoint to get deployment status
+GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
+# Public endpoint to get the list of supported regions in hosting service
+GET_REGIONS_ENDPOINT = f"{config.cp_backend_url}/deployments/regions"
+# Websocket endpoint to stream logs of a deployment
+DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
+# Expected server response time to new deployment request. In seconds.
+DEPLOYMENT_PICKUP_DELAY = 30
+# End of deployment workflow message. Used to determine if it is the last message from server.
+END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]
+# How many iterations to try and print the deployment event messages from server during deployment.
+DEPLOYMENT_EVENT_MESSAGES_RETRIES = 90
+# Timeout limit for http requests
+HTTP_REQUEST_TIMEOUT = 60  # seconds
 
 
 def get_existing_access_token() -> tuple[str, str]:
     """Fetch the access token from the existing config if applicable.
 
-    Raises:
-        Exception: if runs into any issues, file not exist, ill-formatted, etc.
-
     Returns:
-        The access token and optionally the invitation code if valid, otherwise empty string.
+        The access token and the invitation code.
+        If either is not found, return empty string for it instead.
     """
     console.debug("Fetching token from existing config...")
+    access_token = invitation_code = ""
     try:
         with open(constants.Hosting.HOSTING_JSON, "r") as config_file:
             hosting_config = json.load(config_file)
-
-        assert (
-            access_token := hosting_config.get("access_token", "")
-        ), "no access token found or empty token"
-        return access_token, hosting_config.get("code")
+            access_token = hosting_config.get("access_token", "")
+            invitation_code = hosting_config.get("code", "")
     except Exception as ex:
         console.debug(
             f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
-        raise Exception("no existing login found") from ex
+    return access_token, invitation_code
 
 
 def validate_token(token: str):
@@ -59,9 +84,9 @@ def validate_token(token: str):
     """
     try:
         response = httpx.post(
-            constants.Hosting.POST_VALIDATE_ME_ENDPOINT,
+            POST_VALIDATE_ME_ENDPOINT,
             headers=authorization_header(token),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise ValueError
@@ -80,14 +105,22 @@ def validate_token(token: str):
         raise Exception("internal errors") from ex
 
 
-def delete_token_from_config():
-    """Delete the invalid token from the config file if applicable."""
+def delete_token_from_config(include_invitation_code: bool = False):
+    """Delete the invalid token from the config file if applicable.
+
+    Args:
+        include_invitation_code:
+            Whether to delete the invitation code as well.
+            When user logs out, we delete the invitation code together.
+    """
     if os.path.exists(constants.Hosting.HOSTING_JSON):
         hosting_config = {}
         try:
             with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
                 hosting_config = json.load(config_file)
                 del hosting_config["access_token"]
+                if include_invitation_code:
+                    del hosting_config["code"]
                 json.dump(hosting_config, config_file)
         except Exception as ex:
             # Best efforts removing invalid token is OK
@@ -97,14 +130,11 @@ def delete_token_from_config():
 
 
 def save_token_to_config(token: str, code: str | None = None):
-    """Cache the token, and optionally invitation code to the config file.
+    """Best efforts cache the token, and optionally invitation code to the config file.
 
     Args:
         token: The access token to save.
         code: The invitation code to save if exists.
-
-    Raise:
-        Exception: if runs into any issues, file not exist, etc.
     """
     hosting_config: dict[str, str] = {"access_token": token}
     if code:
@@ -118,31 +148,23 @@ def save_token_to_config(token: str, code: str | None = None):
         )
 
 
-def authenticated_token() -> str | None:
+def authenticated_token() -> tuple[str, str]:
     """Fetch the access token from the existing config if applicable and validate it.
 
     Returns:
-        The access token if it is valid, None otherwise.
+        The access token and the invitation code.
+        If either is not found, return empty string for it instead.
     """
     # Check if the user is authenticated
-    try:
-        token, _ = get_existing_access_token()
-        if not token:
-            console.debug("No token found from the existing config.")
-            return None
-        validate_token(token)
-        return token
-    except Exception as ex:
-        console.debug(f"Unable to validate the token from the existing config: {ex}")
-        try:
-            console.debug("Try to delete the invalid token from config file")
-            with open(constants.Hosting.HOSTING_JSON, "rw") as config_file:
-                hosting_config = json.load(config_file)
-                del hosting_config["access_token"]
-                json.dump(hosting_config, config_file)
-        except Exception as ex:
-            console.debug(f"Unable to delete the invalid token from config file: {ex}")
-        return None
+
+    access_token, invitation_code = get_existing_access_token()
+    if not access_token:
+        console.debug("No access token found from the existing config.")
+        access_token = ""
+    elif not validate_token_with_retries(access_token):
+        access_token = ""
+
+    return access_token, invitation_code
 
 
 def authorization_header(token: str) -> dict[str, str]:
@@ -155,6 +177,18 @@ def authorization_header(token: str) -> dict[str, str]:
         The authorization header in dict format.
     """
     return {"Authorization": f"Bearer {token}"}
+
+
+def requires_authenticated() -> str:
+    """Check if the user is authenticated.
+
+    Returns:
+        The validated access token or empty string if not authenticated.
+    """
+    access_token, invitation_code = authenticated_token()
+    if access_token:
+        return access_token
+    return authenticate_on_browser(invitation_code)
 
 
 class DeploymentPrepInfo(Base):
@@ -246,16 +280,16 @@ def prepare_deploy(
         The response containing the backend URLs if successful, None otherwise.
     """
     # Check if the user is authenticated
-    if not (token := authenticated_token()):
+    if not (token := requires_authenticated()):
         raise Exception("not authenticated")
     try:
         response = httpx.post(
-            constants.Hosting.POST_DEPLOYMENTS_PREPARE_ENDPOINT,
+            POST_DEPLOYMENTS_PREPARE_ENDPOINT,
             headers=authorization_header(token),
             json=DeploymentsPreparePostParam(
                 app_name=app_name, key=key, frontend_hostname=frontend_hostname
             ).dict(exclude_none=True),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
 
         response_json = response.json()
@@ -377,7 +411,7 @@ def deploy(
         The response containing the URL of the site to be deployed if successful, None otherwise.
     """
     # Check if the user is authenticated
-    if not (token := authenticated_token()):
+    if not (token := requires_authenticated()):
         raise Exception("not authenticated")
 
     try:
@@ -407,11 +441,15 @@ def deploy(
                 ("files", (backend_file_name, backend_file)),
             ]
             response = httpx.post(
-                constants.Hosting.POST_DEPLOYMENTS_ENDPOINT,
+                POST_DEPLOYMENTS_ENDPOINT,
                 headers=authorization_header(token),
                 data=params.dict(exclude_none=True),
                 files=files,
             )
+        # If the server explicitly states bad request,
+        # display a different error
+        if response.status_code == HTTPStatus.BAD_REQUEST:
+            raise ValueError(response.json()["detail"])
         response.raise_for_status()
         response_json = response.json()
         return DeploymentPostResponse(
@@ -430,6 +468,9 @@ def deploy(
     except (KeyError, ValidationError) as kve:
         console.debug(f"Post params or server response format unexpected: {kve}")
         raise Exception("internal errors") from kve
+    except ValueError as ve:
+        console.debug(f"Unable to deploy due to request error: {ve}")
+        raise Exception("request error") from ve
     except Exception as ex:
         console.debug(f"Unable to deploy due to internal errors: {ex}.")
         raise Exception("internal errors") from ex
@@ -477,17 +518,17 @@ def list_deployments(
     Returns:
         The list of deployments if successful, None otherwise.
     """
-    if not (token := authenticated_token()):
+    if not (token := requires_authenticated()):
         raise Exception("not authenticated")
 
     params = DeploymentsGetParam(app_name=app_name)
 
     try:
         response = httpx.get(
-            constants.Hosting.GET_DEPLOYMENTS_ENDPOINT,
+            GET_DEPLOYMENTS_ENDPOINT,
             headers=authorization_header(token),
             params=params.dict(exclude_none=True),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         return [
@@ -523,34 +564,30 @@ def fetch_token(request_id: str) -> tuple[str, str]:
     Args:
         request_id: The request ID used when the user opens the browser for authentication.
 
-    Raises:
-        Exception: For request timeout, failed requests, ill-formed responses, unexpected errors.
-
     Returns:
         The access token if it exists, None otherwise.
     """
+    access_token = invitation_code = ""
     try:
         resp = httpx.get(
-            f"{constants.Hosting.FETCH_TOKEN_ENDPOINT}/{request_id}",
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            f"{FETCH_TOKEN_ENDPOINT}/{request_id}",
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         resp.raise_for_status()
-        return (resp_json := resp.json())["access_token"], resp_json.get("code", "")
+        access_token = (resp_json := resp.json()).get("access_token", "")
+        invitation_code = resp_json.get("code", "")
     except httpx.RequestError as re:
         console.debug(f"Unable to fetch token due to request error: {re}")
-        raise Exception("request timeout") from re
     except httpx.HTTPError as he:
         console.debug(f"Unable to fetch token due to {he}")
-        raise Exception("not found") from he
     except json.JSONDecodeError as jde:
         console.debug(f"Server did not respond with valid json: {jde}")
-        raise Exception("internal errors") from jde
     except KeyError as ke:
         console.debug(f"Server response format unexpected: {ke}")
-        raise Exception("internal errors") from ke
-    except Exception as ex:
+    except Exception:
         console.debug("Unexpected errors: {ex}")
-        raise Exception("internal errors") from ex
+
+    return access_token, invitation_code
 
 
 def poll_backend(backend_url: str) -> bool:
@@ -564,9 +601,7 @@ def poll_backend(backend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling backend at {backend_url}")
-        resp = httpx.get(
-            f"{backend_url}/ping", timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT
-        )
+        resp = httpx.get(f"{backend_url}/ping", timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -584,9 +619,7 @@ def poll_frontend(frontend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling frontend at {frontend_url}")
-        resp = httpx.get(
-            f"{frontend_url}", timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT
-        )
+        resp = httpx.get(f"{frontend_url}", timeout=HTTP_REQUEST_TIMEOUT)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -610,16 +643,16 @@ def delete_deployment(key: str):
         ValueError: If the key is not provided.
         Exception: If the operation fails. The exception message is the reason.
     """
-    if not (token := authenticated_token()):
+    if not (token := requires_authenticated()):
         raise Exception("not authenticated")
     if not key:
         raise ValueError("Valid key is required for the delete.")
 
     try:
         response = httpx.delete(
-            f"{constants.Hosting.DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
+            f"{DELETE_DEPLOYMENTS_ENDPOINT}/{key}",
             headers=authorization_header(token),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
 
@@ -691,14 +724,14 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
             "A non empty key is required for querying the deployment status."
         )
 
-    if not (token := authenticated_token()):
+    if not (token := requires_authenticated()):
         raise Exception("not authenticated")
 
     try:
         response = httpx.get(
-            f"{constants.Hosting.GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
+            f"{GET_DEPLOYMENT_STATUS_ENDPOINT}/{key}/status",
             headers=authorization_header(token),
-            timeout=constants.Hosting.HTTP_REQUEST_TIMEOUT,
+            timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
         response_json = response.json()
@@ -769,12 +802,12 @@ async def get_logs(
         Exception: If the operation fails. The exception message is the reason.
 
     """
-    if not (token := authenticated_token()):
+    if not (token := requires_authenticated()):
         raise Exception("not authenticated")
     if not key:
         raise ValueError("Valid key is required for querying logs.")
     try:
-        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type.value}"
+        logs_endpoint = f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={log_type.value}"
         console.debug(f"log server endpoint: {logs_endpoint}")
         if from_iso_timestamp is not None:
             logs_endpoint += (
@@ -786,18 +819,22 @@ async def get_logs(
                 row_json = json.loads(await ws.recv())
                 console.debug(f"Server responded with logs: {row_json}")
                 if row_json and isinstance(row_json, dict):
-                    if "timestamp" in row_json:
-                        row_json["timestamp"] = convert_to_local_time(
-                            row_json["timestamp"]
-                        )
-                    print(" | ".join(row_json.values()))
+                    row_to_print = {}
+                    for k, v in row_json.items():
+                        if v is None:
+                            row_to_print[k] = str(v)
+                        elif k == "timestamp":
+                            row_to_print[k] = convert_to_local_time(v)
+                        else:
+                            row_to_print[k] = v
+                    print(" | ".join(row_to_print.values()))
                 else:
                     console.debug("Server responded, no new logs, this is normal")
     except Exception as ex:
         console.debug(f"Unable to get more deployment logs due to {ex}.")
         console.print("Log server disconnected ...")
         console.print(
-            "Note that the server has limit to only stream logs for several minutes to conserve resources"
+            "Note that the server has limit to only stream logs for several minutes"
         )
 
 
@@ -814,37 +851,37 @@ def check_requirements_txt_exist():
 
 
 def authenticate_on_browser(
-    invitation_code: str | None,
-) -> tuple[str | None, str | None]:
+    invitation_code: str,
+) -> str:
     """Open the browser to authenticate the user.
 
     Args:
         invitation_code: The invitation code if it exists.
 
-    Raises:
-        SystemExit: If the browser cannot be opened.
-
     Returns:
-        The access token and invitation if valid, Nones otherwise.
+        The access token if valid, empty otherwise.
     """
-    console.print(f"Opening {constants.Hosting.CP_WEB_URL} ...")
+    console.print(f"Opening {config.cp_web_url} ...")
     request_id = uuid.uuid4().hex
-    if not webbrowser.open(
-        f"{constants.Hosting.CP_WEB_URL}?request-id={request_id}&code={invitation_code}"
-    ):
-        console.error(
-            f"Unable to open the browser to authenticate. Please contact support."
+    auth_url = f"{config.cp_web_url}?request-id={request_id}&code={invitation_code}"
+    if not webbrowser.open(auth_url):
+        console.warn(
+            f"Unable to automatically open the browser. Please go to {auth_url} to authenticate."
         )
-        raise SystemExit("Unable to open browser for authentication.")
+    access_token = invitation_code = ""
     with console.status("Waiting for access token ..."):
         for _ in range(constants.Hosting.WEB_AUTH_RETRIES):
-            try:
-                return fetch_token(request_id)
-            except Exception:
-                pass
-            time.sleep(constants.Hosting.WEB_AUTH_SLEEP_DURATION)
+            access_token, invitation_code = fetch_token(request_id)
+            if access_token:
+                break
+            else:
+                time.sleep(constants.Hosting.WEB_AUTH_SLEEP_DURATION)
 
-    return None, None
+    if access_token and validate_token_with_retries(access_token):
+        save_token_to_config(access_token, invitation_code)
+    else:
+        access_token = ""
+    return access_token
 
 
 def validate_token_with_retries(access_token: str) -> bool:
@@ -853,23 +890,21 @@ def validate_token_with_retries(access_token: str) -> bool:
     Args:
         access_token: The access token to validate.
 
-    Raises:
-        SystemExit: If the token is confirmed invalid by server.
-
     Returns:
-        True if the token is valid, False otherwise.
+        True if the token is valid,
+        False if invalid or unable to validate.
     """
     with console.status("Validating access token ..."):
         for _ in range(constants.Hosting.WEB_AUTH_RETRIES):
             try:
                 validate_token(access_token)
                 return True
-            except ValueError as ve:
+            except ValueError:
                 console.error(f"Access denied")
                 delete_token_from_config()
-                raise SystemExit("Access denied") from ve
+                break
             except Exception as ex:
-                console.debug(f"Unable to validate token due to: {ex}")
+                console.debug(f"Unable to validate token due to: {ex}, trying again")
                 time.sleep(constants.Hosting.WEB_AUTH_SLEEP_DURATION)
     return False
 
@@ -957,20 +992,17 @@ def process_envs(envs: list[str]) -> dict[str, str]:
 
 
 def log_out_on_browser():
-    """Open the browser to authenticate the user.
-
-    Raises:
-        SystemExit: If the browser cannot be opened.
-    """
+    """Open the browser to authenticate the user."""
     # Fetching existing invitation code so user sees the log out page without having to enter it
     invitation_code = None
     with contextlib.suppress(Exception):
         _, invitation_code = get_existing_access_token()
         console.debug("Found existing invitation code in config")
-    console.print(f"Opening {constants.Hosting.CP_WEB_URL} ...")
-    if not webbrowser.open(f"{constants.Hosting.CP_WEB_URL}?code={invitation_code}"):
-        raise SystemExit(
-            f"Unable to open the browser to log out. Please contact support."
+        delete_token_from_config()
+    console.print(f"Opening {config.cp_web_url} ...")
+    if not webbrowser.open(f"{config.cp_web_url}?code={invitation_code}"):
+        console.warn(
+            f"Unable to open the browser automatically. Please go to {config.cp_web_url} to log out."
         )
 
 
@@ -987,16 +1019,16 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
     """
     if not key:
         raise ValueError("Non-empty key is required for querying deploy status.")
-    if not (token := authenticated_token()):
+    if not (token := requires_authenticated()):
         raise Exception("not authenticated")
 
     try:
-        logs_endpoint = f"{constants.Hosting.DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={LogType.DEPLOY_LOG.value}&from_iso_timestamp={from_iso_timestamp.astimezone().isoformat()}"
+        logs_endpoint = f"{DEPLOYMENT_LOGS_ENDPOINT}/{key}/logs?access_token={token}&log_type={LogType.DEPLOY_LOG.value}&from_iso_timestamp={from_iso_timestamp.astimezone().isoformat()}"
         console.debug(f"log server endpoint: {logs_endpoint}")
         _ws = websockets.connect(logs_endpoint)  # type: ignore
         async with _ws as ws:
             # Stream back the deploy events reported back from the server
-            for _ in range(constants.Hosting.DEPLOYMENT_EVENT_MESSAGES_RETRIES):
+            for _ in range(DEPLOYMENT_EVENT_MESSAGES_RETRIES):
                 row_json = json.loads(await ws.recv())
                 console.debug(f"Server responded with: {row_json}")
                 if row_json and isinstance(row_json, dict):
@@ -1011,7 +1043,7 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
                     )
                     if any(
                         msg in row_json["message"].lower()
-                        for msg in constants.Hosting.END_OF_DEPLOYMENT_MESSAGES
+                        for msg in END_OF_DEPLOYMENT_MESSAGES
                     ):
                         console.debug(
                             "Received end of deployment message, stop event message streaming"
@@ -1026,9 +1058,9 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
 def wait_for_server_to_pick_up_request():
     """Wait for server to pick up the request. Right now is just sleep."""
     with console.status(
-        f"Waiting for server to pick up request ~ {constants.Hosting.DEPLOYMENT_PICKUP_DELAY} seconds ..."
+        f"Waiting for server to pick up request ~ {DEPLOYMENT_PICKUP_DELAY} seconds ..."
     ):
-        for _ in range(constants.Hosting.DEPLOYMENT_PICKUP_DELAY):
+        for _ in range(DEPLOYMENT_PICKUP_DELAY):
             time.sleep(1)
 
 
@@ -1040,11 +1072,11 @@ def interactive_prompt_for_envs() -> list[str]:
     """
     envs = []
     envs_finished = False
-    env_key_prompt = "  Env name (enter to skip)"
+    env_count = 1
+    env_key_prompt = f" * env-{env_count} name (enter to skip)"
     console.print("Environment variables ...")
     while not envs_finished:
         env_key = console.ask(env_key_prompt)
-        env_key_prompt = "  env name (enter to finish)"
         if not env_key:
             envs_finished = True
             if envs:
@@ -1053,6 +1085,34 @@ def interactive_prompt_for_envs() -> list[str]:
                 console.print("No envs added. Continuing ...")
             break
         # If it possible to have empty values for env, so we do not check here
-        env_value = console.ask("  env value")
+        env_value = console.ask(f"   env-{env_count} value")
         envs.append(f"{env_key}={env_value}")
+        env_count += 1
+        env_key_prompt = f" * env-{env_count} name (enter to skip)"
     return envs
+
+
+def get_regions() -> list[dict]:
+    """Get the supported regions from the hosting server.
+
+    Returns:
+        A list of dict representation of the region information.
+    """
+    try:
+        response = httpx.get(
+            GET_REGIONS_ENDPOINT,
+            timeout=HTTP_REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
+        response_json = response.json()
+        assert response_json and isinstance(
+            response_json, list
+        ), "Expect server to return a list "
+        assert not response_json or (
+            response_json[0] is not None and isinstance(response_json[0], dict)
+        ), "Expect return values are dict's"
+
+        return response_json
+    except Exception as ex:
+        console.debug(f"Unable to get regions due to {ex}.")
+        return []

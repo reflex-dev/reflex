@@ -10,74 +10,34 @@ from reflex.utils.hosting import DeploymentPrepInfo
 runner = CliRunner()
 
 
-def test_login_success(mocker):
-    mock_get_existing_access_token = mocker.patch(
-        "reflex.utils.hosting.get_existing_access_token",
+def test_login_success_existing_token(mocker):
+    mocker.patch(
+        "reflex.utils.hosting.authenticated_token",
         return_value=("fake-token", "fake-code"),
-    )
-    mock_validate_token = mocker.patch(
-        "reflex.utils.hosting.validate_token_with_retries"
     )
     result = runner.invoke(cli, ["login"])
     assert result.exit_code == 0
-    mock_get_existing_access_token.assert_called_once()
-    mock_validate_token.assert_called_once_with("fake-token")
 
 
-def test_login_existing_token_but_invalid(mocker):
+def test_login_success_on_browser(mocker):
     mocker.patch(
-        "reflex.utils.hosting.get_existing_access_token",
-        return_value=("fake-token", "fake-code"),
+        "reflex.utils.hosting.authenticated_token",
+        return_value=("", "fake-code"),
     )
-    mocker.patch(
-        "reflex.utils.hosting.validate_token",
-        side_effect=ValueError("token not valid"),
-    )
-    mock_delete_token_from_config = mocker.patch(
-        "reflex.utils.hosting.delete_token_from_config"
-    )
-    result = runner.invoke(cli, ["login"])
-    assert result.exit_code == 1
-    # Make sure the invalid token delete is performed
-    mock_delete_token_from_config.assert_called_once()
-
-
-def test_login_no_existing_token_fetched_valid(mocker):
-    # Access token does not exist, but user authenticates successfully on browser.
-    mocker.patch(
-        "reflex.utils.hosting.get_existing_access_token",
-        side_effect=Exception("no token found"),
-    )
-
-    # Token is fetched successfully
-    mocker.patch(
-        "reflex.utils.hosting.authenticate_on_browser",
-        return_value=("fake-token2", "fake-code2"),
-    )
-    mock_validate_token = mocker.patch(
-        "reflex.utils.hosting.validate_token_with_retries"
-    )
-    mock_save_token_to_config = mocker.patch(
-        "reflex.utils.hosting.save_token_to_config"
+    mock_authenticate_on_browser = mocker.patch(
+        "reflex.utils.hosting.authenticate_on_browser", return_value="fake-token"
     )
     result = runner.invoke(cli, ["login"])
     assert result.exit_code == 0
-    mock_validate_token.assert_called_once_with(
-        "fake-token2",
-    )
-    mock_save_token_to_config.assert_called_once_with("fake-token2", "fake-code2")
+    mock_authenticate_on_browser.assert_called_once_with("fake-code")
 
 
-def test_login_no_existing_token_fetch_none(mocker):
+def test_login_fail(mocker):
     # Access token does not exist, but user authenticates successfully on browser.
     mocker.patch(
-        "reflex.utils.hosting.get_existing_access_token",
-        side_effect=Exception("no token found"),
+        "reflex.utils.hosting.get_existing_access_token", return_value=("", "")
     )
-    # Token is not fetched
-    mocker.patch(
-        "reflex.utils.hosting.authenticate_on_browser", return_value=(None, None)
-    )
+    mocker.patch("reflex.utils.hosting.authenticate_on_browser", return_value="")
     result = runner.invoke(cli, ["login"])
     assert result.exit_code == 1
 

@@ -14,7 +14,7 @@ def test_get_existing_access_token_and_no_invitation_code(mocker):
     mocker.patch("builtins.open", mock_open(read_data=json.dumps(mock_hosting_config)))
     token, code = hosting.get_existing_access_token()
     assert token == mock_hosting_config["access_token"]
-    assert code is None
+    assert code == ""
 
 
 def test_get_existing_access_token_and_invitation_code(mocker):
@@ -28,35 +28,37 @@ def test_get_existing_access_token_and_invitation_code(mocker):
 
 def test_no_existing_access_token(mocker):
     # Config file does not have access token
-    mock_hosting_config = {"code": "fake_code"}
-    mocker.patch("builtins.open", mock_open(read_data=json.dumps(mock_hosting_config)))
-    with pytest.raises(Exception):
-        token, _ = hosting.get_existing_access_token()
-        assert token is None
+    mocker.patch(
+        "builtins.open",
+        mock_open(read_data=json.dumps({"no-token": "here", "no-code": "here"})),
+    )
+    access_token, invitation_code = hosting.get_existing_access_token()
+    assert access_token == ""
+    assert invitation_code == ""
 
 
 def test_no_config_file(mocker):
     # Config file not exist
     mocker.patch("builtins.open", side_effect=FileNotFoundError)
-    with pytest.raises(Exception) as ex:
-        hosting.get_existing_access_token()
-        assert ex.value == "No existing login found"
+    access_token, invitation_code = hosting.get_existing_access_token()
+    assert access_token == ""
+    assert invitation_code == ""
 
 
 def test_empty_config_file(mocker):
     # Config file is empty
     mocker.patch("builtins.open", mock_open(read_data=""))
-    with pytest.raises(Exception) as ex:
-        hosting.get_existing_access_token()
-        assert ex.value == "No existing login found"
+    access_token, invitation_code = hosting.get_existing_access_token()
+    assert access_token == ""
+    assert invitation_code == ""
 
 
 def test_invalid_json_config_file(mocker):
     # Config file content is not valid json
     mocker.patch("builtins.open", mock_open(read_data="im not json content"))
-    with pytest.raises(Exception) as ex:
-        hosting.get_existing_access_token()
-        assert ex.value == "No existing login found"
+    access_token, invitation_code = hosting.get_existing_access_token()
+    assert access_token == ""
+    assert invitation_code == ""
 
 
 def test_validate_token_success(mocker):
@@ -124,20 +126,21 @@ def test_save_access_code_but_none_invitation_code_to_config(mocker):
 
 def test_authenticated_token_success(mocker):
     access_token = "fake_token"
+    invitation_code = "fake_code"
     mocker.patch(
         "reflex.utils.hosting.get_existing_access_token",
-        return_value=(access_token, "fake_code"),
+        return_value=(access_token, invitation_code),
     )
-    mocker.patch("reflex.utils.hosting.validate_token")
-    assert hosting.authenticated_token() == access_token
+    mocker.patch("reflex.utils.hosting.validate_token_with_retries", return_value=True)
+    assert hosting.authenticated_token() == (access_token, invitation_code)
 
 
 def test_no_authenticated_token(mocker):
     mocker.patch(
         "reflex.utils.hosting.get_existing_access_token",
-        return_value=(None, None),
+        return_value=("", "code-does-not-matter"),
     )
-    assert hosting.authenticated_token() is None
+    assert hosting.authenticated_token()[0] == ""
 
 
 def test_maybe_authenticated_token_is_invalid(mocker):
@@ -145,30 +148,30 @@ def test_maybe_authenticated_token_is_invalid(mocker):
         "reflex.utils.hosting.get_existing_access_token",
         return_value=("invalid_token", "fake_code"),
     )
-    mocker.patch("reflex.utils.hosting.validate_token", side_effect=ValueError)
-    mocker.patch("builtins.open")
-    mocker.patch("json.load")
-    mock_json_dump = mocker.patch("json.dump")
-    assert hosting.authenticated_token() is None
-    mock_json_dump.assert_called_once()
+    mocker.patch("reflex.utils.hosting.validate_token_with_retries", return_value=False)
+    assert hosting.authenticated_token()[0] == ""
 
 
 def test_prepare_deploy_not_authenticated(mocker):
-    mocker.patch("reflex.utils.hosting.authenticated_token", return_value=None)
+    mocker.patch("reflex.utils.hosting.requires_authenticated", return_value=None)
     with pytest.raises(Exception) as ex:
         hosting.prepare_deploy("fake-app")
         assert ex.value == "Not authenticated"
 
 
 def test_server_unable_to_prepare_deploy(mocker):
-    mocker.patch("reflex.utils.hosting.authenticated_token", return_value="fake_token")
+    mocker.patch(
+        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+    )
     mocker.patch("httpx.post", return_value=httpx.Response(500))
     with pytest.raises(Exception):
         hosting.prepare_deploy("fake-app")
 
 
 def test_prepare_deploy_success(mocker):
-    mocker.patch("reflex.utils.hosting.authenticated_token", return_value="fake_token")
+    mocker.patch(
+        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+    )
     mocker.patch(
         "httpx.post",
         return_value=Mock(
@@ -190,7 +193,9 @@ def test_prepare_deploy_success(mocker):
 
 
 def test_deploy(mocker):
-    mocker.patch("reflex.utils.hosting.authenticated_token", return_value="fake_token")
+    mocker.patch(
+        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+    )
     mocker.patch("builtins.open")
     mocker.patch(
         "httpx.post",
@@ -224,14 +229,13 @@ def test_validate_token_with_retries_failed(mocker):
     assert mock_delete_token.call_count == 0
 
 
-def test_validate_token_access_denied(mocker):
+def test_validate_token_with_retries_access_denied(mocker):
     mock_validate_token = mocker.patch(
         "reflex.utils.hosting.validate_token", side_effect=ValueError
     )
     mock_delete_token = mocker.patch("reflex.utils.hosting.delete_token_from_config")
     mocker.patch("time.sleep")
-    with pytest.raises(SystemExit):
-        hosting.validate_token_with_retries("fake-token")
+    assert hosting.validate_token_with_retries("fake-token") is False
     assert mock_validate_token.call_count == 1
     assert mock_delete_token.call_count == 1
 

@@ -2,7 +2,6 @@
 
 import asyncio
 import atexit
-import contextlib
 import json
 import os
 import shutil
@@ -276,6 +275,11 @@ def export(
         help="The directory to export the zip files to.",
         show_default=False,
     ),
+    backend_exclude_sqlite_db_files: bool = typer.Option(
+        True,
+        help="Whether to exclude sqlite db files when exporting backend.",
+        show_default=False,
+    ),
     loglevel: constants.LogLevel = typer.Option(
         console._LOG_LEVEL, help="The log level to use."
     ),
@@ -306,6 +310,7 @@ def export(
         zip=zipping,
         zip_dest_dir=zip_dest_dir,
         deploy_url=config.deploy_url,
+        backend_exclude_sqlite_db_files=backend_exclude_sqlite_db_files,
     )
 
     # Post a telemetry event.
@@ -322,39 +327,19 @@ def login(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Check if the user is already logged in.
-    # Token is the access token, a JWT token obtained from auth provider
-    # after user completes authentication on web
-    access_token = None
-    # For initial hosting offering, it is by invitation only
-    # The login page is enabled only after a valid invitation code is entered
-    invitation_code = ""
-    using_existing_token = False
-
-    with contextlib.suppress(Exception):
-        access_token, invitation_code = hosting.get_existing_access_token()
-        using_existing_token = True
-        console.debug("Existing token found, proceed to validate")
+    access_token, invitation_code = hosting.authenticated_token()
+    if access_token:
+        console.print("You already logged in.")
+        return
 
     # If not already logged in, open a browser window/tab to the login page.
-    if not using_existing_token:
-        access_token, invitation_code = hosting.authenticate_on_browser(invitation_code)
+    access_token = hosting.authenticate_on_browser(invitation_code)
 
     if not access_token:
-        console.error(
-            f"Unable to fetch access token. Please try again or contact support."
-        )
+        console.error(f"Unable to authenticate. Please try again or contact support.")
         raise typer.Exit(1)
 
-    if not hosting.validate_token_with_retries(access_token):
-        console.error(f"Unable to validate token. Please try again or contact support.")
-        raise typer.Exit(1)
-
-    if not using_existing_token:
-        hosting.save_token_to_config(access_token, invitation_code)
-        console.print("Successfully logged in.")
-    else:
-        console.print("You already logged in.")
+    console.print("Successfully logged in.")
 
 
 @cli.command()
@@ -368,7 +353,7 @@ def logout(
 
     hosting.log_out_on_browser()
     console.debug("Deleting access token from config locally")
-    hosting.delete_token_from_config()
+    hosting.delete_token_from_config(include_invitation_code=True)
 
 
 db_cli = typer.Typer()
@@ -483,6 +468,10 @@ def deploy(
         None,
         help="Setting to export tracing for the deployment. Setup required in user code.",
     ),
+    backend_exclude_sqlite_db_files: bool = typer.Option(
+        True,
+        help="Whether to exclude sqlite db files from the backend export.",
+    ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
@@ -569,6 +558,7 @@ def deploy(
             zipping=True,
             zip_dest_dir=tmp_dir,
             loglevel=loglevel,
+            backend_exclude_sqlite_db_files=backend_exclude_sqlite_db_files,
         )
     except ImportError as ie:
         console.error(
@@ -654,7 +644,7 @@ def deploy(
         )
         return
     console.warn(
-        "Your deployment is taking unusually long. Check back later on its status: `reflex deployments status`"
+        f"Your deployment is taking unusually long. Check back later on its status: `reflex deployments status {key}`"
     )
 
 
@@ -795,6 +785,27 @@ def get_deployment_deploy_logs(
     except Exception as ex:
         console.error(f"Unable to get deployment logs due to: {ex}")
         raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="regions")
+def get_deployment_regions(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+    as_json: bool = typer.Option(
+        False, "-j", "--json", help="Whether to output the result in json format."
+    ),
+):
+    """List all the regions of the hosting service."""
+    console.set_log_level(loglevel)
+    list_regions_info = hosting.get_regions()
+    if as_json:
+        console.print(json.dumps(list_regions_info))
+        return
+    if list_regions_info:
+        headers = list(list_regions_info[0].keys())
+        table = [list(deployment.values()) for deployment in list_regions_info]
+        console.print(tabulate(table, headers=headers))
 
 
 cli.add_typer(db_cli, name="db", help="Subcommands for managing the database schema.")
