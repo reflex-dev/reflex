@@ -819,14 +819,15 @@ async def get_logs(
                 row_json = json.loads(await ws.recv())
                 console.debug(f"Server responded with logs: {row_json}")
                 if row_json and isinstance(row_json, dict):
-                    if "timestamp" in row_json:
-                        row_json["timestamp"] = convert_to_local_time(
-                            row_json["timestamp"]
-                        )
+                    row_to_print = {}
                     for k, v in row_json.items():
                         if v is None:
-                            row_json[k] = str(v)
-                    print(" | ".join(row_json.values()))
+                            row_to_print[k] = str(v)
+                        elif k == "timestamp":
+                            row_to_print[k] = convert_to_local_time(v)
+                        else:
+                            row_to_print[k] = v
+                    print(" | ".join(row_to_print.values()))
                 else:
                     console.debug("Server responded, no new logs, this is normal")
     except Exception as ex:
