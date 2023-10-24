@@ -442,7 +442,7 @@ def deploy(
     envs: List[str] = typer.Option(
         list(),
         "--env",
-        help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option followed by the env name.",
+        help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
     ),
     cpus: Optional[int] = typer.Option(
         None, help="The number of CPUs to allocate.", hidden=True
