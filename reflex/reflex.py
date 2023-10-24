@@ -5,6 +5,7 @@ import atexit
 import contextlib
 import json
 import os
+import shutil
 import tempfile
 import time
 from datetime import datetime
@@ -560,8 +561,8 @@ def deploy(
     # Compile the app in production mode.
     config.api_url = api_url
     config.deploy_url = deploy_url
+    tmp_dir = tempfile.mkdtemp()
     try:
-        tmp_dir = tempfile.mkdtemp()
         export(
             frontend=True,
             backend=True,
@@ -574,6 +575,9 @@ def deploy(
             f"Encountered ImportError, did you install all the dependencies? {ie}"
         )
         raise typer.Exit(1) from ie
+    finally:
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
 
     frontend_file_name = constants.ComponentName.FRONTEND.zip()
     backend_file_name = constants.ComponentName.BACKEND.zip()
@@ -601,6 +605,9 @@ def deploy(
     except Exception as ex:
         console.error(f"Unable to deploy due to: {ex}")
         raise typer.Exit(1) from ex
+    finally:
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
 
     # Deployment will actually start when data plane reconciles this request
     console.debug(f"deploy_response: {deploy_response}")
