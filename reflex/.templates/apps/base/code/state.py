@@ -6,6 +6,7 @@ import reflex as rx
 class State(rx.State):
     """State for the app."""
 
+    # Whether the sidebar is displayed.
     sidebar_displayed: bool = True
 
     @rx.var

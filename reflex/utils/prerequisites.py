@@ -249,13 +249,19 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
         template: The template to use.
     """
     console.log("Initializing the app directory.")
+    module = constants.Templates.Dirs.CODE
     path_ops.cp(
-        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "code"),
+        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, module),
         app_name,
     )
     path_ops.mv(
-        os.path.join(app_name, template.value + ".py"),
+        os.path.join(app_name, template.value + constants.Ext.PY),
         os.path.join(app_name, app_name + constants.Ext.PY),
+    )
+    path_ops.find_replace(
+        app_name,
+        f"from {module}",
+        f"from {app_name}",
     )
     path_ops.cp(
         os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "assets"),

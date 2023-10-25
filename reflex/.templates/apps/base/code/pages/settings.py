@@ -1,28 +1,20 @@
 """The settings page for the template."""
+
 import reflex as rx
 
-from ..styles import *
+from code.pages.template import template
 
 
-def settings_page() -> rx.Component:
-    """The UI for the settings page.
+@rx.page("/settings")
+@template
+def settings() -> rx.Component:
+    """The settings page.
 
     Returns:
-        rx.Component: The UI for the settings page.
+        The UI for the settings page.
     """
-    return rx.box(
-        rx.vstack(
-            rx.heading(
-                "Settings",
-                font_size="3em",
-            ),
-            rx.text(
-                "Welcome to Reflex!",
-            ),
-            rx.text(
-                "You can use this template to get started with Reflex.",
-            ),
-            style=template_content_style,
-        ),
-        style=template_page_style,
+    return rx.fragment(
+        rx.heading("Settings", font_size="3em"),
+        rx.text("Welcome to Reflex!"),
+        rx.text("You can use this template to get started with Reflex."),
     )

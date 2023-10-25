@@ -1,7 +1,7 @@
 """Styles for the app."""
 import reflex as rx
 
-from .state import State
+from code.state import State
 
 border_radius = "0.375rem"
 box_shadow = "0px 0px 0px 1px rgba(84, 82, 95, 0.14)"

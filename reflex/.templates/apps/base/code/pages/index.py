@@ -1,19 +1,20 @@
-"""The dashboard page for the template."""
+"""The home page of the app."""
+
 import reflex as rx
 
 from code.pages.template import template
 
 
-@rx.page("/dashboard")
+@rx.page("/")
 @template
-def dashboard() -> rx.Component:
-    """The dashboard page.
+def index() -> rx.Component:
+    """The home page.
 
     Returns:
-        The UI for the dashboard page.
+        The UI for the home page.
     """
     return rx.fragment(
-        rx.heading("Dashboard", font_size="3em"),
+        rx.heading("Home", font_size="3em"),
         rx.text("Welcome to Reflex!"),
         rx.text("You can use this template to get started with Reflex."),
     )
