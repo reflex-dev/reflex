@@ -419,7 +419,7 @@ class Var:
                     f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
                 ) from None
             is_optional = types.is_optional(self._var_type)
-            type_ = types.can_access_attribute(self._var_type, name)
+            type_ = types.get_attribute_access_type(self._var_type, name)
 
             if type_ is not None:
                 return BaseVar(

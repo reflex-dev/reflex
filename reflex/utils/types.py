@@ -102,8 +102,8 @@ def is_optional(cls: GenericType) -> bool:
     return is_union(cls) and type(None) in get_args(cls)
 
 
-def can_access_attribute(cls: GenericType, name: str) -> GenericType | None:
-    """Check if an attribute can be accessed on the cls.
+def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None:
+    """Check if an attribute can be accessed on the cls and return its type.
 
     Supports pydantic models, unions, and annotated attributes on rx.Model.
 
@@ -114,19 +114,20 @@ def can_access_attribute(cls: GenericType, name: str) -> GenericType | None:
     Returns:
         The type of the attribute, if accessible, or None
     """
-    from ..model import Model
+    from reflex.model import Model
 
-    # pydantic models
     if hasattr(cls, "__fields__") and name in cls.__fields__:
+        # pydantic models
         field = cls.__fields__[name]
         type_ = field.outer_type_
         if isinstance(type_, ModelField):
             type_ = type_.type_
         if not field.required and field.default is None:
+            # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
     elif isinstance(cls, type) and issubclass(cls, Model):
-        # check in the annotations directly
+        # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:
             type_ = hints[name]
@@ -134,11 +135,13 @@ def can_access_attribute(cls: GenericType, name: str) -> GenericType | None:
                 return type_.type_
             return type_
     elif is_union(cls):
-        # check in each arg of the annotation
+        # Check in each arg of the annotation.
         for arg in get_args(cls):
-            type_ = can_access_attribute(arg, name)
+            type_ = get_attribute_access_type(arg, name)
             if type_ is not None:
+                # Return the first attribute type that is accessible.
                 return type_
+    return None  # Attribute is not accessible.
 
 
 def get_base_class(cls: GenericType) -> Type:

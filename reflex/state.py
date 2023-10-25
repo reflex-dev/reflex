@@ -576,7 +576,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             and field.default is None
             and not types.is_optional(prop._var_type)
         ):
-            # ensure frontend uses null coalescing when accessing
+            # Ensure frontend uses null coalescing when accessing.
             prop._var_type = Optional[prop._var_type]
 
     @staticmethod
