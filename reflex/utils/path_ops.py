@@ -178,13 +178,13 @@ def update_json_file(file_path: str, update_dict: dict[str, int | str]):
 
 def find_replace(directory: str, find: str, replace: str):
     """Recursively find and replace text in files in a directory.
-    
+
     Args:
         directory: The directory to search.
         find: The text to find.
         replace: The text to replace.
     """
-    for root, dirs, files in os.walk(directory):
+    for root, _dirs, files in os.walk(directory):
         for file in files:
             filepath = os.path.join(root, file)
             with open(filepath, "r", encoding="utf-8") as f:

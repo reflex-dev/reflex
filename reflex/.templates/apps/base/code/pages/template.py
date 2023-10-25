@@ -1,14 +1,13 @@
 """Common templates used between pages in the app."""
-import functools
+
+from code import styles
+from code.components.sidebar import sidebar
+from code.state import State
 from typing import Callable
 
 import reflex as rx
 
-from code import styles
-from code.state import State
-from code.components.sidebar import sidebar
-
-
+# Meta tags for the app.
 meta = [
     {
         "name": "viewport",
@@ -19,7 +18,7 @@ meta = [
 
 def menu_button() -> rx.Component:
     """The menu button on the top right of the page.
-    
+
     Returns:
         The menu button component.
     """
@@ -50,7 +49,9 @@ def menu_button() -> rx.Component:
     )
 
 
-def template(**page_kwargs: dict) -> Callable[[Callable[[], rx.Component]], rx.Component]:
+def template(
+    **page_kwargs: dict,
+) -> Callable[[Callable[[], rx.Component]], rx.Component]:
     """The template for each page of the app.
 
     Args:
@@ -59,6 +60,7 @@ def template(**page_kwargs: dict) -> Callable[[Callable[[], rx.Component]], rx.C
     Returns:
         The template with the page content.
     """
+
     def decorator(page_content: Callable[[], rx.Component]) -> rx.Component:
         """The template for each page of the app.
 
@@ -68,6 +70,7 @@ def template(**page_kwargs: dict) -> Callable[[Callable[[], rx.Component]], rx.C
         Returns:
             The template with the page content.
         """
+
         @rx.page(**page_kwargs, meta=meta)
         def templated_page():
             return rx.hstack(
@@ -84,7 +87,9 @@ def template(**page_kwargs: dict) -> Callable[[Callable[[], rx.Component]], rx.C
                 align_items="flex-start",
                 transition="left 0.5s, width 0.5s",
                 position="relative",
-                left=rx.cond(State.sidebar_displayed, "0px", f"-{styles.sidebar_width}"),
+                left=rx.cond(
+                    State.sidebar_displayed, "0px", f"-{styles.sidebar_width}"
+                ),
             )
 
         return templated_page

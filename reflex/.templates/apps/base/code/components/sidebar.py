@@ -1,9 +1,9 @@
 """Sidebar component for the app."""
 
-import reflex as rx
-
 from code import styles
 from code.state import State
+
+import reflex as rx
 
 
 def sidebar_header() -> rx.Component:
@@ -90,9 +90,9 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
     """Sidebar item.
 
     Args:
-        text (str): The text of the item.
-        icon (str): The icon of the item.
-        url (str): The URL of the item.
+        text: The text of the item.
+        icon: The icon of the item.
+        url: The URL of the item.
 
     Returns:
         rx.Component: The sidebar item component.
