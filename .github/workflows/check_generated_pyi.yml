@@ -29,6 +29,7 @@ jobs:
           if [[ $(git status --porcelain) ]]; then
             git diff
             echo "ERROR: pyi_generator.py output is out of date. Please run scripts/pyi_generator.py and commit the changes."
+            exit 1
           else
             echo "No diffs - AOK!"
           fi
