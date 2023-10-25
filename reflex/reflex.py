@@ -21,12 +21,12 @@ from reflex.config import get_config
 from reflex.utils import (
     build,
     console,
+    dependency,
     exec,
     hosting,
     prerequisites,
     processes,
     telemetry,
-    dependency,
 )
 
 # Create the app.
@@ -498,9 +498,7 @@ def deploy(
         console.error("Please provide a deployment key when not in interactive mode.")
         raise typer.Exit(1)
 
-
     dependency.check_requirements()
-
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)

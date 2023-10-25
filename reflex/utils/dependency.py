@@ -2,23 +2,20 @@
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
-import zipfile
-from pathlib import Path
-
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
-from reflex.config import get_config
-from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils import console
+
 
 def generate_requirements():
-    # Run the command and get the output
+    """Generate the requirements.txt file."""
     result = subprocess.run(
-        "pipdeptree --warn silence | grep -E '^\w+'", 
-        shell=True, capture_output=True, text=True
+        "pipdeptree --warn silence | grep -E '^\\w+'",
+        shell=True,
+        capture_output=True,
+        text=True,
     )
 
     # Filter the output lines
@@ -29,6 +26,7 @@ def generate_requirements():
     with open("requirements.txt", "w") as f:
         for line in filtered_lines:
             f.write(line + "\n")
+
 
 def check_requirements():
     """Check if the requirements are installed."""
