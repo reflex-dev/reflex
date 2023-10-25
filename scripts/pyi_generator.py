@@ -102,6 +102,7 @@ EXCLUDED_FILES = [
     "foreach.py",
     "cond.py",
     "multiselect.py",
+    "literals.py",
 ]
 
 # These props exist on the base component, but should not be exposed in create methods.

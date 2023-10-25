@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
+from reflex.components.literals import LiteralRowMarker
 from reflex.utils import console, format, imports, types
 from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
@@ -99,9 +100,6 @@ class DataEditorTheme(Base):
     textHeaderSelected: Optional[str] = None
     textLight: Optional[str] = None
     textMedium: Optional[str] = None
-
-
-LiteralRowMarker = Literal["none", "number", "checkbox", "both", "clickable-number"]
 
 
 class DataEditor(NoSSRComponent):
