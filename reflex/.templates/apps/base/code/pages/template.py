@@ -18,6 +18,11 @@ meta = [
 
 
 def menu_button() -> rx.Component:
+    """The menu button on the top right of the page.
+    
+    Returns:
+        The menu button component.
+    """
     return rx.box(
         rx.menu(
             rx.menu_button(
@@ -45,32 +50,43 @@ def menu_button() -> rx.Component:
     )
 
 
-def template(page_content: Callable[[], rx.Component]) -> rx.Component:
+def template(**page_kwargs: dict) -> Callable[[Callable[[], rx.Component]], rx.Component]:
     """The template for each page of the app.
 
     Args:
-        page_content: The main content of the page.
+        page_kwargs: Keyword arguments to pass to the page.
 
     Returns:
-        rx.Component: The template with the page content.
+        The template with the page content.
     """
-    @functools.wraps(page_content)
-    def templated_page():
-        return rx.hstack(
-            sidebar(),
-            rx.box(
-                rx.vstack(
-                    page_content(),
-                    **styles.template_content_style,
-                ),
-                **styles.template_page_style,
-            ),
-            rx.spacer(),
-            menu_button(),
-            align_items="flex-start",
-            transition="left 0.5s, width 0.5s",
-            position="relative",
-            left=rx.cond(State.sidebar_displayed, "0px", f"-{styles.sidebar_width}"),
-        )
+    def decorator(page_content: Callable[[], rx.Component]) -> rx.Component:
+        """The template for each page of the app.
 
-    return templated_page
+        Args:
+            page_content: The content of the page.
+
+        Returns:
+            The template with the page content.
+        """
+        @rx.page(**page_kwargs, meta=meta)
+        def templated_page():
+            return rx.hstack(
+                sidebar(),
+                rx.box(
+                    rx.vstack(
+                        page_content(),
+                        **styles.template_content_style,
+                    ),
+                    **styles.template_page_style,
+                ),
+                rx.spacer(),
+                menu_button(),
+                align_items="flex-start",
+                transition="left 0.5s, width 0.5s",
+                position="relative",
+                left=rx.cond(State.sidebar_displayed, "0px", f"-{styles.sidebar_width}"),
+            )
+
+        return templated_page
+
+    return decorator

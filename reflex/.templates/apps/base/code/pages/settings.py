@@ -5,8 +5,7 @@ import reflex as rx
 from code.pages.template import template
 
 
-@rx.page("/settings")
-@template
+@template(route="/settings")
 def settings() -> rx.Component:
     """The settings page.
 

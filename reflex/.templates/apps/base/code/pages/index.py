@@ -5,8 +5,7 @@ import reflex as rx
 from code.pages.template import template
 
 
-@rx.page("/")
-@template
+@template(route="/")
 def index() -> rx.Component:
     """The home page.
 

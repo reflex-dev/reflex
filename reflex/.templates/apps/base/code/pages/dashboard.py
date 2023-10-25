@@ -4,8 +4,7 @@ import reflex as rx
 from code.pages.template import template
 
 
-@rx.page("/dashboard")
-@template
+@template(route="/dashboard")
 def dashboard() -> rx.Component:
     """The dashboard page.
 
