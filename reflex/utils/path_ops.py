@@ -184,11 +184,9 @@ def find_replace(directory: str, find: str, replace: str):
         find: The text to find.
         replace: The text to replace.
     """
-    print("find replace", directory, find, replace)
     for root, dirs, files in os.walk(directory):
         for file in files:
             filepath = os.path.join(root, file)
-            print("Replacing text in", filepath)
             with open(filepath, "r", encoding="utf-8") as f:
                 text = f.read()
             text = re.sub(find, replace, text)
