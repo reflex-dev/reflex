@@ -1577,7 +1577,7 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
-    app.state_manager = state_manager
+    app._state_manager = state_manager
     app.event_namespace.emit = AsyncMock()  # type: ignore
     monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
     return app
@@ -1662,6 +1662,15 @@ class BackgroundTaskState(State):
 
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+
+    @rx.var
+    def computed_order(self) -> List[str]:
+        """Get the order as a computed var.
+
+        Returns:
+            The value of 'order' var.
+        """
+        return self.order
 
     @rx.background
     async def background_task(self):
@@ -1791,6 +1800,10 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                         "background_task:start",
                         "other",
                     ],
+                    "computed_order": [
+                        "background_task:start",
+                        "other",
+                    ],
                 }
             }
         )
@@ -1800,13 +1813,57 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         await task
     assert not mock_app.background_tasks
 
-    assert (await mock_app.state_manager.get_state(token)).order == [
+    exp_order = [
         "background_task:start",
         "other",
         "background_task:stop",
         "other",
         "private",
     ]
+
+    assert (await mock_app.state_manager.get_state(token)).order == exp_order
+
+    assert mock_app.event_namespace is not None
+    emit_mock = mock_app.event_namespace.emit
+
+    assert json.loads(emit_mock.mock_calls[0].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "order": ["background_task:start"],
+                "computed_order": ["background_task:start"],
+            }
+        },
+        "events": [],
+        "final": True,
+    }
+    for call in emit_mock.mock_calls[1:5]:
+        assert json.loads(call.args[1]) == {
+            "delta": {
+                "background_task_state": {"computed_order": ["background_task:start"]}
+            },
+            "events": [],
+            "final": True,
+        }
+    assert json.loads(emit_mock.mock_calls[-2].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "order": exp_order,
+                "computed_order": exp_order,
+                "dict_list": {},
+            }
+        },
+        "events": [],
+        "final": True,
+    }
+    assert json.loads(emit_mock.mock_calls[-1].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "computed_order": exp_order,
+            },
+        },
+        "events": [],
+        "final": True,
+    }
 
 
 @pytest.mark.asyncio

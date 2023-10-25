@@ -5,7 +5,15 @@ import reflex as rx
 
 from .pages import dashboard_page, home_page, settings_page
 from .sidebar import sidebar
+from .state import State
 from .styles import *
+
+meta = [
+    {
+        "name": "viewport",
+        "content": "width=device-width, shrink-to-fit=no, initial-scale=1",
+    },
+]
 
 
 def template(main_content: Callable[[], rx.Component]) -> rx.Component:
@@ -49,10 +57,13 @@ def template(main_content: Callable[[], rx.Component]) -> rx.Component:
         rx.spacer(),
         menu_button,
         align_items="flex-start",
+        transition="left 0.5s, width 0.5s",
+        position="relative",
+        left=rx.cond(State.sidebar_displayed, "0px", f"-{sidebar_width}"),
     )
 
 
-@rx.page("/")
+@rx.page("/", meta=meta)
 @template
 def home() -> rx.Component:
     """Home page.
@@ -63,7 +74,7 @@ def home() -> rx.Component:
     return home_page()
 
 
-@rx.page("/settings")
+@rx.page("/settings", meta=meta)
 @template
 def settings() -> rx.Component:
     """Settings page.
@@ -74,7 +85,7 @@ def settings() -> rx.Component:
     return settings_page()
 
 
-@rx.page("/dashboard")
+@rx.page("/dashboard", meta=meta)
 @template
 def dashboard() -> rx.Component:
     """Dashboard page.
