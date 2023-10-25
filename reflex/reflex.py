@@ -27,7 +27,6 @@ from reflex.utils import (
     prerequisites,
     processes,
     telemetry,
-    dependency,
 )
 
 # Create the app.
@@ -501,23 +500,8 @@ def deploy(
         )
         raise typer.Exit(1)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    dependency.check_requirements()
-=======
-    if not hosting.check_requirements_for_non_reflex_packages():
-        console.ask(
-            f"Make sure {constants.RequirementsTxt.FILE} has all the dependencies. Enter to proceed"
-        )
-    if not hosting.check_requirements_txt_exist():
-        console.error(f"{constants.RequirementsTxt.FILE} required for deployment")
-        raise typer.Exit(1)
->>>>>>> fe01f0cf (add region check upfront when user deploys interactively (#2030))
-=======
 
     dependency.check_requirements()
-
->>>>>>> 20c95286 (Test to see if autogenerating dpeenencies is viable)
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)

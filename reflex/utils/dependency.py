@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import os
 import re
 import subprocess
@@ -25,22 +26,27 @@ def generate_requirements():
     filtered_lines = [line for line in lines if re.match(r"^\w+", line)]
 =======
 import json
+=======
+>>>>>>> feb38ade (Lint)
 import os
 import subprocess
-import zipfile
-from pathlib import Path
-
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex import constants
-from reflex.config import get_config
-from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils import console
+
 
 def generate_requirements():
-    # Run the command and get the output
+    """Generate the requirements.txt file."""
     result = subprocess.run(
+<<<<<<< HEAD
         "poetry run pipdeptree --warn silence | grep -E '^\w+'", 
         shell=True, capture_output=True, text=True
+=======
+        "pipdeptree --warn silence | grep -E '^\\w+'",
+        shell=True,
+        capture_output=True,
+        text=True,
+>>>>>>> feb38ade (Lint)
     )
 
     # Filter the output lines
@@ -54,6 +60,7 @@ def generate_requirements():
             f.write(line + "\n")
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 def check_requirements():
     """Check if the requirements are installed."""
@@ -62,6 +69,9 @@ def check_requirements():
         response = console.ask(
             "Would you like us to auto-generate one based on your current environment?",
 =======
+=======
+
+>>>>>>> feb38ade (Lint)
 def check_requirements():
     """Check if the requirements are installed."""
     if not os.path.exists(constants.RequirementsTxt.FILE):
@@ -73,6 +83,7 @@ def check_requirements():
 
         if response == "y":
 <<<<<<< HEAD
+<<<<<<< HEAD
             generate_requirements()
         else:
             console.error(
@@ -82,3 +93,6 @@ def check_requirements():
 =======
             generate_requirements()
 >>>>>>> 20c95286 (Test to see if autogenerating dpeenencies is viable)
+=======
+            generate_requirements()
+>>>>>>> feb38ade (Lint)
