@@ -494,7 +494,9 @@ def deploy(
     console.set_log_level(loglevel)
 
     if not interactive and not key:
-        console.error("Please provide a deployment key when not in interactive mode.")
+        console.error(
+            "Please provide a name for the deployed instance when not in interactive mode."
+        )
         raise typer.Exit(1)
 
     try:
