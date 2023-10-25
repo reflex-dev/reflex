@@ -16,7 +16,10 @@ def test_app_harness(tmp_path):
     def BasicApp():
         import reflex as rx
 
-        app = rx.App()
+        class State(rx.State):
+            pass
+
+        app = rx.App(state=State)
         app.add_page(lambda: rx.text("Basic App"), route="/", title="index")
         app.compile()
 

@@ -206,21 +206,6 @@ def test_set_value():
     )
 
 
-def test_set_cookie():
-    """Test the event set_cookie."""
-    spec = event.set_cookie("testkey", "testvalue")
-    assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_set_cookie"
-    assert spec.args[0][0].equals(Var.create_safe("key"))
-    assert spec.args[0][1].equals(Var.create_safe("testkey"))
-    assert spec.args[1][0].equals(Var.create_safe("value"))
-    assert spec.args[1][1].equals(Var.create_safe("testvalue"))
-    assert (
-        format.format_event(spec)
-        == 'Event("_set_cookie", {key:`testkey`,value:`testvalue`})'
-    )
-
-
 def test_remove_cookie():
     """Test the event remove_cookie."""
     spec = event.remove_cookie("testkey")
@@ -229,17 +214,17 @@ def test_remove_cookie():
     assert spec.args[0][0].equals(Var.create_safe("key"))
     assert spec.args[0][1].equals(Var.create_safe("testkey"))
     assert spec.args[1][0].equals(Var.create_safe("options"))
-    assert spec.args[1][1].equals(Var.create_safe({}))
+    assert spec.args[1][1].equals(Var.create_safe({"path": "/"}))
     assert (
         format.format_event(spec)
-        == 'Event("_remove_cookie", {key:`testkey`,options:{}})'
+        == 'Event("_remove_cookie", {key:`testkey`,options:{"path": "/"}})'
     )
 
 
 def test_remove_cookie_with_options():
     """Test the event remove_cookie with options."""
     options = {
-        "path": "/",
+        "path": "/foo",
         "domain": "example.com",
         "secure": True,
         "sameSite": "strict",
@@ -254,21 +239,6 @@ def test_remove_cookie_with_options():
     assert (
         format.format_event(spec)
         == f'Event("_remove_cookie", {{key:`testkey`,options:{json.dumps(options)}}})'
-    )
-
-
-def test_set_local_storage():
-    """Test the event set_local_storage."""
-    spec = event.set_local_storage("testkey", "testvalue")
-    assert isinstance(spec, EventSpec)
-    assert spec.handler.fn.__qualname__ == "_set_local_storage"
-    assert spec.args[0][0].equals(Var.create_safe("key"))
-    assert spec.args[0][1].equals(Var.create_safe("testkey"))
-    assert spec.args[1][0].equals(Var.create_safe("value"))
-    assert spec.args[1][1].equals(Var.create_safe("testvalue"))
-    assert (
-        format.format_event(spec)
-        == 'Event("_set_local_storage", {key:`testkey`,value:`testvalue`})'
     )
 
 

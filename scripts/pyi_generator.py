@@ -1,5 +1,6 @@
 """The pyi generator module."""
 
+import ast
 import importlib
 import inspect
 import os
@@ -48,6 +49,39 @@ from reflex.components.libs.chakra import (
     LiteralMenuStrategy,
     LiteralTagSize,
 )
+from reflex.components.radix.themes.base import (
+    LiteralAccentColor,
+    LiteralAlign,
+    LiteralAppearance,
+    LiteralGrayColor,
+    LiteralJustify,
+    LiteralPanelBackground,
+    LiteralRadius,
+    LiteralScaling,
+    LiteralSize,
+    LiteralVariant,
+)
+from reflex.components.radix.themes.components import (
+    LiteralButtonSize,
+    LiteralSwitchSize,
+)
+from reflex.components.radix.themes.layout import (
+    LiteralBoolNumber,
+    LiteralContainerSize,
+    LiteralFlexDirection,
+    LiteralFlexDisplay,
+    LiteralFlexWrap,
+    LiteralGridDisplay,
+    LiteralGridFlow,
+    LiteralSectionSize,
+)
+from reflex.components.radix.themes.typography import (
+    LiteralLinkUnderline,
+    LiteralTextAlign,
+    LiteralTextSize,
+    LiteralTextTrim,
+    LiteralTextWeight,
+)
 
 # NOQA
 from reflex.event import EventChain
@@ -93,6 +127,31 @@ ruff_dont_remove = [
     LiteralVerticalAlign,
     LiteralIconType,
     LiteralPosition,
+    LiteralAccentColor,
+    LiteralAlign,
+    LiteralAppearance,
+    LiteralBoolNumber,
+    LiteralButtonSize,
+    LiteralContainerSize,
+    LiteralFlexDirection,
+    LiteralFlexDisplay,
+    LiteralFlexWrap,
+    LiteralGrayColor,
+    LiteralGridDisplay,
+    LiteralGridFlow,
+    LiteralJustify,
+    LiteralLinkUnderline,
+    LiteralPanelBackground,
+    LiteralRadius,
+    LiteralScaling,
+    LiteralSectionSize,
+    LiteralSize,
+    LiteralSwitchSize,
+    LiteralTextAlign,
+    LiteralTextSize,
+    LiteralTextTrim,
+    LiteralTextWeight,
+    LiteralVariant,
 ]
 
 EXCLUDED_FILES = [
@@ -168,11 +227,12 @@ def _get_typing_import(_module):
 
 
 def _get_var_definition(_module, _var_name):
-    return [
-        line.split(" = ")[0]
-        for line in inspect.getsource(_module).splitlines()
-        if line.startswith(_var_name)
-    ]
+    for node in ast.parse(inspect.getsource(_module)).body:
+        if isinstance(node, ast.Assign) and _var_name in [
+            t.id for t in node.targets if isinstance(t, ast.Name)
+        ]:
+            return ast.unparse(node)
+    raise Exception(f"Could not find var {_var_name} in module {_module}")
 
 
 class PyiGenerator:
@@ -319,7 +379,7 @@ class PyiGenerator:
         pyi_content.extend(self._generate_imports(variables, classes))
 
         for _name, _var in variables:
-            pyi_content.extend(self._generate_pyi_variable(_name, _var))
+            pyi_content.append(self._generate_pyi_variable(_name, _var))
 
         for _fname, _func in functions:
             pyi_content.extend(self._generate_function(_fname, _func))
@@ -347,13 +407,20 @@ class PyiGenerator:
 
         self.current_module = importlib.import_module(module_import)
 
-        local_variables = [
-            (name, obj)
-            for name, obj in vars(self.current_module).items()
-            if not name.startswith("_")
-            and not inspect.isclass(obj)
-            and not inspect.isfunction(obj)
-        ]
+        local_variables = []
+        for node in ast.parse(inspect.getsource(self.current_module)).body:
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if not isinstance(t, ast.Name):
+                        # Skip non-var assignment statements
+                        continue
+                    if t.id.startswith("_"):
+                        # Skip private vars
+                        continue
+                    obj = getattr(self.current_module, t.id, None)
+                    if inspect.isclass(obj) or inspect.isfunction(obj):
+                        continue
+                    local_variables.append((t.id, obj))
 
         functions = [
             (name, obj)

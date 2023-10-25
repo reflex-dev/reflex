@@ -154,6 +154,13 @@ def run_backend(
     """
     config = get_config()
     app_module = f"{config.app_name}.{config.app_name}:{constants.CompileVars.APP}"
+
+    # Create a .nocompile file to skip compile for backend.
+    if os.path.exists(constants.Dirs.WEB):
+        with open(constants.NOCOMPILE_FILE, "w"):
+            pass
+
+    # Run the backend in development mode.
     uvicorn.run(
         app=f"{app_module}.{constants.CompileVars.API}",
         host=host,
@@ -240,13 +247,13 @@ def output_system_info():
     if system != "Windows":
         dependencies.extend(
             [
-                f"[FNM {constants.Fnm.VERSION} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
                 f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
             ],
         )
     else:
         dependencies.append(
-            f"[FNM {constants.Fnm.VERSION} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
         )
 
     if system == "Linux":
