@@ -97,6 +97,11 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
     Returns:
         rx.Component: The sidebar item component.
     """
+    # Whether the item is active.
+    active = (State.router.page.path == f"/{text.lower()}") | (
+        (State.router.page.path == "/") & text == "Home"
+    )
+
     return rx.link(
         rx.hstack(
             rx.image(
@@ -108,12 +113,12 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
                 text,
             ),
             bg=rx.cond(
-                State.origin_url == f"/{text.lower()}/",
+                active,
                 styles.accent_color,
                 "transparent",
             ),
             color=rx.cond(
-                State.origin_url == f"/{text.lower()}/",
+                active,
                 styles.accent_text_color,
                 styles.text_color,
             ),
@@ -133,20 +138,21 @@ def sidebar() -> rx.Component:
     Returns:
         The sidebar component.
     """
+    # Get all the decorated pages and add them to the sidebar.
+    from reflex.page import get_decorated_pages
+
     return rx.box(
         rx.vstack(
             sidebar_header(),
             rx.vstack(
-                sidebar_item(
-                    "Dashboard",
-                    "/github.svg",
-                    "/dashboard",
-                ),
-                sidebar_item(
-                    "Settings",
-                    "/github.svg",
-                    "/settings",
-                ),
+                *[
+                    sidebar_item(
+                        page.get("title", page["route"].strip("/").capitalize()),
+                        "/github.svg",
+                        page["route"],
+                    )
+                    for page in get_decorated_pages()
+                ],
                 width="100%",
                 overflow_y="auto",
                 align_items="flex-start",

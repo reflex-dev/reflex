@@ -1,7 +1,7 @@
 """Styles for the app."""
-import reflex as rx
-
 from code.state import State
+
+import reflex as rx
 
 border_radius = "0.375rem"
 box_shadow = "0px 0px 0px 1px rgba(84, 82, 95, 0.14)"
@@ -52,4 +52,21 @@ base_style = {
         **overlapping_button_style,
     },
     rx.MenuItem: hover_accent_bg,
+}
+
+markdown_style = {
+    "code": lambda text: rx.code(text, color="#1F1944", bg="#EAE4FD"),
+    "a": lambda text, **props: rx.link(
+        text,
+        **props,
+        font_weight="bold",
+        color="#03030B",
+        text_decoration="underline",
+        text_decoration_color="#AD9BF8",
+        _hover={
+            "color": "#AD9BF8",
+            "text_decoration": "underline",
+            "text_decoration_color": "#03030B",
+        },
+    ),
 }

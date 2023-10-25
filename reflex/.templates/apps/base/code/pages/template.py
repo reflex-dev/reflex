@@ -76,7 +76,7 @@ def template(
             return rx.hstack(
                 sidebar(),
                 rx.box(
-                    rx.vstack(
+                    rx.box(
                         page_content(),
                         **styles.template_content_style,
                     ),
