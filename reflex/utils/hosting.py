@@ -845,16 +845,37 @@ async def get_logs(
         )
 
 
-def check_requirements_txt_exist():
-    """Check if requirements.txt exists in the current directory.
+def check_requirements_txt_exist() -> bool:
+    """Check if requirements.txt exists in the top level app directory.
 
-    Raises:
-        Exception: If the requirements.txt does not exist.
+    Returns:
+        True if requirements.txt exists, False otherwise.
     """
-    if not os.path.exists(constants.RequirementsTxt.FILE):
-        raise Exception(
-            f"Unable to find {constants.RequirementsTxt.FILE} in the current directory."
-        )
+    return os.path.exists(constants.RequirementsTxt.FILE)
+
+
+def check_requirements_for_non_reflex_packages() -> bool:
+    """Check the requirements.txt file for packages other than reflex.
+
+    Returns:
+        True if packages other than reflex are found, False otherwise.
+    """
+    if not check_requirements_txt_exist():
+        return False
+    try:
+        with open(constants.RequirementsTxt.FILE) as fp:
+            for req_line in fp.readlines():
+                package_name = re.search(r"^([^=<>!~]+)", req_line.lstrip())
+                # If we find a package that is not reflex
+                if (
+                    package_name
+                    and package_name.group(1) != constants.Reflex.MODULE_NAME
+                ):
+                    return True
+    except Exception as ex:
+        console.warn(f"Unable to scan requirements.txt for dependencies due to {ex}")
+
+    return False
 
 
 def authenticate_on_browser(
