@@ -843,18 +843,6 @@ async def get_logs(
         )
 
 
-def check_requirements_txt_exist():
-    """Check if requirements.txt exists in the current directory.
-
-    Raises:
-        Exception: If the requirements.txt does not exist.
-    """
-    if not os.path.exists(constants.RequirementsTxt.FILE):
-        raise Exception(
-            f"Unable to find {constants.RequirementsTxt.FILE} in the current directory."
-        )
-
-
 def authenticate_on_browser(
     invitation_code: str,
 ) -> str:

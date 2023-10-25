@@ -26,6 +26,7 @@ from reflex.utils import (
     prerequisites,
     processes,
     telemetry,
+    dependency,
 )
 
 # Create the app.
@@ -497,11 +498,9 @@ def deploy(
         console.error("Please provide a deployment key when not in interactive mode.")
         raise typer.Exit(1)
 
-    try:
-        hosting.check_requirements_txt_exist()
-    except Exception as ex:
-        console.error(f"{constants.RequirementsTxt.FILE} required for deployment")
-        raise typer.Exit(1) from ex
+
+    dependency.check_requirements()
+
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
