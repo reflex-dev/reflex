@@ -17,7 +17,7 @@ from reflex.utils import console, path_ops, prerequisites, processes
 def generate_requirements():
     # Run the command and get the output
     result = subprocess.run(
-        "poetry run pipdeptree --warn silence | grep -E '^\w+'", 
+        "pipdeptree --warn silence | grep -E '^\w+'", 
         shell=True, capture_output=True, text=True
     )
 
