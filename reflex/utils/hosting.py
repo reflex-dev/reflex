@@ -223,6 +223,7 @@ class DeploymentPrepareResponse(Base):
     # This is for a new deployment, user has not deployed this app before.
     # The server returns key suggestion based on the app name.
     suggestion: Optional[DeploymentPrepInfo] = None
+    enabled_regions: Optional[List[str]] = None
 
     @root_validator(pre=True)
     def ensure_at_least_one_deploy_params(cls, values):
@@ -303,6 +304,7 @@ def prepare_deploy(
             reply=response_json["reply"],
             suggestion=response_json["suggestion"],
             existing=response_json["existing"],
+            enabled_regions=response_json.get("enabled_regions"),
         )
     except httpx.RequestError as re:
         console.debug(f"Unable to prepare launch due to {re}.")
@@ -450,7 +452,7 @@ def deploy(
         # If the server explicitly states bad request,
         # display a different error
         if response.status_code == HTTPStatus.BAD_REQUEST:
-            raise AssertionError("Server rejected this request")
+            raise AssertionError(f"Server rejected this request: {response.text}")
         response.raise_for_status()
         response_json = response.json()
         return DeploymentPostResponse(
@@ -1120,7 +1122,7 @@ def get_regions() -> list[dict]:
         if (
             response_json
             and response_json[0] is not None
-            and isinstance(response_json[0], dict)
+            and not isinstance(response_json[0], dict)
         ):
             console.debug("Expect return values are dict's")
             return []
