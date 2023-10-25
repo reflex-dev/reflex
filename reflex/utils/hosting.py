@@ -1108,7 +1108,7 @@ def interactive_prompt_for_envs() -> list[str]:
     envs_finished = False
     env_count = 1
     env_key_prompt = f" * env-{env_count} name (enter to skip)"
-    console.print("Environment variables ...")
+    console.print("Environment variables for your production App ...")
     while not envs_finished:
         env_key = console.ask(env_key_prompt)
         if not env_key:
