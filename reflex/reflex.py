@@ -564,6 +564,7 @@ def deploy(
                 console.warn(
                     f"{region_input} is not a valid region. Must be one of {enabled_regions}"
                 )
+                console.warn("Run `reflex deploymemts regions` to see details.")
         regions = regions or [region_input]
 
         # process the envs
