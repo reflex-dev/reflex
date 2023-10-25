@@ -31,10 +31,16 @@ def generate_requirements():
 def check_requirements():
     """Check if the requirements are installed."""
     if not os.path.exists(constants.RequirementsTxt.FILE):
+        console.warn("It seems like there's no requirements.txt in your project.")
         response = console.ask(
-            f"Could not find requirements.txt. Do you want to generate it?",
+            "Would you like us to auto-generate one based on your current environment?",
             choices=["y", "n"],
         )
 
         if response == "y":
             generate_requirements()
+        else:
+            console.error(
+                "Please create a requirements.txt file in your project's root directory and try again."
+            )
+            exit()
