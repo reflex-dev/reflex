@@ -499,11 +499,13 @@ def deploy(
         )
         raise typer.Exit(1)
 
-    try:
-        hosting.check_requirements_txt_exist()
-    except Exception as ex:
+    if not hosting.check_requirements_for_non_reflex_packages():
+        console.ask(
+            f"Make sure {constants.RequirementsTxt.FILE} has all the dependencies. Enter to proceed"
+        )
+    if not hosting.check_requirements_txt_exist():
         console.error(f"{constants.RequirementsTxt.FILE} required for deployment")
-        raise typer.Exit(1) from ex
+        raise typer.Exit(1)
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
