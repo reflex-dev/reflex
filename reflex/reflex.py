@@ -500,7 +500,6 @@ def deploy(
         )
         raise typer.Exit(1)
 
-
     dependency.check_requirements()
 
     # Check if we are set up.
