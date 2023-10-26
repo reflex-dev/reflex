@@ -33,7 +33,7 @@ class CodeBlock(Component):
     theme: Var[LiteralCodeBlockTheme] = "prism"
 
     # The language to use.
-    language: Var[LiteralCodeLanguage]
+    language: Var[LiteralCodeLanguage] = "python"
 
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
