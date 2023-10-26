@@ -16,9 +16,6 @@ from reflex.style import Style
 from reflex.utils import format, imports
 from reflex.vars import ImportVar, Var
 
-# Path to the prism styles.
-PRISM_STYLES_PATH: str = "/styles/code/prism"
-
 
 class CodeBlock(Component):
     """A code block."""

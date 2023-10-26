@@ -9,8 +9,6 @@ from reflex.components.component import Component
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventHandler, EventChain, EventSpec
 
-PRISM_STYLES_PATH: str
-
 class CodeBlock(Component):
     @overload
     @classmethod
