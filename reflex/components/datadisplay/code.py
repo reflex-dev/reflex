@@ -5,7 +5,11 @@ from typing import Dict, Optional, Union
 from reflex.components.component import Component
 from reflex.components.forms import Button
 from reflex.components.layout import Box
-from reflex.components.libs.chakra import ChakraComponent, LiteralCodeBlockTheme
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralCodeBlockTheme,
+    LiteralCodeLanguage,
+)
 from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style
@@ -29,7 +33,7 @@ class CodeBlock(Component):
     theme: Var[LiteralCodeBlockTheme] = "prism"
 
     # The language to use.
-    language: Var[str]
+    language: Var[LiteralCodeLanguage]
 
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
@@ -91,7 +95,6 @@ class CodeBlock(Component):
         Returns:
             The text component.
         """
-
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
 
@@ -138,10 +141,10 @@ class CodeBlock(Component):
     def _render(self):
         out = super()._render()
         out.add_props(
-                style=Var.create(
-                    format.to_camel_case(self.theme._var_name), _var_is_local=False
-                )
-            ).remove_props("theme")
+            style=Var.create(
+                format.to_camel_case(self.theme._var_name), _var_is_local=False
+            )
+        ).remove_props("theme")
         return out
 
 

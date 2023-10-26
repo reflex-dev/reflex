@@ -7,6 +7,8 @@ from .chakra import (
     LiteralButtonVariant,
     LiteralCardVariant,
     LiteralChakraDirection,
+    LiteralCodeBlockTheme,
+    LiteralCodeLanguage,
     LiteralColorScheme,
     LiteralDividerVariant,
     LiteralDrawerSize,
@@ -27,6 +29,5 @@ from .chakra import (
     LiteralTagColorScheme,
     LiteralTagSize,
     LiteralTheme,
-    LiteralCodeBlockTheme,
     LiteralVariant,
 )
