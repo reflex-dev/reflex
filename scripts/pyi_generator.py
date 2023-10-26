@@ -50,7 +50,7 @@ DEFAULT_TYPING_IMPORTS = {
     "overload",
     "Any",
     "Dict",
-    "List",
+    # "List",
     "Literal",
     "Optional",
     "Union",
@@ -296,7 +296,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, List, function, BaseVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, function, BaseVar]]"
                 ),
             ),
             ast.Constant(value=None),

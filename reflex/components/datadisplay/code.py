@@ -83,7 +83,7 @@ class CodeBlock(Component):
                 else Button.create(
                     Icon.create(tag="copy"),
                     on_click=set_clipboard(code),
-                    style={"position": "absolute", "top": "0.5em", "right": "0"},
+                    style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
                 )
             )
             custom_style.update({"padding": "1em 3.2em 1em 1em"})
