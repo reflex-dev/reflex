@@ -6,16 +6,16 @@ import inspect
 import os
 import re
 import sys
+import textwrap
 from _ast import ClassDef, FunctionDef, Import, ImportFrom
 from inspect import getfullargspec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Type, get_args
+from typing import Any, Iterable, Type, get_args
 
 import black
 
 from reflex.components.component import Component
-from reflex.utils import format
 from reflex.utils import types as rx_types
 
 EXCLUDED_FILES = [
@@ -54,15 +54,25 @@ DEFAULT_TYPING_IMPORTS = {
 STUBS_FOLDER = "stubs"
 
 
-def _get_type_hint(value, type_hint_globals, top_level=True):
+def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
+    """Resolve the type hint for value.
+
+    Args:
+        value: The type annotation as a str or actual types/aliases.
+        type_hint_globals: The globals to use to resolving a type hint str.
+        is_optional: Whether the type hint should be wrapped in Optional.
+
+    Returns:
+        The resolved type hint as a str.
+    """
     res = ""
     args = get_args(value)
     if args:
         inner_container_type_args = (
-            [format.wrap(arg, '"') for arg in args]
+            [repr(arg) for arg in args]
             if rx_types.is_literal(value)
             else [
-                _get_type_hint(arg, type_hint_globals, top_level=False)
+                _get_type_hint(arg, type_hint_globals, is_optional=False)
                 for arg in args
                 if arg is not type(None)
             ]
@@ -70,8 +80,9 @@ def _get_type_hint(value, type_hint_globals, top_level=True):
         res = f"{value.__name__}[{', '.join(inner_container_type_args)}]"
 
         if value.__name__ == "Var":
+            # For Var types, Union with the inner args so they can be passed directly.
             types = [res] + [
-                _get_type_hint(arg, type_hint_globals, top_level=False)
+                _get_type_hint(arg, type_hint_globals, is_optional=False)
                 for arg in args
                 if arg is not type(None)
             ]
@@ -81,15 +92,39 @@ def _get_type_hint(value, type_hint_globals, top_level=True):
     elif isinstance(value, str):
         ev = eval(value, type_hint_globals)
         res = (
-            _get_type_hint(ev, type_hint_globals, top_level=False)
+            _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
             else value
         )
     else:
         res = value.__name__
-    if top_level and not res.startswith("Optional"):
+    if is_optional and not res.startswith("Optional"):
         res = f"Optional[{res}]"
     return res
+
+
+def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
+    """Generate the import statements for the stub file.
+
+    Args:
+        typing_imports: The typing imports to include.
+
+    Returns:
+    The list of import statements.
+    """
+    return [
+        ast.ImportFrom(
+            module="typing", names=[ast.alias(name=imp) for imp in typing_imports]
+        ),
+        *ast.parse(
+            textwrap.dedent(
+                """
+                from reflex.vars import Var, BaseVar, ComputedVar
+                from reflex.event import EventChain, EventHandler, EventSpec
+                from reflex.style import Style"""
+            )
+        ).body,
+    ]
 
 
 class StubGenerator(ast.NodeTransformer):
@@ -106,7 +141,7 @@ class StubGenerator(ast.NodeTransformer):
         self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
-            return self._generate_imports(self.typing_imports) + [node]
+            return _generate_imports(self.typing_imports) + [node]
         return node
 
     def visit_ImportFrom(self, node: ImportFrom) -> Any:
@@ -301,35 +336,6 @@ class StubGenerator(ast.NodeTransformer):
                 ]:
                     new_docstring.append(nline)
         return "\n".join(new_docstring)
-
-    def _generate_imports(self, typing_imports):
-        return [
-            ast.ImportFrom(
-                module="typing", names=[ast.alias(name=imp) for imp in typing_imports]
-            ),
-            ast.ImportFrom(
-                module="reflex.vars",
-                names=[
-                    ast.alias(name="Var"),
-                    ast.alias(name="BaseVar"),
-                    ast.alias(name="ComputedVar"),
-                ],
-            ),
-            ast.ImportFrom(
-                module="reflex.event",
-                names=[
-                    ast.alias(name="EventHandler"),
-                    ast.alias(name="EventChain"),
-                    ast.alias(name="EventSpec"),
-                ],
-            ),
-            ast.ImportFrom(
-                module="reflex.style",
-                names=[
-                    ast.alias(name="Style"),
-                ],
-            ),
-        ]
 
 
 class PyiGenerator:
