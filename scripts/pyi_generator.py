@@ -131,11 +131,20 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
     ]
 
 
-def _generate_docstrings(_classes, _props):
+def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
+    """Generate the docstrings for the create method.
+
+    Args:
+        clzs: The classes to generate docstrings for.
+        props: The props to generate docstrings for.
+
+    Returns:
+        The docstring for the create method.
+    """
     props_comments = {}
     comments = []
-    for _class in _classes:
-        for _i, line in enumerate(inspect.getsource(_class).splitlines()):
+    for clz in clzs:
+        for line in inspect.getsource(clz).splitlines():
             reached_functions = re.search("def ", line)
             if reached_functions:
                 # We've reached the functions, so stop.
@@ -154,7 +163,7 @@ def _generate_docstrings(_classes, _props):
 
             # Get the prop.
             prop = match.group(0).strip(":")
-            if prop in _props:
+            if prop in props:
                 if not comments:  # do not include undocumented props
                     continue
                 props_comments[prop] = "\n".join(
@@ -164,9 +173,9 @@ def _generate_docstrings(_classes, _props):
                 continue
             if prop in EXCLUDED_PROPS:
                 comments.clear()  # throw away comments for excluded props
-    _class = _classes[0]
+    clz = clzs[0]
     new_docstring = []
-    for _i, line in enumerate(_class.create.__doc__.splitlines()):
+    for line in (clz.create.__doc__ or "").splitlines():
         new_docstring.append(line)
         if "*children" in line:
             for nline in [
@@ -474,6 +483,7 @@ class PyiGenerator:
             fast=True,
             mode=black.mode.Mode(is_pyi=True),
         ).splitlines():
+            # Bit of a hack here, since the AST cannot represent comments.
             if formatted_line == "    def create(":
                 pyi_content.append("    def create(  # type: ignore")
             else:
@@ -527,6 +537,7 @@ class PyiGenerator:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
+
     targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
     logger.info(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
