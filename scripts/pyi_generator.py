@@ -10,7 +10,7 @@ import textwrap
 from _ast import ClassDef, FunctionDef, Import, ImportFrom
 from inspect import getfullargspec
 from pathlib import Path
-from types import ModuleType
+from types import FunctionType, ModuleType
 from typing import Any, Iterable, Type, get_args
 
 import black
@@ -127,6 +127,197 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
     ]
 
 
+def _generate_docstrings(_classes, _props):
+    props_comments = {}
+    comments = []
+    for _class in _classes:
+        for _i, line in enumerate(inspect.getsource(_class).splitlines()):
+            reached_functions = re.search("def ", line)
+            if reached_functions:
+                # We've reached the functions, so stop.
+                break
+
+            # Get comments for prop
+            if line.strip().startswith("#"):
+                comments.append(line)
+                continue
+
+            # Check if this line has a prop.
+            match = re.search("\\w+:", line)
+            if match is None:
+                # This line doesn't have a var, so continue.
+                continue
+
+            # Get the prop.
+            prop = match.group(0).strip(":")
+            if prop in _props:
+                if not comments:  # do not include undocumented props
+                    continue
+                props_comments[prop] = "\n".join(
+                    [comment.strip().strip("#") for comment in comments]
+                )
+                comments.clear()
+                continue
+            if prop in EXCLUDED_PROPS:
+                comments.clear()  # throw away comments for excluded props
+    _class = _classes[0]
+    new_docstring = []
+    for _i, line in enumerate(_class.create.__doc__.splitlines()):
+        new_docstring.append(line)
+        if "*children" in line:
+            for nline in [
+                f"{line.split('*')[0]}{n}:{c}" for n, c in props_comments.items()
+            ]:
+                new_docstring.append(nline)
+    return "\n".join(new_docstring)
+
+
+def _extract_func_kwargs_as_ast_nodes(
+    func: FunctionType,
+    type_hint_globals: dict[str, Any],
+) -> list[ast.arg]:
+    """Get the kwargs already defined on the function.
+
+    Args:
+        func: The function to extract kwargs from.
+        type_hint_globals: The globals to use to resolving a type hint str.
+
+    Returns:
+        The list of kwargs as ast arg nodes.
+    """
+    spec = getfullargspec(func)
+    kwargs = []
+
+    for kwarg in spec.kwonlyargs:
+        arg = ast.arg(arg=kwarg)
+        if kwarg in spec.annotations:
+            arg.annotation = ast.Name(
+                id=_get_type_hint(spec.annotations[kwarg], type_hint_globals)
+            )
+        default = None
+        if kwarg in spec.kwonlydefaults:
+            default = ast.Constant(value=spec.kwonlydefaults[kwarg])
+        kwargs.append((arg, default))
+    return kwargs
+
+
+def _extract_class_props_as_ast_nodes(
+    func: FunctionType,
+    clzs: list[Type],
+    type_hint_globals: dict[str, Any],
+) -> list[ast.arg]:
+    """Get the props defined on the class and all parents.
+
+    Args:
+        func: The function that kwargs will be added to.
+        clzs: The classes to extract props from.
+        type_hint_globals: The globals to use to resolving a type hint str.
+
+    Returns:
+        The list of props as ast arg nodes
+    """
+    spec = getfullargspec(func)
+    all_props = []
+    kwargs = []
+    for target_class in clzs:
+        # Import from the target class to ensure type hints are resolvable.
+        exec(f"from {target_class.__module__} import *", type_hint_globals)
+        for name, value in target_class.__annotations__.items():
+            if name in spec.kwonlyargs or name in EXCLUDED_PROPS or name in all_props:
+                continue
+            all_props.append(name)
+
+            default = None
+            try:
+                # Try to get default from pydantic field definition.
+                default = target_class.__fields__[name].default
+            except (AttributeError, KeyError):
+                pass
+
+            kwargs.append(
+                (
+                    ast.arg(
+                        arg=name,
+                        annotation=ast.Name(
+                            id=_get_type_hint(value, type_hint_globals)
+                        ),
+                    ),
+                    ast.Constant(value=default),
+                )
+            )
+    return kwargs
+
+
+def _generate_component_create_functiondef(
+    node: ast.FunctionDef,
+    clz: type[Component],
+    type_hint_globals: dict[str, Any],
+) -> ast.FunctionDef:
+    """Generate the create function definition for a Component.
+    
+    Args:
+        node: The existing create functiondef node from the ast
+        clz: The Component class to generate the create functiondef for.
+        type_hint_globals: The globals to use to resolving a type hint str.
+        
+    Returns:
+        The create functiondef node for the ast.
+    """
+    # kwargs defined on the actual create function
+    kwargs = _extract_func_kwargs_as_ast_nodes(clz.create, type_hint_globals)
+
+    # kwargs associated with props defined in the class and its parents
+    all_classes = [c for c in clz.__mro__ if issubclass(c, Component)]
+    prop_kwargs = _extract_class_props_as_ast_nodes(
+        clz.create, all_classes, type_hint_globals
+    )
+    all_props = [arg[0].arg for arg in prop_kwargs]
+    kwargs.extend(prop_kwargs)
+
+    # event handler kwargs
+    kwargs.extend(
+        (
+            ast.arg(
+                arg=trigger,
+                annotation=ast.Name(
+                    id="Optional[Union[EventHandler, EventSpec, List, function, BaseVar]]"
+                ),
+            ),
+            ast.Constant(value=None),
+        )
+        for trigger in sorted(clz().get_event_triggers().keys())
+    )
+    create_args = ast.arguments(
+        args=[ast.arg(arg="cls")],
+        posonlyargs=[],
+        vararg=ast.arg(arg="children"),
+        kwonlyargs=[arg[0] for arg in kwargs],
+        kw_defaults=[arg[1] for arg in kwargs],
+        kwarg=ast.arg(arg="props"),
+        defaults=[],
+    )
+    definition = ast.FunctionDef(
+        name="create",
+        args=create_args,
+        body=[
+            ast.Expr(
+                value=ast.Constant(value=_generate_docstrings(all_classes, all_props))
+            ),
+        ],
+        decorator_list=[
+            ast.Name(id="overload"),
+            *(
+                node.decorator_list
+                if node is not None
+                else [ast.Name(id="classmethod")]
+            ),
+        ],
+        lineno=node.lineno if node is not None else None,
+        returns=ast.Constant(value=clz.__name__),
+    )
+    return definition
+
+
 class StubGenerator(ast.NodeTransformer):
     def __init__(self, module: ModuleType, classes: dict[str, Type], *args, **kwargs):
         self.classes = classes
@@ -165,7 +356,7 @@ class StubGenerator(ast.NodeTransformer):
             and self.current_class in self.classes
         ):
             node.body.append(
-                self._generate_pyi_class(
+                _generate_component_create_functiondef(
                     None, self.classes[self.current_class], self.type_hint_globals
                 )
             )
@@ -173,7 +364,7 @@ class StubGenerator(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node: FunctionDef) -> Any:
         if node.name == "create":
-            node = self._generate_pyi_class(
+            node = _generate_component_create_functiondef(
                 node, self.classes[self.current_class], self.type_hint_globals
             )
         else:
@@ -188,154 +379,6 @@ class StubGenerator(ast.NodeTransformer):
                 node.body = [ast.Ellipsis()]
         self.generic_visit(node)
         return node
-
-    def _generate_pyi_class(
-        self,
-        node: ast.FunctionDef,
-        _class: type[Component],
-        type_hint_globals: dict[str, Any],
-    ):
-        create_spec = getfullargspec(_class.create)
-
-        kwargs = []
-
-        # kwargs already defined on the create function
-        for kwarg in create_spec.kwonlyargs:
-            arg = ast.arg(arg=kwarg)
-            if kwarg in create_spec.annotations:
-                arg.annotation = ast.Name(
-                    id=_get_type_hint(create_spec.annotations[kwarg], type_hint_globals)
-                )
-            default = None
-            if kwarg in create_spec.kwonlydefaults:
-                default = ast.Constant(value=create_spec.kwonlydefaults[kwarg])
-            kwargs.append((arg, default))
-
-        # kwargs associated with props defined in the class and its parents
-        all_classes = [c for c in _class.__mro__ if issubclass(c, Component)]
-        all_props = []
-        for target_class in all_classes:
-            exec(f"from {target_class.__module__} import *", type_hint_globals)
-            for name, value in target_class.__annotations__.items():
-                if (
-                    name in create_spec.kwonlyargs
-                    or name in EXCLUDED_PROPS
-                    or name in all_props
-                ):
-                    continue
-                all_props.append(name)
-
-                if isinstance(value, str):
-                    print(
-                        f"Class {_class.__qualname__} is using future annotations: {value}."
-                    )
-                else:
-                    print(
-                        f"Class {_class.__qualname__} is NOT using future annotations: {value}."
-                    )
-
-                kwargs.append(
-                    (
-                        ast.arg(
-                            arg=name,
-                            annotation=ast.Name(
-                                id=_get_type_hint(value, type_hint_globals)
-                            ),
-                        ),
-                        ast.Constant(value=None),
-                    )
-                )
-
-        # event handler kwargs
-        kwargs.extend(
-            [
-                (
-                    ast.arg(
-                        arg=trigger,
-                        annotation=ast.Name(
-                            id="Optional[Union[EventHandler, EventSpec, List, function, BaseVar]]"
-                        ),
-                    ),
-                    ast.Constant(value=None),
-                )
-                for trigger in sorted(_class().get_event_triggers().keys())
-            ]
-        )
-        create_args = ast.arguments(
-            args=[ast.arg(arg="cls")],
-            posonlyargs=[],
-            vararg=ast.arg(arg="children"),
-            kwonlyargs=[arg[0] for arg in kwargs],
-            kw_defaults=[arg[1] for arg in kwargs],
-            kwarg=ast.arg(arg="props"),
-            defaults=[],
-        )
-        definition = ast.FunctionDef(
-            name="create",
-            args=create_args,
-            body=[
-                ast.Expr(
-                    value=ast.Constant(
-                        value=self._generate_docstrings(all_classes, all_props)
-                    )
-                ),
-            ],
-            decorator_list=[
-                ast.Name(id="overload"),
-                *(
-                    node.decorator_list
-                    if node is not None
-                    else [ast.Name(id="classmethod")]
-                ),
-            ],
-            lineno=node.lineno if node is not None else None,
-            returns=ast.Constant(value=_class.__name__),
-        )
-        return definition
-
-    def _generate_docstrings(self, _classes, _props):
-        props_comments = {}
-        comments = []
-        for _class in _classes:
-            for _i, line in enumerate(inspect.getsource(_class).splitlines()):
-                reached_functions = re.search("def ", line)
-                if reached_functions:
-                    # We've reached the functions, so stop.
-                    break
-
-                # Get comments for prop
-                if line.strip().startswith("#"):
-                    comments.append(line)
-                    continue
-
-                # Check if this line has a prop.
-                match = re.search("\\w+:", line)
-                if match is None:
-                    # This line doesn't have a var, so continue.
-                    continue
-
-                # Get the prop.
-                prop = match.group(0).strip(":")
-                if prop in _props:
-                    if not comments:  # do not include undocumented props
-                        continue
-                    props_comments[prop] = "\n".join(
-                        [comment.strip().strip("#") for comment in comments]
-                    )
-                    comments.clear()
-                    continue
-                if prop in EXCLUDED_PROPS:
-                    comments.clear()  # throw away comments for excluded props
-        _class = _classes[0]
-        new_docstring = []
-        for _i, line in enumerate(_class.create.__doc__.splitlines()):
-            new_docstring.append(line)
-            if "*children" in line:
-                for nline in [
-                    f"{line.split('*')[0]}{n}:{c}" for n, c in props_comments.items()
-                ]:
-                    new_docstring.append(nline)
-        return "\n".join(new_docstring)
 
 
 class PyiGenerator:
