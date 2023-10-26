@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import sys
 
 from reflex import constants
 from reflex.utils import console
@@ -16,7 +17,7 @@ def generate_requirements():
     """Generate a requirements.txt file based on the current environment."""
     # Run the command and get the output
     result = subprocess.run(
-        ["pipdeptree", "--warn", "silence"],
+        [sys.executable, "-m", "pipdeptree", "--warn", "silence"],
         capture_output=True,
         text=True,
     )
