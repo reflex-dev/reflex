@@ -320,6 +320,9 @@ def _generate_component_create_functiondef(
             ast.Expr(
                 value=ast.Constant(value=_generate_docstrings(all_classes, all_props))
             ),
+            ast.Expr(
+                value=ast.Ellipsis(),
+            ),
         ],
         decorator_list=[
             ast.Name(id="overload"),
@@ -358,6 +361,38 @@ class StubGenerator(ast.NodeTransformer):
         self.import_statements: list[str] = []
         # This dict is used when evaluating type hints.
         self.type_hint_globals = module.__dict__.copy()
+
+    @staticmethod
+    def _remove_docstring(
+        node: ast.Module | ast.ClassDef | ast.FunctionDef,
+    ) -> ast.Module | ast.ClassDef | ast.FunctionDef:
+        """Removes any docstring in place.
+
+        Args:
+            node: The node to remove the docstring from.
+
+        Returns:
+            The modified node.
+        """
+        if (
+            node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+        ):
+            node.body.pop(0)
+        return node
+
+    def visit_Module(self, node: ast.Module) -> ast.Module:
+        """Visit a Module node and remove docstring from body.
+
+        Args:
+            node: The Module node to visit.
+
+        Returns:
+            The modified Module node.
+        """
+        self.generic_visit(node)
+        return self._remove_docstring(node)  # type: ignore
 
     def visit_Import(
         self, node: ast.Import | ast.ImportFrom
@@ -409,11 +444,11 @@ class StubGenerator(ast.NodeTransformer):
         """
         exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
-        for child in node.body[:]:
-            # Remove all assignments in the class body.
-            if isinstance(child, (ast.AnnAssign, ast.Assign)):
-                node.body.remove(child)
-        self.generic_visit(node)
+        self._remove_docstring(node)
+        self.generic_visit(node)  # Visit child nodes.
+        if not node.body:
+            # We should never return an empty body.
+            node.body.append(ast.Expr(value=ast.Ellipsis()))
         if (
             not any(
                 isinstance(child, ast.FunctionDef) and child.name == "create"
@@ -429,6 +464,7 @@ class StubGenerator(ast.NodeTransformer):
                     type_hint_globals=self.type_hint_globals,
                 )
             )
+        self.current_class = None
         return node
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
@@ -455,12 +491,7 @@ class StubGenerator(ast.NodeTransformer):
                 return None  # remove private methods
 
             # Blank out the function body for public functions.
-            if isinstance(node.body[0], ast.Expr) and isinstance(
-                node.body[0].value, ast.Constant
-            ):
-                node.body = node.body[:1]  # only keep the docstring
-            else:
-                node.body = [ast.Ellipsis()]  # type: ignore
+            node.body = [ast.Expr(value=ast.Ellipsis())]
         return node
 
     def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:
@@ -493,6 +524,9 @@ class StubGenerator(ast.NodeTransformer):
             The modified AnnAssign node (or None).
         """
         if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
+            return None
+        if self.current_class in self.classes:
+            # Remove annotated assignments in Component classes (props)
             return None
         # Blank out assignments in type stubs.
         node.value = None
