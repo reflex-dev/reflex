@@ -303,7 +303,7 @@ def _generate_component_create_functiondef(
         )
         for trigger in sorted(clz().get_event_triggers().keys())
     )
-    logger.debug("Generated %s.create method with %d kwargs", clz.__name__, len(kwargs))
+    logger.debug(f"Generated {clz.__name__}.create method with {len(kwargs)} kwargs")
     create_args = ast.arguments(
         args=[ast.arg(arg="cls")],
         posonlyargs=[],
@@ -565,7 +565,7 @@ class PyiGenerator:
 
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text("\n".join(pyi_content))
-        logger.info("Wrote %s", pyi_path)
+        logger.info(f"Wrote {pyi_path}")
 
     def _scan_file(self, module_path: Path):
         module_import = str(module_path.with_suffix("")).replace("/", ".")
