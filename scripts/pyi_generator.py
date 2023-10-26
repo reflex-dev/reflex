@@ -1,19 +1,20 @@
 """The pyi generator module."""
 
 import ast
+import contextlib
 import importlib
 import inspect
 import os
 import re
 import sys
 import textwrap
-from _ast import ClassDef, FunctionDef, Import, ImportFrom
 from inspect import getfullargspec
 from pathlib import Path
-from types import FunctionType, ModuleType
-from typing import Any, Iterable, Type, get_args
+from types import ModuleType
+from typing import Any, Callable, Iterable, Type, get_args
 
 import black
+import black.mode
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
@@ -110,13 +111,13 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
         typing_imports: The typing imports to include.
 
     Returns:
-    The list of import statements.
+        The list of import statements.
     """
     return [
         ast.ImportFrom(
             module="typing", names=[ast.alias(name=imp) for imp in typing_imports]
         ),
-        *ast.parse(
+        *ast.parse(  # type: ignore
             textwrap.dedent(
                 """
                 from reflex.vars import Var, BaseVar, ComputedVar
@@ -173,9 +174,9 @@ def _generate_docstrings(_classes, _props):
 
 
 def _extract_func_kwargs_as_ast_nodes(
-    func: FunctionType,
+    func: Callable,
     type_hint_globals: dict[str, Any],
-) -> list[ast.arg]:
+) -> list[tuple[ast.arg, ast.Constant | None]]:
     """Get the kwargs already defined on the function.
 
     Args:
@@ -195,17 +196,17 @@ def _extract_func_kwargs_as_ast_nodes(
                 id=_get_type_hint(spec.annotations[kwarg], type_hint_globals)
             )
         default = None
-        if kwarg in spec.kwonlydefaults:
+        if spec.kwonlydefaults is not None and kwarg in spec.kwonlydefaults:
             default = ast.Constant(value=spec.kwonlydefaults[kwarg])
         kwargs.append((arg, default))
     return kwargs
 
 
 def _extract_class_props_as_ast_nodes(
-    func: FunctionType,
+    func: Callable,
     clzs: list[Type],
     type_hint_globals: dict[str, Any],
-) -> list[ast.arg]:
+) -> list[tuple[ast.arg, ast.Constant | None]]:
     """Get the props defined on the class and all parents.
 
     Args:
@@ -228,11 +229,9 @@ def _extract_class_props_as_ast_nodes(
             all_props.append(name)
 
             default = None
-            try:
+            with contextlib.suppress(AttributeError, KeyError):
                 # Try to get default from pydantic field definition.
                 default = target_class.__fields__[name].default
-            except (AttributeError, KeyError):
-                pass
 
             kwargs.append(
                 (
@@ -249,17 +248,17 @@ def _extract_class_props_as_ast_nodes(
 
 
 def _generate_component_create_functiondef(
-    node: ast.FunctionDef,
+    node: ast.FunctionDef | None,
     clz: type[Component],
     type_hint_globals: dict[str, Any],
 ) -> ast.FunctionDef:
     """Generate the create function definition for a Component.
-    
+
     Args:
         node: The existing create functiondef node from the ast
         clz: The Component class to generate the create functiondef for.
         type_hint_globals: The globals to use to resolving a type hint str.
-        
+
     Returns:
         The create functiondef node for the ast.
     """
@@ -319,28 +318,77 @@ def _generate_component_create_functiondef(
 
 
 class StubGenerator(ast.NodeTransformer):
-    def __init__(self, module: ModuleType, classes: dict[str, Type], *args, **kwargs):
-        self.classes = classes
-        self.current_class = None
-        self.inserted_imports = False
-        self.typing_imports = DEFAULT_TYPING_IMPORTS  # | _get_typing_import(module)
-        self.import_statements = []
-        self.type_hint_globals = module.__dict__.copy()
-        super().__init__(*args, **kwargs)
+    """A node transformer that will generate the stubs for a given module."""
 
-    def visit_Import(self, node: Import) -> Any:
+    def __init__(self, module: ModuleType, classes: dict[str, Type[Component]]):
+        """Initialize the stub generator.
+
+        Args:
+            module: The actual module object module to generate stubs for.
+            classes: The actual Component class objects to generate stubs for.
+        """
+        super().__init__()
+        # Dict mapping class name to actual class object
+        self.classes = classes
+        # Track the last class node that was visited
+        self.current_class = None
+        # These imports will be included in the AST of stub files
+        self.typing_imports = DEFAULT_TYPING_IMPORTS
+        # Whether those typing imports have been inserted yet
+        self.inserted_imports = False
+        # Collected import statements from the module
+        self.import_statements: list[str] = []
+        # This dict is used when evaluating type hints
+        self.type_hint_globals = module.__dict__.copy()
+
+    def visit_Import(
+        self, node: ast.Import | ast.ImportFrom
+    ) -> ast.Import | ast.ImportFrom | list[ast.Import | ast.ImportFrom]:
+        """Collect import statements from the module.
+
+        If this is the first import statement, insert the typing imports before it.
+
+        Args:
+            node: The import node to visit.
+
+        Returns:
+            The modified import node(s).
+        """
         self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
             return _generate_imports(self.typing_imports) + [node]
         return node
 
-    def visit_ImportFrom(self, node: ImportFrom) -> Any:
+    def visit_ImportFrom(
+        self, node: ast.ImportFrom
+    ) -> ast.Import | ast.ImportFrom | list[ast.Import | ast.ImportFrom] | None:
+        """Visit an ImportFrom node.
+
+        Remove any `from __future__ import *` statements, and hand off to visit_Import.
+
+        Args:
+            node: The ImportFrom node to visit.
+
+        Returns:
+            The modified ImportFrom node.
+        """
         if node.module == "__future__":
             return None  # ignore __future__ imports
         return self.visit_Import(node)
 
-    def visit_ClassDef(self, node: ClassDef) -> Any:
+    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
+        """Visit a ClassDef node.
+
+        Remove all assignments in the class body, and add a create functiondef
+        if one does not exist.
+
+        Args:
+            node: The ClassDef node to visit.
+
+        Returns:
+            The modified ClassDef node.
+        """
         exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
         for child in node.body[:]:
@@ -355,29 +403,46 @@ class StubGenerator(ast.NodeTransformer):
             )
             and self.current_class in self.classes
         ):
+            # Add a new .create FunctionDef since one does not exist
             node.body.append(
                 _generate_component_create_functiondef(
-                    None, self.classes[self.current_class], self.type_hint_globals
+                    node=None,
+                    clz=self.classes[self.current_class],
+                    type_hint_globals=self.type_hint_globals,
                 )
             )
         return node
 
-    def visit_FunctionDef(self, node: FunctionDef) -> Any:
-        if node.name == "create":
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        """Visit a FunctionDef node.
+
+        Special handling for `.create` functions to add type hints for all props
+        defined on the component class.
+
+        Remove all private functions and blank out the function body of the
+        remaining public functions.
+
+        Args:
+            node: The FunctionDef node to visit.
+
+        Returns:
+            The modified FunctionDef node (or None).
+        """
+        if node.name == "create" and self.current_class in self.classes:
             node = _generate_component_create_functiondef(
                 node, self.classes[self.current_class], self.type_hint_globals
             )
         else:
             if node.name.startswith("_"):
                 return None  # remove private methods
-            # blank out the function body
+
+            # Blank out the function body for public functions.
             if isinstance(node.body[0], ast.Expr) and isinstance(
                 node.body[0].value, ast.Constant
             ):
                 node.body = node.body[:1]  # only keep the docstring
             else:
-                node.body = [ast.Ellipsis()]
-        self.generic_visit(node)
+                node.body = [ast.Ellipsis()]  # type: ignore
         return node
 
 
