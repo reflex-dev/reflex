@@ -601,6 +601,11 @@ def deploy(
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
         raise typer.Exit(1) from ie
+    except Exception as ex:
+        console.error(f"Unable to export due to: {ex}")
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+        raise typer.Exit(1) from ex
 
     frontend_file_name = constants.ComponentName.FRONTEND.zip()
     backend_file_name = constants.ComponentName.BACKEND.zip()
