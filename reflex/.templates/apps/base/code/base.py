@@ -1,13 +1,9 @@
-"""Welcome to Reflex!"""
-
-import reflex as rx
+"""Welcome to Reflex!."""
 
 from code import styles
 
 # Import the pages.
-from code.pages.index import index
-from code.pages.settings import settings
-from code.pages.dashboard import dashboard
+import reflex as rx
 
 # Create the app and compile it.
 app = rx.App(style=styles.base_style)
