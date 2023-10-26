@@ -1,5 +1,6 @@
 """The pyi generator module."""
 
+from _ast import ClassDef, FunctionDef, Import, ImportFrom
 import ast
 import importlib
 import inspect
@@ -8,7 +9,11 @@ import re
 import subprocess
 import sys
 from inspect import getfullargspec
-from typing import Any, Dict, List, Literal, Optional, Set, Union, get_args  # NOQA
+from pathlib import Path
+from types import ModuleType
+from typing import Any, Dict, List, Literal, Optional, Set, Type, Union, get_args  # NOQA
+
+import black
 
 from reflex.components.component import Component
 
@@ -227,52 +232,51 @@ def _get_typing_import(_module):
     return set()
 
 
-def _get_var_definition(_module, _var_name):
-    # should not be needed any more
+class StubGenerator(ast.NodeTransformer):
+    def __init__(self, module: ModuleType, classes: dict[str, Type], *args, **kwargs):
+        self.classes = classes
+        self.current_class = None
+        self.inserted_imports = False
+        self.typing_imports = DEFAULT_TYPING_IMPORTS | _get_typing_import(module)
+        super().__init__(*args, **kwargs)
 
-    for node in ast.parse(inspect.getsource(_module)).body:
-        if isinstance(node, ast.Assign) and _var_name in [
-            t.id for t in node.targets if isinstance(t, ast.Name)
-        ]:
-            return ast.unparse(node)
-    raise Exception(f"Could not find var {_var_name} in module {_module}")
+    def visit_Import(self, node: Import) -> Any:
+        if not self.inserted_imports:
+            self.inserted_imports = True
+            return self._generate_imports(self.typing_imports) + [node]
+        return node
 
+    def visit_ImportFrom(self, node: ImportFrom) -> Any:
+        if node.module == "__future__":
+            return None  # ignore __future__ imports
+        return self.visit_Import(node)
 
-class PyiGenerator:
-    """A .pyi file generator that will scan all defined Component in Reflex and
-    generate the approriate stub.
-    """
+    def visit_ClassDef(self, node: ClassDef) -> Any:
+        self.current_class = node.name
+        for child in node.body[:]:
+            # Remove all assignments in the class body
+            if isinstance(child, (ast.AnnAssign, ast.Assign)):
+                node.body.remove(child)
+        if not any(isinstance(child, ast.FunctionDef) and child.name == "create" for child in node.body):
+            node.body.append(
+                self._generate_pyi_class(None, self.classes[self.current_class])
+            )
+        else:
+            self.generic_visit(node)
+        return node
 
-    modules: list = []
-    root: str = ""
-    current_module: Any = {}
-    default_typing_imports: set = DEFAULT_TYPING_IMPORTS
+    def visit_FunctionDef(self, node: FunctionDef) -> Any:
+        if node.name == "create":
+            node = self._generate_pyi_class(node, self.classes[self.current_class])
+        else:
+            # blank out the function body
+            if isinstance(node.body[0], ast.Expr):
+                node.body = node.body[:1]  # only keep the docstring
+            else:
+                node.body = [ast.Ellipsis()]
+        self.generic_visit(node)
+        return node
 
-    def _generate_imports(self, variables, classes):
-        # should not be needed any more
-        variables_imports = {
-            type(_var) for _, _var in variables if isinstance(_var, Component)
-        }
-        bases = {
-            base
-            for _, _class in classes
-            for base in _class.__bases__
-            if inspect.getmodule(base) != self.current_module
-        } | variables_imports
-        bases.add(Component)
-        typing_imports = self.default_typing_imports | _get_typing_import(
-            self.current_module
-        )
-        bases = sorted(bases, key=lambda base: base.__name__)
-        return [
-            f"from typing import {','.join(sorted(typing_imports))}",
-            *[f"from {base.__module__} import {base.__name__}" for base in bases],
-            "from reflex.vars import Var, BaseVar, ComputedVar",
-            "from reflex.event import EventHandler, EventChain, EventSpec",
-            "from reflex.style import Style",
-        ]
-
-    # modified to use AST
     def _generate_pyi_class(self, node: ast.FunctionDef, _class: type[Component]):
         create_spec = getfullargspec(_class.create)
 
@@ -306,13 +310,9 @@ class PyiGenerator:
                         ast.arg(
                             arg=name, annotation=ast.Name(id=_get_type_hint(value))
                         ),
-                        None,
+                        ast.Constant(value=None),
                     )
                 )
-
-        # for trigger in sorted(_class().get_event_triggers().keys()):
-        #     definition += f"{trigger}: Optional[Union[EventHandler, EventSpec, List, function, BaseVar]] = None, "
-
         kwargs.extend(
             [
                 (
@@ -322,17 +322,11 @@ class PyiGenerator:
                             id="Optional[Union[EventHandler, EventSpec, List, function, BaseVar]]"
                         ),
                     ),
-                    None,
+                    ast.Constant(value=None),
                 )
                 for trigger in sorted(_class().get_event_triggers().keys())
             ]
         )
-        print(len(kwargs))
-
-        # definition = definition.rstrip(", ")
-        # definition += f", **props) -> '{_class.__name__}':\n"
-
-        # create_args = ast.arguments(args=[], kwargs={})
         create_args = ast.arguments(
             args=[ast.arg(arg="cls")],
             posonlyargs=[],
@@ -342,18 +336,16 @@ class PyiGenerator:
             kwarg=ast.arg(arg="props"),
             defaults=[],
         )
-        print(node.decorator_list[0].__dict__)
         definition = ast.FunctionDef(
             name="create",
             args=create_args,
-            body=[ast.Ellipsis()],
-            decorator_list=[ast.Name(id="overload"), *node.decorator_list],
-            lineno=node.lineno,
+            body=[
+                ast.Expr(value=ast.Constant(value=self._generate_docstrings(all_classes, all_props))),
+            ],
+            decorator_list=[ast.Name(id="overload"), *(node.decorator_list if node is not None else [ast.Name(id="classmethod")])],
+            lineno=node.lineno if node is not None else None,
+            returns=ast.Constant(value=_class.__name__),
         )
-        # definition += self._generate_docstrings(all_classes, all_props)
-        print(ast.unparse(definition))
-        # lines.append(definition)
-        # lines.append("        ...")
         return definition
 
     def _generate_docstrings(self, _classes, _props):
@@ -392,161 +384,104 @@ class PyiGenerator:
         _class = _classes[0]
         new_docstring = []
         for i, line in enumerate(_class.create.__doc__.splitlines()):
-            if i == 0:
-                new_docstring.append(" " * 8 + '"""' + line)
-            else:
-                new_docstring.append(line)
+            new_docstring.append(line)
             if "*children" in line:
                 for nline in [
                     f"{line.split('*')[0]}{n}:{c}" for n, c in props_comments.items()
                 ]:
                     new_docstring.append(nline)
-        new_docstring += ['"""']
         return "\n".join(new_docstring)
 
-    def _generate_pyi_variable(self, _name, _var):
-        # should not be needed any more
+    def _generate_imports(self, typing_imports):
+        return [
+            ast.ImportFrom(
+                module="typing",
+                names=[
+                    ast.alias(name=imp)
+                    for imp in typing_imports
+                ]
+            ),
+            ast.ImportFrom(
+                module="reflex.vars",
+                names=[
+                    ast.alias(name="Var"),
+                    ast.alias(name="BaseVar"),
+                    ast.alias(name="ComputedVar"),
+                ],
+            ),
+            ast.ImportFrom(
+                module="reflex.event",
+                names=[
+                    ast.alias(name="EventHandler"),
+                    ast.alias(name="EventChain"),
+                    ast.alias(name="EventSpec"),
+                ],
+            ),
+            ast.ImportFrom(
+                module="reflex.style",
+                names=[
+                    ast.alias(name="Style"),
+                ],
+            ),
+        ]
 
-        return _get_var_definition(self.current_module, _name)
 
-    def _generate_function(self, _name, _func):
-        # should not be needed any more
+class PyiGenerator:
+    """A .pyi file generator that will scan all defined Component in Reflex and
+    generate the approriate stub.
+    """
 
-        import textwrap
+    modules: list = []
+    root: str = ""
+    current_module: Any = {}
+    default_typing_imports: set = DEFAULT_TYPING_IMPORTS
 
-        # Don't generate indented functions.
-        source = inspect.getsource(_func)
-        if textwrap.dedent(source) != source:
-            return []
+    def _write_pyi_file(self, module_path: Path, source: str):
+        pyi_content = [
+            f'"""Stub file for {module_path}"""',
+            "# ------------------- DO NOT EDIT ----------------------",
+            "# This file was generated by `scripts/pyi_generator.py`!",
+            "# ------------------------------------------------------",
+            "",
+            source,
+        ]
 
-        definition = "".join([line for line in source.split(":\n")[0].split("\n")])
-        return [f"{definition}:", "    ..."]
+        pyi_path = module_path.with_suffix(".pyi")
+        pyi_path.write_text("\n".join(pyi_content))
 
-    # should not be needed any more
-    # def _write_pyi_file(self, variables, functions, classes):
+        black.format_file_in_place(
+            src=pyi_path,
+            fast=True,
+            mode=black.FileMode(),
+            write_back=black.WriteBack.YES,
+        )
+        # TODO: need a way to add `type: ignore` comments on the `def create` line
 
-    #     pyi_content = [
-    #         f'"""Stub file for {self.current_module_path}.py"""',
-    #         "# ------------------- DO NOT EDIT ----------------------",
-    #         "# This file was generated by `scripts/pyi_generator.py`!",
-    #         "# ------------------------------------------------------",
-    #         "",
-    #     ]
-    #     pyi_content.extend(self._generate_imports(variables, classes))
-
-    #     for _name, _var in variables:
-    #         pyi_content.append(self._generate_pyi_variable(_name, _var))
-
-    #     for _fname, _func in functions:
-    #         pyi_content.extend(self._generate_function(_fname, _func))
-
-    #     # for _, _class in classes:
-    #     #     pyi_content.extend(self._generate_pyi_class(_class))
-
-    #     pyi_filename = f"{self.current_module_path}.pyi"
-    #     pyi_path = os.path.join(self.root, pyi_filename)
-
-    #     # with open(pyi_path, "w") as pyi_file:
-    #     #     pyi_file.write("\n".join(pyi_content))
-
-    #     black.format_file_in_place(
-    #         src=Path(pyi_path),
-    #         fast=True,
-    #         mode=black.FileMode(),
-    #         write_back=black.WriteBack.YES,
-    #     )
-
-    def make_stub(self):
-        """Create a stub in temporary folder."""
-        cmd = ["stubgen", f"{self.current_file_path}", "-o", f"{STUBS_FOLDER}"]
-        _out = subprocess.check_output(cmd)
-
-    def enrich_stub(self, classes):
-        """Enrich the stub file with create definition and copy it to self.current_pyi_path.
-
-        Args:
-            classes: The classes found in the original pyi file.
-        """
-        with open(self.current_stub_path) as stub_file:
-            tree = ast.parse(stub_file.read())
-
-            current_class = None
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ClassDef) and node.name in classes:
-                    current_class = node.name
-                if isinstance(node, ast.FunctionDef) and node.name == "create":
-                    self._generate_pyi_class(node, classes[current_class])
-                    # TODO: figure out how to attach the new create_def to current ast tree
-        # TODO: write the enriched file to self.current_pyi_path
-
-    def _scan_file(self, file):
-        # make paths
-        self.current_module_path = os.path.splitext(file)[0]
-
-        pyi_filename = f"{self.current_module_path}.pyi"
-        self.current_file_path = os.path.join(self.root, file)
-        self.current_stub_path = os.path.join(STUBS_FOLDER, self.root, pyi_filename)
-        self.current_pyi_path = os.path.join(self.root, pyi_filename)
-
-        self.make_stub()
-
-        module_import = os.path.splitext(self.current_file_path)[0].replace("/", ".")
-        self.current_module = importlib.import_module(module_import)
+    def _scan_file(self, module_path: Path):
+        module_import = str(module_path.with_suffix("")).replace("/", ".")
+        module = importlib.import_module(module_import)
 
         class_names = {
             name: obj
-            for name, obj in vars(self.current_module).items()
+            for name, obj in vars(module).items()
             if inspect.isclass(obj)
             and issubclass(obj, Component)
             and obj != Component
-            and inspect.getmodule(obj) == self.current_module
+            and inspect.getmodule(obj) == module
         }
         if not class_names:
             return
 
-        self.enrich_stub(class_names)
-
-        # local_variables = []
-        # for node in ast.parse(inspect.getsource(self.current_module)).body:
-        #     if isinstance(node, ast.Assign):
-        #         for t in node.targets:
-        #             if not isinstance(t, ast.Name):
-        #                 # Skip non-var assignment statements
-        #                 continue
-        #             if t.id.startswith("_"):
-        #                 # Skip private vars
-        #                 continue
-        #             obj = getattr(self.current_module, t.id, None)
-        #             if inspect.isclass(obj) or inspect.isfunction(obj):
-        #                 continue
-        #             local_variables.append((t.id, obj))
-
-        # functions = [
-        #     (name, obj)
-        #     for name, obj in vars(self.current_module).items()
-        #     if not name.startswith("__")
-        #     and (
-        #         not inspect.getmodule(obj)
-        #         or inspect.getmodule(obj) == self.current_module
-        #     )
-        #     and inspect.isfunction(obj)
-        # ]
-
-        # print(f"Parsed {file}: Found {[n for n, _ in class_names]}")
-
-        # remove this when pyi generation work.
-        exit()
-
-        # self._write_pyi_file(local_variables, functions, class_names)
+        new_tree = StubGenerator(module, class_names).visit(ast.parse(inspect.getsource(module)))
+        self._write_pyi_file(module_path, ast.unparse(new_tree))
 
     def _scan_folder(self, folder):
         for root, _, files in os.walk(folder):
-            self.root = root
             for file in files:
                 if file in EXCLUDED_FILES:
                     continue
                 if file.endswith(".py"):
-                    self._scan_file(file)
+                    self._scan_file(Path(root) / file)
 
     def scan_all(self, targets):
         """Scan all targets for class inheriting Component and generate the .pyi files.
@@ -556,7 +491,7 @@ class PyiGenerator:
         """
         for target in targets:
             if target.endswith(".py"):
-                self.root, _, file = target.rpartition("/")
+                file = target.rpartition("/")[2]
                 self._scan_file(file)
             else:
                 self._scan_folder(target)
