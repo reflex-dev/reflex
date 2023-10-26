@@ -168,19 +168,16 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
                 props_comments[prop] = "\n".join(
                     [comment.strip().strip("#") for comment in comments]
                 )
-                comments.clear()
-                continue
-            if prop in EXCLUDED_PROPS:
-                comments.clear()  # throw away comments for excluded props
+            comments.clear()
     clz = clzs[0]
     new_docstring = []
     for line in (clz.create.__doc__ or "").splitlines():
-        new_docstring.append(line)
-        if "*children" in line:
+        if "**" in line:
             for nline in [
                 f"{line.split('*')[0]}{n}:{c}" for n, c in props_comments.items()
             ]:
                 new_docstring.append(nline)
+        new_docstring.append(line)
     return "\n".join(new_docstring)
 
 
