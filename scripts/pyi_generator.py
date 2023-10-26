@@ -19,6 +19,7 @@ import black.mode
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
+from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
 
@@ -54,8 +55,6 @@ DEFAULT_TYPING_IMPORTS = {
     "Optional",
     "Union",
 }
-
-STUBS_FOLDER = "stubs"
 
 
 def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
@@ -218,6 +217,7 @@ def _extract_class_props_as_ast_nodes(
     func: Callable,
     clzs: list[Type],
     type_hint_globals: dict[str, Any],
+    extract_real_default: bool = False,
 ) -> list[tuple[ast.arg, ast.Constant | None]]:
     """Get the props defined on the class and all parents.
 
@@ -225,6 +225,8 @@ def _extract_class_props_as_ast_nodes(
         func: The function that kwargs will be added to.
         clzs: The classes to extract props from.
         type_hint_globals: The globals to use to resolving a type hint str.
+        extract_real_default: Whether to extract the real default value from the
+            pydantic field definition.
 
     Returns:
         The list of props as ast arg nodes
@@ -241,9 +243,14 @@ def _extract_class_props_as_ast_nodes(
             all_props.append(name)
 
             default = None
-            with contextlib.suppress(AttributeError, KeyError):
-                # Try to get default from pydantic field definition.
-                default = target_class.__fields__[name].default
+            if extract_real_default:
+                # TODO: This is not currently working since the default is not type compatible
+                #       with the annotation in some cases.
+                with contextlib.suppress(AttributeError, KeyError):
+                    # Try to get default from pydantic field definition.
+                    default = target_class.__fields__[name].default
+                    if isinstance(default, Var):
+                        default = default._decode()  # type: ignore
 
             kwargs.append(
                 (
@@ -456,6 +463,41 @@ class StubGenerator(ast.NodeTransformer):
                 node.body = node.body[:1]  # only keep the docstring
             else:
                 node.body = [ast.Ellipsis()]  # type: ignore
+        return node
+
+    def visit_Assign(self, node: ast.Assign) -> ast.Assign | None:
+        """Remove non-annotated assignment statements.
+
+        Args:
+            node: The Assign node to visit.
+
+        Returns:
+            The modified Assign node (or None).
+        """
+        # Special case for assignments to `typing.Any` as fallback.
+        if (
+            node.value is not None
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "Any"
+        ):
+            return node
+        return None
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
+        """Visit an AnnAssign node (Annotated assignment).
+
+        Remove private target and remove the assignment value in the stub.
+
+        Args:
+            node: The AnnAssign node to visit.
+
+        Returns:
+            The modified AnnAssign node (or None).
+        """
+        if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
+            return None
+        # Blank out assignments in type stubs.
+        node.value = None
         return node
 
 
