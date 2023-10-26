@@ -4,6 +4,7 @@ import ast
 import contextlib
 import importlib
 import inspect
+import logging
 import os
 import re
 import sys
@@ -18,6 +19,8 @@ import black.mode
 
 from reflex.components.component import Component
 from reflex.utils import types as rx_types
+
+logger = logging.getLogger("pyi_generator")
 
 EXCLUDED_FILES = [
     "__init__.py",
@@ -286,6 +289,7 @@ def _generate_component_create_functiondef(
         )
         for trigger in sorted(clz().get_event_triggers().keys())
     )
+    logger.debug("Generated %s.create method with %d kwargs", clz.__name__, len(kwargs))
     create_args = ast.arguments(
         args=[ast.arg(arg="cls")],
         posonlyargs=[],
@@ -392,7 +396,7 @@ class StubGenerator(ast.NodeTransformer):
         exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
         for child in node.body[:]:
-            # Remove all assignments in the class body
+            # Remove all assignments in the class body.
             if isinstance(child, (ast.AnnAssign, ast.Assign)):
                 node.body.remove(child)
         self.generic_visit(node)
@@ -403,7 +407,7 @@ class StubGenerator(ast.NodeTransformer):
             )
             and self.current_class in self.classes
         ):
-            # Add a new .create FunctionDef since one does not exist
+            # Add a new .create FunctionDef since one does not exist.
             node.body.append(
                 _generate_component_create_functiondef(
                     node=None,
@@ -477,6 +481,7 @@ class PyiGenerator:
 
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text("\n".join(pyi_content))
+        logger.info("Wrote %s", pyi_path)
 
     def _scan_file(self, module_path: Path):
         module_import = str(module_path.with_suffix("")).replace("/", ".")
@@ -520,7 +525,9 @@ class PyiGenerator:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
     targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
-    print(f"Running .pyi generator for {targets}")
+    logger.info(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
     gen.scan_all(targets)
