@@ -677,6 +677,33 @@ def deploy(
     console.warn(f"For logs: `reflex deployments logs {key}`")
 
 
+@cli.command()
+def demo(
+    frontend_port: str = typer.Option(
+        "3001", help="Specify a different frontend port."
+    ),
+    backend_port: str = typer.Option("8001", help="Specify a different backend port."),
+):
+    """Run the demo app."""
+    console.set_log_level(constants.LogLevel.ERROR)
+
+    # Show system info
+    exec.output_system_info()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        try:
+            os.chdir(tmp_dir)
+            os.system(
+                f"reflex init --name reflex_demo --template default --loglevel error"
+            )
+            os.system(
+                f"reflex run --backend-port {backend_port} --frontend-port {frontend_port} --loglevel error"
+            )
+
+        except Exception as ex:
+            print(f"Unable to run demo due to: {ex}")
+
+
 deployments_cli = typer.Typer()
 
 
