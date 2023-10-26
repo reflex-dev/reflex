@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -408,19 +409,50 @@ def download(url: str, filename: Optional[str] = None) -> EventSpec:
     )
 
 
-def call_script(javascript_code: str) -> EventSpec:
+def _callback_arg_spec(eval_result):
+    """ArgSpec for call_script callback function.
+
+    Args:
+        eval_result: The result of the javascript execution.
+
+    Returns:
+        Args for the callback function
+    """
+    return [eval_result]
+
+
+def call_script(
+    javascript_code: str, callback: EventHandler | FunctionType | None = None
+) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
     Args:
         javascript_code: The code to execute.
+        callback: EventHandler that will receive the result of evaluating the javascript code.
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
+
+    Raises:
+        ValueError: If the callback is not a valid event handler.
     """
+    callback_kwargs = {}
+    if callback is not None:
+        arg_name = parse_args_spec(_callback_arg_spec)[0]._var_name
+        if isinstance(callback, EventHandler):
+            event_spec = call_event_handler(callback, _callback_arg_spec)
+        elif isinstance(callback, FunctionType):
+            event_spec = call_event_fn(callback, _callback_arg_spec)[0]
+        else:
+            raise ValueError("Cannot use {callback!r} as a call_script callback.")
+        callback_kwargs = {
+            "callback": f"({arg_name}) => queueEvents([{format.format_event(event_spec)}], {constants.CompileVars.SOCKET})"
+        }
     return server_side(
         "_call_script",
         get_fn_signature(call_script),
         javascript_code=javascript_code,
+        **callback_kwargs,
     )
 
 

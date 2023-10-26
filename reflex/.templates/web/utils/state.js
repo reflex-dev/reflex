@@ -198,7 +198,10 @@ export const applyEvent = async (event, socket) => {
 
   if (event.name == "_call_script") {
     try {
-      eval(event.payload.javascript_code);
+      const eval_result = eval(event.payload.javascript_code);
+      if (event.payload.callback) {
+        eval(event.payload.callback)(eval_result)
+      }
     } catch (e) {
       console.log("_call_script", e);
     }
@@ -213,7 +216,7 @@ export const applyEvent = async (event, socket) => {
 
   // Send the event to the server.
   if (socket) {
-    socket.emit("event", JSON.stringify(event));
+    socket.emit("event", JSON.stringify(event, (k, v) => v === undefined ? null : v));
     return true;
   }
 
