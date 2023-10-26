@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 
 from reflex import constants
@@ -10,17 +11,17 @@ from reflex.utils import console
 
 
 def generate_requirements():
-    """Generate the requirements.txt file."""
+    """Generate a requirements.txt file based on the current environment."""
+    # Run the command and get the output
     result = subprocess.run(
-        "pipdeptree --warn silence | grep -E '^\\w+'",
-        shell=True,
+        ["pipdeptree", "--warn", "silence"],
         capture_output=True,
         text=True,
     )
 
-    # Filter the output lines
+    # Filter the output lines using a regular expression
     lines = result.stdout.split("\n")
-    filtered_lines = [line for line in lines if line and not line.startswith(" ")]
+    filtered_lines = [line for line in lines if re.match(r"^\w+", line)]
 
     # Write the filtered lines to requirements.txt
     with open("requirements.txt", "w") as f:
