@@ -502,7 +502,6 @@ def deploy(
 
     dependency.check_requirements()
 
-
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
     enabled_regions = None
