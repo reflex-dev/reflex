@@ -658,8 +658,6 @@ def deploy(
             time.sleep(1)
     if not backend_up:
         console.print("Backend unreachable")
-    else:
-        console.print("Backend is up")
 
     with console.status("Checking frontend ..."):
         for _ in range(constants.Hosting.FRONTEND_POLL_RETRIES):
@@ -668,17 +666,15 @@ def deploy(
             time.sleep(1)
     if not frontend_up:
         console.print("frontend is unreachable")
-    else:
-        console.print("frontend is up")
 
     if frontend_up and backend_up:
         console.print(
             f"Your site [ {key} ] at {regions} is up: {deploy_response.frontend_url}"
         )
         return
-    console.warn(
-        f"Your deployment is taking unusually long. Check back later on its status: `reflex deployments status {key}`"
-    )
+    console.warn(f"Your deployment is taking time.")
+    console.warn(f"Check back later on its status: `reflex deployments status {key}`")
+    console.warn(f"For logs: `reflex deployments logs {key}`")
 
 
 deployments_cli = typer.Typer()
