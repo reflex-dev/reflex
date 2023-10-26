@@ -27,10 +27,10 @@ class CodeBlock(Component):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralCodeBlockTheme] = "prism"
+    theme: Var[LiteralCodeBlockTheme] = "prism"  # type: ignore
 
     # The language to use.
-    language: Var[LiteralCodeLanguage] = "python"
+    language: Var[LiteralCodeLanguage] = "python"  # type: ignore
 
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
