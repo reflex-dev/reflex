@@ -54,7 +54,7 @@ DEFAULT_TYPING_IMPORTS = {
 STUBS_FOLDER = "stubs"
 
 
-def _get_type_hint(value, type_hint_globals, top_level=True, no_union=False):
+def _get_type_hint(value, type_hint_globals, top_level=True):
     res = ""
     args = get_args(value)
     if args:
@@ -75,7 +75,7 @@ def _get_type_hint(value, type_hint_globals, top_level=True, no_union=False):
                 for arg in args
                 if arg is not type(None)
             ]
-            if len(types) > 1 and not no_union:
+            if len(types) > 1:
                 res = ", ".join(types)
                 res = f"Union[{res}]"
     elif isinstance(value, str):
