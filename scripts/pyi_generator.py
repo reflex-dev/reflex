@@ -510,7 +510,10 @@ class StubGenerator(ast.NodeTransformer):
             and node.value.id == "Any"
         ):
             return node
-        return None
+        if self.current_class in self.classes:
+            # Remove annotated assignments in Component classes (props)
+            return None
+        return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
         """Visit an AnnAssign node (Annotated assignment).
@@ -562,6 +565,7 @@ class PyiGenerator:
                 pyi_content.append("    def create(  # type: ignore")
             else:
                 pyi_content.append(formatted_line)
+        pyi_content.append("")  # add empty line at the end for formatting
 
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text("\n".join(pyi_content))
