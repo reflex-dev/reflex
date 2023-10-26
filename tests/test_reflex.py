@@ -98,6 +98,7 @@ def test_deploy_non_interactive_prepare_failed(
 def test_deploy_non_interactive_success(
     mocker, setup_env_authentication, optional_args, values
 ):
+    mocker.patch("reflex.utils.console.ask")
     app_prefix = "fake-prefix"
     mocker.patch(
         "reflex.utils.hosting.prepare_deploy",
@@ -201,6 +202,7 @@ def test_deploy_interactive_prepare_failed(
                     key=get_suggested_key(),
                 ),
                 existing=None,
+                enabled_regions=["sjc"],
             ),
             ["sjc"],
             [],
@@ -220,6 +222,7 @@ def test_deploy_interactive_prepare_failed(
                     key=get_suggested_key(),
                 ),
                 existing=None,
+                enabled_regions=["sjc"],
             ),
             ["sjc"],
             ["k1=v1", "k2=v2"],
@@ -239,6 +242,7 @@ def test_deploy_interactive_prepare_failed(
                     key=get_suggested_key(),
                 ),
                 existing=None,
+                enabled_regions=["sjc"],
             ),
             ["sjc"],
             [],
@@ -258,6 +262,7 @@ def test_deploy_interactive_prepare_failed(
                     key=get_suggested_key(),
                 ),
                 existing=None,
+                enabled_regions=["sjc"],
             ),
             ["sjc"],
             ["k1=v1", "k3=v3"],
@@ -279,6 +284,7 @@ def test_deploy_interactive_prepare_failed(
                     )
                 ),
                 suggestion=None,
+                enabled_regions=["sjc"],
             ),
             ["sjc"],
             [],
@@ -300,6 +306,7 @@ def test_deploy_interactive_prepare_failed(
                     )
                 ),
                 suggestion=None,
+                enabled_regions=["sjc"],
             ),
             ["sjc"],
             ["k4=v4"],
@@ -319,6 +326,10 @@ def test_deploy_interactive(
     expected_key,
     args_patch,
 ):
+    mocker.patch(
+        "reflex.utils.hosting.check_requirements_for_non_reflex_packages",
+        return_value=True,
+    )
     mocker.patch(
         "reflex.utils.hosting.prepare_deploy",
         return_value=prepare_responses,
