@@ -4,9 +4,21 @@ https://www.radix-ui.com/themes/docs/theme/typography
 """
 from __future__ import annotations
 
+from typing import Literal
+
 from reflex.vars import Var
 
-from .base import CommonMarginProps, RadixThemesComponent
+from .base import (
+    CommonMarginProps,
+    LiteralAccentColor,
+    LiteralVariant,
+    RadixThemesComponent,
+)
+
+LiteralTextWeight = Literal["light", "regular", "medium", "bold"]
+LiteralTextAlign = Literal["left", "center", "right"]
+LiteralTextSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+LiteralTextTrim = Literal["normal", "start", "end", "both"]
 
 
 class Text(CommonMarginProps, RadixThemesComponent):
@@ -21,19 +33,19 @@ class Text(CommonMarginProps, RadixThemesComponent):
     as_: Var[str]
 
     # Text size: "1" - "9"
-    size: Var[str]
+    size: Var[LiteralTextSize]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[str]
+    weight: Var[LiteralTextWeight]
 
     # Alignment of text in element: "left" | "center" | "right"
-    align: Var[str]
+    align: Var[LiteralTextAlign]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[str]
+    trim: Var[LiteralTextTrim]
 
     # Overrides the accent color inherited from the Theme.
-    color: Var[str]
+    color: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
@@ -51,13 +63,13 @@ class Blockquote(CommonMarginProps, RadixThemesComponent):
     tag = "Blockquote"
 
     # Text size: "1" - "9"
-    size: Var[str]
+    size: Var[LiteralTextSize]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[str]
+    weight: Var[LiteralTextWeight]
 
     # Overrides the accent color inherited from the Theme.
-    color: Var[str]
+    color: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
@@ -69,7 +81,7 @@ class Code(Blockquote):
     tag = "Code"
 
     # The visual variant to apply: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[str]
+    variant: Var[LiteralVariant]
 
 
 class Em(CommonMarginProps, RadixThemesComponent):
@@ -84,7 +96,10 @@ class Kbd(CommonMarginProps, RadixThemesComponent):
     tag = "Kbd"
 
     # Text size: "1" - "9"
-    size: Var[str]
+    size: Var[LiteralTextSize]
+
+
+LiteralLinkUnderline = Literal["auto", "hover", "always"]
 
 
 class Link(CommonMarginProps, RadixThemesComponent):
@@ -96,19 +111,19 @@ class Link(CommonMarginProps, RadixThemesComponent):
     as_child: Var[bool]
 
     # Text size: "1" - "9"
-    size: Var[str]
+    size: Var[LiteralTextSize]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
-    weight: Var[str]
+    weight: Var[LiteralTextWeight]
 
     # Removes the leading trim space: "normal" | "start" | "end" | "both"
-    trim: Var[str]
+    trim: Var[LiteralTextTrim]
 
     # Sets the visibility of the underline affordance: "auto" | "hover" | "always"
-    underline: Var[str]
+    underline: Var[LiteralLinkUnderline]
 
     # Overrides the accent color inherited from the Theme.
-    color: Var[str]
+    color: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]

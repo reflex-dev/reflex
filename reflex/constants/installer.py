@@ -103,7 +103,6 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "axios": "1.4.0",
-        "chakra-react-select": "4.6.0",
         "focus-visible": "5.2.0",
         "framer-motion": "10.16.4",
         "json5": "2.2.3",

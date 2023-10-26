@@ -12,7 +12,6 @@ from reflex.vars import (
     ComputedVar,
     ImportVar,
     Var,
-    get_local_storage,
 )
 
 test_vars = [
@@ -624,62 +623,6 @@ def test_import_var(import_var, expected):
         expected: expected name
     """
     assert import_var.name == expected
-
-
-@pytest.mark.parametrize(
-    "key, expected",
-    [
-        (
-            "test_key",
-            BaseVar(_var_name="localStorage.getItem('test_key')", _var_type=str),
-        ),
-        (
-            BaseVar(_var_name="key_var", _var_type=str),
-            BaseVar(_var_name="localStorage.getItem(key_var)", _var_type=str),
-        ),
-        (
-            BaseState.val,
-            BaseVar(_var_name="localStorage.getItem(base_state.val)", _var_type=str),
-        ),
-        (None, BaseVar(_var_name="getAllLocalStorageItems()", _var_type=Dict)),
-    ],
-)
-def test_get_local_storage(key, expected):
-    """Test that the right BaseVar is return when get_local_storage is called.
-
-    Args:
-        key: Local storage key.
-        expected: expected BaseVar.
-
-    """
-    local_storage = get_local_storage(key)
-    assert local_storage._var_name == expected._var_name
-    assert local_storage._var_type == expected._var_type
-
-
-@pytest.mark.parametrize(
-    "key",
-    [
-        ["list", "values"],
-        {"name": "dict"},
-        10,
-        BaseVar(_var_name="key_var", _var_type=List),
-        BaseVar(_var_name="key_var", _var_type=Dict[str, str]),
-    ],
-)
-def test_get_local_storage_raise_error(key):
-    """Test that a type error is thrown when the wrong key type is provided.
-
-    Args:
-        key: Local storage key.
-    """
-    with pytest.raises(TypeError) as err:
-        get_local_storage(key)
-    type_ = type(key) if not isinstance(key, Var) else key._var_type
-    assert (
-        err.value.args[0]
-        == f"Local storage keys can only be of type `str` or `var` of type `str`. Got `{type_}` instead."
-    )
 
 
 @pytest.mark.parametrize(

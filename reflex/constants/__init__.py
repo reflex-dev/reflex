@@ -17,6 +17,7 @@ from .base import (
     Templates,
 )
 from .compiler import (
+    NOCOMPILE_FILE,
     SETTER_PREFIX,
     CompileVars,
     ComponentName,
@@ -29,8 +30,10 @@ from .config import (
     Config,
     Expiration,
     GitIgnore,
+    RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
+from .hosting import Hosting
 from .installer import (
     Bun,
     Fnm,
@@ -65,11 +68,13 @@ __ALL__ = [
     Ext,
     Fnm,
     GitIgnore,
+    RequirementsTxt,
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,
     Next,
     Node,
+    NOCOMPILE_FILE,
     PackageJson,
     PageNames,
     Page404,
@@ -91,4 +96,5 @@ __ALL__ = [
     Tailwind,
     Templates,
     CompileVars,
+    Hosting,
 ]

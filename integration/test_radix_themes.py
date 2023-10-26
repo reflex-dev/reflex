@@ -45,6 +45,38 @@ def RadixThemesApp():
                 direction="row",
                 gap="2",
             ),
+            rdxt.button("This is a button", size="4", variant="solid", color="plum"),
+            rdxt.grid(
+                *[
+                    rdxt.box(rdxt.text(f"Cell {i}"), width="10vw", height="10vw")
+                    for i in range(1, 10)
+                ],
+                columns="3",
+            ),
+            rdxt.container(
+                rdxt.section(
+                    rdxt.heading("Section 1"),
+                    rdxt.text(
+                        "text one with ",
+                        rdxt.kbd("K"),
+                        rdxt.kbd("E"),
+                        rdxt.kbd("Y"),
+                        "s",
+                    ),
+                ),
+                rdxt.section(
+                    rdxt.heading("Section 2", size="2"),
+                    rdxt.code("Inline code yo"),
+                ),
+                rdxt.section(
+                    rdxt.heading("Section 3"),
+                    rdxt.link("Link to google", href="https://google.com"),
+                    rdxt.strong("Strong text"),
+                    rdxt.em("Emphasized text"),
+                    rdxt.blockquote("Blockquote text"),
+                    rdxt.quote("Inline quote"),
+                ),
+            ),
             p="5",
         )
 

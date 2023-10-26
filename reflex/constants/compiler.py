@@ -5,6 +5,9 @@ from types import SimpleNamespace
 # The prefix used to create setters for state vars.
 SETTER_PREFIX = "set_"
 
+# The file used to specify no compilation.
+NOCOMPILE_FILE = ".web/nocompile"
+
 
 class Ext(SimpleNamespace):
     """Extension used in Reflex."""
