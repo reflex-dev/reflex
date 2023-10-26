@@ -328,17 +328,17 @@ class StubGenerator(ast.NodeTransformer):
             classes: The actual Component class objects to generate stubs for.
         """
         super().__init__()
-        # Dict mapping class name to actual class object
+        # Dict mapping class name to actual class object.
         self.classes = classes
-        # Track the last class node that was visited
+        # Track the last class node that was visited.
         self.current_class = None
-        # These imports will be included in the AST of stub files
+        # These imports will be included in the AST of stub files.
         self.typing_imports = DEFAULT_TYPING_IMPORTS
-        # Whether those typing imports have been inserted yet
+        # Whether those typing imports have been inserted yet.
         self.inserted_imports = False
-        # Collected import statements from the module
+        # Collected import statements from the module.
         self.import_statements: list[str] = []
-        # This dict is used when evaluating type hints
+        # This dict is used when evaluating type hints.
         self.type_hint_globals = module.__dict__.copy()
 
     def visit_Import(
