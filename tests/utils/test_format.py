@@ -137,6 +137,9 @@ def test_to_snake_case(input: str, output: str):
         ("Hello", "Hello"),
         ("snake_case", "snakeCase"),
         ("snake_case_two", "snakeCaseTwo"),
+        ("kebab-case", "kebabCase"),
+        ("kebab-case-two", "kebabCaseTwo"),
+        ("snake_kebab-case", "snakeKebabCase")
     ],
 )
 def test_to_camel_case(input: str, output: str):

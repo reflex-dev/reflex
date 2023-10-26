@@ -27,5 +27,6 @@ from .chakra import (
     LiteralTagColorScheme,
     LiteralTagSize,
     LiteralTheme,
+    LiteralCodeBlockTheme,
     LiteralVariant,
 )

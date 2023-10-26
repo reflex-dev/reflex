@@ -5,11 +5,11 @@ from typing import Dict, Optional, Union
 from reflex.components.component import Component
 from reflex.components.forms import Button
 from reflex.components.layout import Box
-from reflex.components.libs.chakra import ChakraComponent, LiteralTheme
+from reflex.components.libs.chakra import ChakraComponent, LiteralCodeBlockTheme
 from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import imports
+from reflex.utils import format, imports
 from reflex.vars import ImportVar, Var
 
 # Path to the prism styles.
@@ -21,10 +21,12 @@ class CodeBlock(Component):
 
     library = "react-syntax-highlighter@15.5.0"
 
-    tag = "Prism"
+    tag = "PrismAsyncLight"
+
+    alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralTheme]
+    theme: Var[LiteralCodeBlockTheme] = "prism"
 
     # The language to use.
     language: Var[str]
@@ -46,12 +48,31 @@ class CodeBlock(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         merged_imports = super()._get_imports()
-        if self.theme is not None:
-            merged_imports = imports.merge_imports(
-                merged_imports,
-                {PRISM_STYLES_PATH: {ImportVar(tag=self.theme._var_name)}},
-            )
+        merged_imports = imports.merge_imports(
+            merged_imports,
+            {
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.theme._var_name}": {
+                    ImportVar(
+                        tag="prism"
+                        if self.theme._var_name == "light"
+                        else format.to_camel_case(self.theme._var_name),
+                        is_default=True,
+                        install=False,
+                    )
+                }
+            },
+            {
+                f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}": {
+                    ImportVar(
+                        tag=self.language._var_name, is_default=True, install=False
+                    )
+                }
+            },
+        )
         return merged_imports
+
+    def _get_custom_code(self) -> str | None:
+        return f"SyntaxHighlighter.registerLanguage('{self.language._var_name}', {self.language._var_name})"
 
     @classmethod
     def create(
@@ -114,7 +135,9 @@ class CodeBlock(Component):
         out = super()._render()
         if self.theme is not None:
             out.add_props(
-                style=Var.create(self.theme._var_name, _var_is_local=False)
+                style=Var.create(
+                    format.to_camel_case(self.theme._var_name), _var_is_local=False
+                )
             ).remove_props("theme")
         return out
 

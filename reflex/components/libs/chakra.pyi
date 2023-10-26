@@ -32,6 +32,38 @@ LiteralColorScheme = Literal[
 LiteralVariant = Literal["solid", "subtle", "outline"]
 LiteralDividerVariant = Literal["solid", "dashed"]
 LiteralTheme = Literal["light", "dark"]
+LiteralCodeBlockTheme = Literal[
+    "a11y-dark",
+    "atom-dark",
+    "cb",
+    "colddark-cold",
+    "coldark-dark",
+    "coy",
+    "coy-without-shadow",
+    "darcula",
+    "dark",
+    "dracula",
+    "duotone",
+    "duotone-earth",
+    "duotone-forest",
+    "duotone-light",
+    "duotone-sea",
+    "duotone-space",
+    "funky",
+    "ghcolors",
+    "gruvbox-dark",
+    "holi-theme",
+    "hopscotch",
+    "light",
+    "lucario",
+    "material-dark",
+    "material-light",
+    "material-oceanic",
+    "night-owl",
+    "nord",
+    "okaidia",
+    "prism",
+]
 LiteralTagColorScheme = Literal[
     "gray",
     "red",
