@@ -14,8 +14,10 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
     Optional,
     Type,
+    Union,
     get_args,
 )
 
@@ -105,6 +107,8 @@ ruff_dont_remove = [
     Optional,
     Dict,
     List,
+    Literal,
+    Union,
     EventChain,
     Style,
     LiteralInputVariant,
@@ -187,12 +191,20 @@ EXCLUDED_PROPS = [
     "valid_children",
 ]
 
-DEFAULT_TYPING_IMPORTS = {"overload", "Any", "Dict", "List", "Optional", "Union"}
+DEFAULT_TYPING_IMPORTS = {
+    "overload",
+    "Any",
+    "Dict",
+    "List",
+    "Literal",
+    "Optional",
+    "Union",
+}
 
 STUBS_FOLDER = "stubs"
 
 
-def _get_type_hint(value, top_level=True, no_union=False):
+def _get_type_hint(value, type_hint_globals, top_level=True, no_union=False):
     res = ""
     args = get_args(value)
     if args:
@@ -200,7 +212,7 @@ def _get_type_hint(value, top_level=True, no_union=False):
             [format.wrap(arg, '"') for arg in args]
             if rx_types.is_literal(value)
             else [
-                _get_type_hint(arg, top_level=False)
+                _get_type_hint(arg, type_hint_globals, top_level=False)
                 for arg in args
                 if arg is not type(None)
             ]
@@ -209,7 +221,7 @@ def _get_type_hint(value, top_level=True, no_union=False):
 
         if value.__name__ == "Var":
             types = [res] + [
-                _get_type_hint(arg, top_level=False)
+                _get_type_hint(arg, type_hint_globals, top_level=False)
                 for arg in args
                 if arg is not type(None)
             ]
@@ -217,8 +229,12 @@ def _get_type_hint(value, top_level=True, no_union=False):
                 res = ", ".join(types)
                 res = f"Union[{res}]"
     elif isinstance(value, str):
-        ev = eval(value)
-        res = _get_type_hint(ev, top_level=False) if ev.__name__ == "Var" else value
+        ev = eval(value, type_hint_globals)
+        res = (
+            _get_type_hint(ev, type_hint_globals, top_level=False)
+            if ev.__name__ == "Var"
+            else value
+        )
     else:
         res = value.__name__
     if top_level and not res.startswith("Optional"):
@@ -226,28 +242,18 @@ def _get_type_hint(value, top_level=True, no_union=False):
     return res
 
 
-def _get_typing_import(_module):
-    # should not be needed any more
-
-    src = [
-        line
-        for line in inspect.getsource(_module).split("\n")
-        if line.startswith("from typing")
-    ]
-    if len(src):
-        return set(src[0].rpartition("from typing import ")[-1].split(", "))
-    return set()
-
-
 class StubGenerator(ast.NodeTransformer):
     def __init__(self, module: ModuleType, classes: dict[str, Type], *args, **kwargs):
         self.classes = classes
         self.current_class = None
         self.inserted_imports = False
-        self.typing_imports = DEFAULT_TYPING_IMPORTS | _get_typing_import(module)
+        self.typing_imports = DEFAULT_TYPING_IMPORTS  # | _get_typing_import(module)
+        self.import_statements = []
+        self.type_hint_globals = module.__dict__.copy()
         super().__init__(*args, **kwargs)
 
     def visit_Import(self, node: Import) -> Any:
+        self.import_statements.append(ast.unparse(node))
         if not self.inserted_imports:
             self.inserted_imports = True
             return self._generate_imports(self.typing_imports) + [node]
@@ -259,54 +265,72 @@ class StubGenerator(ast.NodeTransformer):
         return self.visit_Import(node)
 
     def visit_ClassDef(self, node: ClassDef) -> Any:
+        exec("\n".join(self.import_statements), self.type_hint_globals)
         self.current_class = node.name
         for child in node.body[:]:
             # Remove all assignments in the class body
             if isinstance(child, (ast.AnnAssign, ast.Assign)):
                 node.body.remove(child)
         self.generic_visit(node)
-        if not any(
-            isinstance(child, ast.FunctionDef) and child.name == "create"
-            for child in node.body
+        if (
+            not any(
+                isinstance(child, ast.FunctionDef) and child.name == "create"
+                for child in node.body
+            )
+            and self.current_class in self.classes
         ):
             node.body.append(
-                self._generate_pyi_class(None, self.classes[self.current_class])
+                self._generate_pyi_class(
+                    None, self.classes[self.current_class], self.type_hint_globals
+                )
             )
         return node
 
     def visit_FunctionDef(self, node: FunctionDef) -> Any:
         if node.name == "create":
-            node = self._generate_pyi_class(node, self.classes[self.current_class])
+            node = self._generate_pyi_class(
+                node, self.classes[self.current_class], self.type_hint_globals
+            )
         else:
             if node.name.startswith("_"):
                 return None  # remove private methods
             # blank out the function body
-            if isinstance(node.body[0], ast.Expr) and isinstance(node.body[0].value, ast.Constant):
+            if isinstance(node.body[0], ast.Expr) and isinstance(
+                node.body[0].value, ast.Constant
+            ):
                 node.body = node.body[:1]  # only keep the docstring
             else:
                 node.body = [ast.Ellipsis()]
         self.generic_visit(node)
         return node
 
-    def _generate_pyi_class(self, node: ast.FunctionDef, _class: type[Component]):
+    def _generate_pyi_class(
+        self,
+        node: ast.FunctionDef,
+        _class: type[Component],
+        type_hint_globals: dict[str, Any],
+    ):
         create_spec = getfullargspec(_class.create)
 
-        kwargs = [
-            (
-                ast.arg(
-                    arg=kwarg,
-                    annotation=_get_type_hint(create_spec.annotations[kwarg]),
-                ),
-                None,
-            )
-            if kwarg in create_spec.annotations
-            else (ast.arg(kwarg), None)
-            for kwarg in create_spec.kwonlyargs
-        ]
+        kwargs = []
 
+        # kwargs already defined on the create function
+        for kwarg in create_spec.kwonlyargs:
+            arg = ast.arg(arg=kwarg)
+            if kwarg in create_spec.annotations:
+                arg.annotation = ast.Name(
+                    id=_get_type_hint(create_spec.annotations[kwarg], type_hint_globals)
+                )
+            default = None
+            if kwarg in create_spec.kwonlydefaults:
+                default = ast.Constant(value=create_spec.kwonlydefaults[kwarg])
+            kwargs.append((arg, default))
+
+        # kwargs associated with props defined in the class and its parents
         all_classes = [c for c in _class.__mro__ if issubclass(c, Component)]
         all_props = []
         for target_class in all_classes:
+            exec(f"from {target_class.__module__} import *", type_hint_globals)
             for name, value in target_class.__annotations__.items():
                 if (
                     name in create_spec.kwonlyargs
@@ -316,14 +340,28 @@ class StubGenerator(ast.NodeTransformer):
                     continue
                 all_props.append(name)
 
+                if isinstance(value, str):
+                    print(
+                        f"Class {_class.__qualname__} is using future annotations: {value}."
+                    )
+                else:
+                    print(
+                        f"Class {_class.__qualname__} is NOT using future annotations: {value}."
+                    )
+
                 kwargs.append(
                     (
                         ast.arg(
-                            arg=name, annotation=ast.Name(id=_get_type_hint(value))
+                            arg=name,
+                            annotation=ast.Name(
+                                id=_get_type_hint(value, type_hint_globals)
+                            ),
                         ),
                         ast.Constant(value=None),
                     )
                 )
+
+        # event handler kwargs
         kwargs.extend(
             [
                 (
@@ -512,8 +550,7 @@ class PyiGenerator:
         """
         for target in targets:
             if target.endswith(".py"):
-                file = target.rpartition("/")[2]
-                self._scan_file(file)
+                self._scan_file(Path(target))
             else:
                 self._scan_folder(target)
 
