@@ -495,14 +495,26 @@ def deploy(
     console.set_log_level(loglevel)
 
     if not interactive and not key:
-        console.error("Please provide a deployment key when not in interactive mode.")
+        console.error(
+            "Please provide a name for the deployed instance when not in interactive mode."
+        )
         raise typer.Exit(1)
 
+<<<<<<< HEAD
     dependency.check_requirements()
+=======
+    if not hosting.check_requirements_for_non_reflex_packages():
+        console.ask(
+            f"Make sure {constants.RequirementsTxt.FILE} has all the dependencies. Enter to proceed"
+        )
+    if not hosting.check_requirements_txt_exist():
+        console.error(f"{constants.RequirementsTxt.FILE} required for deployment")
+        raise typer.Exit(1)
+>>>>>>> fe01f0cf (add region check upfront when user deploys interactively (#2030))
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
-
+    enabled_regions = None
     try:
         # Send a request to server to obtain necessary information
         # in preparation of a deployment. For example,
@@ -512,6 +524,10 @@ def deploy(
         pre_deploy_response = hosting.prepare_deploy(
             app_name, key=key, frontend_hostname=frontend_hostname
         )
+        # Note: we likely won't need to fetch this twice
+        if pre_deploy_response.enabled_regions is not None:
+            enabled_regions = pre_deploy_response.enabled_regions
+
     except Exception as ex:
         console.error(f"Unable to prepare deployment due to: {ex}")
         raise typer.Exit(1) from ex
@@ -541,9 +557,19 @@ def deploy(
         key = key_candidate
 
         # Then CP needs to know the user's location, which requires user permission
-        region_input = console.ask(
-            "Region to deploy to", default=regions[0] if regions else "sjc"
-        )
+        console.debug(f"{enabled_regions=}")
+        while True:
+            region_input = console.ask(
+                "Region to deploy to", default=regions[0] if regions else "sjc"
+            )
+
+            if enabled_regions is None or region_input in enabled_regions:
+                break
+            else:
+                console.warn(
+                    f"{region_input} is not a valid region. Must be one of {enabled_regions}"
+                )
+                console.warn("Run `reflex deploymemts regions` to see details.")
         regions = regions or [region_input]
 
         # process the envs
@@ -554,6 +580,8 @@ def deploy(
     if not key or not regions or not app_name or not app_prefix or not api_url:
         console.error("Please provide all the required parameters.")
         raise typer.Exit(1)
+    # Note: if the user uses --no-interactive mode, there was no prepare_deploy call
+    # so we do not check the regions until the call to hosting server
 
     processed_envs = hosting.process_envs(envs) if envs else None
 

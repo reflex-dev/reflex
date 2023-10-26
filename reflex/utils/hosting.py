@@ -223,6 +223,7 @@ class DeploymentPrepareResponse(Base):
     # This is for a new deployment, user has not deployed this app before.
     # The server returns key suggestion based on the app name.
     suggestion: Optional[DeploymentPrepInfo] = None
+    enabled_regions: Optional[List[str]] = None
 
     @root_validator(pre=True)
     def ensure_at_least_one_deploy_params(cls, values):
@@ -303,6 +304,7 @@ def prepare_deploy(
             reply=response_json["reply"],
             suggestion=response_json["suggestion"],
             existing=response_json["existing"],
+            enabled_regions=response_json.get("enabled_regions"),
         )
     except httpx.RequestError as re:
         console.debug(f"Unable to prepare launch due to {re}.")
@@ -450,7 +452,7 @@ def deploy(
         # If the server explicitly states bad request,
         # display a different error
         if response.status_code == HTTPStatus.BAD_REQUEST:
-            raise AssertionError("Server rejected this request")
+            raise AssertionError(f"Server rejected this request: {response.text}")
         response.raise_for_status()
         response_json = response.json()
         return DeploymentPostResponse(
@@ -843,6 +845,39 @@ async def get_logs(
         )
 
 
+def check_requirements_txt_exist() -> bool:
+    """Check if requirements.txt exists in the top level app directory.
+
+    Returns:
+        True if requirements.txt exists, False otherwise.
+    """
+    return os.path.exists(constants.RequirementsTxt.FILE)
+
+
+def check_requirements_for_non_reflex_packages() -> bool:
+    """Check the requirements.txt file for packages other than reflex.
+
+    Returns:
+        True if packages other than reflex are found, False otherwise.
+    """
+    if not check_requirements_txt_exist():
+        return False
+    try:
+        with open(constants.RequirementsTxt.FILE) as fp:
+            for req_line in fp.readlines():
+                package_name = re.search(r"^([^=<>!~]+)", req_line.lstrip())
+                # If we find a package that is not reflex
+                if (
+                    package_name
+                    and package_name.group(1) != constants.Reflex.MODULE_NAME
+                ):
+                    return True
+    except Exception as ex:
+        console.warn(f"Unable to scan requirements.txt for dependencies due to {ex}")
+
+    return False
+
+
 def authenticate_on_browser(
     invitation_code: str,
 ) -> str:
@@ -936,7 +971,9 @@ def interactive_get_deployment_key_from_user_input(
         deploy_url = suggestion.deploy_url
 
         # If user takes the suggestion, we will use the suggested key and proceed
-        while key_input := console.ask(f"Name of deployment", default=key_candidate):
+        while key_input := console.ask(
+            f"Choose a name for your deployed app", default=key_candidate
+        ):
             try:
                 pre_deploy_response = prepare_deploy(
                     app_name,
@@ -1071,7 +1108,7 @@ def interactive_prompt_for_envs() -> list[str]:
     envs_finished = False
     env_count = 1
     env_key_prompt = f" * env-{env_count} name (enter to skip)"
-    console.print("Environment variables ...")
+    console.print("Environment variables for your production App ...")
     while not envs_finished:
         env_key = console.ask(env_key_prompt)
         if not env_key:
@@ -1108,7 +1145,7 @@ def get_regions() -> list[dict]:
         if (
             response_json
             and response_json[0] is not None
-            and isinstance(response_json[0], dict)
+            and not isinstance(response_json[0], dict)
         ):
             console.debug("Expect return values are dict's")
             return []
