@@ -1,12 +1,12 @@
 """The home page of the app."""
 
 from code import styles
-from code.pages.template import template
+from code.templates import template
 
 import reflex as rx
 
 
-@template(route="/", title="Home")
+@template(route="/", title="Home", image="/logo.svg")
 def index() -> rx.Component:
     """The home page.
 

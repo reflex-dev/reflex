@@ -147,9 +147,9 @@ def sidebar() -> rx.Component:
             rx.vstack(
                 *[
                     sidebar_item(
-                        page.get("title", page["route"].strip("/").capitalize()),
-                        "/github.svg",
-                        page["route"],
+                        text=page.get("title", page["route"].strip("/").capitalize()),
+                        icon=page.get("image", "/github.svg"),
+                        url=page["route"],
                     )
                     for page in get_decorated_pages()
                 ],

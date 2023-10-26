@@ -1,5 +1,5 @@
-"""The dashboard page for the template."""
-from code.pages.template import template
+"""The dashboard page."""
+from code.templates import template
 
 import reflex as rx
 

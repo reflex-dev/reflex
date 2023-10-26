@@ -1,6 +1,6 @@
-"""The settings page for the template."""
+"""The settings page."""
 
-from code.pages.template import template
+from code.templates import template
 
 import reflex as rx
 
