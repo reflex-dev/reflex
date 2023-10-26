@@ -451,12 +451,12 @@ def deploy(
         None, help="The amount of memory to allocate.", hidden=True
     ),
     auto_start: Optional[bool] = typer.Option(
-        True,
+        None,
         help="Whether to auto start the instance.",
         hidden=True,
     ),
     auto_stop: Optional[bool] = typer.Option(
-        True,
+        None,
         help="Whether to auto stop the instance.",
         hidden=True,
     ),
