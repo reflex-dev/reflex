@@ -53,9 +53,7 @@ class CodeBlock(Component):
             {
                 f"react-syntax-highlighter/dist/cjs/styles/prism/{self.theme._var_name}": {
                     ImportVar(
-                        tag="prism"
-                        if self.theme._var_name == "light"
-                        else format.to_camel_case(self.theme._var_name),
+                        tag=format.to_camel_case(self.theme._var_name),
                         is_default=True,
                         install=False,
                     )
@@ -72,7 +70,7 @@ class CodeBlock(Component):
         return merged_imports
 
     def _get_custom_code(self) -> str | None:
-        return f"SyntaxHighlighter.registerLanguage('{self.language._var_name}', {self.language._var_name})"
+        return f"{self.alias}.registerLanguage('{self.language._var_name}', {self.language._var_name})"
 
     @classmethod
     def create(
@@ -93,8 +91,14 @@ class CodeBlock(Component):
         Returns:
             The text component.
         """
+
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
+
+        # react-syntax-highlighter doesnt have an explicit "light" theme so we use the default
+        # prism theme to ensure code compatibility
+        if "theme" in props and props["theme"] == "light":
+            props["theme"] = "prism"
 
         if can_copy:
             code = children[0]
@@ -133,8 +137,7 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
-        if self.theme is not None:
-            out.add_props(
+        out.add_props(
                 style=Var.create(
                     format.to_camel_case(self.theme._var_name), _var_is_local=False
                 )
