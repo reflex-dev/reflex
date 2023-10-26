@@ -555,7 +555,8 @@ def deploy(
         console.debug(f"{enabled_regions=}")
         while True:
             region_input = console.ask(
-                "Region to deploy to", default=regions[0] if regions else "sjc"
+                "Region to deploy to. Enter to use default.",
+                default=regions[0] if regions else "sjc",
             )
 
             if enabled_regions is None or region_input in enabled_regions:
