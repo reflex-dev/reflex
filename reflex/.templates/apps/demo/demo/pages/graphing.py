@@ -42,38 +42,38 @@ graph_1_code = """rx.recharts.composed_chart(
 
 
 graph_2_code = """rx.recharts.pie_chart(
-                    rx.recharts.pie(
-                        data=PieChartState.resources,
-                        data_key="count",
-                        name_key="type_",
-                        cx="50%",
-                        cy="50%",
-                        start_angle=180,
-                        end_angle=0,
-                        fill="#8884d8",
-                        label=True,
-                    ),
-                    rx.recharts.graphing_tooltip(),
-                ),
-                rx.vstack(
-                    rx.foreach(
-                        PieChartState.resource_types,
-                        lambda type_, i: rx.hstack(
-                            rx.button(
-                                "-",
-                                on_click=PieChartState.decrement(type_),
-                            ),
-                            rx.text(
-                                type_,
-                                PieChartState.resources[i]["count"],
-                            ),
-                            rx.button(
-                                "+",
-                                on_click=PieChartState.increment(type_),
-                            ),
-                        ),
-                    ),
-                )"""
+    rx.recharts.pie(
+        data=PieChartState.resources,
+        data_key="count",
+        name_key="type_",
+        cx="50%",
+        cy="50%",
+        start_angle=180,
+        end_angle=0,
+        fill="#8884d8",
+        label=True,
+    ),
+    rx.recharts.graphing_tooltip(),
+),
+rx.vstack(
+    rx.foreach(
+        PieChartState.resource_types,
+        lambda type_, i: rx.hstack(
+            rx.button(
+                "-",
+                on_click=PieChartState.decrement(type_),
+            ),
+            rx.text(
+                type_,
+                PieChartState.resources[i]["count"],
+            ),
+            rx.button(
+                "+",
+                on_click=PieChartState.increment(type_),
+            ),
+        ),
+    ),
+)"""
 
 graph_2_state = """class PieChartState(rx.State):
     resources: list[dict[str, Any]] = [

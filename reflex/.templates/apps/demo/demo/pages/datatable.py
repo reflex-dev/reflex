@@ -171,7 +171,7 @@ darkTheme = {
     "font_family": "Inter, Roboto, -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, noto, arial, sans-serif",
 }
 
-darkTheme_show = """{
+darkTheme_show = """darkTheme={
     "accent_color": "#8c96ff",
     "accent_light": "rgba(202, 206, 255, 0.253)",
     "text_dark": "#ffffff",
