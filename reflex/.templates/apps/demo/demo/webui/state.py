@@ -2,10 +2,11 @@ import os
 
 import openai
 import reflex as rx
+import asyncio
 from ..state import State
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
-openai.api_base = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
+# openai.api_key = os.environ["OPENAI_API_KEY"]
+# openai.api_base = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
 
 
 class QA(rx.Base):
@@ -106,31 +107,37 @@ class State(State):
         self.question = ""
         yield
 
-        # Build the messages.
-        messages = [
-            {"role": "system", "content": "You are a friendly chatbot named Reflex."}
-        ]
-        for qa in self.chats[self.current_chat]:
-            messages.append({"role": "user", "content": qa.question})
-            messages.append({"role": "assistant", "content": qa.answer})
+        # # Build the messages.
+        # messages = [
+        #     {"role": "system", "content": "You are a friendly chatbot named Reflex."}
+        # ]
+        # for qa in self.chats[self.current_chat]:
+        #     messages.append({"role": "user", "content": qa.question})
+        #     messages.append({"role": "assistant", "content": qa.answer})
 
-        # Remove the last mock answer.
-        messages = messages[:-1]
+        # # Remove the last mock answer.
+        # messages = messages[:-1]
 
         # Start a new session to answer the question.
-        session = openai.ChatCompletion.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
-            messages=messages,
-            stream=True,
-        )
+        # session = openai.ChatCompletion.create(
+        #     model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+        #     messages=messages,
+        #     stream=True,
+        # )
 
         # Stream the results, yielding after every word.
-        for item in session:
-            if hasattr(item.choices[0].delta, "content"):
-                answer_text = item.choices[0].delta.content
-                self.chats[self.current_chat][-1].answer += answer_text
-                self.chats = self.chats
-                yield
+        #for item in session:
+        answer = "I don't know! This Chatbot still needs to add in AI API keys!"
+        for i in range(len(answer)):
+            # Pause to show the streaming effect.
+            await asyncio.sleep(0.1)
+            # Add one letter at a time to the output.
+            
+            # if hasattr(item.choices[0].delta, "content"):
+            #     answer_text = item.choices[0].delta.content
+            self.chats[self.current_chat][-1].answer += answer[i]
+            self.chats = self.chats
+            yield
 
         # Toggle the processing flag.
         self.processing = False
