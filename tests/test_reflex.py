@@ -63,7 +63,6 @@ def setup_env_authentication(mocker):
     mocker.patch("reflex.utils.prerequisites.check_initialized")
     mocker.patch("reflex.utils.hosting.authenticated_token", return_value="fake-token")
     mocker.patch("time.sleep")
-    mocker.patch("reflex.utils.hosting.check_requirements_txt_exist")
 
 
 def test_deploy_non_interactive_prepare_failed(
