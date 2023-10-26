@@ -66,7 +66,9 @@ class CodeBlock(Component):
             {
                 f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}": {
                     ImportVar(
-                        tag=self.language._var_name, is_default=True, install=False
+                        tag=format.to_camel_case(self.language._var_name),
+                        is_default=True,
+                        install=False,
                     )
                 }
             },
@@ -74,7 +76,7 @@ class CodeBlock(Component):
         return merged_imports
 
     def _get_custom_code(self) -> str | None:
-        return f"{self.alias}.registerLanguage('{self.language._var_name}', {self.language._var_name})"
+        return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
 
     @classmethod
     def create(
