@@ -165,16 +165,17 @@ def _generate_docstrings(clzs: list[Type[Component]], props: list[str]) -> str:
             if prop in props:
                 if not comments:  # do not include undocumented props
                     continue
-                props_comments[prop] = "\n".join(
-                    [comment.strip().strip("#") for comment in comments]
-                )
+                props_comments[prop] = [
+                    comment.strip().strip("#") for comment in comments
+                ]
             comments.clear()
     clz = clzs[0]
     new_docstring = []
     for line in (clz.create.__doc__ or "").splitlines():
         if "**" in line:
+            indent = line.split("**")[0]
             for nline in [
-                f"{line.split('*')[0]}{n}:{c}" for n, c in props_comments.items()
+                f"{indent}{n}:{' '.join(c)}" for n, c in props_comments.items()
             ]:
                 new_docstring.append(nline)
         new_docstring.append(line)
