@@ -417,7 +417,7 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    wrap(json.dumps(val._var_name).strip('"'), "`")
+                    wrap(json.dumps(val._var_name).strip('"').replace("`", "\\`"), "`")
                     if val._var_is_string
                     else val._var_full_name,
                 )
