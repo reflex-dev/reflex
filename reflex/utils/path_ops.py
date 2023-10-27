@@ -187,7 +187,7 @@ def find_replace(directory: str, find: str, replace: str):
     for root, _dirs, files in os.walk(directory):
         for file in files:
             filepath = os.path.join(root, file)
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 text = f.read()
             text = re.sub(find, replace, text)
             with open(filepath, "w") as f:
