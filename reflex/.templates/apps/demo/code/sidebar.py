@@ -169,7 +169,7 @@ def sidebar() -> rx.Component:
             sidebar_footer(),
             height="100dvh",
         ),
-        display=["none", "none", "flex"],
+        display=["none", "none", "block"],
         min_width=sidebar_width,
         height="100%",
         position="sticky",
