@@ -14,24 +14,25 @@ reflex init --template blank
 This template has the following directory structure:
 
 ```bash
-.
+├── README.md
 ├── assets
-├── requirements.txt
 ├── rxconfig.py
 └── {your_app}
     ├── __init__.py
     ├── components
-    │ └── sidebar.py
+    │   ├── __init__.py
+    │   └── sidebar.py
     ├── pages
-    │ ├── __init__.py
-    │ ├── dashboard.py
-    │ ├── index.py
-    │ ├── settings.py
-    │ └── template.py
+    │   ├── __init__.py
+    │   ├── dashboard.py
+    │   ├── index.py
+    │   └── settings.py
     ├── state.py
     ├── styles.py
+    ├── templates
+    │   ├── __init__.py
+    │   └── template.py
     └── {your_app}.py
-
 ```
 
 See the [Project Structure docs](https://reflex.dev/docs/getting-started/project-structure/) for more information on general Reflex project structure.
@@ -50,7 +51,7 @@ To add a new page:
 
 1. Add a new file in `{your_app}/pages/`. We recommend using one file per page, but you can also group pages in a single file.
 2. Add a new function with the `@template` decorator, which takes the same arguments as `@rx.page`.
-3. Import the page in your `{your_app}/{your_app}.py` file and it will automatically be added to the app.
+3. Import the page in your `{your_app}/pages/__init__.py` file and it will automatically be added to the app.
 
 
 ### Adding Components
