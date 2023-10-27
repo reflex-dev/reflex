@@ -41,7 +41,7 @@ def message(qa: QA) -> rx.Component:
 
 def chat() -> rx.Component:
     """List all the messages in a single conversation.
-    
+
     Returns:
         A component displaying all the messages in a single conversation.
     """
@@ -61,7 +61,7 @@ def chat() -> rx.Component:
 
 def action_bar() -> rx.Component:
     """The action bar to send a new message.
-    
+
     Returns:
         The action bar to send a new message.
     """

@@ -9,7 +9,7 @@ from ..webui.components import chat, modal, navbar, sidebar
 
 def chatapp_page() -> rx.Component:
     """The main app.
-    
+
     Returns:
         The UI for the main app.
     """

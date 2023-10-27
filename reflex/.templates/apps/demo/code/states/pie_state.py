@@ -18,7 +18,7 @@ class PieChartState(State):
     @rx.cached_var
     def resource_types(self) -> list[str]:
         """Get the resource types.
-        
+
         Returns:
             The resource types.
         """
@@ -26,7 +26,7 @@ class PieChartState(State):
 
     def increment(self, type_: str):
         """Increment the count of a resource type.
-        
+
         Args:
             type_: The type of resource to increment.
         """
@@ -37,7 +37,7 @@ class PieChartState(State):
 
     def decrement(self, type_: str):
         """Decrement the count of a resource type.
-        
+
         Args:
             type_: The type of resource to decrement.
         """

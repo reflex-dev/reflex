@@ -5,7 +5,7 @@ from ...webui.state import State
 
 def modal() -> rx.Component:
     """A modal to create a new chat.
-    
+
     Returns:
         The modal component.
     """

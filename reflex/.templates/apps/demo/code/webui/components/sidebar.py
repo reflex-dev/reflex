@@ -36,7 +36,7 @@ def sidebar_chat(chat: str) -> rx.Component:
 
 def sidebar() -> rx.Component:
     """The sidebar component.
-    
+
     Returns:
         The sidebar component.
     """
