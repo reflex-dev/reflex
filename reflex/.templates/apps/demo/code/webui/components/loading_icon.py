@@ -15,7 +15,11 @@ class LoadingIcon(rx.Component):
     height: rx.Var[str]
 
     def get_event_triggers(self) -> dict:
-        """Get the event triggers that pass the component's value to the handler."""
+        """Get the event triggers that pass the component's value to the handler.
+        
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
         return {"on_change": lambda status: [status]}
 
 

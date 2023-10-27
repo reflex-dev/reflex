@@ -9,6 +9,9 @@ def sidebar_chat(chat: str) -> rx.Component:
 
     Args:
         chat: The chat item.
+
+    Returns:
+        The sidebar chat item.
     """
     return rx.hstack(
         rx.box(
@@ -32,7 +35,11 @@ def sidebar_chat(chat: str) -> rx.Component:
 
 
 def sidebar() -> rx.Component:
-    """The sidebar component."""
+    """The sidebar component.
+    
+    Returns:
+        The sidebar component.
+    """
     return rx.drawer(
         rx.drawer_overlay(
             rx.drawer_content(

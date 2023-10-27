@@ -40,7 +40,11 @@ def message(qa: QA) -> rx.Component:
 
 
 def chat() -> rx.Component:
-    """List all the messages in a single conversation."""
+    """List all the messages in a single conversation.
+    
+    Returns:
+        A component displaying all the messages in a single conversation.
+    """
     return rx.vstack(
         rx.box(rx.foreach(State.chats[State.current_chat], message)),
         py="8",
@@ -56,7 +60,11 @@ def chat() -> rx.Component:
 
 
 def action_bar() -> rx.Component:
-    """The action bar to send a new message."""
+    """The action bar to send a new message.
+    
+    Returns:
+        The action bar to send a new message.
+    """
     return rx.box(
         rx.vstack(
             rx.form(

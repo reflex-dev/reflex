@@ -92,6 +92,9 @@ class State(State):
 
         Args:
             form_data: A dict with the current question.
+
+        Yields:
+            The current question and the response.
         """
         # Check if the question is empty
         if self.question == "":

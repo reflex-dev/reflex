@@ -9,7 +9,11 @@ class FormState(State):
     form_data: dict = {}
 
     def handle_submit(self, form_data: dict):
-        """Handle the form submit."""
+        """Handle the form submit.
+        
+        Args:
+            form_data: The form data.
+        """
         self.form_data = form_data
 
 
