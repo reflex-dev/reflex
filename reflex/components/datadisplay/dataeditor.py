@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -68,38 +68,38 @@ class GridColumnIcons(Enum):
 class DataEditorTheme(Base):
     """The theme for the DataEditor component."""
 
-    accentColor: Optional[str] = None
-    accentFg: Optional[str] = None
-    accentLight: Optional[str] = None
-    baseFontStyle: Optional[str] = None
-    bgBubble: Optional[str] = None
-    bgBubbleSelected: Optional[str] = None
-    bgCell: Optional[str] = None
-    bgCellMedium: Optional[str] = None
-    bgHeader: Optional[str] = None
-    bgHeaderHasFocus: Optional[str] = None
-    bgHeaderHovered: Optional[str] = None
-    bgIconHeader: Optional[str] = None
-    bgSearchResult: Optional[str] = None
-    borderColor: Optional[str] = None
-    cellHorizontalPadding: Optional[int] = None
-    cellVerticalPadding: Optional[int] = None
-    drilldownBorder: Optional[str] = None
-    editorFontSize: Optional[str] = None
-    fgIconHeader: Optional[str] = None
-    fontFamily: Optional[str] = None
-    headerBottomBorderColor: Optional[str] = None
-    headerFontStyle: Optional[str] = None
-    horizontalBorderColor: Optional[str] = None
-    lineHeight: Optional[int] = None
-    linkColor: Optional[str] = None
-    textBubble: Optional[str] = None
-    textDark: Optional[str] = None
-    textGroupHeader: Optional[str] = None
-    textHeader: Optional[str] = None
-    textHeaderSelected: Optional[str] = None
-    textLight: Optional[str] = None
-    textMedium: Optional[str] = None
+    accent_color: Optional[str] = None
+    accent_fg: Optional[str] = None
+    accent_light: Optional[str] = None
+    base_font_style: Optional[str] = None
+    bg_bubble: Optional[str] = None
+    bg_bubble_selected: Optional[str] = None
+    bg_cell: Optional[str] = None
+    bg_cell_medium: Optional[str] = None
+    bg_header: Optional[str] = None
+    bg_header_has_focus: Optional[str] = None
+    bg_header_hovered: Optional[str] = None
+    bg_icon_header: Optional[str] = None
+    bg_search_result: Optional[str] = None
+    border_color: Optional[str] = None
+    cell_horizontal_padding: Optional[int] = None
+    cell_vertical_padding: Optional[int] = None
+    drilldown_border: Optional[str] = None
+    editor_font_size: Optional[str] = None
+    fg_icon_header: Optional[str] = None
+    font_family: Optional[str] = None
+    header_bottom_border_color: Optional[str] = None
+    header_font_style: Optional[str] = None
+    horizontal_border_color: Optional[str] = None
+    line_height: Optional[int] = None
+    link_color: Optional[str] = None
+    text_bubble: Optional[str] = None
+    text_dark: Optional[str] = None
+    text_group_header: Optional[str] = None
+    text_header: Optional[str] = None
+    text_header_selected: Optional[str] = None
+    text_light: Optional[str] = None
+    text_medium: Optional[str] = None
 
 
 class DataEditor(NoSSRComponent):
@@ -198,7 +198,7 @@ class DataEditor(NoSSRComponent):
     scroll_offset_y: Var[int]
 
     # global theme
-    theme: Var[DataEditorTheme]
+    theme: Var[Union[DataEditorTheme, Dict]]
 
     def _get_imports(self):
         return imports.merge_imports(
@@ -317,6 +317,11 @@ class DataEditor(NoSSRComponent):
                     format.format_data_editor_column(col) for col in columns
                 ]
 
+        if "theme" in props:
+            theme = props.get("theme")
+            if isinstance(theme, Dict):
+                props["theme"] = DataEditorTheme(**theme)
+
         # Allow by default to select a region of cells in the grid.
         props.setdefault("getCellForSelection", True)
 
@@ -405,4 +410,6 @@ def serialize_dataeditortheme(theme: DataEditorTheme):
     Returns:
         The serialized theme.
     """
-    return format.json_dumps({k: v for k, v in theme.__dict__.items() if v is not None})
+    return format.json_dumps(
+        {format.to_camel_case(k): v for k, v in theme.__dict__.items() if v is not None}
+    )
