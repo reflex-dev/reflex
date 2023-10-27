@@ -44,7 +44,7 @@ DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deplo
 # Expected server response time to new deployment request. In seconds.
 DEPLOYMENT_PICKUP_DELAY = 30
 # End of deployment workflow message. Used to determine if it is the last message from server.
-END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]
+END_OF_DEPLOYMENT_MESSAGES = ["deploy success"]
 # How many iterations to try and print the deployment event messages from server during deployment.
 DEPLOYMENT_EVENT_MESSAGES_RETRIES = 90
 # Timeout limit for http requests
@@ -1041,7 +1041,7 @@ def log_out_on_browser():
         )
 
 
-async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
+async def display_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
     """Display the deploy milestone messages reported back from the hosting server.
 
     Args:
@@ -1051,6 +1051,9 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
     Raises:
         ValueError: If a non-empty key is not provided.
         Exception: If the user is not authenticated.
+
+    Returns:
+        False if server reports back failure, True otherwise.
     """
     if not key:
         raise ValueError("Non-empty key is required for querying deploy status.")
@@ -1076,18 +1079,22 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
                             ]
                         )
                     )
-                    if any(
-                        msg in row_json["message"].lower()
-                        for msg in END_OF_DEPLOYMENT_MESSAGES
-                    ):
+                    server_message = row_json["message"].lower()
+                    if "fail" in server_message:
+                        console.debug(
+                            "Received failure message, stop event message streaming"
+                        )
+                        return False
+                    if any(msg in server_message for msg in END_OF_DEPLOYMENT_MESSAGES):
                         console.debug(
                             "Received end of deployment message, stop event message streaming"
                         )
-                        return
+                        return True
                 else:
                     console.debug("Server responded, no new events yet, this is normal")
     except Exception as ex:
         console.debug(f"Unable to get more deployment events due to {ex}.")
+    return False
 
 
 def wait_for_server_to_pick_up_request():

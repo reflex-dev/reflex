@@ -669,10 +669,15 @@ def deploy(
 
     console.print("Waiting for server to report progress ...")
     # Display the key events such as build, deploy, etc
-    asyncio.get_event_loop().run_until_complete(
+    server_report_deploy_success = asyncio.get_event_loop().run_until_complete(
         hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
     )
-
+    if not server_report_deploy_success:
+        console.warn("Hosting server reports failure.")
+        console.warn(
+            f"Check the server logs using `reflex deployments build-logs {key}`"
+        )
+        raise typer.Exit(1)
     console.print("Waiting for the new deployment to come up")
     backend_up = frontend_up = False
 
@@ -821,6 +826,27 @@ def get_deployment_logs(
     console.print("Note: there is a few seconds delay for logs to be available.")
     try:
         asyncio.get_event_loop().run_until_complete(hosting.get_logs(key))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs due to: {ex}")
+        raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="build-logs")
+def get_deployment_build_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+
+    console.print("Note: there is a few seconds delay for logs to be available.")
+    try:
+        # TODO: we need to find a way not to fetch logs
+        # that match the deployed app name but not previously of a different owner
+        # This should not happen often
+        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.BUILD_LOG))
     except Exception as ex:
         console.error(f"Unable to get deployment logs due to: {ex}")
         raise typer.Exit(1) from ex
