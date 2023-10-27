@@ -72,7 +72,7 @@ class CodeBlock(Component):
         )
         return merged_imports
 
-    def _get_custom_code(self) -> str | None:
+    def _get_custom_code(self) -> str:
         return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
 
     @classmethod
