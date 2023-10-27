@@ -2,7 +2,7 @@
 
 from .badge import Badge
 from .code import Code, CodeBlock
-from .dataeditor import DataEditor
+from .dataeditor import DataEditor, DataEditorTheme
 from .datatable import DataTable
 from .divider import Divider
 from .keyboard_key import KeyboardKey

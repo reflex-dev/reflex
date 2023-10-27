@@ -19,6 +19,7 @@ export function locateCell(row, column) {
 }
 
 export function formatCell(value, column) {
+    const editable = column.editable || true
     switch (column.type) {
         case "int":
         case "float":
@@ -26,8 +27,8 @@ export function formatCell(value, column) {
                 kind: GridCellKind.Number,
                 data: value,
                 displayData: value + "",
-                readonly: false,
-                allowOverlay: false
+                readonly: !editable,
+                allowOverlay: editable,
             }
         case "datetime":
         // value = moment format?
@@ -36,15 +37,14 @@ export function formatCell(value, column) {
                 kind: GridCellKind.Text,
                 data: value,
                 displayData: value,
-                readonly: false,
-                allowOverlay: true
+                readonly: !editable,
+                allowOverlay: editable,
             }
         case "bool":
             return {
                 kind: GridCellKind.Boolean,
                 data: value,
-                readonly: false,
-                // allowOverlay: true
+                readonly: !editable,
             }
         default:
             return {
