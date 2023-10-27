@@ -263,6 +263,12 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
 
+    # Remove all pyc and __pycache__ dirs in current directory.
+    for pyc_file in glob.glob("**/*.pyc", recursive=True):
+        os.remove(pyc_file)
+    for pycache_dir in glob.glob("**/__pycache__", recursive=True):
+        os.rmdir(pycache_dir)
+
     # Fix up the imports.
     path_ops.find_replace(
         app_name,
