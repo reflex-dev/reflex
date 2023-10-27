@@ -490,27 +490,6 @@ class DeploymentsGetParam(Base):
     app_name: Optional[str]
 
 
-class DeploymentGetResponse(Base):
-    """The params/settings returned from the GET endpoint."""
-
-    # The deployment key
-    key: str
-    # The list of regions to deploy to
-    regions: List[str]
-    # The app name which is found in the config
-    app_name: str
-    # The VM type
-    vm_type: str
-    # The number of CPUs
-    cpus: int
-    # The memory in MB
-    memory_mb: int
-    # The site URL
-    url: str
-    # The list of environment variable names (values are never shown)
-    envs: List[str]
-
-
 def list_deployments(
     app_name: str | None = None,
 ) -> list[dict]:
@@ -538,19 +517,7 @@ def list_deployments(
             timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
-        return [
-            DeploymentGetResponse(
-                key=deployment["key"],
-                regions=deployment["regions"],
-                app_name=deployment["app_name"],
-                vm_type=deployment["vm_type"],
-                cpus=deployment["cpus"],
-                memory_mb=deployment["memory_mb"],
-                url=deployment["url"],
-                envs=deployment["envs"],
-            ).dict()
-            for deployment in response.json()
-        ]
+        return response.json()
     except httpx.RequestError as re:
         console.error(f"Unable to list deployments due to request error: {re}")
         raise Exception("request timeout") from re
