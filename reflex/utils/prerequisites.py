@@ -251,10 +251,17 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     console.log("Initializing the app directory.")
 
     # Copy the template to the current directory.
-    template_dir = os.path.join(constants.Templates.Dirs.BASE, "apps", template.value)
-    for file in os.listdir(template_dir):
-        # Copy the file but keep the name the same.
-        path_ops.cp(os.path.join(template_dir, file), file)
+    template_dir = Path(constants.Templates.Dirs.BASE, "apps", template.value)
+
+    # Remove all pyc and __pycache__ dirs in template directory.
+    for pyc_file in template_dir.glob("**/*.pyc"):
+        pyc_file.unlink()
+    for pycache_dir in template_dir.glob("**/__pycache__"):
+        pycache_dir.rmdir()
+
+    for file in template_dir.iterdir():
+        # Copy the file to current directory but keep the name the same.
+        path_ops.cp(str(file), file.name)
 
     # Rename the template app to the app name.
     path_ops.mv(constants.Templates.Dirs.CODE, app_name)
