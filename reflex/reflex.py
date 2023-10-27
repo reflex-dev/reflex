@@ -544,7 +544,7 @@ def deploy(
             enabled_regions = pre_deploy_response.enabled_regions
 
     except Exception as ex:
-        console.error(f"Unable to prepare deployment due to: {ex}")
+        console.error(f"Unable to prepare deployment")
         raise typer.Exit(1) from ex
 
     # The app prefix should not change during the time of preparation
@@ -745,7 +745,7 @@ def list_deployments(
     try:
         deployments = hosting.list_deployments()
     except Exception as ex:
-        console.error(f"Unable to list deployments due to: {ex}")
+        console.error(f"Unable to list deployments")
         raise typer.Exit(1) from ex
 
     if as_json:
@@ -772,7 +772,7 @@ def delete_deployment(
     try:
         hosting.delete_deployment(key)
     except Exception as ex:
-        console.error(f"Unable to delete deployment due to: {ex}")
+        console.error(f"Unable to delete deployment")
         raise typer.Exit(1) from ex
     console.print(f"Successfully deleted [ {key} ].")
 
@@ -809,7 +809,7 @@ def get_deployment_status(
         table = list(frontend_status.values())
         console.print(tabulate([table], headers=headers))
     except Exception as ex:
-        console.error(f"Unable to get deployment status due to: {ex}")
+        console.error(f"Unable to get deployment status")
         raise typer.Exit(1) from ex
 
 
@@ -826,7 +826,7 @@ def get_deployment_logs(
     try:
         asyncio.get_event_loop().run_until_complete(hosting.get_logs(key))
     except Exception as ex:
-        console.error(f"Unable to get deployment logs due to: {ex}")
+        console.error(f"Unable to get deployment logs")
         raise typer.Exit(1) from ex
 
 
@@ -847,7 +847,7 @@ def get_deployment_build_logs(
         # This should not happen often
         asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.BUILD_LOG))
     except Exception as ex:
-        console.error(f"Unable to get deployment logs due to: {ex}")
+        console.error(f"Unable to get deployment logs")
         raise typer.Exit(1) from ex
 
 
