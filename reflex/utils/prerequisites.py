@@ -254,7 +254,6 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     template_dir = os.path.join(constants.Templates.Dirs.BASE, "apps", template.value)
     for file in os.listdir(template_dir):
         # Copy the file but keep the name the same.
-        print("copying", os.path.join(template_dir, file), file)
         path_ops.cp(os.path.join(template_dir, file), file)
 
     # Rename the template app to the app name.

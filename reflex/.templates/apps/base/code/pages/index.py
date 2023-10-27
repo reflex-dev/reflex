@@ -13,4 +13,6 @@ def index() -> rx.Component:
     Returns:
         The UI for the home page.
     """
-    return rx.markdown(open("README.md").read(), component_map=styles.markdown_style)
+    with open("README.md") as readme:
+        content = readme.read()
+    return rx.markdown(content, component_map=styles.markdown_style)
