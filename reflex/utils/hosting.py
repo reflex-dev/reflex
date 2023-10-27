@@ -608,7 +608,7 @@ def poll_backend(backend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling backend at {backend_url}")
-        resp = httpx.get(f"{backend_url}/ping", timeout=HTTP_REQUEST_TIMEOUT)
+        resp = httpx.get(f"{backend_url}/ping", timeout=1)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -626,7 +626,7 @@ def poll_frontend(frontend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling frontend at {frontend_url}")
-        resp = httpx.get(f"{frontend_url}", timeout=HTTP_REQUEST_TIMEOUT)
+        resp = httpx.get(f"{frontend_url}", timeout=1)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
