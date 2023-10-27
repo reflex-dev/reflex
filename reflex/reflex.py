@@ -452,12 +452,12 @@ def deploy(
         None, help="The amount of memory to allocate.", hidden=True
     ),
     auto_start: Optional[bool] = typer.Option(
-        True,
+        None,
         help="Whether to auto start the instance.",
         hidden=True,
     ),
     auto_stop: Optional[bool] = typer.Option(
-        True,
+        None,
         help="Whether to auto stop the instance.",
         hidden=True,
     ),
@@ -550,7 +550,8 @@ def deploy(
         console.debug(f"{enabled_regions=}")
         while True:
             region_input = console.ask(
-                "Region to deploy to", default=regions[0] if regions else "sjc"
+                "Region to deploy to. Enter to use default.",
+                default=regions[0] if regions else "sjc",
             )
 
             if enabled_regions is None or region_input in enabled_regions:
@@ -595,6 +596,11 @@ def deploy(
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
         raise typer.Exit(1) from ie
+    except Exception as ex:
+        console.error(f"Unable to export due to: {ex}")
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+        raise typer.Exit(1) from ex
 
     frontend_file_name = constants.ComponentName.FRONTEND.zip()
     backend_file_name = constants.ComponentName.BACKEND.zip()
@@ -652,8 +658,6 @@ def deploy(
             time.sleep(1)
     if not backend_up:
         console.print("Backend unreachable")
-    else:
-        console.print("Backend is up")
 
     with console.status("Checking frontend ..."):
         for _ in range(constants.Hosting.FRONTEND_POLL_RETRIES):
@@ -662,17 +666,15 @@ def deploy(
             time.sleep(1)
     if not frontend_up:
         console.print("frontend is unreachable")
-    else:
-        console.print("frontend is up")
 
     if frontend_up and backend_up:
         console.print(
             f"Your site [ {key} ] at {regions} is up: {deploy_response.frontend_url}"
         )
         return
-    console.warn(
-        f"Your deployment is taking unusually long. Check back later on its status: `reflex deployments status {key}`"
-    )
+    console.warn(f"Your deployment is taking time.")
+    console.warn(f"Check back later on its status: `reflex deployments status {key}`")
+    console.warn(f"For logs: `reflex deployments logs {key}`")
 
 
 deployments_cli = typer.Typer()

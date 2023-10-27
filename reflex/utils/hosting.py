@@ -972,7 +972,8 @@ def interactive_get_deployment_key_from_user_input(
 
         # If user takes the suggestion, we will use the suggested key and proceed
         while key_input := console.ask(
-            f"Choose a name for your deployed app", default=key_candidate
+            f"Choose a name for your deployed app. Enter to use default.",
+            default=key_candidate,
         ):
             try:
                 pre_deploy_response = prepare_deploy(
