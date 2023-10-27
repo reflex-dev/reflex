@@ -110,6 +110,36 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
     )
 
 
+def sidebar_toggle() -> rx.Component:
+    return rx.fragment(
+        rx.el.input(
+            id="sidebar-is-hidden",
+            type="checkbox",
+            display="none",
+        ),
+        rx.form_label(
+            rx.center(
+                rx.image(
+                    src="/paneleft.svg",
+                    height="2em",
+                    padding="0.5em",
+                    transition="transform 0.5s",
+                ),
+                bg="transparent",
+                border_radius=styles.border_radius,
+                **styles.hover_accent_bg,
+            ),
+            html_for="sidebar-is-hidden",
+            display=["none", "none", "block"],
+            position="fixed",
+            left="0.5em",
+            top="calc(100vh - 3em)",
+            z_index="100",
+            **styles.overlapping_button_style,
+        ),
+    )
+
+
 def sidebar() -> rx.Component:
     """The sidebar.
 
@@ -140,10 +170,10 @@ def sidebar() -> rx.Component:
             sidebar_footer(),
             height="100dvh",
         ),
+        id="sidebar",
         display=["none", "none", "block"],
         min_width=styles.sidebar_width,
         height="100%",
-        position="sticky",
-        top="0px",
         border_right=styles.border,
+        transition="transform 0.5s",
     )

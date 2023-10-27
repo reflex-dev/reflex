@@ -1,7 +1,7 @@
 """Common templates used between pages in the app."""
 
 from code import styles
-from code.components.sidebar import sidebar
+from code.components.sidebar import sidebar, sidebar_toggle
 from typing import Callable
 
 import reflex as rx
@@ -106,6 +106,7 @@ def template(
         )
         def templated_page():
             return rx.hstack(
+                sidebar_toggle(),
                 sidebar(),
                 rx.box(
                     rx.box(
@@ -113,12 +114,10 @@ def template(
                         **styles.template_content_style,
                     ),
                     **styles.template_page_style,
+                    id="page-content",
                 ),
-                rx.spacer(),
                 menu_button(),
                 align_items="flex-start",
-                transition="left 0.5s, width 0.5s",
-                position="relative",
             )
 
         return templated_page

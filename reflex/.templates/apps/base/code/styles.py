@@ -13,10 +13,14 @@ hover_accent_bg = {"_hover": {"bg": accent_color}}
 content_width_vw = "90vw"
 sidebar_width = "20em"
 
-template_page_style = {"padding_top": "5em", "padding_x": ["auto", "2em"]}
+template_page_style = {
+    "padding_top": "5em",
+    "padding_x": ["auto", "2em"],
+    "transition": ["inherit", "inherit", "margin-left 0.5s"],
+    "flex": "1",
+}
 
 template_content_style = {
-    "width": "100%",
     "align_items": "flex-start",
     "box_shadow": box_shadow,
     "border_radius": border_radius,
@@ -43,6 +47,15 @@ base_style = {
         **overlapping_button_style,
     },
     rx.MenuItem: hover_accent_bg,
+    "#sidebar-is-hidden:checked ~ label[for=sidebar-is-hidden]": {
+        "transform": "rotate(180deg)",
+    },
+    "#sidebar-is-hidden:checked ~ #sidebar": {
+        "transform": f"translateX(calc(-{sidebar_width} - 0.5em))",
+    },
+    "#sidebar-is-hidden:checked ~ #page-content": {
+        "margin_left": ["0px", "0px", f"-{sidebar_width} !important"],
+    },
 }
 
 markdown_style = {
