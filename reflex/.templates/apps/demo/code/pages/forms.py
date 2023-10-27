@@ -1,10 +1,8 @@
 """The settings page for the template."""
 import reflex as rx
 
-from ..styles import *
 from ..states.form_state import FormState, UploadState
-
-
+from ..styles import *
 
 forms_1_code = """rx.vstack(
     rx.form(
@@ -104,6 +102,7 @@ forms_2_state = """class UploadState(State):
             # Update the img var.
             self.img.append(f"/{file.filename}")"""
 
+
 def forms_page() -> rx.Component:
     """The UI for the settings page.
 
@@ -111,131 +110,145 @@ def forms_page() -> rx.Component:
         rx.Component: The UI for the settings page.
     """
     return rx.box(
+        rx.vstack(
+            rx.heading(
+                "Forms Demo",
+                font_size="3em",
+            ),
             rx.vstack(
-                rx.heading(
-                    "Forms Demo",
-                    font_size="3em",
-                ),
-                rx.vstack(
-                    rx.form(
-                        rx.vstack(
-                            rx.input(
-                                placeholder="First Name",
-                                id="first_name",
-                            ),
-                            rx.input(
-                                placeholder="Last Name", id="last_name"
-                            ),
-                            rx.hstack(
-                                rx.checkbox("Checked", id="check"),
-                                rx.switch("Switched", id="switch"),
-                            ),
-                            rx.button("Submit", 
-                                      type_="submit", 
-                                      bg="#ecfdf5",
-                                      color="#047857",
-                                      border_radius="lg",
-                            ),
+                rx.form(
+                    rx.vstack(
+                        rx.input(
+                            placeholder="First Name",
+                            id="first_name",
                         ),
-                        on_submit=FormState.handle_submit,
-                    ),
-                    rx.divider(),
-                    rx.heading("Results"),
-                    rx.text(FormState.form_data.to_string()),
-                    width="100%",
-                ),
-                rx.tabs(
-                    rx.tab_list(
-                        rx.tab("Code", style=tab_style),
-                        rx.tab("State", style=tab_style),
-                        padding_x=0,
-                    ),
-                    rx.tab_panels(
-                        rx.tab_panel(
-                            rx.code_block(forms_1_code,
-                                        language="python",
-                                        show_line_numbers=True,
-                                        ), 
-                                        width="100%", padding_x=0, padding_y=".25em"
+                        rx.input(placeholder="Last Name", id="last_name"),
+                        rx.hstack(
+                            rx.checkbox("Checked", id="check"),
+                            rx.switch("Switched", id="switch"),
                         ),
-                        rx.tab_panel(
-                            rx.code_block(forms_1_state,
-                                        language="python",
-                                        show_line_numbers=True,
-                                        ), width="100%", padding_x=0, padding_y=".25em"
+                        rx.button(
+                            "Submit",
+                            type_="submit",
+                            bg="#ecfdf5",
+                            color="#047857",
+                            border_radius="lg",
+                        ),
+                    ),
+                    on_submit=FormState.handle_submit,
+                ),
+                rx.divider(),
+                rx.heading("Results"),
+                rx.text(FormState.form_data.to_string()),
+                width="100%",
+            ),
+            rx.tabs(
+                rx.tab_list(
+                    rx.tab("Code", style=tab_style),
+                    rx.tab("State", style=tab_style),
+                    padding_x=0,
+                ),
+                rx.tab_panels(
+                    rx.tab_panel(
+                        rx.code_block(
+                            forms_1_code,
+                            language="python",
+                            show_line_numbers=True,
                         ),
                         width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
-                    variant="unstyled",
-                    color_scheme="purple",
-                    align="end",
+                    rx.tab_panel(
+                        rx.code_block(
+                            forms_1_state,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
+                    ),
                     width="100%",
-                    padding_top=".5em",
                 ),
-                rx.heading("Upload Example", font_size="3em"),
-                rx.text("Try uploading some images and see how they look."),
-                rx.vstack(
-                    rx.upload(
-                        rx.vstack(
-                            rx.button(
-                                "Select File",
-                                color=color,
-                                bg="white",
-                                border=f"1px solid {color}",
-                            ),
-                            rx.text(
-                                "Drag and drop files here or click to select files"
-                            ),
+                variant="unstyled",
+                color_scheme="purple",
+                align="end",
+                width="100%",
+                padding_top=".5em",
+            ),
+            rx.heading("Upload Example", font_size="3em"),
+            rx.text("Try uploading some images and see how they look."),
+            rx.vstack(
+                rx.upload(
+                    rx.vstack(
+                        rx.button(
+                            "Select File",
+                            color=color,
+                            bg="white",
+                            border=f"1px solid {color}",
                         ),
-                        border=f"1px dotted {color}",
-                        padding="5em",
+                        rx.text("Drag and drop files here or click to select files"),
                     ),
-                    rx.hstack(rx.foreach(rx.selected_files, rx.text)),
-                    rx.button(
-                        "Upload",
-                        on_click=lambda: UploadState.handle_upload(
-                            rx.upload_files()
-                        ),
-                    ),
-                    rx.button(
-                        "Clear",
-                        on_click=rx.clear_selected_files,
-                    ),
-                    rx.foreach(
-                        UploadState.img, lambda img: rx.image(src=img, width="20%", height="auto",)
-                    ),
+                    border=f"1px dotted {color}",
                     padding="5em",
-                    width="100%",
                 ),
-                rx.tabs(
-                    rx.tab_list(
-                        rx.tab("Code", style=tab_style),
-                        rx.tab("State", style=tab_style),
-                        padding_x=0,
+                rx.hstack(rx.foreach(rx.selected_files, rx.text)),
+                rx.button(
+                    "Upload",
+                    on_click=lambda: UploadState.handle_upload(rx.upload_files()),
+                ),
+                rx.button(
+                    "Clear",
+                    on_click=rx.clear_selected_files,
+                ),
+                rx.foreach(
+                    UploadState.img,
+                    lambda img: rx.image(
+                        src=img,
+                        width="20%",
+                        height="auto",
                     ),
-                    rx.tab_panels(
-                        rx.tab_panel(
-                            rx.code_block(forms_2_code,
-                                        language="python",
-                                        show_line_numbers=True,
-                                        ), 
-                                        width="100%", padding_x=0, padding_y=".25em"
-                        ),
-                        rx.tab_panel(
-                            rx.code_block(forms_2_state,
-                                        language="python",
-                                        show_line_numbers=True,
-                                        ), width="100%", padding_x=0, padding_y=".25em"
+                ),
+                padding="5em",
+                width="100%",
+            ),
+            rx.tabs(
+                rx.tab_list(
+                    rx.tab("Code", style=tab_style),
+                    rx.tab("State", style=tab_style),
+                    padding_x=0,
+                ),
+                rx.tab_panels(
+                    rx.tab_panel(
+                        rx.code_block(
+                            forms_2_code,
+                            language="python",
+                            show_line_numbers=True,
                         ),
                         width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
-                    variant="unstyled",
-                    color_scheme="purple",
-                    align="end",
+                    rx.tab_panel(
+                        rx.code_block(
+                            forms_2_state,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
+                    ),
                     width="100%",
-                    padding_top=".5em",
                 ),
-                style=template_content_style,
-                ),
-            style=template_page_style,
-        )
+                variant="unstyled",
+                color_scheme="purple",
+                align="end",
+                width="100%",
+                padding_top=".5em",
+            ),
+            style=template_content_style,
+        ),
+        style=template_page_style,
+    )

@@ -1,14 +1,16 @@
 """The settings page for the template."""
-import reflex as rx
 from typing import Any
-from ..styles import *
 
-from ..webui.state import State
 import reflex as rx
 from reflex.components.datadisplay.dataeditor import DataEditorTheme
 
+from ..styles import *
+from ..webui.state import State
+
 
 class DataTableState(State):
+    """Datatable state."""
+
     cols: list[Any] = [
         {"title": "Title", "type": "str"},
         {
@@ -54,13 +56,76 @@ class DataTableState(State):
     ]
 
     data = [
-        ["1", "Harry James Potter",	"31 July 1980", True, "Gryffindor", "11'  Holly  phoenix feather", "Stag", "Half-blood"],
-        ["2", "Ronald Bilius Weasley", "1 March 1980", True,"Gryffindor", "12' Ash unicorn tail hair", "Jack Russell terrier", "Pure-blood"],
-        ["3", "Hermione Jean Granger", "19 September, 1979", True, "Gryffindor", "10¾'  vine wood dragon heartstring", "Otter", "Muggle-born"],	
-        ["4", "Albus Percival Wulfric Brian Dumbledore", "Late August 1881", True, "Gryffindor", "15' Elder Thestral tail hair core", "Phoenix", "Half-blood"],	
-        ["5", "Rubeus Hagrid", "6 December 1928", False, "Gryffindor", "16'  Oak unknown core", "None", "Part-Human (Half-giant)"], 
-        ["6", "Fred Weasley", "1 April, 1978", True, "Gryffindor", "Unknown", "Unknown", "Pure-blood"], 
-        ["7", "George Weasley",	"1 April, 1978", True, "Gryffindor", "Unknown", "Unknown", "Pure-blood"],
+        [
+            "1",
+            "Harry James Potter",
+            "31 July 1980",
+            True,
+            "Gryffindor",
+            "11'  Holly  phoenix feather",
+            "Stag",
+            "Half-blood",
+        ],
+        [
+            "2",
+            "Ronald Bilius Weasley",
+            "1 March 1980",
+            True,
+            "Gryffindor",
+            "12' Ash unicorn tail hair",
+            "Jack Russell terrier",
+            "Pure-blood",
+        ],
+        [
+            "3",
+            "Hermione Jean Granger",
+            "19 September, 1979",
+            True,
+            "Gryffindor",
+            "10¾'  vine wood dragon heartstring",
+            "Otter",
+            "Muggle-born",
+        ],
+        [
+            "4",
+            "Albus Percival Wulfric Brian Dumbledore",
+            "Late August 1881",
+            True,
+            "Gryffindor",
+            "15' Elder Thestral tail hair core",
+            "Phoenix",
+            "Half-blood",
+        ],
+        [
+            "5",
+            "Rubeus Hagrid",
+            "6 December 1928",
+            False,
+            "Gryffindor",
+            "16'  Oak unknown core",
+            "None",
+            "Part-Human (Half-giant)",
+        ],
+        [
+            "6",
+            "Fred Weasley",
+            "1 April, 1978",
+            True,
+            "Gryffindor",
+            "Unknown",
+            "Unknown",
+            "Pure-blood",
+        ],
+        [
+            "7",
+            "George Weasley",
+            "1 April, 1978",
+            True,
+            "Gryffindor",
+            "Unknown",
+            "Unknown",
+            "Pure-blood",
+        ],
     ]
 
 
@@ -198,6 +263,7 @@ darkTheme_show = """darkTheme={
     "font_family": "Inter, Roboto, -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Ubuntu, noto, arial, sans-serif",
 }"""
 
+
 def datatable_page() -> rx.Component:
     """The UI for the settings page.
 
@@ -240,31 +306,44 @@ def datatable_page() -> rx.Component:
                 ),
                 rx.tab_panels(
                     rx.tab_panel(
-                        rx.code_block(code_show,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), 
-                                    width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            code_show,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     rx.tab_panel(
-                        rx.code_block(data_show,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), 
-                                    width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            data_show,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     rx.tab_panel(
-                        rx.code_block(state_show,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), 
-                                    width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            state_show,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     rx.tab_panel(
-                        rx.code_block(darkTheme_show,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            darkTheme_show,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     width="100%",
                 ),

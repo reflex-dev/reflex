@@ -3,7 +3,7 @@ from typing import Callable
 
 import reflex as rx
 
-from .pages import graphing_page, home_page, forms_page, chatapp_page, datatable_page
+from .pages import chatapp_page, datatable_page, forms_page, graphing_page, home_page
 from .sidebar import sidebar
 from .state import State
 from .styles import *
@@ -116,6 +116,7 @@ def chatapp() -> rx.Component:
         rx.Component: The chatapp page.
     """
     return chatapp_page()
+
 
 # Add state and page to the app.
 app = rx.App(style=base_style)

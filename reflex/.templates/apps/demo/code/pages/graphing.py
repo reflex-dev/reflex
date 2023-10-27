@@ -1,7 +1,8 @@
 """The dashboard page for the template."""
 import reflex as rx
-from ..styles import *
+
 from ..states.pie_state import PieChartState
+from ..styles import *
 
 data_1 = [
     {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
@@ -104,7 +105,6 @@ graph_2_state = """class PieChartState(rx.State):
 """
 
 
-
 def graphing_page() -> rx.Component:
     """The UI for the dashboard page.
 
@@ -123,21 +123,15 @@ def graphing_page() -> rx.Component:
             ),
             rx.stack(
                 rx.recharts.composed_chart(
-                    rx.recharts.area(
-                        data_key="uv", stroke="#8884d8", fill="#8884d8"
-                    ),
-                    rx.recharts.bar(
-                        data_key="amt", bar_size=20, fill="#413ea0"
-                    ),
-                    rx.recharts.line(
-                        data_key="pv", type_="monotone", stroke="#ff7300"
-                    ),
+                    rx.recharts.area(data_key="uv", stroke="#8884d8", fill="#8884d8"),
+                    rx.recharts.bar(data_key="amt", bar_size=20, fill="#413ea0"),
+                    rx.recharts.line(data_key="pv", type_="monotone", stroke="#ff7300"),
                     rx.recharts.x_axis(data_key="name"),
                     rx.recharts.y_axis(),
                     rx.recharts.cartesian_grid(stroke_dasharray="3 3"),
                     rx.recharts.graphing_tooltip(),
                     data=data_1,
-                    #height="15em",
+                    # height="15em",
                 ),
                 width="100%",
                 height="20em",
@@ -150,17 +144,24 @@ def graphing_page() -> rx.Component:
                 ),
                 rx.tab_panels(
                     rx.tab_panel(
-                        rx.code_block(graph_1_code,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), 
-                                    width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            graph_1_code,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     rx.tab_panel(
-                        rx.code_block(data_1_show,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            data_1_show,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     width="100%",
                 ),
@@ -216,17 +217,24 @@ def graphing_page() -> rx.Component:
                 ),
                 rx.tab_panels(
                     rx.tab_panel(
-                        rx.code_block(graph_2_code,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), 
-                                    width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            graph_2_code,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     rx.tab_panel(
-                        rx.code_block(graph_2_state,
-                                    language="python",
-                                    show_line_numbers=True,
-                                    ), width="100%", padding_x=0, padding_y=".25em"
+                        rx.code_block(
+                            graph_2_state,
+                            language="python",
+                            show_line_numbers=True,
+                        ),
+                        width="100%",
+                        padding_x=0,
+                        padding_y=".25em",
                     ),
                     width="100%",
                 ),

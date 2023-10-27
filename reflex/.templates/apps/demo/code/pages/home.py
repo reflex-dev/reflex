@@ -24,21 +24,30 @@ def home_page() -> rx.Component:
                 font_size="2em",
             ),
             rx.unordered_list(
-                rx.list_item("Take a look at ", rx.link(
-                                "reflex.dev",
-                                href="https://reflex.dev",
-                                color="rgb(107,99,246)",)
-                            ),
-                rx.list_item("Check out our ", rx.link(
-                                "docs",
-                                href="https://reflex.dev/docs/getting-started/introduction/",
-                                color="rgb(107,99,246)",)
-                            ),
-                rx.list_item("Ask a question in our ", rx.link(
-                                "community",
-                                href="https://discord.gg/T5WSbC2YtQ",
-                                color="rgb(107,99,246)",)
-                            ),
+                rx.list_item(
+                    "Take a look at ",
+                    rx.link(
+                        "reflex.dev",
+                        href="https://reflex.dev",
+                        color="rgb(107,99,246)",
+                    ),
+                ),
+                rx.list_item(
+                    "Check out our ",
+                    rx.link(
+                        "docs",
+                        href="https://reflex.dev/docs/getting-started/introduction/",
+                        color="rgb(107,99,246)",
+                    ),
+                ),
+                rx.list_item(
+                    "Ask a question in our ",
+                    rx.link(
+                        "community",
+                        href="https://discord.gg/T5WSbC2YtQ",
+                        color="rgb(107,99,246)",
+                    ),
+                ),
             ),
             style=template_content_style,
         ),

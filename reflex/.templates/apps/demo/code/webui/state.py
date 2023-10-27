@@ -1,8 +1,7 @@
-import os
-
-import openai
-import reflex as rx
 import asyncio
+
+import reflex as rx
+
 from ..state import State
 
 # openai.api_key = os.environ["OPENAI_API_KEY"]
@@ -126,13 +125,13 @@ class State(State):
         # )
 
         # Stream the results, yielding after every word.
-        #for item in session:
+        # for item in session:
         answer = "I don't know! This Chatbot still needs to add in AI API keys!"
         for i in range(len(answer)):
             # Pause to show the streaming effect.
             await asyncio.sleep(0.1)
             # Add one letter at a time to the output.
-            
+
             # if hasattr(item.choices[0].delta, "content"):
             #     answer_text = item.choices[0].delta.content
             self.chats[self.current_chat][-1].answer += answer[i]

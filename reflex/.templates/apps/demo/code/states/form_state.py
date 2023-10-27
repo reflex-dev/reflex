@@ -1,8 +1,10 @@
-from ..state import State
 import reflex as rx
+
+from ..state import State
 
 
 class FormState(State):
+    """Form state."""
 
     form_data: dict = {}
 
@@ -17,9 +19,7 @@ class UploadState(State):
     # The images to show.
     img: list[str]
 
-    async def handle_upload(
-        self, files: list[rx.UploadFile]
-    ):
+    async def handle_upload(self, files: list[rx.UploadFile]):
         """Handle the upload of file(s).
 
         Args:

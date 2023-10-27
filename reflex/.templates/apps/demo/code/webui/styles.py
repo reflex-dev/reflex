@@ -48,7 +48,7 @@ base_style = {
     rx.Avatar: {
         "shadow": shadow,
         "color": text_light_color,
-        #"bg": border_color,
+        # "bg": border_color,
     },
     rx.Button: {
         "shadow": shadow,
