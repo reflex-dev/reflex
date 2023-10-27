@@ -34,7 +34,7 @@ def detect_package_change(json_file_path: str) -> str:
     """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
 
     Args:
-        json_file_path (str): The path to the JSON file to be hashed.
+        json_file_path: The path to the JSON file to be hashed.
 
     Returns:
         str: The SHA-256 hash of the JSON file as a hexadecimal string.

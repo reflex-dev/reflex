@@ -1,23 +1,25 @@
 """Sidebar component for the app."""
 
-import reflex as rx
+from code import styles
+from code.state import State
 
-from .state import State
-from .styles import *
+import reflex as rx
 
 
 def sidebar_header() -> rx.Component:
     """Sidebar header.
 
     Returns:
-        rx.Component: The sidebar header component.
+        The sidebar header component.
     """
     return rx.hstack(
+        # The logo.
         rx.image(
             src="/icon.svg",
             height="2em",
         ),
         rx.spacer(),
+        # Link to Reflex GitHub repo.
         rx.link(
             rx.center(
                 rx.image(
@@ -25,17 +27,17 @@ def sidebar_header() -> rx.Component:
                     height="3em",
                     padding="0.5em",
                 ),
-                box_shadow=box_shadow,
+                box_shadow=styles.box_shadow,
                 bg="transparent",
-                border_radius=border_radius,
+                border_radius=styles.border_radius,
                 _hover={
-                    "bg": accent_color,
+                    "bg": styles.accent_color,
                 },
             ),
             href="https://github.com/reflex-dev/reflex",
         ),
         width="100%",
-        border_bottom=border,
+        border_bottom=styles.border,
         padding="1em",
     )
 
@@ -44,7 +46,7 @@ def sidebar_footer() -> rx.Component:
     """Sidebar footer.
 
     Returns:
-        rx.Component: The sidebar footer component.
+        The sidebar footer component.
     """
     return rx.hstack(
         rx.link(
@@ -55,15 +57,15 @@ def sidebar_footer() -> rx.Component:
                     padding="0.5em",
                 ),
                 bg="transparent",
-                border_radius=border_radius,
-                **hover_accent_bg,
+                border_radius=styles.border_radius,
+                **styles.hover_accent_bg,
             ),
             on_click=State.toggle_sidebar_displayed,
             transform=rx.cond(~State.sidebar_displayed, "rotate(180deg)", ""),
             transition="transform 0.5s, left 0.5s",
             position="relative",
             left=rx.cond(State.sidebar_displayed, "0px", "20.5em"),
-            **overlapping_button_style,
+            **styles.overlapping_button_style,
         ),
         rx.spacer(),
         rx.link(
@@ -79,7 +81,7 @@ def sidebar_footer() -> rx.Component:
             href="https://reflex.dev/blog/",
         ),
         width="100%",
-        border_top=border,
+        border_top=styles.border,
         padding="1em",
     )
 
@@ -88,13 +90,18 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
     """Sidebar item.
 
     Args:
-        text (str): The text of the item.
-        icon (str): The icon of the item.
-        url (str): The URL of the item.
+        text: The text of the item.
+        icon: The icon of the item.
+        url: The URL of the item.
 
     Returns:
         rx.Component: The sidebar item component.
     """
+    # Whether the item is active.
+    active = (State.router.page.path == f"/{text.lower()}") | (
+        (State.router.page.path == "/") & text == "Home"
+    )
+
     return rx.link(
         rx.hstack(
             rx.image(
@@ -106,17 +113,17 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
                 text,
             ),
             bg=rx.cond(
-                State.origin_url == f"/{text.lower()}/",
-                accent_color,
+                active,
+                styles.accent_color,
                 "transparent",
             ),
             color=rx.cond(
-                State.origin_url == f"/{text.lower()}/",
-                accent_text_color,
-                text_color,
+                active,
+                styles.accent_text_color,
+                styles.text_color,
             ),
-            border_radius=border_radius,
-            box_shadow=box_shadow,
+            border_radius=styles.border_radius,
+            box_shadow=styles.box_shadow,
             width="100%",
             padding_x="1em",
         ),
@@ -126,25 +133,26 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
 
 
 def sidebar() -> rx.Component:
-    """Sidebar.
+    """The sidebar.
 
     Returns:
-        rx.Component: The sidebar component.
+        The sidebar component.
     """
+    # Get all the decorated pages and add them to the sidebar.
+    from reflex.page import get_decorated_pages
+
     return rx.box(
         rx.vstack(
             sidebar_header(),
             rx.vstack(
-                sidebar_item(
-                    "Dashboard",
-                    "/github.svg",
-                    "/dashboard",
-                ),
-                sidebar_item(
-                    "Settings",
-                    "/github.svg",
-                    "/settings",
-                ),
+                *[
+                    sidebar_item(
+                        text=page.get("title", page["route"].strip("/").capitalize()),
+                        icon=page.get("image", "/github.svg"),
+                        url=page["route"],
+                    )
+                    for page in get_decorated_pages()
+                ],
                 width="100%",
                 overflow_y="auto",
                 align_items="flex-start",
@@ -154,9 +162,9 @@ def sidebar() -> rx.Component:
             sidebar_footer(),
             height="100dvh",
         ),
-        min_width=sidebar_width,
+        min_width=styles.sidebar_width,
         height="100%",
         position="sticky",
         top="0px",
-        border_right=border,
+        border_right=styles.border,
     )
