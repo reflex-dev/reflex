@@ -69,12 +69,8 @@ def _init(
     name: str,
     template: constants.Templates.Kind,
     loglevel: constants.LogLevel,
-    dir: str = os.getcwd(),
 ):
     """Initialize a new Reflex app in the given directory."""
-    # Switch to the directory.
-    os.chdir(dir)
-
     # Set the log level.
     console.set_log_level(loglevel)
 
@@ -134,12 +130,8 @@ def _run(
     backend_port: str = str(get_config().backend_port),
     backend_host: str = config.backend_host,
     loglevel: constants.LogLevel = config.loglevel,
-    dir=os.getcwd(),
 ):
     """Run the app in the given directory."""
-    # Switch to the directory.
-    os.chdir(dir)
-
     # Set the log level.
     console.set_log_level(loglevel)
 
@@ -716,11 +708,11 @@ def demo(
 ):
     """Run the demo app."""
     with tempfile.TemporaryDirectory() as tmp_dir:
+        os.chdir(tmp_dir)
         _init(
             name="reflex_demo",
             template=constants.Templates.Kind.BASE,
             loglevel=constants.LogLevel.ERROR,
-            dir=tmp_dir,
         )
         _run(
             env=constants.Env.DEV,
@@ -730,7 +722,6 @@ def demo(
             backend_port=backend_port,
             backend_host="localhost",
             loglevel=constants.LogLevel.ERROR,
-            dir=tmp_dir,
         )
 
 
