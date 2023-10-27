@@ -572,7 +572,6 @@ def deploy(
         key = key_candidate
 
         # Then CP needs to know the user's location, which requires user permission
-        console.debug(f"{enabled_regions=}")
         while True:
             region_input = console.ask(
                 "Region to deploy to. Enter to use default.",
@@ -673,8 +672,8 @@ def deploy(
         hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
     )
     if not server_report_deploy_success:
-        console.warn("Hosting server reports failure.")
-        console.warn(
+        console.error("Hosting server reports failure.")
+        console.error(
             f"Check the server logs using `reflex deployments build-logs {key}`"
         )
         raise typer.Exit(1)
