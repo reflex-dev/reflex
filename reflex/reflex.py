@@ -544,7 +544,7 @@ def deploy(
             enabled_regions = pre_deploy_response.enabled_regions
 
     except Exception as ex:
-        console.error(f"Unable to prepare deployment due to: {ex}")
+        console.error(f"Unable to prepare deployment")
         raise typer.Exit(1) from ex
 
     # The app prefix should not change during the time of preparation
@@ -572,7 +572,6 @@ def deploy(
         key = key_candidate
 
         # Then CP needs to know the user's location, which requires user permission
-        console.debug(f"{enabled_regions=}")
         while True:
             region_input = console.ask(
                 "Region to deploy to. Enter to use default.",
@@ -669,10 +668,15 @@ def deploy(
 
     console.print("Waiting for server to report progress ...")
     # Display the key events such as build, deploy, etc
-    asyncio.get_event_loop().run_until_complete(
+    server_report_deploy_success = asyncio.get_event_loop().run_until_complete(
         hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
     )
-
+    if not server_report_deploy_success:
+        console.error("Hosting server reports failure.")
+        console.error(
+            f"Check the server logs using `reflex deployments build-logs {key}`"
+        )
+        raise typer.Exit(1)
     console.print("Waiting for the new deployment to come up")
     backend_up = frontend_up = False
 
@@ -741,7 +745,7 @@ def list_deployments(
     try:
         deployments = hosting.list_deployments()
     except Exception as ex:
-        console.error(f"Unable to list deployments due to: {ex}")
+        console.error(f"Unable to list deployments")
         raise typer.Exit(1) from ex
 
     if as_json:
@@ -768,7 +772,7 @@ def delete_deployment(
     try:
         hosting.delete_deployment(key)
     except Exception as ex:
-        console.error(f"Unable to delete deployment due to: {ex}")
+        console.error(f"Unable to delete deployment")
         raise typer.Exit(1) from ex
     console.print(f"Successfully deleted [ {key} ].")
 
@@ -805,7 +809,7 @@ def get_deployment_status(
         table = list(frontend_status.values())
         console.print(tabulate([table], headers=headers))
     except Exception as ex:
-        console.error(f"Unable to get deployment status due to: {ex}")
+        console.error(f"Unable to get deployment status")
         raise typer.Exit(1) from ex
 
 
@@ -822,7 +826,28 @@ def get_deployment_logs(
     try:
         asyncio.get_event_loop().run_until_complete(hosting.get_logs(key))
     except Exception as ex:
-        console.error(f"Unable to get deployment logs due to: {ex}")
+        console.error(f"Unable to get deployment logs")
+        raise typer.Exit(1) from ex
+
+
+@deployments_cli.command(name="build-logs")
+def get_deployment_build_logs(
+    key: str = typer.Argument(..., help="The name of the deployment."),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Get the logs for a deployment."""
+    console.set_log_level(loglevel)
+
+    console.print("Note: there is a few seconds delay for logs to be available.")
+    try:
+        # TODO: we need to find a way not to fetch logs
+        # that match the deployed app name but not previously of a different owner
+        # This should not happen often
+        asyncio.run(hosting.get_logs(key, log_type=hosting.LogType.BUILD_LOG))
+    except Exception as ex:
+        console.error(f"Unable to get deployment logs")
         raise typer.Exit(1) from ex
 
 
