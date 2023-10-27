@@ -211,7 +211,6 @@ def datatable_page() -> rx.Component:
                 font_size="3em",
             ),
             rx.hstack(
-                rx.divider(orientation="vertical", height="100vh", border="solid black 1px"),
                 rx.vstack(
                     rx.box(
                         rx.data_editor(
@@ -225,11 +224,9 @@ def datatable_page() -> rx.Component:
                             # style
                             theme=DataEditorTheme(**darkTheme),
                             width="80vw",
-                            height="80vh",
                         ),
                     ),
                     rx.spacer(),
-                    height="100vh",
                     spacing="25",
                 ),
             ),
