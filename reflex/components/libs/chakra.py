@@ -97,6 +97,7 @@ class ChakraColorModeProvider(Component):
 
 
 LiteralColorScheme = Literal[
+    "none",
     "gray",
     "red",
     "orange",
