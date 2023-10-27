@@ -65,20 +65,12 @@ def main(
     pass
 
 
-@cli.command()
-def init(
-    name: str = typer.Option(
-        None, metavar="APP_NAME", help="The name of the app to initialize."
-    ),
-    template: constants.Templates.Kind = typer.Option(
-        constants.Templates.Kind.BASE.value,
-        help="The template to initialize the app with.",
-    ),
-    loglevel: constants.LogLevel = typer.Option(
-        config.loglevel, help="The log level to use."
-    ),
+def _init(
+    name: str,
+    template: constants.Templates.Kind,
+    loglevel: constants.LogLevel,
 ):
-    """Initialize a new Reflex app in the current directory."""
+    """Initialize a new Reflex app in the given directory."""
     # Set the log level.
     console.set_log_level(loglevel)
 
@@ -114,28 +106,32 @@ def init(
 
 
 @cli.command()
-def run(
-    env: constants.Env = typer.Option(
-        constants.Env.DEV, help="The environment to run the app in."
+def init(
+    name: str = typer.Option(
+        None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
-    frontend: bool = typer.Option(
-        False, "--frontend-only", help="Execute only frontend."
-    ),
-    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
-    frontend_port: str = typer.Option(
-        config.frontend_port, help="Specify a different frontend port."
-    ),
-    backend_port: str = typer.Option(
-        config.backend_port, help="Specify a different backend port."
-    ),
-    backend_host: str = typer.Option(
-        config.backend_host, help="Specify the backend host."
+    template: constants.Templates.Kind = typer.Option(
+        constants.Templates.Kind.BASE.value,
+        help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
         config.loglevel, help="The log level to use."
     ),
 ):
-    """Run the app in the current directory."""
+    """Initialize a new Reflex app in the current directory."""
+    _init(name, template, loglevel)
+
+
+def _run(
+    env: constants.Env,
+    frontend: bool = True,
+    backend: bool = True,
+    frontend_port: str = str(get_config().frontend_port),
+    backend_port: str = str(get_config().backend_port),
+    backend_host: str = config.backend_host,
+    loglevel: constants.LogLevel = config.loglevel,
+):
+    """Run the app in the given directory."""
     # Set the log level.
     console.set_log_level(loglevel)
 
@@ -217,6 +213,32 @@ def run(
         # In dev mode, run the backend on the main thread.
         if backend and env == constants.Env.DEV:
             backend_cmd(backend_host, int(backend_port))
+
+
+@cli.command()
+def run(
+    env: constants.Env = typer.Option(
+        constants.Env.DEV, help="The environment to run the app in."
+    ),
+    frontend: bool = typer.Option(
+        False, "--frontend-only", help="Execute only frontend."
+    ),
+    backend: bool = typer.Option(False, "--backend-only", help="Execute only backend."),
+    frontend_port: str = typer.Option(
+        config.frontend_port, help="Specify a different frontend port."
+    ),
+    backend_port: str = typer.Option(
+        config.backend_port, help="Specify a different backend port."
+    ),
+    backend_host: str = typer.Option(
+        config.backend_host, help="Specify the backend host."
+    ),
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Run the app in the current directory."""
+    _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
 
 
 @cli.command()
@@ -675,6 +697,32 @@ def deploy(
     console.warn(f"Your deployment is taking time.")
     console.warn(f"Check back later on its status: `reflex deployments status {key}`")
     console.warn(f"For logs: `reflex deployments logs {key}`")
+
+
+@cli.command()
+def demo(
+    frontend_port: str = typer.Option(
+        "3001", help="Specify a different frontend port."
+    ),
+    backend_port: str = typer.Option("8001", help="Specify a different backend port."),
+):
+    """Run the demo app."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        os.chdir(tmp_dir)
+        _init(
+            name="reflex_demo",
+            template=constants.Templates.Kind.BASE,
+            loglevel=constants.LogLevel.ERROR,
+        )
+        _run(
+            env=constants.Env.DEV,
+            frontend=True,
+            backend=True,
+            frontend_port=frontend_port,
+            backend_port=backend_port,
+            backend_host="localhost",
+            loglevel=constants.LogLevel.ERROR,
+        )
 
 
 deployments_cli = typer.Typer()
