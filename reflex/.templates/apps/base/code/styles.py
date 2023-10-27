@@ -20,11 +20,14 @@ template_page_style = {
 }
 
 template_content_style = {
-    "width": rx.cond(
-        State.sidebar_displayed,
-        f"calc({content_width_vw} - {sidebar_width})",
-        content_width_vw,
-    ),
+    "width": [
+        "100%",
+        rx.cond(
+            State.sidebar_displayed,
+            f"calc({content_width_vw} - {sidebar_width})",
+            content_width_vw,
+        ),
+    ],
     "min-width": sidebar_width,
     "align_items": "flex-start",
     "box_shadow": box_shadow,

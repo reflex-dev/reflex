@@ -22,6 +22,8 @@ def menu_button() -> rx.Component:
     Returns:
         The menu button component.
     """
+    from reflex.page import get_decorated_pages
+
     return rx.box(
         rx.menu(
             rx.menu_button(
@@ -32,7 +34,16 @@ def menu_button() -> rx.Component:
                 ),
             ),
             rx.menu_list(
-                rx.menu_item(rx.link("Home", href="/", width="100%")),
+                *[
+                    rx.menu_item(
+                        rx.link(
+                            page["title"],
+                            href=page["route"],
+                            width="100%",
+                        )
+                    )
+                    for page in get_decorated_pages()
+                ],
                 rx.menu_divider(),
                 rx.menu_item(
                     rx.link("About", href="https://github.com/reflex-dev", width="100%")
@@ -56,7 +67,7 @@ def template(
     description: str | None = None,
     meta: str | None = None,
     script_tags: list[rx.Component] | None = None,
-    on_load: rx.EventHandler | list[rx.EventHandler] | None = None,
+    on_load: rx.event.EventHandler | list[rx.event.EventHandler] | None = None,
 ) -> Callable[[Callable[[], rx.Component]], rx.Component]:
     """The template for each page of the app.
 
