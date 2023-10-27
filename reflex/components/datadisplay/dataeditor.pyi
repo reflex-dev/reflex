@@ -48,7 +48,7 @@ class DataEditorTheme(Base):
     text_dark: Optional[str]
     text_group_header: Optional[str]
     text_header: Optional[str]
-    text_headerSelected: Optional[str]
+    text_header_selected: Optional[str]
     text_light: Optional[str]
     text_medium: Optional[str]
 
