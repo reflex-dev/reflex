@@ -45,7 +45,7 @@ For example, to edit this page you can modify `{your_app}/pages/index.py`.
 See the [pages docs](https://reflex.dev/docs/components/pages/) for more information on pages.
 
 In this template, instead of using `rx.add_page` or the `@rx.page` decorator,
-we use the `@template` decorator from `{your_app}/pages/template.py`.
+we use the `@template` decorator from `{your_app}/templates/template.py`.
 
 To add a new page:
 
