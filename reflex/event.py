@@ -422,7 +422,8 @@ def _callback_arg_spec(eval_result):
 
 
 def call_script(
-    javascript_code: str, callback: EventHandler | FunctionType | None = None
+    javascript_code: str,
+    callback: EventHandler | Callable | None = None,
 ) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
