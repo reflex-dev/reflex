@@ -2,7 +2,9 @@
 
 from code import styles
 
-# Import the pages.
+# Import all the pages.
+from code.pages import *
+
 import reflex as rx
 
 # Create the app and compile it.

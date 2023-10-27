@@ -8,7 +8,7 @@ from typing import Callable
 import reflex as rx
 
 # Meta tags for the app.
-meta = [
+default_meta = [
     {
         "name": "viewport",
         "content": "width=device-width, shrink-to-fit=no, initial-scale=1",
@@ -70,8 +70,10 @@ def template(
         Returns:
             The template with the page content.
         """
+        # Get the meta tags for the page.
+        page_kwargs["meta"] = [*default_meta, *page_kwargs.get("meta", [])]
 
-        @rx.page(**page_kwargs, meta=meta)
+        @rx.page(**page_kwargs)
         def templated_page():
             return rx.hstack(
                 sidebar(),
