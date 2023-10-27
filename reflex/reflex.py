@@ -21,6 +21,7 @@ from reflex.config import get_config
 from reflex.utils import (
     build,
     console,
+    dependency,
     exec,
     hosting,
     prerequisites,
@@ -499,13 +500,7 @@ def deploy(
         )
         raise typer.Exit(1)
 
-    if not hosting.check_requirements_for_non_reflex_packages():
-        console.ask(
-            f"Make sure {constants.RequirementsTxt.FILE} has all the dependencies. Enter to proceed"
-        )
-    if not hosting.check_requirements_txt_exist():
-        console.error(f"{constants.RequirementsTxt.FILE} required for deployment")
-        raise typer.Exit(1)
+    dependency.check_requirements()
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
