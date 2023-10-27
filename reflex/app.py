@@ -614,6 +614,14 @@ class App(Base):
 
     def compile(self):
         """Compile the app and output it to the pages folder."""
+        # add the pages before the compile check so App know onload methods
+        for render, kwargs in DECORATED_PAGES:
+            self.add_page(render, **kwargs)
+
+        # Render a default 404 page if the user didn't supply one
+        if constants.Page404.SLUG not in self.pages:
+            self.add_custom_404_page()
+
         if not self._should_compile():
             return
 
@@ -623,13 +631,6 @@ class App(Base):
             MofNCompleteColumn(),
             TimeElapsedColumn(),
         )
-
-        for render, kwargs in DECORATED_PAGES:
-            self.add_page(render, **kwargs)
-
-        # Render a default 404 page if the user didn't supply one
-        if constants.Page404.SLUG not in self.pages:
-            self.add_custom_404_page()
 
         task = progress.add_task("Compiling: ", total=len(self.pages))
         # TODO: include all work done in progress indicator, not just self.pages
