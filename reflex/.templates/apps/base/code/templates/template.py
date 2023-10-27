@@ -2,7 +2,6 @@
 
 from code import styles
 from code.components.sidebar import sidebar
-from code.state import State
 from typing import Callable
 
 import reflex as rx
@@ -120,9 +119,6 @@ def template(
                 align_items="flex-start",
                 transition="left 0.5s, width 0.5s",
                 position="relative",
-                left=rx.cond(
-                    State.sidebar_displayed, "0px", f"-{styles.sidebar_width}"
-                ),
             )
 
         return templated_page

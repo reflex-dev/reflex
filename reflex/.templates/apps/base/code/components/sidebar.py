@@ -49,35 +49,13 @@ def sidebar_footer() -> rx.Component:
         The sidebar footer component.
     """
     return rx.hstack(
-        rx.link(
-            rx.center(
-                rx.image(
-                    src="/paneleft.svg",
-                    height="2em",
-                    padding="0.5em",
-                ),
-                bg="transparent",
-                border_radius=styles.border_radius,
-                **styles.hover_accent_bg,
-            ),
-            on_click=State.toggle_sidebar_displayed,
-            transform=rx.cond(~State.sidebar_displayed, "rotate(180deg)", ""),
-            transition="transform 0.5s, left 0.5s",
-            position="relative",
-            left=rx.cond(State.sidebar_displayed, "0px", "20.5em"),
-            **styles.overlapping_button_style,
-        ),
         rx.spacer(),
         rx.link(
-            rx.text(
-                "Docs",
-            ),
+            rx.text("Docs"),
             href="https://reflex.dev/docs/getting-started/introduction/",
         ),
         rx.link(
-            rx.text(
-                "Blog",
-            ),
+            rx.text("Blog"),
             href="https://reflex.dev/blog/",
         ),
         width="100%",
@@ -162,7 +140,7 @@ def sidebar() -> rx.Component:
             sidebar_footer(),
             height="100dvh",
         ),
-        display=["none", "none", "flex"],
+        display=["none", "none", "block"],
         min_width=styles.sidebar_width,
         height="100%",
         position="sticky",

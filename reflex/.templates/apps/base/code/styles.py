@@ -1,5 +1,4 @@
 """Styles for the app."""
-from code.state import State
 
 import reflex as rx
 
@@ -20,15 +19,7 @@ template_page_style = {
 }
 
 template_content_style = {
-    "width": [
-        "100%",
-        rx.cond(
-            State.sidebar_displayed,
-            f"calc({content_width_vw} - {sidebar_width})",
-            content_width_vw,
-        ),
-    ],
-    "min-width": sidebar_width,
+    "width": "100%",
     "align_items": "flex-start",
     "box_shadow": box_shadow,
     "border_radius": border_radius,

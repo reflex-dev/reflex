@@ -4,11 +4,9 @@ import reflex as rx
 
 
 class State(rx.State):
-    """State for the app."""
+    """Base state for the app.
 
-    # Whether the sidebar is displayed.
-    sidebar_displayed: bool = True
+    The base state is used to store general vars used throughout the app.
+    """
 
-    def toggle_sidebar_displayed(self) -> None:
-        """Toggle the sidebar displayed."""
-        self.sidebar_displayed = not self.sidebar_displayed
+    pass
