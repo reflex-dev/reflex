@@ -123,7 +123,7 @@ def init(
 
 
 def _run(
-    env: constants.Env,
+    env: constants.Env = constants.Env.DEV,
     frontend: bool = True,
     backend: bool = True,
     frontend_port: str = str(get_config().frontend_port),
@@ -164,6 +164,9 @@ def _run(
         config._set_persistent(frontend_port=frontend_port)
     if backend_port != str(config.backend_port):
         config._set_persistent(backend_port=backend_port)
+
+    # Reload the config to make sure the env vars are persistent.
+    get_config(reload=True)
 
     console.rule("[bold]Starting Reflex App")
 
@@ -711,17 +714,13 @@ def demo(
         os.chdir(tmp_dir)
         _init(
             name="reflex_demo",
-            template=constants.Templates.Kind.BASE,
-            loglevel=constants.LogLevel.ERROR,
+            template=constants.Templates.Kind.DEMO,
+            loglevel=constants.LogLevel.DEBUG,
         )
         _run(
-            env=constants.Env.DEV,
-            frontend=True,
-            backend=True,
             frontend_port=frontend_port,
             backend_port=backend_port,
-            backend_host="localhost",
-            loglevel=constants.LogLevel.ERROR,
+            loglevel=constants.LogLevel.DEBUG,
         )
 
 
