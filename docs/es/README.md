@@ -156,9 +156,9 @@ class State(rx.State):
     complete = False
 ```
 
-El estado defines all the variables (called vars) in an app that can change and the functions that change them.
+El estado (state) define todas las variables (vars) en una aplicación que pueden cambiar y las funciones que las cambian.
 
-Here the state is comprised of a `prompt` and `image_url`. There are also the booleans `processing` and `complete` to indicate when to show the circular progress and image.
+Aquí el estado se compone de un `prompt` y de un `image_url`. También están los booleanos `processing` y `complete` para poder indicar cuándo mostrar el progreso circular y la imagen.
 
 ### **Event Handlers**
 
@@ -187,7 +187,7 @@ Al fin, vamos a definir nuestro app.
 app = rx.App()
 ```
 
-We add a page from the root of the app to the index component. Tambien agregaremos un titulo que show up in the page preview/browser tab.
+Agregamos una página desde la raíz (root) de la aplicación hasta al componente de índice. También agregaremos un título que aparece en la pestaña de vista previa de la página o en la pestaña del navegador web.
 
 ```python
 app.add_page(index, title="DALL-E")
@@ -200,7 +200,7 @@ Puedes crear un app con multiples paginas al agregar mas paginas como esta.
 
 <div align="center">
 
-📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Component Library](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Gallery](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Deployment](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
+📑 [Docs](https://reflex.dev/docs/getting-started/introduction) &nbsp; |  &nbsp; 🗞️ [Blog](https://reflex.dev/blog) &nbsp; |  &nbsp; 📱 [Biblioteca de Componentes](https://reflex.dev/docs/library) &nbsp; |  &nbsp; 🖼️ [Galería](https://reflex.dev/docs/gallery) &nbsp; |  &nbsp; 🛸 [Hospedaje](https://reflex.dev/docs/hosting/deploy)  &nbsp;   
 
 </div>
 
@@ -208,29 +208,29 @@ Puedes crear un app con multiples paginas al agregar mas paginas como esta.
 
 
 
-## ✅ Status
+## ✅ Estatus
 
-Reflex launched in December 2022 with the name Pynecone.
+Reflex lanzo en Diciembre 2022 con el nombre Pynecone.
 
-As of July 2023, we are in the **Public Beta** stage.
+Desde Julio 2023, estamos en el estatus de **Beta Publica**.
 
--   :white_check_mark: **Public Alpha**: Anyone can install and use Reflex. There may be issues, but we are working to resolve them actively.
--   :large_orange_diamond: **Public Beta**: Stable enough for non-enterprise use-cases.
--   **Public Hosting Beta**: _Optionally_, deploy and host your apps on Reflex!
--   **Public**: Reflex is production ready.
+-   :white_check_mark: **Alfa Publico**: Cualquiera puede instalar y utilizar Reflex. Puede que haya problemas, pero estamos trabajando para resolverlos.
+-   :large_orange_diamond: **Beta Publica**: Suficientemente estable para casos de uso no empresariales.
+-   **Betea Publica de Alojamiento**: _Opcionalmente_, lanza y hospeda tus aplicaciónes en Reflex!
+-   **Publico**: Reflex está listo para la producción.
 
-Reflex has new releases and features coming every week! Make sure to :star: star and :eyes: watch this repository to stay up to date.
+¡Reflex tiene nuevos lanzamientos y funciones cada semana! Asedurate de darnos una :star: estrella y :eyes: revisa este repositorio para estar al día.
 
-## Contributing
+## Contribuyendo
 
-We welcome contributions of any size! Below are some good ways to get started in the Reflex community.
+¡Agradecemos contribuciones de cualquier tamaño! Abajo hay algunas buenas formas de comenzar en la comunidad Reflex.
 
--   **Join Our Discord**: Our [Discord](https://discord.gg/T5WSbC2YtQ) is the best place to get help on your Reflex project and to discuss how you can contribute.
--   **GitHub Discussions**: A great way to talk about features you want added or things that are confusing/need clarification.
+-   **Únete a nuestro  Discord**: Nuestro [Discord](https://discord.gg/T5WSbC2YtQ) es el mejor lugar para obtener ayuda en su proyecto Reflex y discutir cómo puedes contribuir.
+-   **Discusiones de GitHub**: Una excelente manera de hablar sobre las características que deseas agregar o cosas que son confusas o que necesitan aclaración.
 -   **GitHub Issues**: These are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
-We are actively looking for contributors, no matter your skill level or experience.
+Buscamos colaboradores, sin importar su nivel de habilidad o experiencia.
 
-## License
+## Licencia
 
-Reflex is open-source and licensed under the [Apache License 2.0](LICENSE).
+Reflex es de código abierto y tiene la licencia [Apache License 2.0](LICENSE).
