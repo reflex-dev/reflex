@@ -719,12 +719,12 @@ def demo(
         _init(
             name="reflex_demo",
             template=constants.Templates.Kind.DEMO,
-            loglevel=constants.LogLevel.DEBUG,
+            loglevel=constants.LogLevel.ERROR,
         )
         _run(
             frontend_port=frontend_port,
             backend_port=backend_port,
-            loglevel=constants.LogLevel.DEBUG,
+            loglevel=constants.LogLevel.ERROR,
         )
 
 
