@@ -265,7 +265,7 @@ def deploy_legacy(
         return
 
     # Compile the app in production mode.
-    export(loglevel=loglevel)
+    export(loglevel=loglevel, zip_dest_dir=os.getcwd())
 
     # Exit early if this is a dry run.
     if dry_run:

@@ -13,10 +13,7 @@ hover_accent_bg = {"_hover": {"bg": accent_color}}
 content_width_vw = "90vw"
 sidebar_width = "20em"
 
-template_page_style = {
-    "padding_top": "5em",
-    "padding_x": "2em",
-}
+template_page_style = {"padding_top": "5em", "padding_x": ["auto", "2em"]}
 
 template_content_style = {
     "width": "100%",
