@@ -97,7 +97,7 @@ class DataEditorTheme(Base):
     text_dark: Optional[str] = None
     text_group_header: Optional[str] = None
     text_header: Optional[str] = None
-    text_headerSelected: Optional[str] = None
+    text_header_selected: Optional[str] = None
     text_light: Optional[str] = None
     text_medium: Optional[str] = None
 
