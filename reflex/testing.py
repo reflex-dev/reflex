@@ -155,7 +155,7 @@ class AppHarness:
                 name=self.app_name,
                 template=reflex.constants.Templates.Kind.BLANK,
                 loglevel=reflex.constants.LogLevel.INFO,
-                dir=self.app_path
+                dir=self.app_path,
             )
             self.app_module_path.write_text(source_code)
         with chdir(self.app_path):
