@@ -7,6 +7,7 @@ import os
 import shutil
 import tempfile
 import time
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -714,18 +715,22 @@ def demo(
     backend_port: str = typer.Option("8001", help="Specify a different backend port."),
 ):
     """Run the demo app."""
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        os.chdir(tmp_dir)
-        _init(
-            name="reflex_demo",
-            template=constants.Templates.Kind.DEMO,
-            loglevel=constants.LogLevel.ERROR,
-        )
-        _run(
-            frontend_port=frontend_port,
-            backend_port=backend_port,
-            loglevel=constants.LogLevel.ERROR,
-        )
+    # Open the demo app in a terminal.
+    webbrowser.open("https://demo.reflex.run")
+
+    # Later: open the demo app locally.
+    # with tempfile.TemporaryDirectory() as tmp_dir:
+    #     os.chdir(tmp_dir)
+    #     _init(
+    #         name="reflex_demo",
+    #         template=constants.Templates.Kind.DEMO,
+    #         loglevel=constants.LogLevel.DEBUG,
+    #     )
+    #     _run(
+    #         frontend_port=frontend_port,
+    #         backend_port=backend_port,
+    #         loglevel=constants.LogLevel.DEBUG,
+    #     )
 
 
 deployments_cli = typer.Typer()

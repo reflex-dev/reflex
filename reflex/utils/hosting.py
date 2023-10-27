@@ -878,9 +878,7 @@ def check_requirements_for_non_reflex_packages() -> bool:
     return False
 
 
-def authenticate_on_browser(
-    invitation_code: str,
-) -> str:
+def authenticate_on_browser(invitation_code: str) -> str:
     """Open the browser to authenticate the user.
 
     Args:
