@@ -554,7 +554,10 @@ class Component(Base, ABC):
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
         tag_name = f"{self.tag or 'Comp'}_{code_hash}"
         code = REACTIVE_COMPONENT.render(
-            tag_name=tag_name, component=self, state_name=base_state, events=events,
+            tag_name=tag_name,
+            component=self,
+            state_name=base_state,
+            events=events,
         )
         self.tag = tag_name
         self.render = render
@@ -584,7 +587,7 @@ class Component(Base, ABC):
                         events = True
 
         if base_state is None:
-           for child in self.children:
+            for child in self.children:
                 if isinstance(child, Bare):
                     child = child.contents
                 if isinstance(child, Var) and child._var_state:

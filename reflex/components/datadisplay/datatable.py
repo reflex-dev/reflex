@@ -113,13 +113,11 @@ class DataTable(Gridjs):
             self.columns = BaseVar(
                 _var_name=f"{self.data._var_name}.columns",
                 _var_type=List[Any],
-                _var_state=self.data._var_state,
-            )
+            )._var_set_state(self.data._var_state)
             self.data = BaseVar(
                 _var_name=f"{self.data._var_name}.data",
                 _var_type=List[List[Any]],
-                _var_state=self.data._var_state,
-            )
+            )._var_set_state(self.data._var_state)
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)

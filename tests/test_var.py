@@ -17,8 +17,10 @@ from reflex.vars import (
 test_vars = [
     BaseVar(_var_name="prop1", _var_type=int),
     BaseVar(_var_name="key", _var_type=str),
-    BaseVar(_var_name="value", _var_type=str, _var_state="state"),
-    BaseVar(_var_name="local", _var_type=str, _var_state="state", _var_is_local=True),
+    BaseVar(_var_name="value", _var_type=str)._var_set_state("state"),
+    BaseVar(_var_name="local", _var_type=str, _var_is_local=True)._var_set_state(
+        "state"
+    ),
     BaseVar(_var_name="local2", _var_type=str, _var_is_local=True),
 ]
 
@@ -263,7 +265,7 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3])[v(0)]) == "{[1, 2, 3].at(0)}"
     assert str(v({"a": 1, "b": 2})["a"]) == '{{"a": 1, "b": 2}["a"]}'
     assert (
-        str(BaseVar(_var_name="foo", _var_state="state", _var_type=TestObj).bar)
+        str(BaseVar(_var_name="foo", _var_type=TestObj)._var_set_state("state").bar)
         == "{state.foo.bar}"
     )
     assert str(abs(v(1))) == "{Math.abs(1)}"
@@ -274,7 +276,7 @@ def test_basic_operations(TestObj):
     assert str(v([1, 2, 3]).reverse()) == "{[...[1, 2, 3]].reverse()}"
     assert str(v(["1", "2", "3"]).reverse()) == '{[...["1", "2", "3"]].reverse()}'
     assert (
-        str(BaseVar(_var_name="foo", _var_state="state", _var_type=list).reverse())
+        str(BaseVar(_var_name="foo", _var_type=list)._var_set_state("state").reverse())
         == "{[...state.foo].reverse()}"
     )
     assert (
@@ -288,11 +290,14 @@ def test_basic_operations(TestObj):
     [
         (v([1, 2, 3]), "[1, 2, 3]"),
         (v(["1", "2", "3"]), '["1", "2", "3"]'),
-        (BaseVar(_var_name="foo", _var_state="state", _var_type=list), "state.foo"),
+        (BaseVar(_var_name="foo", _var_type=list)._var_set_state("state"), "state.foo"),
         (BaseVar(_var_name="foo", _var_type=list), "foo"),
         (v((1, 2, 3)), "[1, 2, 3]"),
         (v(("1", "2", "3")), '["1", "2", "3"]'),
-        (BaseVar(_var_name="foo", _var_state="state", _var_type=tuple), "state.foo"),
+        (
+            BaseVar(_var_name="foo", _var_type=tuple)._var_set_state("state"),
+            "state.foo",
+        ),
         (BaseVar(_var_name="foo", _var_type=tuple), "foo"),
     ],
 )
@@ -301,7 +306,7 @@ def test_list_tuple_contains(var, expected):
     assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
     assert str(var.contains(v(1))) == f"{{{expected}.includes(1)}}"
     assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_state="state", _var_type=str)
+    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
     other_var = BaseVar(_var_name="other", _var_type=str)
     assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
     assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
@@ -311,14 +316,14 @@ def test_list_tuple_contains(var, expected):
     "var, expected",
     [
         (v("123"), json.dumps("123")),
-        (BaseVar(_var_name="foo", _var_state="state", _var_type=str), "state.foo"),
+        (BaseVar(_var_name="foo", _var_type=str)._var_set_state("state"), "state.foo"),
         (BaseVar(_var_name="foo", _var_type=str), "foo"),
     ],
 )
 def test_str_contains(var, expected):
     assert str(var.contains("1")) == f'{{{expected}.includes("1")}}'
     assert str(var.contains(v("1"))) == f'{{{expected}.includes("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_state="state", _var_type=str)
+    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
     other_var = BaseVar(_var_name="other", _var_type=str)
     assert str(var.contains(other_state_var)) == f"{{{expected}.includes(state.other)}}"
     assert str(var.contains(other_var)) == f"{{{expected}.includes(other)}}"
@@ -328,7 +333,7 @@ def test_str_contains(var, expected):
     "var, expected",
     [
         (v({"a": 1, "b": 2}), '{"a": 1, "b": 2}'),
-        (BaseVar(_var_name="foo", _var_state="state", _var_type=dict), "state.foo"),
+        (BaseVar(_var_name="foo", _var_type=dict)._var_set_state("state"), "state.foo"),
         (BaseVar(_var_name="foo", _var_type=dict), "foo"),
     ],
 )
@@ -337,7 +342,7 @@ def test_dict_contains(var, expected):
     assert str(var.contains("1")) == f'{{{expected}.hasOwnProperty("1")}}'
     assert str(var.contains(v(1))) == f"{{{expected}.hasOwnProperty(1)}}"
     assert str(var.contains(v("1"))) == f'{{{expected}.hasOwnProperty("1")}}'
-    other_state_var = BaseVar(_var_name="other", _var_state="state", _var_type=str)
+    other_state_var = BaseVar(_var_name="other", _var_type=str)._var_set_state("state")
     other_var = BaseVar(_var_name="other", _var_type=str)
     assert (
         str(var.contains(other_state_var))
@@ -630,7 +635,7 @@ def test_import_var(import_var, expected):
     [
         (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
         (
-            f"testing f-string with {BaseVar(_var_name='myvar', _var_state='state', _var_type=int)}",
+            f"testing f-string with {BaseVar(_var_name='myvar', _var_type=int)._var_set_state('state')}",
             "testing f-string with ${state.myvar}",
         ),
         (

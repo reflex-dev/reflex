@@ -534,8 +534,8 @@ def test_format_ref(input, output):
     "input,output",
     [
         (("my_array", None), "refs_my_array"),
-        (("my_array", Var.create(0)), "refs_my_array[0]"),
-        (("my_array", Var.create(1)), "refs_my_array[1]"),
+        (("my_array", Var.create(0)), "`refs_my_array`][0"),
+        (("my_array", Var.create(1)), "`refs_my_array`][1"),
     ],
 )
 def test_format_array_ref(input, output):

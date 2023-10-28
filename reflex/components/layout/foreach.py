@@ -61,7 +61,11 @@ class Foreach(Component):
         return code
 
     def _get_memoized(self) -> str | None:
-        base_state = self.iterable.state.partition(".")[0] if self.iterable.state else None
+        base_state = (
+            self.iterable._var_state.partition(".")[0]
+            if self.iterable._var_state
+            else None
+        )
         events = "connectError" in str(self.iterable)
         if base_state or events:
             return self._render_out_of_band(base_state=base_state, events=events)

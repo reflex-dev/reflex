@@ -33,7 +33,9 @@ class Form(ChakraComponent):
                     f"getRefValues(refs[`{ref_name}`])", _var_is_local=False
                 )
             else:
-                form_refs[ref[4:]] = Var.create(f"getRefValue(refs[`{ref}`])", _var_is_local=False)
+                form_refs[ref[4:]] = Var.create(
+                    f"getRefValue(refs[`{ref}`])", _var_is_local=False
+                )
 
         return {
             **super().get_event_triggers(),

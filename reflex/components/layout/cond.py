@@ -60,7 +60,9 @@ class Cond(Component):
         return code
 
     def _get_memoized(self) -> Optional[str]:
-        base_state = self.cond._var_state.partition(".")[0] if self.cond._var_state else None
+        base_state = (
+            self.cond._var_state.partition(".")[0] if self.cond._var_state else None
+        )
         events = bool("connectError" in str(self.cond))
         if base_state or events:
             return self._render_out_of_band(base_state=base_state, events=events)

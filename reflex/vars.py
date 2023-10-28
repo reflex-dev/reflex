@@ -110,8 +110,8 @@ class Var:
     # Whether the var is a string literal.
     _var_is_string: bool
 
-    # The qualified name of the var.
-    _full_name: str = ""
+    # _var_full_name should be prefixed with _var_state
+    _var_full_name_needs_state_prefix: bool
 
     @classmethod
     def create(
@@ -327,6 +327,7 @@ class Var:
                 _var_type=i._var_type,
                 _var_state=i._var_state,
                 _var_is_local=True,
+                _var_full_name_needs_state_prefix=True,
             )
 
         # Handle list/tuple/str indexing.
@@ -346,11 +347,9 @@ class Var:
                 stop = i.stop or "undefined"
 
                 # Use the slice function.
-                return BaseVar(
+                return dataclasses.replace(
+                    self,  # type: ignore
                     _var_name=f"{self._var_name}.slice({start}, {stop})",
-                    _var_type=self._var_type,
-                    _var_state=self._var_state,
-                    _var_is_local=self._var_is_local,
                 )
 
             # Get the type of the indexed var.
@@ -361,12 +360,10 @@ class Var:
             )
 
             # Use `at` to support negative indices.
-            return BaseVar(
+            return dataclasses.replace(
+                self,  # type: ignore
                 _var_name=f"{self._var_name}.at({i})",
                 _var_type=type_,
-                _var_state=self._var_state,
-                _var_is_local=self._var_is_local,
-                _full_name=f"{self._full_name}.at({i})",
             )
 
         # Dictionary / dataframe indexing.
@@ -396,11 +393,10 @@ class Var:
         )
 
         # Use normal indexing here.
-        return BaseVar(
+        return dataclasses.replace(
+            self,  # type: ignore
             _var_name=f"{self._var_name}[{i}]",
             _var_type=type_,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
         )
 
     def __getattr__(self, name: str) -> Var:
@@ -426,11 +422,10 @@ class Var:
             type_ = types.get_attribute_access_type(self._var_type, name)
 
             if type_ is not None:
-                return BaseVar(
+                return dataclasses.replace(
+                    self,  # type: ignore
                     _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
-                    _var_state=self._var_state,
-                    _var_is_local=self._var_is_local,
                 )
 
             if name in REPLACED_NAMES:
@@ -522,11 +517,11 @@ class Var:
                     else f"{self._var_full_name}.{fn}()"
                 )
 
-        return BaseVar(
+        return dataclasses.replace(
+            self,  # type: ignore
             _var_name=operation_name,
             _var_type=type_,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
+            _var_full_name_needs_state_prefix=False,
         )
 
     @staticmethod
@@ -606,11 +601,10 @@ class Var:
         """
         if not types._issubclass(self._var_type, List):
             raise TypeError(f"Cannot get length of non-list var {self}.")
-        return BaseVar(
-            _var_name=f"{self._var_full_name}.length",
+        return dataclasses.replace(
+            self,  # type: ignore
+            _var_name=f"{self._var_name}.length",
             _var_type=int,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
         )
 
     def __eq__(self, other: Var) -> Var:
@@ -760,10 +754,11 @@ class Var:
         ]:
             other_name = other._var_full_name if isinstance(other, Var) else other
             name = f"Array({other_name}).fill().map(() => {self._var_full_name}).flat()"
-            return BaseVar(
+            return dataclasses.replace(
+                self,  # type: ignore
                 _var_name=name,
                 _var_type=str,
-                _var_is_local=self._var_is_local,
+                _var_full_name_needs_state_prefix=False,
             )
 
         return self.operation("*", other)
@@ -1008,11 +1003,10 @@ class Var:
         elif not isinstance(other, Var):
             other = Var.create(other)
         if types._issubclass(self._var_type, Dict):
-            return BaseVar(
-                _var_name=f"{self._var_full_name}.{method}({other._var_full_name})",
+            return dataclasses.replace(
+                self,  # type: ignore
+                _var_name=f"{self._var_name}.{method}({other._var_full_name})",
                 _var_type=bool,
-                _var_state=self._var_state,
-                _var_is_local=self._var_is_local,
             )
         else:  # str, list, tuple
             # For strings, the left operand must be a string.
@@ -1022,11 +1016,10 @@ class Var:
                 raise TypeError(
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
-            return BaseVar(
-                _var_name=f"{self._var_full_name}.includes({other._var_full_name})",
+            return dataclasses.replace(
+                self,  # type: ignore
+                _var_name=f"{self._var_name}.includes({other._var_full_name})",
                 _var_type=bool,
-                _var_state=self._var_state,
-                _var_is_local=self._var_is_local,
             )
 
     def reverse(self) -> Var:
@@ -1041,11 +1034,10 @@ class Var:
         if not types._issubclass(self._var_type, list):
             raise TypeError(f"Cannot reverse non-list var {self._var_full_name}.")
 
-        return BaseVar(
+        return dataclasses.replace(
+            self,  # type: ignore
             _var_name=f"[...{self._var_full_name}].reverse()",
-            _var_type=self._var_type,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
+            _var_full_name_needs_state_prefix=False,
         )
 
     def lower(self) -> Var:
@@ -1062,11 +1054,10 @@ class Var:
                 f"Cannot convert non-string var {self._var_full_name} to lowercase."
             )
 
-        return BaseVar(
-            _var_name=f"{self._var_full_name}.toLowerCase()",
+        return dataclasses.replace(
+            self,  # type: ignore
+            _var_name=f"{self._var_name}.toLowerCase()",
             _var_type=str,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
         )
 
     def upper(self) -> Var:
@@ -1083,11 +1074,10 @@ class Var:
                 f"Cannot convert non-string var {self._var_full_name} to uppercase."
             )
 
-        return BaseVar(
-            _var_name=f"{self._var_full_name}.toUpperCase()",
+        return dataclasses.replace(
+            self,  # type: ignore
+            _var_name=f"{self._var_name}.toUpperCase()",
             _var_type=str,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
         )
 
     def split(self, other: str | Var[str] = " ") -> Var:
@@ -1107,11 +1097,10 @@ class Var:
 
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
-        return BaseVar(
-            _var_name=f"{self._var_full_name}.split({other._var_full_name})",
+        return dataclasses.replace(
+            self,  # type: ignore
+            _var_name=f"{self._var_name}.split({other._var_full_name})",
             _var_type=list[str],
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
         )
 
     def join(self, other: str | Var[str] | None = None) -> Var:
@@ -1136,11 +1125,10 @@ class Var:
         else:
             other = Var.create_safe(other)
 
-        return BaseVar(
-            _var_name=f"{self._var_full_name}.join({other._var_full_name})",
+        return dataclasses.replace(
+            self,  # type: ignore
+            _var_name=f"{self._var_name}.join({other._var_full_name})",
             _var_type=str,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
         )
 
     def foreach(self, fn: Callable) -> Var:
@@ -1156,11 +1144,9 @@ class Var:
             _var_name=get_unique_variable_name(),
             _var_type=self._var_type,
         )
-        return BaseVar(
-            _var_name=f"{self._var_full_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
-            _var_type=self._var_type,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
+        return dataclasses.replace(
+            self,  # type: ignore
+            _var_name=f"{self._var_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
         )
 
     def to(self, type_: Type) -> Var:
@@ -1172,13 +1158,7 @@ class Var:
         Returns:
             The converted var.
         """
-        return BaseVar(
-            _var_name=self._var_name,
-            _var_type=type_,
-            _var_state=self._var_state,
-            _var_is_local=self._var_is_local,
-            _full_name=self._full_name,
-        )
+        return dataclasses.replace(self, _var_type=type_)  # type: ignore
 
     @property
     def _var_full_name(self) -> str:
@@ -1187,19 +1167,28 @@ class Var:
         Returns:
             The full name of the var.
         """
-        return self._full_name if self._full_name else self._var_name
+        if not self._var_full_name_needs_state_prefix:
+            return self._var_name
+        return (
+            self._var_name
+            if self._var_state == ""
+            else ".".join([self._var_state, self._var_name])
+        )
 
-    def _var_set_state(self, state: Type[State]) -> Any:
+    def _var_set_state(self, state: Type[State] | str) -> Any:
         """Set the state of the var.
 
         Args:
-            state: The state to set.
+            state: The state to set or the full name of the state.
 
         Returns:
             The var with the set state.
         """
-        self._var_state = state.get_full_name()
-        self._full_name = self._var_name if self._var_state == "" else ".".join([self._var_state, self._var_name])
+        if isinstance(state, str):
+            self._var_state = state
+        else:
+            self._var_state = state.get_full_name()
+        self._var_full_name_needs_state_prefix = True
         return self
 
 
@@ -1224,6 +1213,9 @@ class BaseVar(Var):
 
     # Whether the var is a string literal.
     _var_is_string: bool = dataclasses.field(default=False)
+
+    # _var_full_name should be prefixed with _var_state
+    _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
