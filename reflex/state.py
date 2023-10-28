@@ -175,10 +175,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
     # Mapping of var name to set of computed variables that depend on it
-    _computed_var_dependencies: Dict[str, Set[str]] = {}
+    _computed_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
 
     # Mapping of var name to set of substates that depend on it
-    _substate_var_dependencies: Dict[str, Set[str]] = {}
+    _substate_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
 
     # The parent state.
     parent_state: Optional[State] = None
@@ -218,10 +218,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
-        # initialize per-instance var dependency tracking
-        self._computed_var_dependencies = defaultdict(set)
-        self._substate_var_dependencies = defaultdict(set)
-
         # Setup the substates.
         for substate in self.get_substates():
             substate_name = substate.get_name()
@@ -233,25 +229,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             self.substates[substate_name] = substate(parent_state=self)
         # Convert the event handlers to functions.
         self._init_event_handlers()
-
-        # Initialize computed vars dependencies.
-        inherited_vars = set(self.inherited_vars).union(
-            set(self.inherited_backend_vars),
-        )
-        for cvar_name, cvar in self.computed_vars.items():
-            # Add the dependencies.
-            for var in cvar._deps(objclass=type(self)):
-                self._computed_var_dependencies[var].add(cvar_name)
-                if var in inherited_vars:
-                    # track that this substate depends on its parent for this var
-                    state_name = self.get_name()
-                    parent_state = self.parent_state
-                    while parent_state is not None and var in parent_state.vars:
-                        parent_state._substate_var_dependencies[var].add(state_name)
-                        state_name, parent_state = (
-                            parent_state.get_name(),
-                            parent_state.parent_state,
-                        )
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(self.backend_vars)
@@ -353,6 +330,33 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             handler = EventHandler(fn=fn)
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
+
+        cls._init_var_dependency_dicts()
+
+    @classmethod
+    def _init_var_dependency_dicts(cls):
+        # Initialize per-class var dependency tracking.
+        cls._computed_var_dependencies = defaultdict(set)
+        cls._substate_var_dependencies = defaultdict(set)
+
+        # Initialize computed vars dependencies.
+        inherited_vars = set(cls.inherited_vars).union(
+            set(cls.inherited_backend_vars),
+        )
+        for cvar_name, cvar in cls.computed_vars.items():
+            # Add the dependencies.
+            for var in cvar._deps(objclass=cls):
+                cls._computed_var_dependencies[var].add(cvar_name)
+                if var in inherited_vars:
+                    # track that this substate depends on its parent for this var
+                    state_name = cls.get_name()
+                    parent_state = cls.get_parent_state()
+                    while parent_state is not None and var in parent_state.vars:
+                        parent_state._substate_var_dependencies[var].add(state_name)
+                        state_name, parent_state = (
+                            parent_state.get_name(),
+                            parent_state.get_parent_state(),
+                        )
 
     @classmethod
     def _check_overridden_methods(cls):
@@ -547,6 +551,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # let substates know about the new variable
         for substate_class in cls.__subclasses__():
             substate_class.vars.setdefault(name, var)
+
+        # Reinitialize dependency tracking dicts
+        cls._init_var_dependency_dicts()
 
     @classmethod
     def _set_var(cls, prop: BaseVar):
