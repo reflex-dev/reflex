@@ -350,6 +350,7 @@ class Var:
                 return dataclasses.replace(
                     self,  # type: ignore
                     _var_name=f"{self._var_name}.slice({start}, {stop})",
+                    _var_is_string=False,
                 )
 
             # Get the type of the indexed var.
@@ -364,6 +365,7 @@ class Var:
                 self,  # type: ignore
                 _var_name=f"{self._var_name}.at({i})",
                 _var_type=type_,
+                _var_is_string=False,
             )
 
         # Dictionary / dataframe indexing.
@@ -397,6 +399,7 @@ class Var:
             self,  # type: ignore
             _var_name=f"{self._var_name}[{i}]",
             _var_type=type_,
+            _var_is_string=False,
         )
 
     def __getattr__(self, name: str) -> Var:
@@ -426,6 +429,7 @@ class Var:
                     self,  # type: ignore
                     _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
+                    _var_is_string=False,
                 )
 
             if name in REPLACED_NAMES:
@@ -521,6 +525,7 @@ class Var:
             self,  # type: ignore
             _var_name=operation_name,
             _var_type=type_,
+            _var_is_string=False,
             _var_full_name_needs_state_prefix=False,
         )
 
@@ -605,6 +610,7 @@ class Var:
             self,  # type: ignore
             _var_name=f"{self._var_name}.length",
             _var_type=int,
+            _var_is_string=False,
         )
 
     def __eq__(self, other: Var) -> Var:
@@ -758,6 +764,7 @@ class Var:
                 self,  # type: ignore
                 _var_name=name,
                 _var_type=str,
+                _var_is_string=False,
                 _var_full_name_needs_state_prefix=False,
             )
 
@@ -1007,6 +1014,7 @@ class Var:
                 self,  # type: ignore
                 _var_name=f"{self._var_name}.{method}({other._var_full_name})",
                 _var_type=bool,
+                _var_is_string=False,
             )
         else:  # str, list, tuple
             # For strings, the left operand must be a string.
@@ -1020,6 +1028,7 @@ class Var:
                 self,  # type: ignore
                 _var_name=f"{self._var_name}.includes({other._var_full_name})",
                 _var_type=bool,
+                _var_is_string=False,
             )
 
     def reverse(self) -> Var:
@@ -1037,6 +1046,7 @@ class Var:
         return dataclasses.replace(
             self,  # type: ignore
             _var_name=f"[...{self._var_full_name}].reverse()",
+            _var_is_string=False,
             _var_full_name_needs_state_prefix=False,
         )
 
@@ -1057,6 +1067,7 @@ class Var:
         return dataclasses.replace(
             self,  # type: ignore
             _var_name=f"{self._var_name}.toLowerCase()",
+            _var_is_string=False,
             _var_type=str,
         )
 
@@ -1077,6 +1088,7 @@ class Var:
         return dataclasses.replace(
             self,  # type: ignore
             _var_name=f"{self._var_name}.toUpperCase()",
+            _var_is_string=False,
             _var_type=str,
         )
 
@@ -1100,6 +1112,7 @@ class Var:
         return dataclasses.replace(
             self,  # type: ignore
             _var_name=f"{self._var_name}.split({other._var_full_name})",
+            _var_is_string=False,
             _var_type=list[str],
         )
 
@@ -1128,6 +1141,7 @@ class Var:
         return dataclasses.replace(
             self,  # type: ignore
             _var_name=f"{self._var_name}.join({other._var_full_name})",
+            _var_is_string=False,
             _var_type=str,
         )
 
@@ -1147,6 +1161,7 @@ class Var:
         return dataclasses.replace(
             self,  # type: ignore
             _var_name=f"{self._var_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
+            _var_is_string=False,
         )
 
     def to(self, type_: Type) -> Var:
