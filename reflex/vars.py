@@ -188,6 +188,22 @@ class Var:
         """
         return _GenericAlias(cls, type_)
 
+    def _replace(self, **kwargs: Any) -> Var:
+        # Cannot use dataclasses.replace because ComputedVar uses multiple inheritance
+        # and it's __init__ has a required fget argument
+        field_values = dict(
+            _var_name=kwargs.pop("_var_name", self._var_name),
+            _var_type=kwargs.pop("_var_type", self._var_type),
+            _var_state=kwargs.pop("_var_state", self._var_state),
+            _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
+            _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
+            _var_full_name_needs_state_prefix=kwargs.pop(
+                "_var_full_name_needs_state_prefix",
+                self._var_full_name_needs_state_prefix,
+            ),
+        )
+        return BaseVar(**field_values)
+
     def _decode(self) -> Any:
         """Decode Var as a python value.
 
@@ -347,8 +363,7 @@ class Var:
                 stop = i.stop or "undefined"
 
                 # Use the slice function.
-                return dataclasses.replace(
-                    self,  # type: ignore
+                return self._replace(
                     _var_name=f"{self._var_name}.slice({start}, {stop})",
                     _var_is_string=False,
                 )
@@ -361,8 +376,7 @@ class Var:
             )
 
             # Use `at` to support negative indices.
-            return dataclasses.replace(
-                self,  # type: ignore
+            return self._replace(
                 _var_name=f"{self._var_name}.at({i})",
                 _var_type=type_,
                 _var_is_string=False,
@@ -395,8 +409,7 @@ class Var:
         )
 
         # Use normal indexing here.
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"{self._var_name}[{i}]",
             _var_type=type_,
             _var_is_string=False,
@@ -425,8 +438,7 @@ class Var:
             type_ = types.get_attribute_access_type(self._var_type, name)
 
             if type_ is not None:
-                return dataclasses.replace(
-                    self,  # type: ignore
+                return self._replace(
                     _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
                     _var_is_string=False,
@@ -521,8 +533,7 @@ class Var:
                     else f"{self._var_full_name}.{fn}()"
                 )
 
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=operation_name,
             _var_type=type_,
             _var_is_string=False,
@@ -606,8 +617,7 @@ class Var:
         """
         if not types._issubclass(self._var_type, List):
             raise TypeError(f"Cannot get length of non-list var {self}.")
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"{self._var_name}.length",
             _var_type=int,
             _var_is_string=False,
@@ -760,8 +770,7 @@ class Var:
         ]:
             other_name = other._var_full_name if isinstance(other, Var) else other
             name = f"Array({other_name}).fill().map(() => {self._var_full_name}).flat()"
-            return dataclasses.replace(
-                self,  # type: ignore
+            return self._replace(
                 _var_name=name,
                 _var_type=str,
                 _var_is_string=False,
@@ -1010,8 +1019,7 @@ class Var:
         elif not isinstance(other, Var):
             other = Var.create(other)
         if types._issubclass(self._var_type, Dict):
-            return dataclasses.replace(
-                self,  # type: ignore
+            return self._replace(
                 _var_name=f"{self._var_name}.{method}({other._var_full_name})",
                 _var_type=bool,
                 _var_is_string=False,
@@ -1024,8 +1032,7 @@ class Var:
                 raise TypeError(
                     f"'in <string>' requires string as left operand, not {other._var_type}"
                 )
-            return dataclasses.replace(
-                self,  # type: ignore
+            return self._replace(
                 _var_name=f"{self._var_name}.includes({other._var_full_name})",
                 _var_type=bool,
                 _var_is_string=False,
@@ -1043,8 +1050,7 @@ class Var:
         if not types._issubclass(self._var_type, list):
             raise TypeError(f"Cannot reverse non-list var {self._var_full_name}.")
 
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"[...{self._var_full_name}].reverse()",
             _var_is_string=False,
             _var_full_name_needs_state_prefix=False,
@@ -1064,8 +1070,7 @@ class Var:
                 f"Cannot convert non-string var {self._var_full_name} to lowercase."
             )
 
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"{self._var_name}.toLowerCase()",
             _var_is_string=False,
             _var_type=str,
@@ -1085,8 +1090,7 @@ class Var:
                 f"Cannot convert non-string var {self._var_full_name} to uppercase."
             )
 
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"{self._var_name}.toUpperCase()",
             _var_is_string=False,
             _var_type=str,
@@ -1109,8 +1113,7 @@ class Var:
 
         other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
 
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"{self._var_name}.split({other._var_full_name})",
             _var_is_string=False,
             _var_type=list[str],
@@ -1138,8 +1141,7 @@ class Var:
         else:
             other = Var.create_safe(other)
 
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"{self._var_name}.join({other._var_full_name})",
             _var_is_string=False,
             _var_type=str,
@@ -1158,8 +1160,7 @@ class Var:
             _var_name=get_unique_variable_name(),
             _var_type=self._var_type,
         )
-        return dataclasses.replace(
-            self,  # type: ignore
+        return self._replace(
             _var_name=f"{self._var_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
             _var_is_string=False,
         )
@@ -1173,7 +1174,7 @@ class Var:
         Returns:
             The converted var.
         """
-        return dataclasses.replace(self, _var_type=type_)  # type: ignore
+        return self._replace(_var_type=type_)
 
     @property
     def _var_full_name(self) -> str:
