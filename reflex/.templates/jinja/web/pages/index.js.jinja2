@@ -9,6 +9,7 @@
 {% block export %}
 export default function Component() {
   const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
+  const focusRef = useRef();
 
   // Set focus to the specified element.
   useEffect(() => {

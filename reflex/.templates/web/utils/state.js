@@ -6,7 +6,7 @@ import env from "env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
-import { initialEvents } from "utils/context.js"
+import { initialEvents, initialState } from "utils/context.js"
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT
@@ -470,8 +470,8 @@ const applyClientStorageDelta = (client_storage, delta) => {
  * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
  *
- * @returns [Event, connectError] -
- *   Event is used to queue an event, and
+ * @returns [addEvents, connectError] -
+ *   addEvents is used to queue an event, and
  *   connectError is a reactive js error from the websocket connection (or null if connected).
  */
 export const useEventLoop = (
@@ -505,7 +505,7 @@ export const useEventLoop = (
       return;
     }
     // only use websockets if state is present
-    if (Object.keys(state).length > 0) {
+    if (Object.keys(initialState).length > 0) {
       // Initialize the websocket connection.
       if (!socket.current) {
         connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
@@ -521,14 +521,14 @@ export const useEventLoop = (
 
   // Route after the initial page hydration.
   useEffect(() => {
-    const change_complete = () => Event(initial_events.map((e) => ({...e})))
+    const change_complete = () => addEvents(initialEvents())
     router.events.on('routeChangeComplete', change_complete)
     return () => {
       router.events.off('routeChangeComplete', change_complete)
     }
   }, [router])
 
-  return [Event, connectError]
+  return [addEvents, connectError]
 }
 
 /***

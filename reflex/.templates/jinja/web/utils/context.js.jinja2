@@ -1,4 +1,4 @@
-import { createContext, useState } from "react"
+import { createContext, useContext, useReducer, useState } from "react"
 import { applyDelta, Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
 
 {% if initial_state %}
@@ -27,21 +27,21 @@ export const initialEvents = () => []
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
 
-function EventLoopProvider({ children }) {
+export function EventLoopProvider({ children }) {
   const dispatch = useContext(DispatchContext)
-  const [Event, connectError] = useEventLoop(
+  const [addEvents, connectError] = useEventLoop(
     dispatch,
     initialEvents,
     clientStorage,
   )
   return (
-    <EventLoopContext.Provider value={[Event, connectError]}>
+    <EventLoopContext.Provider value={[addEvents, connectError]}>
       {children}
     </EventLoopContext.Provider>
   )
 }
 
-function StateProvider({ children }) {
+export function StateProvider({ children }) {
   const [state, dispatch] = useReducer(applyDelta, initialState)
 
   return (

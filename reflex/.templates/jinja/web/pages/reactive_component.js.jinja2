@@ -1,12 +1,12 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
 
 function {{tag_name}} () {
-  const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
+  const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
   {% if state_name %}
   const {{state_name}} = useContext(StateContext);
   {% endif %}
   {% if events %}
-  const [Event, connectError] = useContext(EventLoopContext);
+  const [addEvents, connectError] = useContext(EventLoopContext);
   {% endif %}
   return {{utils.render(component.render())}}
 }
