@@ -1206,7 +1206,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         assert isinstance(HandlerState.handler, EventHandler)
 
     s = HandlerState()
-    assert "cached_x_side_effect" in s.computed_var_dependencies["x"]
+    assert "cached_x_side_effect" in s._computed_var_dependencies["x"]
     assert s.cached_x_side_effect == 1
     assert s.x == 43
     s.handler()
@@ -1274,11 +1274,11 @@ def test_computed_var_dependencies():
             return [z in self._z for z in range(5)]
 
     cs = ComputedState()
-    assert cs.computed_var_dependencies["v"] == {"comp_v"}
-    assert cs.computed_var_dependencies["w"] == {"comp_w"}
-    assert cs.computed_var_dependencies["x"] == {"comp_x"}
-    assert cs.computed_var_dependencies["y"] == {"comp_y"}
-    assert cs.computed_var_dependencies["_z"] == {"comp_z"}
+    assert cs._computed_var_dependencies["v"] == {"comp_v"}
+    assert cs._computed_var_dependencies["w"] == {"comp_w"}
+    assert cs._computed_var_dependencies["x"] == {"comp_x"}
+    assert cs._computed_var_dependencies["y"] == {"comp_y"}
+    assert cs._computed_var_dependencies["_z"] == {"comp_z"}
 
 
 def test_backend_method():

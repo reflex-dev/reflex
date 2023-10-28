@@ -141,6 +141,13 @@ class RouterData(Base):
         self.page = PageData(router_data)
 
 
+RESERVED_BACKEND_VAR_NAMES = {
+    "_backend_vars",
+    "_computed_var_dependencies",
+    "_substate_var_dependencies",
+}
+
+
 class State(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
@@ -165,6 +172,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # The event handlers.
     event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
+    # Mapping of var name to set of computed variables that depend on it
+    _computed_var_dependencies: Dict[str, Set[str]] = {}
+
+    # Mapping of var name to set of substates that depend on it
+    _substate_var_dependencies: Dict[str, Set[str]] = {}
+
     # The parent state.
     parent_state: Optional[State] = None
 
@@ -179,12 +192,6 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     # The routing path that triggered the state
     router_data: Dict[str, Any] = {}
-
-    # Mapping of var name to set of computed variables that depend on it
-    computed_var_dependencies: Dict[str, Set[str]] = {}
-
-    # Mapping of var name to set of substates that depend on it
-    substate_var_dependencies: Dict[str, Set[str]] = {}
 
     # Per-instance copy of backend variable values
     _backend_vars: Dict[str, Any] = {}
@@ -207,8 +214,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         super().__init__(*args, **kwargs)
 
         # initialize per-instance var dependency tracking
-        self.computed_var_dependencies = defaultdict(set)
-        self.substate_var_dependencies = defaultdict(set)
+        self._computed_var_dependencies = defaultdict(set)
+        self._substate_var_dependencies = defaultdict(set)
 
         # Setup the substates.
         for substate in self.get_substates():
@@ -229,13 +236,13 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
             for var in cvar._deps(objclass=type(self)):
-                self.computed_var_dependencies[var].add(cvar_name)
+                self._computed_var_dependencies[var].add(cvar_name)
                 if var in inherited_vars:
                     # track that this substate depends on its parent for this var
                     state_name = self.get_name()
                     parent_state = self.parent_state
                     while parent_state is not None and var in parent_state.vars:
-                        parent_state.substate_var_dependencies[var].add(state_name)
+                        parent_state._substate_var_dependencies[var].add(state_name)
                         state_name, parent_state = (
                             parent_state.get_name(),
                             parent_state.parent_state,
@@ -372,16 +379,17 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The vars to skip when serializing.
         """
-        return set(cls.inherited_vars) | {
-            "parent_state",
-            "substates",
-            "dirty_vars",
-            "dirty_substates",
-            "router_data",
-            "computed_var_dependencies",
-            "substate_var_dependencies",
-            "_backend_vars",
-        }
+        return (
+            set(cls.inherited_vars)
+            | {
+                "parent_state",
+                "substates",
+                "dirty_vars",
+                "dirty_substates",
+                "router_data",
+            }
+            | RESERVED_BACKEND_VAR_NAMES
+        )
 
     @classmethod
     @functools.lru_cache()
@@ -799,7 +807,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if types.is_backend_variable(name) and name != "_backend_vars":
+        if types.is_backend_variable(name) and name not in RESERVED_BACKEND_VAR_NAMES:
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -809,7 +817,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         super().__setattr__(name, value)
 
         # Add the var to the dirty list.
-        if name in self.vars or name in self.computed_var_dependencies:
+        if name in self.vars or name in self._computed_var_dependencies:
             self.dirty_vars.add(name)
             self._mark_dirty()
 
@@ -1087,7 +1095,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         return set(
             cvar
             for dirty_var in from_vars or self.dirty_vars
-            for cvar in self.computed_var_dependencies[dirty_var]
+            for cvar in self._computed_var_dependencies[dirty_var]
         )
 
     def get_delta(self) -> Delta:
@@ -1146,7 +1154,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Propagate dirty var / computed var status into substates
         substates = self.substates
         for var in self.dirty_vars:
-            for substate_name in self.substate_var_dependencies[var]:
+            for substate_name in self._substate_var_dependencies[var]:
                 self.dirty_substates.add(substate_name)
                 substate = substates[substate_name]
                 substate.dirty_vars.add(var)
