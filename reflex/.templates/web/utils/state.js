@@ -201,7 +201,11 @@ export const applyEvent = async (event, socket) => {
     try {
       const eval_result = eval(event.payload.javascript_code);
       if (event.payload.callback) {
-        eval(event.payload.callback)(eval_result)
+        if (!!eval_result && typeof eval_result.then === 'function') {
+          eval(event.payload.callback)(await eval_result)
+        } else {
+          eval(event.payload.callback)(eval_result)
+        }
       }
     } catch (e) {
       console.log("_call_script", e);
