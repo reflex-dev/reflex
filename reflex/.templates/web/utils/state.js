@@ -238,7 +238,15 @@ export const applyEvent = async (event, socket) => {
 export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(event.name, event.payload.files, event.payload.upload_id, event.payload.on_upload_progress, socket);
+    // Start upload, but do not wait for it, which would block other events.
+    uploadFiles(
+      event.name,
+      event.payload.files,
+      event.payload.upload_id,
+      event.payload.on_upload_progress,
+      socket
+    );
+    return false;
   }
   return eventSent;
 };
@@ -347,7 +355,7 @@ export const connect = async (
  * @param on_upload_progress The function to call on upload progress.
  * @param socket the websocket connection
  *
- * @returns Whether the files were uploaded.
+ * @returns The response from posting to the UPLOADURL endpoint.
  */
 export const uploadFiles = async (handler, files, upload_id, on_upload_progress, socket) => {
   // return if there's no file to upload
@@ -359,12 +367,28 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress,
     console.log("Upload already in progress for ", upload_id)
     return false;
   }
+
+  let resp_idx = 0;
+  const eventHandler = (progressEvent) => {
+    // handle any delta / event streamed from the upload event handler
+    const chunks = progressEvent.event.target.responseText.trim().split("\n")
+    chunks.slice(resp_idx).map((chunk) => {
+      try {
+        socket._callbacks.$event.map((f) => {
+          f(chunk)
+        })
+        resp_idx += 1
+      } catch (e) {
+        console.log("Error parsing chunk", chunk, e)
+        return
+      }
+    })
+  }
+
   const controller = new AbortController()
   const config = {
-    headers: {
-      "Content-Type": files[0].type,
-    },
-    signal: controller.signal
+    signal: controller.signal,
+    onDownloadProgress: eventHandler,
   }
   if (on_upload_progress) {
     config["onUploadProgress"] = on_upload_progress
@@ -372,52 +396,37 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress,
   const formdata = new FormData();
 
   // Add the token and handler to the file name.
-  for (let i = 0; i < files.length; i++) {
+  files.forEach((file) => {
     formdata.append(
       "files",
-      files[i],
-      getToken() + ":" + handler + ":" + (files[i].path || files[i].name)
+      file,
+      getToken() + ":" + handler + ":" + (file.path || file.name)
     );
-  }
-
-  // Allow other events to be processed during upload.
-  event_processing = false;
+  })
 
   // Send the file to the server.
   upload_controllers[upload_id] = controller
 
-  await axios.post(UPLOADURL, formdata, config)
-    .then((resp) => {
-      const updates = JSON5.parse(resp.data)
-      // handle any delta / event returned by the upload event handler
-      updates.map((update) => {
-        socket._callbacks.$event.map((f) => {
-          f(update)
-        })
-      })
-      return true;
-    })
-    .catch(
-      error => {
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          console.log(error.response.data);
-        } else if (error.request) {
-          // The request was made but no response was received
-          // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-          // http.ClientRequest in node.js
-          console.log(error.request);
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.log(error.message);
-        }
-        return false;
-      }
-    )
-    .finally(() => {
-      delete upload_controllers[upload_id]
-    })
+  try {
+    return await axios.post(UPLOADURL, formdata, config)
+  } catch (error) {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.log(error.response.data);
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      console.log(error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log(error.message);
+    }
+    return false;
+  } finally {
+    delete upload_controllers[upload_id]
+  }
 };
 
 /**

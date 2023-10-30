@@ -22,6 +22,7 @@ from typing import (
 
 from fastapi import FastAPI, UploadFile
 from fastapi.middleware import cors
+from fastapi.responses import StreamingResponse
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
@@ -933,12 +934,26 @@ def upload(app: App):
                 name=handler,
                 payload={handler_upload_param[0]: files},
             )
-            updates = []
-            async for update in state._process(event):
-                # Postprocess the event.
-                updates.append(await app.postprocess(state, event, update))
-            # Send updates to client
-            return format.json_dumps(updates)
+
+            async def _ndjson_updates():
+                """Process the upload event, generating ndjson updates.
+
+                Yields:
+                    Each state update as JSON followed by a new line.
+                """
+                # Process the event.
+                async for update in state._process(event):
+                    # Postprocess the event.
+                    update = await app.postprocess(state, event, update)
+                    # Do not block websocket processing for upload events
+                    update.final = True
+                    yield update.json() + "\n"
+
+            # Stream updates to client
+            return StreamingResponse(
+                _ndjson_updates(),
+                media_type="application/x-ndjson",
+            )
 
     return upload_file
 
