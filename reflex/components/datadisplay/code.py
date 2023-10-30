@@ -60,20 +60,30 @@ class CodeBlock(Component):
                     )
                 }
             },
-            {
-                f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}": {
-                    ImportVar(
-                        tag=format.to_camel_case(self.language._var_name),
-                        is_default=True,
-                        install=False,
-                    )
-                }
-            },
         )
+        if (
+            self.language is not None
+            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+        ):
+            merged_imports = imports.merge_imports(
+                {
+                    f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}": {
+                        ImportVar(
+                            tag=format.to_camel_case(self.language._var_name),
+                            is_default=True,
+                            install=False,
+                        )
+                    }
+                },
+            )
         return merged_imports
 
-    def _get_custom_code(self) -> str:
-        return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
+    def _get_custom_code(self) -> Optional[str]:
+        if (
+            self.language is not None
+            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+        ):
+            return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
 
     @classmethod
     def create(

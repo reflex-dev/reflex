@@ -918,9 +918,7 @@ class CustomComponent(Component):
         """
         return [
             BaseVar(
-                _var_name=prop._var_name
-                if self.tag == "CodeBlock" and name == "language"
-                else name,  # for code block we want to preserve the language value
+                _var_name=name,
                 _var_type=prop._var_type
                 if types._isinstance(prop, Var)
                 else type(prop),
