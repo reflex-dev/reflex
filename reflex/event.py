@@ -260,8 +260,8 @@ class FileUpload(Base):
                 (
                     Var.create_safe("on_upload_progress"),
                     BaseVar(
-                        name=format.format_prop(on_upload_progress_chain).strip("{}"),
-                        type_=EventChain,
+                        _var_name=format.format_prop(on_upload_progress_chain).strip("{}"),
+                        _var_type=EventChain,
                     ),
                 ),
             )
