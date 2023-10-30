@@ -231,14 +231,14 @@ export const applyEvent = async (event, socket) => {
 /**
  * Send an event to the server via REST.
  * @param event The current event.
- * @param state The state with the event queue.
+ * @param socket The socket object to send the response event(s) on.
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event) => {
+export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(event.name, event.payload.files, event.payload.upload_id, event.payload.on_upload_progress);
+    eventSent = await uploadFiles(event.name, event.payload.files, event.payload.upload_id, event.payload.on_upload_progress, socket);
   }
   return eventSent;
 };
@@ -279,7 +279,7 @@ export const processEvent = async (
   let eventSent = false
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event);
+    eventSent = await applyRestEvent(event, socket);
   } else {
     eventSent = await applyEvent(event, socket);
   }
@@ -343,11 +343,13 @@ export const connect = async (
  *
  * @param state The state to apply the delta to.
  * @param handler The handler to use.
+ * @param upload_id The upload id to use.
  * @param on_upload_progress The function to call on upload progress.
+ * @param socket the websocket connection
  *
  * @returns Whether the files were uploaded.
  */
-export const uploadFiles = async (handler, files, upload_id, on_upload_progress) => {
+export const uploadFiles = async (handler, files, upload_id, on_upload_progress, socket) => {
   // return if there's no file to upload
   if (files.length == 0) {
     return false;
@@ -385,7 +387,16 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress)
   upload_controllers[upload_id] = controller
 
   await axios.post(UPLOADURL, formdata, config)
-    .then(() => { return true; })
+    .then((resp) => {
+      const updates = JSON5.parse(resp.data)
+      // handle any delta / event returned by the upload event handler
+      updates.map((update) => {
+        socket._callbacks.$event.map((f) => {
+          f(update)
+        })
+      })
+      return true;
+    })
     .catch(
       error => {
         if (error.response) {

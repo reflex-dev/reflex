@@ -931,14 +931,12 @@ def upload(app: App):
                 name=handler,
                 payload={handler_upload_param[0]: files},
             )
+            updates = []
             async for update in state._process(event):
                 # Postprocess the event.
-                update = await app.postprocess(state, event, update)
-                # Send update to client
-                await app.event_namespace.emit_update(  # type: ignore
-                    update=update,
-                    sid=sid,
-                )
+                updates.append(await app.postprocess(state, event, update))
+            # Send updates to client
+            return format.json_dumps(updates)
 
     return upload_file
 
