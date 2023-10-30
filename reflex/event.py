@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -148,7 +149,7 @@ class EventHandler(Base):
 
             # Otherwise, convert to JSON.
             try:
-                values.append(Var.create(arg, is_string=type(arg) is str))
+                values.append(Var.create(arg, _var_is_string=type(arg) is str))
             except TypeError as e:
                 raise TypeError(
                     f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
@@ -205,10 +206,6 @@ class FrontendEvent(Base):
     value: Any = None
 
 
-# The default event argument.
-EVENT_ARG = BaseVar(name="_e", type_=FrontendEvent, is_local=True)
-
-
 class FileUpload(Base):
     """Class to represent a file upload."""
 
@@ -238,7 +235,7 @@ class FileUpload(Base):
             (Var.create_safe("files"), Var.create_safe(f"upload_files.{upload_id}[0]")),
             (
                 Var.create_safe("upload_id"),
-                Var.create_safe(upload_id, is_string=True),
+                Var.create_safe(upload_id, _var_is_string=True),
             ),
         ]
         if self.on_upload_progress is not None:
@@ -294,22 +291,25 @@ def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     return EventSpec(
         handler=EventHandler(fn=fn),
         args=tuple(
-            (Var.create_safe(k), Var.create_safe(v, is_string=type(v) is str))
+            (Var.create_safe(k), Var.create_safe(v, _var_is_string=type(v) is str))
             for k, v in kwargs.items()
         ),
     )
 
 
-def redirect(path: str | Var[str]) -> EventSpec:
+def redirect(path: str | Var[str], external: Optional[bool] = False) -> EventSpec:
     """Redirect to a new path.
 
     Args:
         path: The path to redirect to.
+        external: Whether to open in new tab or not.
 
     Returns:
         An event to redirect to the path.
     """
-    return server_side("_redirect", get_fn_signature(redirect), path=path)
+    return server_side(
+        "_redirect", get_fn_signature(redirect), path=path, external=external
+    )
 
 
 def console_log(message: str | Var[str]) -> EventSpec:
@@ -370,25 +370,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     )
 
 
-def set_cookie(key: str, value: str) -> EventSpec:
-    """Set a cookie on the frontend.
-
-    Args:
-        key: The key identifying the cookie.
-        value: The value contained in the cookie.
-
-    Returns:
-        EventSpec: An event to set a cookie.
-    """
-    return server_side(
-        "_set_cookie",
-        get_fn_signature(set_cookie),
-        key=key,
-        value=value,
-    )
-
-
-def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa: B006
+def remove_cookie(key: str, options: dict[str, Any] | None = None) -> EventSpec:
     """Remove a cookie on the frontend.
 
     Args:
@@ -398,29 +380,13 @@ def remove_cookie(key: str, options: dict[str, Any] = {}) -> EventSpec:  # noqa:
     Returns:
         EventSpec: An event to remove a cookie.
     """
+    options = options or {}
+    options["path"] = options.get("path", "/")
     return server_side(
         "_remove_cookie",
         get_fn_signature(remove_cookie),
         key=key,
         options=options,
-    )
-
-
-def set_local_storage(key: str, value: str) -> EventSpec:
-    """Set a value in the local storage on the frontend.
-
-    Args:
-        key: The key identifying the variable in the local storage.
-        value: The value contained in the local storage.
-
-    Returns:
-        EventSpec: An event to set a key-value in local storage.
-    """
-    return server_side(
-        "_set_local_storage",
-        get_fn_signature(set_local_storage),
-        key=key,
-        value=value,
     )
 
 
@@ -447,7 +413,7 @@ def remove_local_storage(key: str) -> EventSpec:
     """
     return server_side(
         "_remove_local_storage",
-        get_fn_signature(clear_local_storage),
+        get_fn_signature(remove_local_storage),
         key=key,
     )
 
@@ -496,19 +462,51 @@ def download(url: str, filename: Optional[str] = None) -> EventSpec:
     )
 
 
-def call_script(javascript_code: str) -> EventSpec:
+def _callback_arg_spec(eval_result):
+    """ArgSpec for call_script callback function.
+
+    Args:
+        eval_result: The result of the javascript execution.
+
+    Returns:
+        Args for the callback function
+    """
+    return [eval_result]
+
+
+def call_script(
+    javascript_code: str,
+    callback: EventHandler | Callable | None = None,
+) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
     Args:
         javascript_code: The code to execute.
+        callback: EventHandler that will receive the result of evaluating the javascript code.
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
+
+    Raises:
+        ValueError: If the callback is not a valid event handler.
     """
+    callback_kwargs = {}
+    if callback is not None:
+        arg_name = parse_args_spec(_callback_arg_spec)[0]._var_name
+        if isinstance(callback, EventHandler):
+            event_spec = call_event_handler(callback, _callback_arg_spec)
+        elif isinstance(callback, FunctionType):
+            event_spec = call_event_fn(callback, _callback_arg_spec)[0]
+        else:
+            raise ValueError("Cannot use {callback!r} as a call_script callback.")
+        callback_kwargs = {
+            "callback": f"({arg_name}) => queueEvents([{format.format_event(event_spec)}], {constants.CompileVars.SOCKET})"
+        }
     return server_side(
         "_call_script",
         get_fn_signature(call_script),
         javascript_code=javascript_code,
+        **callback_kwargs,
     )
 
 
@@ -567,15 +565,15 @@ def call_event_handler(
         else:
             source = inspect.getsource(arg_spec)  # type: ignore
             raise ValueError(
-                f"number of arguments in {event_handler.fn.__name__} "
-                f"doesn't match the definition '{source.strip().strip(',')}'"
+                f"number of arguments in {event_handler.fn.__qualname__} "
+                f"doesn't match the definition of the event trigger '{source.strip().strip(',')}'"
             )
     else:
         console.deprecate(
             feature_name="EVENT_ARG API for triggers",
             reason="Replaced by new API using lambda allow arbitrary number of args",
             deprecation_version="0.2.8",
-            removal_version="0.2.9",
+            removal_version="0.3.0",
         )
         if len(args) == 1:
             return event_handler()
@@ -598,9 +596,9 @@ def parse_args_spec(arg_spec: ArgsSpec):
     return arg_spec(
         *[
             BaseVar(
-                name=f"_{l_arg}",
-                type_=spec.annotations.get(l_arg, FrontendEvent),
-                is_local=True,
+                _var_name=f"_{l_arg}",
+                _var_type=spec.annotations.get(l_arg, FrontendEvent),
+                _var_is_local=True,
             )
             for l_arg in spec.args
         ]
@@ -713,7 +711,7 @@ def fix_events(
             e = e()
         assert isinstance(e, EventSpec), f"Unexpected event type, {type(e)}."
         name = format.format_event_handler(e.handler)
-        payload = {k.name: v._decode() for k, v in e.args}  # type: ignore
+        payload = {k._var_name: v._decode() for k, v in e.args}  # type: ignore
 
         # Create an event and append it to the list.
         out.append(

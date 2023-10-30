@@ -41,11 +41,104 @@ from reflex.event import (
     fix_events,
     window_alert,
 )
-from reflex.utils import format, prerequisites, types
+from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.vars import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
+
+
+class HeaderData(Base):
+    """An object containing headers data."""
+
+    host: str = ""
+    origin: str = ""
+    upgrade: str = ""
+    connection: str = ""
+    pragma: str = ""
+    cache_control: str = ""
+    user_agent: str = ""
+    sec_websocket_version: str = ""
+    sec_websocket_key: str = ""
+    sec_websocket_extensions: str = ""
+    accept_encoding: str = ""
+    accept_language: str = ""
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initalize the HeaderData object based on router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        if router_data:
+            for k, v in router_data.get(constants.RouteVar.HEADERS, {}).items():
+                setattr(self, format.to_snake_case(k), v)
+
+
+class PageData(Base):
+    """An object containing page data."""
+
+    host: str = ""  #  repeated with self.headers.origin (remove or keep the duplicate?)
+    path: str = ""
+    raw_path: str = ""
+    full_path: str = ""
+    full_raw_path: str = ""
+    params: dict = {}
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initalize the PageData object based on router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        if router_data:
+            self.host = router_data.get(constants.RouteVar.HEADERS, {}).get("origin")
+            self.path = router_data.get(constants.RouteVar.PATH, "")
+            self.raw_path = router_data.get(constants.RouteVar.ORIGIN, "")
+            self.full_path = f"{self.host}{self.path}"
+            self.full_raw_path = f"{self.host}{self.raw_path}"
+            self.params = router_data.get(constants.RouteVar.QUERY, {})
+
+
+class SessionData(Base):
+    """An object containing session data."""
+
+    client_token: str = ""
+    client_ip: str = ""
+    session_id: str = ""
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initalize the SessionData object based on router_data.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        if router_data:
+            self.client_token = router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
+            self.client_ip = router_data.get(constants.RouteVar.CLIENT_IP, "")
+            self.session_id = router_data.get(constants.RouteVar.SESSION_ID, "")
+
+
+class RouterData(Base):
+    """An object containing RouterData."""
+
+    session: SessionData = SessionData()
+    headers: HeaderData = HeaderData()
+    page: PageData = PageData()
+
+    def __init__(self, router_data: Optional[dict] = None):
+        """Initialize the RouterData object.
+
+        Args:
+            router_data: the router_data dict.
+        """
+        super().__init__()
+        self.session = SessionData(router_data)
+        self.headers = HeaderData(router_data)
+        self.page = PageData(router_data)
 
 
 class State(Base, ABC, extra=pydantic.Extra.allow):
@@ -96,6 +189,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # Per-instance copy of backend variable values
     _backend_vars: Dict[str, Any] = {}
 
+    # The router data for the current page
+    router: RouterData = RouterData()
+
     def __init__(self, *args, parent_state: State | None = None, **kwargs):
         """Initialize the state.
 
@@ -132,7 +228,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
         for cvar_name, cvar in self.computed_vars.items():
             # Add the dependencies.
-            for var in cvar.deps(objclass=type(self)):
+            for var in cvar._deps(objclass=type(self)):
                 self.computed_var_dependencies[var].add(cvar_name)
                 if var in inherited_vars:
                     # track that this substate depends on its parent for this var
@@ -211,12 +307,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(name=f.name, type_=f.outer_type_).set_state(cls)
+            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
+                cls
+            )
             for f in cls.get_fields().values()
             if f.name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
-            v.name: v.set_state(cls)
+            v._var_name: v._var_set_state(cls)
             for v in cls.__dict__.values()
             if isinstance(v, ComputedVar)
         }
@@ -389,12 +487,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Raises:
             TypeError: if the variable has an incorrect type
         """
-        if not types.is_valid_var_type(prop.type_):
+        if not types.is_valid_var_type(prop._var_type):
             raise TypeError(
                 "State vars must be primitive Python types, "
                 "Plotly figures, Pandas dataframes, "
                 "or subclasses of rx.Base. "
-                f'Found var "{prop.name}" with type {prop.type_}.'
+                f'Found var "{prop._var_name}" with type {prop._var_type}.'
             )
         cls._set_var(prop)
         cls._create_setter(prop)
@@ -421,8 +519,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             )
 
         # create the variable based on name and type
-        var = BaseVar(name=name, type_=type_)
-        var.set_state(cls)
+        var = BaseVar(_var_name=name, _var_type=type_)
+        var._var_set_state(cls)
 
         # add the pydantic field dynamically (must be done before _init_var)
         cls.add_field(var, default_value)
@@ -444,7 +542,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             prop: The var instance to set.
         """
-        setattr(cls, prop.name, prop)
+        setattr(cls, prop._var_name, prop)
 
     @classmethod
     def _create_setter(cls, prop: BaseVar):
@@ -467,11 +565,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             prop: The var to set the default value for.
         """
         # Get the pydantic field for the var.
-        field = cls.get_fields()[prop.name]
-        default_value = prop.get_default_value()
-        if field.required and default_value is not None:
-            field.required = False
-            field.default = default_value
+        field = cls.get_fields()[prop._var_name]
+        if field.required:
+            default_value = prop.get_default_value()
+            if default_value is not None:
+                field.required = False
+                field.default = default_value
+        if (
+            not field.required
+            and field.default is None
+            and not types.is_optional(prop._var_type)
+        ):
+            # Ensure frontend uses null coalescing when accessing.
+            prop._var_type = Optional[prop._var_type]
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
@@ -492,6 +598,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The token of the client.
         """
+        console.deprecate(
+            feature_name="get_token",
+            reason="replaced by `State.router.session.client_token`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.CLIENT_TOKEN, "")
 
     def get_sid(self) -> str:
@@ -500,6 +612,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The session ID of the client.
         """
+        console.deprecate(
+            feature_name="get_sid",
+            reason="replaced by `State.router.session.session_id`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.SESSION_ID, "")
 
     def get_headers(self) -> Dict:
@@ -508,6 +626,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The headers of the client.
         """
+        console.deprecate(
+            feature_name="get_headers",
+            reason="replaced by `State.router.headers`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.HEADERS, {})
 
     def get_client_ip(self) -> str:
@@ -516,6 +640,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The IP of the client.
         """
+        console.deprecate(
+            feature_name="get_client_ip",
+            reason="replaced by `State.router.session.client_ip`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.CLIENT_IP, "")
 
     def get_current_page(self, origin=False) -> str:
@@ -527,10 +657,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The current page.
         """
-        if origin:
-            return self.router_data.get(constants.RouteVar.ORIGIN, "")
-        else:
-            return self.router_data.get(constants.RouteVar.PATH, "")
+        console.deprecate(
+            feature_name="get_current_page",
+            reason="replaced by State.router.page / self.router.page",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
+
+        return self.router.page.raw_path if origin else self.router.page.path
 
     def get_query_params(self) -> dict[str, str]:
         """Obtain the query parameters for the queried page.
@@ -540,6 +674,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The dict of query parameters.
         """
+        console.deprecate(
+            feature_name="get_query_params",
+            reason="replaced by `State.router.page.params`",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         return self.router_data.get(constants.RouteVar.QUERY, {})
 
     def get_cookies(self) -> dict[str, str]:
@@ -548,6 +688,12 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
                 The dict of cookies.
         """
+        console.deprecate(
+            feature_name=f"rx.get_cookies",
+            reason="and has been replaced by rx.Cookie, which can be used as a state var",
+            deprecation_version="0.3.0",
+            removal_version="0.3.1",
+        )
         cookie_dict = {}
         cookies = self.get_headers().get(constants.RouteVar.COOKIE, "").split(";")
 
@@ -575,14 +721,14 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         def argsingle_factory(param):
             @ComputedVar
             def inner_func(self) -> str:
-                return self.get_query_params().get(param, "")
+                return self.router.page.params.get(param, "")
 
             return inner_func
 
         def arglist_factory(param):
             @ComputedVar
             def inner_func(self) -> List:
-                return self.get_query_params().get(param, [])
+                return self.router.page.params.get(param, [])
 
             return inner_func
 
@@ -593,8 +739,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
                 func = arglist_factory(param)
             else:
                 continue
-            func.fget.__name__ = param  # to allow passing as a prop # type: ignore
-            cls.vars[param] = cls.computed_vars[param] = func.set_state(cls)  # type: ignore
+            # to allow passing as a prop
+            func._var_name = param
+            cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
 
     def __getattribute__(self, name: str) -> Any:
@@ -679,6 +826,8 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Reset the base vars.
         fields = self.get_fields()
         for prop_name in self.base_vars:
+            if prop_name == constants.ROUTER:
+                continue  # never reset the router data
             setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
 
         # Recursively reset the substates.
@@ -822,14 +971,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The valid StateUpdate containing the events and final flag.
         """
-        token = self.get_token()
+        # get the delta from the root of the state tree
+        state = self
+        while state.parent_state is not None:
+            state = state.parent_state
+
+        token = self.router.session.client_token
 
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
 
         # Get the delta after processing the event.
-        delta = self.get_delta()
-        self._clean()
+        delta = state.get_delta()
+        state._clean()
 
         return StateUpdate(
             delta=delta,
@@ -868,30 +1022,30 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
-                    yield self._as_state_update(handler, event, final=False)
-                yield self._as_state_update(handler, events=None, final=True)
+                    yield state._as_state_update(handler, event, final=False)
+                yield state._as_state_update(handler, events=None, final=True)
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
                 try:
                     while True:
-                        yield self._as_state_update(handler, next(events), final=False)
+                        yield state._as_state_update(handler, next(events), final=False)
                 except StopIteration as si:
                     # the "return" value of the generator is not available
                     # in the loop, we must catch StopIteration to access it
                     if si.value is not None:
-                        yield self._as_state_update(handler, si.value, final=False)
-                yield self._as_state_update(handler, events=None, final=True)
+                        yield state._as_state_update(handler, si.value, final=False)
+                yield state._as_state_update(handler, events=None, final=True)
 
             # Handle regular event chains.
             else:
-                yield self._as_state_update(handler, events, final=True)
+                yield state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
         except Exception:
             error = traceback.format_exc()
             print(error)
-            yield self._as_state_update(
+            yield state._as_state_update(
                 handler,
                 window_alert("An error occurred. See logs for details."),
                 final=True,
@@ -906,7 +1060,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         return set(
             cvar_name
             for cvar_name, cvar in self.computed_vars.items()
-            if not cvar.cache
+            if not cvar._cache
         )
 
     def _mark_dirty_computed_vars(self) -> None:
@@ -1007,6 +1161,21 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         # Clean this state.
         self.dirty_vars = set()
         self.dirty_substates = set()
+
+    def get_value(self, key: str) -> Any:
+        """Get the value of a field (without proxying).
+
+        The returned value will NOT track dirty state updates.
+
+        Args:
+            key: The key of the field.
+
+        Returns:
+            The value of the field.
+        """
+        if isinstance(key, MutableProxy):
+            return super().get_value(key.__wrapped__)
+        return super().get_value(key)
 
     def dict(self, include_computed: bool = True, **kwargs) -> dict[str, Any]:
         """Convert the object to a dictionary.
@@ -1119,7 +1288,9 @@ class StateProxy(wrapt.ObjectProxy):
         Returns:
             This StateProxy instance in mutable mode.
         """
-        self._self_actx = self._self_app.modify_state(self.__wrapped__.get_token())
+        self._self_actx = self._self_app.modify_state(
+            self.__wrapped__.router.session.client_token
+        )
         mutable_state = await self._self_actx.__aenter__()
         super().__setattr__(
             "__wrapped__", mutable_state.get_substate(self._self_substate_path)
@@ -1202,18 +1373,19 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not name.startswith("_self_") and not self._self_mutable:
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        super().__setattr__(name, value)
+        if (
+            name.startswith("_self_")  # wrapper attribute
+            or self._self_mutable  # lock held
+            # non-persisted state attribute
+            or name in self.__wrapped__.get_skip_vars()
+        ):
+            super().__setattr__(name, value)
+            return
 
-
-class DefaultState(State):
-    """The default empty state."""
-
-    pass
+        raise ImmutableStateError(
+            "Background task StateProxy is immutable outside of a context "
+            "manager. Use `async with self` to modify state."
+        )
 
 
 class StateUpdate(Base):
@@ -1236,7 +1408,7 @@ class StateManager(Base, ABC):
     state: Type[State]
 
     @classmethod
-    def create(cls, state: Type[State] = DefaultState):
+    def create(cls, state: Type[State]):
         """Create a new state manager.
 
         Args:
@@ -1853,7 +2025,13 @@ class ImmutableMutableProxy(MutableProxy):
     to modify the wrapped object when the StateProxy is immutable.
     """
 
-    def _mark_dirty(self, wrapped=None, instance=None, args=tuple(), kwargs=None):
+    def _mark_dirty(
+        self,
+        wrapped=None,
+        instance=None,
+        args=tuple(),
+        kwargs=None,
+    ) -> Any:
         """Raise an exception when an attempt is made to modify the object.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
@@ -1864,6 +2042,9 @@ class ImmutableMutableProxy(MutableProxy):
             args: The args for the wrapped function.
             kwargs: The kwargs for the wrapped function.
 
+        Returns:
+            The result of the wrapped function.
+
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
@@ -1872,6 +2053,6 @@ class ImmutableMutableProxy(MutableProxy):
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
-        super()._mark_dirty(
+        return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )

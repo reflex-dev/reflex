@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Union
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
 from reflex.utils.serializers import serialize
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -203,13 +203,13 @@ def format_var(var: Var) -> str:
     Returns:
         The formatted Var.
     """
-    if not var.is_local or var.is_string:
+    if not var._var_is_local or var._var_is_string:
         return str(var)
-    if types._issubclass(var.type_, str):
-        return format_string(var.full_name)
-    if is_wrapped(var.full_name, "{"):
-        return var.full_name
-    return json_dumps(var.full_name)
+    if types._issubclass(var._var_type, str):
+        return format_string(var._var_full_name)
+    if is_wrapped(var._var_full_name, "{"):
+        return var._var_full_name
+    return json_dumps(var._var_full_name)
 
 
 def format_route(route: str, format_case=True) -> str:
@@ -259,12 +259,16 @@ def format_cond(
 
     # Format prop conds.
     if is_prop:
-        prop1 = Var.create_safe(true_value, is_string=type(true_value) is str).set(
-            is_local=True
-        )  # type: ignore
-        prop2 = Var.create_safe(false_value, is_string=type(false_value) is str).set(
-            is_local=True
-        )  # type: ignore
+        prop1 = Var.create_safe(
+            true_value,
+            _var_is_string=type(true_value) is str,
+        )
+        prop1._var_is_local = True
+        prop2 = Var.create_safe(
+            false_value,
+            _var_is_string=type(false_value) is str,
+        )
+        prop2._var_is_local = True
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
     # Format component conds.
@@ -287,30 +291,27 @@ def format_prop(
         TypeError: If the prop is not valid.
     """
     # import here to avoid circular import.
-    from reflex.event import EVENT_ARG, EventChain
+    from reflex.event import EventChain
 
     try:
         # Handle var props.
         if isinstance(prop, Var):
-            if not prop.is_local or prop.is_string:
+            if not prop._var_is_local or prop._var_is_string:
                 return str(prop)
-            if types._issubclass(prop.type_, str):
-                return format_string(prop.full_name)
-            prop = prop.full_name
+            if types._issubclass(prop._var_type, str):
+                return format_string(prop._var_full_name)
+            prop = prop._var_full_name
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-            if prop.args_spec is None:
-                arg_def = f"{EVENT_ARG}"
+            sig = inspect.signature(prop.args_spec)  # type: ignore
+            if sig.parameters:
+                arg_def = ",".join(f"_{p}" for p in sig.parameters)
+                arg_def = f"({arg_def})"
             else:
-                sig = inspect.signature(prop.args_spec)
-                if sig.parameters:
-                    arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                    arg_def = f"({arg_def})"
-                else:
-                    # add a default argument for addEvents if none were specified in prop.args_spec
-                    # used to trigger the preventDefault() on the event.
-                    arg_def = "(_e)"
+                # add a default argument for addEvents if none were specified in prop.args_spec
+                # used to trigger the preventDefault() on the event.
+                arg_def = "(_e)"
 
             chain = ",".join([format_event(event) for event in prop.events])
             event = f"addEvents([{chain}], {arg_def})"
@@ -414,7 +415,12 @@ def format_event(event_spec: EventSpec) -> str:
     args = ",".join(
         [
             ":".join(
-                (name.name, json.dumps(val.name) if val.is_string else val.full_name)
+                (
+                    name._var_name,
+                    wrap(json.dumps(val._var_name).strip('"').replace("`", "\\`"), "`")
+                    if val._var_is_string
+                    else val._var_full_name,
+                )
             )
             for name, val in event_spec.args
         ]
@@ -448,7 +454,7 @@ def format_event_chain(
     if isinstance(event_chain, Var):
         from reflex.event import EventChain
 
-        if event_chain.type_ is not EventChain:
+        if event_chain._var_type is not EventChain:
             raise ValueError(f"Invalid event chain: {event_chain}")
         return "".join(
             [
@@ -540,7 +546,7 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     """
     clean_ref = re.sub(r"[^\w]+", "_", refs)
     if idx is not None:
-        idx.is_local = True
+        idx._var_is_local = True
         return f"refs_{clean_ref}[{idx}]"
     return f"refs_{clean_ref}"
 
@@ -588,7 +594,7 @@ def json_dumps(obj: Any) -> str:
     Returns:
         A string
     """
-    return json.dumps(obj, ensure_ascii=False, default=list)
+    return json.dumps(obj, ensure_ascii=False, default=serialize)
 
 
 def unwrap_vars(value: str) -> str:
@@ -619,3 +625,47 @@ def unwrap_vars(value: str) -> str:
         string=value,
         flags=re.VERBOSE,
     )
+
+
+def format_data_editor_column(col: str | dict):
+    """Format a given column into the proper format.
+
+    Args:
+        col: The column.
+
+    Raises:
+        ValueError: invalid type provided for column.
+
+    Returns:
+        The formatted column.
+    """
+    if isinstance(col, str):
+        return {"title": col, "id": col.lower(), "type": "str"}
+
+    if isinstance(col, (dict,)):
+        if "id" not in col:
+            col["id"] = col["title"].lower()
+        if "type" not in col:
+            col["type"] = "str"
+        if "overlayIcon" not in col:
+            col["overlayIcon"] = None
+        return col
+
+    if isinstance(col, BaseVar):
+        return col
+
+    raise ValueError(
+        f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
+    )
+
+
+def format_data_editor_cell(cell: Any):
+    """Format a given data into a renderable cell for data_editor.
+
+    Args:
+        cell: The data to format.
+
+    Returns:
+        The formatted cell.
+    """
+    return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}

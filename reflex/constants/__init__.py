@@ -17,6 +17,7 @@ from .base import (
     Templates,
 )
 from .compiler import (
+    NOCOMPILE_FILE,
     SETTER_PREFIX,
     CompileVars,
     ComponentName,
@@ -29,8 +30,10 @@ from .config import (
     Config,
     Expiration,
     GitIgnore,
+    RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
+from .hosting import Hosting
 from .installer import (
     Bun,
     Fnm,
@@ -39,6 +42,7 @@ from .installer import (
 )
 from .route import (
     ROUTE_NOT_FOUND,
+    ROUTER,
     ROUTER_DATA,
     DefaultPage,
     Page404,
@@ -64,11 +68,13 @@ __ALL__ = [
     Ext,
     Fnm,
     GitIgnore,
+    RequirementsTxt,
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,
     Next,
     Node,
+    NOCOMPILE_FILE,
     PackageJson,
     PageNames,
     Page404,
@@ -77,9 +83,10 @@ __ALL__ = [
     PYTEST_CURRENT_TEST,
     PRODUCTION_BACKEND_URL,
     Reflex,
-    RouteVar,
-    RouteRegex,
     RouteArgType,
+    RouteRegex,
+    RouteVar,
+    ROUTER,
     ROUTER_DATA,
     ROUTE_NOT_FOUND,
     SETTER_PREFIX,
@@ -89,4 +96,5 @@ __ALL__ = [
     Tailwind,
     Templates,
     CompileVars,
+    Hosting,
 ]

@@ -1,7 +1,7 @@
 import os
 import typing
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, List, Literal, Union
 
 import pytest
 import typer
@@ -182,10 +182,20 @@ def test_is_backend_variable(input, output):
         (int, Any, True),
         (Any, Any, True),
         (Union[int, float], Any, True),
+        (str, Union[Literal["test", "value"], int], True),
+        (int, Union[Literal["test", "value"], int], True),
+        (str, Literal["test", "value"], True),
+        (int, Literal["test", "value"], False),
     ],
 )
 def test_issubclass(cls: type, cls_check: type, expected: bool):
     assert types._issubclass(cls, cls_check) == expected
+
+
+@pytest.mark.parametrize("cls", [Literal["test", 1], Literal[1, "test"]])
+def test_unsupported_literals(cls: type):
+    with pytest.raises(TypeError):
+        types.get_base_class(cls)
 
 
 @pytest.mark.parametrize(

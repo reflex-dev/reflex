@@ -16,7 +16,7 @@ class DebounceInput(Component):
     is experiencing high latency.
     """
 
-    library = "react-debounce-input@^3.3.0"
+    library = "react-debounce-input@3.3.0"
     tag = "DebounceInput"
 
     # Minimum input characters before triggering the on_change event
@@ -58,7 +58,7 @@ class DebounceInput(Component):
             raise ValueError("DebounceInput child requires an on_change handler")
         child_ref = child.get_ref()
         if child_ref and not props.get("ref"):
-            props["input_ref"] = Var.create(child_ref, is_local=False)
+            props["input_ref"] = Var.create(child_ref, _var_is_local=False)
         self.children = []
         tag = super()._render()
         tag.add_props(
@@ -67,7 +67,11 @@ class DebounceInput(Component):
             sx=child.style,
             id=child.id,
             class_name=child.class_name,
-            element=Var.create("{%s}" % child.tag, is_local=False, is_string=False),
+            element=Var.create(
+                "{%s}" % (child.alias or child.tag),
+                _var_is_local=False,
+                _var_is_string=False,
+            ),
         )
         # do NOT render the child, DebounceInput will create it
         object.__setattr__(child, "render", lambda: "")

@@ -8,9 +8,11 @@
 
 {% block export %}
 export default function Component() {
+{% if state_name %}
   const {{state_name}} = useContext(StateContext)
+{% endif %}
   const {{const.router}} = useRouter()
-  const { {{const.color_mode}}, {{const.toggle_color_mode}} } = {{const.use_color_mode}}()
+  const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
   const focusRef = useRef();
   
   // Main event loop.
@@ -25,7 +27,7 @@ export default function Component() {
 
   // Route after the initial page hydration.
   useEffect(() => {
-    const change_complete = () => addEvents(initialEvents.map((e) => ({...e})))
+    const change_complete = () => addEvents(initialEvents())
     {{const.router}}.events.on('routeChangeComplete', change_complete)
     return () => {
       {{const.router}}.events.off('routeChangeComplete', change_complete)

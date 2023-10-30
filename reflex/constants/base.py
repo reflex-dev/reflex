@@ -5,16 +5,10 @@ from __future__ import annotations
 import os
 import platform
 from enum import Enum
+from importlib import metadata
 from types import SimpleNamespace
 
 from platformdirs import PlatformDirs
-
-# importlib is only available for Python 3.8+ so we need the backport for Python 3.7
-try:
-    from importlib import metadata
-except ImportError:
-    import importlib_metadata as metadata  # pyright: ignore[reportMissingImports]
-
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -45,6 +39,8 @@ class Dirs(SimpleNamespace):
     WEB_ASSETS = os.path.join(WEB, "public")
     # The env json file.
     ENV_JSON = os.path.join(WEB, "env.json")
+    # The reflex json file.
+    REFLEX_JSON = os.path.join(WEB, "reflex.json")
 
 
 class Reflex(SimpleNamespace):
@@ -77,11 +73,12 @@ class Reflex(SimpleNamespace):
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
-    class Kind(str, Enum):
-        """The templates to use for the app."""
+    # Dynamically get the enum values from the .templates folder
+    template_dir = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates/apps")
+    template_dirs = next(os.walk(template_dir))[1]
 
-        DEFAULT = "default"
-        COUNTER = "counter"
+    # Create an enum value for each directory in the .templates folder
+    Kind = Enum("Kind", {template.upper(): template for template in template_dirs})
 
     class Dirs(SimpleNamespace):
         """Folders used by the template system of Reflex."""
@@ -90,10 +87,10 @@ class Templates(SimpleNamespace):
         BASE = os.path.join(Reflex.ROOT_DIR, Reflex.MODULE_NAME, ".templates")
         # The web subdirectory of the template directory.
         WEB_TEMPLATE = os.path.join(BASE, "web")
-        # The assets subdirectory of the template directory.
-        ASSETS_TEMPLATE = os.path.join(BASE, Dirs.APP_ASSETS)
         # The jinja template directory.
         JINJA_TEMPLATE = os.path.join(BASE, "jinja")
+        # Where the code for the templates is stored.
+        CODE = "code"
 
 
 class Next(SimpleNamespace):
@@ -107,6 +104,8 @@ class Next(SimpleNamespace):
     NODE_MODULES = "node_modules"
     # The package lock file.
     PACKAGE_LOCK = "package-lock.json"
+    # Regex to check for message displayed when frontend comes up
+    FRONTEND_LISTENING_REGEX = "Local:[\\s]+(.*)"
 
 
 # Color mode variables

@@ -34,7 +34,7 @@ def test_validate_data_table(data_table_state: rx.Var, expected):
         expected: expected var name.
 
     """
-    if not types.is_dataframe(data_table_state.data.type_):
+    if not types.is_dataframe(data_table_state.data._var_type):
         data_table_component = DataTable.create(
             data=data_table_state.data, columns=data_table_state.columns
         )

@@ -10,7 +10,6 @@ from pydantic.fields import ModelField
 from reflex import constants
 from reflex.components.base import (
     Body,
-    ColorModeScript,
     Description,
     DocumentHead,
     Head,
@@ -24,7 +23,7 @@ from reflex.components.base import (
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.state import Cookie, LocalStorage, State
 from reflex.style import Style
-from reflex.utils import format, imports, path_ops
+from reflex.utils import console, format, imports, path_ops
 from reflex.vars import ImportVar
 
 # To re-export this function.
@@ -139,7 +138,10 @@ def compile_state(state: Type[State]) -> dict:
     """
     try:
         initial_state = state().dict()
-    except Exception:
+    except Exception as e:
+        console.warn(
+            f"Failed to compile initial state with computed vars, excluding them: {e}"
+        )
         initial_state = state().dict(include_computed=False)
     return format.format_state(initial_state)
 
@@ -243,7 +245,7 @@ def compile_custom_component(
     }
 
     # Concatenate the props.
-    props = [prop.name for prop in component.get_prop_vars()]
+    props = [prop._var_name for prop in component.get_prop_vars()]
 
     # Compile the component.
     return (
@@ -269,7 +271,6 @@ def create_document_root(head_components: list[Component] | None = None) -> Comp
     return Html.create(
         DocumentHead.create(*head_components),
         Body.create(
-            ColorModeScript.create(),
             Main.create(),
             NextScript.create(),
         ),

@@ -186,6 +186,6 @@ def test_foreach_render(state_var, render_fn, render_dict):
     rend = component.render()
     arg_index = rend["arg_index"]
     assert rend["iterable_state"] == render_dict["iterable_state"]
-    assert arg_index.name == render_dict["arg_index"]
-    assert arg_index.type_ == int
+    assert arg_index._var_name == render_dict["arg_index"]
+    assert arg_index._var_type == int
     assert rend["iterable_type"] == render_dict["iterable_type"]

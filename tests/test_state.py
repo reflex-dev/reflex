@@ -7,13 +7,14 @@ import functools
 import json
 import os
 import sys
-from typing import Dict, Generator, List
+from typing import Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from plotly.graph_objects import Figure
 
 import reflex as rx
+from reflex.app import App
 from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
@@ -21,6 +22,7 @@ from reflex.state import (
     ImmutableStateError,
     LockExpiredError,
     MutableProxy,
+    RouterData,
     State,
     StateManager,
     StateManagerMemory,
@@ -28,7 +30,8 @@ from reflex.state import (
     StateProxy,
     StateUpdate,
 )
-from reflex.utils import prerequisites
+from reflex.utils import prerequisites, types
+from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
 from .states import GenState
@@ -36,6 +39,33 @@ from .states import GenState
 CI = bool(os.environ.get("CI", False))
 LOCK_EXPIRATION = 2000 if CI else 100
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.2
+
+
+formatted_router = {
+    "session": {"client_token": "", "client_ip": "", "session_id": ""},
+    "headers": {
+        "host": "",
+        "origin": "",
+        "upgrade": "",
+        "connection": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "",
+        "sec_websocket_version": "",
+        "sec_websocket_key": "",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "",
+        "accept_language": "",
+    },
+    "page": {
+        "host": "",
+        "path": "",
+        "raw_path": "",
+        "full_path": "",
+        "full_raw_path": "",
+        "params": {},
+    },
+}
 
 
 class Object(Base):
@@ -196,11 +226,11 @@ def test_base_class_vars(test_state):
             continue
         prop = getattr(cls, field)
         assert isinstance(prop, BaseVar)
-        assert prop.name == field
+        assert prop._var_name == field
 
-    assert cls.num1.type_ == int
-    assert cls.num2.type_ == float
-    assert cls.key.type_ == str
+    assert cls.num1._var_type == int
+    assert cls.num2._var_type == float
+    assert cls.key._var_type == str
 
 
 def test_computed_class_var(test_state):
@@ -210,7 +240,7 @@ def test_computed_class_var(test_state):
         test_state: A state.
     """
     cls = type(test_state)
-    vars = [(prop.name, prop.type_) for prop in cls.computed_vars.values()]
+    vars = [(prop._var_name, prop._var_type) for prop in cls.computed_vars.values()]
     assert ("sum", float) in vars
     assert ("upper", str) in vars
 
@@ -224,6 +254,7 @@ def test_class_vars(test_state):
     cls = type(test_state)
     assert set(cls.vars.keys()) == {
         CompileVars.IS_HYDRATED,  # added by hydrate_middleware to all State
+        "router",
         "num1",
         "num2",
         "key",
@@ -415,11 +446,13 @@ def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
         TestState.num3  # type: ignore
-    TestState._set_var(BaseVar(name="num3", type_=int).set_state(TestState))
+    TestState._set_var(
+        BaseVar(_var_name="num3", _var_type=int)._var_set_state(TestState)
+    )
     var = TestState.num3  # type: ignore
-    assert var.name == "num3"
-    assert var.type_ == int
-    assert var.state == TestState.get_full_name()
+    assert var._var_name == "num3"
+    assert var._var_type == int
+    assert var._var_state == TestState.get_full_name()
 
 
 def test_set_parent_and_substates(test_state, child_state, grandchild_state):
@@ -783,7 +816,7 @@ def test_get_current_page(test_state):
     assert test_state.get_current_page() == ""
 
     route = "mypage/subpage"
-    test_state.router_data = {RouteVar.PATH: route}
+    test_state.router = RouterData({RouteVar.PATH: route})
 
     assert test_state.get_current_page() == route
 
@@ -983,7 +1016,7 @@ def test_conditional_computed_vars():
     assert ms._dirty_computed_vars(from_vars={"flag"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t2"}) == {"rendered_var"}
     assert ms._dirty_computed_vars(from_vars={"t1"}) == {"rendered_var"}
-    assert ms.computed_vars["rendered_var"].deps(objclass=MainState) == {
+    assert ms.computed_vars["rendered_var"]._deps(objclass=MainState) == {
         "flag",
         "t1",
         "t2",
@@ -1127,16 +1160,19 @@ def test_computed_var_depends_on_parent_non_cached():
         cs.get_name(): {"dep_v": 2},
         "no_cache_v": 1,
         CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 4},
         "no_cache_v": 3,
         CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert ps.dict() == {
         cs.get_name(): {"dep_v": 6},
         "no_cache_v": 5,
         CompileVars.IS_HYDRATED: False,
+        "router": formatted_router,
     }
     assert counter == 6
 
@@ -1525,23 +1561,24 @@ async def test_state_manager_lock_expire_contend(
 
 
 @pytest.fixture(scope="function")
-def mock_app(monkeypatch, app: rx.App, state_manager: StateManager) -> rx.App:
+def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
     """Mock app fixture.
 
     Args:
         monkeypatch: Pytest monkeypatch object.
-        app: An app.
         state_manager: A state manager.
 
     Returns:
         The app, after mocking out prerequisites.get_app()
     """
+    app = App(state=TestState)
+
     app_module = Mock()
+
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
-    app.state_manager = state_manager
-    assert app.event_namespace is not None
-    app.event_namespace.emit = AsyncMock()
+    app._state_manager = state_manager
+    app.event_namespace.emit = AsyncMock()  # type: ignore
     monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
     return app
 
@@ -1624,7 +1661,16 @@ class BackgroundTaskState(State):
     """A state with a background task."""
 
     order: List[str] = []
-    dict_list: Dict[str, List[int]] = {"foo": []}
+    dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+
+    @rx.var
+    def computed_order(self) -> List[str]:
+        """Get the order as a computed var.
+
+        Returns:
+            The value of 'order' var.
+        """
+        return self.order
 
     @rx.background
     async def background_task(self):
@@ -1656,6 +1702,9 @@ class BackgroundTaskState(State):
                 pass  # update proxy instance
 
         async with self:
+            # Methods on ImmutableMutableProxy should return their wrapped return value.
+            assert self.dict_list.pop("foo") == [1, 2, 3]
+
             self.order.append("background_task:stop")
             self.other()  # direct calling event handlers works in context
             self._private_method()
@@ -1751,6 +1800,10 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                         "background_task:start",
                         "other",
                     ],
+                    "computed_order": [
+                        "background_task:start",
+                        "other",
+                    ],
                 }
             }
         )
@@ -1760,13 +1813,57 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         await task
     assert not mock_app.background_tasks
 
-    assert (await mock_app.state_manager.get_state(token)).order == [
+    exp_order = [
         "background_task:start",
         "other",
         "background_task:stop",
         "other",
         "private",
     ]
+
+    assert (await mock_app.state_manager.get_state(token)).order == exp_order
+
+    assert mock_app.event_namespace is not None
+    emit_mock = mock_app.event_namespace.emit
+
+    assert json.loads(emit_mock.mock_calls[0].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "order": ["background_task:start"],
+                "computed_order": ["background_task:start"],
+            }
+        },
+        "events": [],
+        "final": True,
+    }
+    for call in emit_mock.mock_calls[1:5]:
+        assert json.loads(call.args[1]) == {
+            "delta": {
+                "background_task_state": {"computed_order": ["background_task:start"]}
+            },
+            "events": [],
+            "final": True,
+        }
+    assert json.loads(emit_mock.mock_calls[-2].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "order": exp_order,
+                "computed_order": exp_order,
+                "dict_list": {},
+            }
+        },
+        "events": [],
+        "final": True,
+    }
+    assert json.loads(emit_mock.mock_calls[-1].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "computed_order": exp_order,
+            },
+        },
+        "events": [],
+        "final": True,
+    }
 
 
 @pytest.mark.asyncio
@@ -2091,6 +2188,29 @@ def test_duplicate_substate_class(duplicate_substate):
         duplicate_substate()
 
 
+class Foo(Base):
+    """A class containing a list of str."""
+
+    tags: List[str] = ["123", "456"]
+
+
+def test_json_dumps_with_mutables():
+    """Test that json.dumps works with Base vars inside mutable types."""
+
+    class MutableContainsBase(State):
+        items: List[Foo] = [Foo()]
+
+    dict_val = MutableContainsBase().dict()
+    assert isinstance(dict_val["items"][0], dict)
+    val = json_dumps(dict_val)
+    f_items = '[{"tags": ["123", "456"]}]'
+    f_formatted_router = str(formatted_router).replace("'", '"')
+    assert (
+        val
+        == f'{{"is_hydrated": false, "items": {f_items}, "router": {f_formatted_router}}}'
+    )
+
+
 def test_reset_with_mutables():
     """Calling reset should always reset fields to a copy of the defaults."""
     default = [[0, 0], [0, 1], [1, 1]]
@@ -2119,3 +2239,52 @@ def test_reset_with_mutables():
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
+
+
+class Custom1(Base):
+    """A custom class with a str field."""
+
+    foo: str
+
+
+class Custom2(Base):
+    """A custom class with a Custom1 field."""
+
+    c1: Optional[Custom1] = None
+    c1r: Custom1
+
+
+class Custom3(Base):
+    """A custom class with a Custom2 field."""
+
+    c2: Optional[Custom2] = None
+    c2r: Custom2
+
+
+def test_state_union_optional():
+    """Test that state can be defined with Union and Optional vars."""
+
+    class UnionState(State):
+        int_float: Union[int, float] = 0
+        opt_int: Optional[int]
+        c3: Optional[Custom3]
+        c3i: Custom3  # implicitly required
+        c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
+        custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
+
+    assert UnionState.c3.c2._var_name == "c3?.c2"  # type: ignore
+    assert UnionState.c3.c2.c1._var_name == "c3?.c2?.c1"  # type: ignore
+    assert UnionState.c3.c2.c1.foo._var_name == "c3?.c2?.c1?.foo"  # type: ignore
+    assert UnionState.c3.c2.c1r.foo._var_name == "c3?.c2?.c1r.foo"  # type: ignore
+    assert UnionState.c3.c2r.c1._var_name == "c3?.c2r.c1"  # type: ignore
+    assert UnionState.c3.c2r.c1.foo._var_name == "c3?.c2r.c1?.foo"  # type: ignore
+    assert UnionState.c3.c2r.c1r.foo._var_name == "c3?.c2r.c1r.foo"  # type: ignore
+    assert UnionState.c3i.c2._var_name == "c3i.c2"  # type: ignore
+    assert UnionState.c3r.c2._var_name == "c3r.c2"  # type: ignore
+    assert UnionState.custom_union.foo is not None  # type: ignore
+    assert UnionState.custom_union.c1 is not None  # type: ignore
+    assert UnionState.custom_union.c1r is not None  # type: ignore
+    assert UnionState.custom_union.c2 is not None  # type: ignore
+    assert UnionState.custom_union.c2r is not None  # type: ignore
+    assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
+    assert types.is_union(UnionState.int_float._var_type)  # type: ignore

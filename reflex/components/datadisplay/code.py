@@ -5,7 +5,7 @@ from typing import Dict, Optional, Union
 from reflex.components.component import Component
 from reflex.components.forms import Button
 from reflex.components.layout import Box
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import ChakraComponent, LiteralTheme
 from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style
@@ -19,12 +19,12 @@ PRISM_STYLES_PATH: str = "/styles/code/prism"
 class CodeBlock(Component):
     """A code block."""
 
-    library = "react-syntax-highlighter@^15.5.0"
+    library = "react-syntax-highlighter@15.5.0"
 
     tag = "Prism"
 
     # The theme to use ("light" or "dark").
-    theme: Var[str]
+    theme: Var[LiteralTheme]
 
     # The language to use.
     language: Var[str]
@@ -48,7 +48,8 @@ class CodeBlock(Component):
         merged_imports = super()._get_imports()
         if self.theme is not None:
             merged_imports = imports.merge_imports(
-                merged_imports, {PRISM_STYLES_PATH: {ImportVar(tag=self.theme.name)}}
+                merged_imports,
+                {PRISM_STYLES_PATH: {ImportVar(tag=self.theme._var_name)}},
             )
         return merged_imports
 
@@ -58,7 +59,7 @@ class CodeBlock(Component):
         *children,
         can_copy: Optional[bool] = False,
         copy_button: Optional[Union[bool, Component]] = None,
-        **props
+        **props,
     ):
         """Create a text component.
 
@@ -113,7 +114,7 @@ class CodeBlock(Component):
         out = super()._render()
         if self.theme is not None:
             out.add_props(
-                style=Var.create(self.theme.name, is_local=False)
+                style=Var.create(self.theme._var_name, _var_is_local=False)
             ).remove_props("theme")
         return out
 

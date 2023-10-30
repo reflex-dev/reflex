@@ -11,7 +11,7 @@ class ReactPlayerComponent(NoSSRComponent):
     reference: https://github.com/cookpete/react-player.
     """
 
-    library = "react-player@^2.12.0"
+    library = "react-player@2.12.0"
 
     tag = "ReactPlayer"
 
@@ -21,7 +21,7 @@ class ReactPlayerComponent(NoSSRComponent):
     url: Var[str]
 
     # Set to true or false to pause or play the media
-    playing: Var[str]
+    playing: Var[bool]
 
     # Set to true or false to loop the media
     loop: Var[bool]

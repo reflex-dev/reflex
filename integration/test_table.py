@@ -26,16 +26,16 @@ def Table():
 
         caption: str = "random caption"
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     app = rx.App(state=TableState)
 
     @app.add_page
     def index():
         return rx.center(
-            rx.input(id="token", value=TableState.token, is_read_only=True),
+            rx.input(
+                id="token",
+                value=TableState.router.session.client_token,
+                is_read_only=True,
+            ),
             rx.table_container(
                 rx.table(
                     headers=TableState.headers,

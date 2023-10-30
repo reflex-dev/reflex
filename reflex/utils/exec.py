@@ -34,7 +34,7 @@ def detect_package_change(json_file_path: str) -> str:
     """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
 
     Args:
-        json_file_path (str): The path to the JSON file to be hashed.
+        json_file_path: The path to the JSON file to be hashed.
 
     Returns:
         str: The SHA-256 hash of the JSON file as a hexadecimal string.
@@ -85,10 +85,10 @@ def run_process_and_launch_url(run_command: list[str]):
             )
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
-                match = re.search("ready started server on ([0-9.:]+), url: (.*)", line)
+                match = re.search(constants.Next.FRONTEND_LISTENING_REGEX, line)
                 if match:
                     if first_run:
-                        url = match.group(2)
+                        url = match.group(1)
                         if get_config().frontend_path != "":
                             url = urljoin(url, get_config().frontend_path)
                         console.print(f"App running at: [bold green]{url}")
@@ -154,6 +154,13 @@ def run_backend(
     """
     config = get_config()
     app_module = f"{config.app_name}.{config.app_name}:{constants.CompileVars.APP}"
+
+    # Create a .nocompile file to skip compile for backend.
+    if os.path.exists(constants.Dirs.WEB):
+        with open(constants.NOCOMPILE_FILE, "w"):
+            pass
+
+    # Run the backend in development mode.
     uvicorn.run(
         app=f"{app_module}.{constants.CompileVars.API}",
         host=host,
@@ -240,13 +247,13 @@ def output_system_info():
     if system != "Windows":
         dependencies.extend(
             [
-                f"[FNM {constants.Fnm.VERSION} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
                 f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
             ],
         )
     else:
         dependencies.append(
-            f"[FNM {constants.Fnm.VERSION} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
         )
 
     if system == "Linux":

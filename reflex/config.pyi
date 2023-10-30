@@ -66,6 +66,8 @@ class Config(Base):
     event_namespace: Optional[str]
     frontend_packages: List[str]
     rxdeploy_url: Optional[str]
+    cp_backend_url: str
+    cp_web_url: str
     username: Optional[str]
 
     def __init__(
@@ -90,6 +92,8 @@ class Config(Base):
         event_namespace: Optional[str] = None,
         frontend_packages: Optional[List[str]] = None,
         rxdeploy_url: Optional[str] = None,
+        cp_backend_url: Optional[str] = None,
+        cp_web_url: Optional[str] = None,
         username: Optional[str] = None,
         **kwargs
     ) -> None: ...
@@ -97,5 +101,6 @@ class Config(Base):
     def check_deprecated_values(**kwargs) -> None: ...
     def update_from_env(self) -> None: ...
     def get_event_namespace(self) -> str | None: ...
+    def _set_persistent(self, **kwargs) -> None: ...
 
 def get_config(reload: bool = ...) -> Config: ...
