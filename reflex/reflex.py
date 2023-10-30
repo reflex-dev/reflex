@@ -673,7 +673,10 @@ def deploy(
         key, from_iso_timestamp=deploy_requested_at
     )
 
-    if not server_report_deploy_success:
+    if server_report_deploy_success is None:
+        console.warn("Hosting server timed out.")
+        console.warn("The deployment may still be in progress. Proceeding ...")
+    elif not server_report_deploy_success:
         console.error("Hosting server reports failure.")
         console.error(
             f"Check the server logs using `reflex deployments build-logs {key}`"

@@ -1025,7 +1025,7 @@ def log_out_on_browser():
         )
 
 
-def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
+def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool | None:
     """Periodically poll the hosting server for deploy milestones.
 
     Args:
@@ -1037,7 +1037,7 @@ def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
         Exception: If the user is not authenticated.
 
     Returns:
-        False if server reports back failure, True otherwise.
+        False if server reports back failure, True otherwise. None if do not receive the end of deployment message.
     """
     if not key:
         raise ValueError("Non-empty key is required for querying deploy status.")
@@ -1096,8 +1096,6 @@ def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
             console.debug(f"Unable to get more deployment events due to {he}.")
         except Exception as ex:
             console.warn(f"Unable to parse server response due to {ex}.")
-
-    return False
 
 
 async def display_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
