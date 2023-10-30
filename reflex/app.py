@@ -17,6 +17,7 @@ from typing import (
     Set,
     Type,
     Union,
+    get_args,
     get_type_hints,
 )
 
@@ -918,7 +919,8 @@ def upload(app: App):
                 func = func.func
             for k, v in get_type_hints(func).items():
                 if types.is_generic_alias(v) and types._issubclass(
-                    v.__args__[0], UploadFile
+                    get_args(v)[0],
+                    UploadFile,
                 ):
                     handler_upload_param = (k, v)
                     break
