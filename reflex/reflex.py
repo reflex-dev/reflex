@@ -669,9 +669,10 @@ def deploy(
 
     console.print("Waiting for server to report progress ...")
     # Display the key events such as build, deploy, etc
-    server_report_deploy_success = asyncio.get_event_loop().run_until_complete(
-        hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
+    server_report_deploy_success = hosting.poll_deploy_milestones(
+        key, from_iso_timestamp=deploy_requested_at
     )
+
     if not server_report_deploy_success:
         console.error("Hosting server reports failure.")
         console.error(
@@ -797,7 +798,7 @@ def get_deployment_status(
         status = hosting.get_deployment_status(key)
 
         # TODO: refactor all these tabulate calls
-        status.backend.updated_at = hosting.convert_to_local_time(
+        status.backend.updated_at = hosting.convert_to_local_time_str(
             status.backend.updated_at or "N/A"
         )
         backend_status = status.backend.dict(exclude_none=True)
@@ -806,7 +807,7 @@ def get_deployment_status(
         console.print(tabulate([table], headers=headers))
         # Add a new line in console
         console.print("\n")
-        status.frontend.updated_at = hosting.convert_to_local_time(
+        status.frontend.updated_at = hosting.convert_to_local_time_str(
             status.frontend.updated_at or "N/A"
         )
         frontend_status = status.frontend.dict(exclude_none=True)

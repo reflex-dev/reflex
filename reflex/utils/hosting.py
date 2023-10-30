@@ -9,7 +9,7 @@ import re
 import time
 import uuid
 import webbrowser
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -41,6 +41,8 @@ GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 GET_REGIONS_ENDPOINT = f"{config.cp_backend_url}/deployments/regions"
 # Websocket endpoint to stream logs of a deployment
 DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
+# The HTTP endpoint to fetch logs of a deployment
+POST_DEPLOYMENT_LOGS_ENDPOINT = f"{config.cp_backend_url}/deployments/logs"
 # Expected server response time to new deployment request. In seconds.
 DEPLOYMENT_PICKUP_DELAY = 30
 # End of deployment workflow message. Used to determine if it is the last message from server.
@@ -726,7 +728,22 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
         raise Exception("internal errors") from ex
 
 
-def convert_to_local_time(iso_timestamp: str) -> str:
+def convert_to_local_time_with_tz(iso_timestamp: str) -> datetime | None:
+    """Helper function to convert the iso timestamp to local time.
+
+    Args:
+        iso_timestamp: The iso timestamp to convert.
+
+    Returns:
+        The converted timestamp with timezone.
+    """
+    try:
+        return datetime.fromisoformat(iso_timestamp).astimezone()
+    except Exception:
+        return None
+
+
+def convert_to_local_time_str(iso_timestamp: str) -> str:
     """Convert the iso timestamp to local time.
 
     Args:
@@ -736,7 +753,9 @@ def convert_to_local_time(iso_timestamp: str) -> str:
         The converted timestamp string.
     """
     try:
-        local_dt = datetime.fromisoformat(iso_timestamp).astimezone()
+        local_dt = convert_to_local_time_with_tz(iso_timestamp)
+        if local_dt is None:
+            return iso_timestamp
         return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
     except Exception as ex:
         console.error(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
@@ -798,7 +817,7 @@ async def get_logs(
                         if v is None:
                             row_to_print[k] = str(v)
                         elif k == "timestamp":
-                            row_to_print[k] = convert_to_local_time(v)
+                            row_to_print[k] = convert_to_local_time_str(v)
                         else:
                             row_to_print[k] = v
                     print(" | ".join(row_to_print.values()))
@@ -1006,6 +1025,81 @@ def log_out_on_browser():
         )
 
 
+def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
+    """Periodically poll the hosting server for deploy milestones.
+
+    Args:
+        key: The deployment key.
+        from_iso_timestamp: The timestamp of the deployment request time, this helps with the milestone query.
+
+    Raises:
+        ValueError: If a non-empty key is not provided.
+        Exception: If the user is not authenticated.
+
+    Returns:
+        False if server reports back failure, True otherwise.
+    """
+    if not key:
+        raise ValueError("Non-empty key is required for querying deploy status.")
+    if not (token := requires_authenticated()):
+        raise Exception("not authenticated")
+
+    for _ in range(DEPLOYMENT_EVENT_MESSAGES_RETRIES):
+        try:
+            response = httpx.post(
+                POST_DEPLOYMENT_LOGS_ENDPOINT,
+                json={
+                    "key": key,
+                    "log_type": LogType.DEPLOY_LOG.value,
+                    "from_iso_timestamp": from_iso_timestamp.astimezone().isoformat(),
+                },
+                headers=authorization_header(token),
+            )
+            response.raise_for_status()
+            # The return is expected to be a list of dicts
+            response_json = response.json()
+            for row in response_json:
+                console.print(
+                    " | ".join(
+                        [
+                            convert_to_local_time_str(row["timestamp"]),
+                            row["message"],
+                        ]
+                    )
+                )
+                # update the from timestamp to the last timestamp of received message
+                if (
+                    maybe_timestamp := convert_to_local_time_with_tz(row["timestamp"])
+                ) is not None:
+                    console.debug(
+                        f"Updating from {from_iso_timestamp} to {maybe_timestamp}"
+                    )
+                    # Add a small delta so does not poll the same logs
+                    from_iso_timestamp = maybe_timestamp + timedelta(microseconds=1e5)
+                else:
+                    console.error(f"Unable to parse timestamp {row['timestamp']}")
+                    raise ValueError
+                server_message = row["message"].lower()
+                if "fail" in server_message:
+                    console.debug(
+                        "Received failure message, stop event message streaming"
+                    )
+                    return False
+                if any(msg in server_message for msg in END_OF_DEPLOYMENT_MESSAGES):
+                    console.debug(
+                        "Received end of deployment message, stop event message streaming"
+                    )
+                    return True
+            time.sleep(1)
+        except httpx.HTTPError as he:
+            # This includes HTTP server and client error
+            console.debug(f"Unable to get more deployment events due to {he}.")
+        except Exception as ex:
+            console.warn(f"Unable to parse server response due to {ex}.")
+
+    return False
+
+
 async def display_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
     """Display the deploy milestone messages reported back from the hosting server.
 
@@ -1039,7 +1133,7 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime) -> b
                     console.print(
                         " | ".join(
                             [
-                                convert_to_local_time(row_json["timestamp"]),
+                                convert_to_local_time_str(row_json["timestamp"]),
                                 row_json["message"],
                             ]
                         )
