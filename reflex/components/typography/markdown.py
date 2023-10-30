@@ -240,7 +240,7 @@ class Markdown(Component):
         ] = f"""{{({{inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
-    if (language !== "") {{
+    if (language) {{
     (async () => {{
       try {{
         const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{language}}`);

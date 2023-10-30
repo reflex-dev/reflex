@@ -5,7 +5,7 @@
 
 export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => {
 {% if component.name == "CodeBlock" and "language" in component.props %}
-    if (language !== "") {
+    if (language) {
       (async () => {
         try {
           const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${language}`);
