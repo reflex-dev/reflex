@@ -887,6 +887,9 @@ def upload(app: App):
         Args:
             files: The file(s) to upload.
 
+        Returns:
+            List of StateUpdate emitted by the upload handler.
+
         Raises:
             ValueError: if there are no args with supported annotation.
         """
@@ -899,7 +902,6 @@ def upload(app: App):
         # Get the state for the session.
         async with app.state_manager.modify_state(token) as state:
             # get the current session ID
-            sid = state.router.session.session_id
             # get the current state(parent state/substate)
             path = handler.split(".")[:-1]
             current_state = state.get_substate(path)

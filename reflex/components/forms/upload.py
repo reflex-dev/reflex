@@ -15,6 +15,17 @@ DEFAULT_UPLOAD_ID = "default"
 
 
 def upload_file_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+    """Get the file upload drop trigger.
+
+    This var is passed to the dropzone component to update the file list when a
+    drop occurs.
+
+    Args:
+        id_: The id of the upload to get the drop trigger for.
+
+    Returns:
+        A var referencing the file upload drop trigger.
+    """
     return BaseVar(
         _var_name=f"e => upload_files.{id_}[1]((files) => e)",
         _var_type=EventChain,
@@ -25,6 +36,14 @@ upload_file = upload_file_for()
 
 
 def selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+    """Get the list of selected files.
+
+    Args:
+        id_: The id of the upload to get the selected files for.
+
+    Returns:
+        A var referencing the list of selected file paths.
+    """
     return BaseVar(
         _var_name=f"(upload_files.{id_} ? upload_files.{id_}[0]?.map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
@@ -36,6 +55,14 @@ selected_files = selected_files_for()
 
 
 def clear_selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
+    """Clear the list of selected files.
+
+    Args:
+        id_: The id of the upload to clear.
+
+    Returns:
+        An event spec that clears the list of selected files when triggered.
+    """
     return call_script(f"upload_files.{id_}[1]((files) => [])")
 
 
@@ -43,6 +70,14 @@ clear_selected_files = clear_selected_files_for()
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
+    """Cancel an upload.
+
+    Args:
+        upload_id: The id of the upload to cancel.
+
+    Returns:
+        An event spec that cancels the upload when triggered.
+    """
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 

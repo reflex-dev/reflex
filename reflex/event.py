@@ -214,7 +214,11 @@ class FileUpload(Base):
 
     @staticmethod
     def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
-        """Args spec for on_upload_progress event handler."""
+        """Args spec for on_upload_progress event handler.
+
+        Returns:
+            The arg mapping passed to backend event handler
+        """
         return [_prog]
 
     def as_event_spec(self, handler: EventHandler) -> EventSpec:
@@ -225,6 +229,9 @@ class FileUpload(Base):
 
         Returns:
             The event spec for the handler.
+
+        Raises:
+            ValueError: If the on_upload_progress is not a valid event handler.
         """
         from reflex.components.forms.upload import DEFAULT_UPLOAD_ID
 
@@ -256,11 +263,12 @@ class FileUpload(Base):
                 events=events,
                 args_spec=self.on_upload_progress_args_spec,
             )
+            formatted_chain = str(format.format_prop(on_upload_progress_chain))
             spec_args.append(
                 (
                     Var.create_safe("on_upload_progress"),
                     BaseVar(
-                        _var_name=format.format_prop(on_upload_progress_chain).strip("{}"),
+                        _var_name=formatted_chain.strip("{}"),
                         _var_type=EventChain,
                     ),
                 ),
