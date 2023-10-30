@@ -66,6 +66,7 @@ class CodeBlock(Component):
             and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
         ):
             merged_imports = imports.merge_imports(
+                merged_imports,
                 {
                     f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}": {
                         ImportVar(
