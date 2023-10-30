@@ -11,7 +11,7 @@ from reflex.event import EventChain, EventSpec, call_script
 from reflex.utils import imports
 from reflex.vars import BaseVar, ImportVar, Var
 
-DEFAULT_UPLOAD_ID = "default"
+DEFAULT_UPLOAD_ID: str = "default"
 
 
 def upload_file_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
@@ -32,7 +32,7 @@ def upload_file_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     )
 
 
-upload_file = upload_file_for()
+upload_file: BaseVar = upload_file_for()
 
 
 def selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
@@ -51,7 +51,7 @@ def selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
 
 
 # Use this var along with the Upload component to render the list of selected files.
-selected_files = selected_files_for()
+selected_files: BaseVar = selected_files_for()
 
 
 def clear_selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
@@ -66,7 +66,7 @@ def clear_selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     return call_script(f"upload_files.{id_}[1]((files) => [])")
 
 
-clear_selected_files = clear_selected_files_for()
+clear_selected_files: EventSpec = clear_selected_files_for()
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
