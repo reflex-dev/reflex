@@ -15,7 +15,10 @@ DEFAULT_UPLOAD_ID = "default"
 
 
 def upload_file_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
-    return BaseVar(_var_name=f"e => upload_files.{id_}[1]((files) => e)", _var_type=EventChain)
+    return BaseVar(
+        _var_name=f"e => upload_files.{id_}[1]((files) => e)",
+        _var_type=EventChain,
+    )
 
 
 upload_file = upload_file_for()
@@ -23,7 +26,7 @@ upload_file = upload_file_for()
 
 def selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     return BaseVar(
-        _var_name=f"upload_files.{id_} ? upload_files.{id_}[0]?.map((f) => f.name) : []",
+        _var_name=f"(upload_files.{id_} ? upload_files.{id_}[0]?.map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
     )
 

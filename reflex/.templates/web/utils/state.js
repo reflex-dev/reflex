@@ -376,7 +376,7 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress,
     formdata.append(
       "files",
       files[i],
-      getToken() + ":" + handler + ":" + files[i].name
+      getToken() + ":" + handler + ":" + (files[i].path || files[i].name)
     );
   }
 
