@@ -895,6 +895,7 @@ def upload(app: App):
 
         Raises:
             ValueError: if there are no args with supported annotation.
+            TypeError: if a background task is used as the handler.
             HTTPException: when the request does not include token / handler headers.
         """
         token = request.headers.get("reflex-client-token")
@@ -907,60 +908,64 @@ def upload(app: App):
             )
 
         # Get the state for the session.
-        async with app.state_manager.modify_state(token) as state:
-            # get the current session ID
-            # get the current state(parent state/substate)
-            path = handler.split(".")[:-1]
-            current_state = state.get_substate(path)
-            handler_upload_param = ()
+        state = await app.state_manager.get_state(token)
 
-            # get handler function
-            func = getattr(current_state, handler.split(".")[-1])
+        # get the current session ID
+        # get the current state(parent state/substate)
+        path = handler.split(".")[:-1]
+        current_state = state.get_substate(path)
+        handler_upload_param = ()
 
-            # check if there exists any handler args with annotation, List[UploadFile]
-            if isinstance(func, EventHandler):
-                func = func.fn
-            if isinstance(func, functools.partial):
-                func = func.func
-            for k, v in get_type_hints(func).items():
-                if types.is_generic_alias(v) and types._issubclass(
-                    get_args(v)[0],
-                    UploadFile,
-                ):
-                    handler_upload_param = (k, v)
-                    break
+        # get handler function
+        func = getattr(type(current_state), handler.split(".")[-1])
 
-            if not handler_upload_param:
-                raise ValueError(
-                    f"`{handler}` handler should have a parameter annotated as "
-                    "List[rx.UploadFile]"
+        # check if there exists any handler args with annotation, List[UploadFile]
+        if isinstance(func, EventHandler):
+            if func.is_background:
+                raise TypeError(
+                    f"@rx.background is not supported for upload handler `{handler}`.",
                 )
+            func = func.fn
+        if isinstance(func, functools.partial):
+            func = func.func
+        for k, v in get_type_hints(func).items():
+            if types.is_generic_alias(v) and types._issubclass(
+                get_args(v)[0],
+                UploadFile,
+            ):
+                handler_upload_param = (k, v)
+                break
 
-            event = Event(
-                token=token,
-                name=handler,
-                payload={handler_upload_param[0]: files},
+        if not handler_upload_param:
+            raise ValueError(
+                f"`{handler}` handler should have a parameter annotated as "
+                "List[rx.UploadFile]"
             )
 
-            async def _ndjson_updates():
-                """Process the upload event, generating ndjson updates.
+        event = Event(
+            token=token,
+            name=handler,
+            payload={handler_upload_param[0]: files},
+        )
 
-                Yields:
-                    Each state update as JSON followed by a new line.
-                """
-                # Process the event.
+        async def _ndjson_updates():
+            """Process the upload event, generating ndjson updates.
+
+            Yields:
+                Each state update as JSON followed by a new line.
+            """
+            # Process the event.
+            async with app.state_manager.modify_state(token) as state:
                 async for update in state._process(event):
                     # Postprocess the event.
                     update = await app.postprocess(state, event, update)
-                    # Do not block websocket processing for upload events
-                    update.final = True
                     yield update.json() + "\n"
 
-            # Stream updates to client
-            return StreamingResponse(
-                _ndjson_updates(),
-                media_type="application/x-ndjson",
-            )
+        # Stream updates to client
+        return StreamingResponse(
+            _ndjson_updates(),
+            media_type="application/x-ndjson",
+        )
 
     return upload_file
 
