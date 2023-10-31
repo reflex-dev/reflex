@@ -1285,24 +1285,42 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return d
 
     @classmethod
-    def _builtin_event_handlers(cls):
-        """Establish builtin event handlers on first subclass of State."""
+    def _builtin_event_handlers(cls) -> dict[str, Callable]:
+        """Establish builtin event handlers on first subclass of State.
 
-        def on_load_internal(self) -> dict[str, FunctionType]:
-            """Queue on_load handlers for the current page."""
-            app = getattr(prerequisites.get_app(), constants.APP_VAR)
+        Returns:
+            Dict of builtin event handlers, mapping handler name to function.
+        """
+
+        def on_load_internal(self) -> list[Event | EventSpec]:
+            """Queue on_load handlers for the current page.
+
+            Args:
+                self: The state instance.
+
+            Returns:
+                The list of events to queue for on load handling.
+            """
+            app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
             self.is_hydrated = False
             return [
                 *fix_events(
-                    app.get_load_events(self.get_current_page()),
-                    self.get_token(),
+                    app.get_load_events(self.router.page.path),
+                    self.router.session.client_token,
                     router_data=self.router_data,
                 ),
-                cls.set_is_hydrated(True),
+                cls.set_is_hydrated(True),  # type: ignore
             ]
 
-        def _process_handler(handler: FunctionType) -> tuple[str, FunctionType]:
-            """Set module and qualname for handler."""
+        def _process_handler(handler: Callable) -> tuple[str, Callable]:
+            """Set module and qualname for handler.
+
+            Args:
+                handler: The handler to process.
+
+            Returns:
+                The handler name and function with module and qualname set on it.
+            """
             handler.__module__ = cls.__module__
             handler.__qualname__ = ".".join((cls.__qualname__, handler.__name__))
             return handler.__name__, handler
