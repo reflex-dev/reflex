@@ -27,6 +27,8 @@ from typing import (
     get_type_hints,
 )
 
+from pandas import DataFrame
+
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, serializers, types
@@ -599,7 +601,9 @@ class Var:
         Raises:
             TypeError: If the var is not a list.
         """
-        if not types._issubclass(self._var_type, List):
+        if not types._issubclass(self._var_type, List) and not types._issubclass(
+            self._var_type, DataFrame
+        ):
             raise TypeError(f"Cannot get length of non-list var {self}.")
         return BaseVar(
             _var_name=f"{self._var_full_name}.length",

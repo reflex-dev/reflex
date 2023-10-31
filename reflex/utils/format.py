@@ -645,7 +645,7 @@ def format_data_editor_column(col: str | dict):
     if isinstance(col, (dict,)):
         if "id" not in col:
             col["id"] = col["title"].lower()
-        if "type" not in col:
+        if "type" not in col or col["type"] == "object":
             col["type"] = "str"
         if "overlayIcon" not in col:
             col["overlayIcon"] = None

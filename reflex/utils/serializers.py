@@ -7,7 +7,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
 from reflex.base import Base
-from reflex.utils import exceptions, format, types
+from reflex.utils import console, exceptions, format, types
 
 # Mapping from type to a serializer.
 # The serializer should convert the type to a JSON object.
@@ -16,44 +16,56 @@ Serializer = Callable[[Type], SerializedType]
 SERIALIZERS: dict[Type, Serializer] = {}
 
 
-def serializer(fn: Serializer) -> Serializer:
+def serializer(override: Any = False) -> Any:  # type: ignore
     """Decorator to add a serializer for a given type.
 
     Args:
-        fn: The function to decorate.
+        override: If the serializer can override an already defined one of the same type.
 
     Returns:
-        The decorated function.
-
-    Raises:
-        ValueError: If the function does not take a single argument.
+        The serializer decorator.
     """
-    # Get the global serializers.
-    global SERIALIZERS
 
-    # Check the type hints to get the type of the argument.
-    type_hints = get_type_hints(fn)
-    args = [arg for arg in type_hints if arg != "return"]
+    def inner_serializer(fn: Serializer):
+        # Get the global serializers.
+        global SERIALIZERS
 
-    # Make sure the function takes a single argument.
-    if len(args) != 1:
-        raise ValueError("Serializer must take a single argument.")
+        # Check the type hints to get the type of the argument.
+        type_hints = get_type_hints(fn)
+        args = [arg for arg in type_hints if arg != "return"]
 
-    # Get the type of the argument.
-    type_ = type_hints[args[0]]
+        # Make sure the function takes a single argument.
+        if len(args) != 1:
+            raise ValueError("Serializer must take a single argument.")
 
-    # Make sure the type is not already registered.
-    registered_fn = SERIALIZERS.get(type_)
-    if registered_fn is not None and registered_fn != fn:
-        raise ValueError(
-            f"Serializer for type {type_} is already registered as {registered_fn.__qualname__}."
-        )
+        # Get the type of the argument.
+        type_ = type_hints[args[0]]
 
-    # Register the serializer.
-    SERIALIZERS[type_] = fn
+        # Make sure the type is not already registered.
+        registered_fn = SERIALIZERS.get(type_)
+        if registered_fn is not None and registered_fn != fn:
+            if override:
+                console.warn(
+                    f"Overriding serializer for type {type_}: Replacing {registered_fn.__module__}.{registered_fn.__qualname__} with {fn.__module__}.{fn.__qualname__}"
+                )
+            else:
+                console.warn(
+                    f"Serializer for type {type_} is already registered as {registered_fn.__module__}.{registered_fn.__qualname__}."
+                )
+                return fn
 
-    # Return the function.
-    return fn
+        # Register the serializer.
+        SERIALIZERS[type_] = fn
+
+        # Return the function.
+        return fn
+
+    if callable(override):
+        _fn = override
+        override = False
+        return inner_serializer(_fn)
+    else:
+        return inner_serializer
 
 
 def serialize(value: Any) -> SerializedType | None:

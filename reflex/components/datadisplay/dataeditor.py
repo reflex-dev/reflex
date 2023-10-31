@@ -4,12 +4,15 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from pandas import DataFrame
+
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
+from reflex.components.tags.tag import Tag
 from reflex.utils import console, format, imports, types
-from reflex.utils.serializers import serializer
-from reflex.vars import ImportVar, Var, get_unique_variable_name
+from reflex.utils.serializers import serialize, serializer
+from reflex.vars import BaseVar, ComputedVar, ImportVar, Var, get_unique_variable_name
 
 
 # TODO: Fix the serialization issue for custom types.
@@ -114,10 +117,10 @@ class DataEditor(NoSSRComponent):
     rows: Var[int]
 
     # Headers of the columns for the data grid.
-    columns: Var[List[Dict[str, Any]]]
+    columns: Var[Union[List[Dict[str, Any]], DataFrame]]
 
     # The data.
-    data: Var[List[List[Any]]]
+    data: Var[Union[List[List[Any]], List[Dict[str, Any]], DataFrame]]
 
     # The name of the callback used to find the data to display.
     get_cell_content: Var[str]
@@ -200,6 +203,9 @@ class DataEditor(NoSSRComponent):
     # global theme
     theme: Var[Union[DataEditorTheme, Dict]]
 
+    # internal_value
+    _editor_id: str = ""
+
     def _get_imports(self):
         return imports.merge_imports(
             super()._get_imports(),
@@ -211,11 +217,9 @@ class DataEditor(NoSSRComponent):
                 },
                 self.library: {ImportVar(tag="GridCellKind")},
                 "/utils/helpers/dataeditor.js": {
-                    ImportVar(tag=f"getDEColumn", is_default=False, install=False),
-                    ImportVar(tag=f"getDERow", is_default=False, install=False),
-                    ImportVar(tag=f"locateCell", is_default=False, install=False),
-                    ImportVar(tag=f"formatCell", is_default=False, install=False),
-                    ImportVar(tag=f"onEditCell", is_default=False, install=False),
+                    ImportVar(
+                        tag=f"formatDataEditorCells", is_default=False, install=False
+                    ),
                 },
             },
         )
@@ -249,29 +253,25 @@ class DataEditor(NoSSRComponent):
         }
 
     def _get_hooks(self) -> str | None:
-        # Define the id of the component in case multiple are used in the same page.
-        editor_id = get_unique_variable_name()
-
         # Define the name of the getData callback associated with this component and assign to get_cell_content.
-        data_callback = f"getData_{editor_id}"
+        data_callback = f"getData_{self._editor_id}"
         self.get_cell_content = Var.create(data_callback, _var_is_local=False)  # type: ignore
 
         code = [f"function {data_callback}([col, row])" "{"]
 
+        if issubclass(self.data._var_type, DataFrame):
+            columns_path = f"{self.data._var_full_name}.columns"
+            data_path = f"{self.data._var_full_name}.data"
+        else:
+            columns_path = f"{self.columns._var_full_name}"
+            data_path = f"{self.data._var_full_name}"
+
         code.extend(
             [
-                f"  if (row < {self.data._var_full_name}.length && col < {self.columns._var_full_name}.length)"
-                " {",
-                f"    const column = getDEColumn({self.columns._var_full_name}, col);",
-                f"    const rowData = getDERow({self.data._var_full_name}, row);",
-                f"    const cellData = locateCell(rowData, column);",
-                "    return formatCell(cellData, column);",
+                f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
                 "  }",
-                "  return { kind: GridCellKind.Loading};",
             ]
         )
-
-        code.append("}")
 
         return "\n".join(code)
 
@@ -291,31 +291,48 @@ class DataEditor(NoSSRComponent):
         """
         from reflex.el.elements import Div
 
-        columns = props.get("columns", [])
+        columns = props.get("columns", None)
         data = props.get("data", [])
         rows = props.get("rows", None)
 
-        # If rows is not provided, determine from data.
-        if rows is None:
-            props["rows"] = (
-                data.length()  # BaseVar.create(value=f"{data}.length()", is_local=False)
-                if isinstance(data, Var)
-                else len(data)
+        # check ComputerVar return type annotation for data and columns props.
+        if isinstance(data, ComputedVar) and data._var_type == Any:
+            raise ValueError(
+                f"Return type annotation for the computed var {data._var_full_name} should be provided."
             )
 
-        if not isinstance(columns, Var) and len(columns):
-            if (
-                types.is_dataframe(type(data))
-                or isinstance(data, Var)
-                and types.is_dataframe(data._var_type)
-            ):
+        if (
+            columns is not None
+            and isinstance(columns, ComputedVar)
+            and columns._var_type == Any
+        ):
+            raise ValueError(
+                f"Return type annotation for the computed var {columns._var_full_name} should be provided."
+            )
+
+        if types.is_dataframe(type(columns)) or (
+            isinstance(columns, Var) and types.is_dataframe(columns._var_type)
+        ):
+            raise ValueError("DataFrame should be passed to the `data` props instead.")
+
+        if types.is_dataframe(type(data)) or (
+            isinstance(data, Var) and types.is_dataframe(data._var_type)
+        ):
+            if columns is not None:
                 raise ValueError(
-                    "Cannot pass in both a pandas dataframe and columns to the data_editor component."
+                    "Cannot pass in both a pandas dataframe and columns to the data_table component."
                 )
             else:
-                props["columns"] = [
-                    format.format_data_editor_column(col) for col in columns
-                ]
+                props["columns"] = data
+
+        # If rows is not provided, determine from data.
+        if rows is None:
+            props["rows"] = data.length() if isinstance(data, Var) else len(data)
+
+        if isinstance(columns, List):
+            props["columns"] = [
+                format.format_data_editor_column(col) for col in columns
+            ]
 
         if "theme" in props:
             theme = props.get("theme")
@@ -323,81 +340,107 @@ class DataEditor(NoSSRComponent):
                 props["theme"] = DataEditorTheme(**theme)
 
         # Allow by default to select a region of cells in the grid.
-        props.setdefault("getCellForSelection", True)
+        props.setdefault("get_cell_for_selection", True)
 
         # Disable on_paste by default if not provided.
-        props.setdefault("onPaste", False)
+        props.setdefault("on_paste", False)
 
         if props.pop("getCellContent", None) is not None:
             console.warn(
                 "getCellContent is not user configurable, the provided value will be discarded"
             )
-        grid = super().create(*children, **props)
+        editor = super().create(*children, **props)
+
+        # Define the id of the component in case multiple are used in the same page.
+        editor._editor_id = get_unique_variable_name()
         return Div.create(
-            grid,
-            Div.create(id="portal"),
+            editor,
             width=props.pop("width", "100%"),
             height=props.pop("height", "100%"),
         )
 
-    # def _render(self) -> Tag:
-    #     if isinstance(self.data, Var) and types.is_dataframe(self.data.type_):
-    #         self.columns = BaseVar(
-    #             name=f"{self.data.name}.columns",
-    #             type_=List[Any],
-    #             state=self.data.state,
-    #         )
-    #         self.data = BaseVar(
-    #             name=f"{self.data.name}.data",
-    #             type_=List[List[Any]],
-    #             state=self.data.state,
-    #         )
-    #     if types.is_dataframe(type(self.data)):
-    #         # If given a pandas df break up the data and columns
-    #         data = serialize(self.data)
-    #         assert isinstance(data, dict), "Serialized dataframe should be a dict."
-    #         self.columns = Var.create_safe(data["columns"])
-    #         self.data = Var.create_safe(data["data"])
+    def _render(self) -> Tag:
+        if isinstance(self.data, Var) and types.is_dataframe(self.data._var_type):
+            self.columns = BaseVar(
+                _var_name=f"{self.data._var_name}.columns",
+                _var_type=List[Any],
+                _var_state=self.data._var_state,
+            )
+            self.data = BaseVar(
+                _var_name=f"{self.data._var_name}.data",
+                _var_type=List[List[Any]],
+                _var_state=self.data._var_state,
+            )
+        if types.is_dataframe(type(self.data)):
+            # If given a pandas df break up the data and columns
+            data = serialize(self.data)
+            assert isinstance(data, dict), "Serialized dataframe should be a dict."
+            self.columns = Var.create_safe(data["columns"])
+            self.data = Var.create_safe(data["data"])
 
-    #    # Render the table.
-    #    return super()._render()
+        # Render the table.
+        return super()._render()
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the component.
+
+        Returns:
+            The app wrap components.
+        """
+        from reflex.el.elements import Div
+
+        class Portal(Div):
+            def get_ref(self):
+                return None
+
+        return {(-1, "DataEditorPortal"): Portal.create(id="portal")}
 
 
-# try:
-#     pass
+def format_dataframe_columns(df: DataFrame) -> List[Dict[str, str]]:
+    """Format dataframe columns to a list of dicts.
 
-#     # def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
-#     #     """Format dataframe values to a list of lists.
+    Args:
+        df: The dataframe to format.
 
-#     #     Args:
-#     #         df: The dataframe to format.
+    Returns:
+        The dataframe columns as a list of dicts.
+    """
+    formatted_columns = [
+        format.format_data_editor_column({"title": column_, "type": str(type_)})
+        for column_, type_ in df.dtypes.items()
+    ]
+    return formatted_columns
 
-#     #     Returns:
-#     #         The dataframe as a list of lists.
-#     #     """
-#     # return [
-#     #     [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-#     #     for data in list(df.values.tolist())
-#     # ]
-#     # ...
 
-#     # @serializer
-#     # def serialize_dataframe(df: DataFrame) -> dict:
-#     #     """Serialize a pandas dataframe.
+def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
+    """Format dataframe values to a list of lists.
 
-#     #     Args:
-#     #         df: The dataframe to serialize.
+    Args:
+        df: The dataframe to format.
 
-#     #     Returns:
-#     #         The serialized dataframe.
-#     #     """
-#     # return {
-#     #     "columns": df.columns.tolist(),
-#     #     "data": format_dataframe_values(df),
-#     # }
+    Returns:
+        The dataframe as a list of lists.
+    """
+    return [
+        [str(d) if isinstance(d, (list, tuple)) else d for d in data]
+        for data in list(df.values.tolist())
+    ]
 
-# except ImportError:
-#     pass
+
+@serializer(override=True)
+def serialize_dataframe(df: DataFrame) -> dict:
+    """Serialize a pandas dataframe.
+
+    Args:
+        df: The dataframe to serialize.
+
+    Returns:
+        The serialized dataframe.
+    """
+    return {
+        "columns": format_dataframe_columns(df),
+        "data": format_dataframe_values(df),
+    }
 
 
 @serializer
