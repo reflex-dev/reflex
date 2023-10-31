@@ -112,11 +112,28 @@ async def _bg_fn2(self):
         pass
 
 
+some_var = 42
+
+
+async def _bg_fn3(self, some_arg=some_var):
+    async with self:
+        pass
+    yield some_arg
+
+
+@background
+async def _bg_fn4(self, some_arg=some_var):
+    async with self:
+        pass
+
+
 @pytest.mark.parametrize(
     "fn",
     [
         _bg_fn1,
         _bg_fn2,
+        background(_bg_fn3),
+        _bg_fn4,
     ],
 )
 def test_background_decorator(fn):
@@ -175,4 +192,48 @@ def test_background_decorator_automatic_yield_after_modifications(param_value):
         assert inspect.getsource(fn).count("background") == 1
         assert "automatic_yield_after_modifications" in inspect.getsource(fn)
         assert inspect.getsource(fn).count("yield") == 1
+    assert getattr(fn, BACKGROUND_TASK_MARKER, None)
+
+
+def test_background_decorator_chain():
+    def dummy(fn):
+        return fn
+
+    @dummy
+    @background
+    async def fn(self):
+        async with self:
+            pass
+
+    assert inspect.isasyncgenfunction(fn)
+    assert inspect.getsource(fn).count("dummy") == 1
+    assert inspect.getsource(fn).count("yield") == 1
+    assert getattr(fn, BACKGROUND_TASK_MARKER, None)
+
+
+def test_background_decorator_depends_on_locals():
+    another_var = 47
+
+    @background
+    async def fn(self, some_arg=some_var, another_arg=another_var):
+        async with self:
+            pass
+
+    assert inspect.isasyncgenfunction(fn)
+    assert inspect.getsource(fn).count("yield") == 1
+    assert "background" not in inspect.getsource(fn)
+    assert getattr(fn, BACKGROUND_TASK_MARKER, None)
+
+
+def test_background_decorator_depends_on_locals_call_dec():
+    another_var = 47
+
+    @background()
+    async def fn(self, some_arg=some_var, another_arg=another_var):
+        async with self:
+            pass
+
+    assert inspect.isasyncgenfunction(fn)
+    assert inspect.getsource(fn).count("yield") == 1
+    assert "background" not in inspect.getsource(fn)
     assert getattr(fn, BACKGROUND_TASK_MARKER, None)
