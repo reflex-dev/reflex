@@ -21,7 +21,7 @@ from typing import (
     get_type_hints,
 )
 
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
 from fastapi.responses import StreamingResponse
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
@@ -883,10 +883,11 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(files: List[UploadFile]):
+    async def upload_file(request: Request, files: List[UploadFile]):
         """Upload a file.
 
         Args:
+            request: The FastAPI request object.
             files: The file(s) to upload.
 
         Returns:
@@ -894,12 +895,16 @@ def upload(app: App):
 
         Raises:
             ValueError: if there are no args with supported annotation.
+            HTTPException: when the request does not include token / handler headers.
         """
-        assert files[0].filename is not None
-        token, handler = files[0].filename.split(":")[:2]
-        for file in files:
-            assert file.filename is not None
-            file.filename = file.filename.split(":")[-1]
+        token = request.headers.get("reflex-client-token")
+        handler = request.headers.get("reflex-event-handler")
+
+        if not token or not handler:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing reflex-client-token or reflex-event-handler header.",
+            )
 
         # Get the state for the session.
         async with app.state_manager.modify_state(token) as state:
@@ -927,8 +932,8 @@ def upload(app: App):
 
             if not handler_upload_param:
                 raise ValueError(
-                    f"`{handler}` handler should have a parameter annotated as List["
-                    f"rx.UploadFile]"
+                    f"`{handler}` handler should have a parameter annotated as "
+                    "List[rx.UploadFile]"
                 )
 
             event = Event(

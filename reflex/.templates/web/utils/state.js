@@ -387,6 +387,10 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress,
 
   const controller = new AbortController()
   const config = {
+    headers: {
+      "Reflex-Client-Token": getToken(),
+      "Reflex-Event-Handler": handler,
+    },
     signal: controller.signal,
     onDownloadProgress: eventHandler,
   }
@@ -400,7 +404,7 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress,
     formdata.append(
       "files",
       file,
-      getToken() + ":" + handler + ":" + (file.path || file.name)
+      file.path || file.name
     );
   })
 
