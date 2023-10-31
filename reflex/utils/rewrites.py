@@ -3,7 +3,7 @@
 This module is used internally by Reflex to rewrite user code
 where needed to better support the Reflex programming model.
 
-Please watch out for Black Magic.
+Please excuse the Black Magic.
 """
 from __future__ import annotations
 
@@ -37,14 +37,18 @@ def replace_function_code(
     """
     source_hash = hashlib.md5(new_source_code.encode()).hexdigest()
     filename = f"<{filename_prefix}_{source_hash}>"
+    # Save the generated source code for tracebacks and inspect.getsource.
     linecache.cache[filename] = (
         len(new_source_code),
         None,
         new_source_code.splitlines(keepends=True),
         filename,
     )
+    # Will use definition-scope locals, if provided.
     lc = locals.copy() if locals is not None else {}
+    # Compile the function with the new source code.
     exec(compile(new_source_code, filename, "exec"), fn.__globals__, lc)
+    # Pull the code object out of the newly compiled function in the locals dict.
     fn.__code__ = lc[fn.__name__].__code__
     return fn
 
@@ -74,12 +78,15 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
         """
         # remove the background task decorator
         for dec in node.decorator_list:
+            # Decorator applied via attribute (@rx.background)
             if isinstance(dec, ast.Attribute) and dec.attr == self._REMOVE_DECORATOR:
                 node.decorator_list.remove(dec)
                 break
+            # Decorator applied via name (@background)
             if isinstance(dec, ast.Name) and dec.id == self._REMOVE_DECORATOR:
                 node.decorator_list.remove(dec)
                 break
+            # Decorator applied via call (@background(...))
             if (
                 isinstance(dec, ast.Call)
                 and isinstance(dec.func, ast.Name)
@@ -87,10 +94,11 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
             ):
                 node.decorator_list.remove(dec)
                 break
+        # Determine what "self" is called in this function.
         for arg in node.args.args:
             self.self_name = arg.arg
             break
-        self.generic_visit(node)
+        self.generic_visit(node)  # Must visit child nodes!
         return node
 
     def generic_visit(self, node: ast.AST) -> ast.AST:
@@ -117,6 +125,7 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
                 and isinstance(child.items[0].context_expr, ast.Name)
                 and child.items[0].context_expr.id == self.self_name
             ):
+                # Found an `async with self` block, so maybe add `yield` after it.
                 insert_yield_at.append((ix + 1))
         for added_so_far, ix in enumerate(insert_yield_at):
             next_ix = added_so_far + ix
@@ -125,7 +134,7 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
                 and isinstance(body[next_ix], ast.Expr)
                 and isinstance(body[next_ix].value, ast.Yield)
             ):
-                continue  # already has a yield here
+                continue  # Already has a yield here.
             body.insert(next_ix, ast.Expr(value=ast.Yield()))
             self.added_yield = True
         return node
@@ -150,6 +159,6 @@ def add_yield_after_async_with_self(
     transformer = AddYieldAfterAsyncWithSelf()
     magic_fn_tree = transformer.visit(ast.parse(orig_src))
     if not transformer.added_yield:
-        return fn  # do not rewrite the function if there were no changes
+        return fn  # Do not rewrite the function if there were no changes.
     magic_fn_source = ast.unparse(magic_fn_tree)
     return replace_function_code(fn, magic_fn_source, locals)
