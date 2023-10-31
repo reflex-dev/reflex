@@ -245,8 +245,8 @@ class EventChain(EventActionsMixin):
 
 
 # These chains can be used for their side effects when no other events are desired.
-stop_propagation = EventChain(events=[], args_spec=None).stop_propagation
-prevent_default = EventChain(events=[], args_spec=None).prevent_default
+stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
+prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
 
 
 class Target(Base):

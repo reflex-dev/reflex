@@ -441,7 +441,7 @@ def test_format_event(input, output):
                     EventSpec(handler=EventHandler(fn=mock_event)),
                     EventSpec(handler=EventHandler(fn=mock_event)),
                 ],
-                args_spec=lambda: [],
+                args_spec=None,
             ),
             'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
         ),
