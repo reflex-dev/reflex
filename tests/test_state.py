@@ -1374,8 +1374,13 @@ def test_error_on_state_method_shadow():
     )
 
 
-def test_state_with_invalid_yield():
-    """Test that an error is thrown when a state yields an invalid value."""
+@pytest.mark.asyncio
+async def test_state_with_invalid_yield(capsys):
+    """Test that an error is thrown when a state yields an invalid value.
+
+    Args:
+        capsys: Pytest fixture for capture standard streams.
+    """
 
     class StateWithInvalidYield(BaseState):
         """A state that yields an invalid value."""
@@ -1389,15 +1394,16 @@ def test_state_with_invalid_yield():
             yield 1
 
     invalid_state = StateWithInvalidYield()
-    with pytest.raises(TypeError) as err:
-        invalid_state._check_valid(
-            invalid_state.event_handlers["invalid_handler"],
-            rx.event.Event(token="fake_token", name="invalid_handler"),
+    async for update in invalid_state._process(
+        rx.event.Event(token="fake_token", name="invalid_handler")
+    ):
+        assert not update.delta
+        assert update.events == rx.event.fix_events(
+            [rx.window_alert("An error occurred. See logs for details.")],
+            token="",
         )
-    assert (
-        "must only return/yield: None, Events or other EventHandlers"
-        in err.value.args[0]
-    )
+    captured = capsys.readouterr()
+    assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
 
 @pytest.fixture(scope="function", params=["in_process", "redis"])
