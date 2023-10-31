@@ -149,3 +149,30 @@ def test_background_decorator_multiple():
     assert inspect.getsource(fn).count("background") == 2
     assert inspect.getsource(fn).count("yield") == 1
     assert getattr(fn, BACKGROUND_TASK_MARKER, None)
+
+
+@pytest.mark.parametrize(
+    "param_value",
+    [
+        True,
+        False,
+    ],
+    ids=["default", "disabled"],
+)
+def test_background_decorator_automatic_yield_after_modifications(param_value):
+    @background(automatic_yield_after_modifications=param_value)
+    async def fn(self):
+        async with self:
+            pass
+
+    if param_value:
+        assert inspect.isasyncgenfunction(fn)
+        assert "automatic_yield_after_modifications" not in inspect.getsource(fn)
+        assert inspect.getsource(fn).count("yield") == 1
+        assert "background" not in inspect.getsource(fn)
+    else:
+        assert not inspect.isasyncgenfunction(fn)
+        assert inspect.getsource(fn).count("background") == 1
+        assert "automatic_yield_after_modifications" in inspect.getsource(fn)
+        assert inspect.getsource(fn).count("yield") == 1
+    assert getattr(fn, BACKGROUND_TASK_MARKER, None)
