@@ -1724,6 +1724,7 @@ class BackgroundTaskState(State):
         async with self:
             pass
 
+    @rx.background
     async def background_task_no_generator2(self):
         """A background task that does not yield."""
         pass
@@ -1918,6 +1919,8 @@ async def test_background_task_no_chain():
         await bts.bad_chain1()
     with pytest.raises(RuntimeError):
         await bts.bad_chain2()
+    with pytest.raises(RuntimeError):
+        await bts.bad_chain3()
 
 
 def test_mutable_list(mutable_state):
