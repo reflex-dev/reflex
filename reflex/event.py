@@ -58,12 +58,19 @@ def background(
     Returns:
         The function with a marker set and optionally rewritten to include `yield`.
     """
+    locals = None
+    current_frame = inspect.currentframe()
+    if current_frame is not None and current_frame.f_back is not None:
+        locals = current_frame.f_back.f_locals
 
     def _decorator(fn: Callable) -> Callable:
         if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
             raise TypeError("Background task must be async function or generator.")
         if automatic_yield_after_modifications:
-            fn = rewrites.add_yield_after_async_with_self(fn)
+            fn = rewrites.add_yield_after_async_with_self(
+                fn,
+                locals=locals,
+            )
         setattr(fn, BACKGROUND_TASK_MARKER, True)
         return fn
 

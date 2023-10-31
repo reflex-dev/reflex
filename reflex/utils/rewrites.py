@@ -11,7 +11,6 @@ import ast
 import hashlib
 import inspect
 import linecache
-import sys
 import textwrap
 from typing import Any, Callable
 
@@ -19,6 +18,7 @@ from typing import Any, Callable
 def replace_function_code(
     fn: Callable,
     new_source_code: str,
+    locals: dict | None = None,
     filename_prefix: str = "reflex_rewrites",
 ) -> Callable:
     """Compile the new source code and replace the function's code object.
@@ -29,6 +29,7 @@ def replace_function_code(
     Args:
         fn: The function to replace the code of.
         new_source_code: The new source code to use.
+        locals: The local variables to use when compiling the new source code.
         filename_prefix: The prefix to use for the filename in `linecache`.
 
     Returns:
@@ -42,9 +43,9 @@ def replace_function_code(
         new_source_code.splitlines(keepends=True),
         filename,
     )
-    gl = sys.modules[fn.__module__].__dict__.copy()
-    exec(compile(new_source_code, filename, "exec"), gl)
-    fn.__code__ = gl[fn.__name__].__code__
+    lc = locals.copy() if locals is not None else {}
+    exec(compile(new_source_code, filename, "exec"), fn.__globals__, lc)
+    fn.__code__ = lc[fn.__name__].__code__
     return fn
 
 
@@ -130,7 +131,9 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
         return node
 
 
-def add_yield_after_async_with_self(fn: Callable) -> Callable:
+def add_yield_after_async_with_self(
+    fn: Callable, locals: dict | None = None
+) -> Callable:
     """Add a `yield` statement after every `async with self:` block.
 
     Rewrite the source code of `fn` to append a `yield` statement after every
@@ -138,6 +141,7 @@ def add_yield_after_async_with_self(fn: Callable) -> Callable:
 
     Args:
         fn: The function to rewrite.
+        locals: The local variables to use when compiling the new source code.
 
     Returns:
         The function with the `yield` statements added.
@@ -148,4 +152,4 @@ def add_yield_after_async_with_self(fn: Callable) -> Callable:
     if not transformer.added_yield:
         return fn  # do not rewrite the function if there were no changes
     magic_fn_source = ast.unparse(magic_fn_tree)
-    return replace_function_code(fn, magic_fn_source)
+    return replace_function_code(fn, magic_fn_source, locals)
