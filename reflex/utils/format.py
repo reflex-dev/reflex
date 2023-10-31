@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Union
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
 from reflex.utils.serializers import serialize
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -291,7 +291,7 @@ def format_prop(
         TypeError: If the prop is not valid.
     """
     # import here to avoid circular import.
-    from reflex.event import EVENT_ARG, EventChain
+    from reflex.event import EventChain
 
     try:
         # Handle var props.
@@ -304,17 +304,14 @@ def format_prop(
 
         # Handle event props.
         elif isinstance(prop, EventChain):
-            if prop.args_spec is None:
-                arg_def = f"{EVENT_ARG}"
+            sig = inspect.signature(prop.args_spec)  # type: ignore
+            if sig.parameters:
+                arg_def = ",".join(f"_{p}" for p in sig.parameters)
+                arg_def = f"({arg_def})"
             else:
-                sig = inspect.signature(prop.args_spec)
-                if sig.parameters:
-                    arg_def = ",".join(f"_{p}" for p in sig.parameters)
-                    arg_def = f"({arg_def})"
-                else:
-                    # add a default argument for addEvents if none were specified in prop.args_spec
-                    # used to trigger the preventDefault() on the event.
-                    arg_def = "(_e)"
+                # add a default argument for addEvents if none were specified in prop.args_spec
+                # used to trigger the preventDefault() on the event.
+                arg_def = "(_e)"
 
             chain = ",".join([format_event(event) for event in prop.events])
             event = f"addEvents([{chain}], {arg_def}, {json_dumps(prop.event_actions)})"
@@ -420,7 +417,7 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    json.dumps(val._var_name)
+                    wrap(json.dumps(val._var_name).strip('"').replace("`", "\\`"), "`")
                     if val._var_is_string
                     else val._var_full_name,
                 )
@@ -597,7 +594,7 @@ def json_dumps(obj: Any) -> str:
     Returns:
         A string
     """
-    return json.dumps(obj, ensure_ascii=False, default=list)
+    return json.dumps(obj, ensure_ascii=False, default=serialize)
 
 
 def unwrap_vars(value: str) -> str:
@@ -628,3 +625,47 @@ def unwrap_vars(value: str) -> str:
         string=value,
         flags=re.VERBOSE,
     )
+
+
+def format_data_editor_column(col: str | dict):
+    """Format a given column into the proper format.
+
+    Args:
+        col: The column.
+
+    Raises:
+        ValueError: invalid type provided for column.
+
+    Returns:
+        The formatted column.
+    """
+    if isinstance(col, str):
+        return {"title": col, "id": col.lower(), "type": "str"}
+
+    if isinstance(col, (dict,)):
+        if "id" not in col:
+            col["id"] = col["title"].lower()
+        if "type" not in col:
+            col["type"] = "str"
+        if "overlayIcon" not in col:
+            col["overlayIcon"] = None
+        return col
+
+    if isinstance(col, BaseVar):
+        return col
+
+    raise ValueError(
+        f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
+    )
+
+
+def format_data_editor_cell(cell: Any):
+    """Format a given data into a renderable cell for data_editor.
+
+    Args:
+        cell: The data to format.
+
+    Returns:
+        The formatted cell.
+    """
+    return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}

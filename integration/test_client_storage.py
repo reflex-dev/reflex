@@ -21,10 +21,6 @@ def ClientSide():
         state_var: str = ""
         input_value: str = ""
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
-
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
         c1: str = rx.Cookie()
@@ -59,7 +55,11 @@ def ClientSide():
 
     def index():
         return rx.fragment(
-            rx.input(value=ClientSideState.token, is_read_only=True, id="token"),
+            rx.input(
+                value=ClientSideState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
             rx.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
@@ -284,63 +284,68 @@ async def test_client_side_state(
     input_value_input.send_keys("l1s value")
     set_sub_sub_state_button.click()
 
+    exp_cookies = {
+        "client_side_state.client_side_sub_state.c1": {
+            "domain": "localhost",
+            "httpOnly": False,
+            "name": "client_side_state.client_side_sub_state.c1",
+            "path": "/",
+            "sameSite": "Lax",
+            "secure": False,
+            "value": "c1%20value",
+        },
+        "client_side_state.client_side_sub_state.c2": {
+            "domain": "localhost",
+            "httpOnly": False,
+            "name": "client_side_state.client_side_sub_state.c2",
+            "path": "/",
+            "sameSite": "Lax",
+            "secure": False,
+            "value": "c2%20value",
+        },
+        "client_side_state.client_side_sub_state.c4": {
+            "domain": "localhost",
+            "httpOnly": False,
+            "name": "client_side_state.client_side_sub_state.c4",
+            "path": "/",
+            "sameSite": "Strict",
+            "secure": False,
+            "value": "c4%20value",
+        },
+        "c6": {
+            "domain": "localhost",
+            "httpOnly": False,
+            "name": "c6",
+            "path": "/",
+            "sameSite": "Lax",
+            "secure": False,
+            "value": "c6%20value",
+        },
+        "client_side_state.client_side_sub_state.c7": {
+            "domain": "localhost",
+            "httpOnly": False,
+            "name": "client_side_state.client_side_sub_state.c7",
+            "path": "/",
+            "sameSite": "Lax",
+            "secure": False,
+            "value": "c7%20value",
+        },
+        "client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s": {
+            "domain": "localhost",
+            "httpOnly": False,
+            "name": "client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s",
+            "path": "/",
+            "sameSite": "Lax",
+            "secure": False,
+            "value": "c1s%20value",
+        },
+    }
+    AppHarness._poll_for(
+        lambda: all(cookie_key in cookie_info_map(driver) for cookie_key in exp_cookies)
+    )
     cookies = cookie_info_map(driver)
-    assert cookies.pop("client_side_state.client_side_sub_state.c1") == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.c1",
-        "path": "/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c1%20value",
-    }
-    assert cookies.pop("client_side_state.client_side_sub_state.c2") == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.c2",
-        "path": "/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c2%20value",
-    }
-    assert cookies.pop("client_side_state.client_side_sub_state.c4") == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.c4",
-        "path": "/",
-        "sameSite": "Strict",
-        "secure": False,
-        "value": "c4%20value",
-    }
-    assert cookies.pop("c6") == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": "c6",
-        "path": "/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c6%20value",
-    }
-    assert cookies.pop("client_side_state.client_side_sub_state.c7") == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.c7",
-        "path": "/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c7%20value",
-    }
-    assert cookies.pop(
-        "client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s"
-    ) == {
-        "domain": "localhost",
-        "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s",
-        "path": "/",
-        "sameSite": "Lax",
-        "secure": False,
-        "value": "c1s%20value",
-    }
+    for exp_cookie_key, exp_cookie_data in exp_cookies.items():
+        assert cookies.pop(exp_cookie_key) == exp_cookie_data
     # assert all cookies have been popped for this page
     assert not cookies
 
@@ -476,6 +481,9 @@ async def test_client_side_state(
     assert l1s.text == "l1s value"
 
     # make sure c5 cookie shows up on the `/foo` route
+    AppHarness._poll_for(
+        lambda: "client_side_state.client_side_sub_state.c5" in cookie_info_map(driver)
+    )
     assert cookie_info_map(driver)["client_side_state.client_side_sub_state.c5"] == {
         "domain": "localhost",
         "httpOnly": False,

@@ -62,7 +62,7 @@ def get_base_component_map() -> dict[str, Callable]:
         "p": lambda value: Text.create(value, margin_y="1em"),
         "ul": lambda value: UnorderedList.create(value, margin_y="1em"),  # type: ignore
         "ol": lambda value: OrderedList.create(value, margin_y="1em"),  # type: ignore
-        "li": lambda value: ListItem.create(value),
+        "li": lambda value: ListItem.create(value, margin_y="0.5em"),
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
         "codeblock": lambda *_, **props: CodeBlock.create(

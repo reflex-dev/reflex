@@ -58,6 +58,32 @@ class ChartBase(RechartsCharts):
             EventTriggers.ON_MOUSE_LEAVE: lambda: [],
         }
 
+    @staticmethod
+    def _ensure_valid_dimension(name: str, value: Any) -> None:
+        """Ensure that the value is an int type or str percentage.
+
+        Unfortunately str Vars cannot be checked and are implicitly not allowed.
+
+        Args:
+            name: The name of the prop.
+            value: The value to check.
+
+        Raises:
+            ValueError: If the value is not an int type or str percentage.
+        """
+        if value is None:
+            return
+        if isinstance(value, int):
+            return
+        if isinstance(value, str) and value.endswith("%"):
+            return
+        if isinstance(value, Var) and issubclass(value._var_type, int):
+            return
+        raise ValueError(
+            f"Chart {name} must be specified as int pixels or percentage, not {value!r}. "
+            "CSS unit dimensions are allowed on parent container."
+        )
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a chart component.
@@ -69,10 +95,24 @@ class ChartBase(RechartsCharts):
         Returns:
             The chart component wrapped in a responsive container.
         """
+        width = props.pop("width", None)
+        height = props.pop("height", None)
+        cls._ensure_valid_dimension("width", width)
+        cls._ensure_valid_dimension("height", height)
+
+        dim_props = dict(
+            width=width or "100%",
+            height=height or "100%",
+        )
+        # Provide min dimensions so the graph always appears, even if the outer container is zero-size.
+        if width is None:
+            dim_props["min_width"] = 200
+        if height is None:
+            dim_props["min_height"] = 100
+
         return ResponsiveContainer.create(
             super().create(*children, **props),
-            width=props.pop("width", "100%"),
-            height=props.pop("height", "100%"),
+            **dim_props,  # type: ignore
         )
 
 

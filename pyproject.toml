@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.2.9"
+version = "0.3.1"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -26,7 +26,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 cloudpickle = "^2.2.1"
 fastapi = "^0.96.0"
 gunicorn = "^20.1.0"
@@ -45,13 +45,17 @@ watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
 websockets = "^10.4"
 starlette-admin = "^0.9.0"
-importlib-metadata = {version = "^6.7.0", python = ">=3.7, <3.8"}
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
 distro = {version = "^1.8.0", platform = "linux"}
 python-engineio = "!=4.6.0"
-wrapt = "^1.15.0"
+wrapt = [
+    {version = "^1.14.0", python = ">=3.11"},
+    {version = "^1.11.0", python = "<3.11"},
+]
 packaging = "^23.1"
+tabulate = "^0.9.0"
+pipdeptree = "^2.13.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -65,7 +69,6 @@ black = "^22.10.0"
 ruff = "^0.0.244"
 pandas = [
     {version = "^1.5.3", python = ">=3.8,<4.0"},
-    {version = "^1.1", python = ">=3.7, <3.8"}
 ]
 pillow = [
     {version = "^10.0.0", python = ">=3.8,<4.0"}
@@ -74,6 +77,7 @@ plotly = "^5.13.0"
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 selenium = "^4.11.0"
+types-tabulate = "^0.9.0.3"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"

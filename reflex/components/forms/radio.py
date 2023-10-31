@@ -50,7 +50,7 @@ class RadioGroup(ChakraComponent):
         if (
             len(children) == 1
             and isinstance(children[0], Var)
-            and _issubclass(children[0].type_, List)
+            and _issubclass(children[0]._var_type, List)
         ):
             children = [Foreach.create(children[0], lambda item: Radio.create(item))]
         return super().create(*children, **props)

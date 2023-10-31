@@ -68,7 +68,9 @@ class DebounceInput(Component):
             id=child.id,
             class_name=child.class_name,
             element=Var.create(
-                "{%s}" % child.tag, _var_is_local=False, _var_is_string=False
+                "{%s}" % (child.alias or child.tag),
+                _var_is_local=False,
+                _var_is_string=False,
             ),
         )
         # do NOT render the child, DebounceInput will create it

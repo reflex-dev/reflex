@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Type
+from typing import Optional, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -39,13 +39,9 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="EventLoopContext"),
         ImportVar(tag="initialEvents"),
         ImportVar(tag="StateContext"),
+        ImportVar(tag="ColorModeContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
-    "@chakra-ui/react": {
-        ImportVar(tag=constants.ColorMode.USE),
-        ImportVar(tag="Box"),
-        ImportVar(tag="Text"),
-    },
 }
 
 
@@ -64,6 +60,23 @@ def _compile_document_root(root: Component) -> str:
     )
 
 
+def _compile_app(app_root: Component) -> str:
+    """Compile the app template component.
+
+    Args:
+        app_root: The app root to compile.
+
+    Returns:
+        The compiled app.
+    """
+    return templates.APP_ROOT.render(
+        imports=utils.compile_imports(app_root.get_imports()),
+        custom_codes=app_root.get_custom_code(),
+        hooks=app_root.get_hooks(),
+        render=app_root.render(),
+    )
+
+
 def _compile_theme(theme: dict) -> str:
     """Compile the theme.
 
@@ -76,7 +89,7 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Type[State]) -> str:
+def _compile_contexts(state: Optional[Type[State]]) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -85,10 +98,16 @@ def _compile_contexts(state: Type[State]) -> str:
     Returns:
         The compiled context file.
     """
-    return templates.CONTEXT.render(
-        initial_state=utils.compile_state(state),
-        state_name=state.get_name(),
-        client_storage=utils.compile_client_storage(state),
+    is_dev_mode = os.environ.get("REFLEX_ENV_MODE", "dev") == "dev"
+    return (
+        templates.CONTEXT.render(
+            initial_state=utils.compile_state(state),
+            state_name=state.get_name(),
+            client_storage=utils.compile_client_storage(state),
+            is_dev_mode=is_dev_mode,
+        )
+        if state
+        else templates.CONTEXT.render(is_dev_mode=is_dev_mode)
     )
 
 
@@ -111,13 +130,15 @@ def _compile_page(
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
+    kwargs = {"state_name": state.get_name()} if state else {}
+
     return templates.PAGE.render(
         imports=imports,
         dynamic_imports=component.get_dynamic_imports(),
         custom_codes=component.get_custom_code(),
-        state_name=state.get_name(),
         hooks=component.get_hooks(),
         render=component.render(),
+        **kwargs,
     )
 
 
@@ -246,6 +267,23 @@ def compile_document_root(head_components: list[Component]) -> tuple[str, str]:
     return output_path, code
 
 
+def compile_app(app_root: Component) -> tuple[str, str]:
+    """Compile the app root.
+
+    Args:
+        app_root: The app root component to compile.
+
+    Returns:
+        The path and code of the compiled app wrapper.
+    """
+    # Get the path for the output file.
+    output_path = utils.get_page_path(constants.PageNames.APP_ROOT)
+
+    # Compile the document root.
+    code = _compile_app(app_root)
+    return output_path, code
+
+
 def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     """Compile the theme.
 
@@ -265,7 +303,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_contexts(state: Type[State]) -> tuple[str, str]:
+def compile_contexts(state: Optional[Type[State]]) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:

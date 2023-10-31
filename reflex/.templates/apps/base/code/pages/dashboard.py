@@ -1,28 +1,21 @@
-"""The dashboard page for the template."""
+"""The dashboard page."""
+from code.templates import template
+
 import reflex as rx
 
-from ..styles import *
 
-
-def dashboard_page() -> rx.Component:
-    """The UI for the dashboard page.
+@template(route="/dashboard", title="Dashboard")
+def dashboard() -> rx.Component:
+    """The dashboard page.
 
     Returns:
-        rx.Component: The UI for the dashboard page.
+        The UI for the dashboard page.
     """
-    return rx.box(
-        rx.vstack(
-            rx.heading(
-                "Dashboard",
-                size="3em",
-            ),
-            rx.text(
-                "Welcome to Reflex!",
-            ),
-            rx.text(
-                "You can use this template to get started with Reflex.",
-            ),
-            style=template_content_style,
+    return rx.vstack(
+        rx.heading("Dashboard", font_size="3em"),
+        rx.text("Welcome to Reflex!"),
+        rx.text(
+            "You can edit this page in ",
+            rx.code("{your_app}/pages/dashboard.py"),
         ),
-        style=template_page_style,
     )

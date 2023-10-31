@@ -15,6 +15,7 @@ import alembic.runtime.environment
 import alembic.script
 import alembic.util
 import sqlalchemy
+import sqlalchemy.orm
 import sqlmodel
 
 from reflex import constants
@@ -68,6 +69,22 @@ class Model(Base, sqlmodel.SQLModel):
 
         super().__init_subclass__()
 
+    @classmethod
+    def _dict_recursive(cls, value):
+        """Recursively serialize the relationship object(s).
+
+        Args:
+            value: The value to serialize.
+
+        Returns:
+            The serialized value.
+        """
+        if hasattr(value, "dict"):
+            return value.dict()
+        elif isinstance(value, list):
+            return [cls._dict_recursive(item) for item in value]
+        return value
+
     def dict(self, **kwargs):
         """Convert the object to a dictionary.
 
@@ -77,7 +94,19 @@ class Model(Base, sqlmodel.SQLModel):
         Returns:
             The object as a dictionary.
         """
-        return {name: getattr(self, name) for name in self.__fields__}
+        base_fields = {name: getattr(self, name) for name in self.__fields__}
+        relationships = {}
+        # SQLModel relationships do not appear in __fields__, but should be included if present.
+        for name in self.__sqlmodel_relationships__:
+            try:
+                relationships[name] = self._dict_recursive(getattr(self, name))
+            except sqlalchemy.orm.exc.DetachedInstanceError:
+                # This happens when the relationship was never loaded and the session is closed.
+                continue
+        return {
+            **base_fields,
+            **relationships,
+        }
 
     @staticmethod
     def create_all():

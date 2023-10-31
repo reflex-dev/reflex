@@ -12,14 +12,11 @@ from .app import UploadFile as UploadFile
 from .base import Base as Base
 from .compiler.utils import get_asset_path
 from .components import *
-from .components.base.script import client_side
 from .components.component import custom_component as memo
 from .components.graphing import recharts as recharts
-from .components.graphing.victory import data as data
 from .config import Config as Config
 from .config import DBConfig as DBConfig
 from .constants import Env as Env
-from .event import EVENT_ARG as EVENT_ARG
 from .event import EventChain as EventChain
 from .event import FileUpload as upload_files
 from .event import background as background
@@ -32,9 +29,7 @@ from .event import redirect as redirect
 from .event import remove_cookie as remove_cookie
 from .event import remove_local_storage as remove_local_storage
 from .event import set_clipboard as set_clipboard
-from .event import set_cookie as set_cookie
 from .event import set_focus as set_focus
-from .event import set_local_storage as set_local_storage
 from .event import set_value as set_value
 from .event import stop_propagation as stop_propagation
 from .event import window_alert as window_alert
@@ -50,4 +45,3 @@ from .style import color_mode as color_mode
 from .style import toggle_color_mode as toggle_color_mode
 from .vars import Var as Var
 from .vars import cached_var as cached_var
-from .vars import get_local_storage as get_local_storage

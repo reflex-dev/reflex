@@ -1,9 +1,10 @@
+import datetime
 from typing import Any
 
 import pytest
 
 from reflex.components.tags.tag import Tag
-from reflex.event import EVENT_ARG, EventChain, EventHandler, EventSpec
+from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
@@ -291,37 +292,46 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         ),
         (
             EventChain(
-                events=[EventSpec(handler=EventHandler(fn=mock_event))], args_spec=None
+                events=[EventSpec(handler=EventHandler(fn=mock_event))],
+                args_spec=lambda: [],
             ),
-            '{_e => addEvents([Event("mock_event", {})], _e, {})}',
+            '{(_e) => addEvents([Event("mock_event", {})], (_e), {})}',
         ),
         (
             EventChain(
                 events=[
                     EventSpec(
                         handler=EventHandler(fn=mock_event),
-                        args=((Var.create_safe("arg"), EVENT_ARG.target.value),),
+                        args=(
+                            (
+                                Var.create_safe("arg"),
+                                BaseVar(
+                                    _var_name="_e",
+                                    _var_type=FrontendEvent,
+                                ).target.value,
+                            ),
+                        ),
                     )
                 ],
-                args_spec=None,
+                args_spec=lambda: [],
             ),
-            '{_e => addEvents([Event("mock_event", {arg:_e.target.value})], _e, {})}',
+            '{(_e) => addEvents([Event("mock_event", {arg:_e.target.value})], (_e), {})}',
         ),
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=None,
+                args_spec=lambda: [],
                 event_actions={"stopPropagation": True},
             ),
-            '{_e => addEvents([Event("mock_event", {})], _e, {"stopPropagation": true})}',
+            '{(_e) => addEvents([Event("mock_event", {})], (_e), {"stopPropagation": true})}',
         ),
         (
             EventChain(
                 events=[EventSpec(handler=EventHandler(fn=mock_event))],
-                args_spec=None,
+                args_spec=lambda: [],
                 event_actions={"preventDefault": True},
             ),
-            '{_e => addEvents([Event("mock_event", {})], _e, {"preventDefault": true})}',
+            '{(_e) => addEvents([Event("mock_event", {})], (_e), {"preventDefault": true})}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(_var_name="var", _var_type="int"), "{var}"),
@@ -431,7 +441,7 @@ def test_format_event(input, output):
                     EventSpec(handler=EventHandler(fn=mock_event)),
                     EventSpec(handler=EventHandler(fn=mock_event)),
                 ],
-                args_spec=None,
+                args_spec=lambda: [],
             ),
             'addEvents([Event("mock_event", {}),Event("mock_event", {})])',
         ),
@@ -462,6 +472,33 @@ def test_format_query_params(input, output):
     assert format.format_query_params(input) == output
 
 
+formatted_router = {
+    "session": {"client_token": "", "client_ip": "", "session_id": ""},
+    "headers": {
+        "host": "",
+        "origin": "",
+        "upgrade": "",
+        "connection": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "",
+        "sec_websocket_version": "",
+        "sec_websocket_key": "",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "",
+        "accept_language": "",
+    },
+    "page": {
+        "host": "",
+        "path": "",
+        "raw_path": "",
+        "full_path": "",
+        "full_raw_path": "",
+        "params": {},
+    },
+}
+
+
 @pytest.mark.parametrize(
     "input, output",
     [
@@ -490,6 +527,7 @@ def test_format_query_params(input, output):
                 "obj": {"prop1": 42, "prop2": "hello"},
                 "sum": 3.14,
                 "upper": "",
+                "router": formatted_router,
             },
         ),
         (
@@ -500,6 +538,7 @@ def test_format_query_params(input, output):
                 "is_hydrated": False,
                 "t": "18:53:00+01:00",
                 "td": "11 days, 0:11:00",
+                "router": formatted_router,
             },
         ),
     ],
@@ -591,6 +630,14 @@ def test_format_library_name(input: str, output: str):
         ([1, 2, 3], "[1, 2, 3]"),
         ({}, "{}"),
         ({"k1": False, "k2": True}, '{"k1": false, "k2": true}'),
+        (
+            [datetime.timedelta(1, 1, 1), datetime.timedelta(1, 1, 2)],
+            '["1 day, 0:00:01.000001", "1 day, 0:00:01.000002"]',
+        ),
+        (
+            {"key1": datetime.timedelta(1, 1, 1), "key2": datetime.timedelta(1, 1, 2)},
+            '{"key1": "1 day, 0:00:01.000001", "key2": "1 day, 0:00:01.000002"}',
+        ),
     ],
 )
 def test_json_dumps(input, output):

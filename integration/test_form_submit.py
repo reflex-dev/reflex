@@ -16,19 +16,21 @@ def FormSubmit():
     class FormState(rx.State):
         form_data: dict = {}
 
+        var_options: list[str] = ["option3", "option4"]
+
         def form_submit(self, form_data: dict):
             self.form_data = form_data
-
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
 
     app = rx.App(state=FormState)
 
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(value=FormState.token, is_read_only=True, id="token"),
+            rx.input(
+                value=FormState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
             rx.form(
                 rx.vstack(
                     rx.input(id="name_input"),
@@ -39,7 +41,9 @@ def FormSubmit():
                     rx.slider(id="slider_input"),
                     rx.range_slider(id="range_input"),
                     rx.radio_group(["option1", "option2"], id="radio_input"),
+                    rx.radio_group(FormState.var_options, id="radio_input_var"),
                     rx.select(["option1", "option2"], id="select_input"),
+                    rx.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
                     rx.input(
                         id="debounce_input",

@@ -4,13 +4,9 @@ import reflex as rx
 
 
 class State(rx.State):
-    """State for the app."""
+    """Base state for the app.
 
-    @rx.var
-    def origin_url(self) -> str:
-        """Get the url of the current page.
+    The base state is used to store general vars used throughout the app.
+    """
 
-        Returns:
-            str: The url of the current page.
-        """
-        return self.router_data.get("asPath", "")
+    pass

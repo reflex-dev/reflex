@@ -32,7 +32,6 @@ from reflex.route import (
     verify_route_validity as verify_route_validity,
 )
 from reflex.state import (
-    DefaultState as DefaultState,
     State as State,
     StateManager as StateManager,
     StateUpdate as StateUpdate,
