@@ -123,9 +123,17 @@ def get_app(reload: bool = False) -> ModuleType:
 
     Returns:
         The app based on the default config.
+
+    Raises:
+        RuntimeError: If the app name is not set in the config.
     """
     os.environ[constants.RELOAD_CONFIG] = str(reload)
     config = get_config()
+    if not config.app_name:
+        raise RuntimeError(
+            "Cannot get the app module because `app_name` is not set in rxconfig! "
+            "If this error occurs in a reflex test case, ensure that `get_app` is mocked."
+        )
     module = ".".join([config.app_name, config.app_name])
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
