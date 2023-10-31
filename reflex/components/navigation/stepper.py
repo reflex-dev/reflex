@@ -12,6 +12,8 @@ class Stepper(ChakraComponent):
 
     tag = "Stepper"
 
+    orientation: Var[Literal["vertical", "horizontal"]]
+
     # The color scheme to use for the stepper; default is blue.
     colorScheme: Var[LiteralColorScheme]
 
