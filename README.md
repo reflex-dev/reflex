@@ -54,7 +54,7 @@ Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has f
 
 ## 🫧 Example App
 
-Let's go over an example: creating an image generation UI around DALL·E. For simplicity, we just call the OpenAI API, but you could replace this with an ML model run locally.
+Let's go over an example: creating an image generation UI around [DALL·E](https://platform.openai.com/docs/guides/images/image-generation?context=node). For simplicity, we just call the [OpenAI API](https://platform.openai.com/docs/api-reference/authentication), but you could replace this with an ML model run locally.
 
 &nbsp;
 
