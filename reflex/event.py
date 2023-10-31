@@ -17,7 +17,7 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, format
+from reflex.utils import console, format, rewrites
 from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
 
@@ -44,23 +44,32 @@ class Event(Base):
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 
 
-def background(fn):
+def background(
+    fn: Callable | None = None,
+    automatic_yield_after_modifications: bool = True,
+) -> Callable:
     """Decorator to mark event handler as running in the background.
 
     Args:
         fn: The function to decorate.
+        automatic_yield_after_modifications: Whether to automatically yield updates
+            to the frontend after exiting an `async with self` block.
 
     Returns:
-        The same function, but with a marker set.
-
-
-    Raises:
-        TypeError: If the function is not a coroutine function or async generator.
+        The function with a marker set and optionally rewritten to include `yield`.
     """
-    if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
-        raise TypeError("Background task must be async function or generator.")
-    setattr(fn, BACKGROUND_TASK_MARKER, True)
-    return fn
+
+    def _decorator(fn: Callable) -> Callable:
+        if not inspect.iscoroutinefunction(fn) and not inspect.isasyncgenfunction(fn):
+            raise TypeError("Background task must be async function or generator.")
+        if automatic_yield_after_modifications:
+            fn = rewrites.add_yield_after_async_with_self(fn)
+        setattr(fn, BACKGROUND_TASK_MARKER, True)
+        return fn
+
+    if fn is not None:
+        return _decorator(fn)
+    return _decorator
 
 
 def _no_chain_background_task(

@@ -1288,7 +1288,7 @@ class StateProxy(wrapt.ObjectProxy):
         Returns:
             This StateProxy instance in mutable mode.
         """
-        self._self_actx = self._self_app.modify_state(
+        self._self_actx = self._self_app.state_manager.modify_state(
             self.__wrapped__.router.session.client_token
         )
         mutable_state = await self._self_actx.__aenter__()
@@ -1598,6 +1598,8 @@ class StateManagerRedis(StateManager):
         """
         async with self._lock(token) as lock_id:
             state = await self.get_state(token)
+            # no dirty vars for freshly loaded state
+            state._clean()
             yield state
             await self.set_state(token, state, lock_id)
 

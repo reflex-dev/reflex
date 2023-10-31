@@ -16,7 +16,7 @@ from plotly.graph_objects import Figure
 import reflex as rx
 from reflex.app import App
 from reflex.base import Base
-from reflex.constants import CompileVars, RouteVar, SocketEvent
+from reflex.constants import CompileVars, RouteVar
 from reflex.event import Event, EventHandler
 from reflex.state import (
     ImmutableStateError,
@@ -1638,23 +1638,18 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert gotten_grandchild_state is not None
     assert gotten_grandchild_state.value2 == 42
 
-    # ensure state update was emitted
+    # Ensure state update was NOT emitted (that's the app's responsibility)
     assert mock_app.event_namespace is not None
-    mock_app.event_namespace.emit.assert_called_once()
-    mcall = mock_app.event_namespace.emit.mock_calls[0]
-    assert mcall.args[0] == str(SocketEvent.EVENT)
-    assert json.loads(mcall.args[1]) == StateUpdate(
-        delta={
-            parent_state.get_full_name(): {
-                "upper": "",
-                "sum": 3.14,
-            },
-            grandchild_state.get_full_name(): {
-                "value2": 42,
-            },
-        }
-    )
-    assert mcall.kwargs["to"] == grandchild_state.get_sid()
+    mock_app.event_namespace.emit.assert_not_called()
+    assert gotten_state.get_delta() == {
+        parent_state.get_full_name(): {
+            "upper": "",
+            "sum": 3.14,
+        },
+        grandchild_state.get_full_name(): {
+            "value2": 42,
+        },
+    }
 
 
 class BackgroundTaskState(State):
@@ -1723,6 +1718,16 @@ class BackgroundTaskState(State):
         async with self:
             self.order.append("reset")
 
+    @rx.background(automatic_yield_after_modifications=False)
+    async def background_task_no_generator(self):
+        """A background task that does not yield."""
+        async with self:
+            pass
+
+    async def background_task_no_generator2(self):
+        """A background task that does not yield."""
+        pass
+
     @rx.background
     async def background_task_generator(self):
         """A background task generator that does nothing.
@@ -1742,12 +1747,16 @@ class BackgroundTaskState(State):
 
     async def bad_chain1(self):
         """Test that a background task cannot be chained."""
-        await self.background_task()
+        await self.background_task_no_generator()
 
     async def bad_chain2(self):
         """Test that a background task generator cannot be chained."""
         async for _foo in self.background_task_generator():
             pass
+
+    async def bad_chain3(self):
+        """Test that a background task cannot be chained."""
+        await self.background_task_no_generator2()
 
 
 @pytest.mark.asyncio
