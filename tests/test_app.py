@@ -794,12 +794,6 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         tmp_path: Temporary path.
         token: a Token.
     """
-    data = b"This is binary data"
-
-    # Create a binary IO object and write data to it
-    bio = io.BytesIO()
-    bio.write(data)
-
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App(state=state if state is FileUploadState else FileStateBase1)
@@ -810,21 +804,49 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         "reflex-client-token": token,
         "reflex-event-handler": f"{state_name}.handle_upload2",
     }
-
-    file1 = UploadFile(
-        filename=f"image1.jpg",
-        file=bio,
-    )
-    file2 = UploadFile(
-        filename=f"image2.jpg",
-        file=bio,
-    )
+    file_mock = unittest.mock.Mock(filename="image1.jpg")
     fn = upload(app)
     with pytest.raises(ValueError) as err:
-        await fn(request_mock, [file1, file2])
+        await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
         == f"`{state_name}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+    )
+
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.redis.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "state",
+    [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
+)
+async def test_upload_file_background(state, tmp_path, token):
+    """Test that an error is thrown handler is a background task.
+
+    Args:
+        state: The state class.
+        tmp_path: Temporary path.
+        token: a Token.
+    """
+    state._tmp_path = tmp_path
+    # The App state must be the "root" of the state tree
+    app = App(state=state if state is FileUploadState else FileStateBase1)
+
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{state_name}.bg_upload",
+    }
+    file_mock = unittest.mock.Mock(filename="image1.jpg")
+    fn = upload(app)
+    with pytest.raises(TypeError) as err:
+        await fn(request_mock, [file_mock])
+    assert (
+        err.value.args[0]
+        == f"@rx.background is not supported for upload handler `{state_name}.bg_upload`."
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
