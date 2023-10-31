@@ -142,7 +142,7 @@ This `index` function defines the frontend of the app.
 We use different components such as `center`, `vstack`, `input`, and `button` to build the frontend. Components can be nested within each other
 to create complex layouts. And you can use keyword args to style them with the full power of CSS.
 
-Reflex comes with [60+ built-in components](https://reflex.dev/docs/library) to help you get started. We are actively adding more components, and it's easy to [create your own components](https://reflex.dev/docs/advanced-guide/wrapping-react).
+Reflex comes with [60+ built-in components](https://reflex.dev/docs/library) to help you get started. We are actively adding more components, and it's easy to [create your own components](https://reflex.dev/docs/wrapping-react/overview/).
 
 ### **State**
 

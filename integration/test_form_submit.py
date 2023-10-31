@@ -53,6 +53,7 @@ def FormSubmit():
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
+                custom_attrs={"action": "/invalid"},
             ),
             rx.spacer(),
             height="100vh",
@@ -145,6 +146,8 @@ async def test_submit(driver, form_submit: AppHarness):
 
     time.sleep(1)
 
+    prev_url = driver.current_url
+
     submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
     submit_input.click()
 
@@ -166,3 +169,6 @@ async def test_submit(driver, form_submit: AppHarness):
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"
+
+    # submitting the form should NOT change the url (preventDefault on_submit event)
+    assert driver.current_url == prev_url
