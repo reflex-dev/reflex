@@ -211,11 +211,9 @@ class DataEditor(NoSSRComponent):
                 },
                 self.library: {ImportVar(tag="GridCellKind")},
                 "/utils/helpers/dataeditor.js": {
-                    ImportVar(tag=f"getDEColumn", is_default=False, install=False),
-                    ImportVar(tag=f"getDERow", is_default=False, install=False),
-                    ImportVar(tag=f"locateCell", is_default=False, install=False),
-                    ImportVar(tag=f"formatCell", is_default=False, install=False),
-                    ImportVar(tag=f"onEditCell", is_default=False, install=False),
+                    ImportVar(
+                        tag=f"formatDataEditorCells", is_default=False, install=False
+                    ),
                 },
             },
         )
@@ -258,20 +256,15 @@ class DataEditor(NoSSRComponent):
 
         code = [f"function {data_callback}([col, row])" "{"]
 
+        columns_path = f"{self.columns._var_full_name}"
+        data_path = f"{self.data._var_full_name}"
+
         code.extend(
             [
-                f"  if (row < {self.data._var_full_name}.length && col < {self.columns._var_full_name}.length)"
-                " {",
-                f"    const column = getDEColumn({self.columns._var_full_name}, col);",
-                f"    const rowData = getDERow({self.data._var_full_name}, row);",
-                f"    const cellData = locateCell(rowData, column);",
-                "    return formatCell(cellData, column);",
+                f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
                 "  }",
-                "  return { kind: GridCellKind.Loading};",
             ]
         )
-
-        code.append("}")
 
         return "\n".join(code)
 
