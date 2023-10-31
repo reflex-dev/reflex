@@ -143,7 +143,7 @@ def index():
 我们用不同的组件比如 `center`, `vstack`, `input`, 和 `button` 来创建前端, 组件之间可以相互嵌入,来创建复杂的布局.
 并且您可以使用关键字参数来使用 CSS 的全部功能.
 
-Reflex 拥有 [60+ 个内置组件](https://reflex.dev/docs/library) 来帮助您开始创建应用程序. 我们正在积极添加组件, 但是您也可以 [创建自己的组件](https://reflex.dev/docs/advanced-guide/wrapping-react).
+Reflex 拥有 [60+ 个内置组件](https://reflex.dev/docs/library) 来帮助您开始创建应用程序. 我们正在积极添加组件, 但是您也可以 [创建自己的组件](https://reflex.dev/docs/wrapping-react/overview/).
 
 ### **State**
 
