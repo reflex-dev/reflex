@@ -51,6 +51,8 @@ def replace_function_code(
 class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
     """Transform the AST to add a `yield` statement after every `async with self:` block."""
 
+    _REMOVE_DECORATOR = "background"
+
     def __init__(self):
         """Initialize the transformer."""
         super().__init__()
@@ -71,10 +73,17 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
         """
         # remove the background task decorator
         for dec in node.decorator_list:
-            if isinstance(dec, ast.Attribute) and dec.attr == "background":
+            if isinstance(dec, ast.Attribute) and dec.attr == self._REMOVE_DECORATOR:
                 node.decorator_list.remove(dec)
                 break
-            if isinstance(dec, ast.Name) and dec.id == "background":
+            if isinstance(dec, ast.Name) and dec.id == self._REMOVE_DECORATOR:
+                node.decorator_list.remove(dec)
+                break
+            if (
+                isinstance(dec, ast.Call)
+                and isinstance(dec.func, ast.Name)
+                and dec.func.id == self._REMOVE_DECORATOR
+            ):
                 node.decorator_list.remove(dec)
                 break
         for arg in node.args.args:
