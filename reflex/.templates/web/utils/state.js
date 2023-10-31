@@ -171,7 +171,8 @@ export const applyEvent = async (event, socket) => {
     const a = document.createElement('a');
     a.hidden = true;
     a.href = event.payload.url;
-    a.download = event.payload.filename;
+    if (event.payload.filename)
+      a.download = event.payload.filename;
     a.click();
     a.remove();
     return false;
