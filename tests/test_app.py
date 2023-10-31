@@ -746,23 +746,28 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     bio.write(data)
 
     state_name = state.get_full_name().partition(".")[2] or state.get_name()
-    handler_prefix = f"{token}:{state_name}"
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{state_name}.multi_handle_upload",
+    }
 
     file1 = UploadFile(
-        filename=f"{handler_prefix}.multi_handle_upload:True:image1.jpg",
+        filename=f"image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{handler_prefix}.multi_handle_upload:True:image2.jpg",
+        filename=f"image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)
-    await upload_fn([file1, file2])
-    state_update = StateUpdate(delta=delta, events=[], final=True)
+    streaming_response = await upload_fn(request_mock, [file1, file2])
+    async for state_update in streaming_response.body_iterator:
+        assert (
+            state_update
+            == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
+        )
 
-    app.event_namespace.emit.assert_called_with(  # type: ignore
-        "event", state_update.json(), to=current_state.router.session.session_id
-    )
     current_state = await app.state_manager.get_state(token)
     state_dict = current_state.dict()
     for substate in state.get_full_name().split(".")[1:]:
@@ -800,19 +805,23 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
     app = App(state=state if state is FileUploadState else FileStateBase1)
 
     state_name = state.get_full_name().partition(".")[2] or state.get_name()
-    handler_prefix = f"{token}:{state_name}"
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{state_name}.handle_upload2",
+    }
 
     file1 = UploadFile(
-        filename=f"{handler_prefix}.handle_upload2:True:image1.jpg",
+        filename=f"image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{handler_prefix}.handle_upload2:True:image2.jpg",
+        filename=f"image2.jpg",
         file=bio,
     )
     fn = upload(app)
     with pytest.raises(ValueError) as err:
-        await fn([file1, file2])
+        await fn(request_mock, [file1, file2])
     assert (
         err.value.args[0]
         == f"`{state_name}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
