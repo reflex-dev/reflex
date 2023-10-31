@@ -339,7 +339,7 @@ class DeploymentsPostParam(Base):
     """Params for hosted instance deployment POST request."""
 
     # Key is the name of the deployment, it becomes part of the URL
-    key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
+    key: str = Field(..., regex=r"^[a-z0-9-]+$")
     # Name of the app
     app_name: str = Field(..., min_length=1)
     # json encoded list of regions to deploy to
@@ -902,6 +902,18 @@ def validate_token_with_retries(access_token: str) -> bool:
     return False
 
 
+def is_valid_deployment_key(key: str):
+    """Helper function to check if the deployment key is valid. Must be a domain name safe string.
+
+    Args:
+        key: The deployment key to check.
+
+    Returns:
+        True if the key contains only domain name safe characters, False otherwise.
+    """
+    return re.match(r"^[a-zA-Z0-9-]*$", key)
+
+
 def interactive_get_deployment_key_from_user_input(
     pre_deploy_response: DeploymentPrepareResponse,
     app_name: str,
@@ -940,6 +952,18 @@ def interactive_get_deployment_key_from_user_input(
             f"Choose a name for your deployed app. Enter to use default.",
             default=key_candidate,
         ):
+            if not is_valid_deployment_key(key_input):
+                console.error(
+                    "Invalid key input, should only contain domain name safe characters: letters, digits, or hyphens."
+                )
+                continue
+
+            elif any(x.isupper() for x in key_input):
+                key_input = key_input.lower()
+                console.info(
+                    f"Domain name is case insensitive, automatically converting to all lower cases: {key_input}"
+                )
+
             try:
                 pre_deploy_response = prepare_deploy(
                     app_name,

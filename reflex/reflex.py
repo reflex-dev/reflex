@@ -452,7 +452,10 @@ def makemigrations(
 @cli.command()
 def deploy(
     key: Optional[str] = typer.Option(
-        None, "-k", "--deployment-key", help="The name of the deployment."
+        None,
+        "-k",
+        "--deployment-key",
+        help="The name of the deployment. Domain name safe characters only.",
     ),
     app_name: str = typer.Option(
         config.app_name,
@@ -531,6 +534,12 @@ def deploy(
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
     enabled_regions = None
+    # If there is already a key, then it is passed in from CLI option in the non-interactive mode
+    if key is not None and not hosting.is_valid_deployment_key(key):
+        console.error(
+            f"Deployment key {key} is not valid. Please use only domain name safe characters."
+        )
+        raise typer.Exit(1)
     try:
         # Send a request to server to obtain necessary information
         # in preparation of a deployment. For example,
