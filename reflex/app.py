@@ -891,7 +891,8 @@ def upload(app: App):
             files: The file(s) to upload.
 
         Returns:
-            List of StateUpdate emitted by the upload handler.
+            StreamingResponse yielding newline-delimited JSON of StateUpdate
+            emitted by the upload handler.
 
         Raises:
             ValueError: if there are no args with supported annotation.
