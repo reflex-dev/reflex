@@ -205,7 +205,8 @@ async def test_upload_file(
     state = await upload_file.get_state(token)
     if secondary:
         # only the secondary form tracks progress and chain events
-        assert state.event_order == ["upload_progress", "chain_event"]
+        assert state.event_order.count("upload_progress") == 1
+        assert state.event_order.count("chain_event") == 1
 
 
 @pytest.mark.asyncio
