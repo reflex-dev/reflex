@@ -11,6 +11,7 @@ import ast
 import hashlib
 import inspect
 import linecache
+import sys
 import textwrap
 from typing import Any, Callable
 
@@ -41,7 +42,7 @@ def replace_function_code(
         new_source_code.splitlines(keepends=True),
         filename,
     )
-    gl = {}
+    gl = sys.modules[fn.__module__].__dict__.copy()
     exec(compile(new_source_code, filename, "exec"), gl)
     fn.__code__ = gl[fn.__name__].__code__
     return fn
@@ -49,6 +50,12 @@ def replace_function_code(
 
 class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
     """Transform the AST to add a `yield` statement after every `async with self:` block."""
+
+    def __init__(self):
+        """Initialize the transformer."""
+        super().__init__()
+        self.added_yield = False
+        self.self_name = None
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
         """Remove the @rx.background decorator.
@@ -62,12 +69,19 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
         Returns:
             The node with the decorator removed.
         """
-        self.generic_visit(node)
         # remove the background task decorator
         for dec in node.decorator_list:
             if isinstance(dec, ast.Attribute) and dec.attr == "background":
                 node.decorator_list.remove(dec)
-                return node
+                break
+            if isinstance(dec, ast.Name) and dec.id == "background":
+                node.decorator_list.remove(dec)
+                break
+        for arg in node.args.args:
+            self.self_name = arg.arg
+            break
+        self.generic_visit(node)
+        return node
 
     def generic_visit(self, node: ast.AST) -> ast.AST:
         """Add a `yield` statement after every `async with self:` block.
@@ -79,7 +93,7 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
             node: The node to visit.
 
         Returns:
-            The node with the `yield` statements added.
+            The node with the `yield` statements added, if applicable.
         """
         super().generic_visit(node)
         body: list[ast.stmt] | None = getattr(node, "body", None)
@@ -91,7 +105,7 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
                 isinstance(child, ast.AsyncWith)
                 and child.items
                 and isinstance(child.items[0].context_expr, ast.Name)
-                and child.items[0].context_expr.id == "self"
+                and child.items[0].context_expr.id == self.self_name
             ):
                 insert_yield_at.append((ix + 1))
         for added_so_far, ix in enumerate(insert_yield_at):
@@ -103,6 +117,7 @@ class AddYieldAfterAsyncWithSelf(ast.NodeTransformer):
             ):
                 continue  # already has a yield here
             body.insert(next_ix, ast.Expr(value=ast.Yield()))
+            self.added_yield = True
         return node
 
 
@@ -119,6 +134,9 @@ def add_yield_after_async_with_self(fn: Callable) -> Callable:
         The function with the `yield` statements added.
     """
     orig_src = textwrap.dedent(inspect.getsource(fn))
-    magic_fn_tree = AddYieldAfterAsyncWithSelf().visit(ast.parse(orig_src))
+    transformer = AddYieldAfterAsyncWithSelf()
+    magic_fn_tree = transformer.visit(ast.parse(orig_src))
+    if not transformer.added_yield:
+        return fn  # do not rewrite the function if there were no changes
     magic_fn_source = ast.unparse(magic_fn_tree)
     return replace_function_code(fn, magic_fn_source)
