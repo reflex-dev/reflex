@@ -969,7 +969,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             headers={},
             client_ip=client_ip,
         )
-        update = await process_coro.__anext__()  # type: ignore
+        update = await process_coro.__anext__()
         # route change (on_load_internal) triggers: [call on_load events, call set_is_hydrated(True)]
         assert update == StateUpdate(
             delta={
@@ -1000,7 +1000,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
 
         # complete the processing
         with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()  # type: ignore
+            await process_coro.__anext__()
 
         # check that router data was written to the state_manager store
         state = await app.state_manager.get_state(token)
@@ -1013,7 +1013,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             headers={},
             client_ip=client_ip,
         )
-        on_load_update = await process_coro.__anext__()  # type: ignore
+        on_load_update = await process_coro.__anext__()
         assert on_load_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -1027,7 +1027,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         # complete the processing
         with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()  # type: ignore
+            await process_coro.__anext__()
         process_coro = process(
             app,
             event=_dynamic_state_event(
@@ -1037,7 +1037,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             headers={},
             client_ip=client_ip,
         )
-        on_set_is_hydrated_update = await process_coro.__anext__()  # type: ignore
+        on_set_is_hydrated_update = await process_coro.__anext__()
         assert on_set_is_hydrated_update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -1051,7 +1051,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         # complete the processing
         with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()  # type: ignore
+            await process_coro.__anext__()
 
         # a simple state update event should NOT trigger on_load or route var side effects
         process_coro = process(
@@ -1061,7 +1061,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             headers={},
             client_ip=client_ip,
         )
-        update = await process_coro.__anext__()  # type: ignore
+        update = await process_coro.__anext__()
         assert update == StateUpdate(
             delta={
                 state.get_name(): {
@@ -1075,7 +1075,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         )
         # complete the processing
         with pytest.raises(StopAsyncIteration):
-            await process_coro.__anext__()  # type: ignore
+            await process_coro.__anext__()
 
         prev_exp_val = exp_val
     state = await app.state_manager.get_state(token)
@@ -1112,7 +1112,7 @@ async def test_process_events(mocker, token: str):
         token=token, name="gen_state.go", payload={"c": 5}, router_data=router_data
     )
 
-    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):  # type: ignore
+    async for _update in process(app, event, "mock_sid", {}, "127.0.0.1"):
         pass
 
     assert (await app.state_manager.get_state(token)).value == 5
