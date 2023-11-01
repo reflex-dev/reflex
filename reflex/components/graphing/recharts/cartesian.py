@@ -3,10 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
-from reflex.constants import EventTriggers
-from reflex.vars import Var
-
-from .recharts import Recharts
 from reflex.components.literals.base import LiteralOrientation
 from reflex.components.literals.recharts import (
     LiteralAnimationEasing,
@@ -21,6 +17,10 @@ from reflex.components.literals.recharts import (
     LiteralScale,
     LiteralShape,
 )
+from reflex.constants import EventTriggers
+from reflex.vars import Var
+
+from .recharts import Recharts
 
 
 class Axis(Recharts):

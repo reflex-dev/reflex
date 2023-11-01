@@ -3,10 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
-from reflex.constants import EventTriggers
-from reflex.vars import Var
-
-from .recharts import Recharts
 from reflex.components.literals.base import LiteralOrientation
 from reflex.components.literals.recharts import (
     LiteralIconType,
@@ -14,6 +10,10 @@ from reflex.components.literals.recharts import (
     LiteralPosition,
     LiteralVerticalAlign,
 )
+from reflex.constants import EventTriggers
+from reflex.vars import Var
+
+from .recharts import Recharts
 
 
 class ResponsiveContainer(Recharts):

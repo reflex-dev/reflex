@@ -4,21 +4,19 @@ https://www.radix-ui.com/themes/docs/theme/typography
 """
 from __future__ import annotations
 
-from typing import Literal
-
+from reflex.components.literals.radix import (
+    LiteralAccentColor,
+    LiteralLinkUnderline,
+    LiteralTextAlign,
+    LiteralTextSize,
+    LiteralTextTrim,
+    LiteralTextWeight,
+    LiteralVariant,
+)
 from reflex.vars import Var
 
 from .base import CommonMarginProps, RadixThemesComponent
-from reflex.components.literals.radix import (
-    LiteralAccentColor,
-    LiteralVariant,
-LiteralTextSize,
-LiteralTextWeight,
 
-LiteralTextAlign,
-LiteralTextTrim,
-LiteralLinkUnderline
-)
 
 class Text(CommonMarginProps, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
@@ -96,7 +94,6 @@ class Kbd(CommonMarginProps, RadixThemesComponent):
 
     # Text size: "1" - "9"
     size: Var[LiteralTextSize]
-
 
 
 class Link(CommonMarginProps, RadixThemesComponent):

@@ -4,8 +4,8 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.literals.base import LiteralOrientation
 from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.base import LiteralOrientation
 from reflex.components.literals.chakra import LiteralChakraDirection
 from reflex.constants import EventTriggers
 from reflex.vars import Var

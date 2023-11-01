@@ -1,24 +1,22 @@
 """Declarative layout and common spacing props."""
 from __future__ import annotations
 
-from typing import Literal
-
+from reflex.components.literals.radix import (
+    LiteralAlign,
+    LiteralBoolNumber,
+    LiteralContainerSize,
+    LiteralFlexDirection,
+    LiteralFlexDisplay,
+    LiteralFlexWrap,
+    LiteralGridDisplay,
+    LiteralGridFlow,
+    LiteralJustify,
+    LiteralSectionSize,
+    LiteralSize,
+)
 from reflex.vars import Var
 
 from .base import CommonMarginProps, RadixThemesComponent
-from reflex.components.literals.radix import (
-    LiteralAlign,
-    LiteralJustify,
-    LiteralSize,
-LiteralBoolNumber,
-LiteralFlexDisplay,
-LiteralFlexDirection,
-LiteralFlexWrap,
-LiteralGridDisplay,
-LiteralGridFlow,
-LiteralContainerSize,
-LiteralSectionSize
-)
 
 
 class LayoutComponent(CommonMarginProps, RadixThemesComponent):
@@ -124,8 +122,6 @@ class Grid(RadixThemesComponent):
     gap_x: Var[LiteralSize]
 
 
-
-
 class Container(LayoutComponent):
     """Constrains the maximum width of page content.
 
@@ -136,8 +132,6 @@ class Container(LayoutComponent):
 
     # The size of the container: "1" - "4" (default "4")
     size: Var[LiteralContainerSize]
-
-
 
 
 class Section(LayoutComponent):

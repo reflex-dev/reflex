@@ -5,10 +5,6 @@ from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
 from reflex.components.graphing.recharts.general import ResponsiveContainer
-from reflex.constants import EventTriggers
-from reflex.vars import Var
-
-from .recharts import RechartsCharts
 from reflex.components.literals import LiteralOrientation
 from reflex.components.literals.recharts import (
     LiteralAnimationEasing,
@@ -16,6 +12,10 @@ from reflex.components.literals.recharts import (
     LiteralStackOffset,
     LiteralSyncMethod,
 )
+from reflex.constants import EventTriggers
+from reflex.vars import Var
+
+from .recharts import RechartsCharts
 
 
 class ChartBase(RechartsCharts):

@@ -1,23 +1,23 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict
 
 from reflex import el
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
+from reflex.components.literals.radix import (
+    LiteralAccentColor,
+    LiteralButtonSize,
+    LiteralRadius,
+    LiteralSize,
+    LiteralSwitchSize,
+    LiteralTextFieldSize,
+    LiteralTextFieldVariant,
+    LiteralVariant,
+)
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from .base import CommonMarginProps, RadixThemesComponent
-from reflex.components.literals.radix import (
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
-LiteralButtonSize,
-LiteralTextFieldSize,
-LiteralSwitchSize,
-LiteralTextFieldVariant
-)
 
 
 class Button(CommonMarginProps, RadixThemesComponent):
@@ -42,7 +42,6 @@ class Button(CommonMarginProps, RadixThemesComponent):
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
-
 
 
 class Switch(CommonMarginProps, RadixThemesComponent):

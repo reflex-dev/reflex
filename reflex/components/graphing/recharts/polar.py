@@ -3,16 +3,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
-from reflex.constants import EventTriggers
-from reflex.vars import Var
-
-from .recharts import Recharts
 from reflex.components.literals.recharts import (
     LiteralAnimationEasing,
     LiteralGridType,
     LiteralPolarRadiusType,
     LiteralScale,
 )
+from reflex.constants import EventTriggers
+from reflex.vars import Var
+
+from .recharts import Recharts
 
 
 class Pie(Recharts):

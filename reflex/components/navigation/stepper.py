@@ -1,6 +1,6 @@
 """A component to indicate progress through a multi-step process."""
 
-from typing import List, Literal, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
