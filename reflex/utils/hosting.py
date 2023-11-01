@@ -551,15 +551,15 @@ def fetch_token(request_id: str) -> tuple[str, str]:
         access_token = (resp_json := resp.json()).get("access_token", "")
         invitation_code = resp_json.get("code", "")
     except httpx.RequestError as re:
-        console.error(f"Unable to fetch token due to request error: {re}")
+        console.debug(f"Unable to fetch token due to request error: {re}")
     except httpx.HTTPError as he:
-        console.error(f"Unable to fetch token due to {he}")
+        console.debug(f"Unable to fetch token due to {he}")
     except json.JSONDecodeError as jde:
-        console.error(f"Server did not respond with valid json: {jde}")
+        console.debug(f"Server did not respond with valid json: {jde}")
     except KeyError as ke:
-        console.error(f"Server response format unexpected: {ke}")
+        console.debug(f"Server response format unexpected: {ke}")
     except Exception:
-        console.error("Unexpected errors: {ex}")
+        console.debug("Unexpected errors: {ex}")
 
     return access_token, invitation_code
 
