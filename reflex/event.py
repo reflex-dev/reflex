@@ -434,7 +434,7 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
-def download(url: str, filename: Optional[str] = None) -> EventSpec:
+def download(url: str | Var, filename: Optional[str | Var] = None) -> EventSpec:
     """Download the file at a given path.
 
     Args:
@@ -447,12 +447,16 @@ def download(url: str, filename: Optional[str] = None) -> EventSpec:
     Returns:
         EventSpec: An event to download the associated file.
     """
-    if not url.startswith("/"):
-        raise ValueError("The URL argument should start with a /")
+    if isinstance(url, Var) and filename is None:
+        filename = ""
 
-    # if filename is not provided, infer it from url
-    if filename is None:
-        filename = url.rpartition("/")[-1]
+    if isinstance(url, str):
+        if not url.startswith("/"):
+            raise ValueError("The URL argument should start with a /")
+
+        # if filename is not provided, infer it from url
+        if filename is None:
+            filename = url.rpartition("/")[-1]
 
     return server_side(
         "_download",
