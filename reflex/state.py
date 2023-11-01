@@ -1292,7 +1292,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             Dict of builtin event handlers, mapping handler name to function.
         """
 
-        def on_load_internal(self) -> list[Event | EventSpec]:
+        def on_load_internal(self) -> list[Event | EventSpec] | None:
             """Queue on_load handlers for the current page.
 
             Args:
@@ -1302,10 +1302,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 The list of events to queue for on load handling.
             """
             app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+            load_events = app.get_load_events(self.router.page.path)
+            if not load_events and self.is_hydrated:
+                return  # Fast path for page-to-page navigation
             self.is_hydrated = False
             return [
                 *fix_events(
-                    app.get_load_events(self.router.page.path),
+                    load_events,
                     self.router.session.client_token,
                     router_data=self.router_data,
                 ),
