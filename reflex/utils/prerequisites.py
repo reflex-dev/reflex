@@ -505,6 +505,22 @@ def install_bun():
     )
 
 
+def get_packages_to_install(packages, npm_packages):  # TODO: refactor
+    packages_to_install = []
+    for _i, package in enumerate(packages):
+        parts = [x for x in package.split("@") if x]
+        if (
+            len(parts) == 1
+            and package not in npm_packages
+            or len(parts) > 1
+            and parts[-1].startswith("^")
+            or len(parts) > 1
+            and package not in npm_packages
+        ):
+            packages_to_install.append(package)
+    return packages_to_install
+
+
 def install_frontend_packages(packages: set[str]):
     """Installs the base and custom frontend packages.
 
@@ -514,9 +530,22 @@ def install_frontend_packages(packages: set[str]):
     Example:
         >>> install_frontend_packages(["react", "react-dom"])
     """
+    package_manager = get_install_package_manager()
+    uses_npm = package_manager.endswith("npm")
+    if uses_npm:
+        npm_packages = processes.new_process(
+            [package_manager, "ls"], run=True, cwd=constants.Dirs.WEB
+        ).stdout.splitlines()
+        npm_packages = set(
+            [
+                package.split()[1]
+                for package in npm_packages[1:]
+                if package and "empty" not in package
+            ]
+        )
     # Install the base packages.
     process = processes.new_process(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+        [package_manager, "install", "--loglevel", "silly"],
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
@@ -525,26 +554,34 @@ def install_frontend_packages(packages: set[str]):
 
     config = get_config()
     if config.tailwind is not None:
+        tailwind_deps = (config.tailwind or {}).get("plugins", [])
+        if uses_npm:
+            tailwind_deps = get_packages_to_install(tailwind_deps, npm_packages)
         # install tailwind and tailwind plugins as dev dependencies.
-        process = processes.new_process(
-            [
-                get_install_package_manager(),
-                "add",
-                "-d",
-                constants.Tailwind.VERSION,
-                *((config.tailwind or {}).get("plugins", [])),
-            ],
-            cwd=constants.Dirs.WEB,
-            shell=constants.IS_WINDOWS,
-        )
-        processes.show_status("Installing tailwind", process)
+        if tailwind_deps:
+            process = processes.new_process(
+                [
+                    package_manager,
+                    "add",
+                    "-d",
+                    constants.Tailwind.VERSION,
+                    *tailwind_deps,
+                ],
+                cwd=constants.Dirs.WEB,
+                shell=constants.IS_WINDOWS,
+            )
+            processes.show_status("Installing tailwind", process)
 
     # Install custom packages defined in frontend_packages
+    if uses_npm:
+        packages = get_packages_to_install(packages, npm_packages)
+
     if len(packages) > 0:
         process = processes.new_process(
-            [get_install_package_manager(), "add", *packages],
+            [package_manager, "add", *packages],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
+            show_logs=True,
         )
         processes.show_status(
             "Installing frontend packages from config and components", process
