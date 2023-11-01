@@ -5,15 +5,20 @@ from typing import Literal
 
 from reflex.vars import Var
 
-from .base import (
-    CommonMarginProps,
+from .base import CommonMarginProps, RadixThemesComponent
+from reflex.components.literals.radix import (
     LiteralAlign,
     LiteralJustify,
     LiteralSize,
-    RadixThemesComponent,
+LiteralBoolNumber,
+LiteralFlexDisplay,
+LiteralFlexDirection,
+LiteralFlexWrap,
+LiteralGridDisplay,
+LiteralGridFlow,
+LiteralContainerSize,
+LiteralSectionSize
 )
-
-LiteralBoolNumber = Literal["0", "1"]
 
 
 class LayoutComponent(CommonMarginProps, RadixThemesComponent):
@@ -56,11 +61,6 @@ class Box(LayoutComponent):
     tag = "Box"
 
 
-LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
-LiteralFlexDisplay = Literal["none", "inline-flex", "flex"]
-LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
-
-
 class Flex(LayoutComponent):
     """Component for creating flex layouts."""
 
@@ -86,10 +86,6 @@ class Flex(LayoutComponent):
 
     # Gap between children: "0" - "9"
     gap: Var[LiteralSize]
-
-
-LiteralGridDisplay = Literal["none", "inline-grid", "grid"]
-LiteralGridFlow = Literal["row", "column", "dense", "row-dense", "column-dense"]
 
 
 class Grid(RadixThemesComponent):
@@ -128,7 +124,6 @@ class Grid(RadixThemesComponent):
     gap_x: Var[LiteralSize]
 
 
-LiteralContainerSize = Literal["1", "2", "3", "4"]
 
 
 class Container(LayoutComponent):
@@ -143,7 +138,6 @@ class Container(LayoutComponent):
     size: Var[LiteralContainerSize]
 
 
-LiteralSectionSize = Literal["1", "2", "3"]
 
 
 class Section(LayoutComponent):

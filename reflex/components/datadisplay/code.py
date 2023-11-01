@@ -5,7 +5,8 @@ from typing import Dict, Optional, Union
 from reflex.components.component import Component
 from reflex.components.forms import Button
 from reflex.components.layout import Box
-from reflex.components.libs.chakra import ChakraComponent, LiteralTheme
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.base import LiteralTheme
 from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style

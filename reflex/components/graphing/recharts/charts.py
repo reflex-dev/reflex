@@ -8,13 +8,13 @@ from reflex.components.graphing.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import (
+from .recharts import RechartsCharts
+from reflex.components.literals import LiteralOrientation
+from reflex.components.literals.recharts import (
     LiteralAnimationEasing,
     LiteralComposedChartBaseValue,
-    LiteralLayout,
     LiteralStackOffset,
     LiteralSyncMethod,
-    RechartsCharts,
 )
 
 
@@ -37,7 +37,7 @@ class ChartBase(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    layout: Var[LiteralOrientation]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]
@@ -443,7 +443,7 @@ class FunnelChart(RechartsCharts):
     height: Var[Union[str, int]] = "100%"  # type: ignore
 
     # The layout of area in the chart. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    layout: Var[LiteralOrientation]
 
     # The sizes of whitespace around the chart.
     margin: Var[Dict[str, Any]]

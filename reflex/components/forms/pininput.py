@@ -5,7 +5,8 @@ from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.layout import Foreach
-from reflex.components.libs.chakra import ChakraComponent, LiteralInputVariant
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.chakra import LiteralInputVariant
 from reflex.constants import EventTriggers
 from reflex.utils import format
 from reflex.vars import Var

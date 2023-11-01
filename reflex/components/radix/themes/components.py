@@ -7,16 +7,17 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .base import (
-    CommonMarginProps,
+from .base import CommonMarginProps, RadixThemesComponent
+from reflex.components.literals.radix import (
     LiteralAccentColor,
     LiteralRadius,
     LiteralSize,
     LiteralVariant,
-    RadixThemesComponent,
+LiteralButtonSize,
+LiteralTextFieldSize,
+LiteralSwitchSize,
+LiteralTextFieldVariant
 )
-
-LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
 class Button(CommonMarginProps, RadixThemesComponent):
@@ -42,8 +43,6 @@ class Button(CommonMarginProps, RadixThemesComponent):
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
 
-
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 
 class Switch(CommonMarginProps, RadixThemesComponent):
@@ -97,10 +96,6 @@ class Switch(CommonMarginProps, RadixThemesComponent):
             **super().get_event_triggers(),
             EventTriggers.ON_CHECKED_CHANGE: lambda checked: [checked],
         }
-
-
-LiteralTextFieldSize = Literal["1", "2", "3"]
-LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
 
 class TextFieldRoot(CommonMarginProps, RadixThemesComponent):

@@ -4,8 +4,8 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
-    ChakraComponent,
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.chakra import (
     LiteralColorScheme,
     LiteralDrawerSize,
 )

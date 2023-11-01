@@ -3,7 +3,9 @@
 from typing import List, Literal, Optional, Tuple
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.base import LiteralOrientation
+from reflex.components.literals.chakra import LiteralColorScheme
 from reflex.vars import Var
 
 
@@ -12,7 +14,7 @@ class Stepper(ChakraComponent):
 
     tag = "Stepper"
 
-    orientation: Var[Literal["vertical", "horizontal"]]
+    orientation: Var[LiteralOrientation]
 
     # The color scheme to use for the stepper; default is blue.
     colorScheme: Var[LiteralColorScheme]

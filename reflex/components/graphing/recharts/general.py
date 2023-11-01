@@ -6,13 +6,13 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import (
+from .recharts import Recharts
+from reflex.components.literals.base import LiteralOrientation
+from reflex.components.literals.recharts import (
     LiteralIconType,
-    LiteralLayout,
     LiteralLegendAlign,
     LiteralPosition,
     LiteralVerticalAlign,
-    Recharts,
 )
 
 
@@ -69,7 +69,7 @@ class Legend(Recharts):
     height: Var[int]
 
     # The layout of legend items. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    layout: Var[LiteralOrientation]
 
     # The alignment of legend items in 'horizontal' direction, which can be 'left', 'center', 'right'.
     align: Var[LiteralLegendAlign]

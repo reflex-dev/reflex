@@ -2,12 +2,12 @@
 from typing import Optional
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
-    ChakraComponent,
+from reflex.components.literals.chakra import (
     LiteralTagColorScheme,
     LiteralTagSize,
     LiteralVariant,
 )
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
 
 

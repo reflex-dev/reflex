@@ -6,7 +6,8 @@ import io
 from typing import Any, Optional, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralImageLoading
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.chakra import LiteralImageLoading
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 

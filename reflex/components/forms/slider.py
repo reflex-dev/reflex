@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.graphing.recharts.recharts import LiteralLayout
-from reflex.components.libs.chakra import ChakraComponent, LiteralChakraDirection
+from reflex.components.literals.base import LiteralOrientation
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.chakra import LiteralChakraDirection
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -52,7 +53,7 @@ class Slider(ChakraComponent):
     min_steps_between_thumbs: Var[int]
 
     # Oreintation of the slider vertical | horizontal.
-    orientation: Var[LiteralLayout]
+    orientation: Var[LiteralOrientation]
 
     # Minimum height of the slider.
     min_h: Var[str]

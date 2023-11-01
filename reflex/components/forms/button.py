@@ -1,8 +1,8 @@
 """A button component."""
 from typing import List
 
-from reflex.components.libs.chakra import (
-    ChakraComponent,
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.chakra import (
     LiteralButtonSize,
     LiteralButtonVariant,
     LiteralColorScheme,

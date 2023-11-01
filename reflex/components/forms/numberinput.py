@@ -4,10 +4,8 @@ from numbers import Number
 from typing import Any, Dict
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
-    ChakraComponent,
-    LiteralInputVariant,
-)
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.libs.chakra import LiteralInputVariant
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

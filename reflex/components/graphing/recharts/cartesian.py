@@ -6,20 +6,20 @@ from typing import Any, Dict, List, Union
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .recharts import (
+from .recharts import Recharts
+from reflex.components.literals.base import LiteralOrientation
+from reflex.components.literals.recharts import (
     LiteralAnimationEasing,
     LiteralAreaType,
     LiteralDirection,
     LiteralIfOverflow,
     LiteralInterval,
-    LiteralLayout,
     LiteralLineType,
     LiteralOrientationTopBottom,
     LiteralOrientationTopBottomLeftRight,
     LiteralPolarRadiusType,
     LiteralScale,
     LiteralShape,
-    Recharts,
 )
 
 
@@ -181,7 +181,7 @@ class Cartesian(Recharts):
     """A base class for cartesian charts in Recharts."""
 
     # The layout of bar in the chart, usually inherited from parent. 'horizontal' | 'vertical'
-    layout: Var[LiteralLayout]
+    layout: Var[LiteralOrientation]
 
     # The key of a group of data which should be unique in an area chart.
     data_key: Var[Union[str, int]]

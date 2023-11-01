@@ -1,7 +1,7 @@
 """A heading component."""
 
-
-from reflex.components.libs.chakra import ChakraComponent, LiteralHeadingSize
+from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.literals.chakra import LiteralHeadingSize
 from reflex.vars import Var
 
 
