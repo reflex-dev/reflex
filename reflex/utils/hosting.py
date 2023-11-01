@@ -148,6 +148,21 @@ def save_token_to_config(token: str, code: str | None = None):
         )
 
 
+def requires_access_token() -> str:
+    """Fetch the access token from the existing config if applicable.
+
+    Returns:
+        The access token. If not found, return empty string for it instead.
+    """
+    # Check if the user is authenticated
+
+    access_token, _ = get_existing_access_token()
+    if not access_token:
+        console.debug("No access token found from the existing config.")
+
+    return access_token
+
+
 def authenticated_token() -> tuple[str, str]:
     """Fetch the access token from the existing config if applicable and validate it.
 
@@ -414,7 +429,7 @@ def deploy(
         The response containing the URL of the site to be deployed if successful, None otherwise.
     """
     # Check if the user is authenticated
-    if not (token := requires_authenticated()):
+    if not (token := requires_access_token()):
         raise Exception("not authenticated")
 
     try:
