@@ -1,6 +1,6 @@
 """A component to indicate progress through a multi-step process."""
 
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme
@@ -11,6 +11,8 @@ class Stepper(ChakraComponent):
     """The parent container for a stepper."""
 
     tag = "Stepper"
+
+    orientation: Var[Literal["vertical", "horizontal"]]
 
     # The color scheme to use for the stepper; default is blue.
     colorScheme: Var[LiteralColorScheme]
