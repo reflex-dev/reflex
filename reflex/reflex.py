@@ -14,6 +14,7 @@ from typing import List, Optional
 
 import httpx
 import typer
+import typer.core
 from alembic.util.exc import CommandError
 from tabulate import tabulate
 
@@ -30,8 +31,11 @@ from reflex.utils import (
     telemetry,
 )
 
+# Disable typer+rich integration for help panels
+typer.core.rich = False  # type: ignore
+
 # Create the app.
-cli = typer.Typer(add_completion=False)
+cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
 
 # Get the config.
 config = get_config()
