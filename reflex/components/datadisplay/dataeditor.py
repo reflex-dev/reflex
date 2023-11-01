@@ -211,11 +211,9 @@ class DataEditor(NoSSRComponent):
                 },
                 self.library: {ImportVar(tag="GridCellKind")},
                 "/utils/helpers/dataeditor.js": {
-                    ImportVar(tag=f"getDEColumn", is_default=False, install=False),
-                    ImportVar(tag=f"getDERow", is_default=False, install=False),
-                    ImportVar(tag=f"locateCell", is_default=False, install=False),
-                    ImportVar(tag=f"formatCell", is_default=False, install=False),
-                    ImportVar(tag=f"onEditCell", is_default=False, install=False),
+                    ImportVar(
+                        tag=f"formatDataEditorCells", is_default=False, install=False
+                    ),
                 },
             },
         )
@@ -258,20 +256,15 @@ class DataEditor(NoSSRComponent):
 
         code = [f"function {data_callback}([col, row])" "{"]
 
+        columns_path = f"{self.columns._var_full_name}"
+        data_path = f"{self.data._var_full_name}"
+
         code.extend(
             [
-                f"  if (row < {self.data._var_full_name}.length && col < {self.columns._var_full_name}.length)"
-                " {",
-                f"    const column = getDEColumn({self.columns._var_full_name}, col);",
-                f"    const rowData = getDERow({self.data._var_full_name}, row);",
-                f"    const cellData = locateCell(rowData, column);",
-                "    return formatCell(cellData, column);",
+                f"    return formatDataEditorCells(col, row, {columns_path}, {data_path});",
                 "  }",
-                "  return { kind: GridCellKind.Loading};",
             ]
         )
-
-        code.append("}")
 
         return "\n".join(code)
 
@@ -323,44 +316,35 @@ class DataEditor(NoSSRComponent):
                 props["theme"] = DataEditorTheme(**theme)
 
         # Allow by default to select a region of cells in the grid.
-        props.setdefault("getCellForSelection", True)
+        props.setdefault("get_cell_for_selection", True)
 
         # Disable on_paste by default if not provided.
-        props.setdefault("onPaste", False)
+        props.setdefault("on_paste", False)
 
-        if props.pop("getCellContent", None) is not None:
+        if props.pop("get_cell_content", None) is not None:
             console.warn(
-                "getCellContent is not user configurable, the provided value will be discarded"
+                "get_cell_content is not user configurable, the provided value will be discarded"
             )
         grid = super().create(*children, **props)
         return Div.create(
             grid,
-            Div.create(id="portal"),
             width=props.pop("width", "100%"),
             height=props.pop("height", "100%"),
         )
 
-    # def _render(self) -> Tag:
-    #     if isinstance(self.data, Var) and types.is_dataframe(self.data.type_):
-    #         self.columns = BaseVar(
-    #             name=f"{self.data.name}.columns",
-    #             type_=List[Any],
-    #             state=self.data.state,
-    #         )
-    #         self.data = BaseVar(
-    #             name=f"{self.data.name}.data",
-    #             type_=List[List[Any]],
-    #             state=self.data.state,
-    #         )
-    #     if types.is_dataframe(type(self.data)):
-    #         # If given a pandas df break up the data and columns
-    #         data = serialize(self.data)
-    #         assert isinstance(data, dict), "Serialized dataframe should be a dict."
-    #         self.columns = Var.create_safe(data["columns"])
-    #         self.data = Var.create_safe(data["data"])
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components for the component.
 
-    #    # Render the table.
-    #    return super()._render()
+        Returns:
+            The app wrap components.
+        """
+        from reflex.el.elements import Div
+
+        class Portal(Div):
+            def get_ref(self):
+                return None
+
+        return {(-1, "DataEditorPortal"): Portal.create(id="portal")}
 
 
 # try:

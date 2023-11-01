@@ -242,6 +242,9 @@ class Component(Base, ABC):
             if value._var_type is not EventChain:
                 raise ValueError(f"Invalid event chain: {value}")
             return value
+        elif isinstance(value, EventChain):
+            # Trust that the caller knows what they're doing passing an EventChain directly
+            return value
 
         arg_spec = triggers.get(event_trigger, lambda: [])
 
@@ -260,7 +263,7 @@ class Component(Base, ABC):
                     deprecation_version="0.2.8",
                     removal_version="0.3.0",
                 )
-            events = []
+            events: list[EventSpec] = []
             for v in value:
                 if isinstance(v, EventHandler):
                     # Call the event handler to get the event.
@@ -291,20 +294,26 @@ class Component(Base, ABC):
             raise ValueError(f"Invalid event chain: {value}")
 
         # Add args to the event specs if necessary.
-        events = [
-            EventSpec(
-                handler=e.handler,
-                args=get_handler_args(e),
-                client_handler_name=e.client_handler_name,
-            )
-            for e in events
-        ]
+        events = [e.with_args(get_handler_args(e)) for e in events]
+
+        # Collect event_actions from each spec
+        event_actions = {}
+        for e in events:
+            event_actions.update(e.event_actions)
 
         # Return the event chain.
         if isinstance(arg_spec, Var):
-            return EventChain(events=events, args_spec=None)
+            return EventChain(
+                events=events,
+                args_spec=None,
+                event_actions=event_actions,
+            )
         else:
-            return EventChain(events=events, args_spec=arg_spec)  # type: ignore
+            return EventChain(
+                events=events,
+                args_spec=arg_spec,  # type: ignore
+                event_actions=event_actions,
+            )
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers for the component.

@@ -5,7 +5,7 @@ For an extensive guide on the different ways to contribute to Reflex see our [Co
 
 
 ## Running a Local Build of Reflex 
-Here is a quick guide to how the run Reflex repo locally so you can start contributing to the project.
+Here is a quick guide on how to run Reflex repo locally so you can start contributing to the project.
 
 **Prerequisites:**
 - Python >= 3.8
@@ -64,12 +64,12 @@ Within the 'test' directory of Reflex you can add to a test file already there o
 What to unit test?
 - Any feature or significant change that has been added.
 - Any edge cases or potential problem areas.
- -Any interactions between different parts of the code.
+- Any interactions between different parts of the code.
 
 
 ## ✅ Making a PR
 
-Once you solve a current issue or improvement to Reflex, you can make a pr, and we will review the changes. 
+Once you solve a current issue or improvement to Reflex, you can make a PR, and we will review the changes. 
 
 Before submitting, a pull request, ensure the following steps are taken and test passing.
 
@@ -95,4 +95,4 @@ Note that pre-commit will only be installed when you use a Python version >= 3.8
 pre-commit install
 ```
 
-That's it you can now submit your pr. Thanks for contributing to Reflex!
+That's it you can now submit your PR. Thanks for contributing to Reflex!
