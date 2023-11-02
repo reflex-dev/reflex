@@ -27,7 +27,8 @@ def convert(style_dict) -> tuple[dict, str]:
     for key, value in style_dict.items():
         key = format.to_camel_case(key)
         if isinstance(value, dict):
-            out[key] = convert(value)
+            out[key], maybe_var_state = convert(value)
+            var_state = var_state or maybe_var_state
         elif isinstance(value, Var):
             out[key] = str(value)
             var_state = var_state or value._var_state
