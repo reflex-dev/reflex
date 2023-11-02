@@ -183,10 +183,10 @@ def test_set_focus():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_focus"
     assert spec.args[0][0].equals(Var.create_safe("ref"))
-    assert spec.args[0][1].equals(Var.create_safe("ref_input1"))
-    assert format.format_event(spec) == 'Event("_set_focus", {ref:ref_input1})'
+    assert spec.args[0][1].equals(format.format_ref_var("ref_input1"))
+    assert format.format_event(spec) == 'Event("_set_focus", {ref:refs[`ref_input1`]})'
     spec = event.set_focus("input1")
-    assert format.format_event(spec) == 'Event("_set_focus", {ref:ref_input1})'
+    assert format.format_event(spec) == 'Event("_set_focus", {ref:refs[`ref_input1`]})'
 
 
 def test_set_value():
@@ -195,14 +195,17 @@ def test_set_value():
     assert isinstance(spec, EventSpec)
     assert spec.handler.fn.__qualname__ == "_set_value"
     assert spec.args[0][0].equals(Var.create_safe("ref"))
-    assert spec.args[0][1].equals(Var.create_safe("ref_input1"))
+    assert spec.args[0][1].equals(format.format_ref_var("ref_input1"))
     assert spec.args[1][0].equals(Var.create_safe("value"))
     assert spec.args[1][1].equals(Var.create_safe(""))
-    assert format.format_event(spec) == 'Event("_set_value", {ref:ref_input1,value:``})'
+    assert (
+        format.format_event(spec)
+        == 'Event("_set_value", {ref:refs[`ref_input1`],value:``})'
+    )
     spec = event.set_value("input1", Var.create_safe("message"))
     assert (
         format.format_event(spec)
-        == 'Event("_set_value", {ref:ref_input1,value:message})'
+        == 'Event("_set_value", {ref:refs[`ref_input1`],value:message})'
     )
 
 

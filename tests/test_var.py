@@ -636,7 +636,7 @@ def test_import_var(import_var, expected):
         (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
         (
             f"testing f-string with {BaseVar(_var_name='myvar', _var_type=int)._var_set_state('state')}",
-            "testing f-string with ${state.myvar}",
+            "testing f-string with $<reflex.Var>_var_state=state</reflex.Var>{state.myvar}",
         ),
         (
             f"testing local f-string {BaseVar(_var_name='x', _var_is_local=True, _var_type=str)}",
@@ -646,6 +646,35 @@ def test_import_var(import_var, expected):
 )
 def test_fstrings(out, expected):
     assert out == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "expect_state"),
+    [
+        ([1], ""),
+        ({"a": 1}, ""),
+        ([Var.create_safe(1)._var_set_state("foo")], "foo"),
+        ({"a": Var.create_safe(1)._var_set_state("foo")}, "foo"),
+    ],
+)
+def test_extract_state_from_container(value, expect_state):
+    """Test that _var_state is extracted from containers containing BaseVar.
+
+    Args:
+        value: The value to create a var from.
+        expect_state: The expected state.
+    """
+    assert Var.create_safe(value)._var_state == expect_state
+
+
+def test_fstring_roundtrip():
+    """Test that f-string roundtrip carries state."""
+    var = BaseVar.create_safe("var")._var_set_state("state")
+    rt_var = Var.create_safe(f"{var}")
+    assert var._var_state == rt_var._var_state
+    assert var._var_full_name_needs_state_prefix
+    assert not rt_var._var_full_name_needs_state_prefix
+    assert rt_var._var_name == var._var_full_name
 
 
 @pytest.mark.parametrize(
