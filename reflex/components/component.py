@@ -566,6 +566,34 @@ class Component(Base, ABC):
         self.get_hooks = lambda: set()
         return code
 
+    @staticmethod
+    def _get_base_state_from_event_triggers(
+        event_triggers: dict[str, EventChain | Var],
+    ) -> tuple[bool, str | None]:
+        """Get the base state from event triggers if any depend on state.
+
+        Args:
+            event_triggers: The event triggers from the component instance.
+
+        Returns:
+            Whether the component has events and the base state associated with any args.
+        """
+        if not event_triggers:
+            return False, None
+
+        for event in event_triggers.values():
+            if isinstance(event, Var):
+                if event._var_state:
+                    return True, event._var_state.partition(".")[0]
+            elif isinstance(event, EventChain):
+                for spec in event.events:
+                    for arg_name, arg_value in spec.args:
+                        maybe_state = arg_name._var_state or arg_value._var_state
+                        if maybe_state:
+                            return True, maybe_state.partition(".")[0]
+
+        return True, None
+
     def _get_memoized(self) -> Optional[str]:
         """Get memoized code for the component.
 
@@ -579,8 +607,9 @@ class Component(Base, ABC):
         from reflex.components.base.bare import Bare
 
         if not isinstance(self, Bare):
-            if self.event_triggers:
-                events = True
+            events, base_state = self._get_base_state_from_event_triggers(
+                self.event_triggers
+            )
 
             for prop in self.get_props():
                 prop_var = getattr(self, prop)
