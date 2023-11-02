@@ -2,6 +2,8 @@
 
 from .badge import Badge
 from .code import Code, CodeBlock
+from .code import LiteralCodeBlockTheme as LiteralCodeBlockTheme
+from .code import LiteralCodeLanguage as LiteralCodeLanguage
 from .dataeditor import DataEditor, DataEditorTheme
 from .datatable import DataTable
 from .divider import Divider
