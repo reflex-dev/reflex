@@ -1,3 +1,4 @@
+"""Literals used by recharts components."""
 from typing import Literal
 
 LiteralAnimationEasing = Literal["ease", "ease-in", "ease-out", "ease-in-out", "linear"]

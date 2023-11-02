@@ -1,3 +1,4 @@
+"""Literals used by Reflex."""
 from .base import LiteralOrientation, LiteralTheme
 from .chakra import (
     LiteralAlertDialogSize,
@@ -27,10 +28,6 @@ from .chakra import (
     LiteralTagColorScheme,
     LiteralTagSize,
     LiteralVariant,
-)
-from .code import (
-    LiteralCodeBlockTheme,
-    LiteralCodeLanguage,
 )
 from .data_editor import LiteralRowMarker
 from .radix import (

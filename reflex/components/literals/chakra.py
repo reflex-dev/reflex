@@ -1,3 +1,4 @@
+"""Literals used by chakra components."""
 from typing import Literal
 
 LiteralColorScheme = Literal[

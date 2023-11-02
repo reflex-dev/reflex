@@ -1,3 +1,4 @@
+"""Literals used by radix components."""
 from typing import Literal
 
 # base
