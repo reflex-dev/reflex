@@ -505,22 +505,6 @@ def install_bun():
     )
 
 
-def get_packages_to_install(packages, npm_packages):  # TODO: refactor
-    packages_to_install = []
-    for _i, package in enumerate(packages):
-        parts = [x for x in package.split("@") if x]
-        if (
-            len(parts) == 1
-            and package not in npm_packages
-            or len(parts) > 1
-            and parts[-1].startswith("^")
-            or len(parts) > 1
-            and package not in npm_packages
-        ):
-            packages_to_install.append(package)
-    return packages_to_install
-
-
 def install_frontend_packages(packages: set[str]):
     """Installs the base and custom frontend packages.
 
@@ -530,58 +514,42 @@ def install_frontend_packages(packages: set[str]):
     Example:
         >>> install_frontend_packages(["react", "react-dom"])
     """
+    config = get_config()
     package_manager = get_install_package_manager()
+
     uses_npm = package_manager.endswith("npm")
-    if uses_npm:
-        npm_packages = processes.new_process(
-            [package_manager, "ls"], run=True, cwd=constants.Dirs.WEB
-        ).stdout.splitlines()
-        npm_packages = set(
-            [
-                package.split()[1]
-                for package in npm_packages[1:]
-                if package and "empty" not in package
-            ]
-        )
+
+    prefer_offline = (["--prefer-offline"] if config.npm_prefer_offline and uses_npm else [])
+
     # Install the base packages.
     process = processes.new_process(
-        [package_manager, "install", "--loglevel", "silly"],
+        [package_manager, "install", "--loglevel", "silly", *prefer_offline],
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
 
     processes.show_status("Installing base frontend packages", process)
 
-    config = get_config()
     if config.tailwind is not None:
-        tailwind_deps = (config.tailwind or {}).get("plugins", [])
-        if uses_npm:
-            tailwind_deps = get_packages_to_install(tailwind_deps, npm_packages)
-        # install tailwind and tailwind plugins as dev dependencies.
-        if tailwind_deps:
-            process = processes.new_process(
-                [
-                    package_manager,
-                    "add",
-                    "-d",
-                    constants.Tailwind.VERSION,
-                    *tailwind_deps,
-                ],
-                cwd=constants.Dirs.WEB,
-                shell=constants.IS_WINDOWS,
-            )
-            processes.show_status("Installing tailwind", process)
-
-    # Install custom packages defined in frontend_packages
-    if uses_npm:
-        packages = get_packages_to_install(packages, npm_packages)
+        process = processes.new_process(
+            [
+                package_manager,
+                "add",
+                "-d",
+                *prefer_offline,
+                constants.Tailwind.VERSION,
+                *(config.tailwind or {}).get("plugins", []),
+            ],
+            cwd=constants.Dirs.WEB,
+            shell=constants.IS_WINDOWS,
+        )
+        processes.show_status("Installing tailwind", process)
 
     if len(packages) > 0:
         process = processes.new_process(
-            [package_manager, "add", *packages],
+            [package_manager, "add", *packages, *prefer_offline],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-            show_logs=True,
         )
         processes.show_status(
             "Installing frontend packages from config and components", process
@@ -728,8 +696,8 @@ def check_schema_up_to_date():
     with model.Model.get_db_engine().connect() as connection:
         try:
             if model.Model.alembic_autogenerate(
-                connection=connection,
-                write_migration_scripts=False,
+                    connection=connection,
+                    write_migration_scripts=False,
             ):
                 console.error(
                     "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "

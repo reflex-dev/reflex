@@ -201,6 +201,9 @@ class Config(Base):
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
+    # npm prefer-offline flag to prefer local cache.
+    npm_prefer_offline: bool = False
+
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
 
