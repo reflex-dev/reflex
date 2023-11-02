@@ -517,9 +517,11 @@ def install_frontend_packages(packages: set[str]):
     config = get_config()
     package_manager = get_install_package_manager()
 
-    uses_npm = package_manager.endswith("npm")
+    uses_npm = package_manager.endswith("npm") if package_manager else False
 
-    prefer_offline = (["--prefer-offline"] if config.npm_prefer_offline and uses_npm else [])
+    prefer_offline = (
+        ["--prefer-offline"] if config.npm_prefer_offline and uses_npm else []
+    )
 
     # Install the base packages.
     process = processes.new_process(
@@ -696,8 +698,8 @@ def check_schema_up_to_date():
     with model.Model.get_db_engine().connect() as connection:
         try:
             if model.Model.alembic_autogenerate(
-                    connection=connection,
-                    write_migration_scripts=False,
+                connection=connection,
+                write_migration_scripts=False,
             ):
                 console.error(
                     "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "

@@ -96,7 +96,7 @@ class Config(Base):
         rxdeploy_url: Optional[str] = None,
         cp_backend_url: Optional[str] = None,
         cp_web_url: Optional[str] = None,
-        npm_prefer_offline: bool=False,
+        npm_prefer_offline: bool = False,
         username: Optional[str] = None,
         gunicorn_worker_class: Optional[str] = None,
         **kwargs
