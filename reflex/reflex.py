@@ -35,7 +35,11 @@ from reflex.utils import (
 typer.core.rich = False  # type: ignore
 
 # Create the app.
-cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+try:
+    cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+except TypeError:
+    # Fallback for older typer versions.
+    cli = typer.Typer(add_completion=False)
 
 # Get the config.
 config = get_config()
