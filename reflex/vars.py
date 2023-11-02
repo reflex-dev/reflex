@@ -6,6 +6,7 @@ import dataclasses
 import dis
 import json
 import random
+import re
 import string
 import sys
 from types import CodeType, FunctionType
@@ -90,6 +91,38 @@ def get_unique_variable_name() -> str:
         USED_VARIABLES.add(name)
         return name
     return get_unique_variable_name()
+
+
+def _encode_var_state(value: Var) -> str:
+    """Encode the state name into a formatted var.
+
+    Args:
+        value: The value to encode the state name into.
+
+    Returns:
+        The encoded var.
+    """
+    if value._var_state:
+        return f"<reflex.Var>_var_state={value._var_state}</reflex.Var>" + str(value)
+    return str(value)
+
+
+def _decode_var_state(value: str) -> tuple[str, str]:
+    """Decode the state name from a formatted var.
+
+    Args:
+        value: The value to extract the state name from.
+
+    Returns:
+        The extracted state name and the value without the state name.
+    """
+    _var_state = ""
+    if isinstance(value, str):
+        # Extract the state name from a formatted var
+        while m := re.match(r"(.*)<reflex.Var>_var_state=(.*)</reflex.Var>(.*)", value):
+            value = m.group(1) + m.group(3)
+            _var_state = m.group(2)
+    return _var_state, value
 
 
 class Var:
@@ -187,6 +220,15 @@ class Var:
             The var class item.
         """
         return _GenericAlias(cls, type_)
+
+    def __post_init__(self) -> None:
+        """Post-initialize the var."""
+        # Decode any inline Var markup and apply it to the instance
+        _var_state, _var_name = _decode_var_state(self._var_name)
+        if _var_state:
+            self._var_name = _var_name
+            if not self._var_state:
+                self._var_state = _var_state
 
     def _replace(self, **kwargs: Any) -> Var:
         # Cannot use dataclasses.replace because ComputedVar uses multiple inheritance
@@ -303,9 +345,11 @@ class Var:
         Returns:
             The formatted var.
         """
+        # Encode the _var_state into the formatted output for tracking purposes.
+        str_self = _encode_var_state(self)
         if self._var_is_local:
-            return str(self)
-        return f"${str(self)}"
+            return str_self
+        return f"${str_self}"
 
     def __getitem__(self, i: Any) -> Var:
         """Index into a var.
@@ -338,13 +382,7 @@ class Var:
 
         # Convert any vars to local vars.
         if isinstance(i, Var):
-            i = BaseVar(
-                _var_name=i._var_name,
-                _var_type=i._var_type,
-                _var_state=i._var_state,
-                _var_is_local=True,
-                _var_full_name_needs_state_prefix=True,
-            )
+            i = i._replace(_var_is_local=True)
 
         # Handle list/tuple/str indexing.
         if types._issubclass(self._var_type, Union[List, Tuple, str]):

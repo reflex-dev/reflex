@@ -22,6 +22,7 @@ from typing import (
 USED_VARIABLES: Incomplete
 
 def get_unique_variable_name() -> str: ...
+def _decode_var_state(value: str) -> tuple[str, str]: ...
 
 class Var:
     _var_name: str

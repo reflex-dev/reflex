@@ -522,6 +522,11 @@ def VarOperations():
             rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
             rx.text(VarOperationState.list3.join(""), id="list_join"),
             rx.text(VarOperationState.list3.join(","), id="list_join_comma"),
+            # Index from an op var
+            rx.text(
+                VarOperationState.list3[VarOperationState.int_var1 % 3],
+                id="list_index_mod",
+            ),
         )
 
     app.compile()
@@ -705,6 +710,8 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("dict_eq_dict", "false"),
         ("dict_neq_dict", "true"),
         ("dict_contains", "true"),
+        # index from an op var
+        ("list_index_mod", "second"),
     ]
 
     for tag, expected in tests:

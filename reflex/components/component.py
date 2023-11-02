@@ -586,6 +586,9 @@ class Component(Base, ABC):
                     if "connectError" in str(prop_var):
                         events = True
 
+        if base_state is None and self.style._var_state:
+            base_state = self.style._var_state.partition(".")[0]
+
         if base_state is None:
             for child in self.children:
                 if isinstance(child, Bare):
