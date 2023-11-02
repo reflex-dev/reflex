@@ -244,6 +244,7 @@ class DataEditor(NoSSRComponent):
             "on_finished_editing": lambda new_value, movement: [new_value, movement],
             "on_row_appended": lambda: [],
             "on_selection_cleared": lambda: [],
+            "on_column_resize": lambda col, width: [col, width],
         }
 
     def _get_hooks(self) -> str | None:
