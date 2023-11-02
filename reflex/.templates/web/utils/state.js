@@ -488,10 +488,10 @@ export const useEventLoop = (
 
   // Function to add new events to the event queue.
   const addEvents = (events, _e, event_actions) => {
-    if (event_actions?.preventDefault && _e) {
+    if (event_actions?.preventDefault && _e?.preventDefault) {
       _e.preventDefault();
     }
-    if (event_actions?.stopPropagation && _e) {
+    if (event_actions?.stopPropagation && _e?.stopPropagation) {
       _e.stopPropagation();
     }
     queueEvents(events, socket)
