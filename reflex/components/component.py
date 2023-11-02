@@ -75,6 +75,9 @@ class Component(Base, ABC):
     # custom attribute
     custom_attrs: Dict[str, str] = {}
 
+    # The memoized code for the component
+    memoized_code: str | None = None
+
     @classmethod
     def __init_subclass__(cls, **kwargs):
         """Set default properties.
@@ -541,25 +544,26 @@ class Component(Base, ABC):
     def _render_out_of_band(self, base_state, events: bool = False) -> str | None:
         from reflex.compiler.templates import REACTIVE_COMPONENT
 
-        def render() -> dict:
-            """Define how to render the component in React.
-
-            Returns:
-                The tag to render.
-            """
-            return dict(Tag(name=self.tag))
-
         rendered_code = self.render()
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
-        tag_name = f"{self.tag or 'Comp'}_{code_hash}"
+        tag_name = f"{self.tag or 'Comp'}_{code_hash}".replace(".", "_")
         code = REACTIVE_COMPONENT.render(
             tag_name=tag_name,
             component=self,
             state_name=base_state,
             events=events,
         )
-        self.tag = tag_name
+
+        def render() -> dict:
+            """Define how to render the component in React.
+
+            Returns:
+                The tag to render.
+            """
+            return dict(Tag(name=tag_name))
+
         self.render = render
+        self.get_hooks = lambda: set()
         return code
 
     def _get_memoized(self) -> Optional[str]:
@@ -568,7 +572,8 @@ class Component(Base, ABC):
         Returns:
             The memoized code.
         """
-        js_func = None
+        if self.memoized_code:
+            return self.memoized_code
         base_state = None
         events = False
         from reflex.components.base.bare import Bare
@@ -597,11 +602,11 @@ class Component(Base, ABC):
                     break
 
         if events or base_state:
-            js_func = self._render_out_of_band(
+            self.memoized_code = self._render_out_of_band(
                 base_state=base_state,
                 events=events,
             )
-        return js_func
+        return self.memoized_code
 
     def get_custom_code(self) -> Set[str]:
         """Get custom code for the component and its children.

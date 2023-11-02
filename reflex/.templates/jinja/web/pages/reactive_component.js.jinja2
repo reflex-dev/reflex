@@ -8,5 +8,10 @@ function {{tag_name}} () {
   {% if events %}
   const [addEvents, connectError] = useContext(EventLoopContext);
   {% endif %}
+
+  {% for hook in component.get_hooks() %}
+  {{ hook }}
+  {% endfor %}
+
   return {{utils.render(component.render())}}
 }
