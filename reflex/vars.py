@@ -15,6 +15,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Literal,
     Optional,
@@ -125,6 +126,21 @@ def _decode_var_state(value: str) -> tuple[str, str]:
     return _var_state, value
 
 
+def _extract_var_state(value: Iterable) -> str:
+    """Extract the state name from an iterable containing a Var.
+
+    Args:
+        value: The iterable to extract the state name from.
+
+    Returns:
+        The extracted state name.
+    """
+    for sub in value:
+        if isinstance(sub, Var) and sub._var_state:
+            return sub._var_state
+    return ""
+
+
 class Var:
     """An abstract var."""
 
@@ -171,6 +187,14 @@ class Var:
         if isinstance(value, Var):
             return value
 
+        # Try to pull the state from contained values.
+        _var_state = ""
+        if not isinstance(value, str):
+            with contextlib.suppress(TypeError, AttributeError):
+                _var_state = _extract_var_state(value) or _extract_var_state(
+                    value.values()
+                )
+
         # Try to serialize the value.
         type_ = type(value)
         name = serializers.serialize(value)
@@ -185,6 +209,7 @@ class Var:
             _var_type=type_,
             _var_is_local=_var_is_local,
             _var_is_string=_var_is_string,
+            _var_state=_var_state,
         )
 
     @classmethod

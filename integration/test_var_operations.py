@@ -28,6 +28,7 @@ def VarOperations():
         str_var4: str = "a long string"
         dict1: dict = {1: 2}
         dict2: dict = {3: 4}
+        html_str: str = "<div>hello</div>"
 
     app = rx.App(state=VarOperationState)
 
@@ -527,6 +528,14 @@ def VarOperations():
                 VarOperationState.list3[VarOperationState.int_var1 % 3],
                 id="list_index_mod",
             ),
+            rx.html(
+                VarOperationState.html_str,
+                id="html_str",
+            ),
+            rx.highlight(
+                "second",
+                query=[VarOperationState.str_var2],
+            ),
         )
 
     app.compile()
@@ -712,7 +721,12 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("dict_contains", "true"),
         # index from an op var
         ("list_index_mod", "second"),
+        # html component with var
+        ("html_str", "hello"),
     ]
 
     for tag, expected in tests:
         assert driver.find_element(By.ID, tag).text == expected
+
+    # Highlight component with var query (does not plumb ID)
+    assert driver.find_element(By.TAG_NAME, "mark").text == "second"
