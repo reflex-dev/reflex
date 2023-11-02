@@ -48,7 +48,7 @@ DEPLOYMENT_PICKUP_DELAY = 30
 # End of deployment workflow message. Used to determine if it is the last message from server.
 END_OF_DEPLOYMENT_MESSAGES = ["deploy success"]
 # How many iterations to try and print the deployment event messages from server during deployment.
-DEPLOYMENT_EVENT_MESSAGES_RETRIES = 90
+DEPLOYMENT_EVENT_MESSAGES_RETRIES = 120
 # Timeout limit for http requests
 HTTP_REQUEST_TIMEOUT = 60  # seconds
 
