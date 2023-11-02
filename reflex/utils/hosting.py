@@ -739,7 +739,8 @@ def convert_to_local_time_with_tz(iso_timestamp: str) -> datetime | None:
     """
     try:
         return datetime.fromisoformat(iso_timestamp).astimezone()
-    except Exception:
+    except (TypeError, ValueError) as ex:
+        console.error(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
         return None
 
 
@@ -752,14 +753,9 @@ def convert_to_local_time_str(iso_timestamp: str) -> str:
     Returns:
         The converted timestamp string.
     """
-    try:
-        local_dt = convert_to_local_time_with_tz(iso_timestamp)
-        if local_dt is None:
-            return iso_timestamp
-        return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
-    except Exception as ex:
-        console.error(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
+    if (local_dt := convert_to_local_time_with_tz(iso_timestamp)) is None:
         return iso_timestamp
+    return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
 
 
 class LogType(str, enum.Enum):
@@ -1077,8 +1073,7 @@ def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool | Non
                     # Add a small delta so does not poll the same logs
                     from_iso_timestamp = maybe_timestamp + timedelta(microseconds=1e5)
                 else:
-                    console.error(f"Unable to parse timestamp {row['timestamp']}")
-                    raise ValueError
+                    console.warn(f"Unable to parse timestamp {row['timestamp']}")
                 server_message = row["message"].lower()
                 if "fail" in server_message:
                     console.debug(
