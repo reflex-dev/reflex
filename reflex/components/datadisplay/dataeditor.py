@@ -197,6 +197,15 @@ class DataEditor(NoSSRComponent):
     # Initial scroll offset on the vertical axis.
     scroll_offset_y: Var[int]
 
+    # Enable the built-in search of the data editor.
+    show_search: Var[bool]
+
+    # The search value.
+    search_value: Var[str]
+
+    # The results of the search as a list of cells positions to highlight.
+    search_results: Var[list[list[int]]]
+
     # global theme
     theme: Var[Union[DataEditorTheme, Dict]]
 
@@ -229,6 +238,7 @@ class DataEditor(NoSSRComponent):
             return [pos, data]
 
         return {
+            **super().get_event_triggers(),
             "on_cell_activated": lambda pos: [pos],
             "on_cell_clicked": lambda pos: [pos],
             "on_cell_context_menu": lambda pos: [pos],
@@ -244,6 +254,8 @@ class DataEditor(NoSSRComponent):
             "on_finished_editing": lambda new_value, movement: [new_value, movement],
             "on_row_appended": lambda: [],
             "on_selection_cleared": lambda: [],
+            "on_search_value_change": lambda val: [val],
+            "on_search_close": lambda: [],
         }
 
     def _get_hooks(self) -> str | None:
