@@ -1,5 +1,6 @@
 """Ensure stopPropagation and preventDefault work as expected."""
 
+import asyncio
 from typing import Callable, Coroutine, Generator
 
 import pytest
@@ -21,13 +22,31 @@ def TestEventAction():
         def on_click2(self):
             self.order.append("on_click2")
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
+    class EventFiringComponent(rx.Component):
+        """A component that fires onClick event without passing DOM event."""
+
+        tag = "EventFiringComponent"
+
+        def _get_custom_code(self) -> str | None:
+            return """
+                function EventFiringComponent(props) {
+                    return (
+                        <div id={props.id} onClick={(e) => props.onClick("foo")}>
+                            Event Firing Component
+                        </div>
+                    )
+                }"""
+
+        def get_event_triggers(self):
+            return {"on_click": lambda: []}
 
     def index():
         return rx.vstack(
-            rx.input(value=EventActionState.token, is_read_only=True, id="token"),
+            rx.input(
+                value=EventActionState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
             rx.button("No events", id="btn-no-events"),
             rx.button(
                 "Stop Prop Only",
@@ -89,6 +108,18 @@ def TestEventAction():
                     "link_both"
                 ).stop_propagation.prevent_default,
                 id="link-stop-propagation-prevent-default",
+            ),
+            EventFiringComponent.create(
+                id="custom-stop-propagation",
+                on_click=EventActionState.on_click(  # type: ignore
+                    "custom-stop-propagation"
+                ).stop_propagation,
+            ),
+            EventFiringComponent.create(
+                id="custom-prevent-default",
+                on_click=EventActionState.on_click(  # type: ignore
+                    "custom-prevent-default"
+                ).prevent_default,
             ),
             rx.list(
                 rx.foreach(
@@ -202,6 +233,14 @@ def poll_for_order(
         ("link-prevent-default", ["on_click:link_prevent_default", "on_click:outer"]),
         ("link-prevent-default-only", ["on_click:outer"]),
         ("link-stop-propagation-prevent-default", ["on_click:link_both"]),
+        (
+            "custom-stop-propagation",
+            ["on_click:custom-stop-propagation", "on_click:outer"],
+        ),
+        (
+            "custom-prevent-default",
+            ["on_click:custom-prevent-default", "on_click:outer"],
+        ),
     ],
 )
 @pytest.mark.usefixtures("token")
@@ -226,6 +265,9 @@ async def test_event_actions(
     prev_url = driver.current_url
 
     el.click()
+    if "on_click:outer" not in exp_order:
+        # really make sure the outer event is not fired
+        await asyncio.sleep(0.5)
     await poll_for_order(exp_order)
 
     if element_id.startswith("link") and "prevent-default" not in element_id:
