@@ -551,6 +551,21 @@ def format_array_ref(refs: str, idx: Var | None) -> str:
     return f"refs_{clean_ref}"
 
 
+def format_ref_var(ref: str) -> Var:
+    """Format a ref into a BaseVar that access the ref via refs global.
+
+    Args:
+        ref: The ref to format.
+
+    Returns:
+        The formatted ref as a Var.
+    """
+    return Var.create_safe(
+        f"refs[{ref}]" if ref.startswith("`") else f"refs[`{ref}`]",
+        _var_is_local=False,
+    )
+
+
 def format_breadcrumbs(route: str) -> list[tuple[str, str]]:
     """Take a route and return a list of tuple for use in breadcrumb.
 

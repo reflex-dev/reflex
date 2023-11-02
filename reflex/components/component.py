@@ -370,8 +370,7 @@ class Component(Base, ABC):
         # Add ref to element if `id` is not None.
         ref = self.get_ref()
         if ref is not None:
-            ref_var_name = f"refs[{ref}]" if ref.startswith("`") else f"refs[`{ref}`]"
-            props["ref"] = Var.create(ref_var_name, _var_is_local=False)
+            props["ref"] = format.format_ref_var(ref)
 
         return tag.add_props(**props)
 

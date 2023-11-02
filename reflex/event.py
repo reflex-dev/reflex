@@ -295,7 +295,7 @@ def set_focus(ref: str) -> EventSpec:
     return server_side(
         "_set_focus",
         get_fn_signature(set_focus),
-        ref=Var.create_safe(format.format_ref(ref)),
+        ref=format.format_ref_var(format.format_ref(ref)),
     )
 
 
@@ -312,7 +312,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     return server_side(
         "_set_value",
         get_fn_signature(set_value),
-        ref=Var.create_safe(format.format_ref(ref)),
+        ref=format.format_ref_var(format.format_ref(ref)),
         value=value,
     )
 
