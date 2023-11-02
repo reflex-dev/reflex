@@ -530,7 +530,7 @@ def install_frontend_packages(packages: set[str]):
         [package_manager, "install", "--loglevel", "silly", *prefer_offline],
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
-        show_logs=show_logs
+        show_logs=show_logs,
     )
 
     processes.show_status("Installing base frontend packages", process)
@@ -547,7 +547,7 @@ def install_frontend_packages(packages: set[str]):
             ],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-            show_logs=show_logs
+            show_logs=show_logs,
         )
         processes.show_status("Installing tailwind", process)
 
@@ -556,7 +556,7 @@ def install_frontend_packages(packages: set[str]):
             [package_manager, "add", *packages, *prefer_offline],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-            show_logs=show_logs
+            show_logs=show_logs,
         )
         processes.show_status(
             "Installing frontend packages from config and components", process
@@ -703,8 +703,8 @@ def check_schema_up_to_date():
     with model.Model.get_db_engine().connect() as connection:
         try:
             if model.Model.alembic_autogenerate(
-                    connection=connection,
-                    write_migration_scripts=False,
+                connection=connection,
+                write_migration_scripts=False,
             ):
                 console.error(
                     "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
