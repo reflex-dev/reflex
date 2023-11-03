@@ -266,7 +266,7 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     # Rename the template app to the app name.
     path_ops.mv(constants.Templates.Dirs.CODE, app_name)
     path_ops.mv(
-        os.path.join(app_name, template.value + constants.Ext.PY),
+        os.path.join(app_name, template_dir.name + constants.Ext.PY),
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
 

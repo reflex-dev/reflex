@@ -250,6 +250,7 @@ class DataEditor(NoSSRComponent):
             "on_finished_editing": lambda new_value, movement: [new_value, movement],
             "on_row_appended": lambda: [],
             "on_selection_cleared": lambda: [],
+            "on_column_resize": lambda col, width: [col, width],
         }
 
     def _get_hooks(self) -> str | None:
@@ -345,9 +346,9 @@ class DataEditor(NoSSRComponent):
         # Disable on_paste by default if not provided.
         props.setdefault("on_paste", False)
 
-        if props.pop("getCellContent", None) is not None:
+        if props.pop("get_cell_content", None) is not None:
             console.warn(
-                "getCellContent is not user configurable, the provided value will be discarded"
+                "get_cell_content is not user configurable, the provided value will be discarded"
             )
         editor = super().create(*children, **props)
 

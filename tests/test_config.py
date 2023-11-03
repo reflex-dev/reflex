@@ -139,7 +139,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
                 "frontend_port": 3001,
             },
         ),
-        # Ports set in environment take precendence
+        # Ports set in environment take precedence
         (
             {"backend_port": 8001, "frontend_port": 3001},
             {"BACKEND_PORT": 8002},
@@ -151,7 +151,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
                 "frontend_port": 3001,
             },
         ),
-        # Ports set on the command line take precendence
+        # Ports set on the command line take precedence
         (
             {"backend_port": 8001, "frontend_port": 3001},
             {"BACKEND_PORT": 8002},
