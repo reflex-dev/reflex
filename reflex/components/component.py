@@ -626,14 +626,15 @@ class Component(Base, ABC):
         )
 
     def _get_imports(self) -> imports.ImportDict:
-        imports = {}
+        _imports = {}
         if self.library is not None and self.tag is not None:
-            imports[self.library] = {self.import_var}
-        return {
-            **self._get_props_imports(),
-            **self._get_dependencies_imports(),
-            **imports,
-        }
+            _imports[self.library] = {self.import_var}
+
+        return imports.merge_imports(
+            self._get_props_imports(),
+            self._get_dependencies_imports(),
+            _imports,
+        )
 
     def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
