@@ -17,7 +17,7 @@ RUN python3.11 -m venv $VIRTUAL_ENV
 RUN pip install -r requirements.txt
 
 # Deploy templates and prepare app
-RUN reflex init
+RUN reflex init --template blank
 
 # Export static copy of frontend to /app/.web/_static
 RUN reflex export --frontend-only --no-zip
