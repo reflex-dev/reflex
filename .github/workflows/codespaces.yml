@@ -1,6 +1,7 @@
 name: codspeed-benchmarks
 
 on:
+<<<<<<< HEAD
   # Run on pushes to the main branch
   push:
     branches:
@@ -10,11 +11,21 @@ on:
   # `workflow_dispatch` allows CodSpeed to trigger backtest
   # performance analysis in order to generate initial data.
   workflow_dispatch:
+=======
+  pull_request:
+    branches: [main]
+  push:
+    # Note even though this job is called "pre-commit" and runs "pre-commit", this job will run
+    # also POST-commit on main also!  In case there are mishandled merge conflicts / bad auto-resolves
+    # when merging into main branch.
+    branches: [main]
+>>>>>>> 7604939e (Initial benchmarking)
 
 jobs:
   benchmarks:
     runs-on: ubuntu-latest
     steps:
+<<<<<<< HEAD
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
@@ -24,8 +35,22 @@ jobs:
           run-poetry-install: true
           shell: bash
           create-venv-at-path: .venv
+=======
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+>>>>>>> 7604939e (Initial benchmarking)
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v1
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
+<<<<<<< HEAD
           run: poetry run pytest tests/ --codspeed
+=======
+          run: pytest tests/ --codspeed
+>>>>>>> 7604939e (Initial benchmarking)
