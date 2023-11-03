@@ -1,5 +1,7 @@
 """Reflex CLI to create, run, and deploy apps."""
 
+from __future__ import annotations
+
 import asyncio
 import atexit
 import json
@@ -76,8 +78,8 @@ def main(
 
 def _init(
     name: str,
-    template: constants.Templates.Kind,
-    loglevel: constants.LogLevel,
+    template: constants.Templates.Kind | None = constants.Templates.Kind.BLANK,
+    loglevel: constants.LogLevel = config.loglevel,
 ):
     """Initialize a new Reflex app in the given directory."""
     # Set the log level.
@@ -98,6 +100,8 @@ def _init(
 
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
+        if template is None:
+            template = prerequisites.prompt_for_template()
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
         telemetry.send("init")
@@ -120,7 +124,7 @@ def init(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
     template: constants.Templates.Kind = typer.Option(
-        constants.Templates.Kind.BLANK.value,
+        None,
         help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(

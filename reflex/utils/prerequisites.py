@@ -705,6 +705,35 @@ def check_schema_up_to_date():
                 )
 
 
+def prompt_for_template() -> constants.Templates.Kind:
+    """Prompt the user to specify a template.
+
+    Returns:
+        The template the user selected.
+    """
+    # Show the user the URLs of each temlate to preview.
+    console.print("\nGet started with a template:")
+    console.print("blank (https://blank-template.reflex.run) - A minimal template.")
+    console.print(
+        "sidebar (https://sidebar-template.reflex.run) - A template with a sidebar to navigate pages."
+    )
+    console.print("")
+
+    # Prompt the user to select a template.
+    template = console.ask(
+        "Which template would you like to use?",
+        choices=[
+            template.value
+            for template in constants.Templates.Kind
+            if template.value != "demo"
+        ],
+        default=constants.Templates.Kind.BLANK.value,
+    )
+
+    # Return the template.
+    return constants.Templates.Kind(template)
+
+
 def migrate_to_reflex():
     """Migration from Pynecone to Reflex."""
     # Check if the old config file exists.
