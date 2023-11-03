@@ -18,11 +18,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v1
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: pytest tests/ --codspeed
+          run: poetry run pytest tests/ --codspeed
