@@ -14,6 +14,7 @@ from typing import List, Optional
 
 import httpx
 import typer
+import typer.core
 from alembic.util.exc import CommandError
 from tabulate import tabulate
 
@@ -30,8 +31,15 @@ from reflex.utils import (
     telemetry,
 )
 
+# Disable typer+rich integration for help panels
+typer.core.rich = False  # type: ignore
+
 # Create the app.
-cli = typer.Typer(add_completion=False)
+try:
+    cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+except TypeError:
+    # Fallback for older typer versions.
+    cli = typer.Typer(add_completion=False)
 
 # Get the config.
 config = get_config()
@@ -112,7 +120,7 @@ def init(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
     template: constants.Templates.Kind = typer.Option(
-        constants.Templates.Kind.BASE.value,
+        constants.Templates.Kind.BLANK.value,
         help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
@@ -452,7 +460,10 @@ def makemigrations(
 @cli.command()
 def deploy(
     key: Optional[str] = typer.Option(
-        None, "-k", "--deployment-key", help="The name of the deployment."
+        None,
+        "-k",
+        "--deployment-key",
+        help="The name of the deployment. Domain name safe characters only.",
     ),
     app_name: str = typer.Option(
         config.app_name,
@@ -531,6 +542,12 @@ def deploy(
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
     enabled_regions = None
+    # If there is already a key, then it is passed in from CLI option in the non-interactive mode
+    if key is not None and not hosting.is_valid_deployment_key(key):
+        console.error(
+            f"Deployment key {key} is not valid. Please use only domain name safe characters."
+        )
+        raise typer.Exit(1)
     try:
         # Send a request to server to obtain necessary information
         # in preparation of a deployment. For example,

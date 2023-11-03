@@ -1,5 +1,7 @@
 """Common templates used between pages in the app."""
 
+from __future__ import annotations
+
 from code import styles
 from code.components.sidebar import sidebar, sidebar_toggle
 from typing import Callable

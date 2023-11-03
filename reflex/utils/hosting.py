@@ -148,6 +148,21 @@ def save_token_to_config(token: str, code: str | None = None):
         )
 
 
+def requires_access_token() -> str:
+    """Fetch the access token from the existing config if applicable.
+
+    Returns:
+        The access token. If not found, return empty string for it instead.
+    """
+    # Check if the user is authenticated
+
+    access_token, _ = get_existing_access_token()
+    if not access_token:
+        console.debug("No access token found from the existing config.")
+
+    return access_token
+
+
 def authenticated_token() -> tuple[str, str]:
     """Fetch the access token from the existing config if applicable and validate it.
 
@@ -339,7 +354,7 @@ class DeploymentsPostParam(Base):
     """Params for hosted instance deployment POST request."""
 
     # Key is the name of the deployment, it becomes part of the URL
-    key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
+    key: str = Field(..., regex=r"^[a-z0-9-]+$")
     # Name of the app
     app_name: str = Field(..., min_length=1)
     # json encoded list of regions to deploy to
@@ -414,7 +429,7 @@ def deploy(
         The response containing the URL of the site to be deployed if successful, None otherwise.
     """
     # Check if the user is authenticated
-    if not (token := requires_authenticated()):
+    if not (token := requires_access_token()):
         raise Exception("not authenticated")
 
     try:
@@ -551,15 +566,15 @@ def fetch_token(request_id: str) -> tuple[str, str]:
         access_token = (resp_json := resp.json()).get("access_token", "")
         invitation_code = resp_json.get("code", "")
     except httpx.RequestError as re:
-        console.error(f"Unable to fetch token due to request error: {re}")
+        console.debug(f"Unable to fetch token due to request error: {re}")
     except httpx.HTTPError as he:
-        console.error(f"Unable to fetch token due to {he}")
+        console.debug(f"Unable to fetch token due to {he}")
     except json.JSONDecodeError as jde:
-        console.error(f"Server did not respond with valid json: {jde}")
+        console.debug(f"Server did not respond with valid json: {jde}")
     except KeyError as ke:
-        console.error(f"Server response format unexpected: {ke}")
+        console.debug(f"Server response format unexpected: {ke}")
     except Exception:
-        console.error("Unexpected errors: {ex}")
+        console.debug("Unexpected errors: {ex}")
 
     return access_token, invitation_code
 
@@ -902,6 +917,18 @@ def validate_token_with_retries(access_token: str) -> bool:
     return False
 
 
+def is_valid_deployment_key(key: str):
+    """Helper function to check if the deployment key is valid. Must be a domain name safe string.
+
+    Args:
+        key: The deployment key to check.
+
+    Returns:
+        True if the key contains only domain name safe characters, False otherwise.
+    """
+    return re.match(r"^[a-zA-Z0-9-]*$", key)
+
+
 def interactive_get_deployment_key_from_user_input(
     pre_deploy_response: DeploymentPrepareResponse,
     app_name: str,
@@ -940,6 +967,18 @@ def interactive_get_deployment_key_from_user_input(
             f"Choose a name for your deployed app. Enter to use default.",
             default=key_candidate,
         ):
+            if not is_valid_deployment_key(key_input):
+                console.error(
+                    "Invalid key input, should only contain domain name safe characters: letters, digits, or hyphens."
+                )
+                continue
+
+            elif any(x.isupper() for x in key_input):
+                key_input = key_input.lower()
+                console.info(
+                    f"Domain name is case insensitive, automatically converting to all lower cases: {key_input}"
+                )
+
             try:
                 pre_deploy_response = prepare_deploy(
                     app_name,

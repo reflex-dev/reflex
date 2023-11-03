@@ -144,7 +144,7 @@ def index():
 그리고 키워드 인자를 사용하여 CSS의 모든 기능을 사용하여 스타일을 지정할 수 있습니다.
 
 
-Reflex는 시작하기 위한 [60개 이상의 기본 컴포넌트](https://reflex.dev/docs/library)를 제공하고 있습니다. 더 많은 컴포넌트를 추가하고 있으며, [자신만의 컴포넌트를 생성하는 것](https://reflex.dev/docs/advanced-guide/wrapping-react)도 쉽습니다.
+Reflex는 시작하기 위한 [60개 이상의 기본 컴포넌트](https://reflex.dev/docs/library)를 제공하고 있습니다. 더 많은 컴포넌트를 추가하고 있으며, [자신만의 컴포넌트를 생성하는 것](https://reflex.dev/docs/wrapping-react/overview/)도 쉽습니다.
 
 ### **State**
 
