@@ -20,6 +20,7 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import console, format, imports, types
+from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, ImportVar, Var
 
 
@@ -401,6 +402,20 @@ class Component(Base, ABC):
         return set()
 
     @classmethod
+    def get_component_props(cls) -> set[str]:
+        """Get the props that expected a component as value.
+
+        Returns:
+            The components props.
+        """
+        return {
+            name
+            for name, field in cls.get_fields().items()
+            if name in cls.get_props()
+            and types._issubclass(field.outer_type_, Component)
+        }
+
+    @classmethod
     def create(cls, *children, **props) -> Component:
         """Create the component.
 
@@ -596,16 +611,25 @@ class Component(Base, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_dependencies_imports(self):
-        return {
-            dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies
-        }
+    def _get_props_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            *[getattr(self, prop).get_imports() for prop in self.get_component_props()]
+        )
+
+    def _get_dependencies_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
+        )
 
     def _get_imports(self) -> imports.ImportDict:
         imports = {}
         if self.library is not None and self.tag is not None:
             imports[self.library] = {self.import_var}
-        return {**self._get_dependencies_imports(), **imports}
+        return {
+            **self._get_props_imports(),
+            **self._get_dependencies_imports(),
+            **imports,
+        }
 
     def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
@@ -988,3 +1012,16 @@ class NoSSRComponent(Component):
             else ""
         )
         return "".join((library_import, mod_import, opts_fragment))
+
+
+@serializer
+def serialize_component(comp: Component):
+    """Serialize a component.
+
+    Args:
+        comp: The component to serialize.
+
+    Returns:
+        The serialized component.
+    """
+    return str(comp)
