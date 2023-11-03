@@ -1,6 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
+import typing
 from typing import Any, Callable, Iterable
 
 from reflex.components.component import Component
@@ -73,7 +74,7 @@ class Foreach(Component):
             type_ = (
                 tag.iterable._var_type
                 if tag.iterable._var_type.mro()[0] == dict
-                else tag.iterable._var_type.__args__[0]
+                else typing.get_args(tag.iterable._var_type)[0]
             )
         except Exception:
             type_ = Any

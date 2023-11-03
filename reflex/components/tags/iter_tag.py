@@ -24,7 +24,9 @@ class IterTag(Tag):
     index_var_name: str = "i"
 
     def get_index_var(self) -> Var:
-        """Get the index var for the tag.
+        """Get the index var for the tag (with curly braces).
+
+        This is used to reference the index var within the tag.
 
         Returns:
             The index var.
@@ -35,7 +37,9 @@ class IterTag(Tag):
         )
 
     def get_index_var_arg(self) -> Var:
-        """Get the index var for the tag.
+        """Get the index var for the tag (without curly braces).
+
+        This is used to render the index var in the .map() function.
 
         Returns:
             The index var.
