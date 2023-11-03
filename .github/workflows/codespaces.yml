@@ -1,0 +1,31 @@
+name: codspeed-benchmarks
+
+on:
+  push:
+    branches:
+      - "main" # or "master"
+  pull_request:
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.12.0"
+
+      - name: Install Nox
+        run: pip install nox
+
+      - name: Install dependencies
+        run: nox --sessions codspeed --install-only
+
+      - name: Run the action
+        uses: CodSpeedHQ/action@v1
+        with:
+          run: nox --sessions codspeed --reuse-existing-virtualenvs --no-install
+          token: ${{ secrets.CODSPEED_TOKEN }}
