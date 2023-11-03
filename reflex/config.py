@@ -314,6 +314,18 @@ class Config(Base):
         ):
             self.deploy_url = f"http://localhost:{kwargs['frontend_port']}"
 
+        # If running in Github Codespaces, override API_URL
+        codespace_name = os.getenv("CODESPACE_NAME")
+        if "api_url" not in self._non_default_attributes and codespace_name:
+            GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
+                "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
+            )
+            if codespace_name:
+                self.api_url = (
+                    f"https://{codespace_name}-{kwargs.get('backend_port', self.backend_port)}"
+                    f".{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+                )
+
     def _set_persistent(self, **kwargs):
         """Set values in this config and in the environment so they persist into subprocess.
 
