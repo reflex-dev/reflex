@@ -612,6 +612,11 @@ class Component(Base, ABC):
         return dynamic_imports
 
     def _get_props_imports(self) -> imports.ImportDict:
+        """Get the imports needed for components props.
+
+        Returns:
+            The  imports for the components props of the component.
+        """
         return imports.merge_imports(
             *[
                 getattr(self, prop).get_imports()
@@ -621,11 +626,21 @@ class Component(Base, ABC):
         )
 
     def _get_dependencies_imports(self) -> imports.ImportDict:
+        """Get the imports from lib_dependencies for installing.
+
+        Returns:
+            The dependencies imports of the component.
+        """
         return imports.merge_imports(
             {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
         )
 
     def _get_imports(self) -> imports.ImportDict:
+        """Get all the libraries and fields that are used by the component.
+
+        Returns:
+            The imports needed by the component.
+        """
         _imports = {}
         if self.library is not None and self.tag is not None:
             _imports[self.library] = {self.import_var}
@@ -637,7 +652,7 @@ class Component(Base, ABC):
         )
 
     def get_imports(self) -> imports.ImportDict:
-        """Get all the libraries and fields that are used by the component.
+        """Get all the libraries and fields that are used by the component and its children.
 
         Returns:
             The import dict with the required imports.
