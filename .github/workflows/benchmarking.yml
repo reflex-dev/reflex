@@ -21,7 +21,7 @@ jobs:
           shell: bash
           create-venv-at-path: .venv
 
-      - name: Run benchmarks
+     - name: Run benchmarks
         uses: CodSpeedHQ/action@v1
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
