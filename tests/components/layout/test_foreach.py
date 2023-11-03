@@ -78,6 +78,9 @@ def display_nested_list_element(element: str, index: int):
     return box(text(element[index]))
 
 
+seen_index_vars = set()
+
+
 @pytest.mark.parametrize(
     "state_var, render_fn, render_dict",
     [
@@ -86,7 +89,6 @@ def display_nested_list_element(element: str, index: int):
             display_color,
             {
                 "iterable_state": "for_each_state.colors_list",
-                "arg_index": "i",
                 "iterable_type": "list",
             },
         ),
@@ -95,7 +97,6 @@ def display_nested_list_element(element: str, index: int):
             display_color_name,
             {
                 "iterable_state": "for_each_state.colors_dict_list",
-                "arg_index": "i",
                 "iterable_type": "list",
             },
         ),
@@ -104,7 +105,6 @@ def display_nested_list_element(element: str, index: int):
             display_shade,
             {
                 "iterable_state": "for_each_state.colors_nested_dict_list",
-                "arg_index": "i",
                 "iterable_type": "list",
             },
         ),
@@ -113,7 +113,6 @@ def display_nested_list_element(element: str, index: int):
             display_primary_colors,
             {
                 "iterable_state": "for_each_state.primary_color",
-                "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
@@ -122,7 +121,6 @@ def display_nested_list_element(element: str, index: int):
             display_color_with_shades,
             {
                 "iterable_state": "for_each_state.color_with_shades",
-                "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
@@ -131,7 +129,6 @@ def display_nested_list_element(element: str, index: int):
             display_nested_color_with_shades,
             {
                 "iterable_state": "for_each_state.nested_colors_with_shades",
-                "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
@@ -140,7 +137,6 @@ def display_nested_list_element(element: str, index: int):
             display_nested_color_with_shades_v2,
             {
                 "iterable_state": "for_each_state.nested_colors_with_shades",
-                "arg_index": "i",
                 "iterable_type": "dict",
             },
         ),
@@ -149,7 +145,6 @@ def display_nested_list_element(element: str, index: int):
             display_color_tuple,
             {
                 "iterable_state": "for_each_state.color_tuple",
-                "arg_index": "i",
                 "iterable_type": "tuple",
             },
         ),
@@ -158,7 +153,6 @@ def display_nested_list_element(element: str, index: int):
             display_colors_set,
             {
                 "iterable_state": "for_each_state.colors_set",
-                "arg_index": "i",
                 "iterable_type": "set",
             },
         ),
@@ -167,7 +161,6 @@ def display_nested_list_element(element: str, index: int):
             lambda el, i: display_nested_list_element(el, i),
             {
                 "iterable_state": "for_each_state.nested_colors_list",
-                "arg_index": "i",
                 "iterable_type": "list",
             },
         ),
@@ -184,8 +177,11 @@ def test_foreach_render(state_var, render_fn, render_dict):
     component = Foreach.create(state_var, render_fn)
 
     rend = component.render()
-    arg_index = rend["arg_index"]
     assert rend["iterable_state"] == render_dict["iterable_state"]
-    assert arg_index._var_name == render_dict["arg_index"]
-    assert arg_index._var_type == int
     assert rend["iterable_type"] == render_dict["iterable_type"]
+
+    # Make sure the index vars are unique.
+    arg_index = rend["arg_index"]
+    assert arg_index._var_name not in seen_index_vars
+    assert arg_index._var_type == int
+    seen_index_vars.add(arg_index._var_name)
