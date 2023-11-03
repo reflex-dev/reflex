@@ -613,7 +613,11 @@ class Component(Base, ABC):
 
     def _get_props_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
-            *[getattr(self, prop).get_imports() for prop in self.get_component_props()]
+            *[
+                getattr(self, prop).get_imports()
+                for prop in self.get_component_props()
+                if getattr(self, prop) is not None
+            ]
         )
 
     def _get_dependencies_imports(self) -> imports.ImportDict:
