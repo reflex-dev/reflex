@@ -15,9 +15,8 @@ jobs:
   benchmarks:
     runs-on: ubuntu-latest
     steps:
-      - name: Run benchmarks
-        uses: CodSpeedHQ/action@v1
-        uses: ./.github/actions/setup_build_env
+      - uses: CodSpeedHQ/action@v1
+      - uses: ./.github/actions/setup_build_env
         with:
           # running vs. one version of Python is OK
           # i.e. ruff, black, etc.
@@ -25,6 +24,8 @@ jobs:
           run-poetry-install: true
           shell: bash
           create-venv-at-path: .venv
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v1
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: poetry run pytest tests/ --codspeed
