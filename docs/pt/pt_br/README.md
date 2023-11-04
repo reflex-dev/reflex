@@ -17,7 +17,7 @@
 </div>
 
 ---
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [Português (Brasil)](https://github.com/reflex-dev/reflex/blob/main/docs/pt/pt_br/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
 ---
 ## ⚙️ Instalação
 
@@ -142,7 +142,7 @@ Esta função `index` define o frontend do app.
 Usamos diferentes componentes, como `center`, `vstack`, `input` e `button`, para construir o frontend. Componentes podem ser aninhados um no do outro
 para criar layouts mais complexos. E você pode usar argumentos de chave-valor para estilizá-los com todo o poder do CSS.
 
-O Reflex vem com [60+ componentes nativos](https://reflex.dev/docs/library) para te ajudar. Estamos adicionando ativamente mais componentes, mas também é fácil [criar seus próprios componentes](https://reflex.dev/docs/advanced-guide/wrapping-react). 
+O Reflex vem com [60+ componentes nativos](https://reflex.dev/docs/library) para te ajudar. Estamos adicionando ativamente mais componentes, mas também é fácil [criar seus próprios componentes](https://reflex.dev/docs/wrapping-react/overview/). 
 
 ### **Estado**
 

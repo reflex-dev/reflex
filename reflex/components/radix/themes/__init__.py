@@ -1,4 +1,14 @@
 """Namespace for components provided by the @radix-ui/themes library."""
+from .base import LiteralAccentColor as LiteralAccentColor
+from .base import LiteralAlign as LiteralAlign
+from .base import LiteralAppearance as LiteralAppearance
+from .base import LiteralGrayColor as LiteralGrayColor
+from .base import LiteralJustify as LiteralJustify
+from .base import LiteralPanelBackground as LiteralPanelBackground
+from .base import LiteralRadius as LiteralRadius
+from .base import LiteralScaling as LiteralScaling
+from .base import LiteralSize as LiteralSize
+from .base import LiteralVariant as LiteralVariant
 from .base import (
     Theme,
     ThemePanel,
@@ -10,6 +20,8 @@ from .components import (
     TextFieldRoot,
     TextFieldSlot,
 )
+from .components import LiteralButtonSize as LiteralButtonSize
+from .components import LiteralSwitchSize as LiteralSwitchSize
 from .layout import (
     Box,
     Container,
@@ -17,7 +29,30 @@ from .layout import (
     Grid,
     Section,
 )
-from .typography import Blockquote, Code, Em, Heading, Kbd, Link, Quote, Strong, Text
+from .layout import LiteralBoolNumber as LiteralBoolNumber
+from .layout import LiteralContainerSize as LiteralContainerSize
+from .layout import LiteralFlexDirection as LiteralFlexDirection
+from .layout import LiteralFlexDisplay as LiteralFlexDisplay
+from .layout import LiteralFlexWrap as LiteralFlexWrap
+from .layout import LiteralGridDisplay as LiteralGridDisplay
+from .layout import LiteralGridFlow as LiteralGridFlow
+from .layout import LiteralSectionSize as LiteralSectionSize
+from .typography import (
+    Blockquote,
+    Code,
+    Em,
+    Heading,
+    Kbd,
+    Link,
+    Quote,
+    Strong,
+    Text,
+)
+from .typography import LiteralLinkUnderline as LiteralLinkUnderline
+from .typography import LiteralTextAlign as LiteralTextAlign
+from .typography import LiteralTextSize as LiteralTextSize
+from .typography import LiteralTextTrim as LiteralTextTrim
+from .typography import LiteralTextWeight as LiteralTextWeight
 
 blockquote = Blockquote.create
 box = Box.create

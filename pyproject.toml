@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.2.9"
+version = "0.3.2"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -39,7 +39,7 @@ python-socketio = "^5.7.0"
 redis = "^4.3.5"
 rich = "^13.0.0"
 sqlmodel = "^0.0.8"
-typer = "0.4.2"
+typer = ">=0.4.2,<1"
 uvicorn = "^0.20.0"
 watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
@@ -49,8 +49,13 @@ alembic = "^1.11.1"
 platformdirs = "^3.10.0"
 distro = {version = "^1.8.0", platform = "linux"}
 python-engineio = "!=4.6.0"
-wrapt = "^1.15.0"
+wrapt = [
+    {version = "^1.14.0", python = ">=3.11"},
+    {version = "^1.11.0", python = "<3.11"},
+]
 packaging = "^23.1"
+tabulate = "^0.9.0"
+pipdeptree = "^2.13.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -73,6 +78,7 @@ plotly = "^5.13.0"
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 selenium = "^4.11.0"
+types-tabulate = "^0.9.0.3"
 
 [tool.poetry.scripts]
 reflex = "reflex.reflex:cli"

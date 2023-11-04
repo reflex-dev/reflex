@@ -566,10 +566,18 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_name]
-        default_value = prop.get_default_value()
-        if field.required and default_value is not None:
-            field.required = False
-            field.default = default_value
+        if field.required:
+            default_value = prop.get_default_value()
+            if default_value is not None:
+                field.required = False
+                field.default = default_value
+        if (
+            not field.required
+            and field.default is None
+            and not types.is_optional(prop._var_type)
+        ):
+            # Ensure frontend uses null coalescing when accessing.
+            prop._var_type = Optional[prop._var_type]
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
@@ -963,14 +971,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The valid StateUpdate containing the events and final flag.
         """
+        # get the delta from the root of the state tree
+        state = self
+        while state.parent_state is not None:
+            state = state.parent_state
+
         token = self.router.session.client_token
 
         # Convert valid EventHandler and EventSpec into Event
         fixed_events = fix_events(self._check_valid(handler, events), token)
 
         # Get the delta after processing the event.
-        delta = self.get_delta()
-        self._clean()
+        delta = state.get_delta()
+        state._clean()
 
         return StateUpdate(
             delta=delta,
@@ -1009,30 +1022,30 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             # Handle async generators.
             if inspect.isasyncgen(events):
                 async for event in events:
-                    yield self._as_state_update(handler, event, final=False)
-                yield self._as_state_update(handler, events=None, final=True)
+                    yield state._as_state_update(handler, event, final=False)
+                yield state._as_state_update(handler, events=None, final=True)
 
             # Handle regular generators.
             elif inspect.isgenerator(events):
                 try:
                     while True:
-                        yield self._as_state_update(handler, next(events), final=False)
+                        yield state._as_state_update(handler, next(events), final=False)
                 except StopIteration as si:
                     # the "return" value of the generator is not available
                     # in the loop, we must catch StopIteration to access it
                     if si.value is not None:
-                        yield self._as_state_update(handler, si.value, final=False)
-                yield self._as_state_update(handler, events=None, final=True)
+                        yield state._as_state_update(handler, si.value, final=False)
+                yield state._as_state_update(handler, events=None, final=True)
 
             # Handle regular event chains.
             else:
-                yield self._as_state_update(handler, events, final=True)
+                yield state._as_state_update(handler, events, final=True)
 
         # If an error occurs, throw a window alert.
         except Exception:
             error = traceback.format_exc()
             print(error)
-            yield self._as_state_update(
+            yield state._as_state_update(
                 handler,
                 window_alert("An error occurred. See logs for details."),
                 final=True,
@@ -1360,12 +1373,19 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if not name.startswith("_self_") and not self._self_mutable:
-            raise ImmutableStateError(
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-        super().__setattr__(name, value)
+        if (
+            name.startswith("_self_")  # wrapper attribute
+            or self._self_mutable  # lock held
+            # non-persisted state attribute
+            or name in self.__wrapped__.get_skip_vars()
+        ):
+            super().__setattr__(name, value)
+            return
+
+        raise ImmutableStateError(
+            "Background task StateProxy is immutable outside of a context "
+            "manager. Use `async with self` to modify state."
+        )
 
 
 class StateUpdate(Base):

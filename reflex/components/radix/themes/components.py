@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
 from reflex import el
 from reflex.components.component import Component
@@ -7,7 +7,16 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .base import CommonMarginProps, RadixThemesComponent
+from .base import (
+    CommonMarginProps,
+    LiteralAccentColor,
+    LiteralRadius,
+    LiteralSize,
+    LiteralVariant,
+    RadixThemesComponent,
+)
+
+LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
 class Button(CommonMarginProps, RadixThemesComponent):
@@ -19,19 +28,22 @@ class Button(CommonMarginProps, RadixThemesComponent):
     as_child: Var[bool]
 
     # Button size "1" - "4"
-    size: Var[str]
+    size: Var[LiteralButtonSize]
 
     # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[str]
+    variant: Var[LiteralVariant]
 
     # Override theme color for button
-    color: Var[str]
+    color: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[str]
+    radius: Var[LiteralRadius]
+
+
+LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 
 class Switch(CommonMarginProps, RadixThemesComponent):
@@ -61,19 +73,19 @@ class Switch(CommonMarginProps, RadixThemesComponent):
     value: Var[str]
 
     # Switch size "1" - "4"
-    size: Var[str]
+    size: Var[LiteralSwitchSize]
 
     # Variant of switch: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[str]
+    variant: Var[LiteralVariant]
 
     # Override theme color for switch
-    color: Var[str]
+    color: Var[LiteralAccentColor]
 
     # Whether to render the switch with higher contrast color against background
     high_contrast: Var[bool]
 
     # Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[str]
+    radius: Var[LiteralRadius]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -87,22 +99,26 @@ class Switch(CommonMarginProps, RadixThemesComponent):
         }
 
 
+LiteralTextFieldSize = Literal["1", "2", "3"]
+LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
+
+
 class TextFieldRoot(CommonMarginProps, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
     tag = "TextField.Root"
 
-    # Button size "1" - "3"
-    size: Var[str]
+    # Text field size "1" - "3"
+    size: Var[LiteralTextFieldSize]
 
     # Variant of text field: "classic" | "surface" | "soft"
-    variant: Var[str]
+    variant: Var[LiteralTextFieldVariant]
 
     # Override theme color for text field
-    color: Var[str]
+    color: Var[LiteralAccentColor]
 
     # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[str]
+    radius: Var[LiteralRadius]
 
 
 class TextField(TextFieldRoot, el.Input):
@@ -154,7 +170,7 @@ class TextFieldSlot(RadixThemesComponent):
     tag = "TextField.Slot"
 
     # Override theme color for text field slot
-    color: Var[str]
+    color: Var[LiteralAccentColor]
 
     # Override the gap spacing between slot and input: "1" - "9"
-    gap: Var[str]
+    gap: Var[LiteralSize]
