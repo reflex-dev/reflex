@@ -15,7 +15,7 @@ jobs:
   benchmarks:
     runs-on: ubuntu-latest
     steps:
-      - uses: CodSpeedHQ/action@v1
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup_build_env
         with:
           # running vs. one version of Python is OK
