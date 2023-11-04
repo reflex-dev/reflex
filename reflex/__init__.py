@@ -45,14 +45,3 @@ from .style import color_mode as color_mode
 from .style import toggle_color_mode as toggle_color_mode
 from .vars import Var as Var
 from .vars import cached_var as cached_var
-
-
-def _global_compat_patches():
-    # Hack around uvicorn shutdown hang on py312 (Remove after bug is fixed)
-    # https://github.com/encode/uvicorn/discussions/2122
-    import reflex.utils.compat
-
-    reflex.utils.compat.patch_uvicorn_0_23_py312()
-
-
-_global_compat_patches()
