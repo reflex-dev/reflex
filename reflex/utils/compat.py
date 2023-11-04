@@ -1,6 +1,6 @@
 """Compatibility shims and helpers."""
-import importlib.metadata
 import sys
+from pathlib import Path
 
 
 def _patch_uvicorn_server_shutdown(source_code):
@@ -28,9 +28,9 @@ def patch_uvicorn_0_23_py312():
     if sys.version_info < (3, 12):
         return  # nothing to do on older versions
 
-    for f_path in importlib.metadata.files("uvicorn"):
-        if f_path.name == "server.py":
-            f_path.locate().write_text(
-                _patch_uvicorn_server_shutdown(f_path.read_text()),
-            )
-            break
+    import uvicorn.server
+
+    uvicorn_server_py = Path(uvicorn.server.__file__)
+    uvicorn_server_py.write_text(
+        _patch_uvicorn_server_shutdown(uvicorn_server_py.read_text()),
+    )
