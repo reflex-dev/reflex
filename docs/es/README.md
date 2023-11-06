@@ -8,7 +8,7 @@
 
 <hr>
 
-### **✨ Aplicaciones de web performantes y perzonalizables en solo Python. Lanza tu aplicación en solo segundos. ✨**
+### **✨ Aplicaciones  web potentes y perzonalizables utilizando solo Python. Lanza tu aplicación en segundos. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
@@ -21,7 +21,7 @@
 ---
 ## ⚙️ Instalación
 
-Abre un terminal y instala reflex (Requiere Python 3.7+):
+Abre un terminal e instala reflex (Requiere Python 3.7+):
 
 ```bash
 pip install reflex
@@ -29,9 +29,9 @@ pip install reflex
 
 ## 🥳 Crea tu primer aplicación
 
-Al instalar `reflex` tambien se instalara la herramienta de command line `reflex`.
+Al instalar `reflex` tambien se instalará la herramienta de linea de comandos  `reflex`.
 
-Comprueba que la instalación fue exitosa al crear un nuevo proyecto. (Reemplaza `my_app_name` con el nombre de tu proyecto):
+Comprueba que la instalación fué exitosa creando un nuevo proyecto. (Reemplaza `my_app_name` con el nombre de tu proyecto):
 
 ```bash
 mkdir my_app_name
@@ -39,9 +39,9 @@ cd my_app_name
 reflex init
 ```
 
-Esto inicializara la plantilla de la aplicación en tu nuevo directorio. 
+Esto inicializará la plantilla de la aplicación en tu nuevo directorio. 
 
-You can run this app in development mode:
+Puedes iniciar la aplicación en modo desarrollador:
 
 ```bash
 reflex run
