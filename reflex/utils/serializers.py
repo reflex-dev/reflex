@@ -153,7 +153,7 @@ def serialize_primitive(value: Union[bool, int, float, None]) -> str:
 
 
 @serializer
-def serialize_base(value: Base) -> str:
+def serialize_base(value: Base) -> dict:
     """Serialize a Base instance.
 
     Args:
@@ -162,7 +162,7 @@ def serialize_base(value: Base) -> str:
     Returns:
         The serialized Base.
     """
-    return value.json()
+    return value.dict()
 
 
 @serializer

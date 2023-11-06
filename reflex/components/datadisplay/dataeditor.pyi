@@ -16,41 +16,95 @@ from reflex.utils import console, format, imports, types
 from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
 
-class GridColumnIcons(Enum): ...
+LiteralDataEditorGridColumnIcons = Literal[
+    "headerRowID",
+    "headerCode",
+    "headerNumber",
+    "headerString",
+    "headerBoolean",
+    "headerAudioUri",
+    "headerVideoUri",
+    "headerEmoji",
+    "headerImage",
+    "headerUri",
+    "headerPhone",
+    "headerMarkdown",
+    "headerDate",
+    "headerTime",
+    "headerEmail",
+    "headerReference",
+    "headerIfThenElse",
+    "headerSingleValue",
+    "headerLookup",
+    "headerTextTemplate",
+    "headerMath",
+    "headerRollup",
+    "headerJoinStrings",
+    "headerSplitString",
+    "headerGeoDistance",
+    "headerArray",
+    "rowOwnerOverlay",
+    "protectedColumnOverlay",
+]
 
-class DataEditorTheme(Base):
-    accent_color: Optional[str]
-    accent_fg: Optional[str]
-    accent_light: Optional[str]
-    base_font_style: Optional[str]
-    bg_bubble: Optional[str]
-    bg_bubble_selected: Optional[str]
-    bg_cell: Optional[str]
-    bg_cell_medium: Optional[str]
-    bg_header: Optional[str]
-    bg_header_has_focus: Optional[str]
-    bg_header_hovered: Optional[str]
-    bg_icon_header: Optional[str]
-    bg_search_result: Optional[str]
-    border_color: Optional[str]
-    cell_horizontal_padding: Optional[int]
-    cell_vertical_padding: Optional[int]
-    drilldown_border: Optional[str]
-    editor_font_size: Optional[str]
-    fg_icon_header: Optional[str]
-    font_family: Optional[str]
-    header_bottom_border_color: Optional[str]
-    header_font_style: Optional[str]
-    horizontal_border_color: Optional[str]
-    line_height: Optional[int]
-    link_color: Optional[str]
-    text_bubble: Optional[str]
-    text_dark: Optional[str]
-    text_group_header: Optional[str]
-    text_header: Optional[str]
-    text_header_selected: Optional[str]
-    text_light: Optional[str]
-    text_medium: Optional[str]
+LiteralDataEditorColumnStyle = Literal["normal", "highlight"]
+
+class DataEditorProp(Base): ...
+
+class DataEditorTheme(DataEditorProp):
+    accent_color: Optional[str] = None
+    accent_fg: Optional[str] = None
+    accent_light: Optional[str] = None
+    base_font_style: Optional[str] = None
+    bg_bubble: Optional[str] = None
+    bg_bubble_selected: Optional[str] = None
+    bg_cell: Optional[str] = None
+    bg_cell_medium: Optional[str] = None
+    bg_header: Optional[str] = None
+    bg_header_has_focus: Optional[str] = None
+    bg_header_hovered: Optional[str] = None
+    bg_icon_header: Optional[str] = None
+    bg_search_result: Optional[str] = None
+    border_color: Optional[str] = None
+    cell_horizontal_padding: Optional[int] = None
+    cell_vertical_padding: Optional[int] = None
+    drilldown_border: Optional[str] = None
+    editor_font_size: Optional[str] = None
+    fg_icon_header: Optional[str] = None
+    font_family: Optional[str] = None
+    header_bottom_border_color: Optional[str] = None
+    header_font_style: Optional[str] = None
+    horizontal_border_color: Optional[str] = None
+    line_height: Optional[int] = None
+    link_color: Optional[str] = None
+    text_bubble: Optional[str] = None
+    text_dark: Optional[str] = None
+    text_group_header: Optional[str] = None
+    text_header: Optional[str] = None
+    text_header_selected: Optional[str] = None
+    text_light: Optional[str] = None
+    text_medium: Optional[str] = None
+
+class TrailingRowOptions(DataEditorProp):
+    hint: Optional[str]
+    add_icon: Optional[str]
+    target_column: Optional[int]
+    theme_override: Optional[DataEditorTheme]
+    disabled: Optional[bool]
+
+class DataEditorColumn(DataEditorProp):
+    title: str
+    id: Optional[str] = None
+    type_: str = "str"
+    group: Optional[str]
+    icon: Optional[LiteralDataEditorGridColumnIcons]
+    overlay_icon: Optional[LiteralDataEditorGridColumnIcons]
+    has_menu: Optional[bool]
+    grow: Optional[int]
+    style: Optional[LiteralDataEditorColumnStyle]
+    theme_override: Optional[DataEditorTheme]
+    trailing_row_options: Optional[TrailingRowOptions]
+    grow_offset: Optional[int]
 
 class DataEditor(NoSSRComponent):
     def get_event_triggers(self) -> Dict[str, Callable]: ...
