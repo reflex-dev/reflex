@@ -7,6 +7,7 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.utils import console, format, imports, types
+from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
 
 LiteralDataEditorGridColumnIcons = Literal[
@@ -408,3 +409,16 @@ class DataEditor(NoSSRComponent):
 
 # except ImportError:
 #     pass
+
+
+@serializer
+def serialize_data_editor_prop(prop: DataEditorProp) -> dict:
+    """The serializer for the data editor theme.
+
+    Args:
+        prop: The prop to serialize.
+
+    Returns:
+        The serialized prop.
+    """
+    return prop.dict()
