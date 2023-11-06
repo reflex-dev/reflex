@@ -59,38 +59,38 @@ class DataEditorProp(Base):
 class DataEditorTheme(DataEditorProp):
     """The theme for the DataEditor component."""
 
-    accent_color: Optional[str] = None
-    accent_fg: Optional[str] = None
-    accent_light: Optional[str] = None
-    base_font_style: Optional[str] = None
-    bg_bubble: Optional[str] = None
-    bg_bubble_selected: Optional[str] = None
-    bg_cell: Optional[str] = None
-    bg_cell_medium: Optional[str] = None
-    bg_header: Optional[str] = None
-    bg_header_has_focus: Optional[str] = None
-    bg_header_hovered: Optional[str] = None
-    bg_icon_header: Optional[str] = None
-    bg_search_result: Optional[str] = None
-    border_color: Optional[str] = None
-    cell_horizontal_padding: Optional[int] = None
-    cell_vertical_padding: Optional[int] = None
-    drilldown_border: Optional[str] = None
-    editor_font_size: Optional[str] = None
-    fg_icon_header: Optional[str] = None
-    font_family: Optional[str] = None
-    header_bottom_border_color: Optional[str] = None
-    header_font_style: Optional[str] = None
-    horizontal_border_color: Optional[str] = None
-    line_height: Optional[int] = None
-    link_color: Optional[str] = None
-    text_bubble: Optional[str] = None
-    text_dark: Optional[str] = None
-    text_group_header: Optional[str] = None
-    text_header: Optional[str] = None
-    text_header_selected: Optional[str] = None
-    text_light: Optional[str] = None
-    text_medium: Optional[str] = None
+    accent_color: Optional[str]
+    accent_fg: Optional[str]
+    accent_light: Optional[str]
+    base_font_style: Optional[str]
+    bg_bubble: Optional[str]
+    bg_bubble_selected: Optional[str]
+    bg_cell: Optional[str]
+    bg_cell_medium: Optional[str]
+    bg_header: Optional[str]
+    bg_header_has_focus: Optional[str]
+    bg_header_hovered: Optional[str]
+    bg_icon_header: Optional[str]
+    bg_search_result: Optional[str]
+    border_color: Optional[str]
+    cell_horizontal_padding: Optional[int]
+    cell_vertical_padding: Optional[int]
+    drilldown_border: Optional[str]
+    editor_font_size: Optional[str]
+    fg_icon_header: Optional[str]
+    font_family: Optional[str]
+    header_bottom_border_color: Optional[str]
+    header_font_style: Optional[str]
+    horizontal_border_color: Optional[str]
+    line_height: Optional[int]
+    link_color: Optional[str]
+    text_bubble: Optional[str]
+    text_dark: Optional[str]
+    text_group_header: Optional[str]
+    text_header: Optional[str]
+    text_header_selected: Optional[str]
+    text_light: Optional[str]
+    text_medium: Optional[str]
 
 
 class TrailingRowOptions(DataEditorProp):
@@ -107,7 +107,7 @@ class DataEditorColumn(DataEditorProp):
     """Column."""
 
     title: str
-    id: Optional[str] = None
+    id: Optional[str]
     type_: str = "str"
     group: Optional[str]
     icon: Optional[LiteralDataEditorGridColumnIcons]
