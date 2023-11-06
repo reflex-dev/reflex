@@ -514,49 +514,37 @@ def install_frontend_packages(packages: set[str]):
     Example:
         >>> install_frontend_packages(["react", "react-dom"])
     """
-    config = get_config()
-    package_manager = get_install_package_manager()
-
-    uses_npm = package_manager.endswith("npm") if package_manager else False
-
-    prefer_offline = (
-        ["--prefer-offline"] if config.npm_prefer_offline and uses_npm else []
-    )
-    # show logs for debug mode.
-    show_logs = config.loglevel >= constants.LogLevel.DEBUG
-
     # Install the base packages.
     process = processes.new_process(
-        [package_manager, "install", "--loglevel", "silly", *prefer_offline],
+        [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
-        show_logs=show_logs,
     )
 
     processes.show_status("Installing base frontend packages", process)
 
+    config = get_config()
     if config.tailwind is not None:
+        # install tailwind and tailwind plugins as dev dependencies.
         process = processes.new_process(
             [
-                package_manager,
+                get_install_package_manager(),
                 "add",
                 "-d",
-                *prefer_offline,
                 constants.Tailwind.VERSION,
-                *(config.tailwind or {}).get("plugins", []),
+                *((config.tailwind or {}).get("plugins", [])),
             ],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-            show_logs=show_logs,
         )
         processes.show_status("Installing tailwind", process)
 
+    # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         process = processes.new_process(
-            [package_manager, "add", *packages, *prefer_offline],
+            [get_install_package_manager(), "add", *packages],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
-            show_logs=show_logs,
         )
         processes.show_status(
             "Installing frontend packages from config and components", process
