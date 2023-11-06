@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from platformdirs import PlatformDirs
 
 IS_WINDOWS = platform.system() == "Windows"
+IS_LINUX_OR_MAC = platform.system() in ["Linux", "Darwin"]
 
 
 class Dirs(SimpleNamespace):

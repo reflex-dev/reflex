@@ -428,51 +428,24 @@ def download_and_extract_fnm_zip():
 
 
 def install_node():
-    """Install fnm and nodejs for use by Reflex.
-    Independent of any existing system installations.
-    """
-    if not constants.Fnm.FILENAME:
-        # fnm only support Linux, macOS and Windows distros.
-        console.debug("")
+    """Install fnm and nodejs for use by Reflex on windows."""
+    if not constants.IS_WINDOWS:
         return
 
     path_ops.mkdir(constants.Fnm.DIR)
     if not os.path.exists(constants.Fnm.EXE):
         download_and_extract_fnm_zip()
 
-    if constants.IS_WINDOWS:
-        # Install node
-        fnm_exe = Path(constants.Fnm.EXE).resolve()
-        fnm_dir = Path(constants.Fnm.DIR).resolve()
-        process = processes.new_process(
-            [
-                "powershell",
-                "-Command",
-                f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
-            ],
-        )
-    else:  # All other platforms (Linux, MacOS).
-        # TODO we can skip installation if check_node_version() checks out
-        # Add execute permissions to fnm executable.
-        os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
-        # Install node.
-        # Specify arm64 arch explicitly for M1s and M2s.
-        architecture_arg = (
-            ["--arch=arm64"]
-            if platform.system() == "Darwin" and platform.machine() == "arm64"
-            else []
-        )
-
-        process = processes.new_process(
-            [
-                constants.Fnm.EXE,
-                "install",
-                *architecture_arg,
-                constants.Node.VERSION,
-                "--fnm-dir",
-                constants.Fnm.DIR,
-            ],
-        )
+    # Install node
+    fnm_exe = Path(constants.Fnm.EXE).resolve()
+    fnm_dir = Path(constants.Fnm.DIR).resolve()
+    process = processes.new_process(
+        [
+            "powershell",
+            "-Command",
+            f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
+        ],
+    )
     processes.show_status("Installing node", process)
 
 
@@ -624,38 +597,32 @@ def validate_bun():
             raise typer.Exit(1)
 
 
-def validate_frontend_dependencies(init=True):
-    """Validate frontend dependencies to ensure they meet requirements.
-
-    Args:
-        init: whether running `reflex init`
-
+def validate_node():
+    """Check the version of Node.js is correct.
     Raises:
-        Exit: If the package manager is invalid.
+        Exit: If the version of Node.js is incorrect.
     """
-    if not init:
-        # we only need to validate the package manager when running app.
-        # `reflex init` will install the deps anyway(if applied).
-        package_manager = get_package_manager()
-        if not package_manager:
-            console.error(
-                "Could not find NPM package manager. Make sure you have node installed."
-            )
-            raise typer.Exit(1)
+    current_version = get_node_version()
 
-        if not check_node_version():
-            node_version = get_node_version()
-            console.error(
-                f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-            )
-            raise typer.Exit(1)
+    # Check if Node is installed.
+    if not current_version:
+        console.error(
+            "Failed to obtain node version. Make sure node is installed and in your PATH."
+        )
+        raise typer.Exit(1)
 
-    if constants.IS_WINDOWS:
-        return
+    # Check if the version of Node is correct.
+    if current_version < version.parse(constants.Node.NODE_VERSION_MIN):
+        console.error(
+            f"Reflex requires node version {constants.Node.NODE_VERSION_MIN} or higher to run, but the detected version is {current_version}."
+        )
+        raise typer.Exit(1)
 
-    if init:
-        # we only need bun for package install on `reflex init`.
-        validate_bun()
+
+def validate_frontend_dependencies():
+    """Validate frontend dependencies to ensure they meet requirements."""
+    # Bun only supports linux and Mac. For Non-linux-or-mac, we use node.
+    validate_bun() if constants.IS_LINUX_OR_MAC else validate_node()
 
 
 def initialize_frontend_dependencies():
@@ -665,7 +632,11 @@ def initialize_frontend_dependencies():
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
-    processes.run_concurrently(install_node, install_bun)
+    if constants.IS_WINDOWS:
+        install_node()
+    else:
+        install_bun()
+    # processes.run_concurrently(install_node, install_bun)
     # Set up the web directory.
     initialize_web_directory()
 

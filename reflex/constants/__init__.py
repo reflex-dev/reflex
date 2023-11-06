@@ -3,6 +3,7 @@
 from .base import (
     COOKIES,
     IS_WINDOWS,
+    IS_LINUX_OR_MAC,
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,
     PYTEST_CURRENT_TEST,
@@ -69,6 +70,7 @@ __ALL__ = [
     Fnm,
     GitIgnore,
     RequirementsTxt,
+    IS_LINUX_OR_MAC,
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,

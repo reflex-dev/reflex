@@ -222,7 +222,7 @@ def setup_frontend(
     if disable_telemetry:
         processes.new_process(
             [
-                prerequisites.get_package_manager(),
+                prerequisites.get_install_package_manager(),
                 "run",
                 "next",
                 "telemetry",

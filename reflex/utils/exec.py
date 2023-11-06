@@ -116,12 +116,12 @@ def run_frontend(root: Path, port: str):
     # Start watching asset folder.
     start_watching_assets_folder(root)
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies(init=False)
+    prerequisites.validate_frontend_dependencies()
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])  # type: ignore
+    run_process_and_launch_url([prerequisites.get_install_package_manager(), "run", "dev"])  # type: ignore
 
 
 def run_frontend_prod(root: Path, port: str):
@@ -134,10 +134,10 @@ def run_frontend_prod(root: Path, port: str):
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies(init=False)
+    prerequisites.validate_frontend_dependencies()
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])  # type: ignore
+    run_process_and_launch_url([prerequisites.get_install_package_manager(), "run", "prod"])  # type: ignore
 
 
 def run_backend(
