@@ -1900,7 +1900,7 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         return self._wrap_recursive(wrapped(*args, **kwargs))
 
-    def __getattribute__(self, __name: str) -> Any:
+    def __getattr__(self, __name: str) -> Any:
         """Get the attribute on the proxied object and return a proxy if mutable.
 
         Args:
@@ -1909,26 +1909,24 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The attribute value.
         """
-        value = super().__getattribute__(__name)
+        value = super().__getattr__(__name)
 
         if callable(value):
-            if __name in super().__getattribute__("__mark_dirty_attrs__"):
+            if __name in self.__mark_dirty_attrs__:
                 # Wrap special callables, like "append", which should mark state dirty.
-                value = wrapt.FunctionWrapper(
-                    value,
-                    super().__getattribute__("_mark_dirty"),
-                )
+                value = wrapt.FunctionWrapper(value, self._mark_dirty)
 
-            if __name in super().__getattribute__("__wrap_mutable_attrs__"):
+            if __name in self.__wrap_mutable_attrs__:
                 # Wrap methods that may return mutable objects tied to the state.
                 value = wrapt.FunctionWrapper(
                     value,
-                    super().__getattribute__("_wrap_recursive_decorator"),
+                    self._wrap_recursive_decorator,
                 )
 
-        if isinstance(
-            value, super().__getattribute__("__mutable_types__")
-        ) and __name not in ("__wrapped__", "_self_state"):
+        if isinstance(value, self.__mutable_types__) and __name not in (
+            "__wrapped__",
+            "_self_state",
+        ):
             # Recursively wrap mutable attribute values retrieved through this proxy.
             return self._wrap_recursive(value)
 
