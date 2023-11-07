@@ -6,10 +6,8 @@ import glob
 import importlib
 import json
 import os
-import platform
 import random
 import re
-import stat
 import sys
 import tempfile
 import zipfile
@@ -27,23 +25,6 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, get_config
 from reflex.utils import console, path_ops, processes
-
-
-def check_node_version() -> bool:
-    """Check the version of Node.js.
-
-    Returns:
-        Whether the version of Node.js is valid.
-    """
-    current_version = get_node_version()
-    if current_version:
-        # Compare the version numbers
-        return (
-            current_version >= version.parse(constants.Node.MIN_VERSION)
-            if constants.IS_WINDOWS
-            else current_version == version.parse(constants.Node.VERSION)
-        )
-    return False
 
 
 def get_node_version() -> version.Version | None:
@@ -87,7 +68,7 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_install_package_manager() -> str | None:
+def get_package_manager() -> str | None:
     """Get the package manager executable for installation.
       Currently on unix systems, bun is used for installation only.
 
@@ -96,15 +77,15 @@ def get_install_package_manager() -> str | None:
     """
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS:
-        return get_package_manager()
+        return get_npm_package_manager()
 
     # On other platforms, we use bun.
     return get_config().bun_path
 
 
-def get_package_manager() -> str | None:
-    """Get the package manager executable for running app.
-      Currently on unix systems, npm is used for running the app only.
+def get_npm_package_manager() -> str | None:
+    """Get the npm package manager executable for installing and running app
+      on windows.
 
     Returns:
         The path to the package manager.
@@ -360,13 +341,6 @@ def update_next_config(next_config: str, config: Config) -> str:
     return next_config
 
 
-def remove_existing_bun_installation():
-    """Remove existing bun installation."""
-    console.debug("Removing existing bun installation.")
-    if os.path.exists(get_config().bun_path):
-        path_ops.rm(constants.Bun.ROOT_PATH)
-
-
 def download_and_run(url: str, *args, show_status: bool = False, **env):
     """Download and run a script.
 
@@ -489,7 +463,7 @@ def install_frontend_packages(packages: set[str]):
     """
     # Install the base packages.
     process = processes.new_process(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+        [get_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
@@ -501,7 +475,7 @@ def install_frontend_packages(packages: set[str]):
         # install tailwind and tailwind plugins as dev dependencies.
         process = processes.new_process(
             [
-                get_install_package_manager(),
+                get_package_manager(),
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
@@ -515,7 +489,7 @@ def install_frontend_packages(packages: set[str]):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         process = processes.new_process(
-            [get_install_package_manager(), "add", *packages],
+            [get_package_manager(), "add", *packages],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
@@ -599,6 +573,7 @@ def validate_bun():
 
 def validate_node():
     """Check the version of Node.js is correct.
+
     Raises:
         Exit: If the version of Node.js is incorrect.
     """
@@ -619,6 +594,13 @@ def validate_node():
         raise typer.Exit(1)
 
 
+def remove_existing_fnm_dir():
+    """Remove existing fnm directory on linux and mac."""
+    if os.path.exists(constants.Fnm.DIR):
+        console.debug("Removing existing fnm installation.")
+        path_ops.rm(constants.Fnm.DIR)
+
+
 def validate_frontend_dependencies():
     """Validate frontend dependencies to ensure they meet requirements."""
     # Bun only supports linux and Mac. For Non-linux-or-mac, we use node.
@@ -629,16 +611,13 @@ def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
-    # validate dependencies before install
-    validate_frontend_dependencies()
     # Install the frontend dependencies.
-    if constants.IS_WINDOWS:
-        install_node()
-    else:
-        install_bun()
-    # processes.run_concurrently(install_node, install_bun)
+    install_node() if constants.IS_WINDOWS else install_bun()
     # Set up the web directory.
     initialize_web_directory()
+    # remove existing fnm dir on linux and mac
+    if constants.IS_LINUX_OR_MAC:
+        remove_existing_fnm_dir()
 
 
 def check_db_initialized() -> bool:

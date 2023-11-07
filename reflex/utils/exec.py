@@ -121,7 +121,7 @@ def run_frontend(root: Path, port: str):
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
-    run_process_and_launch_url([prerequisites.get_install_package_manager(), "run", "dev"])  # type: ignore
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "dev"])  # type: ignore
 
 
 def run_frontend_prod(root: Path, port: str):
@@ -137,7 +137,7 @@ def run_frontend_prod(root: Path, port: str):
     prerequisites.validate_frontend_dependencies()
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
-    run_process_and_launch_url([prerequisites.get_install_package_manager(), "run", "prod"])  # type: ignore
+    run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])  # type: ignore
 
 
 def run_backend(
@@ -239,21 +239,20 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
-        f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
 
     if system != "Windows":
-        dependencies.extend(
-            [
-                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
-            ],
+        dependencies.append(
+            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
         )
     else:
-        dependencies.append(
-            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+        dependencies.extend(
+            [
+                f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
+                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+            ]
         )
 
     if system == "Linux":
@@ -269,7 +268,7 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
+        f"Using package installer at: {prerequisites.get_package_manager()}"  # type: ignore
     )
     console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":

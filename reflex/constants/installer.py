@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import platform
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS, Dirs, Reflex

@@ -121,19 +121,6 @@ def test_validate_bun_path_incompatible_version(mocker):
         prerequisites.validate_bun()
 
 
-def test_remove_existing_bun_installation(mocker):
-    """Test that existing bun installation is removed.
-
-    Args:
-        mocker: Pytest mocker.
-    """
-    mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
-    rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
-
-    prerequisites.remove_existing_bun_installation()
-    rm.assert_called_once()
-
-
 def test_setup_frontend(tmp_path, mocker):
     """Test checking if assets content have been
     copied into the .web/public folder.
