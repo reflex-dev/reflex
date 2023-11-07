@@ -62,13 +62,13 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash tests/benchmarks/benchmarks.sh ./reflex-web prod
+          poetry run bash scripts/benchmarks.sh ./reflex-web prod
         env:
             LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
         working-directory: ./tests/benchmarks
         run: 
-          poetry run python benchmarks.py "$GITHUB_SHA" ../../reflex-web/.lighthouseci
+          poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
         env:
             GITHUB_SHA: ${{ github.sha }}
             DATABASE_URL: $

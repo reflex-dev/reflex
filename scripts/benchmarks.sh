@@ -49,8 +49,6 @@ fi
 project_dir=$1
 shift
 pushd "$project_dir" || exit 1
-echo "Changed directory to $project_dir"
-echo $(pwd)
 cd .web
 
 # Create a lighthouserc.js file
@@ -64,6 +62,7 @@ module.exports = {
     },
     upload: {
       target: 'temporary-public-storage',
+      "outputDir": "./tests/benchmarks/.lighthouseci"
     },
   },
 };
