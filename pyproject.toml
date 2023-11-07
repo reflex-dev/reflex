@@ -40,7 +40,10 @@ redis = "^4.3.5"
 rich = "^13.0.0"
 sqlmodel = "^0.0.8"
 typer = ">=0.4.2,<1"
-uvicorn = "^0.20.0"
+uvicorn = [
+    {version = "^0.24.0", python = ">=3.12"},
+    {version = "^0.20.0", python = "<3.12"},
+]
 watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
 websockets = "^10.4"
@@ -68,7 +71,8 @@ pytest-cov = "^4.0.0"
 black = "^22.10.0"
 ruff = "^0.0.244"
 pandas = [
-    {version = "^1.5.3", python = ">=3.8,<4.0"},
+    {version = "^2.1.1", python = ">=3.9,<3.13"},
+    {version = "^1.5.3", python = ">=3.8,<3.9"},
 ]
 pillow = [
     {version = "^10.0.0", python = ">=3.8,<4.0"}
