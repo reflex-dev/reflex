@@ -72,13 +72,9 @@ EOF
 npm install -g @lhci/cli
 lhci autorun || echo "LHCI failed!"
 
-# Directory containing JSON files
-JSON_DIR=".lighthouseci"
 
 # print full path to JSON_DIR
-echo "JSON_DIR: $(pwd)/$JSON_DIR"
+echo "JSON_DIR: $(pwd)/".lighthouseci""
 
-
-# Run the benchmarks
-echo Running benchmarks
-python benchmarks.py "$GITHUB_SHA" "$JSON_DIR"
+# list all files in JSON_DIR
+ls -la .lighthouseci
