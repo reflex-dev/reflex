@@ -7,21 +7,26 @@ import sys
 def get_lighthouse_scores(directory_path):
     scores = {}
     
-    # List all files in the given directory
-    for filename in os.listdir(directory_path):
-        # Check if the file is a JSON file
-        if filename.endswith('.json'):
-            file_path = os.path.join(directory_path, filename)
-            with open(file_path, 'r') as file:
-                data = json.load(file)
-                # Extract scores and add them to the dictionary with the filename as key
-                scores[data["finalUrl"].replace("http://localhost:3000/", "")] = {
-                    "performance_score": data["categories"]["performance"]["score"],
-                    "accessibility_score": data["categories"]["accessibility"]["score"],
-                    "best_practices_score": data["categories"]["best-practices"]["score"],
-                    "seo_score": data["categories"]["seo"]["score"],
-                    "pwa_score": data["categories"]["pwa"]["score"]
-                }
+    try:
+        # List all files in the given directory
+        for filename in os.listdir(directory_path):
+            # Check if the file is a JSON file
+            if filename.endswith('.json'):
+                file_path = os.path.join(directory_path, filename)
+                with open(file_path, 'r') as file:
+                    data = json.load(file)
+                    # Extract scores and add them to the dictionary with the filename as key
+                    scores[data["finalUrl"].replace("http://localhost:3000/", "")] = {
+                        "performance_score": data["categories"]["performance"]["score"],
+                        "accessibility_score": data["categories"]["accessibility"]["score"],
+                        "best_practices_score": data["categories"]["best-practices"]["score"],
+                        "seo_score": data["categories"]["seo"]["score"],
+                        "pwa_score": data["categories"]["pwa"]["score"]
+                    }
+    except Exception as e:
+        print(e)
+        return {"error": "Error parsing JSON files"}
+    
     return scores
 
 def run_pytest_and_get_results(test_path=None):
@@ -33,6 +38,9 @@ def run_pytest_and_get_results(test_path=None):
 
     # Run pytest with the specified arguments
     pytest.main(pytest_args)
+
+    # Print ls of the current directory
+    print(os.listdir())
 
     with open('benchmark_report.json', 'r') as file:
             pytest_results = json.load(file)
@@ -84,7 +92,6 @@ def main():
 
      # Upload benchmarking data to the database
     db_url = os.environ.get('DATABASE_URL')
-    print(db_url)
     insert_benchmarking_data(db_url, lighthouse_scores, cleaned_results, commit_sha)
 
 if __name__ == "__main__":

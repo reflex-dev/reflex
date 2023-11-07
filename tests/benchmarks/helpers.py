@@ -6,7 +6,6 @@ from datetime import datetime
 
 def insert_benchmarking_data(db_connection_url, lighthouse_data, performance_data, commit_sha):
     # Connect to the database
-    print(db_connection_url)
     try:
         conn = psycopg2.connect(db_connection_url)
     except psycopg2.Error as e:
