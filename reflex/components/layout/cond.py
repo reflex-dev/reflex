@@ -117,7 +117,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         raise ValueError("For conditional vars, the second argument must be set.")
 
     # Create the conditional var.
-    return BaseVar(
+    return cond_var._replace(
         _var_name=format.format_cond(
             cond=cond_var._var_full_name,
             true_value=c1,
@@ -125,4 +125,5 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             is_prop=True,
         ),
         _var_type=c1._var_type if isinstance(c1, BaseVar) else type(c1),
+        _var_full_name_needs_state_prefix=False,
     )

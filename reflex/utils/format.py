@@ -520,6 +520,21 @@ def format_state(value: Any) -> Any:
     raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
 
 
+def format_state_name(state_name: str) -> str:
+    """Format a state name, replacing dots with double underscore.
+
+    This allows individual substates to be accessed independently as javascript vars
+    without using dot notation.
+
+    Args:
+        state_name: The state name to format.
+
+    Returns:
+        The formatted state name.
+    """
+    return state_name.replace(".", "__")
+
+
 def format_ref(ref: str) -> str:
     """Format a ref.
 

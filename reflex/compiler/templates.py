@@ -3,7 +3,7 @@
 from jinja2 import Environment, FileSystemLoader, Template
 
 from reflex import constants
-from reflex.utils.format import json_dumps
+from reflex.utils.format import format_state_name, json_dumps
 
 
 class ReflexJinjaEnvironment(Environment):
@@ -19,6 +19,7 @@ class ReflexJinjaEnvironment(Environment):
         )
         self.filters["json_dumps"] = json_dumps
         self.filters["react_setter"] = lambda state: f"set{state.capitalize()}"
+        self.filters["var_name"] = format_state_name
         self.loader = FileSystemLoader(constants.Templates.Dirs.JINJA_TEMPLATE)
         self.globals["const"] = {
             "socket": constants.CompileVars.SOCKET,

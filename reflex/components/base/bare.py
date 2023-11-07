@@ -24,7 +24,11 @@ class Bare(Component):
         Returns:
             The component.
         """
-        return cls(contents=str(contents))  # type: ignore
+        if isinstance(contents, Var) and (contents._var_imports or contents._var_hooks):
+            contents = contents.to(str)
+        else:
+            contents = str(contents)
+        return cls(contents=contents)  # type: ignore
 
     def _render(self) -> Tag:
         return Tagless(contents=str(self.contents))

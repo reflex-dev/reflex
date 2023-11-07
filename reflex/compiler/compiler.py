@@ -25,7 +25,6 @@ DEFAULT_IMPORTS: imports.ImportDict = {
     "next/router": {ImportVar(tag="useRouter")},
     f"/{constants.Dirs.STATE_PATH}": {
         ImportVar(tag="uploadFiles"),
-        ImportVar(tag="Event"),
         ImportVar(tag="isTrue"),
         ImportVar(tag="spreadArraysOrObjects"),
         ImportVar(tag="preventDefault"),
@@ -33,13 +32,6 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getRefValue"),
         ImportVar(tag="getRefValues"),
         ImportVar(tag="getAllLocalStorageItems"),
-        ImportVar(tag="useEventLoop"),
-    },
-    "/utils/context.js": {
-        ImportVar(tag="EventLoopContext"),
-        ImportVar(tag="initialEvents"),
-        ImportVar(tag="StateContext"),
-        ImportVar(tag="ColorModeContext"),
     },
     "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
 }

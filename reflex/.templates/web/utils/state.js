@@ -6,7 +6,7 @@ import env from "env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
-import { initialEvents } from "utils/context.js"
+import { initialEvents, initialState } from "utils/context.js"
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT
@@ -95,18 +95,7 @@ export const getEventURL = () => {
  * @param delta The delta to apply.
  */
 export const applyDelta = (state, delta) => {
-  const new_state = { ...state }
-  for (const substate in delta) {
-    let s = new_state;
-    const path = substate.split(".").slice(1);
-    while (path.length > 0) {
-      s = s[path.shift()];
-    }
-    for (const key in delta[substate]) {
-      s[key] = delta[substate][key];
-    }
-  }
-  return new_state
+  return { ...state, ...delta }
 };
 
 
@@ -333,7 +322,9 @@ export const connect = async (
   // On each received message, queue the updates and events.
   socket.current.on("event", message => {
     const update = JSON5.parse(message)
-    dispatch(update.delta)
+    for (const substate in update.delta) {
+      dispatch[substate](update.delta[substate])
+    }
     applyClientStorageDelta(client_storage, update.delta)
     event_processing = !update.final
     if (update.events) {
@@ -475,23 +466,21 @@ const applyClientStorageDelta = (client_storage, delta) => {
 
 /**
  * Establish websocket event loop for a NextJS page.
- * @param initial_state The initial app state.
- * @param initial_events Function that returns the initial app events.
+ * @param dispatch The reducer dispatch function to update state.
+ * @param initial_events The initial app events.
  * @param client_storage The client storage object from context.js
  *
- * @returns [state, addEvents, connectError] -
- *   state is a reactive dict,
+ * @returns [addEvents, connectError] -
  *   addEvents is used to queue an event, and
  *   connectError is a reactive js error from the websocket connection (or null if connected).
  */
 export const useEventLoop = (
-  initial_state = {},
+  dispatch,
   initial_events = () => [],
   client_storage = {},
 ) => {
   const socket = useRef(null)
   const router = useRouter()
-  const [state, dispatch] = useReducer(applyDelta, initial_state)
   const [connectError, setConnectError] = useState(null)
 
   // Function to add new events to the event queue.
@@ -521,7 +510,7 @@ export const useEventLoop = (
       return;
     }
     // only use websockets if state is present
-    if (Object.keys(state).length > 0) {
+    if (Object.keys(initialState).length > 0) {
       // Initialize the websocket connection.
       if (!socket.current) {
         connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
@@ -534,7 +523,17 @@ export const useEventLoop = (
       })()
     }
   })
-  return [state, addEvents, connectError]
+
+  // Route after the initial page hydration.
+  useEffect(() => {
+    const change_complete = () => addEvents(initialEvents())
+    router.events.on('routeChangeComplete', change_complete)
+    return () => {
+      router.events.off('routeChangeComplete', change_complete)
+    }
+  }, [router])
+
+  return [addEvents, connectError]
 }
 
 /***

@@ -343,7 +343,9 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return os.path.join(constants.Dirs.WEB_UTILS, "context" + constants.Ext.JS)
+    return os.path.join(
+        constants.Dirs.WEB, constants.Dirs.CONTEXTS_PATH + constants.Ext.JS
+    )
 
 
 def get_components_path() -> str:

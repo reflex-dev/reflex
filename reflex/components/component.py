@@ -5,7 +5,7 @@ from __future__ import annotations
 import typing
 from abc import ABC
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Type, Union
 
 from reflex.base import Base
 from reflex.components.tags import Tag
@@ -553,6 +553,56 @@ class Component(Base, ABC):
             if self.valid_children:
                 validate_valid_child(name)
 
+    @staticmethod
+    def _get_vars_from_event_triggers(
+        event_triggers: dict[str, EventChain | Var],
+    ) -> Iterator[str, list[Var]]:
+        """Get the Vars associated with each event trigger.
+
+        Args:
+            event_triggers: The event triggers from the component instance.
+
+        Yields:
+            tuple of (event_name, event_vars)
+        """
+        for event_trigger, event in event_triggers.items():
+            if isinstance(event, Var):
+                yield event_trigger, [event]
+            elif isinstance(event, EventChain):
+                event_args = []
+                for spec in event.events:
+                    for args in spec.args:
+                        event_args.extend(args)
+                yield event_trigger, event_args
+
+    def _get_vars(self) -> Iterator[Var]:
+        """Walk all Vars used in this component.
+
+        Yields:
+            Each var referenced by the component (props, styles, event handlers).
+        """
+        from reflex.components.base.bare import Bare
+
+        if isinstance(self, Bare):
+            if isinstance(self.contents, Var):
+                yield self.contents
+        else:
+            for _, vars in self._get_vars_from_event_triggers(self.event_triggers):
+                yield from vars
+
+            for prop in self.get_props():
+                prop_var = getattr(self, prop)
+                if isinstance(prop_var, Var):
+                    yield prop_var
+
+        if self.style:
+            yield BaseVar(
+                _var_name="style",
+                _var_type=str,
+                _var_imports=self.style._var_imports,
+                _var_hooks=self.style._var_hooks,
+            )
+
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
 
@@ -644,11 +694,21 @@ class Component(Base, ABC):
         _imports = {}
         if self.library is not None and self.tag is not None:
             _imports[self.library] = {self.import_var}
-
+        event_imports = {}
+        if self.event_triggers:
+            event_imports = {
+                f"/{Dirs.CONTEXTS_PATH}": {ImportVar(tag="EventLoopContext")},
+                f"/{Dirs.STATE_PATH}": {ImportVar(tag="Event")},
+                "react": {ImportVar(tag="useContext")},
+            }
+        # determine imports from Vars
+        var_imports = [var._var_imports for var in self._get_vars()]
         return imports.merge_imports(
             self._get_props_imports(),
             self._get_dependencies_imports(),
             _imports,
+            event_imports,
+            *var_imports,
         )
 
     def get_imports(self) -> imports.ImportDict:
@@ -694,6 +754,28 @@ class Component(Base, ABC):
         if ref is not None:
             return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
 
+    def _get_vars_hooks(self) -> set[str]:
+        """Get the hooks required by vars referenced in this component.
+
+        Returns:
+            The hooks for the vars.
+        """
+        vars_hooks = set()
+        for var in self._get_vars():
+            vars_hooks.update(var._var_hooks)
+        return vars_hooks
+
+    def _get_events_hooks(self) -> str[str]:
+        """Get the hooks required by events referenced in this component.
+
+        Returns:
+            The hooks for the events.
+        """
+        # TODO: use constants here for better indirection
+        if self.event_triggers:
+            return {"const [addEvents, connectError] = useContext(EventLoopContext);"}
+        return set()
+
     def _get_hooks_internal(self) -> Set[str]:
         """Get the React hooks for this component managed by the framework.
 
@@ -703,10 +785,14 @@ class Component(Base, ABC):
         Returns:
             Set of internally managed hooks.
         """
-        return set(
-            hook
-            for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
-            if hook
+        return (
+            set(
+                hook
+                for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
+                if hook
+            )
+            .union(self._get_vars_hooks())
+            .union(self._get_events_hooks())
         )
 
     def _get_hooks(self) -> str | None:
