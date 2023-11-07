@@ -57,7 +57,7 @@ module.exports = {
      url: ['http://localhost:3000', "http://localhost:3000/docs/getting-started/introduction/", "http://localhost:3000/blog/2023-08-02-seed-annoucement/"]
     },
     upload: {
-      target: 'temporary-public-storage',
+      target: 'filesystem',
       "outputDir": "./tests/benchmarks/.lighthouseci"
     },
   },
@@ -66,8 +66,7 @@ EOF
 
 # Install and Run LHCI
 npm install -g @lhci/cli
-lhci autorun || echo "LHCI failed!"
-
+lhci autorun
 
 # Check to see if the LHCI report is generated
 if [ -d "./tests/benchmarks/.lighthouseci" ] && [ "$(ls -A ./tests/benchmarks/.lighthouseci)" ]; then
