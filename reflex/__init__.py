@@ -5,43 +5,37 @@ To signal to typecheckers that something should be reexported,
 we use the Flask "import name as name" syntax.
 """
 
-from . import el as el
-from .admin import AdminDash as AdminDash
-from .app import App as App
-from .app import UploadFile as UploadFile
-from .base import Base as Base
-from .compiler.utils import get_asset_path
-from .components import *
-from .components.component import custom_component as memo
-from .components.graphing import recharts as recharts
-from .config import Config as Config
-from .config import DBConfig as DBConfig
-from .constants import Env as Env
-from .event import EventChain as EventChain
-from .event import FileUpload as upload_files
-from .event import background as background
-from .event import call_script as call_script
-from .event import clear_local_storage as clear_local_storage
-from .event import console_log as console_log
-from .event import download as download
-from .event import prevent_default as prevent_default
-from .event import redirect as redirect
-from .event import remove_cookie as remove_cookie
-from .event import remove_local_storage as remove_local_storage
-from .event import set_clipboard as set_clipboard
-from .event import set_focus as set_focus
-from .event import set_value as set_value
-from .event import stop_propagation as stop_propagation
-from .event import window_alert as window_alert
-from .middleware import Middleware as Middleware
-from .model import Model as Model
-from .model import session as session
-from .page import page as page
-from .state import ComputedVar as var
-from .state import Cookie as Cookie
-from .state import LocalStorage as LocalStorage
-from .state import State as State
-from .style import color_mode as color_mode
-from .style import toggle_color_mode as toggle_color_mode
-from .vars import Var as Var
-from .vars import cached_var as cached_var
+_MAPPING = {
+    "reflex.admin": ["AdminDash"],
+    "reflex.app": ["App", "UploadFile"],
+    "reflex.base": ["Base"],
+    "reflex.compiler.utils": ["get_asset_path"],
+    "reflex.components.component": ["memo"],
+    "reflex.components.graphing": ["reccharts"],
+    "reflex.config": ["Config", "DBConfig"],
+    "reflex.constants": ["constants", "Env"],
+    "reflex.event": ["EventChain", "FileUpload", "background", "call_script", "clear_local_storage", "console_log", "download", "prevent_default", "redirect", "remove_cookie", "remove_local_storage", "set_clipboard", "set_focus", "set_value", "stop_propagation", "window_alert"],
+    "reflex.middleware": ["Middleware"],
+    "reflex.model": ["model", "session", "Model"],
+    "reflex.page": ["page"],
+    "reflex.state": ["var", "Cookie", "LocalStorage", "State"],
+    "reflex.style": ["color_mode", "toggle_color_mode"],
+    "reflex.vars": ["cached_var", "Var"],
+}
+_MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
+
+
+def __getattr__(name):
+    """Lazy load all modules."""
+    import importlib
+    # Import the module.
+    module = importlib.import_module(_MAPPING[name])
+    # Add the module to the globals.
+    globals()[name] = module
+    # Get the attribute from the module if the name is not the module itself.
+    attr = getattr(module, name) if name != _MAPPING[name] else module
+    # Return the attribute.
+    return attr
+
+# from . import el as el
+# from .components import *
