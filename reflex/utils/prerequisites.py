@@ -347,6 +347,7 @@ def update_next_config(next_config: str, config: Config) -> str:
     Returns:
         The next_config updated from config.
     """
+    print(config)
     next_config = re.sub(
         "compress: (true|false)",
         f'compress: {"true" if config.next_compression else "false"}',

@@ -95,8 +95,8 @@ class PackageJson(SimpleNamespace):
         """The commands to define in package.json."""
 
         DEV = "next dev"
-        EXPORT = "next build && next export -o _static"
-        EXPORT_SITEMAP = "next build && next-sitemap && next export -o _static"
+        EXPORT = "next build"
+        EXPORT_SITEMAP = "next build && next-sitemap"
         PROD = "next start"
 
     PATH = os.path.join(Dirs.WEB, "package.json")
