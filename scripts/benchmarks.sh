@@ -45,11 +45,7 @@ else
   echo "URL does not exist: https://localhost:3000"
 fi
 
-# Change to .web directory
-project_dir=$1
-shift
-pushd "$project_dir" || exit 1
-cd .web
+mkdir -p ./tests/benchmarks/.lighthouseci
 
 # Create a lighthouserc.js file
 cat << EOF > lighthouserc.js
@@ -74,9 +70,9 @@ lhci autorun || echo "LHCI failed!"
 
 
 # Check to see if the LHCI report is generated
-# To see if the ./tests/benchmarks/.lighthouseci directory exists and is not empty
 if [ -d "./tests/benchmarks/.lighthouseci" ] && [ "$(ls -A ./tests/benchmarks/.lighthouseci)" ]; then
   echo "LHCI report generated"
 else
   echo "LHCI report not generated"
+  exit 1 # Exits the script with a status of 1, which will cause the GitHub Action to stop
 fi
