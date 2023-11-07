@@ -17,7 +17,7 @@ shift
 
 # Start the server in the background
 export TELEMETRY_ENABLED=false
-reflex run --loglevel debug --env "$env_mode" "$@" & pid=$!
+reflex run --env "$env_mode" "$@" & pid=$!
 
 # Within the context of this bash, $pid_in_bash is what we need to pass to "kill" on exit
 # This is true on all platforms.
@@ -73,8 +73,10 @@ npm install -g @lhci/cli
 lhci autorun || echo "LHCI failed!"
 
 
-# print full path to JSON_DIR
-echo $(pwd)
-
-# list all files in JSON_DIR
-ls -la .lighthouseci
+# Check to see if the LHCI report is generated
+# To see if the ./tests/benchmarks/.lighthouseci directory exists and is not empty
+if [ -d "./tests/benchmarks/.lighthouseci" ] && [ "$(ls -A ./tests/benchmarks/.lighthouseci)" ]; then
+  echo "LHCI report generated"
+else
+  echo "LHCI report not generated"
+fi
