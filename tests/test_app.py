@@ -764,9 +764,7 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         "event", state_update.json(), to=current_state.router.session.session_id
     )
     current_state = await app.state_manager.get_state(token)
-    state_dict = current_state.dict()
-    for substate in state.get_full_name().split(".")[1:]:
-        state_dict = state_dict[substate]
+    state_dict = current_state.dict()[state.get_full_name()]
     assert state_dict["img_list"] == [
         "image1.jpg",
         "image2.jpg",
