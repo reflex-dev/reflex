@@ -50,6 +50,7 @@ project_dir=$1
 shift
 pushd "$project_dir" || exit 1
 echo "Changed directory to $project_dir"
+echo $(pwd)
 cd .web
 
 # Create a lighthouserc.js file
@@ -74,7 +75,7 @@ lhci autorun || echo "LHCI failed!"
 
 
 # print full path to JSON_DIR
-echo "JSON_DIR: $(pwd)/".lighthouseci""
+echo $(pwd)
 
 # list all files in JSON_DIR
 ls -la .lighthouseci
