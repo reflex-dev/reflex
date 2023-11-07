@@ -66,8 +66,8 @@ jobs:
         env:
             LHCI_GITHUB_APP_TOKEN: $
       - name: Run Benchmarks
-        working-directory: ./reflex-web
-        run: ./tests/benchmarks
+        working-directory: ./tests/benchmarks
+        run: 
           poetry run python benchmarks.py "$GITHUB_SHA" ../../reflex-web/.lightouseci
         env:
             GITHUB_SHA: ${{ github.sha }}
