@@ -587,9 +587,9 @@ def validate_node():
         raise typer.Exit(1)
 
     # Check if the version of Node is correct.
-    if current_version < version.parse(constants.Node.NODE_VERSION_MIN):
+    if current_version < version.parse(constants.Node.MIN_VERSION):
         console.error(
-            f"Reflex requires node version {constants.Node.NODE_VERSION_MIN} or higher to run, but the detected version is {current_version}."
+            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {current_version}."
         )
         raise typer.Exit(1)
 
