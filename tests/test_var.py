@@ -7,10 +7,10 @@ from pandas import DataFrame
 
 from reflex.base import Base
 from reflex.state import State
+from reflex.utils.imports import ImportVar
 from reflex.vars import (
     BaseVar,
     ComputedVar,
-    ImportVar,
     Var,
 )
 
@@ -553,10 +553,10 @@ def test_var_unsupported_indexing_dicts(var, index):
     "fixture,full_name",
     [
         ("ParentState", "parent_state.var_without_annotation"),
-        ("ChildState", "parent_state.child_state.var_without_annotation"),
+        ("ChildState", "parent_state__child_state.var_without_annotation"),
         (
             "GrandChildState",
-            "parent_state.child_state.grand_child_state.var_without_annotation",
+            "parent_state__child_state__grand_child_state.var_without_annotation",
         ),
         ("StateWithAnyVar", "state_with_any_var.var_without_annotation"),
     ],
@@ -636,7 +636,7 @@ def test_import_var(import_var, expected):
         (f"{BaseVar(_var_name='var', _var_type=str)}", "${var}"),
         (
             f"testing f-string with {BaseVar(_var_name='myvar', _var_type=int)._var_set_state('state')}",
-            "testing f-string with $<reflex.Var>_var_state=state</reflex.Var>{state.myvar}",
+            'testing f-string with $<reflex.Var>{"state": "state", "imports": {"/utils/context": [{"tag": "StateContexts", "is_default": false, "alias": null, "install": true, "render": true}], "react": [{"tag": "useContext", "is_default": false, "alias": null, "install": true, "render": true}]}, "hooks": ["const state = useContext(StateContexts.state)"]}</reflex.Var>{state.myvar}',
         ),
         (
             f"testing local f-string {BaseVar(_var_name='x', _var_is_local=True, _var_type=str)}",

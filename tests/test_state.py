@@ -324,11 +324,17 @@ def test_dict(test_state):
     Args:
         test_state: A state.
     """
-    substates = {"child_state", "child_state2"}
-    assert set(test_state.dict().keys()) == set(test_state.vars.keys()) | substates
-    assert (
-        set(test_state.dict(include_computed=False).keys())
-        == set(test_state.base_vars) | substates
+    substates = {
+        "test_state",
+        "test_state.child_state",
+        "test_state.child_state.grandchild_state",
+        "test_state.child_state2",
+    }
+    test_state_dict = test_state.dict()
+    assert set(test_state_dict) == substates
+    assert set(test_state_dict[test_state.get_name()]) == set(test_state.vars)
+    assert set(test_state.dict(include_computed=False)[test_state.get_name()]) == set(
+        test_state.base_vars
     )
 
 
@@ -1081,9 +1087,9 @@ def test_computed_var_cached():
             return self.v
 
     cs = ComputedState()
-    assert cs.dict()["v"] == 0
+    assert cs.dict()[cs.get_full_name()]["v"] == 0
     assert comp_v_calls == 1
-    assert cs.dict()["comp_v"] == 0
+    assert cs.dict()[cs.get_full_name()]["comp_v"] == 0
     assert comp_v_calls == 1
     assert cs.comp_v == 0
     assert comp_v_calls == 1
@@ -1156,24 +1162,27 @@ def test_computed_var_depends_on_parent_non_cached():
     assert ps.dirty_vars == set()
     assert cs.dirty_vars == set()
 
-    assert ps.dict() == {
-        cs.get_name(): {"dep_v": 2},
+    dict1 = ps.dict()
+    assert dict1[ps.get_full_name()] == {
         "no_cache_v": 1,
         CompileVars.IS_HYDRATED: False,
         "router": formatted_router,
     }
-    assert ps.dict() == {
-        cs.get_name(): {"dep_v": 4},
+    assert dict1[cs.get_full_name()] == {"dep_v": 2}
+    dict2 = ps.dict()
+    assert dict2[ps.get_full_name()] == {
         "no_cache_v": 3,
         CompileVars.IS_HYDRATED: False,
         "router": formatted_router,
     }
-    assert ps.dict() == {
-        cs.get_name(): {"dep_v": 6},
+    assert dict2[cs.get_full_name()] == {"dep_v": 4}
+    dict3 = ps.dict()
+    assert dict3[ps.get_full_name()] == {
         "no_cache_v": 5,
         CompileVars.IS_HYDRATED: False,
         "router": formatted_router,
     }
+    assert dict3[cs.get_full_name()] == {"dep_v": 6}
     assert counter == 6
 
 
@@ -2201,13 +2210,13 @@ def test_json_dumps_with_mutables():
         items: List[Foo] = [Foo()]
 
     dict_val = MutableContainsBase().dict()
-    assert isinstance(dict_val["items"][0], dict)
+    assert isinstance(dict_val[MutableContainsBase.get_full_name()]["items"][0], dict)
     val = json_dumps(dict_val)
     f_items = '[{"tags": ["123", "456"]}]'
     f_formatted_router = str(formatted_router).replace("'", '"')
     assert (
         val
-        == f'{{"is_hydrated": false, "items": {f_items}, "router": {f_formatted_router}}}'
+        == f'{{"{MutableContainsBase.get_full_name()}": {{"is_hydrated": false, "items": {f_items}, "router": {f_formatted_router}}}}}'
     )
 
 

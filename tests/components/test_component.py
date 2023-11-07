@@ -11,7 +11,8 @@ from reflex.event import EventHandler
 from reflex.state import State
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.utils.imports import ImportVar
+from reflex.vars import Var
 
 
 @pytest.fixture

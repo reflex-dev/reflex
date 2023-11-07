@@ -341,7 +341,6 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
             BaseVar(
                 _var_name="_",
                 _var_type=Any,
-                _var_state="",
                 _var_is_local=True,
                 _var_is_string=False,
             ),
