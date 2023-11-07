@@ -3,5 +3,5 @@ module.exports = {
   compress: true,
   reactStrictMode: true,
   trailingSlash: true,
-  output: "export",
+  output: "",
 };

@@ -336,6 +336,9 @@ def export(
     # Compile the app in production mode and export it.
     console.rule("[bold]Compiling production app and preparing for export.")
 
+    # Update some parameters for export
+    prerequisites.update_next_config(export=True)
+
     if frontend:
         # Ensure module can be imported and app.compile() is called.
         prerequisites.get_app()

@@ -181,7 +181,7 @@ def export(
                 target=os.path.join(
                     zip_dest_dir, constants.ComponentName.FRONTEND.zip()
                 ),
-                root_dir=".web/_static",
+                root_dir=constants.Dirs.WEB_STATIC,
                 files_to_exclude=files_to_exclude,
                 exclude_venv_dirs=False,
             )
