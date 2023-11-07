@@ -64,6 +64,7 @@ jobs:
           npm -v
           poetry run bash scripts/lighthouse.sh ./reflex-web prod
         env:
+            GITHUB_SHA: ${{ github.sha }}
             LHCI_GITHUB_APP_TOKEN: $
-            POSTHOG: $
+            DATABASE_URL: $
         

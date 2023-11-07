@@ -72,52 +72,7 @@ EOF
 npm install -g @lhci/cli
 lhci autorun || echo "LHCI failed!"
 
-#!/bin/bash
-
-# Define the base URL where you want to send the POST requests
-base_url="https://app.posthog.com/capture/"
-
 # Directory containing JSON files
-json_dir=".lighthouseci"
+JSON_DIR=".lighthouseci"
 
-# API Key
-api_key="$POSTHOG"
-
-# Get the current timestamp
-timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-# Loop through each JSON file in the directory
-for json_file in "$json_dir"/*.json; do
-    if [ -f "$json_file" ]; then
-        # Extract the file name without the extension
-        file_name=$(basename "$json_file" .json)
-
-        # Generate a random distinct_id (a random number)
-        distinct_id=$((RANDOM))
-
-        # Read the contents of the JSON file
-        json_data=$(cat "$json_file")
-
-        # Construct the event name with the JSON file name
-        event="Lighthouse CI - $file_name"
-
-        # Construct the JSON payload with the random distinct_id
-        payload="{\"api_key\": \"$api_key\", \"event\": \"$event\", \"timestamp\": \"$timestamp\", \"distinct_id\": $distinct_id, \"properties\": $json_data}"
-
-        # Create a temporary file for the payload
-        tmpfile=$(mktemp)
-
-        # Write the payload to the temporary file
-        echo "$payload" > "$tmpfile"
-
-        # Send the POST request with the constructed payload using curl
-        response=$(curl -X POST -H "Content-Type: application/json" --data @"$tmpfile" "$base_url")
-
-        # Clean up the temporary file
-        rm "$tmpfile"
-
-        # Print the response for each file
-        echo "Response for $json_file:"
-        echo "$response"
-    fi
-done
+python benchmarking_script.py "$GITHUB_SHA" "$JSON_DIR"
