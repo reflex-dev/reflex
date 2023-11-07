@@ -10,12 +10,13 @@ def get_lighthouse_scores(directory_path):
     try:
         # List all files in the given directory
         for filename in os.listdir(directory_path):
-            # Check if the file is a JSON file
-            print("Parsing file: ", filename)
-            if filename.endswith('.json'):
+            # Check if the file is a JSON file and ignore the manifest.json
+            
+            if filename.endswith('.json') and filename != 'manifest.json':
                 file_path = os.path.join(directory_path, filename)
                 with open(file_path, 'r') as file:
                     data = json.load(file)
+                    print("Data: ", data)
                     # Extract scores and add them to the dictionary with the filename as key
                     scores[data["finalUrl"].replace("http://localhost:3000/", "")] = {
                         "performance_score": data["categories"]["performance"]["score"],
