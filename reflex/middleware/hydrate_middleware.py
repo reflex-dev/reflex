@@ -51,7 +51,7 @@ class HydrateMiddleware(Middleware):
                     setattr(var_state, var_name, value)
 
         # Get the initial state.
-        delta = format.format_state({state.get_name(): state.dict()})
+        delta = format.format_state(state.dict())
         # since a full dict was captured, clean any dirtiness
         state._clean()
 

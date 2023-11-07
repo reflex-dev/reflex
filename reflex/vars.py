@@ -212,6 +212,8 @@ def _extract_var_data(value: Iterable) -> VarData | None:
                     var_data = VarData.merge(var_data, _extract_var_data(sub.values()))
                 # Recurse into iterable values (or dict keys)
                 var_data = VarData.merge(var_data, _extract_var_data(sub))
+    if hasattr(value, "values") and callable(value.values):
+        var_data = VarData.merge(var_data, _extract_var_data(value.values()))
     return var_data
 
 
@@ -1370,6 +1372,15 @@ class Var:
         self._var_data = VarData.merge(self._var_data, new_var_data)
         self._var_full_name_needs_state_prefix = True
         return self
+
+    @property
+    def _var_state(self) -> str:
+        """Compat method for getting the state.
+
+        Returns:
+            The state name associated with the var.
+        """
+        return self._var_data.state if self._var_data else ""
 
 
 @dataclasses.dataclass(
