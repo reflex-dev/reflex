@@ -72,7 +72,7 @@ OPERATION_MAPPING = {
 REPLACED_NAMES = {
     "full_name": "_var_full_name",
     "name": "_var_name",
-    "state": "_var_state",
+    "state": "_var_data.state",
     "type_": "_var_type",
     "is_local": "_var_is_local",
     "is_string": "_var_is_string",
@@ -94,24 +94,63 @@ def get_unique_variable_name() -> str:
     return get_unique_variable_name()
 
 
-def _merge_imports(
-    *import_dicts: dict[str, set[ImportVar]]
-) -> dict[str, set[ImportVar]]:
-    """Merge multiple import dicts.
+class VarData(Base):
+    # The name of the enclosing state.
+    state: str = ""
 
-    This is the same as reflex.utils.imports.merge_imports, except
-    that causes a circular import, so define this helper to avoid
-    inline imports all over this module.
+    # Imports needed to render this var
+    imports: dict[str, set[ImportVar]] = {}
 
-    Args:
-        *import_dicts: The import dicts to merge.
+    # Hooks that need to be present in the component to render this var
+    hooks: set[str] = set()
 
-    Returns:
-        The merged import dict.
-    """
-    from reflex.utils import imports
+    @classmethod
+    def merge(cls, *others: VarData | None) -> VarData | None:
+        """Merge multiple var data objects.
 
-    return imports.merge_imports(*import_dicts)
+        Args:
+            *others: The var data objects to merge.
+
+        Returns:
+            The merged var data object.
+        """
+        from reflex.utils.imports import merge_imports
+
+        state = ""
+        imports = {}
+        hooks = set()
+        for var_data in others:
+            if var_data is None:
+                continue
+            state = state or var_data.state
+            imports = merge_imports(imports, var_data.imports)
+            hooks.update(var_data.hooks)
+        return (
+            cls(
+                state=state,
+                imports=imports,
+                hooks=hooks,
+            )
+            or None
+        )
+
+    def __bool__(self) -> bool:
+        return bool(self.state or self.imports or self.hooks)
+
+    def dict(self) -> dict:
+        """Convert the var data to a dictionary.
+
+        Returns:
+            The var data dictionary.
+        """
+        return {
+            "state": self.state,
+            "imports": {
+                lib: [import_var.dict() for import_var in import_vars]
+                for lib, import_vars in self.imports.items()
+            },
+            "hooks": list(self.hooks),
+        }
 
 
 def _encode_var(value: Var) -> str:
@@ -123,19 +162,12 @@ def _encode_var(value: Var) -> str:
     Returns:
         The encoded var.
     """
-    if value._var_imports or value._var_hooks:
-        data = {
-            "_var_imports": {
-                lib: [iv.dict() for iv in imports]
-                for lib, imports in value._var_imports.items()
-            },
-            "_var_hooks": list(value._var_hooks),
-        }
-        return f"<reflex.Var>{json.dumps(data)}</reflex.Var>" + str(value)
+    if value._var_data:
+        return f"<reflex.Var>{value._var_data.json()}</reflex.Var>" + str(value)
     return str(value)
 
 
-def _decode_var(value: str) -> tuple[list[str], str]:
+def _decode_var(value: str) -> tuple[VarData, str]:
     """Decode the state name from a formatted var.
 
     Args:
@@ -144,70 +176,36 @@ def _decode_var(value: str) -> tuple[list[str], str]:
     Returns:
         The extracted state name and the value without the state name.
     """
-    _var_data = {}
+    var_datas = []
     if isinstance(value, str):
         # Extract the state name from a formatted var
         while m := re.match(r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)", value):
             value = m.group(1) + m.group(3)
-            _var_data = json.loads(m.group(2))
-            _var_data["_var_hooks"] = set(_var_data["_var_hooks"])
-            _var_data["_var_imports"] = {
-                lib: set(ImportVar(**iv_json) for iv_json in ivs_json)
-                for lib, ivs_json in _var_data["_var_imports"].items()
-            }
-    return _var_data, value
+            var_datas.append(VarData.parse_raw(m.group(2)))
+    return VarData.merge(*var_datas), value
 
 
-def _merge_var_data(*var_datas: dict[str, Any]) -> dict[str, Any]:
-    """Merge multiple var data dicts.
-
-    Args:
-        *var_datas: The var data dicts to merge.
-
-    Returns:
-        The merged var data dict.
-    """
-    _var_imports = {}
-    _var_hooks = set()
-    for _var_data in var_datas:
-        _var_imports = _merge_imports(_var_imports, _var_data.get("_var_imports", {}))
-        _var_hooks.update(_var_data.get("_var_hooks", set()))
-    return {"_var_imports": _var_imports, "_var_hooks": _var_hooks}
-
-
-def _extract_var_data(value: Iterable) -> list[str]:
+def _extract_var_data(value: Iterable) -> VarData | None:
     """Extract the var imports and hooks from an iterable containing a Var.
 
     Args:
-        value: The iterable to extract the state name from.
+        value: The iterable to extract the VarData from
 
     Returns:
-        The extracted state name.
+        The extracted VarData.
     """
-    _var_data = {}
-    for sub in value:
-        if isinstance(sub, Var):
-            _var_data = _merge_var_data(
-                _var_data,
-                {
-                    "_var_imports": sub._var_imports,
-                    "_var_hooks": sub._var_hooks,
-                },
-            )
-        elif not isinstance(sub, str):
-            # Recurse into dict values
-            if hasattr(sub, "values") and callable(sub.values):
-                _var_data = _merge_var_data(
-                    _var_data,
-                    _extract_var_data(sub.values()),
-                )
-            # Recurse into iterable values (or dict keys)
-            with contextlib.suppress(TypeError):
-                _var_data = _merge_var_data(
-                    _var_data,
-                    _extract_var_data(sub),
-                )
-    return _var_data
+    var_data = None
+    with contextlib.suppress(TypeError):
+        for sub in value:
+            if isinstance(sub, Var):
+                var_data = VarData.merge(var_data, sub._var_data)
+            elif not isinstance(sub, str):
+                # Recurse into dict values
+                if hasattr(sub, "values") and callable(sub.values):
+                    var_data = VarData.merge(var_data, _extract_var_data(sub.values()))
+                # Recurse into iterable values (or dict keys)
+                var_data = VarData.merge(var_data, _extract_var_data(sub))
+    return var_data
 
 
 class Var:
@@ -219,9 +217,6 @@ class Var:
     # The type of the var.
     _var_type: Type
 
-    # The name of the enclosing state.
-    _var_state: str
-
     # Whether this is a local javascript variable.
     _var_is_local: bool
 
@@ -231,11 +226,8 @@ class Var:
     # _var_full_name should be prefixed with _var_state
     _var_full_name_needs_state_prefix: bool
 
-    # Imports needed to render this var
-    _var_imports: dict[str, set[ImportVar]]
-
-    # All substates that this var depends on
-    _var_hooks: set[str]
+    # Extra metadata associated with the Var
+    _var_data: Optional[VarData]
 
     @classmethod
     def create(
@@ -263,10 +255,9 @@ class Var:
             return value
 
         # Try to pull the imports and hooks from contained values.
-        _var_data = {}
+        _var_data = None
         if not isinstance(value, str):
-            with contextlib.suppress(TypeError):
-                _var_data = _extract_var_data(value)
+            _var_data = _extract_var_data(value)
 
         # Try to serialize the value.
         type_ = type(value)
@@ -282,8 +273,7 @@ class Var:
             _var_type=type_,
             _var_is_local=_var_is_local,
             _var_is_string=_var_is_string,
-            _var_imports=_var_data.get("_var_imports", {}),
-            _var_hooks=_var_data.get("_var_hooks", set()),
+            _var_data=_var_data,
         )
 
     @classmethod
@@ -326,32 +316,23 @@ class Var:
         _var_data, _var_name = _decode_var(self._var_name)
         if _var_data:
             self._var_name = _var_name
-            self._var_hooks.update(_var_data.get("_var_hooks", set()))
-            self._var_imports = _merge_imports(
-                self._var_imports,
-                _var_data.get("_var_imports", {}),
-            )
+            self._var_data = VarData.merge(self._var_data, _var_data)
 
-    def _replace(self, add_imports=None, add_hooks=None, **kwargs: Any) -> Var:
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
         # Cannot use dataclasses.replace because ComputedVar uses multiple inheritance
         # and it's __init__ has a required fget argument
-        _var_imports = _merge_imports(
-            kwargs.pop("_var_imports", self._var_imports),
-            add_imports or {},
-        )
-        _var_hooks = kwargs.pop("_var_hooks", self._var_hooks).union(add_hooks or set())
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
-            _var_state=kwargs.pop("_var_state", self._var_state),
             _var_is_local=kwargs.pop("_var_is_local", self._var_is_local),
             _var_is_string=kwargs.pop("_var_is_string", self._var_is_string),
             _var_full_name_needs_state_prefix=kwargs.pop(
                 "_var_full_name_needs_state_prefix",
                 self._var_full_name_needs_state_prefix,
             ),
-            _var_imports=_var_imports,
-            _var_hooks=_var_hooks,
+            _var_data=VarData.merge(
+                kwargs.get("_var_data", self._var_data), merge_var_data
+            ),
         )
         return BaseVar(**field_values)
 
@@ -364,8 +345,6 @@ class Var:
         Returns:
             The decoded value or the Var name.
         """
-        if self._var_state:
-            return self._var_full_name
         if self._var_is_string:
             return self._var_name
         try:
@@ -385,12 +364,10 @@ class Var:
         return (
             self._var_name == other._var_name
             and self._var_type == other._var_type
-            and self._var_state == other._var_state
             and self._var_is_local == other._var_is_local
             and self._var_full_name_needs_state_prefix
             == other._var_full_name_needs_state_prefix
-            and self._var_imports == other._var_imports
-            and self._var_hooks == other._var_hooks
+            and self._var_data == other._var_data
         )
 
     def to_string(self, json: bool = True) -> Var:
@@ -689,8 +666,7 @@ class Var:
             _var_type=type_,
             _var_is_string=False,
             _var_full_name_needs_state_prefix=False,
-            add_imports=other._var_imports if other is not None else None,
-            add_hooks=other._var_hooks if other is not None else None,
+            merge_var_data=other._var_data if other is not None else None,
         )
 
     @staticmethod
@@ -1176,8 +1152,7 @@ class Var:
                 _var_name=f"{self._var_name}.{method}({other._var_full_name})",
                 _var_type=bool,
                 _var_is_string=False,
-                add_imports=other._var_imports,
-                add_hooks=other._var_hooks,
+                merge_var_data=other._var_data,
             )
         else:  # str, list, tuple
             # For strings, the left operand must be a string.
@@ -1191,8 +1166,7 @@ class Var:
                 _var_name=f"{self._var_name}.includes({other._var_full_name})",
                 _var_type=bool,
                 _var_is_string=False,
-                add_imports=other._var_imports,
-                add_hooks=other._var_hooks,
+                merge_var_data=other._var_data,
             )
 
     def reverse(self) -> Var:
@@ -1274,8 +1248,7 @@ class Var:
             _var_name=f"{self._var_name}.split({other._var_full_name})",
             _var_is_string=False,
             _var_type=list[str],
-            add_imports=other._var_imports,
-            add_hooks=other._var_hooks,
+            merge_var_data=other._var_data,
         )
 
     def join(self, other: str | Var[str] | None = None) -> Var:
@@ -1304,8 +1277,7 @@ class Var:
             _var_name=f"{self._var_name}.join({other._var_full_name})",
             _var_is_string=False,
             _var_type=str,
-            add_imports=other._var_imports,
-            add_hooks=other._var_hooks,
+            merge_var_data=other._var_data,
         )
 
     def foreach(self, fn: Callable) -> Var:
@@ -1348,8 +1320,10 @@ class Var:
             return self._var_name
         return (
             self._var_name
-            if self._var_state == ""
-            else ".".join([format.format_state_name(self._var_state), self._var_name])
+            if self._var_data.state == ""
+            else ".".join(
+                [format.format_state_name(self._var_data.state), self._var_name]
+            )
         )
 
     def _var_set_state(self, state: Type[State] | str) -> Any:
@@ -1361,22 +1335,20 @@ class Var:
         Returns:
             The var with the set state.
         """
-        if isinstance(state, str):
-            self._var_state = state
-        else:
-            self._var_state = state.get_full_name()
-        self._var_hooks.add(
-            "const {0} = useContext(StateContexts.{0})".format(
-                format.format_state_name(self._var_state)
-            )
-        )
-        self._var_imports = _merge_imports(
-            self._var_imports,
-            {
+        state_name = state if isinstance(state, str) else state.get_full_name()
+        new_var_data = VarData(
+            state=state_name,
+            hooks={
+                "const {0} = useContext(StateContexts.{0})".format(
+                    format.format_state_name(state_name)
+                )
+            },
+            imports={
                 f"/{constants.Dirs.CONTEXTS_PATH}": {ImportVar(tag="StateContexts")},
                 "react": {ImportVar(tag="useContext")},
             },
         )
+        self._var_data = VarData.merge(self._var_data, new_var_data)
         self._var_full_name_needs_state_prefix = True
         return self
 
@@ -1394,9 +1366,6 @@ class BaseVar(Var):
     # The type of the var.
     _var_type: Type = dataclasses.field(default=Any)
 
-    # The name of the enclosing state.
-    _var_state: str = dataclasses.field(default="")
-
     # Whether this is a local javascript variable.
     _var_is_local: bool = dataclasses.field(default=False)
 
@@ -1406,11 +1375,8 @@ class BaseVar(Var):
     # _var_full_name should be prefixed with _var_state
     _var_full_name_needs_state_prefix: bool = dataclasses.field(default=False)
 
-    # Imports needed to render this var
-    _var_imports: dict[str, set[ImportVar]] = dataclasses.field(default_factory=dict)
-
-    # All substates that this var depends on
-    _var_hooks: set[str] = dataclasses.field(default_factory=set)
+    # Extra metadata associated with the Var
+    _var_data: Optional[VarData] = dataclasses.field(default=None)
 
     def __hash__(self) -> int:
         """Define a hash function for a var.
@@ -1473,9 +1439,11 @@ class BaseVar(Var):
             The name of the setter function.
         """
         setter = constants.SETTER_PREFIX + self._var_name
-        if not include_state or self._var_state == "":
+        if self._var_data is None:
             return setter
-        return ".".join((self._var_state, setter))
+        if not include_state or self._var_data.state == "":
+            return setter
+        return ".".join((self._var_data.state, setter))
 
     def get_setter(self) -> Callable[[State, Any], None]:
         """Get the var's setter function.

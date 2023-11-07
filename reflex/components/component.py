@@ -599,8 +599,7 @@ class Component(Base, ABC):
             yield BaseVar(
                 _var_name="style",
                 _var_type=str,
-                _var_imports=self.style._var_imports,
-                _var_hooks=self.style._var_hooks,
+                _var_data=self.style._var_data,
             )
 
     def _get_custom_code(self) -> str | None:
@@ -702,7 +701,9 @@ class Component(Base, ABC):
                 "react": {ImportVar(tag="useContext")},
             }
         # determine imports from Vars
-        var_imports = [var._var_imports for var in self._get_vars()]
+        var_imports = [
+            var._var_data.imports for var in self._get_vars() if var._var_data
+        ]
         return imports.merge_imports(
             self._get_props_imports(),
             self._get_dependencies_imports(),
@@ -762,10 +763,11 @@ class Component(Base, ABC):
         """
         vars_hooks = set()
         for var in self._get_vars():
-            vars_hooks.update(var._var_hooks)
+            if var._var_data:
+                vars_hooks.update(var._var_data.hooks)
         return vars_hooks
 
-    def _get_events_hooks(self) -> str[str]:
+    def _get_events_hooks(self) -> set[str]:
         """Get the hooks required by events referenced in this component.
 
         Returns:

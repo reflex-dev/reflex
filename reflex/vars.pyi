@@ -11,6 +11,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Set,
@@ -22,14 +23,23 @@ from typing import (
 USED_VARIABLES: Incomplete
 
 def get_unique_variable_name() -> str: ...
-def _decode_var_state(value: str) -> tuple[str, str]: ...
+def _encode_var(value: Var) -> str: ...
+def _decode_var(value: str) -> tuple[VarData, str]: ...
+def _extract_var_data(value: Iterable) -> VarData | None: ...
+
+class VarData(Base):
+    state: str
+    imports: dict[str, set[ImportVar]]
+    hooks: set[str]
+    @classmethod
+    def merge(cls, *others: VarData | None) -> VarData | None: ...
 
 class Var:
     _var_name: str
     _var_type: Type
-    _var_state: str = ""
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_data: VarData | None = None
     @classmethod
     def create(
         cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
@@ -95,9 +105,9 @@ class Var:
 class BaseVar(Var):
     _var_name: str
     _var_type: Any
-    _var_state: str = ""
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_data: VarData | None = None
     def __hash__(self) -> int: ...
     def get_default_value(self) -> Any: ...
     def get_setter_name(self, include_state: bool = ...) -> str: ...
