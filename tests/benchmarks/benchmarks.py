@@ -11,6 +11,7 @@ def get_lighthouse_scores(directory_path):
         # List all files in the given directory
         for filename in os.listdir(directory_path):
             # Check if the file is a JSON file
+            print("Parsing file: ", filename)
             if filename.endswith('.json'):
                 file_path = os.path.join(directory_path, filename)
                 with open(file_path, 'r') as file:
