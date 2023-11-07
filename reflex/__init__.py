@@ -4,6 +4,9 @@ Anything imported here will be available in the default Reflex import as `rx.*`.
 To signal to typecheckers that something should be reexported,
 we use the Flask "import name as name" syntax.
 """
+from typing import Type
+
+from reflex.utils.format import to_snake_case
 
 _ALL_COMPONENTS = [
     "Accordion",
@@ -38,19 +41,27 @@ _ALL_COMPONENTS = [
     "CardBody",
     "CardFooter",
     "CardHeader",
+    "Center",
     "Checkbox",
     "CheckboxGroup",
     "CircularProgress",
+    "CircularProgressLabel",
     "Circle",
     "CloseButton",
     "Code",
+    "CodeBlock",
     "Collapse",
     "CollapseButton",
     "CollapseIcon",
     "CollapsePanel",
     "ColorModeScript",
+    "Component",
+    "Cond",
     "Container",
     "ControlBox",
+    "DataTable",
+    "DataEditor",
+    "DebounceInput",
     "Divider",
     "Drawer",
     "DrawerBody",
@@ -62,7 +73,7 @@ _ALL_COMPONENTS = [
     "Editable",
     "EditableInput",
     "EditablePreview",
-    "EditableTextarea"
+    "EditableTextarea",
     "Editor",
     "Email",
     "Fade",
@@ -78,7 +89,7 @@ _ALL_COMPONENTS = [
     "GridItem",
     "Heading",
     "Highlight",
-    "HStack",
+    "Hstack",
     "Html",
     "Icon",
     "IconButton",
@@ -207,9 +218,19 @@ _ALL_COMPONENTS = [
     "Upload",
     "Video",
     "VisuallyHidden",
-    "VStack",
+    "Vstack",
     "Wrap",
     "WrapItem",
+]
+
+_ALL_COMPONENTS += [to_snake_case(component) for component in _ALL_COMPONENTS]
+_ALL_COMPONENTS += [
+    "desktop_only",
+    "mobile_only",
+    "tablet_only",
+    "mobile_and_tablet",
+    "tablet_and_desktop",
+    "EditorOptions",
 ]
 
 _MAPPING = {
@@ -223,10 +244,28 @@ _MAPPING = {
     "reflex.config": ["Config", "DBConfig"],
     "reflex.constants": ["constants", "Env"],
     "reflex.el": ["el"],
-    "reflex.event": ["EventChain", "FileUpload", "background", "call_script", "clear_local_storage", "console_log", "download", "prevent_default", "redirect", "remove_cookie", "remove_local_storage", "set_clipboard", "set_focus", "set_value", "stop_propagation", "window_alert"],
+    "reflex.event": [
+        "EventChain",
+        "FileUpload",
+        "background",
+        "call_script",
+        "clear_local_storage",
+        "console_log",
+        "download",
+        "prevent_default",
+        "redirect",
+        "remove_cookie",
+        "remove_local_storage",
+        "set_clipboard",
+        "set_focus",
+        "set_value",
+        "stop_propagation",
+        "window_alert",
+    ],
     "reflex.middleware": ["Middleware"],
     "reflex.model": ["model", "session", "Model"],
     "reflex.page": ["page"],
+    "reflex.components.graphing.recharts": ["recharts"],
     "reflex.state": ["var", "Cookie", "LocalStorage", "State"],
     "reflex.style": ["color_mode", "toggle_color_mode"],
     "reflex.vars": ["cached_var", "Var"],
@@ -234,11 +273,18 @@ _MAPPING = {
 _MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
 
 
+def __getattr__(name: str) -> Type:
+    """Lazy load all modules.
 
-def __getattr__(name):
-    """Lazy load all modules."""
+    Args:
+        name: name of the module to load.
+
+    Returns:
+        The module.
+    """
     # Import the module.
     import importlib
+
     module = importlib.import_module(_MAPPING[name])
 
     # Get the attribute from the module if the name is not the module itself.

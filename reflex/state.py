@@ -46,6 +46,7 @@ from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
 from reflex.vars import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
+var = ComputedVar
 
 
 class HeaderData(Base):
