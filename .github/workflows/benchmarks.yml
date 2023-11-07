@@ -1,4 +1,4 @@
-name: lighthouse-tests
+name: benchmarking
 
 on:
   push:
@@ -62,8 +62,12 @@ jobs:
         run: |
           # Check that npm is home
           npm -v
-          poetry run bash scripts/lighthouse.sh ./reflex-web prod
+          poetry run bash tests/benchmarks/benchmarks.sh ./reflex-web prod
         env:
             LHCI_GITHUB_APP_TOKEN: $
-            POSTHOG: $
-        
+      - name: Run Benchmarks
+        run: 
+          poetry run python tests/benchmarks/benchmarks.py "$GITHUB_SHA" ./reflex-web/.lightouseci
+        env:
+            GITHUB_SHA: ${{ github.sha }}
+            DATABASE_URL: $
