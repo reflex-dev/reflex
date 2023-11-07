@@ -5,22 +5,27 @@ from typing import Optional
 
 from reflex.components.base.bare import Bare
 from reflex.components.component import Component
-from reflex.components.layout import Box, Cond
+from reflex.components.layout import Box, cond
 from reflex.components.overlay.modal import Modal
 from reflex.components.typography import Text
+from reflex.constants import Hooks, Imports
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var, VarData
+
+connect_error_var_data = VarData(
+    imports=Imports.EVENTS,
+    hooks={Hooks.EVENTS},
+)
 
 connection_error: Var = Var.create_safe(
     value="(connectError !== null) ? connectError.message : ''",
     _var_is_local=False,
     _var_is_string=False,
-)
+)._replace(merge_var_data=connect_error_var_data)
 has_connection_error: Var = Var.create_safe(
     value="connectError !== null",
     _var_is_string=False,
-)
-has_connection_error._var_type = bool
+)._replace(_var_type=bool, merge_var_data=connect_error_var_data)
 
 
 class WebsocketTargetURL(Bare):
@@ -28,7 +33,7 @@ class WebsocketTargetURL(Bare):
 
     def _get_imports(self) -> imports.ImportDict:
         return {
-            "/utils/state.js": {ImportVar(tag="getEventURL")},
+            "/utils/state.js": {imports.ImportVar(tag="getEventURL")},
         }
 
     @classmethod
@@ -78,7 +83,7 @@ class ConnectionBanner(Component):
                 textAlign="center",
             )
 
-        return Cond.create(has_connection_error, comp)
+        return cond(has_connection_error, comp)
 
 
 class ConnectionModal(Component):
@@ -96,7 +101,7 @@ class ConnectionModal(Component):
         """
         if not comp:
             comp = Text.create(*default_connection_error())
-        return Cond.create(
+        return cond(
             has_connection_error,
             Modal.create(
                 header="Connection Error",

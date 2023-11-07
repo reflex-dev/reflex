@@ -100,22 +100,6 @@ export const applyDelta = (state, delta) => {
 
 
 /**
- * Get all local storage items in a key-value object.
- * @returns object of items in local storage.
- */
-export const getAllLocalStorageItems = () => {
-  var localStorageItems = {};
-
-  for (var i = 0, len = localStorage.length; i < len; i++) {
-    var key = localStorage.key(i);
-    localStorageItems[key] = localStorage.getItem(key);
-  }
-
-  return localStorageItems;
-}
-
-
-/**
  * Handle frontend event or send the event to the backend via Websocket.
  * @param event The event to send.
  * @param socket The socket object to send the event on.

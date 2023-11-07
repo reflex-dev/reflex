@@ -8,15 +8,6 @@
 
 {% block export %}
 export default function Component() {
-  const focusRef = useRef();
-
-  // Set focus to the specified element.
-  useEffect(() => {
-    if (focusRef.current) {
-      focusRef.current.focus();
-    }
-  })
-
   {% for hook in hooks %}
   {{ hook }}
   {% endfor %}

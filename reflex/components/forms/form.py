@@ -5,8 +5,9 @@ from typing import Any, Callable, Dict, List
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
-from reflex.constants import EventTriggers
+from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain, EventHandler, EventSpec
+from reflex.utils import imports
 from reflex.vars import Var
 
 
@@ -65,6 +66,17 @@ class Form(ChakraComponent):
             **super().get_event_triggers(),
             EventTriggers.ON_SUBMIT: lambda e0: [form_refs],
         }
+
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            {
+                f"/{Dirs.STATE_PATH}": {
+                    imports.ImportVar(tag="getRefValue"),
+                    imports.ImportVar(tag="getRefValues"),
+                },
+            },
+        )
 
 
 class FormControl(ChakraComponent):

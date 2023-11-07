@@ -5,7 +5,7 @@ from typing import List, Literal
 
 from reflex.components.component import Component
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 
 class ChakraComponent(Component):
@@ -57,17 +57,17 @@ class ChakraProvider(ChakraComponent):
         )
 
     def _get_imports(self) -> imports.ImportDict:
-        imports = super()._get_imports()
-        imports.setdefault(self.__fields__["library"].default, set()).add(
-            ImportVar(tag="extendTheme", is_default=False),
+        _imports = super()._get_imports()
+        _imports.setdefault(self.__fields__["library"].default, set()).add(
+            imports.ImportVar(tag="extendTheme", is_default=False),
         )
-        imports.setdefault("/utils/theme.js", set()).add(
-            ImportVar(tag="theme", is_default=True),
+        _imports.setdefault("/utils/theme.js", set()).add(
+            imports.ImportVar(tag="theme", is_default=True),
         )
-        imports.setdefault(Global.__fields__["library"].default, set()).add(
-            ImportVar(tag="css", is_default=False),
+        _imports.setdefault(Global.__fields__["library"].default, set()).add(
+            imports.ImportVar(tag="css", is_default=False),
         )
-        return imports
+        return _imports
 
     def _get_custom_code(self) -> str | None:
         return """

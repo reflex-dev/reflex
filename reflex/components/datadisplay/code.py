@@ -10,7 +10,7 @@ from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 # Path to the prism styles.
 PRISM_STYLES_PATH: str = "/styles/code/prism"
@@ -49,7 +49,7 @@ class CodeBlock(Component):
         if self.theme is not None:
             merged_imports = imports.merge_imports(
                 merged_imports,
-                {PRISM_STYLES_PATH: {ImportVar(tag=self.theme._var_name)}},
+                {PRISM_STYLES_PATH: {imports.ImportVar(tag=self.theme._var_name)}},
             )
         return merged_imports
 

@@ -8,7 +8,7 @@ from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.utils import imports, types
 from reflex.utils.serializers import serialize, serializer
-from reflex.vars import BaseVar, ComputedVar, ImportVar, Var
+from reflex.vars import BaseVar, ComputedVar, Var
 
 
 class Gridjs(Component):
@@ -105,7 +105,7 @@ class DataTable(Gridjs):
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
-            {"": {ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
+            {"": {imports.ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
         )
 
     def _render(self) -> Tag:

@@ -6,8 +6,9 @@ from typing import Any, Dict, Optional
 from reflex.components.component import Component
 from reflex.components.layout.fragment import Fragment
 from reflex.components.tags import CondTag, Tag
-from reflex.utils import format
-from reflex.vars import Var
+from reflex.constants import Dirs
+from reflex.utils import format, imports
+from reflex.vars import Var, VarData
 
 
 class Cond(Component):
@@ -80,6 +81,12 @@ class Cond(Component):
             cond_state=f"isTrue({self.cond._var_full_name})",
         )
 
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            getattr(self.cond._var_data, "imports", {}),
+        )
+
 
 def cond(condition: Any, c1: Any, c2: Any = None):
     """Create a conditional component or Prop.
@@ -101,6 +108,15 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     # Convert the condition to a Var.
     cond_var = Var.create(condition)
     assert cond_var is not None, "The condition must be set."
+    cond_var = cond_var._replace(
+        merge_var_data=VarData(
+            imports={
+                f"/{Dirs.STATE_PATH}": {
+                    imports.ImportVar(tag="isTrue"),
+                },
+            },
+        ),
+    )
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, Component):
@@ -109,7 +125,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
 
-    # Otherwise, create a conditionl Var.
+    # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
     if isinstance(c2, Component):
         raise ValueError("Both arguments must be props.")

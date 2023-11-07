@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Optional, Union
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
-from reflex.constants import EventTriggers
+from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain
+from reflex.utils import imports
 from reflex.vars import BaseVar, Var
 
 files_state: str = "const [files, setFiles] = useState([]);"
@@ -114,3 +115,14 @@ class Upload(Component):
 
     def _get_hooks(self) -> str | None:
         return (super()._get_hooks() or "") + files_state
+
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            {
+                "react": {imports.ImportVar(tag="useState")},
+                f"/{Dirs.STATE_PATH}": {
+                    imports.ImportVar(tag="uploadFiles"),
+                },
+            },
+        )

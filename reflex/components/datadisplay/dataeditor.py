@@ -8,8 +8,9 @@ from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
 from reflex.utils import console, format, imports, types
+from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
-from reflex.vars import ImportVar, Var, get_unique_variable_name
+from reflex.vars import Var, get_unique_variable_name
 
 
 # TODO: Fix the serialization issue for custom types.

@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, Set
+from typing import Dict, Optional, Set
 
-from reflex.vars import ImportVar
-
-ImportDict = Dict[str, Set[ImportVar]]
+from reflex.base import Base
 
 
 def merge_imports(*imports) -> ImportDict:
@@ -25,3 +23,48 @@ def merge_imports(*imports) -> ImportDict:
             for field in fields:
                 all_imports[lib].add(field)
     return all_imports
+
+
+class ImportVar(Base):
+    """An import var."""
+
+    # The name of the import tag.
+    tag: Optional[str]
+
+    # whether the import is default or named.
+    is_default: Optional[bool] = False
+
+    # The tag alias.
+    alias: Optional[str] = None
+
+    # Whether this import need to install the associated lib
+    install: Optional[bool] = True
+
+    # whether this import should be rendered or not
+    render: Optional[bool] = True
+
+    @property
+    def name(self) -> str:
+        """The name of the import.
+
+        Returns:
+            The name(tag name with alias) of tag.
+        """
+        return self.tag if not self.alias else " as ".join([self.tag, self.alias])  # type: ignore
+
+    def __hash__(self) -> int:
+        """Define a hash function for the import var.
+
+        Returns:
+            The hash of the var.
+        """
+        return hash((self.tag, self.is_default, self.alias, self.install, self.render))
+
+
+class NoRenderImportVar(ImportVar):
+    """A import that doesn't need to be rendered."""
+
+    render: Optional[bool] = False
+
+
+ImportDict = Dict[str, Set[ImportVar]]

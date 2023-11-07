@@ -24,13 +24,12 @@ from reflex.components.component import Component, ComponentStyle, CustomCompone
 from reflex.state import Cookie, LocalStorage, State
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
-from reflex.vars import ImportVar
 
 # To re-export this function.
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(fields: set[ImportVar]) -> tuple[str, set[str]]:
+def compile_import_statement(fields: set[imports.ImportVar]) -> tuple[str, set[str]]:
     """Compile an import statement.
 
     Args:

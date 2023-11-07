@@ -31,7 +31,7 @@ from typing import (
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console, format, serializers, types
+from reflex.utils import console, format, imports, serializers, types
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -95,11 +95,13 @@ def get_unique_variable_name() -> str:
 
 
 class VarData(Base):
+    """Metadata associated with a Var."""
+
     # The name of the enclosing state.
     state: str = ""
 
     # Imports needed to render this var
-    imports: dict[str, set[ImportVar]] = {}
+    imports: dict[str, set[imports.ImportVar]] = {}
 
     # Hooks that need to be present in the component to render this var
     hooks: set[str] = set()
@@ -135,6 +137,11 @@ class VarData(Base):
         )
 
     def __bool__(self) -> bool:
+        """Check if the var data is non-empty.
+
+        Returns:
+            True if any field is set to a non-default value.
+        """
         return bool(self.state or self.imports or self.hooks)
 
     def dict(self) -> dict:
@@ -435,7 +442,7 @@ class Var:
         Returns:
             The formatted var.
         """
-        # Encode the _var_imports and _var_hooks into the formatted output for tracking purposes.
+        # Encode the _var_data into the formatted output for tracking purposes.
         str_self = _encode_var(self)
         if self._var_is_local:
             return str_self
@@ -836,7 +843,17 @@ class Var:
             types.get_base_class(self._var_type) == list
             and types.get_base_class(other_type) == list
         ):
-            return self.operation(",", other, fn="spreadArraysOrObjects", flip=flip)
+            return self.operation(
+                ",", other, fn="spreadArraysOrObjects", flip=flip
+            )._replace(
+                merge_var_data=VarData(
+                    imports={
+                        f"/{constants.Dirs.STATE_PATH}": {
+                            imports.ImportVar(tag="spreadArraysOrObjects")
+                        }
+                    },
+                ),
+            )
         return self.operation("+", other, flip=flip)
 
     def __radd__(self, other: Var) -> Var:
@@ -1344,8 +1361,10 @@ class Var:
                 )
             },
             imports={
-                f"/{constants.Dirs.CONTEXTS_PATH}": {ImportVar(tag="StateContexts")},
-                "react": {ImportVar(tag="useContext")},
+                f"/{constants.Dirs.CONTEXTS_PATH}": {
+                    imports.ImportVar(tag="StateContexts")
+                },
+                "react": {imports.ImportVar(tag="useContext")},
             },
         )
         self._var_data = VarData.merge(self._var_data, new_var_data)
@@ -1655,45 +1674,3 @@ def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
     cvar = ComputedVar(fget=fget)
     cvar._cache = True
     return cvar
-
-
-class ImportVar(Base):
-    """An import var."""
-
-    # The name of the import tag.
-    tag: Optional[str]
-
-    # whether the import is default or named.
-    is_default: Optional[bool] = False
-
-    # The tag alias.
-    alias: Optional[str] = None
-
-    # Whether this import need to install the associated lib
-    install: Optional[bool] = True
-
-    # whether this import should be rendered or not
-    render: Optional[bool] = True
-
-    @property
-    def name(self) -> str:
-        """The name of the import.
-
-        Returns:
-            The name(tag name with alias) of tag.
-        """
-        return self.tag if not self.alias else " as ".join([self.tag, self.alias])  # type: ignore
-
-    def __hash__(self) -> int:
-        """Define a hash function for the import var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((self.tag, self.is_default, self.alias, self.install, self.render))
-
-
-class NoRenderImportVar(ImportVar):
-    """A import that doesn't need to be rendered."""
-
-    render: Optional[bool] = False

@@ -11,7 +11,7 @@ from reflex.components.libs.chakra import (
 )
 from reflex.constants import EventTriggers
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 
 class Input(ChakraComponent):
@@ -58,7 +58,7 @@ class Input(ChakraComponent):
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
-            {"/utils/state": {ImportVar(tag="set_val")}},
+            {"/utils/state": {imports.ImportVar(tag="set_val")}},
         )
 
     def get_event_triggers(self) -> Dict[str, Any]:

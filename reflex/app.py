@@ -59,7 +59,7 @@ from reflex.state import (
     StateUpdate,
 )
 from reflex.utils import console, format, prerequisites, types
-from reflex.vars import ImportVar
+from reflex.utils.imports import ImportVar
 
 # Define custom types.
 ComponentCallable = Callable[[], Component]

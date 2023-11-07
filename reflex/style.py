@@ -7,7 +7,8 @@ from typing import Any
 from reflex import constants
 from reflex.event import EventChain
 from reflex.utils import format
-from reflex.vars import BaseVar, ImportVar, Var, VarData
+from reflex.utils.imports import ImportVar
+from reflex.vars import BaseVar, Var, VarData
 
 VarData.update_forward_refs()
 color_mode_var_data = VarData(
@@ -70,6 +71,7 @@ class Style(dict):
 
         Args:
             style_dict: The style dictionary.
+            kwargs: Other key value pairs to apply to the dict update.
         """
         if kwargs:
             style_dict = {**style_dict, **kwargs}

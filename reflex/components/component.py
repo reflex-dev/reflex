@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Type, Uni
 
 from reflex.base import Base
 from reflex.components.tags import Tag
-from reflex.constants import Dirs, EventTriggers
+from reflex.constants import Dirs, EventTriggers, Hooks, Imports
 from reflex.event import (
     EventChain,
     EventHandler,
@@ -20,8 +20,9 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import console, format, imports, types
+from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
-from reflex.vars import BaseVar, ImportVar, Var
+from reflex.vars import BaseVar, Var
 
 
 class Component(Base, ABC):
@@ -684,6 +685,23 @@ class Component(Base, ABC):
             {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
         )
 
+    def _get_hooks_imports(self) -> imports.ImportDict:
+        """Get the imports required by certain hooks."""
+        _imports = {}
+        if self._get_ref_hook():
+            _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
+            _imports.setdefault(f"/{Dirs.STATE_PATH}", set()).add(ImportVar(tag="refs"))
+        if self._get_mount_lifecycle_hook():
+            _imports.setdefault("react", set()).add(ImportVar(tag="useEffect"))
+        if self._get_special_hooks():
+            _imports.setdefault("react", set()).update(
+                {
+                    ImportVar(tag="useRef"),
+                    ImportVar(tag="useEffect"),
+                },
+            )
+        return _imports
+
     def _get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
@@ -693,13 +711,7 @@ class Component(Base, ABC):
         _imports = {}
         if self.library is not None and self.tag is not None:
             _imports[self.library] = {self.import_var}
-        event_imports = {}
-        if self.event_triggers:
-            event_imports = {
-                f"/{Dirs.CONTEXTS_PATH}": {ImportVar(tag="EventLoopContext")},
-                f"/{Dirs.STATE_PATH}": {ImportVar(tag="Event")},
-                "react": {ImportVar(tag="useContext")},
-            }
+        event_imports = Imports.EVENTS if self.event_triggers else {}
         # determine imports from Vars
         var_imports = [
             var._var_data.imports for var in self._get_vars() if var._var_data
@@ -707,6 +719,7 @@ class Component(Base, ABC):
         return imports.merge_imports(
             self._get_props_imports(),
             self._get_dependencies_imports(),
+            self._get_hooks_imports(),
             _imports,
             event_imports,
             *var_imports,
@@ -773,9 +786,27 @@ class Component(Base, ABC):
         Returns:
             The hooks for the events.
         """
-        # TODO: use constants here for better indirection
         if self.event_triggers:
-            return {"const [addEvents, connectError] = useContext(EventLoopContext);"}
+            return {Hooks.EVENTS}
+        return set()
+
+    def _get_special_hooks(self) -> set[str]:
+        """Get the hooks required by special actions referenced in this component.
+
+        Returns:
+            The hooks for special actions.
+        """
+        if self.autofocus:
+            return {
+                """
+                // Set focus to the specified element.
+                const focusRef = useRef(null)
+                useEffect(() => {
+                  if (focusRef.current) {
+                    focusRef.current.focus();
+                  }
+                })""",
+            }
         return set()
 
     def _get_hooks_internal(self) -> Set[str]:
@@ -795,6 +826,7 @@ class Component(Base, ABC):
             )
             .union(self._get_vars_hooks())
             .union(self._get_events_hooks())
+            .union(self._get_special_hooks())
         )
 
     def _get_hooks(self) -> str | None:
@@ -1093,10 +1125,11 @@ class NoSSRComponent(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         dynamic_import = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
-
+        _imports = super()._get_imports()
+        _imports[self.library] = {ImportVar(tag=None, render=False)}
         return imports.merge_imports(
             dynamic_import,
-            {self.library: {ImportVar(tag=None, render=False)}},
+            _imports,
             self._get_dependencies_imports(),
         )
 
