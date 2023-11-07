@@ -106,7 +106,7 @@ class PackageJson(SimpleNamespace):
         "focus-visible": "5.2.0",
         "framer-motion": "10.16.4",
         "json5": "2.2.3",
-        "next": "13.5.4",
+        "next": "14.0.1",
         "next-sitemap": "4.1.8",
         "next-themes": "0.2.0",
         "react": "18.2.0",
