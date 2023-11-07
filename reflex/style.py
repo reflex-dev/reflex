@@ -46,10 +46,12 @@ def convert(style_dict):
         key = format.to_camel_case(key)
         if isinstance(value, dict):
             out[key], new_var_data = convert(value)
+        elif isinstance(value, Var):
+            new_var_data = value._var_data
+            out[key] = str(value)
         else:
-            new_var = Var.create(value, _var_is_string=True)
-            out[key] = str(new_var)
-            new_var_data = new_var._var_data
+            new_var_data = Var.create(value)._var_data
+            out[key] = value
         var_data = VarData.merge(var_data, new_var_data)
     return out, var_data
 
