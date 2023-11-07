@@ -71,8 +71,3 @@ EOF
 # Install and Run LHCI
 npm install -g @lhci/cli
 lhci autorun || echo "LHCI failed!"
-
-# Directory containing JSON files
-JSON_DIR=".lighthouseci"
-
-python benchmarks.py "$GITHUB_SHA" "$JSON_DIR"

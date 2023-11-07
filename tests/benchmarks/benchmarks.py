@@ -74,6 +74,8 @@ def main():
     commit_sha = sys.argv[1]
     json_dir = sys.argv[2]
 
+    print("Running benchmarks...")
+    
     results = run_pytest_and_get_results()
     cleaned_results = extract_stats_from_json(results)
 
