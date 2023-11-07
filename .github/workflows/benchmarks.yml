@@ -68,7 +68,7 @@ jobs:
       - name: Run Benchmarks
         working-directory: ./tests/benchmarks
         run: 
-          poetry run python benchmarks.py "$GITHUB_SHA" ../../reflex-web/.lightouseci
+          poetry run python benchmarks.py "$GITHUB_SHA" ../../reflex-web/.lighthouseci
         env:
             GITHUB_SHA: ${{ github.sha }}
             DATABASE_URL: $
