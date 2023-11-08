@@ -96,7 +96,7 @@ class PackageJson(SimpleNamespace):
 
         DEV = "next dev"
         EXPORT = "next build"
-        EXPORT_SITEMAP = "next build && next-sitemap"
+        EXPORT_SITEMAP = "next-sitemap && next build"
         PROD = "next start"
 
     PATH = os.path.join(Dirs.WEB, "package.json")
