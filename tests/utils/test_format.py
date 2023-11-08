@@ -8,7 +8,13 @@ from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
-from tests.test_state import ChildState, ChildState2, DateTimeState, GrandchildState, TestState
+from tests.test_state import (
+    ChildState,
+    ChildState2,
+    DateTimeState,
+    GrandchildState,
+    TestState,
+)
 
 
 def mock_event(arg):

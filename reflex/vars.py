@@ -19,6 +19,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Set,
     Tuple,
     Type,
     Union,
@@ -101,10 +102,10 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: dict[str, set[imports.ImportVar]] = {}
+    imports: Dict[str, Set[imports.ImportVar]] = {}
 
     # Hooks that need to be present in the component to render this var
-    hooks: set[str] = set()
+    hooks: Set[str] = set()
 
     @classmethod
     def merge(cls, *others: VarData | None) -> VarData | None:
@@ -174,7 +175,7 @@ def _encode_var(value: Var) -> str:
     return str(value)
 
 
-def _decode_var(value: str) -> tuple[VarData, str]:
+def _decode_var(value: str) -> tuple[VarData | None, str]:
     """Decode the state name from a formatted var.
 
     Args:
@@ -207,13 +208,15 @@ def _extract_var_data(value: Iterable) -> VarData | None:
             if isinstance(sub, Var):
                 var_data = VarData.merge(var_data, sub._var_data)
             elif not isinstance(sub, str):
-                # Recurse into dict values
+                # Recurse into dict values.
                 if hasattr(sub, "values") and callable(sub.values):
                     var_data = VarData.merge(var_data, _extract_var_data(sub.values()))
-                # Recurse into iterable values (or dict keys)
+                # Recurse into iterable values (or dict keys).
                 var_data = VarData.merge(var_data, _extract_var_data(sub))
-    if hasattr(value, "values") and callable(value.values):
-        var_data = VarData.merge(var_data, _extract_var_data(value.values()))
+    # Recurse when value is a dict itself.
+    values = getattr(value, "values", None)
+    if callable(values):
+        var_data = VarData.merge(var_data, _extract_var_data(values()))
     return var_data
 
 
@@ -1339,7 +1342,7 @@ class Var:
             return self._var_name
         return (
             self._var_name
-            if self._var_data.state == ""
+            if self._var_data is None or self._var_data.state == ""
             else ".".join(
                 [format.format_state_name(self._var_data.state), self._var_name]
             )

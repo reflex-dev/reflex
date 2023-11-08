@@ -6,6 +6,7 @@ from reflex import constants as constants
 from reflex.base import Base as Base
 from reflex.state import State as State
 from reflex.utils import console as console, format as format, types as types
+from reflex.utils.imports import ImportVar
 from types import FunctionType
 from typing import (
     Any,
@@ -39,6 +40,7 @@ class Var:
     _var_type: Type
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_full_name_needs_state_prefix: bool = False
     _var_data: VarData | None = None
     @classmethod
     def create(
@@ -108,6 +110,7 @@ class BaseVar(Var):
     _var_type: Any
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_full_name_needs_state_prefix: bool = False
     _var_data: VarData | None = None
     def __hash__(self) -> int: ...
     def get_default_value(self) -> Any: ...

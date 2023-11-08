@@ -1,7 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, overload
 
 from reflex.components.component import Component
 from reflex.components.layout.fragment import Fragment
@@ -88,6 +88,21 @@ class Cond(Component):
         )
 
 
+@overload
+def cond(condition: Any, c1: Component, c2: Any) -> Component:
+    ...
+
+
+@overload
+def cond(condition: Any, c1: Component) -> Component:
+    ...
+
+
+@overload
+def cond(condition: Any, c1: Any, c2: Any) -> Var:
+    ...
+
+
 def cond(condition: Any, c1: Any, c2: Any = None):
     """Create a conditional component or Prop.
 
@@ -109,7 +124,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     cond_var = Var.create(condition)
     assert cond_var is not None, "The condition must be set."
     cond_var = cond_var._replace(
-        merge_var_data=VarData(
+        merge_var_data=VarData(  # type: ignore
             imports={
                 f"/{Dirs.STATE_PATH}": {
                     imports.ImportVar(tag="isTrue"),

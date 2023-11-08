@@ -11,7 +11,7 @@ from reflex.utils.imports import ImportVar
 from reflex.vars import BaseVar, Var, VarData
 
 VarData.update_forward_refs()
-color_mode_var_data = VarData(
+color_mode_var_data = VarData(  # type: ignore
     imports={
         f"/{constants.Dirs.CONTEXTS_PATH}": {ImportVar(tag="ColorModeContext")},
     },
@@ -44,13 +44,16 @@ def convert(style_dict):
     out = {}
     for key, value in style_dict.items():
         key = format.to_camel_case(key)
+        new_var_data = None
         if isinstance(value, dict):
             out[key], new_var_data = convert(value)
         elif isinstance(value, Var):
             new_var_data = value._var_data
             out[key] = str(value)
         else:
-            new_var_data = Var.create(value)._var_data
+            new_var = Var.create(value)
+            if new_var is not None:
+                new_var_data = new_var._var_data
             out[key] = value
         var_data = VarData.merge(var_data, new_var_data)
     return out, var_data
@@ -76,7 +79,7 @@ class Style(dict):
             kwargs: Other key value pairs to apply to the dict update.
         """
         if kwargs:
-            style_dict = {**style_dict, **kwargs}
+            style_dict = {**(style_dict or {}), **kwargs}
         converted_dict = type(self)(style_dict)
         self._var_data = VarData.merge(self._var_data, converted_dict._var_data)
         super().update(converted_dict)
@@ -89,5 +92,6 @@ class Style(dict):
             value: The value to set.
         """
         _var = Var.create(value)
-        self._var_data = VarData.merge(self._var_data, _var._var_data)
+        if _var is not None:
+            self._var_data = VarData.merge(self._var_data, _var._var_data)
         super().__setitem__(key, value)

@@ -561,7 +561,7 @@ class Component(Base, ABC):
     @staticmethod
     def _get_vars_from_event_triggers(
         event_triggers: dict[str, EventChain | Var],
-    ) -> Iterator[str, list[Var]]:
+    ) -> Iterator[tuple[str, list[Var]]]:
         """Get the Vars associated with each event trigger.
 
         Args:
@@ -592,8 +592,10 @@ class Component(Base, ABC):
             if isinstance(self.contents, Var):
                 yield self.contents
         else:
-            for _, vars in self._get_vars_from_event_triggers(self.event_triggers):
-                yield from vars
+            for _, event_vars in self._get_vars_from_event_triggers(
+                self.event_triggers
+            ):
+                yield from event_vars
 
             for prop in self.get_props():
                 prop_var = getattr(self, prop)
@@ -690,7 +692,11 @@ class Component(Base, ABC):
         )
 
     def _get_hooks_imports(self) -> imports.ImportDict:
-        """Get the imports required by certain hooks."""
+        """Get the imports required by certain hooks.
+
+        Returns:
+            The imports required for all selected hooks.
+        """
         _imports = {}
         if self._get_ref_hook():
             _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
@@ -1130,7 +1136,8 @@ class NoSSRComponent(Component):
     def _get_imports(self) -> imports.ImportDict:
         dynamic_import = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
         _imports = super()._get_imports()
-        _imports[self.library] = {ImportVar(tag=None, render=False)}
+        if self.library is not None:
+            _imports[self.library] = {ImportVar(tag=None, render=False)}
         return imports.merge_imports(
             dynamic_import,
             _imports,
