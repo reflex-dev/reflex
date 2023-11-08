@@ -242,7 +242,6 @@ def output_system_info():
     ]
 
     system = platform.system()
-    console.debug(f"system uname: {platform.uname()}")
     if system == "Windows" or not prerequisites.is_valid_linux():
         dependencies.extend(
             [
