@@ -2,9 +2,32 @@
 from __future__ import annotations
 
 import os
+import platform
 from types import SimpleNamespace
 
 from .base import IS_WINDOWS, Dirs, Reflex
+
+
+def get_fnm_name() -> str | None:
+    """Get the appropriate fnm executable name based on the current platform.
+
+    Returns:
+            The fnm executable name for the current platform.
+    """
+    platform_os = platform.system()
+
+    if platform_os == "Windows":
+        return "fnm-windows"
+    elif platform_os == "Darwin":
+        return "fnm-macos"
+    elif platform_os == "Linux":
+        machine = platform.machine()
+        if machine == "arm" or machine.startswith("armv7"):
+            return "fnm-arm32"
+        elif machine.startswith("aarch") or machine.startswith("armv8"):
+            return "fnm-arm64"
+        return "fnm-linux"
+    return None
 
 
 # Bun config.
@@ -31,9 +54,9 @@ class Fnm(SimpleNamespace):
     VERSION = "1.35.1"
     # The directory to store fnm.
     DIR = os.path.join(Reflex.DIR, "fnm")
-    FILENAME = "fnm-windows"
+    FILENAME = get_fnm_name()
     # The fnm executable binary.
-    EXE = os.path.join(DIR, "fnm.exe")
+    EXE = os.path.join(DIR, "fnm.exe" if IS_WINDOWS else "fnm")
 
     # The URL to the fnm release binary
     INSTALL_URL = (

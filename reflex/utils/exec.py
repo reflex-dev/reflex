@@ -250,7 +250,7 @@ def output_system_info():
     else:
         print("Not running inside WSL")
     print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    if system != "Windows":
+    if system != "Windows" or not prerequisites.is_valid_linux():
         dependencies.append(
             f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
         )

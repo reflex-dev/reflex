@@ -6,8 +6,10 @@ import glob
 import importlib
 import json
 import os
+import platform
 import random
 import re
+import stat
 import sys
 import tempfile
 import zipfile
@@ -402,24 +404,39 @@ def download_and_extract_fnm_zip():
 
 
 def install_node():
-    """Install fnm and nodejs for use by Reflex on windows."""
-    if not constants.IS_WINDOWS:
+    """Install fnm and nodejs for use by Reflex."""
+    if not constants.IS_WINDOWS or not is_valid_linux():
         return
 
     path_ops.mkdir(constants.Fnm.DIR)
     if not os.path.exists(constants.Fnm.EXE):
         download_and_extract_fnm_zip()
 
-    # Install node
-    fnm_exe = Path(constants.Fnm.EXE).resolve()
-    fnm_dir = Path(constants.Fnm.DIR).resolve()
-    process = processes.new_process(
-        [
-            "powershell",
-            "-Command",
-            f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
-        ],
-    )
+    if constants.IS_WINDOWS:
+        # Install node
+        fnm_exe = Path(constants.Fnm.EXE).resolve()
+        fnm_dir = Path(constants.Fnm.DIR).resolve()
+        process = processes.new_process(
+            [
+                "powershell",
+                "-Command",
+                f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
+            ],
+        )
+    else:  # All other platforms (Linux, MacOS).
+        # TODO we can skip installation if check_node_version() checks out
+        # Add execute permissions to fnm executable.
+        os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
+        # Install node.
+        process = processes.new_process(
+            [
+                constants.Fnm.EXE,
+                "install",
+                constants.Node.VERSION,
+                "--fnm-dir",
+                constants.Fnm.DIR,
+            ],
+        )
     processes.show_status("Installing node", process)
 
 
@@ -606,13 +623,20 @@ def validate_frontend_dependencies():
     # Bun only supports linux and Mac. For Non-linux-or-mac, we use node.
     validate_bun() if constants.IS_LINUX_OR_MAC else validate_node()
 
+def is_valid_linux()-> bool:
+
+    kernel = platform.release()
+    kv = version.parse(kernel.split("-")[0])
+    print(f"------------kv: {kv}")
+    return True if platform.system() == "Linux" and kv.major >= 5 and kv.minor >= 10 else False
+
 
 def initialize_frontend_dependencies():
     """Initialize all the frontend dependencies."""
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
     # Install the frontend dependencies.
-    install_node() if constants.IS_WINDOWS else install_bun()
+    install_node() if constants.IS_WINDOWS or not is_valid_linux() else install_bun()
     # Set up the web directory.
     initialize_web_directory()
     # remove existing fnm dir on linux and mac
