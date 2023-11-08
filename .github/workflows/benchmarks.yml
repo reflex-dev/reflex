@@ -71,4 +71,4 @@ jobs:
           poetry run python benchmarks.py "$GITHUB_SHA" .lighthouseci
         env:
             GITHUB_SHA: ${{ github.sha }}
-            DATABASE_URL: $
+            DATABASE_URL: ${{ secrets.DATABASE_URL }}
