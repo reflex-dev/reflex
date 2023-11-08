@@ -72,3 +72,4 @@ jobs:
         env:
             GITHUB_SHA: ${{ github.sha }}
             DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            PR_TITLE: ${{ github.event.pull_request.title }}

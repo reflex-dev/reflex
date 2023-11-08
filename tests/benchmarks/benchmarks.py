@@ -1,38 +1,45 @@
 import json
 import os
+import sys
+
 import pytest
 from helpers import insert_benchmarking_data
-import sys
+
 
 def get_lighthouse_scores(directory_path):
     scores = {}
-    
+
     try:
         for filename in os.listdir(directory_path):
-            if filename.endswith('.json') and filename != 'manifest.json':
+            if filename.endswith(".json") and filename != "manifest.json":
                 file_path = os.path.join(directory_path, filename)
-                with open(file_path, 'r') as file:
+                with open(file_path, "r") as file:
                     data = json.load(file)
                     # Extract scores and add them to the dictionary with the filename as key
                     scores[data["finalUrl"].replace("http://localhost:3000/", "")] = {
                         "performance_score": data["categories"]["performance"]["score"],
-                        "accessibility_score": data["categories"]["accessibility"]["score"],
-                        "best_practices_score": data["categories"]["best-practices"]["score"],
+                        "accessibility_score": data["categories"]["accessibility"][
+                            "score"
+                        ],
+                        "best_practices_score": data["categories"]["best-practices"][
+                            "score"
+                        ],
                         "seo_score": data["categories"]["seo"]["score"],
-                        "pwa_score": data["categories"]["pwa"]["score"]
+                        "pwa_score": data["categories"]["pwa"]["score"],
                     }
     except Exception as e:
         print(e)
         return {"error": "Error parsing JSON files"}
-    
+
     return scores
+
 
 def run_pytest_and_get_results(test_path=None):
     # Set the default path to the current directory if no path is provided
     if not test_path:
         test_path = os.getcwd()
     # Ensure you have installed the pytest-json plugin before running this
-    pytest_args = ['-v', '--benchmark-json=benchmark_report.json', test_path]
+    pytest_args = ["-v", "--benchmark-json=benchmark_report.json", test_path]
 
     # Run pytest with the specified arguments
     pytest.main(pytest_args)
@@ -40,55 +47,65 @@ def run_pytest_and_get_results(test_path=None):
     # Print ls of the current directory
     print(os.listdir())
 
-    with open('benchmark_report.json', 'r') as file:
-            pytest_results = json.load(file)
+    with open("benchmark_report.json", "r") as file:
+        pytest_results = json.load(file)
 
     return pytest_results
 
+
 def extract_stats_from_json(json_data):
     # Load the JSON data if it is a string, otherwise assume it's already a dictionary
-    if isinstance(json_data, str):
-        data = json.loads(json_data)
-    else:
-        data = json_data
+    data = json.loads(json_data) if isinstance(json_data, str) else json_data
 
     # Initialize an empty list to store the stats for each test
     test_stats = []
 
     # Iterate over each test in the 'benchmarks' list
-    for test in data.get('benchmarks', []):
-        stats = test.get('stats', {})
-        test_name = test.get('name', 'Unknown Test')
-        min_value = stats.get('min', None)
-        max_value = stats.get('max', None)
-        mean_value = stats.get('mean', None)
-        stdev_value = stats.get('stddev', None)
+    for test in data.get("benchmarks", []):
+        stats = test.get("stats", {})
+        test_name = test.get("name", "Unknown Test")
+        min_value = stats.get("min", None)
+        max_value = stats.get("max", None)
+        mean_value = stats.get("mean", None)
+        stdev_value = stats.get("stddev", None)
 
-        test_stats.append({
-            'test_name': test_name,
-            'min': min_value,
-            'max': max_value,
-            'mean': mean_value,
-            'stdev': stdev_value
-        })
+        test_stats.append(
+            {
+                "test_name": test_name,
+                "min": min_value,
+                "max": max_value,
+                "mean": mean_value,
+                "stdev": stdev_value,
+            }
+        )
 
     return test_stats
 
 
 def main():
-    # Commit SHA
+    # Get the commit SHA and JSON directory from the command line arguments
     commit_sha = sys.argv[1]
     json_dir = sys.argv[2]
-    
+
+    # Get the PR title and database URL from the environment variables
+    pr_title = os.environ.get("PR_TITLE")
+    db_url = os.environ.get("DATABASE_URL")
+
+    if db_url is None or pr_title is None:
+        sys.exit("Missing environment variables")
+
+    # Run pytest and get the results
     results = run_pytest_and_get_results()
     cleaned_results = extract_stats_from_json(results)
 
-    # Upload lighthouse scores
+    # Get the Lighthouse scores
     lighthouse_scores = get_lighthouse_scores(json_dir)
 
-     # Upload benchmarking data to the database
-    db_url = os.environ.get('DATABASE_URL')
-    insert_benchmarking_data(db_url, lighthouse_scores, cleaned_results, commit_sha)
+    # Insert the data into the database
+    insert_benchmarking_data(
+        db_url, lighthouse_scores, cleaned_results, commit_sha, pr_title
+    )
+
 
 if __name__ == "__main__":
     main()
