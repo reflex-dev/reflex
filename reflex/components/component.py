@@ -503,7 +503,11 @@ class Component(Base, ABC):
         tag = self._render()
         rendered_dict = dict(
             tag.add_props(
-                **self.event_triggers,
+                **{
+                    trigger: handler
+                    for trigger, handler in self.event_triggers.items()
+                    if trigger not in {EventTriggers.ON_MOUNT, EventTriggers.ON_UNMOUNT}
+                },
                 key=self.key,
                 id=self.id,
                 class_name=self.class_name,
@@ -743,13 +747,13 @@ class Component(Base, ABC):
         """
         # pop on_mount and on_unmount from event_triggers since these are handled by
         # hooks, not as actually props in the component
-        on_mount = self.event_triggers.pop(EventTriggers.ON_MOUNT, None)
-        on_unmount = self.event_triggers.pop(EventTriggers.ON_UNMOUNT, None)
-        if on_mount:
+        on_mount = self.event_triggers.get(EventTriggers.ON_MOUNT, None)
+        on_unmount = self.event_triggers.get(EventTriggers.ON_UNMOUNT, None)
+        if on_mount is not None:
             on_mount = format.format_event_chain(on_mount)
-        if on_unmount:
+        if on_unmount is not None:
             on_unmount = format.format_event_chain(on_unmount)
-        if on_mount or on_unmount:
+        if on_mount is not None or on_unmount is not None:
             return f"""
                 useEffect(() => {{
                     {on_mount or ""}
