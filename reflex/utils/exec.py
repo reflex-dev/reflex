@@ -242,7 +242,7 @@ def output_system_info():
     ]
 
     system = platform.system()
-    if system == "Windows" or not prerequisites.is_valid_linux():
+    if system == "Windows" or constants.IS_LINUX and not prerequisites.is_valid_linux():
         dependencies.extend(
             [
                 f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
@@ -250,7 +250,7 @@ def output_system_info():
             ]
         )
 
-    if system != "Windows" or not prerequisites.is_valid_linux():
+    if system != "Windows" or constants.IS_LINUX and not prerequisites.is_valid_linux():
         dependencies.append(
             f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
         )

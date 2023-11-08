@@ -416,9 +416,8 @@ def download_and_extract_fnm_zip():
 
 def install_node():
     """Install fnm and nodejs for use by Reflex."""
-    if constants.IS_WINDOWS or not is_valid_linux():
+    if constants.IS_WINDOWS or constants.IS_LINUX and not is_valid_linux():
 
-        console.debug("Reflex will install anm and node")
         path_ops.mkdir(constants.Fnm.DIR)
         if not os.path.exists(constants.Fnm.EXE):
             download_and_extract_fnm_zip()
