@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import dis
+import inspect
 import json
 import random
 import string
@@ -1138,13 +1139,37 @@ class Var:
 
         Returns:
             A var representing foreach operation.
+
+        Raises:
+            TypeError: If the var is not a list.
         """
+        inner_types = get_args(self._var_type)
+        if not inner_types:
+            raise TypeError(
+                f"Cannot foreach over non-sequence var {self._var_full_name} of type {self._var_type}."
+            )
         arg = BaseVar(
             _var_name=get_unique_variable_name(),
-            _var_type=self._var_type,
+            _var_type=inner_types[0],
         )
+        index = BaseVar(
+            _var_name=get_unique_variable_name(),
+            _var_type=int,
+        )
+        fn_signature = inspect.signature(fn)
+        if len(fn_signature.parameters) == 0:
+            fn_ret = fn()
+        elif len(fn_signature.parameters) == 1:
+            fn_ret = fn(arg)
+        elif len(fn_signature.parameters) == 2:
+            fn_ret = fn(arg, index)
+        else:
+            raise TypeError(
+                f"Cannot foreach over var {self._var_full_name} with function {fn.__name__} "
+                "that has more than 2 arguments."
+            )
         return BaseVar(
-            _var_name=f"{self._var_full_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
+            _var_name=f"{self._var_full_name}.map(({arg._var_name}, {index._var_name}) => {fn_ret})",
             _var_type=self._var_type,
             _var_is_local=self._var_is_local,
         )
