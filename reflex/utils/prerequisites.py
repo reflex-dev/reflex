@@ -79,21 +79,22 @@ def get_package_manager() -> str | None:
     """
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS or not is_valid_linux():
-        print(f"system is either windows or wsl1")
         return get_npm_package_manager()
 
     # On other platforms, we use bun.
     return get_config().bun_path
 
 
-def get_install_package_manager()-> str | None:
+def get_install_package_manager() -> str | None:
     """Get package manager to install dependencies.
+
     Returns:
         Path to install package manager.
     """
     if constants.IS_WINDOWS:
         return get_npm_package_manager()
     return get_config().bun_path
+
 
 def get_npm_package_manager() -> str | None:
     """Get the npm package manager executable for installing and running app
@@ -415,7 +416,6 @@ def download_and_extract_fnm_zip():
 
 def install_node():
     """Install fnm and nodejs for use by Reflex."""
-
     if constants.IS_WINDOWS or not is_valid_linux():
 
         console.debug("Reflex will install anm and node")
@@ -634,11 +634,16 @@ def validate_frontend_dependencies():
     # Bun only supports linux and Mac. For Non-linux-or-mac, we use node.
     validate_bun() if constants.IS_LINUX_OR_MAC else validate_node()
 
-def is_valid_linux()-> bool:
 
+def is_valid_linux() -> bool:
+    """Check if the linux kernel version is valid enough to use bun.
+    This is typically used run npm at runtime for WSL 1 or lower linux versions.
+
+    Returns:
+        If linux kernel version is valid enough.
+    """
     kernel = platform.release()
     kv = version.parse(kernel.split("-")[0])
-    print(f"------------kv: {kv} | platform.system: {platform.system()}")
     return platform.system() == "Linux" and kv.major >= 5 and kv.minor >= 10
 
 

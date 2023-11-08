@@ -242,14 +242,6 @@ def output_system_info():
     ]
 
     system = platform.system()
-    console.debug(f"##########$$$$$$$$   uname: {platform.uname()}")
-    import os
-    if 'WSLENV' in os.environ:
-        print("Running inside Windows Subsystem for Linux (WSL)")
-        print(f"WSLENV: {os.environ['WSLENV']}")
-    else:
-        print("Not running inside WSL")
-    print(f" @@@@@@@ is valid linux: {prerequisites.is_valid_linux()}")
     if system == "Windows" or not prerequisites.is_valid_linux():
         dependencies.extend(
             [
@@ -262,7 +254,6 @@ def output_system_info():
         dependencies.append(
             f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
         )
-
 
     if system == "Linux":
         import distro  # type: ignore
