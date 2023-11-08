@@ -8,7 +8,7 @@ from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
-from tests.test_state import ChildState, DateTimeState, GrandchildState, TestState
+from tests.test_state import ChildState, ChildState2, DateTimeState, GrandchildState, TestState
 
 
 def mock_event(arg):
@@ -506,40 +506,44 @@ formatted_router = {
         (
             TestState().dict(),  # type: ignore
             {
-                "array": [1, 2, 3.14],
-                "child_state": {
+                TestState.get_full_name(): {
+                    "array": [1, 2, 3.14],
+                    "complex": {
+                        1: {"prop1": 42, "prop2": "hello"},
+                        2: {"prop1": 42, "prop2": "hello"},
+                    },
+                    "dt": "1989-11-09 18:53:00+01:00",
+                    "fig": [],
+                    "is_hydrated": False,
+                    "key": "",
+                    "map_key": "a",
+                    "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
+                    "num1": 0,
+                    "num2": 3.14,
+                    "obj": {"prop1": 42, "prop2": "hello"},
+                    "sum": 3.14,
+                    "upper": "",
+                    "router": formatted_router,
+                },
+                ChildState.get_full_name(): {
                     "count": 23,
-                    "grandchild_state": {"value2": ""},
                     "value": "",
                 },
-                "child_state2": {"value": ""},
-                "complex": {
-                    1: {"prop1": 42, "prop2": "hello"},
-                    2: {"prop1": 42, "prop2": "hello"},
-                },
-                "dt": "1989-11-09 18:53:00+01:00",
-                "fig": [],
-                "is_hydrated": False,
-                "key": "",
-                "map_key": "a",
-                "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
-                "num1": 0,
-                "num2": 3.14,
-                "obj": {"prop1": 42, "prop2": "hello"},
-                "sum": 3.14,
-                "upper": "",
-                "router": formatted_router,
+                ChildState2.get_full_name(): {"value": ""},
+                GrandchildState.get_full_name(): {"value2": ""},
             },
         ),
         (
             DateTimeState().dict(),
             {
-                "d": "1989-11-09",
-                "dt": "1989-11-09 18:53:00+01:00",
-                "is_hydrated": False,
-                "t": "18:53:00+01:00",
-                "td": "11 days, 0:11:00",
-                "router": formatted_router,
+                DateTimeState.get_full_name(): {
+                    "d": "1989-11-09",
+                    "dt": "1989-11-09 18:53:00+01:00",
+                    "is_hydrated": False,
+                    "t": "18:53:00+01:00",
+                    "td": "11 days, 0:11:00",
+                    "router": formatted_router,
+                },
             },
         ),
     ],
