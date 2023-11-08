@@ -242,7 +242,7 @@ def output_system_info():
     ]
 
     system = platform.system()
-
+    console.debug(f"##########$$$$$$$$   uname: {platform.uname()}")
     if system != "Windows":
         dependencies.append(
             f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
