@@ -630,7 +630,7 @@ def unwrap_vars(value: str) -> str:
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     """Collapse keys with consecutive suffixes into a single list value.
 
-    Seprators dash and underscore are removed, unless this would overwrite an existing key.
+    Separators dash and underscore are removed, unless this would overwrite an existing key.
 
     Args:
         form_dict: The dict to collapse.
