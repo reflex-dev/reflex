@@ -128,7 +128,7 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
     """
     node_bin_path = ""
     if not constants.IS_LINUX_OR_MAC or not prerequisites.is_valid_linux():
-        node_bin_path = path_ops.get_node_bin_path()
+        node_bin_path = path_ops.get_node_bin_path() or ""
         if not node_bin_path:
             console.warn(
                 "The path to the Node binary could not be found. Please ensure that Node is properly "
