@@ -406,7 +406,7 @@ def download_and_extract_fnm_zip():
 
 def install_node():
     """Install fnm and nodejs for use by Reflex."""
-    if not constants.IS_WINDOWS or not is_valid_linux():
+    if not constants.IS_WINDOWS or is_valid_linux():
         return
 
     path_ops.mkdir(constants.Fnm.DIR)
