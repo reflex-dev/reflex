@@ -36,4 +36,3 @@ def insert_benchmarking_data(
         )
         # Commit the transaction
         conn.commit()
-        conn.close()
