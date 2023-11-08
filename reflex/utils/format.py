@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Union
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
 from reflex.utils.serializers import serialize
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
     from reflex.components.component import ComponentStyle
@@ -122,7 +122,7 @@ def to_snake_case(text: str) -> str:
         The snake case string.
     """
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", text)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
 def to_camel_case(text: str) -> str:
@@ -314,7 +314,7 @@ def format_prop(
                 arg_def = "(_e)"
 
             chain = ",".join([format_event(event) for event in prop.events])
-            event = f"addEvents([{chain}], {arg_def})"
+            event = f"addEvents([{chain}], {arg_def}, {json_dumps(prop.event_actions)})"
             prop = f"{arg_def} => {event}"
 
         # Handle other types.
@@ -417,7 +417,7 @@ def format_event(event_spec: EventSpec) -> str:
             ":".join(
                 (
                     name._var_name,
-                    wrap(json.dumps(val._var_name).strip('"'), "`")
+                    wrap(json.dumps(val._var_name).strip('"').replace("`", "\\`"), "`")
                     if val._var_is_string
                     else val._var_full_name,
                 )
@@ -647,3 +647,47 @@ def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
     # collapsing never overwrites valid data from the form_dict
     collapsed.update(form_dict)
     return collapsed
+
+
+def format_data_editor_column(col: str | dict):
+    """Format a given column into the proper format.
+
+    Args:
+        col: The column.
+
+    Raises:
+        ValueError: invalid type provided for column.
+
+    Returns:
+        The formatted column.
+    """
+    if isinstance(col, str):
+        return {"title": col, "id": col.lower(), "type": "str"}
+
+    if isinstance(col, (dict,)):
+        if "id" not in col:
+            col["id"] = col["title"].lower()
+        if "type" not in col:
+            col["type"] = "str"
+        if "overlayIcon" not in col:
+            col["overlayIcon"] = None
+        return col
+
+    if isinstance(col, BaseVar):
+        return col
+
+    raise ValueError(
+        f"unexpected type ({(type(col).__name__)}: {col}) for column header in data_editor"
+    )
+
+
+def format_data_editor_cell(cell: Any):
+    """Format a given data into a renderable cell for data_editor.
+
+    Args:
+        cell: The data to format.
+
+    Returns:
+        The formatted cell.
+    """
+    return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}

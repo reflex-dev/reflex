@@ -16,7 +16,7 @@ Pynecone की तलाश हैं? आप सही रेपो में 
 </div>
 
 ---
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) 
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [हिंदी](https://github.com/reflex-dev/reflex/blob/main/docs/in/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
 ---
 
 ## ⚙️ इंस्टॉलेशन 
@@ -140,7 +140,7 @@ def index():
 
 हम फ़्रंटएंड बनाने के लिए `center`, `vstack`, `input`, और `button` जैसे विभिन्न components का उपयोग करते हैं। Components को एक-दूसरे के भीतर डाल सकते हैं विस्तारित लेआउट बनाने के लिए। और आप CSS की पूरी ताक़त के साथ इन्हें स्टाइल करने के लिए कीवर्ड आर्ग्यूमेंट (keyword args) का उपयोग कर सकते हैं।
 
-रिफ़्लेक्स के पास [60+ built-in components](https://reflex.dev/docs/library) हैं जो आपको शुरुआती मदद के लिए हैं। हम बहुत से components जोड़ रहे हैं, और अपने खुद के components बनाना भी आसान है। [create your own components](https://reflex.dev/docs/advanced-guide/wrapping-react)
+रिफ़्लेक्स के पास [60+ built-in components](https://reflex.dev/docs/library) हैं जो आपको शुरुआती मदद के लिए हैं। हम बहुत से components जोड़ रहे हैं, और अपने खुद के components बनाना भी आसान है। [create your own components](https://reflex.dev/docs/wrapping-react/overview/)
 
 ### **स्टेट (State)**
 
@@ -209,10 +209,10 @@ app.compile()
 
 जुलाई 2023 तक, हम **Public Beta** (सार्वजनिक बीटा) चरण में हैं।
 
--   :white_check_mark: **Public Alpha**: कोई भी रिफ्लेक्स इंस्टॉल और उपयोग कर सकता है। कुछ इशू हो सकते हैं, लेकिन हम उन्हें सुलझाने के लिए सक्रिय रूप से काम कर रहे हैं।
--   :large_orange_diamond: **Public Beta**: गैर-उद्यम उपयोग-मामलों के लिए स्थिर।
--   **Public Hosting Beta**: _Optionally_, अपने ऐप्स को रिफ्लेक्स पर डिप्लॉइ और होस्ट करें!
--   **Public**: रिफ्लेक्स उत्पादन के लिए तैयार है।
+-   :white_check_mark: **Public Alpha** (सार्वजनिक अल्फा): कोई भी रिफ्लेक्स इंस्टॉल और उपयोग कर सकता है। कुछ इशू हो सकते हैं, लेकिन हम उन्हें सुलझाने के लिए सक्रिय रूप से काम कर रहे हैं।
+-   :large_orange_diamond: **Public Beta** (सार्वजनिक बीटा): गैर-उद्यम उपयोग-मामलों के लिए स्थिर।
+-   **Public Hosting Beta** (सार्वजनिक होस्टिंग बीटा): _Optionally_, अपने ऐप्स को रिफ्लेक्स पर डिप्लॉइ और होस्ट करें!
+-   **Public** (सार्वजनिक): रिफ्लेक्स उत्पादन के लिए तैयार है।
 
 रिफ्लेक्स में हर सप्ताह नई रिलीज़ और सुविधाएँ आ रही हैं! अपडेट रहने के लिए इस रिपॉजिटरी को :star: स्टार करें और समय-समय पर अवश्य देखें :eyes:।
 
@@ -220,9 +220,9 @@ app.compile()
 
 हम हर तरह के योगदान का स्वागत करते हैं! रिफ्लेक्स कम्यूनिटी में शुरुआत करने के कुछ अच्छे तरीके नीचे दिए गए हैं।
 
--   **Join Our Discord**: Our [Discord](https://discord.gg/T5WSbC2YtQ) हमारा डिस्कॉर्ड रिफ्लेक्स प्रोजेक्ट पर सहायता प्राप्त करने और आप कैसे योगदान दे सकते हैं, इस पर चर्चा करने के लिए सबसे अच्छी जगह है।
--   **GitHub Discussions**: उन सुविधाओं के बारे में बात करने का एक शानदार तरीका जिन्हें आप जोड़ना चाहते हैं या ऐसी चीज़ें जो भ्रमित करने वाली हैं/स्पष्टीकरण की आवश्यकता है।
--   **GitHub Issues**: ये बग की रिपोर्ट करने का एक शानदार तरीका है। इसके अतिरिक्त, आप किसी मौजूदा समस्या को हल करने का प्रयास कर सकते हैं और एक पीआर सबमिट कर सकते हैं।
+-   **Join Our Discord** (डिस्कॉर्ड सर्वर से जुड़ें): Our [Discord](https://discord.gg/T5WSbC2YtQ) हमारा डिस्कॉर्ड रिफ्लेक्स प्रोजेक्ट पर सहायता प्राप्त करने और आप कैसे योगदान दे सकते हैं, इस पर चर्चा करने के लिए सबसे अच्छी जगह है।
+-   **GitHub Discussions** (गिटहब चर्चाएँ): उन सुविधाओं के बारे में बात करने का एक शानदार तरीका जिन्हें आप जोड़ना चाहते हैं या ऐसी चीज़ें जो भ्रमित करने वाली हैं/स्पष्टीकरण की आवश्यकता है।
+-   **GitHub Issues** (गिटहब समस्याएं): ये बग की रिपोर्ट करने का एक शानदार तरीका है। इसके अतिरिक्त, आप किसी मौजूदा समस्या को हल करने का प्रयास कर सकते हैं और एक पीआर सबमिट कर सकते हैं।
 
 हम सक्रिय रूप से योगदानकर्ताओं की तलाश कर रहे हैं, चाहे आपका कौशल स्तर या अनुभव कुछ भी हो।
 

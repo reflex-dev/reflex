@@ -60,6 +60,19 @@ def get_node_version() -> version.Version | None:
         return None
 
 
+def get_fnm_version() -> version.Version | None:
+    """Get the version of fnm.
+
+    Returns:
+        The version of FNM.
+    """
+    try:
+        result = processes.new_process([constants.Fnm.EXE, "--version"], run=True)
+        return version.parse(result.stdout.split(" ")[1])  # type: ignore
+    except (FileNotFoundError, TypeError):
+        return None
+
+
 def get_bun_version() -> version.Version | None:
     """Get the version of bun.
 
@@ -83,7 +96,7 @@ def get_install_package_manager() -> str | None:
     """
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS:
-        return path_ops.get_npm_path()
+        return get_package_manager()
 
     # On other platforms, we use bun.
     return get_config().bun_path
@@ -96,7 +109,10 @@ def get_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    return path_ops.get_npm_path()
+    npm_path = path_ops.get_npm_path()
+    if npm_path is not None:
+        npm_path = str(Path(npm_path).resolve())
+    return npm_path
 
 
 def get_app(reload: bool = False) -> ModuleType:
@@ -200,6 +216,31 @@ def initialize_gitignore():
         f.write(f"{(path_ops.join(sorted(files))).lstrip()}")
 
 
+def initialize_requirements_txt():
+    """Initialize the requirements.txt file.
+    If absent, generate one for the user.
+    If the requirements.txt does not have reflex as dependency,
+    generate a requirement pinning current version and append to
+    the requirements.txt file.
+    """
+    fp = Path(constants.RequirementsTxt.FILE)
+    fp.touch(exist_ok=True)
+
+    try:
+        with open(fp, "r") as f:
+            for req in f.readlines():
+                # Check if we have a package name that is reflex
+                if re.match(r"^reflex[^a-zA-Z0-9]", req):
+                    console.debug(f"{fp} already has reflex as dependency.")
+                    return
+        with open(fp, "a") as f:
+            f.write(
+                f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+            )
+    except Exception:
+        console.info(f"Unable to check {fp} for reflex dependency.")
+
+
 def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     """Initialize the app directory on reflex init.
 
@@ -208,17 +249,32 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
         template: The template to use.
     """
     console.log("Initializing the app directory.")
-    path_ops.cp(
-        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "code"),
-        app_name,
-    )
+
+    # Copy the template to the current directory.
+    template_dir = Path(constants.Templates.Dirs.BASE, "apps", template.value)
+
+    # Remove all pyc and __pycache__ dirs in template directory.
+    for pyc_file in template_dir.glob("**/*.pyc"):
+        pyc_file.unlink()
+    for pycache_dir in template_dir.glob("**/__pycache__"):
+        pycache_dir.rmdir()
+
+    for file in template_dir.iterdir():
+        # Copy the file to current directory but keep the name the same.
+        path_ops.cp(str(file), file.name)
+
+    # Rename the template app to the app name.
+    path_ops.mv(constants.Templates.Dirs.CODE, app_name)
     path_ops.mv(
-        os.path.join(app_name, template.value + ".py"),
+        os.path.join(app_name, template_dir.name + constants.Ext.PY),
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
-    path_ops.cp(
-        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "assets"),
-        constants.Dirs.APP_ASSETS,
+
+    # Fix up the imports.
+    path_ops.find_replace(
+        app_name,
+        f"from {constants.Templates.Dirs.CODE}",
+        f"from {app_name}",
     )
 
 
@@ -386,11 +442,13 @@ def install_node():
 
     if constants.IS_WINDOWS:
         # Install node
+        fnm_exe = Path(constants.Fnm.EXE).resolve()
+        fnm_dir = Path(constants.Fnm.DIR).resolve()
         process = processes.new_process(
             [
                 "powershell",
                 "-Command",
-                f'& "{constants.Fnm.EXE}" install {constants.Node.VERSION} --fnm-dir "{constants.Fnm.DIR}"',
+                f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
             ],
         )
     else:  # All other platforms (Linux, MacOS).
@@ -645,6 +703,35 @@ def check_schema_up_to_date():
                 console.error(
                     f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
                 )
+
+
+def prompt_for_template() -> constants.Templates.Kind:
+    """Prompt the user to specify a template.
+
+    Returns:
+        The template the user selected.
+    """
+    # Show the user the URLs of each temlate to preview.
+    console.print("\nGet started with a template:")
+    console.print("blank (https://blank-template.reflex.run) - A minimal template.")
+    console.print(
+        "sidebar (https://sidebar-template.reflex.run) - A template with a sidebar to navigate pages."
+    )
+    console.print("")
+
+    # Prompt the user to select a template.
+    template = console.ask(
+        "Which template would you like to use?",
+        choices=[
+            template.value
+            for template in constants.Templates.Kind
+            if template.value != "demo"
+        ],
+        default=constants.Templates.Kind.BLANK.value,
+    )
+
+    # Return the template.
+    return constants.Templates.Kind(template)
 
 
 def migrate_to_reflex():

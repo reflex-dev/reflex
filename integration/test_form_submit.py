@@ -17,6 +17,8 @@ def FormSubmit():
     class FormState(rx.State):
         form_data: dict = {}
 
+        var_options: list[str] = ["option3", "option4"]
+
         def form_submit(self, form_data: dict):
             self.form_data = form_data
 
@@ -42,7 +44,9 @@ def FormSubmit():
                     rx.slider(id="slider_input"),
                     rx.range_slider(id="range_input"),
                     rx.radio_group(["option1", "option2"], id="radio_input"),
+                    rx.radio_group(FormState.var_options, id="radio_input_var"),
                     rx.select(["option1", "option2"], id="select_input"),
+                    rx.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
                     rx.input(
                         id="debounce_input",
@@ -52,6 +56,7 @@ def FormSubmit():
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
+                custom_attrs={"action": "/invalid"},
             ),
             rx.spacer(),
             height="100vh",
@@ -199,6 +204,8 @@ async def test_submit(driver, form_submit: AppHarness):
 
     time.sleep(1)
 
+    prev_url = driver.current_url
+
     submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
     submit_input.click()
 
@@ -225,3 +232,6 @@ async def test_submit(driver, form_submit: AppHarness):
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"
+
+    # submitting the form should NOT change the url (preventDefault on_submit event)
+    assert driver.current_url == prev_url

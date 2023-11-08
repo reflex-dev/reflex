@@ -11,7 +11,7 @@ COPY . .
 # Create virtualenv which will be copied into final container
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN python3 -m venv $VIRTUAL_ENV
+RUN python3.11 -m venv $VIRTUAL_ENV
 
 # Install app requirements and reflex inside virtualenv
 RUN pip install -r requirements.txt

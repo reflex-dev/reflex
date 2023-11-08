@@ -15,16 +15,17 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
     Union,
     _GenericAlias,  # type: ignore
     cast,
+    get_args,
+    get_origin,
     get_type_hints,
 )
-
-from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
@@ -417,15 +418,12 @@ class Var:
                 raise TypeError(
                     f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
                 ) from None
-            if (
-                hasattr(self._var_type, "__fields__")
-                and name in self._var_type.__fields__
-            ):
-                type_ = self._var_type.__fields__[name].outer_type_
-                if isinstance(type_, ModelField):
-                    type_ = type_.type_
+            is_optional = types.is_optional(self._var_type)
+            type_ = types.get_attribute_access_type(self._var_type, name)
+
+            if type_ is not None:
                 return BaseVar(
-                    _var_name=f"{self._var_name}.{name}",
+                    _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
                     _var_state=self._var_state,
                     _var_is_local=self._var_is_local,
@@ -1285,11 +1283,17 @@ class BaseVar(Var):
         Raises:
             ImportError: If the var is a dataframe and pandas is not installed.
         """
+        if types.is_optional(self._var_type):
+            return None
+
         type_ = (
-            self._var_type.__origin__
+            get_origin(self._var_type)
             if types.is_generic_alias(self._var_type)
             else self._var_type
         )
+        if type_ is Literal:
+            args = get_args(self._var_type)
+            return args[0] if args else None
         if issubclass(type_, str):
             return ""
         if issubclass(type_, types.get_args(Union[int, float])):
@@ -1467,17 +1471,25 @@ class ComputedVar(Var, property):
                 # is referencing an attribute on self
                 self_is_top_of_stack = True
                 continue
-            if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
-                # direct attribute access
-                d.add(instruction.argval)
-            elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
-                # method call on self
-                d.update(
-                    self._deps(
-                        objclass=objclass,
-                        obj=getattr(objclass, instruction.argval),
+            if self_is_top_of_stack and instruction.opname in (
+                "LOAD_ATTR",
+                "LOAD_METHOD",
+            ):
+                try:
+                    ref_obj = getattr(objclass, instruction.argval)
+                except Exception:
+                    ref_obj = None
+                if callable(ref_obj):
+                    # recurse into callable attributes
+                    d.update(
+                        self._deps(
+                            objclass=objclass,
+                            obj=ref_obj,
+                        )
                     )
-                )
+                else:
+                    # normal attribute access
+                    d.add(instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
             ):

@@ -34,7 +34,7 @@ def detect_package_change(json_file_path: str) -> str:
     """Calculates the SHA-256 hash of a JSON file and returns it as a hexadecimal string.
 
     Args:
-        json_file_path (str): The path to the JSON file to be hashed.
+        json_file_path: The path to the JSON file to be hashed.
 
     Returns:
         str: The SHA-256 hash of the JSON file as a hexadecimal string.
@@ -185,7 +185,7 @@ def run_backend_prod(
     """
     num_workers = processes.get_num_workers()
     config = get_config()
-    RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
+    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
     app_module = f"{config.app_name}.{config.app_name}:{constants.CompileVars.APP}"
     command = (
@@ -247,13 +247,13 @@ def output_system_info():
     if system != "Windows":
         dependencies.extend(
             [
-                f"[FNM {constants.Fnm.VERSION} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+                f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
                 f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
             ],
         )
     else:
         dependencies.append(
-            f"[FNM {constants.Fnm.VERSION} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
+            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
         )
 
     if system == "Linux":
