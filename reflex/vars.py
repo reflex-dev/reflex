@@ -1174,11 +1174,19 @@ class Var:
             _var_is_local=self._var_is_local,
         )
 
-    def range(self, start: Var | int = 0) -> Var:
-        """Return an array of indicies from from start ot this var.
+    @classmethod
+    def range(
+        cls,
+        v1: Var | int = 0,
+        v2: Var | int | None = None,
+        step: Var | int | None = None,
+    ) -> Var:
+        """Return an iterator over indices from v1 to v2 (or 0 to v1).
 
         Args:
-            start: The start of the range.
+            v1: The start of the range or end of range if v2 is not given.
+            v2: The end of the range.
+            step: The number of numbers between each item.
 
         Returns:
             A var representing range operation.
@@ -1186,44 +1194,27 @@ class Var:
         Raises:
             TypeError: If the var is not an int.
         """
-        if self._var_type != int:
-            raise TypeError(f"Cannot get range on non-int var {self._var_full_name}.")
-        if isinstance(start, int):
-            start = Var.create_safe(start)
-        if start._var_type != int:
-            raise TypeError(
-                f"Cannot get start of range on non-int var {start._var_full_name}."
-            )
+        if not isinstance(v1, Var):
+            v1 = Var.create_safe(v1)
+        if v1._var_type != int:
+            raise TypeError(f"Cannot get range on non-int var {v1._var_full_name}.")
+        if not isinstance(v2, Var):
+            v2 = Var.create(v2)
+        if v2 is None:
+            v2 = Var.create_safe("undefined")
+        elif v2._var_type != int:
+            raise TypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
+
+        if not isinstance(step, Var):
+            step = Var.create(step)
+        if step is None:
+            step = Var.create_safe(1)
+        elif step._var_type != int:
+            raise TypeError(f"Cannot get range on non-int var {step._var_full_name}.")
 
         return BaseVar(
-            _var_name=f"Array({self._var_full_name}).fill(0).map((_, i) => i + {start})",
-            _var_type=list[self._var_type],
-            _var_is_local=False,
-        )
-
-    def forrange(self, fn: Callable) -> Var:
-        """Return a list of components. after running fn the number of times specified by this var.
-
-        Args:
-            fn: The function to call `self` times
-
-        Returns:
-            A var representing foreach operation.
-
-        Raises:
-            TypeError: If the var is not an int.
-        """
-        if self._var_type != int:
-            raise TypeError(
-                f"Cannot run forrange on non-int var {self._var_full_name}."
-            )
-        arg = BaseVar(
-            _var_name=get_unique_variable_name(),
-            _var_type=self._var_type,
-        )
-        return BaseVar(
-            _var_name=f"Array({self._var_full_name}).fill(0).map((_, {arg._var_name}) => {fn(arg)})",
-            _var_type=self._var_type,
+            _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
+            _var_type=list[int],
             _var_is_local=False,
         )
 

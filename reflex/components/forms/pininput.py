@@ -112,8 +112,8 @@ class PinInput(ChakraComponent):
         """
         if self.id:
             ref = format.format_array_ref(self.id, None)
-            refs_declaration = self.length.forrange(  # type: ignore
-                lambda _: Var.create_safe("useRef(null)", _var_is_string=False),
+            refs_declaration = Var.range(self.length).foreach(
+                lambda: Var.create_safe("useRef(null)", _var_is_string=False),
             )
             refs_declaration._var_is_local = True
             if ref:
@@ -179,8 +179,6 @@ class PinInputField(ChakraComponent):
         Returns:
             The PinInputField.
         """
-        if isinstance(length, int):
-            length = Var.create_safe(length)
         name = props.get("name")
 
         def _create(i):
@@ -188,7 +186,7 @@ class PinInputField(ChakraComponent):
                 props["name"] = f"{name}-{i}"
             return PinInputField.create(**props, index=i, key=i)
 
-        return length.forrange(_create)  # type: ignore
+        return Var.range(length).foreach(_create)  # type: ignore
 
     def _get_ref_hook(self) -> Optional[str]:
         return None
