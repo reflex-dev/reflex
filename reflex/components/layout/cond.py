@@ -141,5 +141,6 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             is_prop=True,
         ),
         _var_type=c1._var_type if isinstance(c1, BaseVar) else type(c1),
+        _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
     )
