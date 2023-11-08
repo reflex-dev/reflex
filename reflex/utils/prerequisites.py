@@ -288,7 +288,7 @@ def initialize_web_directory():
 
     path_ops.mkdir(constants.Dirs.WEB_ASSETS)
 
-    update_next_config(initial=True)
+    update_next_config()
 
     # Initialize the reflex json file.
     init_reflex_json()
@@ -329,39 +329,40 @@ def init_reflex_json():
     path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(initial=False, export=False):
+def update_next_config(export=False):
     """Update Next.js config from Reflex config.
 
     Args:
-        initial: if the method run during reflex init.
         export: if the method run during reflex export.
     """
-    console.log("Updating next.config.js")
-    config = get_config()
     next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
     with open(next_config_file, "r") as file:
         next_config = file.read()
 
-    if initial:
-        next_config = re.sub(
-            "compress: (true|false)",
-            f'compress: {"true" if config.next_compression else "false"}',
-            next_config,
-        )
-        next_config = re.sub(
-            'basePath: ".*?"',
-            f'basePath: "{config.frontend_path or ""}"',
-            next_config,
-        )
+    next_config = _update_next_config(next_config, get_config(), export=export)
+
+    with open(next_config_file, "w") as file:
+        file.write(next_config)
+
+
+def _update_next_config(next_config, config, export=False):
+    next_config = re.sub(
+        "compress: (true|false)",
+        f'compress: {"true" if config.next_compression else "false"}',
+        next_config,
+    )
+    next_config = re.sub(
+        'basePath: ".*?"',
+        f'basePath: "{config.frontend_path or ""}"',
+        next_config,
+    )
 
     if export:
         next_config = re.sub('output: ".*?"', 'output: "export"', next_config)
     else:
         next_config = re.sub('output: "export"', 'output: ""', next_config)
-
-    with open(next_config_file, "w") as file:
-        file.write(next_config)
+    return next_config
 
 
 def remove_existing_bun_installation():

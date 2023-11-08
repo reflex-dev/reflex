@@ -4,11 +4,11 @@ import pytest
 
 from reflex import constants
 from reflex.config import Config
-from reflex.utils.prerequisites import initialize_requirements_txt, update_next_config
+from reflex.utils.prerequisites import _update_next_config, initialize_requirements_txt
 
 
 @pytest.mark.parametrize(
-    "template_next_config, reflex_config, expected_next_config",
+    "input, config, export, expected_output",
     [
         (
             """
@@ -17,17 +17,20 @@ from reflex.utils.prerequisites import initialize_requirements_txt, update_next_
                     compress: true,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
                 };
             """,
             Config(
                 app_name="test",
             ),
+            False,
             """
                 module.exports = {
                     basePath: "",
                     compress: true,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
                 };
             """,
         ),
@@ -38,18 +41,21 @@ from reflex.utils.prerequisites import initialize_requirements_txt, update_next_
                     compress: true,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
                 };
             """,
             Config(
                 app_name="test",
                 next_compression=False,
             ),
+            False,
             """
                 module.exports = {
                     basePath: "",
                     compress: false,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
                 };
             """,
         ),
@@ -60,18 +66,21 @@ from reflex.utils.prerequisites import initialize_requirements_txt, update_next_
                     compress: true,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
                 };
             """,
             Config(
                 app_name="test",
                 frontend_path="/test",
             ),
+            False,
             """
                 module.exports = {
                     basePath: "/test",
                     compress: true,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
                 };
             """,
         ),
@@ -82,6 +91,7 @@ from reflex.utils.prerequisites import initialize_requirements_txt, update_next_
                     compress: true,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
                 };
             """,
             Config(
@@ -89,21 +99,49 @@ from reflex.utils.prerequisites import initialize_requirements_txt, update_next_
                 frontend_path="/test",
                 next_compression=False,
             ),
+            False,
             """
                 module.exports = {
                     basePath: "/test",
                     compress: false,
                     reactStrictMode: true,
                     trailingSlash: true,
+                    output: "",
+                };
+            """,
+        ),
+        (
+            """
+                module.exports = {
+                    basePath: "",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
+                    output: "",
+                };
+            """,
+            Config(
+                app_name="test",
+            ),
+            True,
+            """
+                module.exports = {
+                    basePath: "",
+                    compress: true,
+                    reactStrictMode: true,
+                    trailingSlash: true,
+                    output: "export",
                 };
             """,
         ),
     ],
 )
-def test_update_next_config(template_next_config, reflex_config, expected_next_config):
-    assert (
-        update_next_config(template_next_config, reflex_config) == expected_next_config
-    )
+def test_update_next_config(input, config, export, expected_output):
+    output = _update_next_config(input, config, export=export)
+    assert output == expected_output
+
+    if export:
+        assert _update_next_config(output, config) == input
 
 
 def test_initialize_requirements_txt(mocker):
