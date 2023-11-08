@@ -665,7 +665,7 @@ def is_valid_linux() -> bool:
         return False
     kernel_string = platform.release()
     kv = parse_non_semver_version(kernel_string)
-    return kv.major >= 5 and kv.minor >= 10 if kv else False
+    return kv.major > 5 or (kv.major == 5 and kv.minor >= 10) if kv else False
 
 
 def initialize_frontend_dependencies():
