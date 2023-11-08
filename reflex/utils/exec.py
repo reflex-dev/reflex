@@ -249,17 +249,18 @@ def output_system_info():
         print(f"WSLENV: {os.environ['WSLENV']}")
     else:
         print("Not running inside WSL")
-    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    if system != "Windows" or prerequisites.is_valid_linux():
-        dependencies.append(
-            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
-        )
-    else:
+    print(f" @@@@@@@ is valid linux: {prerequisites.is_valid_linux()}")
+    if system == "Windows" or not prerequisites.is_valid_linux():
         dependencies.extend(
             [
                 f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
                 f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
             ]
+        )
+
+    else:
+        dependencies.append(
+            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
         )
 
     if system == "Linux":

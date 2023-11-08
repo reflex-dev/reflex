@@ -79,6 +79,7 @@ def get_package_manager() -> str | None:
     """
     # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS or not is_valid_linux():
+        print(f"system is either windows or wsl1")
         return get_npm_package_manager()
 
     # On other platforms, we use bun.
