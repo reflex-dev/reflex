@@ -1157,17 +1157,8 @@ class Var:
             _var_type=int,
         )
         fn_signature = inspect.signature(fn)
-        if len(fn_signature.parameters) == 0:
-            fn_ret = fn()
-        elif len(fn_signature.parameters) == 1:
-            fn_ret = fn(arg)
-        elif len(fn_signature.parameters) == 2:
-            fn_ret = fn(arg, index)
-        else:
-            raise TypeError(
-                f"Cannot foreach over var {self._var_full_name} with function {fn.__name__} "
-                "that has more than 2 arguments."
-            )
+        fn_args = (arg, index)
+        fn_ret = fn(*fn_args[: len(fn_signature.parameters)])
         return BaseVar(
             _var_name=f"{self._var_full_name}.map(({arg._var_name}, {index._var_name}) => {fn_ret})",
             _var_type=self._var_type,
