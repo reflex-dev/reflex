@@ -97,6 +97,7 @@ _ALL_COMPONENTS = [
     "InputLeftElement",
     "InputRightAddon",
     "InputRightElement",
+    "Kbd",
     "Link",
     "LinkBox",
     "LinkOverlay",

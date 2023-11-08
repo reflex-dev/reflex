@@ -5,7 +5,7 @@ from .code import Code, CodeBlock
 from .dataeditor import DataEditor, DataEditorTheme
 from .datatable import DataTable
 from .divider import Divider
-from .keyboard_key import KeyboardKey
+from .keyboard_key import KeyboardKey as Kbd
 from .list import List, ListItem, OrderedList, UnorderedList
 from .moment import Moment
 from .stat import Stat, StatArrow, StatGroup, StatHelpText, StatLabel, StatNumber

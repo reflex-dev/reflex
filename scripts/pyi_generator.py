@@ -611,7 +611,7 @@ class PyiGenerator:
 
 def generate_init():
     """Generate a pyi file for the main __init__.py."""
-    from reflex import _MAPPING
+    from reflex import _MAPPING  # type: ignore
 
     imports = [
         f"from {path if mod != path.rsplit('.')[-1] else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
