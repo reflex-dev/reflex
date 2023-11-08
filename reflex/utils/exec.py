@@ -258,10 +258,11 @@ def output_system_info():
             ]
         )
 
-    else:
+    if system != "Windows" or not prerequisites.is_valid_linux():
         dependencies.append(
             f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
         )
+
 
     if system == "Linux":
         import distro  # type: ignore
@@ -276,7 +277,7 @@ def output_system_info():
         console.debug(f"{dep}")
 
     console.debug(
-        f"Using package installer at: {prerequisites.get_package_manager()}"  # type: ignore
+        f"Using package installer at: {prerequisites.get_install_package_manager()}"  # type: ignore
     )
     console.debug(f"Using package executer at: {prerequisites.get_package_manager()}")  # type: ignore
     if system != "Windows":

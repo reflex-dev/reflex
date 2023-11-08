@@ -86,6 +86,15 @@ def get_package_manager() -> str | None:
     return get_config().bun_path
 
 
+def get_install_package_manager()-> str | None:
+    """Get package manager to install dependencies.
+    Returns:
+        Path to install package manager.
+    """
+    if constants.IS_WINDOWS:
+        return get_npm_package_manager()
+    return get_config().bun_path
+
 def get_npm_package_manager() -> str | None:
     """Get the npm package manager executable for installing and running app
       on windows.
@@ -482,7 +491,7 @@ def install_frontend_packages(packages: set[str]):
     """
     # Install the base packages.
     process = processes.new_process(
-        [get_package_manager(), "install", "--loglevel", "silly"],
+        [get_install_package_manager(), "install", "--loglevel", "silly"],
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
@@ -494,7 +503,7 @@ def install_frontend_packages(packages: set[str]):
         # install tailwind and tailwind plugins as dev dependencies.
         process = processes.new_process(
             [
-                get_package_manager(),
+                get_install_package_manager(),
                 "add",
                 "-d",
                 constants.Tailwind.VERSION,
@@ -508,7 +517,7 @@ def install_frontend_packages(packages: set[str]):
     # Install custom packages defined in frontend_packages
     if len(packages) > 0:
         process = processes.new_process(
-            [get_package_manager(), "add", *packages],
+            [get_install_package_manager(), "add", *packages],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
         )
@@ -638,11 +647,11 @@ def initialize_frontend_dependencies():
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
     # Install the frontend dependencies.
-    install_node() if constants.IS_WINDOWS or not is_valid_linux() else install_bun()
+    processes.run_concurrently(install_node, install_bun)
     # Set up the web directory.
     initialize_web_directory()
     # remove existing fnm dir on linux and mac
-    if constants.IS_LINUX_OR_MAC:
+    if constants.IS_LINUX_OR_MAC and is_valid_linux():
         remove_existing_fnm_dir()
 
 
