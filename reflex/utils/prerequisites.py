@@ -78,7 +78,7 @@ def get_package_manager() -> str | None:
         The path to the package manager.
     """
     # On Windows, we use npm instead of bun.
-    if constants.IS_WINDOWS:
+    if constants.IS_WINDOWS or not is_valid_linux():
         return get_npm_package_manager()
 
     # On other platforms, we use bun.
