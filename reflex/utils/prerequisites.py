@@ -630,8 +630,8 @@ def is_valid_linux()-> bool:
 
     kernel = platform.release()
     kv = version.parse(kernel.split("-")[0])
-    print(f"------------kv: {kv}")
-    return True if platform.system() == "Linux" and kv.major >= 5 and kv.minor >= 10 else False
+    print(f"------------kv: {kv} | platform.system: {platform.system()}")
+    return platform.system() == "Linux" and kv.major >= 5 and kv.minor >= 10
 
 
 def initialize_frontend_dependencies():
