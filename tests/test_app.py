@@ -28,7 +28,7 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import RouterData, State, StateManagerRedis, StateUpdate
+from reflex.state import BaseState, RouterData, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -43,7 +43,7 @@ from .states import (
 )
 
 
-class EmptyState(State):
+class EmptyState(BaseState):
     """An empty state."""
 
     pass
@@ -77,14 +77,14 @@ def about_page():
     return about
 
 
-class ATestState(State):
+class ATestState(BaseState):
     """A simple state for testing."""
 
     var: int
 
 
 @pytest.fixture()
-def test_state() -> Type[State]:
+def test_state() -> Type[BaseState]:
     """A default state.
 
     Returns:
@@ -94,14 +94,14 @@ def test_state() -> Type[State]:
 
 
 @pytest.fixture()
-def redundant_test_state() -> Type[State]:
+def redundant_test_state() -> Type[BaseState]:
     """A default state.
 
     Returns:
         A default state.
     """
 
-    class RedundantTestState(State):
+    class RedundantTestState(BaseState):
         var: int
 
     return RedundantTestState
@@ -198,12 +198,12 @@ def test_default_app(app: App):
 
 
 def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
-    """Test that an error is thrown when multiple classes subclass rx.State.
+    """Test that an error is thrown when multiple classes subclass rx.BaseState.
 
     Args:
         monkeypatch: Pytest monkeypatch object.
-        test_state: A test state subclassing rx.State.
-        redundant_test_state: Another test state subclassing rx.State.
+        test_state: A test state subclassing rx.BaseState.
+        redundant_test_state: Another test state subclassing rx.BaseState.
     """
     monkeypatch.delenv(constants.PYTEST_CURRENT_TEST)
     with pytest.raises(ValueError):
@@ -851,7 +851,7 @@ async def test_upload_file_background(state, tmp_path, token):
         await app.state_manager.redis.close()
 
 
-class DynamicState(State):
+class DynamicState(BaseState):
     """State class for testing dynamic route var.
 
     This is defined at module level because event handlers cannot be addressed

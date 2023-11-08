@@ -20,7 +20,7 @@ from reflex.vars import Var
 
 @pytest.fixture
 def cond_state(request):
-    class CondState(rx.State):
+    class CondState(rx.BaseState):
         value: request.param["value_type"] = request.param["value"]  # noqa
 
     return CondState

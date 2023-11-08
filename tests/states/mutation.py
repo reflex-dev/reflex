@@ -5,7 +5,7 @@ from typing import Dict, List, Set, Union
 import reflex as rx
 
 
-class DictMutationTestState(rx.State):
+class DictMutationTestState(rx.BaseState):
     """A state for testing ReflexDict mutation."""
 
     # plain dict
@@ -62,7 +62,7 @@ class DictMutationTestState(rx.State):
         self.friend_in_nested_dict["friend"]["age"] = 30
 
 
-class ListMutationTestState(rx.State):
+class ListMutationTestState(rx.BaseState):
     """A state for testing ReflexList mutation."""
 
     # plain list
@@ -144,7 +144,7 @@ class CustomVar(rx.Base):
     custom: OtherBase = OtherBase()
 
 
-class MutableTestState(rx.State):
+class MutableTestState(rx.BaseState):
     """A test state."""
 
     array: List[Union[str, List, Dict[str, str]]] = [

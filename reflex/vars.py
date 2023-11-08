@@ -41,7 +41,7 @@ from reflex.utils import console, format, imports, serializers, types
 from reflex.utils.imports import ImportDict, ImportVar
 
 if TYPE_CHECKING:
-    from reflex.state import State
+    from reflex.state import BaseState
 
 # Set of unique variable names.
 USED_VARIABLES = set()
@@ -1472,7 +1472,7 @@ class Var:
             )
         )
 
-    def _var_set_state(self, state: Type[State] | str) -> Any:
+    def _var_set_state(self, state: Type[BaseState] | str) -> Any:
         """Set the state of the var.
 
         Args:
@@ -1604,14 +1604,14 @@ class BaseVar(Var):
             return setter
         return ".".join((self._var_data.state, setter))
 
-    def get_setter(self) -> Callable[[State, Any], None]:
+    def get_setter(self) -> Callable[[BaseState, Any], None]:
         """Get the var's setter function.
 
         Returns:
             A function that that creates a setter for the var.
         """
 
-        def setter(state: State, value: Any):
+        def setter(state: BaseState, value: Any):
             """Get the setter for the var.
 
             Args:
@@ -1643,9 +1643,9 @@ class ComputedVar(Var, property):
 
     def __init__(
         self,
-        fget: Callable[[State], Any],
-        fset: Callable[[State, Any], None] | None = None,
-        fdel: Callable[[State], Any] | None = None,
+        fget: Callable[[BaseState], Any],
+        fset: Callable[[BaseState, Any], None] | None = None,
+        fdel: Callable[[BaseState], Any] | None = None,
         doc: str | None = None,
         **kwargs,
     ):

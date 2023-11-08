@@ -18,7 +18,7 @@ def data_table_state(request):
         The data table state class.
     """
 
-    class DataTableState(rx.State):
+    class DataTableState(rx.BaseState):
         data = request.param["data"]
         columns = ["column1", "column2"]
 
@@ -33,7 +33,7 @@ def data_table_state2():
         The data table state class.
     """
 
-    class DataTableState(rx.State):
+    class DataTableState(rx.BaseState):
         _data = pd.DataFrame()
 
         @rx.var
@@ -51,7 +51,7 @@ def data_table_state3():
         The data table state class.
     """
 
-    class DataTableState(rx.State):
+    class DataTableState(rx.BaseState):
         _data: List = []
         _columns: List = ["col1", "col2"]
 
@@ -74,7 +74,7 @@ def data_table_state4():
         The data table state class.
     """
 
-    class DataTableState(rx.State):
+    class DataTableState(rx.BaseState):
         _data: List = []
         _columns: List = ["col1", "col2"]
 

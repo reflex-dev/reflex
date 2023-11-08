@@ -21,7 +21,7 @@ from reflex.components.base import (
     Title,
 )
 from reflex.components.component import Component, ComponentStyle, CustomComponent
-from reflex.state import Cookie, LocalStorage, State
+from reflex.state import BaseState, Cookie, LocalStorage
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
 
@@ -128,7 +128,7 @@ def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) 
     }
 
 
-def compile_state(state: Type[State]) -> dict:
+def compile_state(state: Type[BaseState]) -> dict:
     """Compile the state of the app.
 
     Args:
@@ -170,7 +170,7 @@ def _compile_client_storage_field(
 
 
 def _compile_client_storage_recursive(
-    state: Type[State],
+    state: Type[BaseState],
 ) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:
     """Compile the client-side storage for the given state recursively.
 
@@ -208,7 +208,7 @@ def _compile_client_storage_recursive(
     return cookies, local_storage
 
 
-def compile_client_storage(state: Type[State]) -> dict[str, dict]:
+def compile_client_storage(state: Type[BaseState]) -> dict[str, dict]:
     """Compile the client-side storage for the given state.
 
     Args:

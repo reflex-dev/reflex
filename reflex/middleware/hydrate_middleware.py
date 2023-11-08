@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional
 from reflex import constants
 from reflex.event import Event, fix_events, get_hydrate_event
 from reflex.middleware.middleware import Middleware
-from reflex.state import State, StateUpdate
+from reflex.state import BaseState, StateUpdate
 from reflex.utils import format
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ class HydrateMiddleware(Middleware):
     """Middleware to handle initial app hydration."""
 
     async def preprocess(
-        self, app: App, state: State, event: Event
+        self, app: App, state: BaseState, event: Event
     ) -> Optional[StateUpdate]:
         """Preprocess the event.
 

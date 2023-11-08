@@ -19,11 +19,11 @@ from reflex.base import Base
 from reflex.constants import CompileVars, RouteVar, SocketEvent
 from reflex.event import Event, EventHandler
 from reflex.state import (
+    BaseState,
     ImmutableStateError,
     LockExpiredError,
     MutableProxy,
     RouterData,
-    State,
     StateManager,
     StateManagerMemory,
     StateManagerRedis,
@@ -75,7 +75,7 @@ class Object(Base):
     prop2: str = "hello"
 
 
-class TestState(State):
+class TestState(BaseState):
     """A test state."""
 
     # Set this class as not test one
@@ -148,7 +148,7 @@ class GrandchildState(ChildState):
         pass
 
 
-class DateTimeState(State):
+class DateTimeState(BaseState):
     """A State with some datetime fields."""
 
     d: datetime.date = datetime.date.fromisoformat("1989-11-09")
@@ -837,7 +837,7 @@ def test_get_query_params(test_state):
 
 
 def test_add_var():
-    class DynamicState(State):
+    class DynamicState(BaseState):
         pass
 
     ds1 = DynamicState()
@@ -870,7 +870,7 @@ def test_add_var_default_handlers(test_state):
     assert isinstance(test_state.event_handlers["set_rand_int"], EventHandler)
 
 
-class InterdependentState(State):
+class InterdependentState(BaseState):
     """A state with 3 vars and 3 computed vars.
 
     x: a variable that no computed var depends on
@@ -915,7 +915,7 @@ class InterdependentState(State):
 
 
 @pytest.fixture
-def interdependent_state() -> State:
+def interdependent_state() -> BaseState:
     """A state with varying dependency between vars.
 
     Returns:
@@ -988,7 +988,7 @@ def test_per_state_backend_var(interdependent_state):
 def test_child_state():
     """Test that the child state computed vars can reference parent state vars."""
 
-    class MainState(State):
+    class MainState(BaseState):
         v: int = 2
 
     class ChildState(MainState):
@@ -1006,7 +1006,7 @@ def test_child_state():
 def test_conditional_computed_vars():
     """Test that computed vars can have conditionals."""
 
-    class MainState(State):
+    class MainState(BaseState):
         flag: bool = False
         t1: str = "a"
         t2: str = "b"
@@ -1051,7 +1051,7 @@ def test_event_handlers_convert_to_fns(test_state, child_state):
 def test_event_handlers_call_other_handlers():
     """Test that event handlers can call other event handlers."""
 
-    class MainState(State):
+    class MainState(BaseState):
         v: int = 0
 
         def set_v(self, v: int):
@@ -1077,7 +1077,7 @@ def test_computed_var_cached():
     """Test that a ComputedVar doesn't recalculate when accessed."""
     comp_v_calls = 0
 
-    class ComputedState(State):
+    class ComputedState(BaseState):
         v: int = 0
 
         @rx.cached_var
@@ -1102,7 +1102,7 @@ def test_computed_var_cached():
 def test_computed_var_cached_depends_on_non_cached():
     """Test that a cached_var is recalculated if it depends on non-cached ComputedVar."""
 
-    class ComputedState(State):
+    class ComputedState(BaseState):
         v: int = 0
 
         @rx.var
@@ -1144,7 +1144,7 @@ def test_computed_var_depends_on_parent_non_cached():
     """Child state cached_var that depends on parent state un cached var is always recalculated."""
     counter = 0
 
-    class ParentState(State):
+    class ParentState(BaseState):
         @rx.var
         def no_cache_v(self) -> int:
             nonlocal counter
@@ -1195,7 +1195,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
     """
     counter = 0
 
-    class HandlerState(State):
+    class HandlerState(BaseState):
         x: int = 42
 
         def handler(self):
@@ -1226,7 +1226,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
 def test_computed_var_dependencies():
     """Test that a ComputedVar correctly tracks its dependencies."""
 
-    class ComputedState(State):
+    class ComputedState(BaseState):
         v: int = 0
         w: int = 0
         x: int = 0
@@ -1293,7 +1293,7 @@ def test_computed_var_dependencies():
 def test_backend_method():
     """A method with leading underscore should be callable from event handler."""
 
-    class BackendMethodState(State):
+    class BackendMethodState(BaseState):
         def _be_method(self):
             return True
 
@@ -1369,7 +1369,7 @@ def test_error_on_state_method_shadow():
     """Test that an error is thrown when an event handler shadows a state method."""
     with pytest.raises(NameError) as err:
 
-        class InvalidTest(rx.State):
+        class InvalidTest(rx.BaseState):
             def reset(self):
                 pass
 
@@ -1382,7 +1382,7 @@ def test_error_on_state_method_shadow():
 def test_state_with_invalid_yield():
     """Test that an error is thrown when a state yields an invalid value."""
 
-    class StateWithInvalidYield(rx.State):
+    class StateWithInvalidYield(rx.BaseState):
         """A state that yields an invalid value."""
 
         def invalid_handler(self):
@@ -1666,7 +1666,7 @@ async def test_state_proxy(grandchild_state: GrandchildState, mock_app: rx.App):
     assert mcall.kwargs["to"] == grandchild_state.get_sid()
 
 
-class BackgroundTaskState(State):
+class BackgroundTaskState(BaseState):
     """A state with a background task."""
 
     order: List[str] = []
@@ -2206,7 +2206,7 @@ class Foo(Base):
 def test_json_dumps_with_mutables():
     """Test that json.dumps works with Base vars inside mutable types."""
 
-    class MutableContainsBase(State):
+    class MutableContainsBase(BaseState):
         items: List[Foo] = [Foo()]
 
     dict_val = MutableContainsBase().dict()
@@ -2225,7 +2225,7 @@ def test_reset_with_mutables():
     default = [[0, 0], [0, 1], [1, 1]]
     copied_default = copy.deepcopy(default)
 
-    class MutableResetState(State):
+    class MutableResetState(BaseState):
         items: List[List[int]] = default
 
     instance = MutableResetState()
@@ -2273,7 +2273,7 @@ class Custom3(Base):
 def test_state_union_optional():
     """Test that state can be defined with Union and Optional vars."""
 
-    class UnionState(State):
+    class UnionState(BaseState):
         int_float: Union[int, float] = 0
         opt_int: Optional[int]
         c3: Optional[Custom3]

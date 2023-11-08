@@ -1,4 +1,4 @@
-"""Common rx.State subclasses for use in tests."""
+"""Common rx.BaseState subclasses for use in tests."""
 import reflex as rx
 
 from .mutation import DictMutationTestState, ListMutationTestState, MutableTestState
@@ -12,7 +12,7 @@ from .upload import (
 )
 
 
-class GenState(rx.State):
+class GenState(rx.BaseState):
     """A state with event handlers that generate multiple updates."""
 
     value: int

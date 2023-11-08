@@ -16,6 +16,7 @@ from reflex.components.component import (
 )
 from reflex.config import get_config
 from reflex.state import State
+from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 
 
@@ -63,7 +64,7 @@ def _compile_theme(theme: dict) -> str:
     return templates.THEME.render(theme=theme)
 
 
-def _compile_contexts(state: Optional[Type[State]]) -> str:
+def _compile_contexts(state: Optional[Type[BaseState]]) -> str:
     """Compile the initial state and contexts.
 
     Args:
@@ -87,7 +88,7 @@ def _compile_contexts(state: Optional[Type[State]]) -> str:
 
 def _compile_page(
     component: Component,
-    state: Type[State],
+    state: Type[BaseState],
 ) -> str:
     """Compile the component given the app state.
 
@@ -337,7 +338,7 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
-def compile_contexts(state: Optional[Type[State]]) -> tuple[str, str]:
+def compile_contexts(state: Optional[Type[BaseState]]) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
@@ -353,7 +354,7 @@ def compile_contexts(state: Optional[Type[State]]) -> tuple[str, str]:
 
 
 def compile_page(
-    path: str, component: Component, state: Type[State]
+    path: str, component: Component, state: Type[BaseState]
 ) -> tuple[str, str]:
     """Compile a single page.
 

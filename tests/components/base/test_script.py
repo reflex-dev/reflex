@@ -2,7 +2,7 @@
 import pytest
 
 from reflex.components.base.script import Script
-from reflex.state import State
+from reflex.state import BaseState
 
 
 def test_script_inline():
@@ -31,7 +31,7 @@ def test_script_neither():
         Script.create()
 
 
-class EvState(State):
+class EvState(BaseState):
     """State for testing event handlers."""
 
     def on_ready(self):

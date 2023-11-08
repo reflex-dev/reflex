@@ -235,7 +235,7 @@ def duplicate_substate():
         The test state.
     """
 
-    class TestState(rx.State):
+    class TestState(rx.BaseState):
         pass
 
     class ChildTestState(TestState):  # type: ignore # noqa

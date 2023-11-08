@@ -38,7 +38,7 @@ import reflex.utils.build
 import reflex.utils.exec
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.state import State, StateManagerMemory, StateManagerRedis
+from reflex.state import BaseState, State, StateManagerMemory, StateManagerRedis
 
 try:
     from selenium import webdriver  # pyright: ignore [reportMissingImports]
@@ -434,7 +434,7 @@ class AppHarness:
         self._frontends.append(driver)
         return driver
 
-    async def get_state(self, token: str) -> State:
+    async def get_state(self, token: str) -> BaseState:
         """Get the state associated with the given token.
 
         Args:
@@ -561,7 +561,9 @@ class AppHarness:
             )
         return element.get_attribute("value")
 
-    def poll_for_clients(self, timeout: TimeoutType = None) -> dict[str, reflex.State]:
+    def poll_for_clients(
+        self, timeout: TimeoutType = None
+    ) -> dict[str, reflex.BaseState]:
         """Poll app state_manager for any connected clients.
 
         Args:

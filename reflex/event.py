@@ -22,7 +22,7 @@ from reflex.utils.types import ArgsSpec
 from reflex.vars import BaseVar, Var
 
 if TYPE_CHECKING:
-    from reflex.state import State
+    from reflex.state import BaseState
 
 
 class Event(Base):
@@ -64,7 +64,7 @@ def background(fn):
 
 
 def _no_chain_background_task(
-    state_cls: Type["State"], name: str, fn: Callable
+    state_cls: Type["BaseState"], name: str, fn: Callable
 ) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
