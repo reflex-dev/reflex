@@ -434,8 +434,7 @@ def install_node():
                     f'& "{fnm_exe}" install {constants.Node.VERSION} --fnm-dir "{fnm_dir}"',
                 ],
             )
-        else:  # All other platforms (Linux, MacOS).
-            # TODO we can skip installation if check_node_version() checks out
+        else:  # All other platforms (Linux, WSL1).
             # Add execute permissions to fnm executable.
             os.chmod(constants.Fnm.EXE, stat.S_IXUSR)
             # Install node.
@@ -635,6 +634,27 @@ def validate_frontend_dependencies():
     validate_bun() if constants.IS_LINUX_OR_MAC else validate_node()
 
 
+def parse_non_semver_version(version_string: str) -> version.Version | None:
+    """Parse unsemantic version string and produce
+    a clean version that confirms to packaging.version.
+
+    Args:
+        version_string: The version string
+
+    Returns:
+        A cleaned semantic packaging.version object.
+
+    """
+    # Remove non-numeric characters from the version string
+    cleaned_version_string = re.sub(r"[^\d.]+", "", version_string)
+    try:
+        parsed_version = version.parse(cleaned_version_string)
+        return parsed_version
+    except version.InvalidVersion:
+        console.debug(f"could not parse version: {version_string}")
+        return None
+
+
 def is_valid_linux() -> bool:
     """Check if the linux kernel version is valid enough to use bun.
     This is typically used run npm at runtime for WSL 1 or lower linux versions.
@@ -644,9 +664,9 @@ def is_valid_linux() -> bool:
     """
     if platform.system() != "Linux":
         return False
-    kernel = platform.release()
-    kv = version.parse(kernel.split("-")[0])
-    return kv.major >= 5 and kv.minor >= 10
+    kernel_string = platform.release()
+    kv = parse_non_semver_version(kernel_string)
+    return kv.major >= 5 and kv.minor >= 10 if kv else False
 
 
 def initialize_frontend_dependencies():
