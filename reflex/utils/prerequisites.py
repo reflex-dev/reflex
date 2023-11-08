@@ -77,8 +77,8 @@ def get_package_manager() -> str | None:
     Returns:
         The path to the package manager.
     """
-    # On Windows, we use npm instead of bun.
-    if constants.IS_WINDOWS or not is_valid_linux():
+    # On Windows or lower linux kernels(WSL1), we use npm instead of bun.
+    if constants.IS_WINDOWS or constants.IS_LINUX and not is_valid_linux():
         return get_npm_package_manager()
 
     # On other platforms, we use bun.
@@ -662,7 +662,7 @@ def is_valid_linux() -> bool:
     Returns:
         If linux kernel version is valid enough.
     """
-    if platform.system() != "Linux":
+    if not constants.IS_LINUX:
         return False
     kernel_string = platform.release()
     kv = parse_non_semver_version(kernel_string)
