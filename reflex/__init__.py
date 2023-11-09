@@ -276,7 +276,13 @@ _MAPPING = {
     "reflex.vars": ["vars", "cached_var", "Var"],
 }
 _MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
-__all__ = [mod.removeprefix("reflex.") for mod in _MAPPING]
+
+
+def _removeprefix(text, prefix):
+    return text[text.startswith(prefix) and len(prefix) :]
+
+
+__all__ = [_removeprefix(mod, "reflex.") for mod in _MAPPING]
 
 
 def __getattr__(name: str) -> Type:
@@ -286,17 +292,25 @@ def __getattr__(name: str) -> Type:
         name: name of the module to load.
 
     Returns:
-        The module.
+        The module or the attribute of the module.
+
+    Raises:
+        AttributeError: If the module or the attribute does not exist.
     """
-    # Check for import of a module that is not in the mapping.
-    if name not in _MAPPING:
-        # If the name does not start with reflex, add it.
-        if not name.startswith("reflex") and name != "__all__":
-            name = f"reflex.{name}"
-        return importlib.import_module(name)
+    try:
+        # Check for import of a module that is not in the mapping.
+        if name not in _MAPPING:
+            # If the name does not start with reflex, add it.
+            if not name.startswith("reflex") and name != "__all__":
+                name = f"reflex.{name}"
+            return importlib.import_module(name)
 
-    # Import the module.
-    module = importlib.import_module(_MAPPING[name])
+        # Import the module.
+        module = importlib.import_module(_MAPPING[name])
 
-    # Get the attribute from the module if the name is not the module itself.
-    return getattr(module, name) if name != _MAPPING[name].rsplit(".")[-1] else module
+        # Get the attribute from the module if the name is not the module itself.
+        return (
+            getattr(module, name) if name != _MAPPING[name].rsplit(".")[-1] else module
+        )
+    except ModuleNotFoundError:
+        raise AttributeError(f"module 'reflex' has no attribute {name}") from None
