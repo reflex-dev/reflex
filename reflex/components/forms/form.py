@@ -54,6 +54,8 @@ class Form(ChakraComponent):
         )
 
     def _get_hooks(self) -> str | None:
+        if EventTriggers.ON_SUBMIT not in self.event_triggers:
+            return
         return HANDLE_SUBMIT_JS_JINJA2.render(
             handle_submit_unique_name=self.handle_submit_unique_name,
             form_data=FORM_DATA,
