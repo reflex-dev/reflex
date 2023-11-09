@@ -34,23 +34,6 @@ cd examples
 poetry run reflex init
 poetry run reflex run
 ```
-All the changes you make to the repository will be reflected in your running app.
-
-
-## 🧪 Testing and QA
-
-Within the 'test' directory of Reflex you can add to a test file already there or create a new test python file if it doesn't fit into the existing layout.
-
-#### What to unit test?
-- Any feature or significant change that has been added.
-- Any edge cases or potential problem areas.
-- Any interactions between different parts of the code.
-
-Now Init/Run
-``` bash
-poetry run reflex init
-poetry run reflex run
-```
 
 All the changes you make to the repository will be reflected in your running app.
 * We have the examples folder in the .gitignore, so your changes in reflex/examples won't be reflected in your commit.
@@ -61,7 +44,7 @@ Any feature or significant change added should be accompanied with unit tests.
 
 Within the 'test' directory of Reflex you can add to a test file already there or create a new test python file if it doesn't fit into the existing layout.
 
-What to unit test?
+#### What to unit test?
 - Any feature or significant change that has been added.
 - Any edge cases or potential problem areas.
 - Any interactions between different parts of the code.

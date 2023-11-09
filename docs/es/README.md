@@ -1,5 +1,5 @@
 ```diff
-+ ¿Buscas a Pynecone? Estas en el repositorio correcto. Pynecone ha sido renomabrado a Reflex. +
++ ¿Buscando Pynecone? Estas en el repositorio correcto. Pynecone ha sido renomabrado a Reflex. +
 ```
 
 <div align="center">
@@ -8,7 +8,7 @@
 
 <hr>
 
-### **✨ Aplicaciones  web potentes y perzonalizables utilizando solo Python. Lanza tu aplicación en segundos. ✨**
+### **✨ Aplicaciones  web personalizables y eficaces en Python puro. Despliega tú aplicación en segundos. ✨**
 [![PyPI version](https://badge.fury.io/py/reflex.svg)](https://badge.fury.io/py/reflex)
 ![tests](https://github.com/pynecone-io/pynecone/actions/workflows/integration.yml/badge.svg)
 ![versions](https://img.shields.io/pypi/pyversions/reflex.svg)
@@ -21,17 +21,17 @@
 ---
 ## ⚙️ Instalación
 
-Abre un terminal e instala reflex (Requiere Python 3.7+):
+Abra un terminal y ejecute (Requiere Python 3.7+):
 
 ```bash
 pip install reflex
 ```
 
-## 🥳 Crea tu primer aplicación
+## 🥳 Crea tú primera aplicación
 
-Al instalar `reflex` tambien se instalará la herramienta de linea de comandos  `reflex`.
+Al instalar `reflex` tambien se instala la herramienta de línea de comandos  `reflex`.
 
-Comprueba que la instalación fué exitosa creando un nuevo proyecto. (Reemplaza `my_app_name` con el nombre de tu proyecto):
+Compruebe que la instalación se ha realizado correctamente creando un nuevo proyecto. (Sustituye `my_app_name` por el nombre de tu proyecto):
 
 ```bash
 mkdir my_app_name
@@ -39,22 +39,22 @@ cd my_app_name
 reflex init
 ```
 
-Esto inicializará la plantilla de la aplicación en tu nuevo directorio. 
+Este comando inicializa una aplicación de ejemplo (plantilla) en tu nuevo directorio. 
 
-Puedes iniciar la aplicación en modo desarrollador:
+Puedes iniciar esta aplicación en modo de desarrollo:
 
 ```bash
 reflex run
 ```
 
-You should see your app running at http://localhost:3000.
+Debería ver su aplicación ejecutándose en http://localhost:3000.
 
-Now you can modify the source code in `my_app_name/my_app_name.py`. Reflex has fast refreshes so you can see your changes instantly when you save your code.
+Ahora puede modificar el código fuente en `my_app_name/my_app_name.py`. Reflex se actualiza rápidamente para que pueda ver los cambios al instante cuando guarde el código.
 
 
 ## 🫧 Ejemplo de una Aplicación
 
-Miremos un ejemplo: crear un UI de generación de imágenes usando DALL·E. Para simplicidad, usaremos el API de OpenAI , pero también pudes usar un modelo ML local.
+Veamos un ejemplo: crearemos una UI de generación de imágenes en torno a DALL-E. Para simplificar, solo llamamos a la API de OpenAI, pero podrías reeemplazar esto con un modelo ML ejecutado localmente.
 
 &nbsp;
 
@@ -64,7 +64,7 @@ Miremos un ejemplo: crear un UI de generación de imágenes usando DALL·E. Para
 
 &nbsp;
 
-Aqui esta el codigo completo para crear esto. ¡Todo esta hecho un solo archivo de Python!
+Aquí está el código completo para crear esto. ¡Todo esto se hace en un archivo de Python!
 
 ```python
 import reflex as rx
@@ -124,11 +124,11 @@ app.add_page(index, title="reflex:DALL·E")
 app.compile()
 ```
 
-## Repasemos esto.
+## Vamos a desglosarlo.
 
 ### **Reflex UI**
 
-Comenzemos con el interfaz de usario (UI).
+Empezemos por la interfaz de usuario (UI).
 
 ```python
 def index():
@@ -139,13 +139,13 @@ def index():
 
 Esta función `index` define el frontend de la aplicación.
 
-Usamos diferentes componentes como `center`, `vstack`, `input`, y `button` para crear el frontend. Los componentes pueden ser anidados dentro de cada uno para crear un disposición complejo. Tambien puedes usar keyword args para estilizarlos con el poder completo de CSS.
+Utilizamos diferentes componentes como `center`, `vstack`, `input`, y `button` para construir el frontend. Los componentes pueden anidarse unos dentro de otros para crear diseños complejos. Además, puedes usar argumentos (keyword args) para darles estilo con toda la potencia de CSS.
 
-Reflex viene con [mas de 60+ componentes incorporados](https://reflex.dev/docs/library) para ayudarte comenzar. Continuamos agregando mas componentes, y es facil de [crear tus propios componentes](https://reflex.dev/docs/advanced-guide/wrapping-react).
+Reflex viene con [mas de 60+ componentes incorporados](https://reflex.dev/docs/library) para ayudarle a empezar. Estamos añadiendo activamente más componentes y es fácil [crear sus propios componentes](https://reflex.dev/docs/advanced-guide/wrapping-react).
 
 ### **State**
 
-Reflex representa tu UI com una función de tu estado (State).
+Reflex representa su UI en función de su estado (State).
 
 ```python
 class State(rx.State):
@@ -156,9 +156,9 @@ class State(rx.State):
     complete = False
 ```
 
-El estado (state) define todas las variables (vars) en una aplicación que pueden cambiar y las funciones que las cambian.
+El estado (State) define todas las variables (llamadas vars) de una aplicación que pueden cambiar y las funciones que las modifican.
 
-Aquí el estado se compone de un `prompt` y de un `image_url`. También están los booleanos `processing` y `complete` para poder indicar cuándo mostrar el progreso circular y la imagen.
+Aquí el estado (State) se compone de `prompt` e `image_url`. También están los booleanos `processing` y `complete` para poder indicar cuándo mostrar el progreso circular y la imagen.
 
 ### **Event Handlers**
 
@@ -175,26 +175,26 @@ def get_image(self):
     self.processing, self.complete = False, True
 ```
 
-Dentro del estado, definos funciones que se llaman 'event handlers' que cambian los 'state vars'. Event handlers son la manera que podemos modificar el 'state' en Reflex. Pueden ser activadas en respuesta a las acciones del usuario, como seleccionando un botón or escribiendo dentro de un 'text box'. Estas acciones se llaman 'events'.
+Dentro del estado (State), definimos funciones llamadas "event handlers" que cambian los 'state vars'. Event handlers, son la manera que podemos modificar el 'state' en Reflex. Pueden ser activados en respuesta a las acciones del usuario, como hacer clic en un botón o escribir en un cuadro de texto. Estas acciones se llaman eventos 'events'.
 
-Nuestra aplicación DALL·E. tiene un event handler, `get_image` que recibe esta imagen del OpenAI API. Usando `yield` en medio de un event handler causara que el UI se actualize. Por lo demás, el UI se actualizara al fin de el event handler.
+Nuestra aplicación DALL·E. tiene un controlador de eventos "event handler", `get_image` que recibe esta imagen del OpenAI API. El uso de `yield` en medio de un controlador de eventos "event handler" hará que la UI se actualice. De lo contrario, la interfaz se actualizará al final del controlador de eventos "event handler".
 
 ### **Routing**
 
-Al fin, vamos a definir nuestro app.
+Por último, definimos nuestra app.
 
 ```python
 app = rx.App()
 ```
 
-Agregamos una página desde la raíz (root) de la aplicación hasta al componente de índice. También agregaremos un título que aparece en la pestaña de vista previa de la página o en la pestaña del navegador web.
+Añadimos una página desde la raíz (root) de la aplicación al componente de índice (index). También agregamos un título que se mostrará en la vista previa de la página/pestaña del navegador.
 
 ```python
 app.add_page(index, title="DALL-E")
 app.compile()
 ```
 
-Puedes crear un app con multiples paginas al agregar mas paginas como esta.
+Puedes crear una aplicación multipágina añadiendo más páginas.
 
 ## 📑 Recursos
 
@@ -210,27 +210,27 @@ Puedes crear un app con multiples paginas al agregar mas paginas como esta.
 
 ## ✅ Estatus
 
-Reflex lanzo en Diciembre 2022 con el nombre Pynecone.
+Reflex se lanzó en Diciembre de 2022 con el nombre Pynecone.
 
-Desde Julio 2023, estamos en el estatus de **Beta Publica**.
+A partir de julio de 2023, nos encontramos en la etapa de  **Beta Pública**.
 
--   :white_check_mark: **Alfa Publico**: Cualquiera puede instalar y utilizar Reflex. Puede que haya problemas, pero estamos trabajando para resolverlos.
--   :large_orange_diamond: **Beta Publica**: Suficientemente estable para casos de uso no empresariales.
--   **Betea Publica de Alojamiento**: _Opcionalmente_, lanza y hospeda tus aplicaciónes en Reflex!
--   **Publico**: Reflex está listo para la producción.
+-   :white_check_mark: **Alpha Pública**: Cualquier persona puede instalar y usar Reflex. Puede haber problemas, pero estamos trabajando activamente para resolverlos.
+-   :large_orange_diamond: **Beta Pública**: Suficientemente estable para casos de uso no empresariales.
+-   **Beta de Hospedaje Público**: ¡_Opcionalmente_, despliega y hospeda tus aplicaciónes en Reflex!
+-   **Público**: Reflex está listo para producción.
 
-¡Reflex tiene nuevos lanzamientos y funciones cada semana! Asedurate de darnos una :star: estrella y :eyes: revisa este repositorio para estar al día.
+¡Reflex tiene nuevas versiones y características que se lanzan cada semana! Aseguraté de darnos una :star: estrella y :eyes: revisa este repositorio para mantenerte actualizado.
 
 ## Contribuyendo
 
-¡Agradecemos contribuciones de cualquier tamaño! Abajo hay algunas buenas formas de comenzar en la comunidad Reflex.
+¡Aceptamos contribuciones de cualquier tamaño! A continuación encontrará algunas buenas formas de iniciarse en la comunidad Reflex.
 
 -   **Únete a nuestro  Discord**: Nuestro [Discord](https://discord.gg/T5WSbC2YtQ) es el mejor lugar para obtener ayuda en su proyecto Reflex y discutir cómo puedes contribuir.
--   **Discusiones de GitHub**: Una excelente manera de hablar sobre las características que deseas agregar o cosas que son confusas o que necesitan aclaración.
--   **GitHub Issues**: These are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
+-   **Discusiones de GitHub**: Una excelente manera de hablar sobre las características que deseas agregar o las cosas que te resusltan confusas o necesitan aclaración.
+-   **GitHub Issues**: Las incidencias son una forma excelente de informar de errores. Además, puedes intentar resolver un problema exixtente y enviar un PR.
 
-Buscamos colaboradores, sin importar su nivel de habilidad o experiencia.
+Buscamos colaboradores, sin importar su nivel o experiencia.
 
 ## Licencia
 
-Reflex es de código abierto y tiene la licencia [Apache License 2.0](LICENSE).
+Reflex es de código abierto y está licenciado bajo la [Apache License 2.0](LICENSE).

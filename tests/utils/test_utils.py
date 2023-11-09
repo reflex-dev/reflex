@@ -121,19 +121,6 @@ def test_validate_bun_path_incompatible_version(mocker):
         prerequisites.validate_bun()
 
 
-def test_remove_existing_bun_installation(mocker):
-    """Test that existing bun installation is removed.
-
-    Args:
-        mocker: Pytest mocker.
-    """
-    mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
-    rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
-
-    prerequisites.remove_existing_bun_installation()
-    rm.assert_called_once()
-
-
 def test_setup_frontend(tmp_path, mocker):
     """Test checking if assets content have been
     copied into the .web/public folder.
@@ -364,65 +351,6 @@ def test_node_install_windows(tmp_path, mocker):
     download.assert_called_once()
 
 
-@pytest.mark.parametrize(
-    "machine, system",
-    [
-        ("x64", "Darwin"),
-        ("arm64", "Darwin"),
-        ("x64", "Windows"),
-        ("arm64", "Windows"),
-        ("armv7", "Linux"),
-        ("armv8-a", "Linux"),
-        ("armv8.1-a", "Linux"),
-        ("armv8.2-a", "Linux"),
-        ("armv8.3-a", "Linux"),
-        ("armv8.4-a", "Linux"),
-        ("aarch64", "Linux"),
-        ("aarch32", "Linux"),
-    ],
-)
-def test_node_install_unix(tmp_path, mocker, machine, system):
-    fnm_root_path = tmp_path / "reflex" / "fnm"
-    fnm_exe = fnm_root_path / "fnm"
-
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
-    mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
-
-    class Resp(Base):
-        status_code = 200
-        text = "test"
-
-    mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
-    mocker.patch("reflex.utils.processes.stream_logs")
-
-    prerequisites.install_node()
-
-    assert fnm_root_path.exists()
-    download.assert_called_once()
-    if system == "Darwin" and machine == "arm64":
-        process.assert_called_with(
-            [
-                fnm_exe,
-                "install",
-                "--arch=arm64",
-                constants.Node.VERSION,
-                "--fnm-dir",
-                fnm_root_path,
-            ]
-        )
-    else:
-        process.assert_called_with(
-            [fnm_exe, "install", constants.Node.VERSION, "--fnm-dir", fnm_root_path]
-        )
-    chmod.assert_called_once()
-
-
 def test_bun_install_without_unzip(mocker):
     """Test that an error is thrown when installing bun with unzip not installed.
 
@@ -447,10 +375,9 @@ def test_create_reflex_dir(mocker, is_windows):
         is_windows: Whether platform is windows.
     """
     mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
-    mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
+    mocker.patch("reflex.utils.prerequisites.install_bun", mocker.Mock())
+    mocker.patch("reflex.utils.prerequisites.install_node", mocker.Mock())
     mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
-    mocker.patch("reflex.utils.processes.run_concurrently")
-    mocker.patch("reflex.utils.prerequisites.validate_bun")
     create_cmd = mocker.patch(
         "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )

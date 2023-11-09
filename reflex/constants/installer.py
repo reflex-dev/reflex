@@ -116,5 +116,5 @@ class PackageJson(SimpleNamespace):
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.14",
-        "postcss": "8.4.24",
+        "postcss": "8.4.31",
     }
