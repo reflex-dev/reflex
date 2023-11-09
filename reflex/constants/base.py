@@ -24,7 +24,7 @@ class Dirs(SimpleNamespace):
     # The name of the utils file.
     UTILS = "utils"
     # The name of the output static directory.
-    STATIC = "out"
+    STATIC = "_static"
     # The name of the state file.
     STATE_PATH = "/".join([UTILS, "state"])
     # The name of the components file.

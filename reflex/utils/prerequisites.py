@@ -340,29 +340,25 @@ def update_next_config(export=False):
     with open(next_config_file, "r") as file:
         next_config = file.read()
 
-    next_config = _update_next_config(next_config, get_config(), export=export)
+    next_config = _update_next_config(get_config(), export=export)
 
     with open(next_config_file, "w") as file:
         file.write(next_config)
+        file.write("\n")
 
 
-def _update_next_config(next_config, config, export=False):
-    next_config = re.sub(
-        "compress: (true|false)",
-        f'compress: {"true" if config.next_compression else "false"}',
-        next_config,
-    )
-    next_config = re.sub(
-        'basePath: ".*?"',
-        f'basePath: "{config.frontend_path or ""}"',
-        next_config,
-    )
+def _update_next_config(config, export=False):
+    next_config = {
+        "basePath": config.frontend_path or "",
+        "compress": config.next_compression,
+        "reactStrictMode": True,
+        "trailingSlash": True,
+        "output": "export" if export else "",
+        "distDir": constants.Dirs.STATIC,
+    }
 
-    if export:
-        next_config = re.sub('output: ".*?"', 'output: "export"', next_config)
-    else:
-        next_config = re.sub('output: "export"', 'output: ""', next_config)
-    return next_config
+    next_config_json = re.sub(r'"([^"]+)"(?=:)', r"\1", json.dumps(next_config))
+    return f"module.exports = {next_config_json};"
 
 
 def remove_existing_bun_installation():

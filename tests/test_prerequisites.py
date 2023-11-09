@@ -8,140 +8,52 @@ from reflex.utils.prerequisites import _update_next_config, initialize_requireme
 
 
 @pytest.mark.parametrize(
-    "input, config, export, expected_output",
+    "config, export, expected_output",
     [
         (
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
             Config(
                 app_name="test",
             ),
             False,
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
+            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
         ),
         (
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
             Config(
                 app_name="test",
                 next_compression=False,
             ),
             False,
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: false,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
+            'module.exports = {basePath: "", compress: false, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
         ),
         (
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
             Config(
                 app_name="test",
                 frontend_path="/test",
             ),
             False,
-            """
-                module.exports = {
-                    basePath: "/test",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
+            'module.exports = {basePath: "/test", compress: true, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
         ),
         (
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
             Config(
                 app_name="test",
                 frontend_path="/test",
                 next_compression=False,
             ),
             False,
-            """
-                module.exports = {
-                    basePath: "/test",
-                    compress: false,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
+            'module.exports = {basePath: "/test", compress: false, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
         ),
         (
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "",
-                };
-            """,
             Config(
                 app_name="test",
             ),
             True,
-            """
-                module.exports = {
-                    basePath: "",
-                    compress: true,
-                    reactStrictMode: true,
-                    trailingSlash: true,
-                    output: "export",
-                };
-            """,
+            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, output: "export", distDir: "_static"};',
         ),
     ],
 )
-def test_update_next_config(input, config, export, expected_output):
-    output = _update_next_config(input, config, export=export)
+def test_update_next_config(config, export, expected_output):
+    output = _update_next_config(config, export=export)
     assert output == expected_output
-
-    if export:
-        assert _update_next_config(output, config) == input
 
 
 def test_initialize_requirements_txt(mocker):
