@@ -69,7 +69,7 @@ npm install -g @lhci/cli
 lhci autorun
 
 # Check to see if the LHCI report is generated
-if [ -d "./tests/benchmarks/.lighthouseci" ] && [ "$(ls -A ./tests/benchmarks/.lighthouseci)" ]; then
+if [ -d "./integration/benchmarks/.lighthouseci" ] && [ "$(ls -A ./integration/benchmarks/.lighthouseci)" ]; then
   echo "LHCI report generated"
 else
   echo "LHCI report not generated"
