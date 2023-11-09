@@ -58,7 +58,7 @@ module.exports = {
     },
     upload: {
       target: 'filesystem',
-      "outputDir": "./tests/benchmarks/.lighthouseci"
+      "outputDir": "./integration/benchmarks/.lighthouseci"
     },
   },
 };
