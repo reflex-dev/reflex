@@ -1,3 +1,5 @@
+"""Helper functions for the benchmarking integration."""
+
 import json
 from datetime import datetime
 
@@ -11,6 +13,15 @@ def insert_benchmarking_data(
     commit_sha: str,
     pr_title: str,
 ):
+    """Insert the benchmarking data into the database.
+
+    Args:
+        db_connection_url: The URL to connect to the database.
+        lighthouse_data: The Lighthouse data to insert.
+        performance_data: The performance data to insert.
+        commit_sha: The commit SHA to insert.
+        pr_title: The PR title to insert.
+    """
     # Serialize the JSON data
     lighthouse_json = json.dumps(lighthouse_data)
     performance_json = json.dumps(performance_data)

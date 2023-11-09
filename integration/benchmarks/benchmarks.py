@@ -1,3 +1,5 @@
+"""Runs the benchmarks and inserts the results into the database."""
+
 import json
 import os
 import sys
@@ -6,7 +8,15 @@ import pytest
 from helpers import insert_benchmarking_data
 
 
-def get_lighthouse_scores(directory_path):
+def get_lighthouse_scores(directory_path: str) -> dict:
+    """Extracts the Lighthouse scores from the JSON files in the specified directory.
+
+    Args:
+        directory_path (str): The path to the directory containing the JSON files.
+
+    Returns:
+        dict: The Lighthouse scores.
+    """
     scores = {}
 
     try:
@@ -34,7 +44,15 @@ def get_lighthouse_scores(directory_path):
     return scores
 
 
-def run_pytest_and_get_results(test_path=None):
+def run_pytest_and_get_results(test_path=None) -> dict:
+    """Runs pytest and returns the results.
+
+    Args:
+        test_path: The path to the tests to run.
+
+    Returns:
+        dict: The results of the tests.
+    """
     # Set the default path to the current directory if no path is provided
     if not test_path:
         test_path = os.getcwd()
@@ -53,7 +71,15 @@ def run_pytest_and_get_results(test_path=None):
     return pytest_results
 
 
-def extract_stats_from_json(json_data):
+def extract_stats_from_json(json_data) -> list[dict]:
+    """Extracts the stats from the JSON data and returns them as a list of dictionaries.
+
+    Args:
+        json_data: The JSON data to extract the stats from.
+
+    Returns:
+        list[dict]: The stats for each test.
+    """
     # Load the JSON data if it is a string, otherwise assume it's already a dictionary
     data = json.loads(json_data) if isinstance(json_data, str) else json_data
 
@@ -83,6 +109,7 @@ def extract_stats_from_json(json_data):
 
 
 def main():
+    """Runs the benchmarks and inserts the results into the database."""
     # Get the commit SHA and JSON directory from the command line arguments
     commit_sha = sys.argv[1]
     json_dir = sys.argv[2]
