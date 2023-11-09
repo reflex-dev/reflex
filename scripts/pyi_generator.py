@@ -614,7 +614,7 @@ def generate_init():
     from reflex import _MAPPING  # type: ignore
 
     imports = [
-        f"from {path if mod != path.rsplit('.')[-1] else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
+        f"from {path if mod != path.rsplit('.')[-1] or mod == 'page' else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
         for mod, path in _MAPPING.items()
     ]
 

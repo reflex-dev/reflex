@@ -4,6 +4,7 @@ Anything imported here will be available in the default Reflex import as `rx.*`.
 To signal to typecheckers that something should be reexported,
 we use the Flask "import name as name" syntax.
 """
+import importlib
 from typing import Type
 
 from reflex.utils.format import to_snake_case
@@ -222,6 +223,7 @@ _ALL_COMPONENTS = [
 
 _ALL_COMPONENTS += [to_snake_case(component) for component in _ALL_COMPONENTS]
 _ALL_COMPONENTS += [
+    "components",
     "desktop_only",
     "mobile_only",
     "tablet_only",
@@ -233,9 +235,10 @@ _ALL_COMPONENTS += [
 ]
 
 _MAPPING = {
-    "reflex.admin": ["AdminDash"],
-    "reflex.app": ["App", "UploadFile"],
-    "reflex.base": ["Base"],
+    "reflex.admin": ["admin", "AdminDash"],
+    "reflex.app": ["app", "App", "UploadFile"],
+    "reflex.base": ["base", "Base"],
+    "reflex.compiler": ["compiler"],
     "reflex.compiler.utils": ["get_asset_path"],
     "reflex.components": _ALL_COMPONENTS,
     "reflex.components.component": ["memo"],
@@ -246,7 +249,6 @@ _MAPPING = {
     "reflex.event": [
         "event",
         "EventChain",
-        "FileUpload",
         "background",
         "call_script",
         "clear_local_storage",
@@ -260,17 +262,21 @@ _MAPPING = {
         "set_focus",
         "set_value",
         "stop_propagation",
+        "upload_files",
         "window_alert",
     ],
-    "reflex.middleware": ["Middleware"],
+    "reflex.middleware": ["middleware", "Middleware"],
     "reflex.model": ["model", "session", "Model"],
     "reflex.page": ["page"],
-    "reflex.components.graphing.recharts": ["recharts"],
-    "reflex.state": ["var", "Cookie", "LocalStorage", "State"],
-    "reflex.style": ["color_mode", "toggle_color_mode"],
-    "reflex.vars": ["cached_var", "Var"],
+    "reflex.route": ["route"],
+    "reflex.state": ["state", "var", "Cookie", "LocalStorage", "State"],
+    "reflex.style": ["style", "color_mode", "toggle_color_mode"],
+    "reflex.testing": ["testing"],
+    "reflex.utils": ["utils"],
+    "reflex.vars": ["vars", "cached_var", "Var"],
 }
 _MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
+__all__ = [mod.removeprefix("reflex.") for mod in _MAPPING]
 
 
 def __getattr__(name: str) -> Type:
@@ -282,9 +288,14 @@ def __getattr__(name: str) -> Type:
     Returns:
         The module.
     """
-    # Import the module.
-    import importlib
+    # Check for import of a module that is not in the mapping.
+    if name not in _MAPPING:
+        # If the name does not start with reflex, add it.
+        if not name.startswith("reflex") and name != "__all__":
+            name = f"reflex.{name}"
+        return importlib.import_module(name)
 
+    # Import the module.
     module = importlib.import_module(_MAPPING[name])
 
     # Get the attribute from the module if the name is not the module itself.

@@ -270,6 +270,10 @@ class FileUpload(Base):
     pass
 
 
+# Alias for rx.upload_files
+upload_files = FileUpload
+
+
 # Special server-side events.
 def server_side(name: str, sig: inspect.Signature, **kwargs) -> EventSpec:
     """A server-side event.
