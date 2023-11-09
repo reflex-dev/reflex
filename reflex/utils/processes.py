@@ -127,7 +127,11 @@ def new_process(args, run: bool = False, show_logs: bool = False, **kwargs):
         Execute a child program in a new process.
     """
     node_bin_path = ""
-    if not constants.IS_LINUX_OR_MAC or not prerequisites.is_valid_linux():
+    if (
+        not constants.IS_LINUX_OR_MAC
+        or constants.IS_LINUX
+        and not prerequisites.is_valid_linux()
+    ):
         node_bin_path = path_ops.get_node_bin_path() or ""
         if not node_bin_path:
             console.warn(

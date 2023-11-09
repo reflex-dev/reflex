@@ -163,9 +163,12 @@ def export(
         ]
         # Start the subprocess with the progress bar.
         process = processes.new_process(
-            [prerequisites.get_package_manager(), "run", command],
+            [*prerequisites.get_package_manager(), "run", command],
             cwd=constants.Dirs.WEB,
             shell=constants.IS_WINDOWS,
+            env={
+                "NODE_ENV": "production",
+            },
         )
         processes.show_progress("Creating Production Build", process, checkpoints)
 
@@ -222,7 +225,7 @@ def setup_frontend(
     if disable_telemetry:
         processes.new_process(
             [
-                prerequisites.get_package_manager(),
+                *prerequisites.get_package_manager(),
                 "run",
                 "next",
                 "telemetry",

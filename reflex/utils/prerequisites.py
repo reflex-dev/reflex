@@ -70,7 +70,7 @@ def get_bun_version() -> version.Version | None:
         return None
 
 
-def get_package_manager() -> str | None:
+def get_package_manager() -> list[str] | None:
     """Get the package manager executable for installation.
       Currently on unix systems, bun is used for installation only.
 
@@ -79,10 +79,10 @@ def get_package_manager() -> str | None:
     """
     # On Windows or lower linux kernels(WSL1), we use npm instead of bun.
     if constants.IS_WINDOWS or constants.IS_LINUX and not is_valid_linux():
-        return get_npm_package_manager()
+        return [get_npm_package_manager()]
 
     # On other platforms, we use bun.
-    return get_config().bun_path
+    return [get_config().bun_path, "--bun"]
 
 
 def get_install_package_manager() -> str | None:
@@ -489,7 +489,7 @@ def install_frontend_packages(packages: set[str]):
     """
     # Install the base packages.
     process = processes.new_process(
-        [get_install_package_manager(), "install", "--loglevel", "silly"],
+        [get_install_package_manager(), "install", "--loglevel", "debug"],
         cwd=constants.Dirs.WEB,
         shell=constants.IS_WINDOWS,
     )
@@ -722,8 +722,7 @@ def prompt_for_template() -> constants.Templates.Kind:
     Returns:
         The template the user selected.
     """
-    # Show the user the URLs of each temlate to preview.
-    console.print("\nGet started with a template:")
+    # Show the usackagetarted with a template:")
     console.print("blank (https://blank-template.reflex.run) - A minimal template.")
     console.print(
         "sidebar (https://sidebar-template.reflex.run) - A template with a sidebar to navigate pages."
