@@ -179,7 +179,7 @@ class DataEditor(NoSSRComponent):
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
     vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
-    # Allow columns selections. ("none", "single", "multiple")
+    # Allow columns selections. ("none", "single", "multi")
     column_select: Var[str]
 
     # Prevent diagonal scrolling.
