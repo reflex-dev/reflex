@@ -196,12 +196,13 @@ def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
         pass
 
 
-def stream_logs(message: str, process: subprocess.Popen):
+def stream_logs(message: str, process: subprocess.Popen, progress=None):
     """Stream the logs for a process.
 
     Args:
         message: The message to display.
         process: The process.
+        progress: The ongoing progress bar if one is being used.
 
     Yields:
         The lines of the process output.
@@ -212,11 +213,11 @@ def stream_logs(message: str, process: subprocess.Popen):
     # Store the tail of the logs.
     logs = collections.deque(maxlen=512)
     with process:
-        console.debug(message)
+        console.debug(message, progress=progress)
         if process.stdout is None:
             return
         for line in process.stdout:
-            console.debug(line, end="")
+            console.debug(line, end="", progress=progress)
             logs.append(line)
             yield line
 
@@ -263,7 +264,7 @@ def show_progress(message: str, process: subprocess.Popen, checkpoints: List[str
     # Iterate over the process output.
     with console.progress() as progress:
         task = progress.add_task(f"{message}: ", total=len(checkpoints))
-        for line in stream_logs(message, process):
+        for line in stream_logs(message, process, progress=progress):
             # Check for special strings and update the progress bar.
             for special_string in checkpoints:
                 if special_string in line:

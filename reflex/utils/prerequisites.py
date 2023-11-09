@@ -347,9 +347,10 @@ def _update_next_config(config, export=False):
         "compress": config.next_compression,
         "reactStrictMode": True,
         "trailingSlash": True,
-        "output": "export" if export else "",
-        "distDir": constants.Dirs.STATIC,
     }
+    if export:
+        next_config["output"] = "export"
+        next_config["distDir"] = constants.Dirs.STATIC
 
     next_config_json = re.sub(r'"([^"]+)"(?=:)', r"\1", json.dumps(next_config))
     return f"module.exports = {next_config_json};"
@@ -418,7 +419,6 @@ def download_and_extract_fnm_zip():
 def install_node():
     """Install fnm and nodejs for use by Reflex."""
     if constants.IS_WINDOWS or constants.IS_LINUX and not is_valid_linux():
-
         path_ops.mkdir(constants.Fnm.DIR)
         if not os.path.exists(constants.Fnm.EXE):
             download_and_extract_fnm_zip()

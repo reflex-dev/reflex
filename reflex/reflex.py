@@ -184,6 +184,7 @@ def _run(
     console.rule("[bold]Starting Reflex App")
 
     if frontend:
+        prerequisites.update_next_config()
         # Get the app module.
         prerequisites.get_app()
 

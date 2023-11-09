@@ -35,21 +35,25 @@ def set_os_env(**kwargs):
         os.environ[key.upper()] = value
 
 
-def generate_sitemap_config(deploy_url: str):
+def generate_sitemap_config(deploy_url: str, export=False):
     """Generate the sitemap config file.
 
     Args:
         deploy_url: The URL of the deployed app.
+        export: If the sitemap are generated for an export.
     """
     # Import here to avoid circular imports.
     from reflex.compiler import templates
 
-    config = json.dumps(
-        {
-            "siteUrl": deploy_url,
-            "generateRobotsTxt": True,
-        }
-    )
+    config = {
+        "siteUrl": deploy_url,
+        "generateRobotsTxt": True,
+    }
+
+    if export:
+        config["outDir"] = constants.Dirs.STATIC
+
+    config = json.dumps(config)
 
     with open(constants.Next.SITEMAP_CONFIG_FILE, "w") as f:
         f.write(templates.SITEMAP_CONFIG(config=config))
@@ -115,7 +119,7 @@ def _zip(
 
     with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file in files_to_zip:
-            console.debug(f"{target}: {file}")
+            console.debug(f"{target}: {file}", progress=progress)
             progress.advance(task)
             zipf.write(file, os.path.relpath(file, root_dir))
 
@@ -145,22 +149,23 @@ def export(
     command = "export"
 
     if frontend:
-        # Generate a sitemap if a deploy URL is provided.
-        if deploy_url is not None:
-            generate_sitemap_config(deploy_url)
-            command = "export-sitemap"
-
         checkpoints = [
             "Linting and checking ",
-            "Compiled successfully",
+            "Creating an optimized production build",
             "Route (pages)",
+            "prerendered as static HTML",
             "Collecting page data",
-            "automatically rendered as static HTML",
-            'Copying "static build" directory',
-            'Copying "public" directory',
             "Finalizing page optimization",
-            "Export successful",
+            "Collecting build traces",
         ]
+
+        # Generate a sitemap if a deploy URL is provided.
+        if deploy_url is not None:
+            generate_sitemap_config(deploy_url, export=zip)
+            command = "export-sitemap"
+
+            checkpoints.extend(["Loading next-sitemap", "Generation completed"])
+
         # Start the subprocess with the progress bar.
         process = processes.new_process(
             [prerequisites.get_package_manager(), "run", command],
