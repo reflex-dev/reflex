@@ -2,8 +2,6 @@
 
 from .base import (
     COOKIES,
-    IS_LINUX,
-    IS_LINUX_OR_MAC,
     IS_WINDOWS,
     LOCAL_STORAGE,
     POLLING_MAX_HTTP_BUFFER_SIZE,
@@ -71,8 +69,6 @@ __ALL__ = [
     Fnm,
     GitIgnore,
     RequirementsTxt,
-    IS_LINUX_OR_MAC,
-    IS_LINUX,
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,

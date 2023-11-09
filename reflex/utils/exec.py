@@ -116,7 +116,7 @@ def run_frontend(root: Path, port: str):
     # Start watching asset folder.
     start_watching_assets_folder(root)
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies()
+    prerequisites.validate_frontend_dependencies(init=False)
 
     # Run the frontend in development mode.
     console.rule("[bold green]App Running")
@@ -134,7 +134,7 @@ def run_frontend_prod(root: Path, port: str):
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     # validate dependencies before run
-    prerequisites.validate_frontend_dependencies()
+    prerequisites.validate_frontend_dependencies(init=False)
     # Run the frontend in production mode.
     console.rule("[bold green]App Running")
     run_process_and_launch_url([prerequisites.get_package_manager(), "run", "prod"])  # type: ignore
@@ -239,20 +239,21 @@ def output_system_info():
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
+        f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
     ]
 
     system = platform.system()
-    if system == "Windows" or constants.IS_LINUX and not prerequisites.is_valid_linux():
+
+    if system != "Windows":
         dependencies.extend(
             [
-                f"[Node {prerequisites.get_node_version()} (Expected: {constants.Node.VERSION}) (PATH:{path_ops.get_node_path()})]",
                 f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
-            ]
+                f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
+            ],
         )
-
-    if system != "Windows" or constants.IS_LINUX and not prerequisites.is_valid_linux():
+    else:
         dependencies.append(
-            f"[Bun {prerequisites.get_bun_version()} (Expected: {constants.Bun.VERSION}) (PATH: {config.bun_path})]",
+            f"[FNM {prerequisites.get_fnm_version()} (Expected: {constants.Fnm.VERSION}) (PATH: {constants.Fnm.EXE})]",
         )
 
     if system == "Linux":
