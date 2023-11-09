@@ -677,7 +677,7 @@ def initialize_frontend_dependencies():
     # Set up the web directory.
     initialize_web_directory()
     # remove existing fnm dir on linux and mac
-    if constants.IS_LINUX_OR_MAC and is_valid_linux():
+    if constants.IS_MAC or constants.IS_LINUX and is_valid_linux():
         remove_existing_fnm_dir()
 
 
