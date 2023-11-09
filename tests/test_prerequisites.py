@@ -15,7 +15,7 @@ from reflex.utils.prerequisites import _update_next_config, initialize_requireme
                 app_name="test",
             ),
             False,
-            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
+            'module.exports = {basePath: "", compress: true, reactStrictMode: true, trailingSlash: true};',
         ),
         (
             Config(
@@ -23,7 +23,7 @@ from reflex.utils.prerequisites import _update_next_config, initialize_requireme
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "", compress: false, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
+            'module.exports = {basePath: "", compress: false, reactStrictMode: true, trailingSlash: true};',
         ),
         (
             Config(
@@ -31,7 +31,7 @@ from reflex.utils.prerequisites import _update_next_config, initialize_requireme
                 frontend_path="/test",
             ),
             False,
-            'module.exports = {basePath: "/test", compress: true, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
+            'module.exports = {basePath: "/test", compress: true, reactStrictMode: true, trailingSlash: true};',
         ),
         (
             Config(
@@ -40,7 +40,7 @@ from reflex.utils.prerequisites import _update_next_config, initialize_requireme
                 next_compression=False,
             ),
             False,
-            'module.exports = {basePath: "/test", compress: false, reactStrictMode: true, trailingSlash: true, output: "", distDir: "_static"};',
+            'module.exports = {basePath: "/test", compress: false, reactStrictMode: true, trailingSlash: true};',
         ),
         (
             Config(
