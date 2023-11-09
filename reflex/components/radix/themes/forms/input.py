@@ -7,7 +7,7 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .base import (
+from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
@@ -15,89 +15,6 @@ from .base import (
     LiteralVariant,
     RadixThemesComponent,
 )
-
-LiteralButtonSize = Literal["1", "2", "3", "4"]
-
-
-class Button(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
-
-    tag = "Button"
-
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
-
-    # Button size "1" - "4"
-    size: Var[LiteralButtonSize]
-
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
-
-    # Override theme color for button
-    color: Var[LiteralAccentColor]
-
-    # Whether to render the button with higher contrast color against background
-    high_contrast: Var[bool]
-
-    # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
-
-
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
-
-
-class Switch(CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
-
-    tag = "Switch"
-
-    # Change the default rendered element for the one passed as a child, merging their props and behavior.
-    as_child: Var[bool]
-
-    # Whether the switch is checked by default
-    default_checked: Var[bool]
-
-    # Whether the switch is checked
-    checked: Var[bool]
-
-    # If true, prevent the user from interacting with the switch
-    disabled: Var[bool]
-
-    # If true, the user must interact with the switch to submit the form
-    required: Var[bool]
-
-    # The name of the switch (when submitting a form)
-    name: Var[str]
-
-    # The value associated with the "on" position
-    value: Var[str]
-
-    # Switch size "1" - "4"
-    size: Var[LiteralSwitchSize]
-
-    # Variant of switch: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
-
-    # Override theme color for switch
-    color: Var[LiteralAccentColor]
-
-    # Whether to render the switch with higher contrast color against background
-    high_contrast: Var[bool]
-
-    # Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
-
-    def get_event_triggers(self) -> Dict[str, Any]:
-        """Get the event triggers that pass the component's value to the handler.
-
-        Returns:
-            A dict mapping the event trigger name to the argspec passed to the handler.
-        """
-        return {
-            **super().get_event_triggers(),
-            EventTriggers.ON_CHECKED_CHANGE: lambda checked: [checked],
-        }
-
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
