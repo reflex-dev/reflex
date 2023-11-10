@@ -627,6 +627,28 @@ def unwrap_vars(value: str) -> str:
     )
 
 
+def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
+    """Collapse keys with consecutive suffixes into a single list value.
+
+    Separators dash and underscore are removed, unless this would overwrite an existing key.
+
+    Args:
+        form_dict: The dict to collapse.
+
+    Returns:
+        The collapsed dict.
+    """
+    ending_digit_regex = re.compile(r"^(.*?)[_-]?(\d+)$")
+    collapsed = {}
+    for k in sorted(form_dict):
+        m = ending_digit_regex.match(k)
+        if m:
+            collapsed.setdefault(m.group(1), []).append(form_dict[k])
+    # collapsing never overwrites valid data from the form_dict
+    collapsed.update(form_dict)
+    return collapsed
+
+
 def format_data_editor_column(col: str | dict):
     """Format a given column into the proper format.
 
