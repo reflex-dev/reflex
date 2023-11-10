@@ -45,7 +45,22 @@ class Form(ChakraComponent):
     reset_on_submit: Var[bool] = False  # type: ignore
 
     # The name used to make this form's submit handler function unique
-    handle_submit_unique_name: Var[str] = get_unique_variable_name()  # type: ignore
+    handle_submit_unique_name: Var[str]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a form component.
+
+        Args:
+            *children: The children of the form.
+            **props: The properties of the form.
+
+        Returns:
+            The form component.
+        """
+        if "handle_submit_unique_name" not in props:
+            props["handle_submit_unique_name"] = get_unique_variable_name()
+        return super().create(*children, **props)
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
