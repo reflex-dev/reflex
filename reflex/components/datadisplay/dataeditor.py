@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, Literal
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -180,7 +180,7 @@ class DataEditor(NoSSRComponent):
     vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
     # Allow columns selections. ("none", "single", "multi")
-    column_select: Var[str]
+    column_select: Literal["none", "single", "multi"]
 
     # Prevent diagonal scrolling.
     prevent_diagonal_scrolling: Var[bool]
