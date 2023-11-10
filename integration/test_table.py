@@ -26,7 +26,7 @@ def Table():
 
         caption: str = "random caption"
 
-    app = rx.App(state=TableState)
+    app = rx.App(state=rx.State)
 
     @app.add_page
     def index():

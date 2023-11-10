@@ -30,7 +30,7 @@ def VarOperations():
         dict2: dict = {3: 4}
         html_str: str = "<div>hello</div>"
 
-    app = rx.App(state=VarOperationState)
+    app = rx.App(state=rx.State)
 
     @app.add_page
     def index():

@@ -113,7 +113,7 @@ def UploadFile():
             ),
         )
 
-    app = rx.App(state=UploadState)
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.compile()
 
@@ -192,7 +192,7 @@ async def test_upload_file(
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token))._file_data
+        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
@@ -251,7 +251,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token))._file_data
+        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)

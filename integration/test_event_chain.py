@@ -122,7 +122,7 @@ def EventChain():
             time.sleep(0.5)
             self.interim_value = "final"
 
-    app = rx.App(state=State)
+    app = rx.App(state=rx.State)
 
     token_input = rx.input(
         value=State.router.session.client_token, is_read_only=True, id="token"
@@ -401,12 +401,12 @@ async def test_event_chain_click(
     btn.click()
 
     async def _has_all_events():
-        return len((await event_chain.get_state(token)).event_order) == len(
+        return len((await event_chain.get_state(token)).substates["state"].event_order) == len(
             exp_event_order
         )
 
     await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).event_order
+    event_order = (await event_chain.get_state(token)).substates["state"].event_order
     assert event_order == exp_event_order
 
 
@@ -453,12 +453,12 @@ async def test_event_chain_on_load(
     token = assert_token(event_chain, driver)
 
     async def _has_all_events():
-        return len((await event_chain.get_state(token)).event_order) == len(
+        return len((await event_chain.get_state(token)).substates["state"].event_order) == len(
             exp_event_order
         )
 
     await AppHarness._poll_for_async(_has_all_events)
-    backend_state = await event_chain.get_state(token)
+    backend_state = (await event_chain.get_state(token)).substates["state"]
     assert backend_state.event_order == exp_event_order
     assert backend_state.is_hydrated is True
 
@@ -529,12 +529,12 @@ async def test_event_chain_on_mount(
     unmount_button.click()
 
     async def _has_all_events():
-        return len((await event_chain.get_state(token)).event_order) == len(
+        return len((await event_chain.get_state(token)).substates["state"].event_order) == len(
             exp_event_order
         )
 
     await AppHarness._poll_for_async(_has_all_events)
-    event_order = (await event_chain.get_state(token)).event_order
+    event_order = (await event_chain.get_state(token)).substates["state"].event_order
     assert event_order == exp_event_order
 
 

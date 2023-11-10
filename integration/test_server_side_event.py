@@ -33,7 +33,7 @@ def ServerSideEvent():
         def set_value_return_c(self):
             return rx.set_value("c", "")
 
-    app = rx.App(state=SSState)
+    app = rx.App(state=rx.State)
 
     @app.add_page
     def index():

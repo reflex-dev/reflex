@@ -22,7 +22,7 @@ def FormSubmit():
         def form_submit(self, form_data: dict):
             self.form_data = form_data
 
-    app = rx.App(state=FormState)
+    app = rx.App(state=rx.State)
 
     @app.add_page
     def index():
@@ -210,7 +210,7 @@ async def test_submit(driver, form_submit: AppHarness):
     submit_input.click()
 
     async def get_form_data():
-        return (await form_submit.get_state(token)).form_data
+        return (await form_submit.get_state(token)).substates["form_state"].form_data
 
     # wait for the form data to arrive at the backend
     form_data = await AppHarness._poll_for_async(get_form_data)

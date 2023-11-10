@@ -42,7 +42,7 @@ def LoginSample():
             rx.button("Do it", on_click=State.login, id="doit"),
         )
 
-    app = rx.App(state=State)
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.add_page(login)
     app.compile()
@@ -137,6 +137,6 @@ def test_login_flow(
     logout_button = driver.find_element(By.ID, "logout")
     logout_button.click()
 
-    assert login_sample._poll_for(lambda: local_storage["state.auth_token"] == "")
+    assert login_sample._poll_for(lambda: local_storage["state.state.auth_token"] == "")
     with pytest.raises(NoSuchElementException):
         driver.find_element(By.ID, "auth-token")
