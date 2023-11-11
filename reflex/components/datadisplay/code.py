@@ -356,7 +356,7 @@ class CodeBlock(Component):
     alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralCodeBlockTheme] = "prism"  # type: ignore
+    theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
 
     # The language to use.
     language: Var[LiteralCodeLanguage] = "python"  # type: ignore
@@ -437,10 +437,16 @@ class CodeBlock(Component):
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
 
-        # react-syntax-highlighter doesnt have an explicit "light" theme so we use the default
-        # prism theme to ensure code compatibility
-        if "theme" in props and props["theme"] == "light":
-            props["theme"] = "prism"
+        # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
+        # themes respectively to ensure code compatibility.
+        if "theme" in props:
+            props["theme"] = (
+                "one-light"
+                if props["theme"] == "light"
+                else "one-dark"
+                if props["theme"] == "dark"
+                else props["theme"]
+            )
 
         if can_copy:
             code = children[0]
