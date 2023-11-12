@@ -356,6 +356,18 @@ def get_components_path() -> str:
     return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
 
 
+def get_stateful_components_path() -> str:
+    """Get the path of the compiled stateful components.
+
+    Returns:
+        The path of the compiled stateful components.
+    """
+    return os.path.join(
+        constants.Dirs.WEB_UTILS,
+        constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS,
+    )
+
+
 def get_asset_path(filename: str | None = None) -> str:
     """Get the path for an asset.
 

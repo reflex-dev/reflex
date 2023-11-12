@@ -3,11 +3,17 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional, Type
+from typing import Iterable, Optional, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
-from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.components.component import (
+    BaseComponent,
+    Component,
+    ComponentStyle,
+    CustomComponent,
+    StatefulComponent,
+)
 from reflex.config import get_config
 from reflex.state import State
 from reflex.utils.imports import ImportDict, ImportVar
@@ -204,6 +210,45 @@ def _compile_components(components: set[CustomComponent]) -> str:
     )
 
 
+def _compile_stateful_components(page_components: list[BaseComponent]) -> str:
+    """Compile the stateful components.
+
+    Args:
+        page_components: The Components or StatefulComponents to compile.
+
+    Returns:
+        The rendered stateful components code.
+    """
+    all_imports = {}
+    rendered_components = {}
+
+    def get_shared_components_recursive(component: BaseComponent):
+        """Get the shared components for a component and its children."""
+        nonlocal all_imports
+
+        for child in component.children:
+            get_shared_components_recursive(child)
+        if isinstance(component, StatefulComponent) and component.references > 1:
+            rendered_components.update(
+                {code: None for code in component.get_custom_code()},
+            )
+            all_imports = utils.merge_imports(all_imports, component.get_imports())
+            component.rendered_as_shared = True
+
+    for page_component in page_components:
+        get_shared_components_recursive(page_component)
+
+    # Don't import from the file that we're about to create.
+    all_imports.pop(
+        f"/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
+    )
+
+    return templates.STATEFUL_COMPONENTS.render(
+        imports=utils.compile_imports(all_imports),
+        memoized_code="\n".join(rendered_components.keys()),
+    )
+
+
 def _compile_tailwind(
     config: dict,
 ) -> str:
@@ -327,6 +372,25 @@ def compile_components(components: set[CustomComponent]):
     # Compile the components.
     code = _compile_components(components)
     return output_path, code
+
+
+def compile_stateful_components(
+    pages: Iterable[Component],
+) -> tuple[str, str, list[BaseComponent]]:
+    """Compile the stateful components.
+
+    Args:
+        pages: The pages to extract stateful components from.
+
+    Returns:
+        The path and code of the compiled stateful components.
+    """
+    output_path = utils.get_stateful_components_path()
+
+    # Compile the stateful components.
+    page_components = [StatefulComponent.compile_from(page) or page for page in pages]
+    code = _compile_stateful_components(page_components)
+    return output_path, code, page_components
 
 
 def compile_tailwind(

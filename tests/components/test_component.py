@@ -4,7 +4,7 @@ import pytest
 
 import reflex as rx
 from reflex.base import Base
-from reflex.components.component import Component, CustomComponent, custom_component
+from reflex.components.component import Component, CustomComponent, StatefulComponent, custom_component
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler
@@ -601,3 +601,36 @@ def test_format_component(component, rendered):
         rendered: The expected rendered component.
     """
     assert str(component) == rendered
+
+
+def test_stateful_component(test_state):
+    """Test that a stateful component is created correctly.
+
+    Args:
+        test_state: A test state.
+    """
+
+    text_component = rx.text(test_state.num)
+    stateful_component = StatefulComponent.compile_from(text_component)
+    assert stateful_component.tag.startswith("Text_")
+    assert stateful_component.references == 1
+    sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
+    assert stateful_component.references == 2
+    assert sc2.references == 2
+
+
+def test_stateful_component_memoize_event_trigger(test_state):
+    """Test that a stateful component is created correctly with events.
+
+    Args:
+        test_state: A test state.
+    """
+    button_component = rx.button("Click me", on_click=test_state.do_something)
+    print(button_component)
+
+
+def test_stateful_banner():
+    """Test that a stateful component is created correctly with events."""
+    connection_modal_component = rx.connection_modal()
+    stateful_component = StatefulComponent.compile_from(connection_modal_component)
+    print(stateful_component)

@@ -660,6 +660,23 @@ class App(Base):
                 # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
                 component.add_style(self.style)
+                # add component.get_imports() to all_imports
+                all_imports.update(component.get_imports())
+
+                # add the app wrappers from this component
+                app_wrappers.update(component.get_app_wrap_components())
+
+                # Add the custom components from the page to the set.
+                custom_components |= component.get_custom_components()
+
+            (
+                stateful_components_path,
+                stateful_components_code,
+                page_components,
+            ) = compiler.compile_stateful_components(self.pages.values())
+            compile_results.append((stateful_components_path, stateful_components_code))
+
+            for route, component in zip(self.pages.keys(), page_components):
                 page_futures.append(
                     thread_pool.apply_async(
                         compiler.compile_page,
@@ -670,15 +687,6 @@ class App(Base):
                         ),
                     )
                 )
-                # add component.get_imports() to all_imports
-                all_imports.update(component.get_imports())
-
-                # add the app wrappers from this component
-                app_wrappers.update(component.get_app_wrap_components())
-
-                # Add the custom components from the page to the set.
-                custom_components |= component.get_custom_components()
-
         thread_pool.close()
         thread_pool.join()
 
