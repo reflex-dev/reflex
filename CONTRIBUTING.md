@@ -14,7 +14,7 @@ Here is a quick guide on how to run Reflex repo locally so you can start contrib
 
 **1. Clone Reflex and navigate into the repo:**
 ``` bash
-git clone https://github.com/reflex-dev/reflex.git
+git clone https://github.com/<YOUR-USERNAME>/reflex.git
 cd reflex
 ```
 
