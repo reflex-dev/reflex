@@ -1,10 +1,9 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 from typing import Union
 
-from reflex.el.element import Element
 from reflex.vars import Var as Var_
-from .base import BaseHTML
 
+from .base import BaseHTML
 
 
 class A(BaseHTML):  # Inherits common attributes from BaseMeta
@@ -133,6 +132,7 @@ class S(BaseHTML):  # noqa: E742
 
     tag = "s"
 
+
 class Samp(BaseHTML):  # noqa: E742
     """Display the samp element."""
 
@@ -161,6 +161,7 @@ class Sub(BaseHTML):  # noqa: E742
     """Display the sub element."""
 
     tag = "sub"
+
 
 class Sup(BaseHTML):  # noqa: E742
     """Display the sup element."""
