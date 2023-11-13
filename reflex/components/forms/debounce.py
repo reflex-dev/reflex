@@ -76,8 +76,11 @@ class DebounceInput(Component):
         if "on_change" not in child.event_triggers:
             raise ValueError("DebounceInput child requires an on_change handler")
         props.setdefault("style", {}).update(child.style)
-        props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
+        if child.class_name:
+            props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
 
+        if child.id and not props.get("id"):
+            props["id"] = child.id
         child_ref = child.get_ref()
         if not props.get("input_ref") and child_ref:
             props["input_ref"] = Var.create(child_ref, _var_is_local=False)
