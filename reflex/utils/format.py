@@ -122,7 +122,7 @@ def to_snake_case(text: str) -> str:
         The snake case string.
     """
     s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", text)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
 def to_camel_case(text: str) -> str:
@@ -137,14 +137,9 @@ def to_camel_case(text: str) -> str:
     Returns:
         The camel case string.
     """
-    if "_" not in text:
-        return text
-    camel = "".join(
-        word.capitalize() if i > 0 else word.lower()
-        for i, word in enumerate(text.lstrip("_").split("_"))
-    )
-    prefix = "_" if text.startswith("_") else ""
-    return prefix + camel
+    words = re.split("[_-]", text)
+    # Capitalize the first letter of each word except the first one
+    return words[0] + "".join(x.capitalize() for x in words[1:])
 
 
 def to_title_case(text: str) -> str:
@@ -625,6 +620,28 @@ def unwrap_vars(value: str) -> str:
         string=value,
         flags=re.VERBOSE,
     )
+
+
+def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
+    """Collapse keys with consecutive suffixes into a single list value.
+
+    Separators dash and underscore are removed, unless this would overwrite an existing key.
+
+    Args:
+        form_dict: The dict to collapse.
+
+    Returns:
+        The collapsed dict.
+    """
+    ending_digit_regex = re.compile(r"^(.*?)[_-]?(\d+)$")
+    collapsed = {}
+    for k in sorted(form_dict):
+        m = ending_digit_regex.match(k)
+        if m:
+            collapsed.setdefault(m.group(1), []).append(form_dict[k])
+    # collapsing never overwrites valid data from the form_dict
+    collapsed.update(form_dict)
+    return collapsed
 
 
 def format_data_editor_column(col: str | dict):

@@ -45,7 +45,11 @@ def debug(msg: str, **kwargs):
         kwargs: Keyword arguments to pass to the print function.
     """
     if _LOG_LEVEL <= LogLevel.DEBUG:
-        print(f"[blue]Debug: {msg}[/blue]", **kwargs)
+        msg_ = f"[blue]Debug: {msg}[/blue]"
+        if progress := kwargs.pop("progress", None):
+            progress.console.print(msg_, **kwargs)
+        else:
+            print(msg_, **kwargs)
 
 
 def info(msg: str, **kwargs):

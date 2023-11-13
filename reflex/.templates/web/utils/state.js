@@ -12,6 +12,9 @@ import { initialEvents } from "utils/context.js"
 const EVENTURL = env.EVENT
 const UPLOADURL = env.UPLOAD
 
+// These hostnames indicate that the backend and frontend are reachable via the same domain.
+const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"]
+
 // Global variable to hold the token.
 let token;
 
@@ -74,12 +77,13 @@ export const getToken = () => {
 export const getEventURL = () => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(EVENTURL);
-  if (endpoint.hostname === "localhost") {
-    // If the backend URL references localhost, and the frontend is not on localhost,
-    // then use the frontend host.
+  if (SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
+    // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
-    if (frontend_hostname !== "localhost") {
-      endpoint.hostname = frontend_hostname;
+    endpoint.hostname = frontend_hostname;
+    if (window.location.protocol === "https:" && endpoint.protocol === "ws:") {
+      endpoint.protocol = "wss:";
+      endpoint.port = "";  // Assume websocket is on https port via load balancer.
     }
   }
   return endpoint
@@ -569,7 +573,7 @@ export const getRefValues = (refs) => {
     return;
   }
   // getAttribute is used by RangeSlider because it doesn't assign value
-  return refs.map((ref) => ref.current.value || ref.current.getAttribute("aria-valuenow"));
+  return refs.map((ref) => ref.current ? ref.current.value || ref.current.getAttribute("aria-valuenow") : null);
 }
 
 /**

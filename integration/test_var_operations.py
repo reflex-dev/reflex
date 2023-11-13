@@ -522,6 +522,10 @@ def VarOperations():
             rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
             rx.text(VarOperationState.list3.join(""), id="list_join"),
             rx.text(VarOperationState.list3.join(","), id="list_join_comma"),
+            rx.text(rx.Var.range(2, 5).join(","), id="list_join_range1"),
+            rx.text(rx.Var.range(2, 10, 2).join(","), id="list_join_range2"),
+            rx.text(rx.Var.range(5, 0, -1).join(","), id="list_join_range3"),
+            rx.text(rx.Var.range(0, 3).join(","), id="list_join_range4"),
         )
 
     app.compile()
@@ -688,6 +692,10 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("list_reverse", "[2,1]"),
         ("list_join", "firstsecondthird"),
         ("list_join_comma", "first,second,third"),
+        ("list_join_range1", "2,3,4"),
+        ("list_join_range2", "2,4,6,8"),
+        ("list_join_range3", "5,4,3,2,1"),
+        ("list_join_range4", "0,1,2"),
         # list, int
         ("list_mult_int", "[1,2,1,2,1,2,1,2,1,2]"),
         ("list_or_int", "[1,2]"),

@@ -34,6 +34,9 @@ class Switch(ChakraComponent):
     # The name of the input field in a switch (Useful for form submission).
     name: Var[str]
 
+    # The value of the input field when checked (use is_checked prop for a bool)
+    value: Var[str] = Var.create(True)  # type: ignore
+
     # The spacing between the switch and its label text (0.5rem)
     spacing: Var[str]
 

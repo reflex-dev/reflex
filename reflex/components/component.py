@@ -20,6 +20,7 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import console, format, imports, types
+from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, ImportVar, Var
 
 
@@ -401,6 +402,20 @@ class Component(Base, ABC):
         return set()
 
     @classmethod
+    def get_component_props(cls) -> set[str]:
+        """Get the props that expected a component as value.
+
+        Returns:
+            The components props.
+        """
+        return {
+            name
+            for name, field in cls.get_fields().items()
+            if name in cls.get_props()
+            and types._issubclass(field.outer_type_, Component)
+        }
+
+    @classmethod
     def create(cls, *children, **props) -> Component:
         """Create the component.
 
@@ -596,19 +611,48 @@ class Component(Base, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_dependencies_imports(self):
-        return {
-            dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies
-        }
+    def _get_props_imports(self) -> imports.ImportDict:
+        """Get the imports needed for components props.
+
+        Returns:
+            The  imports for the components props of the component.
+        """
+        return imports.merge_imports(
+            *[
+                getattr(self, prop).get_imports()
+                for prop in self.get_component_props()
+                if getattr(self, prop) is not None
+            ]
+        )
+
+    def _get_dependencies_imports(self) -> imports.ImportDict:
+        """Get the imports from lib_dependencies for installing.
+
+        Returns:
+            The dependencies imports of the component.
+        """
+        return imports.merge_imports(
+            {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
+        )
 
     def _get_imports(self) -> imports.ImportDict:
-        imports = {}
+        """Get all the libraries and fields that are used by the component.
+
+        Returns:
+            The imports needed by the component.
+        """
+        _imports = {}
         if self.library is not None and self.tag is not None:
-            imports[self.library] = {self.import_var}
-        return {**self._get_dependencies_imports(), **imports}
+            _imports[self.library] = {self.import_var}
+
+        return imports.merge_imports(
+            self._get_props_imports(),
+            self._get_dependencies_imports(),
+            _imports,
+        )
 
     def get_imports(self) -> imports.ImportDict:
-        """Get all the libraries and fields that are used by the component.
+        """Get all the libraries and fields that are used by the component and its children.
 
         Returns:
             The import dict with the required imports.
@@ -988,3 +1032,16 @@ class NoSSRComponent(Component):
             else ""
         )
         return "".join((library_import, mod_import, opts_fragment))
+
+
+@serializer
+def serialize_component(comp: Component):
+    """Serialize a component.
+
+    Args:
+        comp: The component to serialize.
+
+    Returns:
+        The serialized component.
+    """
+    return str(comp)

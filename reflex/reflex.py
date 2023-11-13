@@ -1,5 +1,7 @@
 """Reflex CLI to create, run, and deploy apps."""
 
+from __future__ import annotations
+
 import asyncio
 import atexit
 import json
@@ -76,8 +78,8 @@ def main(
 
 def _init(
     name: str,
-    template: constants.Templates.Kind,
-    loglevel: constants.LogLevel,
+    template: constants.Templates.Kind | None = constants.Templates.Kind.BLANK,
+    loglevel: constants.LogLevel = config.loglevel,
 ):
     """Initialize a new Reflex app in the given directory."""
     # Set the log level.
@@ -98,6 +100,8 @@ def _init(
 
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
+        if template is None:
+            template = prerequisites.prompt_for_template()
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
         telemetry.send("init")
@@ -120,7 +124,7 @@ def init(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
     template: constants.Templates.Kind = typer.Option(
-        constants.Templates.Kind.BLANK.value,
+        None,
         help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
@@ -180,6 +184,7 @@ def _run(
     console.rule("[bold]Starting Reflex App")
 
     if frontend:
+        prerequisites.update_next_config()
         # Get the app module.
         prerequisites.get_app()
 
@@ -333,6 +338,8 @@ def export(
     console.rule("[bold]Compiling production app and preparing for export.")
 
     if frontend:
+        # Update some parameters for export
+        prerequisites.update_next_config(export=True)
         # Ensure module can be imported and app.compile() is called.
         prerequisites.get_app()
         # Set up .web directory and install frontend dependencies.
@@ -686,10 +693,14 @@ def deploy(
 
     console.print("Waiting for server to report progress ...")
     # Display the key events such as build, deploy, etc
-    server_report_deploy_success = asyncio.get_event_loop().run_until_complete(
-        hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
+    server_report_deploy_success = hosting.poll_deploy_milestones(
+        key, from_iso_timestamp=deploy_requested_at
     )
-    if not server_report_deploy_success:
+
+    if server_report_deploy_success is None:
+        console.warn("Hosting server timed out.")
+        console.warn("The deployment may still be in progress. Proceeding ...")
+    elif not server_report_deploy_success:
         console.error("Hosting server reports failure.")
         console.error(
             f"Check the server logs using `reflex deployments build-logs {key}`"
@@ -814,7 +825,7 @@ def get_deployment_status(
         status = hosting.get_deployment_status(key)
 
         # TODO: refactor all these tabulate calls
-        status.backend.updated_at = hosting.convert_to_local_time(
+        status.backend.updated_at = hosting.convert_to_local_time_str(
             status.backend.updated_at or "N/A"
         )
         backend_status = status.backend.dict(exclude_none=True)
@@ -823,7 +834,7 @@ def get_deployment_status(
         console.print(tabulate([table], headers=headers))
         # Add a new line in console
         console.print("\n")
-        status.frontend.updated_at = hosting.convert_to_local_time(
+        status.frontend.updated_at = hosting.convert_to_local_time_str(
             status.frontend.updated_at or "N/A"
         )
         frontend_status = status.frontend.dict(exclude_none=True)
