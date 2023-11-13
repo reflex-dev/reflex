@@ -310,7 +310,9 @@ def __getattr__(name: str) -> Type:
 
         # Get the attribute from the module if the name is not the module itself.
         return (
-            getattr(module, name) if name != _MAPPING[name].rsplit(".")[-1] else module
+            getattr(module, name)
+            if name != _MAPPING[name].rsplit(".")[-1] or name == "page"
+            else module
         )
     except ModuleNotFoundError:
         raise AttributeError(f"module 'reflex' has no attribute {name}") from None
