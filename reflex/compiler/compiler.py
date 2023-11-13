@@ -229,6 +229,7 @@ def _compile_stateful_components(page_components: list[BaseComponent]) -> str:
         for child in component.children:
             get_shared_components_recursive(child)
         if isinstance(component, StatefulComponent) and component.references > 1:
+            component.rendered_as_shared = False
             rendered_components.update(
                 {code: None for code in component.get_custom_code()},
             )
