@@ -16,7 +16,7 @@ color_mode_var_data = VarData(  # type: ignore
         f"/{constants.Dirs.CONTEXTS_PATH}": {ImportVar(tag="ColorModeContext")},
     },
     hooks={
-        f"const [ {{{constants.ColorMode.NAME}}}, {{{constants.ColorMode.TOGGLE}}} ] = useContext(ColorModeContext)",
+        f"const [ {constants.ColorMode.NAME}, {constants.ColorMode.TOGGLE} ] = useContext(ColorModeContext)",
     },
 )
 color_mode = BaseVar(
