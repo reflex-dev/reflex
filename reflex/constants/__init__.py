@@ -33,7 +33,6 @@ from .config import (
     RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
-from .hosting import Hosting
 from .installer import (
     Bun,
     Fnm,
@@ -96,5 +95,4 @@ __ALL__ = [
     Tailwind,
     Templates,
     CompileVars,
-    Hosting,
 ]

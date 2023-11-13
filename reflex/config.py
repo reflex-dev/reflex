@@ -190,11 +190,6 @@ class Config(Base):
     # The rxdeploy url.
     rxdeploy_url: Optional[str] = None
 
-    # The hosting service backend URL.
-    cp_backend_url: str = constants.Hosting.CP_BACKEND_URL
-    # The hosting service frontend URL.
-    cp_web_url: str = constants.Hosting.CP_WEB_URL
-
     # The username.
     username: Optional[str] = None
 
