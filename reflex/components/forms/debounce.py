@@ -75,15 +75,16 @@ class DebounceInput(Component):
             )
         if "on_change" not in child.event_triggers:
             raise ValueError("DebounceInput child requires an on_change handler")
+        # Carry all child props directly via custom_attrs
+        props.setdefault("custom_attrs", {}).update(props_not_none(child))
         props.setdefault("style", {}).update(child.style)
         if child.class_name:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
 
-        if child.id and not props.get("id"):
-            props["id"] = child.id
         child_ref = child.get_ref()
         if not props.get("input_ref") and child_ref:
             props["input_ref"] = Var.create(child_ref, _var_is_local=False)
+            props["id"] = child.id
         props.setdefault(
             "element",
             Var.create(
@@ -116,6 +117,16 @@ class DebounceInput(Component):
         for child in self.children:
             hooks.update(child._get_hooks_internal())
         return hooks
+
+    def get_ref(self) -> str | None:
+        """Get the ref for this component.
+
+        The DebounceInput itself cannot have a ref, the ID applies to the child created internally.
+
+        Returns:
+            None
+        """
+        return None
 
 
 def props_not_none(c: Component) -> dict[str, Any]:
@@ -151,7 +162,7 @@ def _collect_first_child_and_props(c: Component) -> tuple[Component, dict[str, A
         return c, props
     child = c.children[0]
     if not isinstance(child, DebounceInput):
-        return child, {**props_not_none(child), **props}
+        return child, props
     # carry props from nested DebounceInput components
     recursive_child, child_props = _collect_first_child_and_props(child)
     return recursive_child, {**child_props, **props}

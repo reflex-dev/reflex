@@ -98,6 +98,14 @@ class BaseComponent(Base, ABC):
             The custom code.
         """
 
+    @abc.abstractmethod
+    def get_refs(self) -> set[str]:
+        """Get the refs for the children of the component.
+
+        Returns:
+            The refs for the children.
+        """
+
 
 # Map from component to styling.
 ComponentStyle = Dict[Union[str, Type[BaseComponent]], Any]
@@ -141,7 +149,7 @@ class Component(BaseComponent, ABC):
     valid_children: List[str] = []
 
     # custom attribute
-    custom_attrs: Dict[str, str] = {}
+    custom_attrs: Dict[str, Var | str] = {}
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -843,7 +851,7 @@ class Component(BaseComponent, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
+            return f"const {ref} = useRef(null); {str(Var.create_safe(ref).as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> set[str]:
         """Get the hooks required by vars referenced in this component.
@@ -1394,6 +1402,12 @@ class StatefulComponent(BaseComponent):
         for event_trigger, event_args in component._get_vars_from_event_triggers(
             component.event_triggers
         ):
+            if event_trigger in {
+                EventTriggers.ON_MOUNT,
+                EventTriggers.ON_UNMOUNT,
+                EventTriggers.ON_SUBMIT,
+            }:
+                continue  # do not memoize lifecycle or submit events
             event = component.event_triggers[event_trigger]
             rendered_chain = format.format_prop(event).strip("{}")
             chain_hash = md5(str(rendered_chain).encode("utf-8")).hexdigest()
@@ -1439,6 +1453,16 @@ class StatefulComponent(BaseComponent):
         if self.rendered_as_shared:
             return set()
         return self.component.get_custom_code().union({self.code})
+
+    def get_refs(self) -> set[str]:
+        """Get the refs for the children of the component.
+
+        Returns:
+            The refs for the children.
+        """
+        if self.rendered_as_shared:
+            return set()
+        return self.component.get_refs()
 
     def render(self) -> dict:
         """Define how to render the component in React.

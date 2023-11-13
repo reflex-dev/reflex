@@ -1403,6 +1403,24 @@ class Var:
         """
         return self._replace(_var_type=type_)
 
+    def as_ref(self) -> Var:
+        """Convert the var to a ref.
+
+        Returns:
+            The var as a ref.
+        """
+        return self._replace(
+            _var_name=f"refs['{self._var_full_name}']",
+            _var_is_local=True,
+            _var_is_string=False,
+            _var_full_name_needs_state_prefix=False,
+            merge_var_data=VarData(
+                imports={
+                    f"/{constants.Dirs.STATE_PATH}": {imports.ImportVar(tag="refs")},
+                },
+            ),
+        )
+
     @property
     def _var_full_name(self) -> str:
         """Get the full name of the var.

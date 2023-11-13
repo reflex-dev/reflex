@@ -85,11 +85,15 @@ class Form(ChakraComponent):
         Returns:
             The rendered component.
         """
-        self.event_triggers[EventTriggers.ON_SUBMIT] = BaseVar(
-            _var_name=f"handleSubmit{self.handle_submit_unique_name}",
-            _var_type=EventChain,
-        )
-        return super().render()
+        orig_on_submit = self.event_triggers.pop(EventTriggers.ON_SUBMIT)
+        if orig_on_submit is not None:
+            self.event_triggers[EventTriggers.ON_SUBMIT] = BaseVar(
+                _var_name=f"handleSubmit{self.handle_submit_unique_name}",
+                _var_type=EventChain,
+            )
+        rendered = super().render()
+        self.event_triggers[EventTriggers.ON_SUBMIT] = orig_on_submit
+        return rendered
 
     def _get_form_refs(self) -> Dict[str, Any]:
         # Send all the input refs to the handler.
@@ -98,13 +102,15 @@ class Form(ChakraComponent):
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
+                ref_var = Var.create_safe(ref[:-3]).as_ref()
                 form_refs[ref[5:-3]] = Var.create(
-                    f"getRefValues({ref[:-3]})", _var_is_local=False
-                )
+                    f"getRefValues({str(ref_var)})", _var_is_local=False
+                )._replace(merge_var_data=ref_var._var_data)
             else:
+                ref_var = Var.create_safe(ref).as_ref()
                 form_refs[ref[4:]] = Var.create(
-                    f"getRefValue({ref})", _var_is_local=False
-                )
+                    f"getRefValue({str(ref_var)})", _var_is_local=False
+                )._replace(merge_var_data=ref_var._var_data)
         return form_refs
 
     def get_event_triggers(self) -> Dict[str, Any]:
