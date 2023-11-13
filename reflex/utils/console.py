@@ -46,8 +46,7 @@ def debug(msg: str, **kwargs):
     """
     if _LOG_LEVEL <= LogLevel.DEBUG:
         msg_ = f"[blue]Debug: {msg}[/blue]"
-        progress = kwargs.pop("progress", None)
-        if progress:
+        if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
         else:
             print(msg_, **kwargs)

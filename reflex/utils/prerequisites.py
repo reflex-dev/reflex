@@ -337,9 +337,6 @@ def update_next_config(export=False):
     """
     next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
 
-    with open(next_config_file, "r") as file:
-        next_config = file.read()
-
     next_config = _update_next_config(get_config(), export=export)
 
     with open(next_config_file, "w") as file:
