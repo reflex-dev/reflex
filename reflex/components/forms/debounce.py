@@ -1,15 +1,19 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any, Set, Type
+from typing import Any, Iterator, Set, Type
 
-from reflex.components import Component
+from reflex.components.component import Component
 from reflex.utils import imports
 from reflex.vars import Var
 
 
-def empty_iterator():
-    """Return an empty iterator."""
+def _empty_iterator() -> Iterator[Var]:
+    """Return an empty iterator.
+
+    Yields:
+        No values, ever. Will raise StopIteration immediately.
+    """
     yield from []
 
 
@@ -83,11 +87,11 @@ class DebounceInput(Component):
 
         child_ref = child.get_ref()
         if not props.get("input_ref") and child_ref:
-            props["input_ref"] = Var.create(child_ref, _var_is_local=False)
+            props["input_ref"] = Var.create_safe(child_ref, _var_is_local=False)
             props["id"] = child.id
         props.setdefault(
             "element",
-            Var.create(
+            Var.create_safe(
                 "{%s}" % (child.alias or child.tag),
                 _var_is_local=False,
                 _var_is_string=False,
@@ -102,19 +106,22 @@ class DebounceInput(Component):
         # Do NOT render the child, DebounceInput will create it.
         object.__setattr__(child, "render", lambda: "")
         # Prevent the child from being memoized as a stateful component.
-        object.__setattr__(child, "_get_vars", empty_iterator)
+        object.__setattr__(child, "_get_vars", _empty_iterator)
         child.event_triggers = {}
 
         return comp
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
-            super()._get_imports(), *[c._get_imports() for c in self.children]
+            super()._get_imports(),
+            *[c._get_imports() for c in self.children if isinstance(c, Component)],
         )
 
     def _get_hooks_internal(self) -> Set[str]:
         hooks = super()._get_hooks_internal()
         for child in self.children:
+            if not isinstance(child, Component):
+                continue
             hooks.update(child._get_hooks_internal())
         return hooks
 
@@ -156,11 +163,16 @@ def _collect_first_child_and_props(c: Component) -> tuple[Component, dict[str, A
     Returns:
         tuple containing the first nested child of a different type and the collected
         props from each component traversed.
+
+    Raises:
+        TypeError: if any children are not Component instances.
     """
     props = props_not_none(c)
     if not c.children:
         return c, props
     child = c.children[0]
+    if not isinstance(child, Component):
+        raise TypeError(f"DebounceInput child must be a Component, got {child!r}")
     if not isinstance(child, DebounceInput):
         return child, props
     # carry props from nested DebounceInput components

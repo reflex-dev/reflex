@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import abc
 import copy
 import typing
-from abc import ABC
+from abc import ABC, abstractmethod
 from functools import wraps
 from hashlib import md5
 from typing import (
@@ -47,7 +46,7 @@ class BaseComponent(Base, ABC):
     """
 
     # The children nested within the component.
-    children: List[Component] = []
+    children: List[BaseComponent] = []
 
     # The library that the component is based on.
     library: Optional[str] = None
@@ -58,7 +57,7 @@ class BaseComponent(Base, ABC):
     # The tag to use when rendering the component.
     tag: Optional[str] = None
 
-    @abc.abstractmethod
+    @abstractmethod
     def render(self) -> dict:
         """Render the component.
 
@@ -66,7 +65,7 @@ class BaseComponent(Base, ABC):
             The dictionary for template of component.
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_hooks(self) -> set[str]:
         """Get the React hooks for this component.
 
@@ -74,7 +73,7 @@ class BaseComponent(Base, ABC):
             The code that should appear just before returning the rendered component.
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
 
@@ -82,7 +81,7 @@ class BaseComponent(Base, ABC):
             The import dict with the required imports.
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_dynamic_imports(self) -> set[str]:
         """Get dynamic imports for the component.
 
@@ -90,7 +89,7 @@ class BaseComponent(Base, ABC):
             The dynamic imports.
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_custom_code(self) -> set[str]:
         """Get custom code for the component.
 
@@ -558,6 +557,8 @@ class Component(BaseComponent, ABC):
 
         # Recursively add style to the children.
         for child in self.children:
+            if not isinstance(child, Component):
+                continue
             child.add_style(style)
         return self
 
@@ -966,6 +967,8 @@ class Component(BaseComponent, ABC):
         if ref is not None:
             refs.add(ref)
         for child in self.children:
+            if not isinstance(child, Component):
+                continue
             refs |= child.get_refs()
         return refs
 
@@ -986,6 +989,8 @@ class Component(BaseComponent, ABC):
         if seen is None:
             seen = set()
         for child in self.children:
+            if not isinstance(child, Component):
+                continue
             custom_components |= child.get_custom_components(seen=seen)
         return custom_components
 
@@ -1018,11 +1023,13 @@ class Component(BaseComponent, ABC):
         # Store the components in a set to avoid duplicates.
         components = self._get_app_wrap_components()
 
-        for component in tuple(components.values()):
+        for component in components.values():
             components.update(component.get_app_wrap_components())
 
         # Add the app wrap components for the children.
         for child in self.children:
+            if not isinstance(child, Component):
+                continue
             components.update(child.get_app_wrap_components())
 
         # Return the components.
@@ -1299,6 +1306,8 @@ class StatefulComponent(BaseComponent):
                     prop_var_data = VarData.merge(prop_var_data, prop_var._var_data)
 
         for child in component.children:
+            if not isinstance(child, Component):
+                continue
             child = cls._child_var(child)
             if isinstance(child, Var) and child._var_data:
                 prop_var_data = VarData.merge(prop_var_data, child._var_data)
@@ -1409,7 +1418,9 @@ class StatefulComponent(BaseComponent):
             }:
                 continue  # do not memoize lifecycle or submit events
             event = component.event_triggers[event_trigger]
-            rendered_chain = format.format_prop(event).strip("{}")
+            rendered_chain = format.format_prop(event)
+            if isinstance(rendered_chain, str):
+                rendered_chain = rendered_chain.strip("{}")
             chain_hash = md5(str(rendered_chain).encode("utf-8")).hexdigest()
             memo_name = f"{event_trigger}_{chain_hash}"
             var_deps = ["addEvents", "Event"]
@@ -1420,7 +1431,7 @@ class StatefulComponent(BaseComponent):
                     var_deps.extend(cls._get_hook_deps(hook))
             memo_var_data = VarData.merge(
                 *[var._var_data for var in event_args],
-                VarData(
+                VarData(  # type: ignore
                     imports={"react": {ImportVar(tag="useCallback")}},
                 ),
             )
@@ -1433,9 +1444,19 @@ class StatefulComponent(BaseComponent):
         return trigger_memo
 
     def get_hooks(self) -> set[str]:
+        """Get the React hooks for this component.
+
+        Returns:
+            The code that should appear just before returning the rendered component.
+        """
         return set()
 
     def get_imports(self) -> imports.ImportDict:
+        """Get all the libraries and fields that are used by the component.
+
+        Returns:
+            The import dict with the required imports.
+        """
         if self.rendered_as_shared:
             return {
                 f"/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": {
@@ -1445,11 +1466,21 @@ class StatefulComponent(BaseComponent):
         return self.component.get_imports()
 
     def get_dynamic_imports(self) -> set[str]:
+        """Get dynamic imports for the component.
+
+        Returns:
+            The dynamic imports.
+        """
         if self.rendered_as_shared:
             return set()
         return self.component.get_dynamic_imports()
 
     def get_custom_code(self) -> set[str]:
+        """Get custom code for the component.
+
+        Returns:
+            The custom code.
+        """
         if self.rendered_as_shared:
             return set()
         return self.component.get_custom_code().union({self.code})
@@ -1473,7 +1504,7 @@ class StatefulComponent(BaseComponent):
         return dict(Tag(name=self.tag))
 
     @classmethod
-    def compile_from(cls, component: Component) -> StatefulComponent | None:
+    def compile_from(cls, component: BaseComponent) -> BaseComponent:
         """Walk through the component tree and memoize all stateful components.
 
         Args:
@@ -1485,4 +1516,6 @@ class StatefulComponent(BaseComponent):
         component.children = [
             cls.compile_from(child) or child for child in component.children
         ]
-        return cls.create(component) or component
+        if isinstance(component, Component):
+            return cls.create(component) or component
+        return component

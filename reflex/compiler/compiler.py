@@ -223,7 +223,11 @@ def _compile_stateful_components(page_components: list[BaseComponent]) -> str:
     rendered_components = {}
 
     def get_shared_components_recursive(component: BaseComponent):
-        """Get the shared components for a component and its children."""
+        """Get the shared components for a component and its children.
+
+        Args:
+            component: The component to collect shared StatefulComponents for.
+        """
         nonlocal all_imports
 
         for child in component.children:

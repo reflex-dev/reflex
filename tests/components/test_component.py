@@ -616,9 +616,12 @@ def test_stateful_component(test_state):
     """
     text_component = rx.text(test_state.num)
     stateful_component = StatefulComponent.compile_from(text_component)
+    assert isinstance(stateful_component, StatefulComponent)
+    assert stateful_component.tag is not None
     assert stateful_component.tag.startswith("Text_")
     assert stateful_component.references == 1
     sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
+    assert isinstance(sc2, StatefulComponent)
     assert stateful_component.references == 2
     assert sc2.references == 2
 
@@ -630,11 +633,17 @@ def test_stateful_component_memoize_event_trigger(test_state):
         test_state: A test state.
     """
     button_component = rx.button("Click me", on_click=test_state.do_something)
-    print(button_component)
+    stateful_component = StatefulComponent.compile_from(button_component)
+    assert isinstance(stateful_component, StatefulComponent)
+
+    # No event trigger? No StatefulComponent
+    assert not isinstance(
+        StatefulComponent.compile_from(rx.button("Click me")), StatefulComponent
+    )
 
 
 def test_stateful_banner():
     """Test that a stateful component is created correctly with events."""
     connection_modal_component = rx.connection_modal()
     stateful_component = StatefulComponent.compile_from(connection_modal_component)
-    print(stateful_component)
+    assert isinstance(stateful_component, StatefulComponent)

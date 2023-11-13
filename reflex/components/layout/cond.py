@@ -18,17 +18,17 @@ class Cond(Component):
     cond: Var[Any]
 
     # The component to render if the cond is true.
-    comp1: Component = Fragment.create()
+    comp1: BaseComponent = Fragment.create()
 
     # The component to render if the cond is false.
-    comp2: Component = Fragment.create()
+    comp2: BaseComponent = Fragment.create()
 
     @classmethod
     def create(
         cls,
         cond: Var,
-        comp1: Component,
-        comp2: Optional[Component] = None,
+        comp1: BaseComponent,
+        comp2: Optional[BaseComponent] = None,
     ) -> Component:
         """Create a conditional component.
 
