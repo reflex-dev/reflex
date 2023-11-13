@@ -1,0 +1,22 @@
+# fly.toml app configuration file generated for reflex-gold on 2023-10-27T13:45:31-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "reflex-gold"
+primary_region = "sjc"
+
+[build]
+  image = "alekpetuskey/fly:reflexgold"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8000
+
+  [[services.ports]]
+    port = 8000
+    handlers = ["http", "tls"]
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 10000
+    soft_limit = 10000
