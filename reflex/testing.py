@@ -677,7 +677,7 @@ class AppHarnessProd(AppHarness):
     frontend_server: Optional[Subdir404TCPServer] = None
 
     def _run_frontend(self):
-        web_root = self.app_path / reflex.constants.Dirs.WEB / "_static"
+        web_root = self.app_path / reflex.constants.Dirs.WEB_STATIC
         error_page_map = {
             404: web_root / "404.html",
         }

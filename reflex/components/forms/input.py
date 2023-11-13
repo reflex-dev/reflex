@@ -55,6 +55,9 @@ class Input(ChakraComponent):
     # "lg" | "md" | "sm" | "xs"
     size: Var[LiteralButtonSize]
 
+    # The name of the form field
+    name: Var[str]
+
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),

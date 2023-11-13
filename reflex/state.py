@@ -43,6 +43,7 @@ from reflex.event import (
 )
 from reflex.utils import console, format, prerequisites, types
 from reflex.utils.exceptions import ImmutableStateError, LockExpiredError
+from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
@@ -2018,6 +2019,25 @@ class MutableProxy(wrapt.ObjectProxy):
             A deepcopy of the wrapped object, unconnected to the proxy.
         """
         return copy.deepcopy(self.__wrapped__, memo=memo)
+
+
+@serializer
+def serialize_mutable_proxy(mp: MutableProxy) -> SerializedType:
+    """Serialize the wrapped value of a MutableProxy.
+
+    Args:
+        mp: The MutableProxy to serialize.
+
+    Returns:
+        The serialized wrapped object.
+
+    Raises:
+        ValueError: when the wrapped object is not serializable.
+    """
+    value = serialize(mp.__wrapped__)
+    if value is None:
+        raise ValueError(f"Cannot serialize {type(mp.__wrapped__)}")
+    return value
 
 
 class ImmutableMutableProxy(MutableProxy):

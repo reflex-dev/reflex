@@ -66,6 +66,9 @@ class Slider(ChakraComponent):
     # Maximum width of the slider.
     max_w: Var[str]
 
+    # The name of the form field
+    name: Var[str]
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
