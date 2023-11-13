@@ -656,7 +656,7 @@ class App(Base):
             app_wrappers[(20, "Theme")] = self.theme
 
         with progress:
-            for route, component in self.pages.items():
+            for _route, component in self.pages.items():
                 # TODO: this progress does not reflect actual threaded task completion
                 progress.advance(task)
                 component.add_style(self.style)

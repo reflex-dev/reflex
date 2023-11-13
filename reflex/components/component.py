@@ -1343,7 +1343,6 @@ class StatefulComponent(BaseComponent):
         Returns:
             The tag name and the rendered code.
         """
-
         rendered_code = component.render()
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
         tag_name = format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")

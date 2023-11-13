@@ -4,7 +4,12 @@ import pytest
 
 import reflex as rx
 from reflex.base import Base
-from reflex.components.component import Component, CustomComponent, StatefulComponent, custom_component
+from reflex.components.component import (
+    Component,
+    CustomComponent,
+    StatefulComponent,
+    custom_component,
+)
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventHandler
@@ -609,7 +614,6 @@ def test_stateful_component(test_state):
     Args:
         test_state: A test state.
     """
-
     text_component = rx.text(test_state.num)
     stateful_component = StatefulComponent.compile_from(text_component)
     assert stateful_component.tag.startswith("Text_")
