@@ -1,12 +1,16 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any, Set
+from typing import Any, Set, Type
 
 from reflex.components import Component
-from reflex.components.tags import Tag
 from reflex.utils import imports
 from reflex.vars import Var
+
+
+def empty_iterator():
+    """Return an empty iterator."""
+    yield from []
 
 
 class DebounceInput(Component):
@@ -35,48 +39,69 @@ class DebounceInput(Component):
     # If provided, create a fully-controlled input
     value: Var[str]
 
-    def _render(self) -> Tag:
-        """Carry first child props directly on this tag.
+    # The ref to attach to the created input
+    input_ref: Var[str]
+
+    # The element to wrap
+    element: Var[Type[Component]]
+
+    @classmethod
+    def create(cls, child: Component, **props: Any) -> Component:
+        """Create a DebounceInput component.
+
+        Carry first child props directly on this tag.
 
         Since react-debounce-input wants to create and manage the underlying
         input component itself, we carry all props, events, and styles from
         the child, and then neuter the child's render method so it produces no output.
 
+        Args:
+            child: The child component to wrap.
+            props: The component props.
+
         Returns:
-            The rendered debounce element wrapping the first child element.
+            The DebounceInput component.
 
         Raises:
             RuntimeError: unless exactly one child element is provided.
             ValueError: if the child element does not have an on_change handler.
         """
-        child, props = _collect_first_child_and_props(self)
-        if isinstance(child, type(self)) or len(self.children) > 1:
+        child, collected_props = _collect_first_child_and_props(child)
+        props.update(collected_props)
+        if isinstance(child, cls):
             raise RuntimeError(
                 "Provide a single child for DebounceInput, such as rx.input() or "
                 "rx.text_area()",
             )
         if "on_change" not in child.event_triggers:
             raise ValueError("DebounceInput child requires an on_change handler")
+        props.setdefault("style", {}).update(child.style)
+        props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
+
         child_ref = child.get_ref()
-        if child_ref and not props.get("ref"):
+        if not props.get("input_ref") and child_ref:
             props["input_ref"] = Var.create(child_ref, _var_is_local=False)
-        self.children = []
-        tag = super()._render()
-        tag.add_props(
-            **props,
-            **child.event_triggers,
-            sx=child.style,
-            id=child.id,
-            class_name=child.class_name,
-            element=Var.create(
+        props.setdefault(
+            "element",
+            Var.create(
                 "{%s}" % (child.alias or child.tag),
                 _var_is_local=False,
                 _var_is_string=False,
+            )._replace(
+                _var_type=Type[Component],
             ),
         )
-        # do NOT render the child, DebounceInput will create it
+
+        comp = super().create(child, **props)
+        comp.event_triggers.update(child.event_triggers)
+
+        # Do NOT render the child, DebounceInput will create it.
         object.__setattr__(child, "render", lambda: "")
-        return tag
+        # Prevent the child from being memoized as a stateful component.
+        object.__setattr__(child, "_get_vars", empty_iterator)
+        child.event_triggers = {}
+
+        return comp
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
@@ -122,7 +147,7 @@ def _collect_first_child_and_props(c: Component) -> tuple[Component, dict[str, A
     if not c.children:
         return c, props
     child = c.children[0]
-    if not isinstance(child, type(c)):
+    if not isinstance(child, DebounceInput):
         return child, {**props_not_none(child), **props}
     # carry props from nested DebounceInput components
     recursive_child, child_props = _collect_first_child_and_props(child)
