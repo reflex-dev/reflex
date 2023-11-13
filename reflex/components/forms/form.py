@@ -94,10 +94,11 @@ class Form(ChakraComponent):
         Returns:
             The rendered component.
         """
-        self.event_triggers[EventTriggers.ON_SUBMIT] = BaseVar(
-            _var_name=f"handleSubmit{self.handle_submit_unique_name}",
-            _var_type=EventChain,
-        )
+        if EventTriggers.ON_SUBMIT in self.event_triggers:
+            self.event_triggers[EventTriggers.ON_SUBMIT] = BaseVar(
+                _var_name=f"handleSubmit{self.handle_submit_unique_name}",
+                _var_type=EventChain,
+            )
         return super().render()
 
     def _get_form_refs(self) -> Dict[str, Any]:
