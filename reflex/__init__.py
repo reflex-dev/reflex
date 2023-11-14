@@ -57,6 +57,8 @@ _ALL_COMPONENTS = [
     "ColorModeSwitch",
     "Component",
     "Cond",
+    "ConnectionBanner",
+    "ConnectionModal",
     "Container",
     "DataTable",
     "DataEditor",

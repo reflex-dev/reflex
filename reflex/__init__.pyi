@@ -53,6 +53,8 @@ from reflex.components import ColorModeIcon as ColorModeIcon
 from reflex.components import ColorModeSwitch as ColorModeSwitch
 from reflex.components import Component as Component
 from reflex.components import Cond as Cond
+from reflex.components import ConnectionBanner as ConnectionBanner
+from reflex.components import ConnectionModal as ConnectionModal
 from reflex.components import Container as Container
 from reflex.components import DataTable as DataTable
 from reflex.components import DataEditor as DataEditor
@@ -258,6 +260,8 @@ from reflex.components import color_mode_icon as color_mode_icon
 from reflex.components import color_mode_switch as color_mode_switch
 from reflex.components import component as component
 from reflex.components import cond as cond
+from reflex.components import connection_banner as connection_banner
+from reflex.components import connection_modal as connection_modal
 from reflex.components import container as container
 from reflex.components import data_table as data_table
 from reflex.components import data_editor as data_editor
