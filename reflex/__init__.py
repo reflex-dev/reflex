@@ -7,6 +7,7 @@ we use the Flask "import name as name" syntax.
 import importlib
 from typing import Type
 
+from reflex.page import page as page
 from reflex.utils.format import to_snake_case
 
 _ALL_COMPONENTS = [
@@ -307,11 +308,6 @@ def __getattr__(name: str) -> Type:
 
         # Import the module.
         module = importlib.import_module(_MAPPING[name])
-
-        # Special case for page.
-        if name == "page":
-            globals()["page"] = module.page
-            return module.page
 
         # Get the attribute from the module if the name is not the module itself.
         return (
