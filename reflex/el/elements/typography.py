@@ -6,7 +6,7 @@ from reflex.vars import Var as Var_
 from .base import BaseHTML
 
 
-class Blockquote(BaseHTML):  # noqa: E742
+class Blockquote(BaseHTML):  
     """Display the blockquote element."""
 
     tag = "blockquote"
@@ -15,37 +15,37 @@ class Blockquote(BaseHTML):  # noqa: E742
     cite: Var_[Union[str, int, bool]]
 
 
-class Dd(BaseHTML):  # noqa: E742
+class Dd(BaseHTML):  
     """Display the dd element."""
 
     tag = "dd"
 
 
-class Div(BaseHTML):  # noqa: E742
+class Div(BaseHTML):  
     """Display the div element."""
 
     tag = "div"
 
 
-class Dl(BaseHTML):  # noqa: E742
+class Dl(BaseHTML):  
     """Display the dl element."""
 
     tag = "dl"
 
 
-class Dt(BaseHTML):  # noqa: E742
+class Dt(BaseHTML):  
     """Display the dt element."""
 
     tag = "dt"
 
 
-class Figcaption(BaseHTML):  # noqa: E742
+class Figcaption(BaseHTML):  
     """Display the figcaption element."""
 
     tag = "figcaption"
 
 
-class Hr(BaseHTML):  # noqa: E742
+class Hr(BaseHTML):  
     """Display the hr element."""
 
     tag = "hr"
@@ -57,13 +57,13 @@ class Hr(BaseHTML):  # noqa: E742
     color: Var_[Union[str, int, bool]]
 
 
-class Li(BaseHTML):  # noqa: E742
+class Li(BaseHTML):  
     """Display the li element."""
 
     tag = "li"
 
 
-class Menu(BaseHTML):  # noqa: E742
+class Menu(BaseHTML):  
     """Display the menu element."""
 
     tag = "menu"
@@ -72,7 +72,7 @@ class Menu(BaseHTML):  # noqa: E742
     type: Var_[Union[str, int, bool]]
 
 
-class Ol(BaseHTML):  # noqa: E742
+class Ol(BaseHTML):  
     """Display the ol element."""
 
     tag = "ol"
@@ -87,19 +87,19 @@ class Ol(BaseHTML):  # noqa: E742
     type: Var_[Union[str, int, bool]]
 
 
-class P(BaseHTML):  # noqa: E742
+class P(BaseHTML):  
     """Display the p element."""
 
     tag = "p"
 
 
-class Pre(BaseHTML):  # noqa: E742
+class Pre(BaseHTML):  
     """Display the pre element."""
 
     tag = "pre"
 
 
-class Ul(BaseHTML):  # noqa: E742
+class Ul(BaseHTML):  
     """Display the ul element."""
 
     tag = "ul"
