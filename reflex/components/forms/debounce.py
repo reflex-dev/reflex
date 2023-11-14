@@ -83,9 +83,11 @@ class DebounceInput(Component):
             )
         if "on_change" not in child.event_triggers:
             raise ValueError("DebounceInput child requires an on_change handler")
-        props.update(collected_props)
+        props = {**collected_props, **props}
+        child_props = props_not_none(child)
+        props.setdefault("value", child_props.pop("value", None))
         # Carry all child props directly via custom_attrs
-        props.setdefault("custom_attrs", {}).update(props_not_none(child), **child.custom_attrs)
+        props.setdefault("custom_attrs", {}).update(child_props, **child.custom_attrs)
         props.setdefault("style", {}).update(child.style)
         if child.class_name:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
@@ -112,7 +114,6 @@ class DebounceInput(Component):
         object.__setattr__(child, "render", lambda: "")
         # Prevent the child from being memoized as a stateful component.
         object.__setattr__(child, "_get_vars", _empty_iterator)
-        child.event_triggers = {}
 
         return comp
 
