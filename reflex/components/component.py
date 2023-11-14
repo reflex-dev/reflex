@@ -433,8 +433,11 @@ class Component(BaseComponent, ABC):
 
         return _compile_component(self)
 
-    def _render(self) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
+
+        Args:
+            props: The props to render (if None, then use get_props).
 
         Returns:
             The tag to render.
@@ -445,16 +448,30 @@ class Component(BaseComponent, ABC):
             special_props=self.special_props,
         )
 
-        # Add component props to the tag.
-        props = {
-            attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
-            for attr in self.get_props()
-        }
+        if props is None:
+            # Add component props to the tag.
+            props = {
+                attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
+                for attr in self.get_props()
+            }
 
-        # Add ref to element if `id` is not None.
-        ref = self.get_ref()
-        if ref is not None:
-            props["ref"] = Var.create(ref, _var_is_local=False)
+            # Add ref to element if `id` is not None.
+            ref = self.get_ref()
+            if ref is not None:
+                props["ref"] = Var.create(ref, _var_is_local=False)
+
+        props.update(
+            **{
+                trigger: handler
+                for trigger, handler in self.event_triggers.items()
+                if trigger not in {EventTriggers.ON_MOUNT, EventTriggers.ON_UNMOUNT}
+            },
+            key=self.key,
+            id=self.id,
+            class_name=self.class_name,
+        )
+        props.update(self._get_style())
+        props.update(self.custom_attrs)
 
         return tag.add_props(**props)
 
@@ -578,18 +595,7 @@ class Component(BaseComponent, ABC):
         """
         tag = self._render()
         rendered_dict = dict(
-            tag.add_props(
-                **{
-                    trigger: handler
-                    for trigger, handler in self.event_triggers.items()
-                    if trigger not in {EventTriggers.ON_MOUNT, EventTriggers.ON_UNMOUNT}
-                },
-                key=self.key,
-                id=self.id,
-                class_name=self.class_name,
-                **self._get_style(),
-                **self.custom_attrs,
-            ).set(
+            tag.set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
                 props=tag.format_props(),
@@ -1156,10 +1162,7 @@ class CustomComponent(Component):
         Returns:
             The tag to render.
         """
-        return Tag(
-            name=self.tag if not self.alias else self.alias,
-            special_props=self.special_props,
-        ).add_props(**self.props)
+        return super()._render(props=self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.

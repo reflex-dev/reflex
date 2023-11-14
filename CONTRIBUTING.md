@@ -57,7 +57,7 @@ Once you solve a current issue or improvement to Reflex, you can make a PR, and 
 Before submitting, a pull request, ensure the following steps are taken and test passing.
 
 In your `reflex` directory run make sure all the unit tests are still passing using the following command.
-This will fail if code coverage is below 80%.
+This will fail if code coverage is below 70%.
 ``` bash
 poetry run pytest tests --cov --no-cov-on-fail --cov-report= 
 ```

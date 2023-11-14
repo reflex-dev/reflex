@@ -11,7 +11,7 @@ from reflex.components.tags import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain
 from reflex.utils import imports
-from reflex.utils.format import format_event_chain
+from reflex.utils.format import format_event_chain, to_camel_case
 from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var, get_unique_variable_name
 
@@ -45,7 +45,22 @@ class Form(ChakraComponent):
     reset_on_submit: Var[bool] = False  # type: ignore
 
     # The name used to make this form's submit handler function unique
-    handle_submit_unique_name: Var[str] = get_unique_variable_name()  # type: ignore
+    handle_submit_unique_name: Var[str]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a form component.
+
+        Args:
+            *children: The children of the form.
+            **props: The properties of the form.
+
+        Returns:
+            The form component.
+        """
+        if "handle_submit_unique_name" not in props:
+            props["handle_submit_unique_name"] = get_unique_variable_name()
+        return super().create(*children, **props)
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
@@ -73,27 +88,25 @@ class Form(ChakraComponent):
         )
 
     def _render(self) -> Tag:
-        return (
+        render_tag = (
             super()
             ._render()
-            .remove_props("reset_on_submit", "handle_submit_unique_name")
-        )
-
-    def render(self) -> dict:
-        """Render the component.
-
-        Returns:
-            The rendered component.
-        """
-        orig_on_submit = self.event_triggers.pop(EventTriggers.ON_SUBMIT)
-        if orig_on_submit is not None:
-            self.event_triggers[EventTriggers.ON_SUBMIT] = BaseVar(
-                _var_name=f"handleSubmit{self.handle_submit_unique_name}",
-                _var_type=EventChain,
+            .remove_props(
+                "reset_on_submit",
+                "handle_submit_unique_name",
+                to_camel_case(EventTriggers.ON_SUBMIT),
             )
-        rendered = super().render()
-        self.event_triggers[EventTriggers.ON_SUBMIT] = orig_on_submit
-        return rendered
+        )
+        if EventTriggers.ON_SUBMIT in self.event_triggers:
+            render_tag.add_props(
+                **{
+                    EventTriggers.ON_SUBMIT: BaseVar(
+                        _var_name=f"handleSubmit{self.handle_submit_unique_name}",
+                        _var_type=EventChain,
+                    )
+                }
+            )
+        return render_tag
 
     def _get_form_refs(self) -> Dict[str, Any]:
         # Send all the input refs to the handler.
