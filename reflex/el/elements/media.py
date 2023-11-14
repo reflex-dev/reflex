@@ -6,91 +6,195 @@ from reflex.vars import Var as Var_
 from .base import BaseHTML
 
 
-class Area(BaseHTML):  # Inherits common attributes from BaseHTML
+class Area(BaseHTML):
     """Display the area element."""
 
     tag = "area"
+
+    # Alternate text for the area, used for accessibility
     alt: Var_[Union[str, int, bool]]
+
+    # Coordinates to define the shape of the area
     coords: Var_[Union[str, int, bool]]
+
+    # Specifies that the target will be downloaded when clicked
     download: Var_[Union[str, int, bool]]
+
+    # Hyperlink reference for the area
     href: Var_[Union[str, int, bool]]
+
+    # Language of the linked resource
     href_lang: Var_[Union[str, int, bool]]
+
+    # Specifies what media/device the linked resource is optimized for
     media: Var_[Union[str, int, bool]]
+
+    # A list of URLs to be notified if the user follows the hyperlink
     ping: Var_[Union[str, int, bool]]
+
+    # Specifies which referrer information to send with the link
     referrer_policy: Var_[Union[str, int, bool]]
+
+    # Specifies the relationship of the target object to the link object
     rel: Var_[Union[str, int, bool]]
+
+    # Defines the shape of the area (rectangle, circle, polygon)
     shape: Var_[Union[str, int, bool]]
+
+    # Specifies where to open the linked document
     target: Var_[Union[str, int, bool]]
 
 
-class Audio(BaseHTML):  # Inherits common attributes from BaseHTML
+class Audio(BaseHTML):
     """Display the audio element."""
 
     tag = "audio"
+
+    # Specifies that the audio will start playing as soon as it is ready
     auto_play: Var_[Union[str, int, bool]]
+
+    # Represents the time range of the buffered media
     buffered: Var_[Union[str, int, bool]]
+
+    # Displays the standard audio controls
     controls: Var_[Union[str, int, bool]]
+
+    # Configures the CORS requests for the element
     cross_origin: Var_[Union[str, int, bool]]
+
+    # Specifies that the audio will loop
     loop: Var_[Union[str, int, bool]]
+
+    # Indicates whether the audio is muted by default
     muted: Var_[Union[str, int, bool]]
+
+    # Specifies how the audio file should be preloaded
     preload: Var_[Union[str, int, bool]]
+
+    # URL of the audio to play
     src: Var_[Union[str, int, bool]]
 
 
-class Img(BaseHTML):  # Inherits common attributes from BaseHTML
+class Img(BaseHTML):
     """Display the img element."""
 
     tag = "img"
+
+    # Image alignment with respect to its surrounding elements
     align: Var_[Union[str, int, bool]]
+
+    # Alternative text for the image
     alt: Var_[Union[str, int, bool]]
+
+    # Border width around the image
     border: Var_[Union[str, int, bool]]
+
+    # Configures the CORS requests for the image
     cross_origin: Var_[Union[str, int, bool]]
+
+    # How the image should be decoded
     decoding: Var_[Union[str, int, bool]]
+
+    # The intrinsic height of the image
     height: Var_[Union[str, int, bool]]
+
+    # Specifies an intrinsic size for the image
     intrinsicsize: Var_[Union[str, int, bool]]
+
+    # Whether the image is a server-side image map
     ismap: Var_[Union[str, int, bool]]
+
+    # Specifies the loading behavior of the image
     loading: Var_[Union[str, int, bool]]
+
+    # Referrer policy for the image
     referrer_policy: Var_[Union[str, int, bool]]
+
+    # Sizes of the image for different layouts
     sizes: Var_[Union[str, int, bool]]
+
+    # URL of the image to display
     src: Var_[Union[str, int, bool]]
+
+    # A set of source sizes and URLs for responsive images
     src_set: Var_[Union[str, int, bool]]
+
+    # The name of the map to use with the image
     use_map: Var_[Union[str, int, bool]]
+
+    # The intrinsic width of the image
     width: Var_[Union[str, int, bool]]
 
 
-class Map(BaseHTML):  # Inherits common attributes from BaseHTML
+class Map(BaseHTML):
     """Display the map element."""
 
     tag = "map"
+
+    # Name of the map, referenced by the 'usemap' attribute in 'img' and 'object' elements
     name: Var_[Union[str, int, bool]]
 
 
-class Track(BaseHTML):  # Inherits common attributes from BaseHTML
+class Track(BaseHTML):
     """Display the track element."""
 
     tag = "track"
+
+    # Indicates that the track should be enabled unless the user's preferences indicate otherwise
     default: Var_[Union[str, int, bool]]
+
+    # Specifies the kind of text track
     kind: Var_[Union[str, int, bool]]
+
+    # Title of the text track, used by the browser when listing available text tracks
     label: Var_[Union[str, int, bool]]
+
+    # URL of the track file
     src: Var_[Union[str, int, bool]]
+
+    # Language of the track text data
     src_lang: Var_[Union[str, int, bool]]
 
 
-class Video(BaseHTML):  # Inherits common attributes from BaseHTML
+class Video(BaseHTML):
     """Display the video element."""
 
     tag = "video"
+
+    # Specifies that the video will start playing as soon as it is ready
     auto_play: Var_[Union[str, int, bool]]
+
+    # Represents the time range of the buffered media
     buffered: Var_[Union[str, int, bool]]
+
+    # Displays the standard video controls
     controls: Var_[Union[str, int, bool]]
+
+    # Configures the CORS requests for the video
     cross_origin: Var_[Union[str, int, bool]]
+
+    # The intrinsic height of the video
     height: Var_[Union[str, int, bool]]
+
+    # Specifies that the video will loop
     loop: Var_[Union[str, int, bool]]
+
+    # Indicates whether the video is muted by default
     muted: Var_[Union[str, int, bool]]
+
+    # Indicates that the video should play 'inline', inside its element's playback area
     plays_inline: Var_[Union[str, int, bool]]
+
+    # URL of an image to show while the video is downloading, or until the user hits the play button
     poster: Var_[Union[str, int, bool]]
+
+    # Specifies how the video file should be preloaded
     preload: Var_[Union[str, int, bool]]
+
+    # URL of the video to play
     src: Var_[Union[str, int, bool]]
+
+    # The intrinsic width of the video
     width: Var_[Union[str, int, bool]]
 
 
@@ -98,9 +202,17 @@ class Embed(BaseHTML):
     """Display the embed element."""
 
     tag = "embed"
+
+    # The intrinsic height of the embedded content
     height: Var_[Union[str, int, bool]]
+
+    # URL of the embedded content
     src: Var_[Union[str, int, bool]]
+
+    # Media type of the embedded content
     type: Var_[Union[str, int, bool]]
+
+    # The intrinsic width of the embedded content
     width: Var_[Union[str, int, bool]]
 
 
@@ -108,16 +220,38 @@ class Iframe(BaseHTML):
     """Display the iframe element."""
 
     tag = "iframe"
+
+    # Alignment of the iframe within the page or surrounding elements
     align: Var_[Union[str, int, bool]]
+
+    # Permissions policy for the iframe
     allow: Var_[Union[str, int, bool]]
+
+    # Content Security Policy to apply to the iframe's content
     csp: Var_[Union[str, int, bool]]
+
+    # The height of the iframe
     height: Var_[Union[str, int, bool]]
+
+    # Specifies the loading behavior of the iframe
     loading: Var_[Union[str, int, bool]]
+
+    # Name of the iframe, used as a target for hyperlinks and forms
     name: Var_[Union[str, int, bool]]
+
+    # Referrer policy for the iframe
     referrer_policy: Var_[Union[str, int, bool]]
+
+    # Security restrictions for the content in the iframe
     sandbox: Var_[Union[str, int, bool]]
+
+    # URL of the document to display in the iframe
     src: Var_[Union[str, int, bool]]
+
+    # HTML content to embed directly within the iframe
     src_doc: Var_[Union[str, int, bool]]
+
+    # The width of the iframe
     width: Var_[Union[str, int, bool]]
 
 
@@ -125,13 +259,29 @@ class Object(BaseHTML):
     """Display the object element."""
 
     tag = "object"
+
+    # Border width around the object
     border: Var_[Union[str, int, bool]]
+
+    # URL of the data to be used by the object
     data: Var_[Union[str, int, bool]]
+
+    # Associates the object with a form element
     form: Var_[Union[str, int, bool]]
+
+    # The intrinsic height of the object
     height: Var_[Union[str, int, bool]]
+
+    # Name of the object, used for scripting or as a target for forms and links
     name: Var_[Union[str, int, bool]]
+
+    # Media type of the data specified in the data attribute
     type: Var_[Union[str, int, bool]]
+
+    # Name of an image map to use with the object
     use_map: Var_[Union[str, int, bool]]
+
+    # The intrinsic width of the object
     width: Var_[Union[str, int, bool]]
 
 
@@ -153,8 +303,18 @@ class Source(BaseHTML):
     """Display the source element."""
 
     tag = "source"
+
+    # Media query indicating what device the linked resource is optimized for
     media: Var_[Union[str, int, bool]]
+
+    # Sizes of the source for different layouts
     sizes: Var_[Union[str, int, bool]]
+
+    # URL of the media file or an image for the element to use
     src: Var_[Union[str, int, bool]]
+
+    # A set of source sizes and URLs for responsive images
     src_set: Var_[Union[str, int, bool]]
+
+    # Media type of the source
     type: Var_[Union[str, int, bool]]

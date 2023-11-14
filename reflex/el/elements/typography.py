@@ -11,6 +11,7 @@ class Blockquote(BaseHTML):  # noqa: E742
 
     tag = "blockquote"
 
+    # Define the title of a work.
     cite: Var_[Union[str, int, bool]]
 
 
@@ -49,7 +50,10 @@ class Hr(BaseHTML):  # noqa: E742
 
     tag = "hr"
 
+    # Used to specify the alignment of text content of The Element. this attribute is used in all elements.
     align: Var_[Union[str, int, bool]]
+
+    # Used to specify the color of a Horizontal rule.
     color: Var_[Union[str, int, bool]]
 
 
@@ -64,6 +68,7 @@ class Menu(BaseHTML):  # noqa: E742
 
     tag = "menu"
 
+    # Specifies that the menu element is a context menu.
     type: Var_[Union[str, int, bool]]
 
 
@@ -72,8 +77,13 @@ class Ol(BaseHTML):  # noqa: E742
 
     tag = "ol"
 
+    # Reverses the order of the list.
     reversed: Var_[Union[str, int, bool]]
+
+    # Specifies the start value of the first list item in an ordered list.
     start: Var_[Union[str, int, bool]]
+
+    # Specifies the kind of marker to use in the list (letters or numbers).
     type: Var_[Union[str, int, bool]]
 
 
@@ -99,7 +109,11 @@ class Ins(BaseHTML):
     """Display the ins element."""
 
     tag = "ins"
+
+    # Specifies the URL of the document that explains the reason why the text was inserted/changed.
     cite: Var_[Union[str, int, bool]]
+
+    # Specifies the date and time of when the text was inserted/changed.
     date_time: Var_[Union[str, int, bool]]
 
 
@@ -107,5 +121,9 @@ class Del(BaseHTML):
     """Display the del element."""
 
     tag = "del"
+
+    # Specifies the URL of the document that explains the reason why the text was deleted.
     cite: Var_[Union[str, int, bool]]
+
+    # Specifies the date and time of when the text was deleted.
     date_time: Var_[Union[str, int, bool]]

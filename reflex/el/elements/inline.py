@@ -10,14 +10,32 @@ class A(BaseHTML):  # Inherits common attributes from BaseMeta
     """Display the 'a' element."""
 
     tag = "a"
+
+    # Specifies that the target (the file specified in the href attribute) will be downloaded when a user clicks on the hyperlink.
     download: Var_[Union[str, int, bool]]
+
+    # Specifies the URL of the page the link goes to
     href: Var_[Union[str, int, bool]]
+
+    # Specifies the language of the linked document
     href_lang: Var_[Union[str, int, bool]]
+
+    # Specifies what media/device the linked document is optimized for
     media: Var_[Union[str, int, bool]]
+
+    # Specifies which referrer is sent when fetching the resource
     ping: Var_[Union[str, int, bool]]
+
+    # Specifies the relationship between the current document and the linked document
     referrer_policy: Var_[Union[str, int, bool]]
+
+    # Specifies the relationship between the linked document and the current document
     rel: Var_[Union[str, int, bool]]
+
+    # Specifies the shape of the area
     shape: Var_[Union[str, int, bool]]
+
+    # Specifies where to open the linked document
     target: Var_[Union[str, int, bool]]
 
 
