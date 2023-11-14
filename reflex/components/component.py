@@ -973,8 +973,6 @@ class Component(BaseComponent, ABC):
         if ref is not None:
             refs.add(ref)
         for child in self.children:
-            if not isinstance(child, Component):
-                continue
             refs |= child.get_refs()
         return refs
 
