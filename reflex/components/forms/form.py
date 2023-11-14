@@ -116,12 +116,12 @@ class Form(ChakraComponent):
             # to collect data
             if ref.startswith("refs_"):
                 ref_var = Var.create_safe(ref[:-3]).as_ref()
-                form_refs[ref[5:-3]] = Var.create(
+                form_refs[ref[5:-3]] = Var.create_safe(
                     f"getRefValues({str(ref_var)})", _var_is_local=False
                 )._replace(merge_var_data=ref_var._var_data)
             else:
                 ref_var = Var.create_safe(ref).as_ref()
-                form_refs[ref[4:]] = Var.create(
+                form_refs[ref[4:]] = Var.create_safe(
                     f"getRefValue({str(ref_var)})", _var_is_local=False
                 )._replace(merge_var_data=ref_var._var_data)
         return form_refs
