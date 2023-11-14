@@ -1210,6 +1210,10 @@ def custom_component(
     return wrapper
 
 
+# Alias memo to custom_component.
+memo = custom_component
+
+
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 

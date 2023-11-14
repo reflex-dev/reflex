@@ -47,6 +47,7 @@ from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
+var = ComputedVar
 
 
 class HeaderData(Base):
