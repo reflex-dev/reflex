@@ -13,9 +13,6 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 
-State.add_var(constants.CompileVars.IS_HYDRATED, type_=bool, default_value=False)
-
-
 class HydrateMiddleware(Middleware):
     """Middleware to handle initial app hydration."""
 
@@ -57,9 +54,10 @@ class HydrateMiddleware(Middleware):
 
         # Get the route for on_load events.
         route = event.router_data.get(constants.RouteVar.PATH, "")
-
+        load_events = app.get_load_events(route)
+        sh = type(state).set_is_hydrated(True)
         # Add the on_load events and set is_hydrated to True.
-        events = [*app.get_load_events(route), type(state).set_is_hydrated(True)]  # type: ignore
+        events = [*load_events, sh]  # type: ignore
         events = fix_events(events, event.token, router_data=event.router_data)
 
         # Return the state update.
