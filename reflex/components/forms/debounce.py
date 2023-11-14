@@ -1,11 +1,11 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any, Iterator, Set, Type
+from typing import Any, Dict, Iterator, Type
 
 from reflex.components.component import Component
-from reflex.utils import imports
-from reflex.vars import Var
+from reflex.constants import EventTriggers
+from reflex.vars import Var, VarData
 
 
 def _empty_iterator() -> Iterator[Var]:
@@ -75,21 +75,25 @@ class DebounceInput(Component):
                 "Provide a single child for DebounceInput, such as rx.input() or "
                 "rx.text_area()",
             )
-        child, collected_props = _collect_first_child_and_props(children[0])
-        if isinstance(child, cls):
-            raise RuntimeError(
-                "Provide a single child for DebounceInput, such as rx.input() or "
-                "rx.text_area()",
-            )
+        child = children[0]
         if "on_change" not in child.event_triggers:
             raise ValueError("DebounceInput child requires an on_change handler")
-        props = {**collected_props, **props}
-        child_props = props_not_none(child)
-        props.setdefault("value", child_props.pop("value", None))
-        # Carry all child props directly via custom_attrs
-        props.setdefault("custom_attrs", {}).update(child_props, **child.custom_attrs)
+        props_from_child = {
+            p: getattr(child, p)
+            for p in cls.get_props()
+            if getattr(child, p, None) is not None
+        }
+        props_from_child.update(child.event_triggers)
+        props = {**props_from_child, **props}
+        other_props = {
+            p: getattr(child, p)
+            for p in child.get_props()
+            if p not in props_from_child and getattr(child, p) is not None
+        }
+        # Carry all other child props directly via custom_attrs
+        props.setdefault("custom_attrs", {}).update(other_props, **child.custom_attrs)
         props.setdefault("style", {}).update(child.style)
-        if child.class_name:
+        if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
 
         child_ref = child.get_ref()
@@ -104,81 +108,25 @@ class DebounceInput(Component):
                 _var_is_string=False,
             )._replace(
                 _var_type=Type[Component],
+                merge_var_data=VarData(
+                    imports=child._get_imports(),
+                    hooks=child._get_hooks_internal(),
+                ),
             ),
         )
 
-        comp = super().create(child, **props)
-        comp.event_triggers.update(child.event_triggers)
+        return super().create(**props)
 
-        # Do NOT render the child, DebounceInput will create it.
-        object.__setattr__(child, "render", lambda: "")
-
-        return comp
-
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            *[c._get_imports() for c in self.children if isinstance(c, Component)],
-        )
-
-    def _get_hooks_internal(self) -> Set[str]:
-        hooks = super()._get_hooks_internal()
-        for child in self.children:
-            if not isinstance(child, Component):
-                continue
-            hooks.update(child._get_hooks_internal())
-        return hooks
-
-    def get_ref(self) -> str | None:
-        """Get the ref for this component.
-
-        The DebounceInput itself cannot have a ref, the ID applies to the child created internally.
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers that pass the component's value to the handler.
 
         Returns:
-            None
+            A dict mapping the event trigger to the var that is passed to the handler.
         """
-        return None
+        return {
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0.value],
+        }
 
-
-def props_not_none(c: Component) -> dict[str, Any]:
-    """Get all properties of the component that are not None.
-
-    Args:
-        c: the component to get_props from
-
-    Returns:
-        dict of all props that are not None.
-    """
-    cdict = {a: getattr(c, a) for a in c.get_props() if getattr(c, a, None) is not None}
-    return cdict
-
-
-def _collect_first_child_and_props(c: Component) -> tuple[Component, dict[str, Any]]:
-    """Recursively find the first child of a different type than `c` with props.
-
-    This function is used to collapse nested DebounceInput components by
-    applying props from each level. Parent props take precedent over child
-    props. The first child component that differs in type will be returned
-    along with all combined parent props seen along the way.
-
-    Args:
-        c: the component to get_props from
-
-    Returns:
-        tuple containing the first nested child of a different type and the collected
-        props from each component traversed.
-
-    Raises:
-        TypeError: if any children are not Component instances.
-    """
-    if not c.children:
-        return c, {}
-    child = c.children[0]
-    if not isinstance(child, Component):
-        raise TypeError(f"DebounceInput child must be a Component, got {child!r}")
-    props = props_not_none(c)
-    if not isinstance(child, DebounceInput):
-        return child, props
-    # carry props from nested DebounceInput components
-    recursive_child, child_props = _collect_first_child_and_props(child)
-    return recursive_child, {**child_props, **props}
+    def _render(self):
+        return super()._render().remove_props("ref")
