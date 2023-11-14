@@ -911,7 +911,7 @@ class InterdependentState(State):
         Returns:
             ComputedVar v1x2 multiplied by 2
         """
-        return self.v1x2 * 2
+        return self.v1x2 * 2  # type: ignore
 
 
 @pytest.fixture
@@ -1111,7 +1111,7 @@ def test_computed_var_cached_depends_on_non_cached():
 
         @rx.cached_var
         def dep_v(self) -> int:
-            return self.no_cache_v
+            return self.no_cache_v  # type: ignore
 
         @rx.cached_var
         def comp_v(self) -> int:
@@ -1154,7 +1154,7 @@ def test_computed_var_depends_on_parent_non_cached():
     class ChildState(ParentState):
         @rx.cached_var
         def dep_v(self) -> int:
-            return self.no_cache_v
+            return self.no_cache_v  # type: ignore
 
     ps = ParentState()
     cs = ps.substates[ChildState.get_name()]

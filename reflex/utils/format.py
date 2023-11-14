@@ -137,14 +137,9 @@ def to_camel_case(text: str) -> str:
     Returns:
         The camel case string.
     """
-    if "_" not in text:
-        return text
-    camel = "".join(
-        word.capitalize() if i > 0 else word.lower()
-        for i, word in enumerate(text.lstrip("_").split("_"))
-    )
-    prefix = "_" if text.startswith("_") else ""
-    return prefix + camel
+    words = re.split("[_-]", text)
+    # Capitalize the first letter of each word except the first one
+    return words[0] + "".join(x.capitalize() for x in words[1:])
 
 
 def to_title_case(text: str) -> str:
