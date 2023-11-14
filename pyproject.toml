@@ -46,7 +46,6 @@ uvicorn = [
 ]
 watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
-websockets = "^10.4"
 starlette-admin = "^0.9.0"
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
@@ -59,6 +58,7 @@ wrapt = [
 packaging = "^23.1"
 tabulate = "^0.9.0"
 pipdeptree = "^2.13.0"
+websockets = ">=10.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
