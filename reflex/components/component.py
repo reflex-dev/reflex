@@ -384,6 +384,8 @@ class Component(Base, ABC):
             ref = self.get_ref()
             if ref is not None:
                 props["ref"] = Var.create(ref, _var_is_local=False)
+        else:
+            props = props.copy()
 
         props.update(
             self.event_triggers,
