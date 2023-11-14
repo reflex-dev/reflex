@@ -609,6 +609,19 @@ class PyiGenerator:
                 self._scan_folder(target)
 
 
+def generate_init():
+    """Generate a pyi file for the main __init__.py."""
+    from reflex import _MAPPING  # type: ignore
+
+    imports = [
+        f"from {path if mod != path.rsplit('.')[-1] or mod == 'page' else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
+        for mod, path in _MAPPING.items()
+    ]
+
+    with open("reflex/__init__.pyi", "w") as pyi_file:
+        pyi_file.writelines("\n".join(imports))
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
@@ -617,3 +630,4 @@ if __name__ == "__main__":
     logger.info(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
     gen.scan_all(targets)
+    generate_init()
