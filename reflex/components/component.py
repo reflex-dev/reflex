@@ -1320,6 +1320,8 @@ class StatefulComponent(BaseComponent):
                 prop_var_data = VarData.merge(prop_var_data, child._var_data)
 
         if prop_var_data is not None or component.event_triggers:
+            if not component.render():
+                return None  # never memoize non-visual components
             tag, code = cls._render_stateful_code(component)
             stateful_component = cls.tag_to_stateful_component.setdefault(
                 tag, cls(component=component, tag=tag, code=code)

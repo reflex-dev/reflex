@@ -112,8 +112,6 @@ class DebounceInput(Component):
 
         # Do NOT render the child, DebounceInput will create it.
         object.__setattr__(child, "render", lambda: "")
-        # Prevent the child from being memoized as a stateful component.
-        object.__setattr__(child, "_get_vars", _empty_iterator)
 
         return comp
 
