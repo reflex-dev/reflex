@@ -385,15 +385,16 @@ class Component(Base, ABC):
             if ref is not None:
                 props["ref"] = Var.create(ref, _var_is_local=False)
 
-        return tag.add_props(
-            **props,
-            **self.event_triggers,
+        props.update(
+            self.event_triggers,
             key=self.key,
             id=self.id,
             class_name=self.class_name,
-            **self._get_style(),
-            **self.custom_attrs,
         )
+        props.update(self._get_style())
+        props.update(self.custom_attrs)
+
+        return tag.add_props(**props)
 
     @classmethod
     def get_props(cls) -> Set[str]:
