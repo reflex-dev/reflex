@@ -39,49 +39,49 @@ class A(BaseHTML):  # Inherits common attributes from BaseMeta
     target: Var_[Union[str, int, bool]]
 
 
-class Abbr(BaseHTML):  
+class Abbr(BaseHTML):
     """Display the abbr element."""
 
     tag = "abbr"
 
 
-class B(BaseHTML):  
+class B(BaseHTML):
     """Display the b element."""
 
     tag = "b"
 
 
-class Bdi(BaseHTML):  
+class Bdi(BaseHTML):
     """Display the bdi element."""
 
     tag = "bdi"
 
 
-class Bdo(BaseHTML):  
+class Bdo(BaseHTML):
     """Display the bdo element."""
 
     tag = "bdo"
 
 
-class Br(BaseHTML):  
+class Br(BaseHTML):
     """Display the br element."""
 
     tag = "br"
 
 
-class Cite(BaseHTML):  
+class Cite(BaseHTML):
     """Display the cite element."""
 
     tag = "cite"
 
 
-class Code(BaseHTML):  
+class Code(BaseHTML):
     """Display the code element."""
 
     tag = "code"
 
 
-class Data(BaseHTML):  
+class Data(BaseHTML):
     """Display the data element."""
 
     tag = "data"
@@ -89,37 +89,37 @@ class Data(BaseHTML):
     value: Var_[Union[str, int, bool]]
 
 
-class Dfn(BaseHTML):  
+class Dfn(BaseHTML):
     """Display the dfn element."""
 
     tag = "dfn"
 
 
-class Em(BaseHTML):  
+class Em(BaseHTML):
     """Display the em element."""
 
     tag = "em"
 
 
-class I(BaseHTML):  
+class I(BaseHTML):  # noqa: E742
     """Display the i element."""
 
     tag = "i"
 
 
-class Kbd(BaseHTML):  
+class Kbd(BaseHTML):
     """Display the kbd element."""
 
     tag = "kbd"
 
 
-class Mark(BaseHTML):  
+class Mark(BaseHTML):
     """Display the mark element."""
 
     tag = "mark"
 
 
-class Q(BaseHTML):  
+class Q(BaseHTML):
     """Display the q element."""
 
     tag = "q"
@@ -127,86 +127,86 @@ class Q(BaseHTML):
     cite: Var_[Union[str, int, bool]]
 
 
-class Rp(BaseHTML):  
+class Rp(BaseHTML):
     """Display the rp element."""
 
     tag = "rp"
 
 
-class Rt(BaseHTML):  
+class Rt(BaseHTML):
     """Display the rt element."""
 
     tag = "rt"
 
 
-class Ruby(BaseHTML):  
+class Ruby(BaseHTML):
     """Display the ruby element."""
 
     tag = "ruby"
 
 
-class S(BaseHTML):  
+class S(BaseHTML):
     """Display the s element."""
 
     tag = "s"
 
 
-class Samp(BaseHTML):  
+class Samp(BaseHTML):
     """Display the samp element."""
 
     tag = "samp"
 
 
-class Small(BaseHTML):  
+class Small(BaseHTML):
     """Display the small element."""
 
     tag = "small"
 
 
-class Span(BaseHTML):  
+class Span(BaseHTML):
     """Display the span element."""
 
     tag = "span"
 
 
-class Strong(BaseHTML):  
+class Strong(BaseHTML):
     """Display the strong element."""
 
     tag = "strong"
 
 
-class Sub(BaseHTML):  
+class Sub(BaseHTML):
     """Display the sub element."""
 
     tag = "sub"
 
 
-class Sup(BaseHTML):  
+class Sup(BaseHTML):
     """Display the sup element."""
 
     tag = "sup"
 
 
-class Time(BaseHTML):  
+class Time(BaseHTML):
     """Display the time element."""
 
     tag = "time"
     date_time: Var_[Union[str, int, bool]]
 
 
-class U(BaseHTML):  
+class U(BaseHTML):
     """Display the u element."""
 
     tag = "u"
 
 
-class Var(BaseHTML):  
+class Var(BaseHTML):
     """Display the var element."""
 
     tag = "var"
 
 
-class Wbr(BaseHTML):  
+class Wbr(BaseHTML):
     """Display the wbr element."""
 
     tag = "wbr"

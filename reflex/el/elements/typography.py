@@ -6,7 +6,7 @@ from reflex.vars import Var as Var_
 from .base import BaseHTML
 
 
-class Blockquote(BaseHTML):  
+class Blockquote(BaseHTML):
     """Display the blockquote element."""
 
     tag = "blockquote"
@@ -15,37 +15,37 @@ class Blockquote(BaseHTML):
     cite: Var_[Union[str, int, bool]]
 
 
-class Dd(BaseHTML):  
+class Dd(BaseHTML):
     """Display the dd element."""
 
     tag = "dd"
 
 
-class Div(BaseHTML):  
+class Div(BaseHTML):
     """Display the div element."""
 
     tag = "div"
 
 
-class Dl(BaseHTML):  
+class Dl(BaseHTML):
     """Display the dl element."""
 
     tag = "dl"
 
 
-class Dt(BaseHTML):  
+class Dt(BaseHTML):
     """Display the dt element."""
 
     tag = "dt"
 
 
-class Figcaption(BaseHTML):  
+class Figcaption(BaseHTML):
     """Display the figcaption element."""
 
     tag = "figcaption"
 
 
-class Hr(BaseHTML):  
+class Hr(BaseHTML):
     """Display the hr element."""
 
     tag = "hr"
@@ -57,13 +57,13 @@ class Hr(BaseHTML):
     color: Var_[Union[str, int, bool]]
 
 
-class Li(BaseHTML):  
+class Li(BaseHTML):
     """Display the li element."""
 
     tag = "li"
 
 
-class Menu(BaseHTML):  
+class Menu(BaseHTML):
     """Display the menu element."""
 
     tag = "menu"
@@ -72,7 +72,7 @@ class Menu(BaseHTML):
     type: Var_[Union[str, int, bool]]
 
 
-class Ol(BaseHTML):  
+class Ol(BaseHTML):
     """Display the ol element."""
 
     tag = "ol"
@@ -87,19 +87,19 @@ class Ol(BaseHTML):
     type: Var_[Union[str, int, bool]]
 
 
-class P(BaseHTML):  
+class P(BaseHTML):
     """Display the p element."""
 
     tag = "p"
 
 
-class Pre(BaseHTML):  
+class Pre(BaseHTML):
     """Display the pre element."""
 
     tag = "pre"
 
 
-class Ul(BaseHTML):  
+class Ul(BaseHTML):
     """Display the ul element."""
 
     tag = "ul"
