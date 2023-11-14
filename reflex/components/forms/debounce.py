@@ -50,7 +50,7 @@ class DebounceInput(Component):
     element: Var[Type[Component]]
 
     @classmethod
-    def create(cls, child: Component, **props: Any) -> Component:
+    def create(cls, *children: Component, **props: Any) -> Component:
         """Create a DebounceInput component.
 
         Carry first child props directly on this tag.
@@ -60,7 +60,7 @@ class DebounceInput(Component):
         the child, and then neuter the child's render method so it produces no output.
 
         Args:
-            child: The child component to wrap.
+            children: The child component to wrap.
             props: The component props.
 
         Returns:
@@ -70,8 +70,12 @@ class DebounceInput(Component):
             RuntimeError: unless exactly one child element is provided.
             ValueError: if the child element does not have an on_change handler.
         """
-        child, collected_props = _collect_first_child_and_props(child)
-        props.update(collected_props)
+        if len(children) != 1:
+            raise RuntimeError(
+                "Provide a single child for DebounceInput, such as rx.input() or "
+                "rx.text_area()",
+            )
+        child, collected_props = _collect_first_child_and_props(children[0])
         if isinstance(child, cls):
             raise RuntimeError(
                 "Provide a single child for DebounceInput, such as rx.input() or "
@@ -79,8 +83,9 @@ class DebounceInput(Component):
             )
         if "on_change" not in child.event_triggers:
             raise ValueError("DebounceInput child requires an on_change handler")
+        props.update(collected_props)
         # Carry all child props directly via custom_attrs
-        props.setdefault("custom_attrs", {}).update(props_not_none(child))
+        props.setdefault("custom_attrs", {}).update(props_not_none(child), **child.custom_attrs)
         props.setdefault("style", {}).update(child.style)
         if child.class_name:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
@@ -167,12 +172,12 @@ def _collect_first_child_and_props(c: Component) -> tuple[Component, dict[str, A
     Raises:
         TypeError: if any children are not Component instances.
     """
-    props = props_not_none(c)
     if not c.children:
-        return c, props
+        return c, {}
     child = c.children[0]
     if not isinstance(child, Component):
         raise TypeError(f"DebounceInput child must be a Component, got {child!r}")
+    props = props_not_none(c)
     if not isinstance(child, DebounceInput):
         return child, props
     # carry props from nested DebounceInput components

@@ -97,7 +97,7 @@ class BaseComponent(Base, ABC):
             The custom code.
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_refs(self) -> set[str]:
         """Get the refs for the children of the component.
 
@@ -1023,7 +1023,7 @@ class Component(BaseComponent, ABC):
         # Store the components in a set to avoid duplicates.
         components = self._get_app_wrap_components()
 
-        for component in components.values():
+        for component in tuple(components.values()):
             components.update(component.get_app_wrap_components())
 
         # Add the app wrap components for the children.
