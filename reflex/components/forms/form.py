@@ -11,7 +11,7 @@ from reflex.components.tags import Tag
 from reflex.constants import EventTriggers
 from reflex.event import EventChain
 from reflex.utils import imports
-from reflex.utils.format import format_event_chain
+from reflex.utils.format import format_event_chain, to_camel_case
 from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var, get_unique_variable_name
 
@@ -82,23 +82,25 @@ class Form(ChakraComponent):
         )
 
     def _render(self) -> Tag:
-        return (
+        render_tag = (
             super()
             ._render()
-            .remove_props("reset_on_submit", "handle_submit_unique_name")
+            .remove_props(
+                "reset_on_submit",
+                "handle_submit_unique_name",
+                to_camel_case(EventTriggers.ON_SUBMIT),
+            )
         )
-
-    def render(self) -> dict:
-        """Render the component.
-
-        Returns:
-            The rendered component.
-        """
-        self.event_triggers[EventTriggers.ON_SUBMIT] = BaseVar(
-            _var_name=f"handleSubmit{self.handle_submit_unique_name}",
-            _var_type=EventChain,
-        )
-        return super().render()
+        if EventTriggers.ON_SUBMIT in self.event_triggers:
+            render_tag.add_props(
+                **{
+                    EventTriggers.ON_SUBMIT: BaseVar(
+                        _var_name=f"handleSubmit{self.handle_submit_unique_name}",
+                        _var_type=EventChain,
+                    )
+                }
+            )
+        return render_tag
 
     def _get_form_refs(self) -> Dict[str, Any]:
         # Send all the input refs to the handler.
