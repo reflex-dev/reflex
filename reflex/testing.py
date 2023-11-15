@@ -172,8 +172,6 @@ class AppHarness:
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance.state_manager
-        breakpoint()
-        print()
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
