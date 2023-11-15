@@ -3,9 +3,10 @@
 from typing import Dict, List, Set, Union
 
 import reflex as rx
+from reflex.state import BaseState
 
 
-class DictMutationTestState(rx.BaseState):
+class DictMutationTestState(BaseState):
     """A state for testing ReflexDict mutation."""
 
     # plain dict
@@ -62,7 +63,7 @@ class DictMutationTestState(rx.BaseState):
         self.friend_in_nested_dict["friend"]["age"] = 30
 
 
-class ListMutationTestState(rx.BaseState):
+class ListMutationTestState(BaseState):
     """A state for testing ReflexList mutation."""
 
     # plain list
@@ -144,7 +145,7 @@ class CustomVar(rx.Base):
     custom: OtherBase = OtherBase()
 
 
-class MutableTestState(rx.BaseState):
+class MutableTestState(BaseState):
     """A test state."""
 
     array: List[Union[str, List, Dict[str, str]]] = [

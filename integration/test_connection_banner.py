@@ -19,7 +19,7 @@ def ConnectionBanner():
     def index():
         return rx.text("Hello World")
 
-    app = rx.App(state=rx.State)
+    app = rx.App()
     app.add_page(index)
     app.compile()
 

@@ -1369,7 +1369,7 @@ def test_error_on_state_method_shadow():
     """Test that an error is thrown when an event handler shadows a state method."""
     with pytest.raises(NameError) as err:
 
-        class InvalidTest(rx.BaseState):
+        class InvalidTest(BaseState):
             def reset(self):
                 pass
 
@@ -1382,7 +1382,7 @@ def test_error_on_state_method_shadow():
 def test_state_with_invalid_yield():
     """Test that an error is thrown when a state yields an invalid value."""
 
-    class StateWithInvalidYield(rx.BaseState):
+    class StateWithInvalidYield(BaseState):
         """A state that yields an invalid value."""
 
         def invalid_handler(self):

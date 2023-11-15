@@ -18,6 +18,7 @@ from typing import (
     AsyncIterator,
     Callable,
     ClassVar,
+    DefaultDict,
     Dict,
     List,
     Optional,
@@ -176,6 +177,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # The event handlers.
     event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
+    # A mapping of classes and corresponding subclassses.
+    class_subclasses: ClassVar[
+        DefaultDict[Type[BaseState], Set[Type[BaseState]]]
+    ] = defaultdict(set)
+
     # Mapping of var name to set of computed variables that depend on it
     _computed_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
 
@@ -291,6 +297,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
+            # fix up parent class_substates
+            cls.class_subclasses[parent_state].add(cls) if not any(
+                [c.__name__ == cls.__name__ for c in cls.class_subclasses[parent_state]]
+            ) else None
 
         cls.new_backend_vars = {
             name: value
@@ -452,14 +462,14 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
 
     @classmethod
-    @functools.lru_cache()
     def get_substates(cls) -> set[Type[BaseState]]:
         """Get the substates of the state.
 
         Returns:
             The substates of the state.
         """
-        return set(cls.__subclasses__())
+        # return set(cls.__subclasses__())
+        return cls.class_subclasses[cls]
 
     @classmethod
     @functools.lru_cache()

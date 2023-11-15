@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 import reflex as rx
+from reflex.state import BaseState
 
 
 @pytest.fixture
@@ -18,7 +19,7 @@ def data_table_state(request):
         The data table state class.
     """
 
-    class DataTableState(rx.BaseState):
+    class DataTableState(BaseState):
         data = request.param["data"]
         columns = ["column1", "column2"]
 
@@ -33,7 +34,7 @@ def data_table_state2():
         The data table state class.
     """
 
-    class DataTableState(rx.BaseState):
+    class DataTableState(BaseState):
         _data = pd.DataFrame()
 
         @rx.var
@@ -51,7 +52,7 @@ def data_table_state3():
         The data table state class.
     """
 
-    class DataTableState(rx.BaseState):
+    class DataTableState(BaseState):
         _data: List = []
         _columns: List = ["col1", "col2"]
 
@@ -74,7 +75,7 @@ def data_table_state4():
         The data table state class.
     """
 
-    class DataTableState(rx.BaseState):
+    class DataTableState(BaseState):
         _data: List = []
         _columns: List = ["col1", "col2"]
 

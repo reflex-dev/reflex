@@ -8,9 +8,9 @@ from typing import Dict, Generator
 
 import pytest
 
-import reflex as rx
 from reflex.app import App
 from reflex.event import EventSpec
+from reflex.state import BaseState
 
 from .states import (
     DictMutationTestState,
@@ -235,7 +235,7 @@ def duplicate_substate():
         The test state.
     """
 
-    class TestState(rx.BaseState):
+    class TestState(BaseState):
         pass
 
     class ChildTestState(TestState):  # type: ignore # noqa

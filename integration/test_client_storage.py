@@ -97,7 +97,7 @@ def ClientSide():
             rx.box(ClientSideSubSubState.l1s, id="l1s"),
         )
 
-    app = rx.App(state=rx.State)
+    app = rx.App()
     app.add_page(index)
     app.add_page(index, route="/foo")
     app.compile()
@@ -354,9 +354,12 @@ async def test_client_side_state(
     input_value_input.send_keys("c3 value")
     set_sub_state_button.click()
     AppHarness._poll_for(
-        lambda: "state.client_side_state.client_side_sub_state.c3" in cookie_info_map(driver)
+        lambda: "state.client_side_state.client_side_sub_state.c3"
+        in cookie_info_map(driver)
     )
-    c3_cookie = cookie_info_map(driver)["state.client_side_state.client_side_sub_state.c3"]
+    c3_cookie = cookie_info_map(driver)[
+        "state.client_side_state.client_side_sub_state.c3"
+    ]
     assert c3_cookie.pop("expiry") is not None
     assert c3_cookie == {
         "domain": "localhost",
@@ -368,7 +371,9 @@ async def test_client_side_state(
         "value": "c3%20value",
     }
     time.sleep(2)  # wait for c3 to expire
-    assert "state.client_side_state.client_side_sub_state.c3" not in cookie_info_map(driver)
+    assert "state.client_side_state.client_side_sub_state.c3" not in cookie_info_map(
+        driver
+    )
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
@@ -482,9 +487,12 @@ async def test_client_side_state(
 
     # make sure c5 cookie shows up on the `/foo` route
     AppHarness._poll_for(
-        lambda: "state.client_side_state.client_side_sub_state.c5" in cookie_info_map(driver)
+        lambda: "state.client_side_state.client_side_sub_state.c5"
+        in cookie_info_map(driver)
     )
-    assert cookie_info_map(driver)["state.client_side_state.client_side_sub_state.c5"] == {
+    assert cookie_info_map(driver)[
+        "state.client_side_state.client_side_sub_state.c5"
+    ] == {
         "domain": "localhost",
         "httpOnly": False,
         "name": "state.client_side_state.client_side_sub_state.c5",

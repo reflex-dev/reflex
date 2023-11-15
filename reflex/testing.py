@@ -162,6 +162,9 @@ class AppHarness:
         with chdir(self.app_path):
             # ensure config and app are reloaded when testing different app
             reflex.config.get_config(reload=True)
+            # reset rx.State subclasses
+            State.class_subclasses.clear()
+            # self.app_module.app.
             self.app_module = reflex.utils.prerequisites.get_app(reload=True)
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance.state_manager, StateManagerRedis):
@@ -169,6 +172,8 @@ class AppHarness:
             self.state_manager = StateManagerRedis.create(self.app_instance.state)
         else:
             self.state_manager = self.app_instance.state_manager
+        breakpoint()
+        print()
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:
@@ -561,9 +566,7 @@ class AppHarness:
             )
         return element.get_attribute("value")
 
-    def poll_for_clients(
-        self, timeout: TimeoutType = None
-    ) -> dict[str, reflex.BaseState]:
+    def poll_for_clients(self, timeout: TimeoutType = None) -> dict[str, BaseState]:
         """Poll app state_manager for any connected clients.
 
         Args:
