@@ -185,7 +185,6 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
-    
     # The hosting service backend URL.
     cp_backend_url: str = constants.Hosting.CP_BACKEND_URL
     # The hosting service frontend URL.
