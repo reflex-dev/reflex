@@ -332,8 +332,15 @@ class Var:
             self._var_data = VarData.merge(self._var_data, _var_data)
 
     def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
-        # Cannot use dataclasses.replace because ComputedVar uses multiple inheritance
-        # and it's __init__ has a required fget argument
+        """Make a copy of this Var with updated fields.
+
+        Args:
+            merge_var_data: VarData to merge into the existing VarData.
+            **kwargs: Var fields to update.
+
+        Returns:
+            A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
+        """
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),

@@ -10,6 +10,10 @@ from reflex.constants import Dirs
 from reflex.utils import format, imports
 from reflex.vars import Var, VarData
 
+_IS_TRUE_IMPORT = {
+    f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
+}
+
 
 class Cond(Component):
     """Render one of two components based on a condition."""
@@ -85,6 +89,7 @@ class Cond(Component):
         return imports.merge_imports(
             super()._get_imports(),
             getattr(self.cond._var_data, "imports", {}),
+            _IS_TRUE_IMPORT,
         )
 
 
@@ -125,11 +130,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     assert cond_var is not None, "The condition must be set."
     cond_var = cond_var._replace(
         merge_var_data=VarData(  # type: ignore
-            imports={
-                f"/{Dirs.STATE_PATH}": {
-                    imports.ImportVar(tag="isTrue"),
-                },
-            },
+            imports=_IS_TRUE_IMPORT,
         ),
     )
 

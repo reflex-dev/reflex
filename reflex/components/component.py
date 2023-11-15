@@ -615,6 +615,23 @@ class Component(Base, ABC):
                 _var_data=self.style._var_data,
             )
 
+        yield from self.special_props
+
+        for comp_prop in (
+            self.class_name,
+            self.id,
+            self.key,
+            self.autofocus,
+            *self.custom_attrs.values(),
+        ):
+            if isinstance(comp_prop, Var):
+                yield comp_prop
+            elif isinstance(comp_prop, str):
+                # catch f-strings containing Vars
+                var = Var.create_safe(comp_prop)
+                if var._var_data is not None:
+                    yield var
+
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
 

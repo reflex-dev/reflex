@@ -510,7 +510,7 @@ export const useEventLoop = (
 
   // Route after the initial page hydration.
   useEffect(() => {
-    const change_complete = () => addEvents(initialEvents())
+    const change_complete = () => addEvents(initial_events())
     router.events.on('routeChangeComplete', change_complete)
     return () => {
       router.events.off('routeChangeComplete', change_complete)
