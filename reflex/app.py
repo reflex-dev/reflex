@@ -383,6 +383,10 @@ class App(Base):
             meta: The metadata of the page.
             script_tags: List of script tags to be added to component
         """
+        # Skip adding pages if we don't need to compile.
+        if not self._should_compile():
+            return
+
         # If the route is not set, get it from the callable.
         if route is None:
             assert isinstance(

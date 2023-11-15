@@ -20,7 +20,7 @@ class ChakraComponent(Component):
     def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
         return {
             **super()._get_app_wrap_components(),
-            (60, "ChakraProvider"): ChakraProvider.create(),
+            (60, "ChakraProvider"): chakra_provider,
         }
 
 
@@ -86,6 +86,9 @@ const GlobalStyles = css`
         return {
             (50, "ChakraColorModeProvider"): ChakraColorModeProvider.create(),
         }
+
+
+chakra_provider = ChakraProvider.create()
 
 
 class ChakraColorModeProvider(Component):
