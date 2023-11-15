@@ -527,7 +527,7 @@ def deploy(
             enabled_regions = pre_deploy_response.enabled_regions
 
     except Exception as ex:
-        console.error(f"Unable to prepare deployment")
+        console.error(f"Unable to prepare deployment due to: {ex}")
         raise typer.Exit(1) from ex
 
     # The app prefix should not change during the time of preparation

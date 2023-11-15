@@ -324,22 +324,22 @@ def prepare_deploy(
             enabled_regions=response_json.get("enabled_regions"),
         )
     except httpx.RequestError as re:
-        console.error(f"Unable to prepare launch due to {re}.")
+        console.debug(f"Unable to prepare launch due to {re}.")
         raise Exception(str(re)) from re
     except httpx.HTTPError as he:
-        console.error(f"Unable to prepare deploy due to {he}.")
+        console.debug(f"Unable to prepare deploy due to {he}.")
         raise Exception(f"{he}") from he
     except json.JSONDecodeError as jde:
-        console.error(f"Server did not respond with valid json: {jde}")
+        console.debug(f"Server did not respond with valid json: {jde}")
         raise Exception("internal errors") from jde
     except (KeyError, ValidationError) as kve:
-        console.error(f"The server response format is unexpected {kve}")
+        console.debug(f"The server response format is unexpected {kve}")
         raise Exception("internal errors") from kve
     except ValueError as ve:
         # This is a recognized client error, currently indicates forbidden
         raise Exception(f"{ve}") from ve
     except Exception as ex:
-        console.error(f"Unexpected error: {ex}.")
+        console.debug(f"Unexpected error: {ex}.")
         raise Exception("internal errors") from ex
 
 
