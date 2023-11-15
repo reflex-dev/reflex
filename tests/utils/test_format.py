@@ -3,11 +3,11 @@ from typing import Any
 
 import pytest
 
-from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
-from reflex.style import Style
-from reflex.utils import format
-from reflex.vars import BaseVar, Var
+from nextpy.components.tags.tag import Tag
+from nextpy.core.event import EventChain, EventHandler, EventSpec, FrontendEvent
+from nextpy.core.style import Style
+from nextpy.utils import format
+from nextpy.core.vars import BaseVar, Var
 from tests.test_state import ChildState, DateTimeState, GrandchildState, TestState
 
 

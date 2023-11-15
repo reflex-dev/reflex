@@ -1,6 +1,6 @@
 import json
 
-from reflex.utils import telemetry
+from nextpy.utils import telemetry
 
 
 def versiontuple(v):
@@ -21,8 +21,8 @@ def test_telemetry():
     # Check that the available memory is greater than 0
     assert tel.memory > 0
 
-    # Check that the Reflex version is not None.
-    assert tel.reflex_version is not None
+    # Check that the Nextpy version is not None.
+    assert tel.nextpy_version is not None
 
     # Check that the Python version is greater than 3.7.
     assert tel.python_version is not None
@@ -33,7 +33,7 @@ def test_telemetry():
     assert tel_json["user_os"] == tel.user_os
     assert tel_json["cpu_count"] == tel.cpu_count
     assert tel_json["memory"] == tel.memory
-    assert tel_json["reflex_version"] == tel.reflex_version
+    assert tel_json["nextpy_version"] == tel.nextpy_version
     assert tel_json["python_version"] == tel.python_version
 
 

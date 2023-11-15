@@ -2,10 +2,10 @@ from typing import Any, Dict
 
 import pytest
 
-from reflex.app import App
-from reflex.constants import CompileVars
-from reflex.middleware.hydrate_middleware import HydrateMiddleware
-from reflex.state import State, StateUpdate
+from nextpy.app import App
+from nextpy.constants import CompileVars
+from nextpy.core.middleware.hydrate_middleware import HydrateMiddleware
+from nextpy.core.state import State, StateUpdate
 
 
 def exp_is_hydrated(state: State) -> Dict[str, Any]:

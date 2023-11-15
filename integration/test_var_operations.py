@@ -4,16 +4,16 @@ from typing import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false
 
 
 def VarOperations():
     """App with var operations."""
-    import reflex as rx
+    import nextpy as xt
 
-    class VarOperationState(rx.State):
+    class VarOperationState(xt.State):
         int_var1: int = 10
         int_var2: int = 5
         int_var3: int = 7
@@ -29,499 +29,499 @@ def VarOperations():
         dict1: dict = {1: 2}
         dict2: dict = {3: 4}
 
-    app = rx.App(state=VarOperationState)
+    app = xt.App(state=VarOperationState)
 
     @app.add_page
     def index():
-        return rx.vstack(
-            rx.input(
+        return xt.vstack(
+            xt.input(
                 id="token",
                 value=VarOperationState.router.session.client_token,
                 is_read_only=True,
             ),
             # INT INT
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 + VarOperationState.int_var2,
                 id="int_add_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 * VarOperationState.int_var2,
                 id="int_mult_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 - VarOperationState.int_var2,
                 id="int_sub_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1**VarOperationState.int_var2,
                 id="int_exp_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 / VarOperationState.int_var2,
                 id="int_div_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 // VarOperationState.int_var3,
                 id="int_floor_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 % VarOperationState.int_var2,
                 id="int_mod_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 | VarOperationState.int_var2,
                 id="int_or_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 > VarOperationState.int_var2).to_string(),
                 id="int_gt_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 < VarOperationState.int_var2).to_string(),
                 id="int_lt_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 >= VarOperationState.int_var2).to_string(),
                 id="int_gte_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 <= VarOperationState.int_var2).to_string(),
                 id="int_lte_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.int_var1 & VarOperationState.int_var2,
                 id="int_and_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 | VarOperationState.int_var2).to_string(),
                 id="int_or_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 == VarOperationState.int_var2).to_string(),
                 id="int_eq_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 != VarOperationState.int_var2).to_string(),
                 id="int_neq_int",
             ),
             # INT FLOAT OR FLOAT INT
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 + VarOperationState.int_var2,
                 id="float_add_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 * VarOperationState.int_var2,
                 id="float_mult_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 - VarOperationState.int_var2,
                 id="float_sub_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1**VarOperationState.int_var2,
                 id="float_exp_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 / VarOperationState.int_var2,
                 id="float_div_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 // VarOperationState.int_var3,
                 id="float_floor_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 % VarOperationState.int_var2,
                 id="float_mod_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 > VarOperationState.int_var2).to_string(),
                 id="float_gt_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 < VarOperationState.int_var2).to_string(),
                 id="float_lt_int",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 >= VarOperationState.int_var2
                 ).to_string(),
                 id="float_gte_int",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 <= VarOperationState.int_var2
                 ).to_string(),
                 id="float_lte_int",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.int_var2
                 ).to_string(),
                 id="float_eq_int",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.int_var2
                 ).to_string(),
                 id="float_neq_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 & VarOperationState.int_var2).to_string(),
                 id="float_and_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 | VarOperationState.int_var2).to_string(),
                 id="float_or_int",
             ),
             # INT, DICT
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 | VarOperationState.dict1).to_string(),
                 id="int_or_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 & VarOperationState.dict1).to_string(),
                 id="int_and_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 == VarOperationState.dict1).to_string(),
                 id="int_eq_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.int_var1 != VarOperationState.dict1).to_string(),
                 id="int_neq_dict",
             ),
             # FLOAT FLOAT
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 + VarOperationState.float_var2,
                 id="float_add_float",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 * VarOperationState.float_var2,
                 id="float_mult_float",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 - VarOperationState.float_var2,
                 id="float_sub_float",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1**VarOperationState.float_var2,
                 id="float_exp_float",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 / VarOperationState.float_var2,
                 id="float_div_float",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 // VarOperationState.float_var2,
                 id="float_floor_float",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 % VarOperationState.float_var2,
                 id="float_mod_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 > VarOperationState.float_var2
                 ).to_string(),
                 id="float_gt_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 < VarOperationState.float_var2
                 ).to_string(),
                 id="float_lt_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 >= VarOperationState.float_var2
                 ).to_string(),
                 id="float_gte_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 <= VarOperationState.float_var2
                 ).to_string(),
                 id="float_lte_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.float_var2
                 ).to_string(),
                 id="float_eq_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.float_var2
                 ).to_string(),
                 id="float_neq_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 & VarOperationState.float_var2
                 ).to_string(),
                 id="float_and_float",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 | VarOperationState.float_var2
                 ).to_string(),
                 id="float_or_float",
             ),
             # FLOAT STR
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 | VarOperationState.str_var1,
                 id="float_or_str",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.float_var1 & VarOperationState.str_var1,
                 id="float_and_str",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.str_var1
                 ).to_string(),
                 id="float_eq_str",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.str_var1
                 ).to_string(),
                 id="float_neq_str",
             ),
             # FLOAT LIST
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 | VarOperationState.list1).to_string(),
                 id="float_or_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 & VarOperationState.list1).to_string(),
                 id="float_and_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 == VarOperationState.list1).to_string(),
                 id="float_eq_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 != VarOperationState.list1).to_string(),
                 id="float_neq_list",
             ),
             # FLOAT DICT
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 | VarOperationState.dict1).to_string(),
                 id="float_or_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 & VarOperationState.dict1).to_string(),
                 id="float_and_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 == VarOperationState.dict1).to_string(),
                 id="float_eq_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.float_var1 != VarOperationState.dict1).to_string(),
                 id="float_neq_dict",
             ),
             # STR STR
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 + VarOperationState.str_var2,
                 id="str_add_str",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 > VarOperationState.str_var2).to_string(),
                 id="str_gt_str",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 < VarOperationState.str_var2).to_string(),
                 id="str_lt_str",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 >= VarOperationState.str_var2).to_string(),
                 id="str_gte_str",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 <= VarOperationState.str_var2).to_string(),
                 id="str_lte_str",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 == VarOperationState.float_var2
                 ).to_string(),
                 id="str_eq_str",
             ),
-            rx.text(
+            xt.text(
                 (
                     VarOperationState.float_var1 != VarOperationState.float_var2
                 ).to_string(),
                 id="str_neq_str",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1.contains("fir").to_string(),
                 id="str_contains",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 | VarOperationState.str_var1, id="str_or_str"
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 & VarOperationState.str_var2,
                 id="str_and_str",
             ),
             # STR, INT
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 * VarOperationState.int_var2,
                 id="str_mult_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 & VarOperationState.int_var2,
                 id="str_and_int",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 | VarOperationState.int_var2, id="str_or_int"
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 == VarOperationState.int_var1).to_string(),
                 id="str_eq_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 != VarOperationState.int_var1).to_string(),
                 id="str_neq_int",
             ),
             # STR, LIST
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 | VarOperationState.list1, id="str_or_list"
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 & VarOperationState.list1).to_string(),
                 id="str_and_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 == VarOperationState.list1).to_string(),
                 id="str_eq_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 != VarOperationState.list1).to_string(),
                 id="str_neq_list",
             ),
             # STR, DICT
-            rx.text(
+            xt.text(
                 VarOperationState.str_var1 | VarOperationState.dict1, id="str_or_dict"
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 & VarOperationState.dict1).to_string(),
                 id="str_and_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 == VarOperationState.dict1).to_string(),
                 id="str_eq_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.str_var1 != VarOperationState.dict1).to_string(),
                 id="str_neq_dict",
             ),
             # LIST, LIST
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 + VarOperationState.list2).to_string(),
                 id="list_add_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 & VarOperationState.list2).to_string(),
                 id="list_and_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 | VarOperationState.list2).to_string(),
                 id="list_or_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 > VarOperationState.list2).to_string(),
                 id="list_gt_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 < VarOperationState.list2).to_string(),
                 id="list_lt_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 >= VarOperationState.list2).to_string(),
                 id="list_gte_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 <= VarOperationState.list2).to_string(),
                 id="list_lte_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 == VarOperationState.list2).to_string(),
                 id="list_eq_list",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 != VarOperationState.list2).to_string(),
                 id="list_neq_list",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.list1.contains(1).to_string(), id="list_contains"
             ),
-            rx.text(VarOperationState.list1.reverse().to_string(), id="list_reverse"),
+            xt.text(VarOperationState.list1.reverse().to_string(), id="list_reverse"),
             # LIST, INT
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 * VarOperationState.int_var2).to_string(),
                 id="list_mult_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 | VarOperationState.int_var1).to_string(),
                 id="list_or_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 & VarOperationState.int_var1).to_string(),
                 id="list_and_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 == VarOperationState.int_var1).to_string(),
                 id="list_eq_int",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 != VarOperationState.int_var1).to_string(),
                 id="list_neq_int",
             ),
             # LIST, DICT
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 | VarOperationState.dict1).to_string(),
                 id="list_or_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 & VarOperationState.dict1).to_string(),
                 id="list_and_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 == VarOperationState.dict1).to_string(),
                 id="list_eq_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.list1 != VarOperationState.dict1).to_string(),
                 id="list_neq_dict",
             ),
             # DICT, DICT
-            rx.text(
+            xt.text(
                 (VarOperationState.dict1 | VarOperationState.dict2).to_string(),
                 id="dict_or_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.dict1 & VarOperationState.dict2).to_string(),
                 id="dict_and_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.dict1 == VarOperationState.dict2).to_string(),
                 id="dict_eq_dict",
             ),
-            rx.text(
+            xt.text(
                 (VarOperationState.dict1 != VarOperationState.dict2).to_string(),
                 id="dict_neq_dict",
             ),
-            rx.text(
+            xt.text(
                 VarOperationState.dict1.contains(1).to_string(), id="dict_contains"
             ),
-            rx.text(VarOperationState.str_var3.lower(), id="str_lower"),
-            rx.text(VarOperationState.str_var3.upper(), id="str_upper"),
-            rx.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
-            rx.text(VarOperationState.list3.join(""), id="list_join"),
-            rx.text(VarOperationState.list3.join(","), id="list_join_comma"),
+            xt.text(VarOperationState.str_var3.lower(), id="str_lower"),
+            xt.text(VarOperationState.str_var3.upper(), id="str_upper"),
+            xt.text(VarOperationState.str_var4.split(" ").to_string(), id="str_split"),
+            xt.text(VarOperationState.list3.join(""), id="list_join"),
+            xt.text(VarOperationState.list3.join(","), id="list_join_comma"),
         )
 
     app.compile()

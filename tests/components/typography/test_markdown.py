@@ -1,7 +1,7 @@
 import pytest
 
-import reflex as rx
-from reflex.components.typography.markdown import Markdown
+import nextpy as xt
+from nextpy.components.typography.markdown import Markdown
 
 
 @pytest.mark.parametrize(
@@ -36,10 +36,10 @@ def test_get_component(tag, expected):
 def test_set_component_map():
     """Test setting the component map."""
     component_map = {
-        "h1": lambda value: rx.box(
-            rx.heading(value, as_="h1", size="2xl"), padding="1em"
+        "h1": lambda value: xt.box(
+            xt.heading(value, as_="h1", size="2xl"), padding="1em"
         ),
-        "p": lambda value: rx.box(rx.text(value), padding="1em"),
+        "p": lambda value: xt.box(xt.text(value), padding="1em"),
     }
     md = Markdown.create("# Hello", component_map=component_map)
 

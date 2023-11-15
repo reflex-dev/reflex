@@ -1,13 +1,13 @@
 import pandas as pd
 import pytest
 
-import reflex as rx
-from reflex.components.datadisplay.datatable import (
+import nextpy as xt
+from nextpy.components.datadisplay.datatable import (
     DataTable,
     serialize_dataframe,  # type: ignore
 )
-from reflex.utils import types
-from reflex.utils.serializers import serialize
+from nextpy.utils import types
+from nextpy.utils.serializers import serialize
 
 
 @pytest.mark.parametrize(
@@ -26,7 +26,7 @@ from reflex.utils.serializers import serialize
     ],
     indirect=["data_table_state"],
 )
-def test_validate_data_table(data_table_state: rx.Var, expected):
+def test_validate_data_table(data_table_state: xt.Var, expected):
     """Test the str/render function.
 
     Args:

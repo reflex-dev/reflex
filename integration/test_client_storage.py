@@ -8,96 +8,96 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 from . import utils
 
 
 def ClientSide():
     """App for testing client-side state."""
-    import reflex as rx
+    import nextpy as xt
 
-    class ClientSideState(rx.State):
+    class ClientSideState(xt.State):
         state_var: str = ""
         input_value: str = ""
 
     class ClientSideSubState(ClientSideState):
         # cookies with default settings
-        c1: str = rx.Cookie()
-        c2: rx.Cookie = "c2 default"  # type: ignore
+        c1: str = xt.Cookie()
+        c2: xt.Cookie = "c2 default"  # type: ignore
 
         # cookies with custom settings
-        c3: str = rx.Cookie(max_age=2)  # expires after 2 second
-        c4: rx.Cookie = rx.Cookie(same_site="strict")
-        c5: str = rx.Cookie(path="/foo/")  # only accessible on `/foo/`
-        c6: str = rx.Cookie(name="c6")
-        c7: str = rx.Cookie("c7 default")
+        c3: str = xt.Cookie(max_age=2)  # expires after 2 second
+        c4: xt.Cookie = xt.Cookie(same_site="strict")
+        c5: str = xt.Cookie(path="/foo/")  # only accessible on `/foo/`
+        c6: str = xt.Cookie(name="c6")
+        c7: str = xt.Cookie("c7 default")
 
         # local storage with default settings
-        l1: str = rx.LocalStorage()
-        l2: rx.LocalStorage = "l2 default"  # type: ignore
+        l1: str = xt.LocalStorage()
+        l2: xt.LocalStorage = "l2 default"  # type: ignore
 
         # local storage with custom settings
-        l3: str = rx.LocalStorage(name="l3")
-        l4: str = rx.LocalStorage("l4 default")
+        l3: str = xt.LocalStorage(name="l3")
+        l4: str = xt.LocalStorage("l4 default")
 
         def set_var(self):
             setattr(self, self.state_var, self.input_value)
             self.state_var = self.input_value = ""
 
     class ClientSideSubSubState(ClientSideSubState):
-        c1s: str = rx.Cookie()
-        l1s: str = rx.LocalStorage()
+        c1s: str = xt.Cookie()
+        l1s: str = xt.LocalStorage()
 
         def set_var(self):
             setattr(self, self.state_var, self.input_value)
             self.state_var = self.input_value = ""
 
     def index():
-        return rx.fragment(
-            rx.input(
+        return xt.fragment(
+            xt.input(
                 value=ClientSideState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(
+            xt.input(
                 placeholder="state var",
                 value=ClientSideState.state_var,
                 on_change=ClientSideState.set_state_var,  # type: ignore
                 id="state_var",
             ),
-            rx.input(
+            xt.input(
                 placeholder="input value",
                 value=ClientSideState.input_value,
                 on_change=ClientSideState.set_input_value,  # type: ignore
                 id="input_value",
             ),
-            rx.button(
+            xt.button(
                 "Set ClientSideSubState",
                 on_click=ClientSideSubState.set_var,
                 id="set_sub_state",
             ),
-            rx.button(
+            xt.button(
                 "Set ClientSideSubSubState",
                 on_click=ClientSideSubSubState.set_var,
                 id="set_sub_sub_state",
             ),
-            rx.box(ClientSideSubState.c1, id="c1"),
-            rx.box(ClientSideSubState.c2, id="c2"),
-            rx.box(ClientSideSubState.c3, id="c3"),
-            rx.box(ClientSideSubState.c4, id="c4"),
-            rx.box(ClientSideSubState.c5, id="c5"),
-            rx.box(ClientSideSubState.c6, id="c6"),
-            rx.box(ClientSideSubState.c7, id="c7"),
-            rx.box(ClientSideSubState.l1, id="l1"),
-            rx.box(ClientSideSubState.l2, id="l2"),
-            rx.box(ClientSideSubState.l3, id="l3"),
-            rx.box(ClientSideSubState.l4, id="l4"),
-            rx.box(ClientSideSubSubState.c1s, id="c1s"),
-            rx.box(ClientSideSubSubState.l1s, id="l1s"),
+            xt.box(ClientSideSubState.c1, id="c1"),
+            xt.box(ClientSideSubState.c2, id="c2"),
+            xt.box(ClientSideSubState.c3, id="c3"),
+            xt.box(ClientSideSubState.c4, id="c4"),
+            xt.box(ClientSideSubState.c5, id="c5"),
+            xt.box(ClientSideSubState.c6, id="c6"),
+            xt.box(ClientSideSubState.c7, id="c7"),
+            xt.box(ClientSideSubState.l1, id="l1"),
+            xt.box(ClientSideSubState.l2, id="l2"),
+            xt.box(ClientSideSubState.l3, id="l3"),
+            xt.box(ClientSideSubState.l4, id="l4"),
+            xt.box(ClientSideSubSubState.c1s, id="c1s"),
+            xt.box(ClientSideSubSubState.l1s, id="l1s"),
         )
 
-    app = rx.App(state=ClientSideState)
+    app = xt.App(state=ClientSideState)
     app.add_page(index)
     app.add_page(index, route="/foo")
     app.compile()

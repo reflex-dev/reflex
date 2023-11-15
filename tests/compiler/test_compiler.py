@@ -3,9 +3,9 @@ from typing import List, Set
 
 import pytest
 
-from reflex.compiler import compiler, utils
-from reflex.utils import imports
-from reflex.vars import ImportVar
+from nextpy.core.compiler import compiler, utils
+from nextpy.utils import imports
+from nextpy.core.vars import ImportVar
 
 
 @pytest.mark.parametrize(
@@ -121,7 +121,7 @@ def test_compile_stylesheets(tmp_path, mocker):
     assets_dir.mkdir()
 
     (assets_dir / "styles.css").touch()
-    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch("nextpy.core.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [
         "https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple",
@@ -155,10 +155,10 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
     mock = mocker.Mock()
 
     mocker.patch.object(mock, "tailwind", None)
-    mocker.patch("reflex.compiler.compiler.get_config", return_value=mock)
+    mocker.patch("nextpy.core.compiler.compiler.get_config", return_value=mock)
 
     (assets_dir / "styles.css").touch()
-    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch("nextpy.core.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = [
         "/styles.css",
@@ -183,7 +183,7 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker):
     assets_dir = project / "assets"
     assets_dir.mkdir()
 
-    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch("nextpy.core.compiler.compiler.Path.cwd", return_value=project)
 
     stylesheets = ["/styles.css"]
 

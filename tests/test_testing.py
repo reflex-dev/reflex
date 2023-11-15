@@ -1,6 +1,6 @@
 """Unit tests for the included testing tools."""
-from reflex.constants import IS_WINDOWS
-from reflex.testing import AppHarness
+from nextpy.constants import IS_WINDOWS
+from nextpy.core.testing import AppHarness
 
 
 def test_app_harness(tmp_path):
@@ -14,13 +14,13 @@ def test_app_harness(tmp_path):
         return
 
     def BasicApp():
-        import reflex as rx
+        import nextpy as xt
 
-        class State(rx.State):
+        class State(xt.State):
             pass
 
-        app = rx.App(state=State)
-        app.add_page(lambda: rx.text("Basic App"), route="/", title="index")
+        app = xt.App(state=State)
+        app.add_page(lambda: xt.text("Basic App"), route="/", title="index")
         app.compile()
 
     with AppHarness.create(

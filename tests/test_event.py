@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from reflex import event
-from reflex.event import Event, EventHandler, EventSpec, fix_events
-from reflex.state import State
-from reflex.utils import format
-from reflex.vars import Var
+from nextpy.core import event
+from nextpy.core.event import Event, EventHandler, EventSpec, fix_events
+from nextpy.core.state import State
+from nextpy.utils import format
+from nextpy.core.vars import Var
 
 
 def make_var(value) -> Var:

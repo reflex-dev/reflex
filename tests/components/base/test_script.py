@@ -1,8 +1,8 @@
 """Test that Script from next/script renders correctly."""
 import pytest
 
-from reflex.components.base.script import Script
-from reflex.state import State
+from nextpy.components.base.script import Script
+from nextpy.core.state import State
 
 
 def test_script_inline():

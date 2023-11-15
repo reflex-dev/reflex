@@ -8,41 +8,42 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 from . import utils
 
 
+
 def LoginSample():
     """Sample app for testing login/logout with LocalStorage var."""
-    import reflex as rx
+    import nextpy as xt
 
-    class State(rx.State):
-        auth_token: str = rx.LocalStorage("")
+    class State(xt.State):
+        auth_token: str = xt.LocalStorage("")
 
         def logout(self):
             self.set_auth_token("")
 
         def login(self):
             self.set_auth_token("12345")
-            yield rx.redirect("/")
+            yield xt.redirect("/")
 
     def index():
-        return rx.Cond.create(
+        return xt.Cond.create(
             State.is_hydrated & State.auth_token,  # type: ignore
-            rx.vstack(
-                rx.heading(State.auth_token, id="auth-token"),
-                rx.button("Logout", on_click=State.logout, id="logout"),
+            xt.vstack(
+                xt.heading(State.auth_token, id="auth-token"),
+                xt.button("Logout", on_click=State.logout, id="logout"),
             ),
-            rx.button("Login", on_click=rx.redirect("/login"), id="login"),
+            xt.button("Login", on_click=xt.redirect("/login"), id="login"),
         )
 
     def login():
-        return rx.vstack(
-            rx.button("Do it", on_click=State.login, id="doit"),
+        return xt.vstack(
+            xt.button("Do it", on_click=State.login, id="doit"),
         )
 
-    app = rx.App(state=State)
+    app = xt.App(state=State)
     app.add_page(index)
     app.add_page(login)
     app.compile()

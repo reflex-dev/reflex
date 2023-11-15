@@ -6,20 +6,20 @@ import pytest
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness, WebDriver
+from nextpy.core.testing import AppHarness, WebDriver
 
 
 def ConnectionBanner():
     """App with a connection banner."""
-    import reflex as rx
+    import nextpy as xt
 
-    class State(rx.State):
+    class State(xt.State):
         foo: int = 0
 
     def index():
-        return rx.text("Hello World")
+        return xt.text("Hello World")
 
-    app = rx.App(state=State)
+    app = xt.App(state=State)
     app.add_page(index)
     app.compile()
 

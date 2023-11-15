@@ -2,8 +2,8 @@ from typing import Dict, List
 
 import pytest
 
-from reflex.components.tags import CondTag, Tag, tagless
-from reflex.vars import BaseVar, Var
+from nextpy.components.tags import CondTag, Tag, tagless
+from nextpy.core.vars import BaseVar, Var
 
 
 @pytest.mark.parametrize(

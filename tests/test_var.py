@@ -5,9 +5,9 @@ from typing import Dict, List, Set, Tuple
 import pytest
 from pandas import DataFrame
 
-from reflex.base import Base
-from reflex.state import State
-from reflex.vars import (
+from nextpy.core.base import Base
+from nextpy.core.state import State
+from nextpy.core.vars import (
     BaseVar,
     ComputedVar,
     ImportVar,

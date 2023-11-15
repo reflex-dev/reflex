@@ -6,9 +6,9 @@ try:
     import PIL
     from PIL.Image import Image as Img
 
-    import reflex as rx
-    from reflex.components.media.image import Image, serialize_image  # type: ignore
-    from reflex.utils.serializers import serialize
+    import nextpy as xt
+    from nextpy.components.media.image import Image, serialize_image  # type: ignore
+    from nextpy.utils.serializers import serialize
 
     @pytest.fixture
     def pil_image() -> Img:
@@ -33,7 +33,7 @@ try:
 
     def test_set_src_str():
         """Test that setting the src works."""
-        image = rx.image(src="pic2.jpeg")
+        image = xt.image(src="pic2.jpeg")
         assert str(image.src) == "{`pic2.jpeg`}"  # type: ignore
 
     def test_set_src_img(pil_image: Img):

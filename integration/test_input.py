@@ -6,32 +6,32 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 
 def FullyControlledInput():
     """App using a fully controlled input with implicit debounce wrapper."""
-    import reflex as rx
+    import nextpy as xt
 
-    class State(rx.State):
+    class State(xt.State):
         text: str = "initial"
 
-    app = rx.App(state=State)
+    app = xt.App(state=State)
 
     @app.add_page
     def index():
-        return rx.fragment(
-            rx.input(
+        return xt.fragment(
+            xt.input(
                 value=State.router.session.client_token, is_read_only=True, id="token"
             ),
-            rx.input(
+            xt.input(
                 id="debounce_input_input",
                 on_change=State.set_text,  # type: ignore
                 value=State.text,
             ),
-            rx.input(value=State.text, id="value_input", is_read_only=True),
-            rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
-            rx.button("CLEAR", on_click=rx.set_value("on_change_input", "")),
+            xt.input(value=State.text, id="value_input", is_read_only=True),
+            xt.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
+            xt.button("CLEAR", on_click=xt.set_value("on_change_input", "")),
         )
 
     app.compile()

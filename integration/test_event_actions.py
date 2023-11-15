@@ -1,18 +1,19 @@
 """Ensure stopPropagation and preventDefault work as expected."""
 
+import asyncio
 from typing import Callable, Coroutine, Generator
 
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness, WebDriver
+from nextpy.core.testing import AppHarness, WebDriver
 
 
 def TestEventAction():
     """App for testing event_actions."""
-    import reflex as rx
+    import nextpy as xt
 
-    class EventActionState(rx.State):
+    class EventActionState(xt.State):
         order: list[str]
 
         def on_click(self, ev):
@@ -21,46 +22,64 @@ def TestEventAction():
         def on_click2(self):
             self.order.append("on_click2")
 
-        @rx.var
-        def token(self) -> str:
-            return self.get_token()
+    class EventFiringComponent(xt.Component):
+        """A component that fires onClick event without passing DOM event."""
+
+        tag = "EventFiringComponent"
+
+        def _get_custom_code(self) -> str | None:
+            return """
+                function EventFiringComponent(props) {
+                    return (
+                        <div id={props.id} onClick={(e) => props.onClick("foo")}>
+                            Event Firing Component
+                        </div>
+                    )
+                }"""
+
+        def get_event_triggers(self):
+            return {"on_click": lambda: []}
 
     def index():
-        return rx.vstack(
-            rx.input(value=EventActionState.token, is_read_only=True, id="token"),
-            rx.button("No events", id="btn-no-events"),
-            rx.button(
+        return xt.vstack(
+            xt.input(
+                value=EventActionState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
+            xt.button("No events", id="btn-no-events"),
+            xt.button(
                 "Stop Prop Only",
                 id="btn-stop-prop-only",
-                on_click=rx.stop_propagation,  # type: ignore
+                on_click=xt.stop_propagation,  # type: ignore
             ),
-            rx.button(
+            xt.button(
                 "Click event",
                 on_click=EventActionState.on_click("no_event_actions"),  # type: ignore
                 id="btn-click-event",
             ),
-            rx.button(
+            xt.button(
                 "Click stop propagation",
                 on_click=EventActionState.on_click("stop_propagation").stop_propagation,  # type: ignore
                 id="btn-click-stop-propagation",
             ),
-            rx.button(
+            xt.button(
                 "Click stop propagation2",
                 on_click=EventActionState.on_click2.stop_propagation,
                 id="btn-click-stop-propagation2",
             ),
-            rx.button(
+            xt.button(
                 "Click event 2",
                 on_click=EventActionState.on_click2,
                 id="btn-click-event2",
             ),
-            rx.link(
+            xt.link(
                 "Link",
                 href="#",
                 on_click=EventActionState.on_click("link_no_event_actions"),  # type: ignore
                 id="link",
             ),
-            rx.link(
+            xt.link(
                 "Link Stop Propagation",
                 href="#",
                 on_click=EventActionState.on_click(  # type: ignore
@@ -68,13 +87,13 @@ def TestEventAction():
                 ).stop_propagation,
                 id="link-stop-propagation",
             ),
-            rx.link(
+            xt.link(
                 "Link Prevent Default Only",
                 href="/invalid",
-                on_click=rx.prevent_default,  # type: ignore
+                on_click=xt.prevent_default,  # type: ignore
                 id="link-prevent-default-only",
             ),
-            rx.link(
+            xt.link(
                 "Link Prevent Default",
                 href="/invalid",
                 on_click=EventActionState.on_click(  # type: ignore
@@ -82,7 +101,7 @@ def TestEventAction():
                 ).prevent_default,
                 id="link-prevent-default",
             ),
-            rx.link(
+            xt.link(
                 "Link Both",
                 href="/invalid",
                 on_click=EventActionState.on_click(  # type: ignore
@@ -90,16 +109,28 @@ def TestEventAction():
                 ).stop_propagation.prevent_default,
                 id="link-stop-propagation-prevent-default",
             ),
-            rx.list(
-                rx.foreach(
+            EventFiringComponent.create(
+                id="custom-stop-propagation",
+                on_click=EventActionState.on_click(  # type: ignore
+                    "custom-stop-propagation"
+                ).stop_propagation,
+            ),
+            EventFiringComponent.create(
+                id="custom-prevent-default",
+                on_click=EventActionState.on_click(  # type: ignore
+                    "custom-prevent-default"
+                ).prevent_default,
+            ),
+            xt.list(
+                xt.foreach(
                     EventActionState.order,  # type: ignore
-                    rx.list_item,
+                    xt.list_item,
                 ),
             ),
             on_click=EventActionState.on_click("outer"),  # type: ignore
         )
 
-    app = rx.App(state=EventActionState)
+    app = xt.App(state=EventActionState)
     app.add_page(index)
     app.compile()
 
@@ -202,6 +233,14 @@ def poll_for_order(
         ("link-prevent-default", ["on_click:link_prevent_default", "on_click:outer"]),
         ("link-prevent-default-only", ["on_click:outer"]),
         ("link-stop-propagation-prevent-default", ["on_click:link_both"]),
+        (
+            "custom-stop-propagation",
+            ["on_click:custom-stop-propagation", "on_click:outer"],
+        ),
+        (
+            "custom-prevent-default",
+            ["on_click:custom-prevent-default", "on_click:outer"],
+        ),
     ],
 )
 @pytest.mark.usefixtures("token")
@@ -226,6 +265,9 @@ async def test_event_actions(
     prev_url = driver.current_url
 
     el.click()
+    if "on_click:outer" not in exp_order:
+        # really make sure the outer event is not fired
+        await asyncio.sleep(0.5)
     await poll_for_order(exp_order)
 
     if element_id.startswith("link") and "prevent-default" not in element_id:

@@ -7,12 +7,12 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 
 def CallScript():
     """A test app for browser javascript integration."""
-    import reflex as rx
+    import nextpy as xt
 
     inline_scripts = """
     let inline_counter = 0
@@ -28,11 +28,15 @@ def CallScript():
         inline_counter += 1
         return {inline3: 42, a: [1, 2, 3], s: 'js', o: {a: 1, b: 2}}
     }
+    async function inline4() {
+        inline_counter += 1
+        return "async inline4"
+    }
     """
 
     external_scripts = inline_scripts.replace("inline", "external")
 
-    class CallScriptState(rx.State):
+    class CallScriptState(xt.State):
         results: list[str | dict | list | None] = []
         inline_counter: int = 0
         external_counter: int = 0
@@ -44,31 +48,35 @@ def CallScript():
             self.results.append([other_arg, result])
 
         def call_scripts_inline_yield(self):
-            yield rx.call_script("inline1()")
-            yield rx.call_script("inline2()")
-            yield rx.call_script("inline3()")
+            yield xt.call_script("inline1()")
+            yield xt.call_script("inline2()")
+            yield xt.call_script("inline3()")
+            yield xt.call_script("inline4()")
 
         def call_script_inline_return(self):
-            return rx.call_script("inline2()")
+            return xt.call_script("inline2()")
 
         def call_scripts_inline_yield_callback(self):
-            yield rx.call_script(
+            yield xt.call_script(
                 "inline1()", callback=CallScriptState.call_script_callback
             )
-            yield rx.call_script(
+            yield xt.call_script(
                 "inline2()", callback=CallScriptState.call_script_callback
             )
-            yield rx.call_script(
+            yield xt.call_script(
                 "inline3()", callback=CallScriptState.call_script_callback
+            )
+            yield xt.call_script(
+                "inline4()", callback=CallScriptState.call_script_callback
             )
 
         def call_script_inline_return_callback(self):
-            return rx.call_script(
+            return xt.call_script(
                 "inline3()", callback=CallScriptState.call_script_callback
             )
 
         def call_script_inline_return_lambda(self):
-            return rx.call_script(
+            return xt.call_script(
                 "inline2()",
                 callback=lambda result: CallScriptState.call_script_callback_other_arg(  # type: ignore
                     result, "lambda"
@@ -76,37 +84,41 @@ def CallScript():
             )
 
         def get_inline_counter(self):
-            return rx.call_script(
+            return xt.call_script(
                 "inline_counter",
                 callback=CallScriptState.set_inline_counter,  # type: ignore
             )
 
         def call_scripts_external_yield(self):
-            yield rx.call_script("external1()")
-            yield rx.call_script("external2()")
-            yield rx.call_script("external3()")
+            yield xt.call_script("external1()")
+            yield xt.call_script("external2()")
+            yield xt.call_script("external3()")
+            yield xt.call_script("external4()")
 
         def call_script_external_return(self):
-            return rx.call_script("external2()")
+            return xt.call_script("external2()")
 
         def call_scripts_external_yield_callback(self):
-            yield rx.call_script(
+            yield xt.call_script(
                 "external1()", callback=CallScriptState.call_script_callback
             )
-            yield rx.call_script(
+            yield xt.call_script(
                 "external2()", callback=CallScriptState.call_script_callback
             )
-            yield rx.call_script(
+            yield xt.call_script(
                 "external3()", callback=CallScriptState.call_script_callback
+            )
+            yield xt.call_script(
+                "external4()", callback=CallScriptState.call_script_callback
             )
 
         def call_script_external_return_callback(self):
-            return rx.call_script(
+            return xt.call_script(
                 "external3()", callback=CallScriptState.call_script_callback
             )
 
         def call_script_external_return_lambda(self):
-            return rx.call_script(
+            return xt.call_script(
                 "external2()",
                 callback=lambda result: CallScriptState.call_script_callback_other_arg(  # type: ignore
                     result, "lambda"
@@ -114,105 +126,105 @@ def CallScript():
             )
 
         def get_external_counter(self):
-            return rx.call_script(
+            return xt.call_script(
                 "external_counter",
                 callback=CallScriptState.set_external_counter,  # type: ignore
             )
 
         def reset_(self):
-            yield rx.call_script("inline_counter = 0; external_counter = 0")
+            yield xt.call_script("inline_counter = 0; external_counter = 0")
             self.reset()
 
-    app = rx.App(state=CallScriptState)
+    app = xt.App(state=CallScriptState)
     with open("assets/external.js", "w") as f:
         f.write(external_scripts)
 
     @app.add_page
     def index():
-        return rx.vstack(
-            rx.input(
+        return xt.vstack(
+            xt.input(
                 value=CallScriptState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.input(
+            xt.input(
                 value=CallScriptState.inline_counter.to(str),  # type: ignore
                 id="inline_counter",
                 is_read_only=True,
             ),
-            rx.input(
+            xt.input(
                 value=CallScriptState.external_counter.to(str),  # type: ignore
                 id="external_counter",
                 is_read_only=True,
             ),
-            rx.text_area(
+            xt.text_area(
                 value=CallScriptState.results.to_string(),  # type: ignore
                 id="results",
                 is_read_only=True,
             ),
-            rx.script(inline_scripts),
-            rx.script(src="/external.js"),
-            rx.button(
+            xt.script(inline_scripts),
+            xt.script(src="/external.js"),
+            xt.button(
                 "call_scripts_inline_yield",
                 on_click=CallScriptState.call_scripts_inline_yield,
                 id="inline_yield",
             ),
-            rx.button(
+            xt.button(
                 "call_script_inline_return",
                 on_click=CallScriptState.call_script_inline_return,
                 id="inline_return",
             ),
-            rx.button(
+            xt.button(
                 "call_scripts_inline_yield_callback",
                 on_click=CallScriptState.call_scripts_inline_yield_callback,
                 id="inline_yield_callback",
             ),
-            rx.button(
+            xt.button(
                 "call_script_inline_return_callback",
                 on_click=CallScriptState.call_script_inline_return_callback,
                 id="inline_return_callback",
             ),
-            rx.button(
+            xt.button(
                 "call_script_inline_return_lambda",
                 on_click=CallScriptState.call_script_inline_return_lambda,
                 id="inline_return_lambda",
             ),
-            rx.button(
+            xt.button(
                 "call_scripts_external_yield",
                 on_click=CallScriptState.call_scripts_external_yield,
                 id="external_yield",
             ),
-            rx.button(
+            xt.button(
                 "call_script_external_return",
                 on_click=CallScriptState.call_script_external_return,
                 id="external_return",
             ),
-            rx.button(
+            xt.button(
                 "call_scripts_external_yield_callback",
                 on_click=CallScriptState.call_scripts_external_yield_callback,
                 id="external_yield_callback",
             ),
-            rx.button(
+            xt.button(
                 "call_script_external_return_callback",
                 on_click=CallScriptState.call_script_external_return_callback,
                 id="external_return_callback",
             ),
-            rx.button(
+            xt.button(
                 "call_script_external_return_lambda",
                 on_click=CallScriptState.call_script_external_return_lambda,
                 id="external_return_lambda",
             ),
-            rx.button(
+            xt.button(
                 "Update Inline Counter",
                 on_click=CallScriptState.get_inline_counter,
                 id="update_inline_counter",
             ),
-            rx.button(
+            xt.button(
                 "Update External Counter",
                 on_click=CallScriptState.get_external_counter,
                 id="update_external_counter",
             ),
-            rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
+            xt.button("Reset", id="reset", on_click=CallScriptState.reset_),
         )
 
     app.compile()
@@ -300,7 +312,7 @@ def test_call_script(
 
     yield_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "3"
+    assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
     reset_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="3") == "0"
     return_button.click()
@@ -314,7 +326,8 @@ def test_call_script(
     assert call_script.poll_for_value(counter, exp_not_equal="0") == "3"
     assert call_script.poll_for_value(
         results, exp_not_equal="[]"
-    ) == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}}]' % (
+    ) == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}},"async %s4"]' % (
+        script,
         script,
         script,
     )

@@ -3,7 +3,7 @@ repos:
     rev: 22.10.0
     hooks:
     - id: black
-      args: [integration, reflex, tests]
+      args: [integration, nextpy, tests]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.244
@@ -15,11 +15,11 @@ repos:
     rev: v1.1.313
     hooks:
     - id: pyright
-      args: [integration, reflex, tests]
+      args: [integration, nextpy, tests]
       language: system
 
   - repo: https://github.com/terrencepreilly/darglint
     rev: v1.8.1
     hooks:
     - id: darglint
-      exclude: '^reflex/reflex.py'
+      exclude: '^nextpy/nextpy.py'

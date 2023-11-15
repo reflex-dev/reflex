@@ -2,7 +2,7 @@ import urllib.parse
 
 import pytest
 
-from reflex.config import DBConfig
+from nextpy.core.config import DBConfig
 
 
 @pytest.mark.parametrize(

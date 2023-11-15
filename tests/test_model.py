@@ -5,9 +5,9 @@ import pytest
 import sqlalchemy
 import sqlmodel
 
-import reflex.constants
-import reflex.model
-from reflex.model import Model
+import nextpy.constants
+import nextpy.core.model
+from nextpy.core.model import Model
 
 
 @pytest.fixture
@@ -69,11 +69,13 @@ def test_automigration(tmp_working_dir, monkeypatch):
     """
     alembic_ini = tmp_working_dir / "alembic.ini"
     versions = tmp_working_dir / "alembic" / "versions"
-    monkeypatch.setattr(reflex.constants, "ALEMBIC_CONFIG", str(alembic_ini))
+    monkeypatch.setattr(nextpy.constants, "ALEMBIC_CONFIG", str(alembic_ini))
 
     config_mock = mock.Mock()
-    config_mock.db_url = f"sqlite:///{tmp_working_dir}/reflex.db"
-    monkeypatch.setattr(reflex.model, "get_config", mock.Mock(return_value=config_mock))
+    config_mock.db_url = f"sqlite:///{tmp_working_dir}/nextpy.db"
+    monkeypatch.setattr(
+        nextpy.core.model, "get_config", mock.Mock(return_value=config_mock)
+    )
 
     Model.alembic_init()
     assert alembic_ini.exists()
@@ -90,7 +92,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     assert len(version_scripts) == 1
     assert version_scripts[0].name.endswith("initial_revision.py")
 
-    with reflex.model.session() as session:
+    with nextpy.core.model.session() as session:
         session.add(AlembicThing(id=None, t1="foo"))
         session.commit()
 
@@ -104,7 +106,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 2
 
-    with reflex.model.session() as session:
+    with nextpy.core.model.session() as session:
         result = session.exec(sqlmodel.select(AlembicThing)).all()
         assert len(result) == 1
         assert result[0].t2 == "bar"
@@ -118,7 +120,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 3
 
-    with reflex.model.session() as session:
+    with nextpy.core.model.session() as session:
         result = session.exec(sqlmodel.select(AlembicThing)).all()
         assert len(result) == 1
         assert result[0].t2 == "bar"
@@ -131,7 +133,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 4
 
-    with reflex.model.session() as session:
+    with nextpy.core.model.session() as session:
         session.add(AlembicSecond(id=None))
         session.commit()
         result = session.exec(sqlmodel.select(AlembicSecond)).all()
@@ -152,7 +154,7 @@ def test_automigration(tmp_working_dir, monkeypatch):
     Model.migrate(autogenerate=True)
     assert len(list(versions.glob("*.py"))) == 5
 
-    with reflex.model.session() as session:
+    with nextpy.core.model.session() as session:
         with pytest.raises(sqlalchemy.exc.OperationalError) as errctx:  # type: ignore
             session.exec(sqlmodel.select(AlembicSecond)).all()
         assert errctx.match(r"no such table: alembicsecond")

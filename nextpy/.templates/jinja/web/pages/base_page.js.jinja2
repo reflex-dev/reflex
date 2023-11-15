@@ -1,0 +1,51 @@
+{# ==============================
+     UTILS.JS TEMPLATE IMPORT
+============================== #}
+{# 
+Purpose:
+- Imports utility functions from the 'utils.js.jinja2' template for use in this template.
+#}
+
+{% import 'web/pages/utils.js.jinja2' as utils %}
+
+{# ==============================
+     LIBRARY IMPORTS BLOCK
+============================== #}
+{# 
+Purpose:
+- Renders all required library imports for the current page or component.
+- Utilizes utility functions to generate standard imports and also handles dynamic imports.
+#}
+{%- block imports_libs %}
+    {# Iterates over standard module imports and uses utility functions to render them. #}
+    {% for module in imports %}
+        {{- utils.get_import(module) }}
+    {% endfor %}
+
+    {# Handles dynamic imports that might be specified differently or require special handling. #}
+    {% for dynamic_import in dynamic_imports %}
+        {{dynamic_import}}
+    {% endfor %}
+{% endblock %}
+
+{# ==============================
+     DECLARATIONS BLOCK
+============================== #}
+{# 
+Purpose:
+- A placeholder block for any necessary variable or function declarations.
+- This block can be overridden in child templates to add specific declarations as required.
+#}
+{% block declaration %}
+{% endblock %}
+
+{# ==============================
+     EXPORTS BLOCK
+============================== #}
+{# 
+Purpose:
+- A placeholder block for exporting modules, functions, or variables.
+- This block can be overridden in child templates to specify what should be exported.
+#}
+{% block export %}
+{% endblock %}

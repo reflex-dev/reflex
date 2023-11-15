@@ -1,6 +1,6 @@
 import pytest
 
-from reflex.event import Event
+from nextpy.core.event import Event
 
 
 def create_event(name):

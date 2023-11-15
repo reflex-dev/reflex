@@ -1,0 +1,27 @@
+"""Import operations."""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from typing import Dict, Set
+
+from nextpy.core.vars import ImportVar
+
+ImportDict = Dict[str, Set[ImportVar]]
+
+
+def merge_imports(*imports) -> ImportDict:
+    """Merge multiple import dicts together.
+
+    Args:
+        *imports: The list of import dicts to merge.
+
+    Returns:
+        The merged import dicts.
+    """
+    all_imports = defaultdict(set)
+    for import_dict in imports:
+        for lib, fields in import_dict.items():
+            for field in fields:
+                all_imports[lib].add(field)
+    return all_imports

@@ -9,19 +9,19 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
+from nextpy.core.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
 
 
 def RadixThemesApp():
     """App using radix-themes components."""
-    import reflex as rx
-    import reflex.components.radix.themes as rdxt
+    import nextpy as xt
+    import nextpy.components.radix.themes as rdxt
 
-    class State(rx.State):
+    class State(xt.State):
         v: str = ""
         checked: bool = False
 
-    def index() -> rx.Component:
+    def index() -> xt.Component:
         return rdxt.box(
             rdxt.text_field(
                 id="token", value=State.router.session.client_token, read_only=True
@@ -37,7 +37,7 @@ def RadixThemesApp():
                     checked=State.checked,
                     on_checked_change=State.set_checked,  # type: ignore
                 ),
-                rx.cond(
+                xt.cond(
                     State.checked,
                     rdxt.text("💡", id="bulb"),
                     rdxt.text("🌙", id="moon"),
@@ -80,7 +80,7 @@ def RadixThemesApp():
             p="5",
         )
 
-    app = rx.App(
+    app = xt.App(
         state=State,
         theme=rdxt.theme(rdxt.theme_panel(), accent_color="grass"),
     )

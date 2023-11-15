@@ -7,19 +7,19 @@ import pytest
 import typer
 from packaging import version
 
-from reflex import constants
-from reflex.base import Base
-from reflex.event import EventHandler
-from reflex.state import State
-from reflex.utils import (
+from nextpy import constants
+from nextpy.core.base import Base
+from nextpy.core.event import EventHandler
+from nextpy.core.state import State
+from nextpy.utils import (
     build,
     imports,
     prerequisites,
     types,
 )
-from reflex.utils import exec as utils_exec
-from reflex.utils.serializers import serialize
-from reflex.vars import Var
+from nextpy.utils import exec as utils_exec
+from nextpy.utils.serializers import serialize
+from nextpy.core.vars import Var
 
 
 def mock_event(arg):
@@ -96,8 +96,8 @@ def test_validate_invalid_bun_path(mocker):
     """
     mock = mocker.Mock()
     mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
-    mocker.patch("reflex.utils.prerequisites.get_bun_version", return_value=None)
+    mocker.patch("nextpy.utils.prerequisites.get_config", mock)
+    mocker.patch("nextpy.utils.prerequisites.get_bun_version", return_value=None)
 
     with pytest.raises(typer.Exit):
         prerequisites.validate_bun()
@@ -111,9 +111,9 @@ def test_validate_bun_path_incompatible_version(mocker):
     """
     mock = mocker.Mock()
     mocker.patch.object(mock, "bun_path", return_value="/mock/path")
-    mocker.patch("reflex.utils.prerequisites.get_config", mock)
+    mocker.patch("nextpy.utils.prerequisites.get_config", mock)
     mocker.patch(
-        "reflex.utils.prerequisites.get_bun_version",
+        "nextpy.utils.prerequisites.get_bun_version",
         return_value=version.parse("0.6.5"),
     )
 
@@ -127,8 +127,8 @@ def test_remove_existing_bun_installation(mocker):
     Args:
         mocker: Pytest mocker.
     """
-    mocker.patch("reflex.utils.prerequisites.os.path.exists", return_value=True)
-    rm = mocker.patch("reflex.utils.prerequisites.path_ops.rm", mocker.Mock())
+    mocker.patch("nextpy.utils.prerequisites.os.path.exists", return_value=True)
+    rm = mocker.patch("nextpy.utils.prerequisites.path_ops.rm", mocker.Mock())
 
     prerequisites.remove_existing_bun_installation()
     rm.assert_called_once()
@@ -147,8 +147,8 @@ def test_setup_frontend(tmp_path, mocker):
     assets.mkdir()
     (assets / "favicon.ico").touch()
 
-    mocker.patch("reflex.utils.prerequisites.install_frontend_packages")
-    mocker.patch("reflex.utils.build.set_env_json")
+    mocker.patch("nextpy.utils.prerequisites.install_frontend_packages")
+    mocker.patch("nextpy.utils.build.set_env_json")
 
     build.setup_frontend(tmp_path, disable_telemetry=False)
     assert web_public_folder.exists()
@@ -208,7 +208,7 @@ def test_unsupported_literals(cls: type):
     ],
 )
 def test_create_config(app_name, expected_config_name, mocker):
-    """Test templates.RXCONFIG is formatted with correct app name and config class name.
+    """Test templates.XTCONFIG is formatted with correct app name and config class name.
 
     Args:
         app_name: App name.
@@ -216,7 +216,7 @@ def test_create_config(app_name, expected_config_name, mocker):
         mocker: Mocker object.
     """
     mocker.patch("builtins.open")
-    tmpl_mock = mocker.patch("reflex.compiler.templates.RXCONFIG")
+    tmpl_mock = mocker.patch("nextpy.core.compiler.templates.XTCONFIG")
     prerequisites.create_config(app_name)
     tmpl_mock.render.assert_called_with(
         app_name=app_name, config_name=expected_config_name
@@ -287,7 +287,7 @@ def test_is_dataframe(class_type, expected):
 
 @pytest.mark.parametrize("gitignore_exists", [True, False])
 def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
-    """Test that the generated .gitignore_file file on reflex init contains the correct file
+    """Test that the generated .gitignore_file file on nextpy init contains the correct file
     names with correct formatting.
 
     Args:
@@ -296,7 +296,7 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
         gitignore_exists: Whether a gitignore file exists in the root dir.
     """
     expected = constants.GitIgnore.DEFAULTS.copy()
-    mocker.patch("reflex.constants.GitIgnore.FILE", tmp_path / ".gitignore")
+    mocker.patch("nextpy.constants.GitIgnore.FILE", tmp_path / ".gitignore")
 
     gitignore_file = tmp_path / ".gitignore"
 
@@ -318,16 +318,16 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
 
 
 def test_app_default_name(tmp_path, mocker):
-    """Test that an error is raised if the app name is reflex.
+    """Test that an error is raised if the app name is nextpy.
 
     Args:
         tmp_path: Test working dir.
         mocker: Pytest mocker object.
     """
-    reflex = tmp_path / "reflex"
-    reflex.mkdir()
+    nextpy = tmp_path / "nextpy"
+    nextpy.mkdir()
 
-    mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
+    mocker.patch("nextpy.utils.prerequisites.os.getcwd", return_value=str(nextpy))
 
     with pytest.raises(typer.Exit):
         prerequisites.get_default_app_name()
@@ -340,23 +340,23 @@ def test_node_install_windows(tmp_path, mocker):
         tmp_path: Test working dir.
         mocker: Pytest mocker object.
     """
-    fnm_root_path = tmp_path / "reflex" / "fnm"
+    fnm_root_path = tmp_path / "nextpy" / "fnm"
     fnm_exe = fnm_root_path / "fnm.exe"
 
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", True)
-    mocker.patch("reflex.utils.processes.new_process")
-    mocker.patch("reflex.utils.processes.stream_logs")
+    mocker.patch("nextpy.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
+    mocker.patch("nextpy.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
+    mocker.patch("nextpy.utils.prerequisites.constants.IS_WINDOWS", True)
+    mocker.patch("nextpy.utils.processes.new_process")
+    mocker.patch("nextpy.utils.processes.stream_logs")
 
     class Resp(Base):
         status_code = 200
         text = "test"
 
     mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    mocker.patch("reflex.utils.prerequisites.zipfile.ZipFile")
-    mocker.patch("reflex.utils.prerequisites.path_ops.rm")
+    download = mocker.patch("nextpy.utils.prerequisites.download_and_extract_fnm_zip")
+    mocker.patch("nextpy.utils.prerequisites.zipfile.ZipFile")
+    mocker.patch("nextpy.utils.prerequisites.path_ops.rm")
 
     prerequisites.install_node()
 
@@ -382,24 +382,24 @@ def test_node_install_windows(tmp_path, mocker):
     ],
 )
 def test_node_install_unix(tmp_path, mocker, machine, system):
-    fnm_root_path = tmp_path / "reflex" / "fnm"
+    fnm_root_path = tmp_path / "nextpy" / "fnm"
     fnm_exe = fnm_root_path / "fnm"
 
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
-    mocker.patch("reflex.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
-    mocker.patch("reflex.utils.prerequisites.platform.machine", return_value=machine)
-    mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
+    mocker.patch("nextpy.utils.prerequisites.constants.Fnm.DIR", fnm_root_path)
+    mocker.patch("nextpy.utils.prerequisites.constants.Fnm.EXE", fnm_exe)
+    mocker.patch("nextpy.utils.prerequisites.constants.IS_WINDOWS", False)
+    mocker.patch("nextpy.utils.prerequisites.platform.machine", return_value=machine)
+    mocker.patch("nextpy.utils.prerequisites.platform.system", return_value=system)
 
     class Resp(Base):
         status_code = 200
         text = "test"
 
     mocker.patch("httpx.stream", return_value=Resp())
-    download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
-    process = mocker.patch("reflex.utils.processes.new_process")
-    chmod = mocker.patch("reflex.utils.prerequisites.os.chmod")
-    mocker.patch("reflex.utils.processes.stream_logs")
+    download = mocker.patch("nextpy.utils.prerequisites.download_and_extract_fnm_zip")
+    process = mocker.patch("nextpy.utils.processes.new_process")
+    chmod = mocker.patch("nextpy.utils.prerequisites.os.chmod")
+    mocker.patch("nextpy.utils.processes.stream_logs")
 
     prerequisites.install_node()
 
@@ -429,30 +429,30 @@ def test_bun_install_without_unzip(mocker):
     Args:
         mocker: Pytest mocker object.
     """
-    mocker.patch("reflex.utils.path_ops.which", return_value=None)
+    mocker.patch("nextpy.utils.path_ops.which", return_value=None)
     mocker.patch("os.path.exists", return_value=False)
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
+    mocker.patch("nextpy.utils.prerequisites.constants.IS_WINDOWS", False)
 
     with pytest.raises(FileNotFoundError):
         prerequisites.install_bun()
 
 
 @pytest.mark.parametrize("is_windows", [True, False])
-def test_create_reflex_dir(mocker, is_windows):
-    """Test that a reflex directory is created on initializing frontend
+def test_create_nextpy_dir(mocker, is_windows):
+    """Test that a nextpy directory is created on initializing frontend
     dependencies.
 
     Args:
         mocker: Pytest mocker object.
         is_windows: Whether platform is windows.
     """
-    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", is_windows)
-    mocker.patch("reflex.utils.prerequisites.processes.run_concurrently", mocker.Mock())
-    mocker.patch("reflex.utils.prerequisites.initialize_web_directory", mocker.Mock())
-    mocker.patch("reflex.utils.processes.run_concurrently")
-    mocker.patch("reflex.utils.prerequisites.validate_bun")
+    mocker.patch("nextpy.utils.prerequisites.constants.IS_WINDOWS", is_windows)
+    mocker.patch("nextpy.utils.prerequisites.processes.run_concurrently", mocker.Mock())
+    mocker.patch("nextpy.utils.prerequisites.initialize_web_directory", mocker.Mock())
+    mocker.patch("nextpy.utils.processes.run_concurrently")
+    mocker.patch("nextpy.utils.prerequisites.validate_bun")
     create_cmd = mocker.patch(
-        "reflex.utils.prerequisites.path_ops.mkdir", mocker.Mock()
+        "nextpy.utils.prerequisites.path_ops.mkdir", mocker.Mock()
     )
 
     prerequisites.initialize_frontend_dependencies()
@@ -461,7 +461,7 @@ def test_create_reflex_dir(mocker, is_windows):
 
 
 def test_output_system_info(mocker):
-    """Make sure reflex does not crash dumping system info.
+    """Make sure nextpy does not crash dumping system info.
 
     Args:
         mocker: Pytest mocker object.
@@ -469,7 +469,7 @@ def test_output_system_info(mocker):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
+    mocker.patch("nextpy.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 

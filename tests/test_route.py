@@ -1,7 +1,7 @@
 import pytest
 
-from reflex import constants
-from reflex.route import catchall_in_route, get_route_args, verify_route_validity
+from nextpy import constants
+from nextpy.core.route import catchall_in_route, get_route_args, verify_route_validity
 
 
 @pytest.mark.parametrize(

@@ -17,9 +17,9 @@ from typing import Any, Callable, Iterable, Type, get_args
 import black
 import black.mode
 
-from reflex.components.component import Component
-from reflex.utils import types as rx_types
-from reflex.vars import Var
+from nextpy.components.component import Component
+from nextpy.utils import types as xt_types
+from nextpy.core.vars import Var
 
 logger = logging.getLogger("pyi_generator")
 
@@ -74,7 +74,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     if args:
         inner_container_type_args = (
             [repr(arg) for arg in args]
-            if rx_types.is_literal(value)
+            if xt_types.is_literal(value)
             else [
                 _get_type_hint(arg, type_hint_globals, is_optional=False)
                 for arg in args
@@ -123,9 +123,9 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
         *ast.parse(  # type: ignore
             textwrap.dedent(
                 """
-                from reflex.vars import Var, BaseVar, ComputedVar
-                from reflex.event import EventChain, EventHandler, EventSpec
-                from reflex.style import Style"""
+                from nextpy.core.vars import Var, BaseVar, ComputedVar
+                from nextpy.core.event import EventChain, EventHandler, EventSpec
+                from nextpy.core.style import Style"""
             )
         ).body,
     ]
@@ -535,7 +535,7 @@ class StubGenerator(ast.NodeTransformer):
 
 
 class PyiGenerator:
-    """A .pyi file generator that will scan all defined Component in Reflex and
+    """A .pyi file generator that will scan all defined Component in nextpy and
     generate the approriate stub.
     """
 
@@ -613,7 +613,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
-    targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
+    targets = sys.argv[1:] if len(sys.argv) > 1 else ["nextpy/components"]
     logger.info(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
     gen.scan_all(targets)

@@ -5,70 +5,70 @@ from typing import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 
 def ServerSideEvent():
     """App with inputs set via event handlers and set_value."""
-    import reflex as rx
+    import nextpy as xt
 
-    class SSState(rx.State):
+    class SSState(xt.State):
         def set_value_yield(self):
-            yield rx.set_value("a", "")
-            yield rx.set_value("b", "")
-            yield rx.set_value("c", "")
+            yield xt.set_value("a", "")
+            yield xt.set_value("b", "")
+            yield xt.set_value("c", "")
 
         def set_value_yield_return(self):
-            yield rx.set_value("a", "")
-            yield rx.set_value("b", "")
-            return rx.set_value("c", "")
+            yield xt.set_value("a", "")
+            yield xt.set_value("b", "")
+            return xt.set_value("c", "")
 
         def set_value_return(self):
             return [
-                rx.set_value("a", ""),
-                rx.set_value("b", ""),
-                rx.set_value("c", ""),
+                xt.set_value("a", ""),
+                xt.set_value("b", ""),
+                xt.set_value("c", ""),
             ]
 
         def set_value_return_c(self):
-            return rx.set_value("c", "")
+            return xt.set_value("c", "")
 
-    app = rx.App(state=SSState)
+    app = xt.App(state=SSState)
 
     @app.add_page
     def index():
-        return rx.fragment(
-            rx.input(
+        return xt.fragment(
+            xt.input(
                 id="token", value=SSState.router.session.client_token, is_read_only=True
             ),
-            rx.input(default_value="a", id="a"),
-            rx.input(default_value="b", id="b"),
-            rx.input(default_value="c", id="c"),
-            rx.button(
+            xt.input(default_value="a", id="a"),
+            xt.input(default_value="b", id="b"),
+            xt.input(default_value="c", id="c"),
+            xt.button(
                 "Clear Immediate",
                 id="clear_immediate",
                 on_click=[
-                    rx.set_value("a", ""),
-                    rx.set_value("b", ""),
-                    rx.set_value("c", ""),
+                    xt.set_value("a", ""),
+                    xt.set_value("b", ""),
+                    xt.set_value("c", ""),
                 ],
             ),
-            rx.button(
+            xt.button(
                 "Clear Chained Yield",
                 id="clear_chained_yield",
                 on_click=SSState.set_value_yield,
             ),
-            rx.button(
+            xt.button(
                 "Clear Chained Yield+Return",
                 id="clear_chained_yield_return",
                 on_click=SSState.set_value_yield_return,
             ),
-            rx.button(
+            xt.button(
                 "Clear Chained Return",
                 id="clear_chained_return",
                 on_click=SSState.set_value_return,
             ),
-            rx.button(
+            xt.button(
                 "Clear C Return",
                 id="clear_return_c",
                 on_click=SSState.set_value_return_c,

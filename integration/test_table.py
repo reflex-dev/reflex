@@ -4,16 +4,16 @@ from typing import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 
 def Table():
     """App using table component."""
     from typing import List
 
-    import reflex as rx
+    import nextpy as xt
 
-    class TableState(rx.State):
+    class TableState(xt.State):
         rows: List[List[str]] = [
             ["John", "30", "New York"],
             ["Jane", "31", "San Fransisco"],
@@ -26,18 +26,18 @@ def Table():
 
         caption: str = "random caption"
 
-    app = rx.App(state=TableState)
+    app = xt.App(state=TableState)
 
     @app.add_page
     def index():
-        return rx.center(
-            rx.input(
+        return xt.center(
+            xt.input(
                 id="token",
                 value=TableState.router.session.client_token,
                 is_read_only=True,
             ),
-            rx.table_container(
-                rx.table(
+            xt.table_container(
+                xt.table(
                     headers=TableState.headers,
                     rows=TableState.rows,
                     footers=TableState.footers,
@@ -51,37 +51,37 @@ def Table():
 
     @app.add_page
     def another():
-        return rx.center(
-            rx.table_container(
-                rx.table(  # type: ignore
-                    rx.thead(  # type: ignore
-                        rx.tr(  # type: ignore
-                            rx.th("Name"),
-                            rx.th("Age"),
-                            rx.th("Location"),
+        return xt.center(
+            xt.table_container(
+                xt.table(  # type: ignore
+                    xt.thead(  # type: ignore
+                        xt.tr(  # type: ignore
+                            xt.th("Name"),
+                            xt.th("Age"),
+                            xt.th("Location"),
                         )
                     ),
-                    rx.tbody(  # type: ignore
-                        rx.tr(  # type: ignore
-                            rx.td("John"),
-                            rx.td(30),
-                            rx.td("New York"),
+                    xt.tbody(  # type: ignore
+                        xt.tr(  # type: ignore
+                            xt.td("John"),
+                            xt.td(30),
+                            xt.td("New York"),
                         ),
-                        rx.tr(  # type: ignore
-                            rx.td("Jane"),
-                            rx.td(31),
-                            rx.td("San Francisco"),
+                        xt.tr(  # type: ignore
+                            xt.td("Jane"),
+                            xt.td(31),
+                            xt.td("San Francisco"),
                         ),
-                        rx.tr(  # type: ignore
-                            rx.td("Joe"),
-                            rx.td(32),
-                            rx.td("Los Angeles"),
+                        xt.tr(  # type: ignore
+                            xt.td("Joe"),
+                            xt.td(32),
+                            xt.td("Los Angeles"),
                         ),
                     ),
-                    rx.tfoot(  # type: ignore
-                        rx.tr(rx.td("footer1"), rx.td("footer2"), rx.td("footer3"))  # type: ignore
+                    xt.tfoot(  # type: ignore
+                        xt.tr(xt.td("footer1"), xt.td("footer2"), xt.td("footer3"))  # type: ignore
                     ),
-                    rx.table_caption("random caption"),
+                    xt.table_caption("random caption"),
                     variant="striped",
                     color_scheme="teal",
                 )

@@ -1,19 +1,15 @@
 [tool.poetry]
-name = "reflex"
-version = "0.3.1"
-description = "Web apps in pure Python."
+name = "nextpy"
+version = "0.2.1"
+description = "Web apps in pure Python with all the flexibility and speed of nextjs."
 license = "Apache-2.0"
 authors = [
-    "Nikhil Rao <nikhil@reflex.dev>",
-    "Alek Petuskey <alek@reflex.dev>",
-    "Masen Furer <masen@reflex.dev>",
-    "Elijah Ahianyo <elijah@reflex.dev>",
-    "Thomas Brandého <thomas@reflex.dev>",
+    "Team dotagent <anurag@dotagent.ai>",
 ]
 readme = "README.md"
-homepage = "https://reflex.dev"
-repository = "https://github.com/reflex-dev/reflex"
-documentation = "https://reflex.dev/docs/getting-started/introduction"
+homepage = "https://dotagent.dev"
+repository = "https://github.com/dot-agent/nextpy"
+documentation = "https://dotagent.dev/docs/getting-started/introduction"
 keywords = [
     "web",
     "framework",
@@ -22,7 +18,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
 ]
 packages = [
-    {include = "reflex"}
+    {include = "nextpy"}
 ]
 
 [tool.poetry.dependencies]
@@ -45,11 +41,12 @@ watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
 websockets = "^10.4"
 starlette-admin = "^0.9.0"
+importlib-metadata = {version = "^6.7.0", python = ">=3.7, <3.8"}
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
 distro = {version = "^1.8.0", platform = "linux"}
 python-engineio = "!=4.6.0"
-wrapt = [
+wrapt =  [
     {version = "^1.14.0", python = ">=3.11"},
     {version = "^1.11.0", python = "<3.11"},
 ]
@@ -69,6 +66,7 @@ black = "^22.10.0"
 ruff = "^0.0.244"
 pandas = [
     {version = "^1.5.3", python = ">=3.8,<4.0"},
+    {version = "^1.1", python = ">=3.7, <3.8"}
 ]
 pillow = [
     {version = "^10.0.0", python = ">=3.8,<4.0"}
@@ -77,10 +75,9 @@ plotly = "^5.13.0"
 asynctest = "^0.13.0"
 pre-commit = {version = "^3.2.1", python = ">=3.8,<4.0"}
 selenium = "^4.11.0"
-types-tabulate = "^0.9.0.3"
 
 [tool.poetry.scripts]
-reflex = "reflex.reflex:cli"
+nextpy = "nextpy.cli:cli"
 
 [build-system]
 requires = ["poetry-core>=1.5.1"]
@@ -100,5 +97,5 @@ target-version = "py37"
 
 "__init__.py" = ["F401"]
 "tests/*.py" = ["D100", "D103", "D104"]
-"reflex/.templates/*.py" = ["D100", "D103", "D104"]
+"nextpy/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["ALL"]

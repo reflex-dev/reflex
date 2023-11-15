@@ -1,0 +1,196 @@
+{# ==============================
+     INTRODUCTION TO JINJA2
+============================== #}
+{# 
+Jinja2 is a templating language for Python, used to generate text-based content.
+It mixes static text with dynamic content, controlled by special tags. 
+There are various tags in Jinja2:
+    - {% ... %} : For statements (e.g., for loops, if conditions).
+    - {{ ... }} : To output the value of an expression.
+    - {# ... #} : For comments, which aren't included in the output.
+#}
+
+{# ==============================
+    OVERVIEW : Renders components recursively
+============================== #}
+{# 
+This Jinja2 template dynamically generates code for React-like components. 
+Each macro corresponds to a different way a component can be rendered, 
+from simple tags to conditionals and iterables. Macros are Jinja2's version of functions. They can be called with arguments and return rendered content.
+#}
+
+
+
+{# ==============================
+     RECURSIVE RENDERING MACRO
+============================== #}
+{# 
+Purpose:
+- Main entry for component rendering.
+- Handles components based on their attributes.
+
+Parameters: 
+- 'component' (dict): The component to be rendered.
+- 'indent_width' (optional int): Formatting width for output.
+#}
+{% macro render(component, indent_width=0) %}
+{% filter indent(width=indent_width) %}
+  {%- if component is not mapping %}
+    {{- component }}
+  {%- elif "iterable" in component %}
+    {{- render_iterable_tag(component) }}
+  {%- elif "cond" in component %}
+    {{- render_condition_tag(component) }}
+  {%- elif component.children|length %}
+    {{- render_tag(component) }}
+  {%- else %}
+    {{- render_self_close_tag(component) }}
+  {%- endif %}
+{% endfilter %}
+{% endmacro %}
+
+{# ==============================
+     SELF-CLOSING TAG RENDERING
+============================== #}
+{# 
+Purpose:
+- Renders components that don't have child elements.
+
+Parameters: 
+- 'component' (dict): The component to be rendered.
+#}
+{% macro render_self_close_tag(component) %}
+{%- if component.name|length %}
+<{{ component.name }} {{- render_props(component.props) }}{% if component.autofocus %} ref={focusRef} {% endif %}/>
+{%- else %}
+  {{- component.contents }}
+{%- endif %}
+{% endmacro %}
+
+
+{# ==============================
+     TAG WITH CHILDREN RENDERING
+============================== #}
+{# 
+Purpose:
+- Renders components with child elements.
+
+Parameters: 
+- 'component' (dict): The component with children to be rendered.
+#}
+
+{% macro render_tag(component) %}
+<{{component.name}} {{- render_props(component.props) }}>
+{%- if component.args is not none -%}
+  {{- render_arg_content(component) }}
+{%- else -%}
+  {{ component.contents }}
+  {% for child in component.children %}
+  {{ render(child) }}
+  {% endfor %}
+{%- endif -%}
+</{{component.name}}>
+{%- endmacro %}
+
+
+{# ==============================
+     CONDITIONAL TAG RENDERING
+============================== #}
+{# 
+Purpose:
+- Renders content based on a condition.
+
+Parameters: 
+- 'component' (dict): The component with a condition to evaluate.
+#}
+{% macro render_condition_tag(component) %}
+{ {{- component.cond_state }} ? (
+  {{ render(component.true_value) }}
+) : (
+  {{ render(component.false_value) }}
+)}
+{%- endmacro %}
+
+
+
+{# ==============================
+     ITERABLE TAG RENDERING
+============================== #}
+{# 
+Purpose:
+- Renders iterable structures like lists or dictionaries.
+
+Parameters: 
+- 'component' (dict): The iterable component to be rendered.
+#}
+{% macro render_iterable_tag(component) %}
+{ {%- if component.iterable_type == 'dict' -%}Object.entries({{- component.iterable_state }}){%- else -%}{{- component.iterable_state }}{%- endif -%}.map(({{ component.arg_name }}, {{ component.arg_index }}) => (
+  {% for child in component.children %}
+  {{ render(child) }}
+  {% endfor %}
+))}
+{%- endmacro %}
+
+{# ==============================
+     PROPERTIES RENDERING
+============================== #}
+{# 
+Purpose:
+- Outputs the properties or attributes of a component.
+
+Parameters: 
+- 'props' (list or dict): Properties to be rendered.
+#}
+{% macro render_props(props) %}
+{% if props|length %} {{ props|join(" ") }}{% endif %}
+{% endmacro %}
+
+
+
+{# ==============================
+     ARGUMENT CONTENT RENDERING
+============================== #}
+{# 
+Purpose:
+- Renders content that requires specific arguments.
+
+Parameters: 
+- 'component' (dict): The component with arguments to be rendered.
+#}
+{% macro render_arg_content(component) %}
+{% filter indent(width=2) %}
+{# no string below for a line break #}
+
+{({ {{component.args|join(", ")}} }) => (
+  {% for child in component.children %}
+  {{ render(child) }}
+  {% endfor %}
+)}
+{% endfilter %}
+{% endmacro %}
+
+
+
+{# ==============================
+     REACT LIBRARY IMPORTS
+============================== #}
+{# 
+Purpose:
+- Generates correct 'import' statements for React libraries.
+
+Parameters: 
+- 'module' (dict): Dictionary containing module details for import.
+#}
+
+{% macro get_import(module)%}
+{%- if module.default|length and module.rest|length -%}
+  import {{module.default}}, { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+{%- elif module.default|length -%}
+  import {{module.default}} from "{{module.lib}}"
+{%- elif module.rest|length -%}
+  import { {{module.rest|sort|join(", ")}} } from "{{module.lib}}"
+{%- else -%}
+  import "{{module.lib}}"
+{%- endif -%}
+{% endmacro %}
+

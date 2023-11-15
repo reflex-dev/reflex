@@ -2,11 +2,11 @@
 
 from typing import Dict, List, Set, Union
 
-import reflex as rx
+import nextpy as xt
 
 
-class DictMutationTestState(rx.State):
-    """A state for testing ReflexDict mutation."""
+class DictMutationTestState(xt.State):
+    """A state for testing NextpyDict mutation."""
 
     # plain dict
     details = {"name": "Tommy"}
@@ -62,8 +62,8 @@ class DictMutationTestState(rx.State):
         self.friend_in_nested_dict["friend"]["age"] = 30
 
 
-class ListMutationTestState(rx.State):
-    """A state for testing ReflexList mutation."""
+class ListMutationTestState(xt.State):
+    """A state for testing NextpyList mutation."""
 
     # plain list
     plain_friends = ["Tommy"]
@@ -128,13 +128,13 @@ class ListMutationTestState(rx.State):
         self.friends_in_nested_list[1].append("Jimmy")
 
 
-class OtherBase(rx.Base):
+class OtherBase(xt.Base):
     """A Base model with a str field."""
 
     bar: str = ""
 
 
-class CustomVar(rx.Base):
+class CustomVar(xt.Base):
     """A Base model with multiple fields."""
 
     foo: str = ""
@@ -144,7 +144,7 @@ class CustomVar(rx.Base):
     custom: OtherBase = OtherBase()
 
 
-class MutableTestState(rx.State):
+class MutableTestState(xt.State):
     """A test state."""
 
     array: List[Union[str, List, Dict[str, str]]] = [

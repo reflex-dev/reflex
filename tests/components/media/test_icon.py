@@ -1,7 +1,7 @@
 import pytest
 
-from reflex.components.media.icon import ICON_LIST, Icon
-from reflex.utils import format
+from nextpy.components.media.icon import ICON_LIST, Icon
+from nextpy.utils import format
 
 
 def test_no_tag_errors():

@@ -3,15 +3,15 @@ from typing import Any, Dict
 
 import pytest
 
-import reflex as rx
-import reflex.config
-from reflex.constants import Endpoint
+import nextpy as xt
+import nextpy.core.config
+from nextpy.constants import Endpoint
 
 
 def test_requires_app_name():
     """Test that a config requires an app_name."""
     with pytest.raises(ValueError):
-        rx.Config()  # type: ignore
+        xt.Config()  # type: ignore
 
 
 def test_set_app_name(base_config_values):
@@ -20,7 +20,7 @@ def test_set_app_name(base_config_values):
     Args:
         base_config_values: Config values.
     """
-    config = rx.Config(**base_config_values)
+    config = xt.Config(**base_config_values)
     assert config.app_name == base_config_values["app_name"]
 
 
@@ -40,7 +40,7 @@ def test_deprecated_params(base_config_values: Dict[str, Any], param):
         param: The deprecated param.
     """
     with pytest.raises(ValueError):
-        rx.Config(**base_config_values, **{param: "test"})  # type: ignore
+        xt.Config(**base_config_values, **{param: "test"})  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -71,7 +71,7 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
     """
     monkeypatch.setenv(env_var, str(value))
     assert os.environ.get(env_var) == str(value)
-    config = rx.Config(**base_config_values)
+    config = xt.Config(**base_config_values)
     assert getattr(config, env_var.lower()) == value
 
 
@@ -102,15 +102,15 @@ def test_event_namespace(mocker, kwargs, expected):
         kwargs: The Config kwargs.
         expected: Expected namespace
     """
-    conf = rx.Config(**kwargs)
-    mocker.patch("reflex.config.get_config", return_value=conf)
+    conf = xt.Config(**kwargs)
+    mocker.patch("nextpy.core.config.get_config", return_value=conf)
 
-    config = reflex.config.get_config()
+    config = nextpy.core.config.get_config()
     assert conf == config
     assert config.get_event_namespace() == expected
 
 
-DEFAULT_CONFIG = rx.Config(app_name="a")
+DEFAULT_CONFIG = xt.Config(app_name="a")
 
 
 @pytest.mark.parametrize(
@@ -194,9 +194,9 @@ def test_replace_defaults(
         exp_config_values: The expected config values.
     """
     mock_os_env = os.environ.copy()
-    monkeypatch.setattr(reflex.config.os, "environ", mock_os_env)  # type: ignore
+    monkeypatch.setattr(nextpy.core.config.os, "environ", mock_os_env)  # type: ignore
     mock_os_env.update({k: str(v) for k, v in env_vars.items()})
-    c = rx.Config(app_name="a", **config_kwargs)
+    c = xt.Config(app_name="a", **config_kwargs)
     c._set_persistent(**set_persistent_vars)
     for key, value in exp_config_values.items():
         assert getattr(c, key) == value

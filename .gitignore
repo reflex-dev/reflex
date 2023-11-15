@@ -2,8 +2,17 @@
 **/*.pyc
 dist/*
 examples/
+myapp/*
 .idea
 .vscode
 .coverage
 .coverage.*
 venv
+*my_app_name*
+.pytest_cache
+.ruff_cache
+.chat
+playground/
+my_app
+poetry.lock.bkup
+pyproject.toml.bkup

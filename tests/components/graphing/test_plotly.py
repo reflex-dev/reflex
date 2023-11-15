@@ -2,8 +2,8 @@ import numpy as np
 import plotly.graph_objects as go
 import pytest
 
-from reflex.components.graphing.plotly import serialize_figure  # type: ignore
-from reflex.utils.serializers import serialize
+from nextpy.components.graphing.plotly import serialize_figure  # type: ignore
+from nextpy.utils.serializers import serialize
 
 
 @pytest.fixture

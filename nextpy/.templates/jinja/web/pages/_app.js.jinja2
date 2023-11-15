@@ -1,0 +1,75 @@
+{# =========================================
+     EXTENDING THE BASE PAGE TEMPLATE
+========================================= #}
+{# This template extends the foundational structure provided by the base page template 
+   located at "web/pages/base_page.js.jinja2", allowing for specific customizations. #}
+{% extends "web/pages/base_page.js.jinja2" %}
+
+
+{# =========================================
+     DECLARATIONS BLOCK
+========================================= #}
+{# This block contains the import statements and any other declarations necessary for the current page or component. #}
+{% block declaration %}
+    
+    {# ------------------------------
+       ESSENTIAL IMPORTS
+    ------------------------------ #}
+    {# TODO: add specific details.Importing required providers and utilities for the app's functionality. #}
+    import { EventLoopProvider } from "/utils/context.js"
+    import { ThemeProvider } from 'next-themes'
+    
+    {# ------------------------------
+       CUSTOM DECLARATIONS
+    ------------------------------ #}
+    {# TODO: add specific details. Iterating over 'custom_codes' to inject any additional code or declarations. #}
+    {% for custom_code in custom_codes %}
+        {{custom_code}}
+    {% endfor %}
+    
+{% endblock %}
+
+
+{# =========================================
+     COMPONENT EXPORT BLOCK
+========================================= #}
+{# This block defines and exports the main React component(s) for this page or module.
+   It encompasses the necessary hooks, contexts, and wrapper components for the app's logic. #}
+{% block export %}
+    
+    {# ------------------------------
+       APP WRAPPER COMPONENT
+    ------------------------------ #}
+    {# A wrapper component to encapsulate any shared logic or providers. #}
+    function AppWrap({children}) {
+
+        {# Additional hooks specific to this wrapper component. #}
+        {% for hook in hooks %}
+            {{ hook }}
+        {% endfor %}
+
+        {# Render the main structure of the AppWrap component. #}
+        return (
+            {{utils.render(render, indent_width=0)}}
+        )
+    }
+    
+    {# ------------------------------
+       MAIN APP COMPONENT
+    ------------------------------ #}
+    {# The primary MyApp component that wraps the entire application in essential providers, 
+       ensuring they are accessible throughout the app. #}
+       
+    export default function MyApp({ Component, pageProps }) {
+        return (
+            <ThemeProvider defaultTheme="light" storageKey="chakra-ui-color-mode" attribute="class">
+                <AppWrap>
+                    <EventLoopProvider>
+                        <Component {...pageProps} />
+                    </EventLoopProvider>
+                </AppWrap>
+            </ThemeProvider>
+        )
+    }
+
+{% endblock %}

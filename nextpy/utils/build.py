@@ -1,0 +1,252 @@
+"""Building the app and initializing all prerequisites."""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import zipfile
+from pathlib import Path
+
+from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+
+from nextpy import constants
+from nextpy.core.config import get_config
+from nextpy.utils import console, path_ops, prerequisites, processes
+
+
+def set_env_json():
+    """Write the upload url to a NEXTPY_JSON."""
+    path_ops.update_json_file(
+        constants.Dirs.ENV_JSON,
+        {endpoint.name: endpoint.get_url() for endpoint in constants.Endpoint},
+    )
+
+
+def set_os_env(**kwargs):
+    """Set os environment variables.
+
+    Args:
+        kwargs: env key word args.
+    """
+    for key, value in kwargs.items():
+        if not value:
+            continue
+        os.environ[key.upper()] = value
+
+
+def generate_sitemap_config(deploy_url: str):
+    """Generate the sitemap config file.
+
+    Args:
+        deploy_url: The URL of the deployed app.
+    """
+    # Import here to avoid circular imports.
+    from nextpy.core.compiler import templates
+
+    config = json.dumps(
+        {
+            "siteUrl": deploy_url,
+            "generateRobotsTxt": True,
+        }
+    )
+
+    with open(constants.Next.SITEMAP_CONFIG_FILE, "w") as f:
+        f.write(templates.SITEMAP_CONFIG(config=config))
+
+
+def _zip(
+    component_name: constants.ComponentName,
+    target: str,
+    root_dir: str,
+    exclude_venv_dirs: bool,
+    upload_db_file: bool = False,
+    dirs_to_exclude: set[str] | None = None,
+    files_to_exclude: set[str] | None = None,
+) -> None:
+    """Zip utility function.
+
+    Args:
+        component_name: The name of the component: backend or frontend.
+        target: The target zip file.
+        root_dir: The root directory to zip.
+        exclude_venv_dirs: Whether to exclude venv directories.
+        upload_db_file: Whether to include local sqlite db files.
+        dirs_to_exclude: The directories to exclude.
+        files_to_exclude: The files to exclude.
+
+    """
+    dirs_to_exclude = dirs_to_exclude or set()
+    files_to_exclude = files_to_exclude or set()
+    files_to_zip: list[str] = []
+    # Traverse the root directory in a top-down manner. In this traversal order,
+    # we can modify the dirs list in-place to remove directories we don't want to include.
+    for root, dirs, files in os.walk(root_dir, topdown=True):
+        # Modify the dirs in-place so excluded and hidden directories are skipped in next traversal.
+        dirs[:] = [
+            d
+            for d in dirs
+            if (basename := os.path.basename(os.path.normpath(d)))
+            not in dirs_to_exclude
+            and not basename.startswith(".")
+            and (
+                not exclude_venv_dirs or not _looks_like_venv_dir(os.path.join(root, d))
+            )
+        ]
+        # Modify the files in-place so the hidden files and db files are excluded.
+        files[:] = [
+            f
+            for f in files
+            if not f.startswith(".") and (upload_db_file or not f.endswith(".db"))
+        ]
+        files_to_zip += [
+            os.path.join(root, file) for file in files if file not in files_to_exclude
+        ]
+
+    # Create a progress bar for zipping the component.
+    progress = Progress(
+        *Progress.get_default_columns()[:-1],
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+    )
+    task = progress.add_task(
+        f"Zipping {component_name.value}:", total=len(files_to_zip)
+    )
+
+    with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for file in files_to_zip:
+            console.debug(f"{target}: {file}")
+            progress.advance(task)
+            zipf.write(file, os.path.relpath(file, root_dir))
+
+
+def export(
+    backend: bool = True,
+    frontend: bool = True,
+    zip: bool = False,
+    zip_dest_dir: str = os.getcwd(),
+    deploy_url: str | None = None,
+    upload_db_file: bool = False,
+):
+    """Export the app for deployment.
+
+    Args:
+        backend: Whether to zip up the backend app.
+        frontend: Whether to zip up the frontend app.
+        zip: Whether to zip the app.
+        zip_dest_dir: The destination directory for created zip files (if any)
+        deploy_url: The URL of the deployed app.
+        upload_db_file: Whether to include local sqlite db files from the backend zip.
+    """
+    # Remove the static folder.
+    path_ops.rm(constants.Dirs.WEB_STATIC)
+
+    # The export command to run.
+    command = "export"
+
+    if frontend:
+        # Generate a sitemap if a deploy URL is provided.
+        if deploy_url is not None:
+            generate_sitemap_config(deploy_url)
+            command = "export-sitemap"
+
+        checkpoints = [
+            "Linting and checking ",
+            "Compiled successfully",
+            "Route (pages)",
+            "Collecting page data",
+            "automatically rendered as static HTML",
+            'Copying "static build" directory',
+            'Copying "public" directory',
+            "Finalizing page optimization",
+            "Export successful",
+        ]
+        # Start the subprocess with the progress bar.
+        process = processes.new_process(
+            [prerequisites.get_package_manager(), "run", command],
+            cwd=constants.Dirs.WEB,
+            shell=constants.IS_WINDOWS,
+        )
+        processes.show_progress("Creating Production Build", process, checkpoints)
+
+    # Zip up the app.
+    if zip:
+        files_to_exclude = {
+            constants.ComponentName.FRONTEND.zip(),
+            constants.ComponentName.BACKEND.zip(),
+        }
+        if frontend:
+            _zip(
+                component_name=constants.ComponentName.FRONTEND,
+                target=os.path.join(
+                    zip_dest_dir, constants.ComponentName.FRONTEND.zip()
+                ),
+                root_dir=".web/_static",
+                files_to_exclude=files_to_exclude,
+                exclude_venv_dirs=False,
+            )
+        if backend:
+            _zip(
+                component_name=constants.ComponentName.BACKEND,
+                target=os.path.join(
+                    zip_dest_dir, constants.ComponentName.BACKEND.zip()
+                ),
+                root_dir=".",
+                dirs_to_exclude={"assets", "__pycache__"},
+                files_to_exclude=files_to_exclude,
+                exclude_venv_dirs=True,
+                upload_db_file=upload_db_file,
+            )
+
+
+def setup_frontend(
+    root: Path,
+    disable_telemetry: bool = True,
+):
+    """Set up the frontend to run the app.
+
+    Args:
+        root: The root path of the project.
+        disable_telemetry: Whether to disable the Next telemetry.
+    """
+    # Copy asset files to public folder.
+    path_ops.cp(
+        src=str(root / constants.Dirs.APP_ASSETS),
+        dest=str(root / constants.Dirs.WEB_ASSETS),
+    )
+
+    # Set the environment variables in client (env.json).
+    set_env_json()
+
+    # Disable the Next telemetry.
+    if disable_telemetry:
+        processes.new_process(
+            [
+                prerequisites.get_package_manager(),
+                "run",
+                "next",
+                "telemetry",
+                "disable",
+            ],
+            cwd=constants.Dirs.WEB,
+            stdout=subprocess.DEVNULL,
+            shell=constants.IS_WINDOWS,
+        )
+
+
+def setup_frontend_prod(
+    root: Path,
+    disable_telemetry: bool = True,
+):
+    """Set up the frontend for prod mode.
+
+    Args:
+        root: The root path of the project.
+        disable_telemetry: Whether to disable the Next telemetry.
+    """
+    setup_frontend(root, disable_telemetry)
+    export(deploy_url=get_config().deploy_url)
+
+
+def _looks_like_venv_dir(dir_to_check: str) -> bool:
+    return os.path.exists(os.path.join(dir_to_check, "pyvenv.cfg"))

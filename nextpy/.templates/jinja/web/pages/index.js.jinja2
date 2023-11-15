@@ -1,0 +1,86 @@
+{# =========================================
+     EXTENDING THE BASE PAGE TEMPLATE
+========================================= #}
+{# This template extends the foundational structure provided by the base page template 
+   located at "web/pages/base_page.js.jinja2", allowing for specific customizations. #}
+
+{% extends "web/pages/base_page.js.jinja2" %}
+
+
+{# =========================================
+     CUSTOM DECLARATIONS BLOCK
+========================================= #}
+{# This block introduces custom declarations that are specific to this component or page.
+   It iterates over 'custom_codes' to inject any additional code or declarations. #}
+{% block declaration %}
+    
+    {% for custom_code in custom_codes %}
+        {{custom_code}}
+    {% endfor %}
+    
+{% endblock %}
+
+
+{# =========================================
+     COMPONENT EXPORT BLOCK
+========================================= #}
+{# This block defines and exports the main React component for this page or module.
+   It encompasses the necessary hooks, contexts, and effects for the component's logic. #}
+{% block export %}
+
+export default function Component() {
+
+    {# ------------------------------
+       ACCESS THE GLOBAL STATE
+    ------------------------------ #}
+    {# If 'state_name' is defined, the global state is accessed. #}
+    {% if state_name %}
+        const {{state_name}} = useContext(StateContext)
+    {% endif %}
+
+    {# ------------------------------
+       ESSENTIAL HOOKS AND CONTEXTS
+    ------------------------------ #}
+    const {{const.router}} = useRouter()
+    const [ {{const.color_mode}}, {{const.toggle_color_mode}} ] = useContext(ColorModeContext)
+    const focusRef = useRef()
+    const [addEvents, connectError] = useContext(EventLoopContext)
+
+    {# ------------------------------
+       FOCUS EFFECT
+    ------------------------------ #}
+    {# This effect sets focus to a specific element once it's rendered. #}
+    useEffect(() => {
+        if (focusRef.current) {
+            focusRef.current.focus()
+        }
+    })
+
+    {# ------------------------------
+       ROUTE CHANGE EFFECT
+    ------------------------------ #}
+    {# This effect handles route changes after the initial page hydration. #}
+    useEffect(() => {
+        const change_complete = () => addEvents(initialEvents())
+        {{const.router}}.events.on('routeChangeComplete', change_complete)
+        return () => {
+            {{const.router}}.events.off('routeChangeComplete', change_complete)
+        }
+    }, [{{const.router}}])
+
+    {# ------------------------------
+       ADDITIONAL HOOKS
+    ------------------------------ #}
+    {% for hook in hooks %}
+        {{ hook }}
+    {% endfor %}
+
+    {# ------------------------------
+       RENDER THE COMPONENT
+    ------------------------------ #}
+    return (
+        {{utils.render(render, indent_width=0)}}
+    )
+}
+
+{% endblock %}

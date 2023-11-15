@@ -1,6 +1,6 @@
 import pytest
 
-from reflex.base import Base
+from nextpy.core.base import Base
 
 
 @pytest.fixture

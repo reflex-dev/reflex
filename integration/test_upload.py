@@ -7,54 +7,54 @@ from typing import Generator
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 
 def UploadFile():
     """App for testing dynamic routes."""
-    import reflex as rx
+    import nextpy as xt
 
-    class UploadState(rx.State):
+    class UploadState(xt.State):
         _file_data: dict[str, str] = {}
 
-        async def handle_upload(self, files: list[rx.UploadFile]):
+        async def handle_upload(self, files: list[xt.UploadFile]):
             for file in files:
                 upload_data = await file.read()
                 self._file_data[file.filename or ""] = upload_data.decode("utf-8")
 
     def index():
-        return rx.vstack(
-            rx.input(
+        return xt.vstack(
+            xt.input(
                 value=UploadState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.upload(
-                rx.vstack(
-                    rx.button("Select File"),
-                    rx.text("Drag and drop files here or click to select files"),
+            xt.upload(
+                xt.vstack(
+                    xt.button("Select File"),
+                    xt.text("Drag and drop files here or click to select files"),
                 ),
             ),
-            rx.button(
+            xt.button(
                 "Upload",
-                on_click=lambda: UploadState.handle_upload(rx.upload_files()),  # type: ignore
+                on_click=lambda: UploadState.handle_upload(xt.upload_files()),  # type: ignore
                 id="upload_button",
             ),
-            rx.box(
-                rx.foreach(
-                    rx.selected_files,
-                    lambda f: rx.text(f),
+            xt.box(
+                xt.foreach(
+                    xt.selected_files,
+                    lambda f: xt.text(f),
                 ),
                 id="selected_files",
             ),
-            rx.button(
+            xt.button(
                 "Clear",
-                on_click=rx.clear_selected_files,
+                on_click=xt.clear_selected_files,
                 id="clear_button",
             ),
         )
 
-    app = rx.App(state=UploadState)
+    app = xt.App(state=UploadState)
     app.add_page(index)
     app.compile()
 
@@ -160,7 +160,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
     exp_files = {
         "test1.txt": "test file contents!",
         "test2.txt": "this is test file number 2!",
-        "reflex.txt": "reflex is awesome!",
+        "nextpy.txt": "nextpy is awesome!",
     }
     for exp_name, exp_contents in exp_files.items():
         target_file = tmp_path / exp_name
@@ -209,7 +209,7 @@ def test_clear_files(tmp_path, upload_file: AppHarness, driver):
     exp_files = {
         "test1.txt": "test file contents!",
         "test2.txt": "this is test file number 2!",
-        "reflex.txt": "reflex is awesome!",
+        "nextpy.txt": "nextpy is awesome!",
     }
     for exp_name, exp_contents in exp_files.items():
         target_file = tmp_path / exp_name

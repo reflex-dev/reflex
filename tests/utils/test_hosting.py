@@ -4,8 +4,8 @@ from unittest.mock import Mock, mock_open
 import httpx
 import pytest
 
-from reflex import constants
-from reflex.utils import hosting
+from nextpy import constants
+from nextpy.utils import hosting
 
 
 def test_get_existing_access_token_and_no_invitation_code(mocker):
@@ -128,16 +128,16 @@ def test_authenticated_token_success(mocker):
     access_token = "fake_token"
     invitation_code = "fake_code"
     mocker.patch(
-        "reflex.utils.hosting.get_existing_access_token",
+        "nextpy.utils.hosting.get_existing_access_token",
         return_value=(access_token, invitation_code),
     )
-    mocker.patch("reflex.utils.hosting.validate_token_with_retries", return_value=True)
+    mocker.patch("nextpy.utils.hosting.validate_token_with_retries", return_value=True)
     assert hosting.authenticated_token() == (access_token, invitation_code)
 
 
 def test_no_authenticated_token(mocker):
     mocker.patch(
-        "reflex.utils.hosting.get_existing_access_token",
+        "nextpy.utils.hosting.get_existing_access_token",
         return_value=("", "code-does-not-matter"),
     )
     assert hosting.authenticated_token()[0] == ""
@@ -145,15 +145,15 @@ def test_no_authenticated_token(mocker):
 
 def test_maybe_authenticated_token_is_invalid(mocker):
     mocker.patch(
-        "reflex.utils.hosting.get_existing_access_token",
+        "nextpy.utils.hosting.get_existing_access_token",
         return_value=("invalid_token", "fake_code"),
     )
-    mocker.patch("reflex.utils.hosting.validate_token_with_retries", return_value=False)
+    mocker.patch("nextpy.utils.hosting.validate_token_with_retries", return_value=False)
     assert hosting.authenticated_token()[0] == ""
 
 
 def test_prepare_deploy_not_authenticated(mocker):
-    mocker.patch("reflex.utils.hosting.requires_authenticated", return_value=None)
+    mocker.patch("nextpy.utils.hosting.requires_authenticated", return_value=None)
     with pytest.raises(Exception) as ex:
         hosting.prepare_deploy("fake-app")
         assert ex.value == "Not authenticated"
@@ -161,7 +161,7 @@ def test_prepare_deploy_not_authenticated(mocker):
 
 def test_server_unable_to_prepare_deploy(mocker):
     mocker.patch(
-        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+        "nextpy.utils.hosting.requires_authenticated", return_value="fake_token"
     )
     mocker.patch("httpx.post", return_value=httpx.Response(500))
     with pytest.raises(Exception):
@@ -170,7 +170,7 @@ def test_server_unable_to_prepare_deploy(mocker):
 
 def test_prepare_deploy_success(mocker):
     mocker.patch(
-        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+        "nextpy.utils.hosting.requires_authenticated", return_value="fake_token"
     )
     mocker.patch(
         "httpx.post",
@@ -194,7 +194,7 @@ def test_prepare_deploy_success(mocker):
 
 def test_deploy(mocker):
     mocker.patch(
-        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+        "nextpy.utils.hosting.requires_access_token", return_value="fake_token"
     )
     mocker.patch("builtins.open")
     mocker.patch(
@@ -219,9 +219,9 @@ def test_deploy(mocker):
 
 def test_validate_token_with_retries_failed(mocker):
     mock_validate_token = mocker.patch(
-        "reflex.utils.hosting.validate_token", side_effect=Exception
+        "nextpy.utils.hosting.validate_token", side_effect=Exception
     )
-    mock_delete_token = mocker.patch("reflex.utils.hosting.delete_token_from_config")
+    mock_delete_token = mocker.patch("nextpy.utils.hosting.delete_token_from_config")
     mocker.patch("time.sleep")
 
     assert hosting.validate_token_with_retries("fake-token") is False
@@ -231,9 +231,9 @@ def test_validate_token_with_retries_failed(mocker):
 
 def test_validate_token_with_retries_access_denied(mocker):
     mock_validate_token = mocker.patch(
-        "reflex.utils.hosting.validate_token", side_effect=ValueError
+        "nextpy.utils.hosting.validate_token", side_effect=ValueError
     )
-    mock_delete_token = mocker.patch("reflex.utils.hosting.delete_token_from_config")
+    mock_delete_token = mocker.patch("nextpy.utils.hosting.delete_token_from_config")
     mocker.patch("time.sleep")
     assert hosting.validate_token_with_retries("fake-token") is False
     assert mock_validate_token.call_count == 1
@@ -243,9 +243,9 @@ def test_validate_token_with_retries_access_denied(mocker):
 def test_validate_token_with_retries_success(mocker):
     validate_token_returns = [Exception, Exception, None]
     mock_validate_token = mocker.patch(
-        "reflex.utils.hosting.validate_token", side_effect=validate_token_returns
+        "nextpy.utils.hosting.validate_token", side_effect=validate_token_returns
     )
-    mock_delete_token = mocker.patch("reflex.utils.hosting.delete_token_from_config")
+    mock_delete_token = mocker.patch("nextpy.utils.hosting.delete_token_from_config")
     mocker.patch("time.sleep")
 
     assert hosting.validate_token_with_retries("fake-token") is True
@@ -299,7 +299,7 @@ def test_validate_token_with_retries_success(mocker):
 def test_interactive_get_deployment_key_user_accepts_defaults(
     mocker, prepare_response, expected
 ):
-    mocker.patch("reflex.utils.console.ask", side_effect=[""])
+    mocker.patch("nextpy.utils.console.ask", side_effect=[""])
     assert (
         hosting.interactive_get_deployment_key_from_user_input(
             prepare_response, "fake-app"
@@ -309,9 +309,9 @@ def test_interactive_get_deployment_key_user_accepts_defaults(
 
 
 def test_interactive_get_deployment_key_user_input_accepted(mocker):
-    mocker.patch("reflex.utils.console.ask", side_effect=["my-site"])
+    mocker.patch("nextpy.utils.console.ask", side_effect=["my-site"])
     mocker.patch(
-        "reflex.utils.hosting.prepare_deploy",
+        "nextpy.utils.hosting.prepare_deploy",
         return_value=hosting.DeploymentPrepareResponse(
             app_prefix="fake-prefix",
             reply=hosting.DeploymentPrepInfo(
@@ -351,19 +351,19 @@ def test_process_envs():
     ],
 )
 def test_interactive_prompt_for_envs(mocker, inputs, expected):
-    mocker.patch("reflex.utils.console.ask", side_effect=inputs)
+    mocker.patch("nextpy.utils.console.ask", side_effect=inputs)
     assert hosting.interactive_prompt_for_envs() == expected
 
 
-def test_requirements_txt_only_contains_reflex(mocker):
-    mocker.patch("reflex.utils.hosting.check_requirements_txt_exist", return_value=True)
-    mocker.patch("builtins.open", mock_open(read_data="\nreflex=1.2.3\n\n"))
-    assert hosting.check_requirements_for_non_reflex_packages() is False
+def test_requirements_txt_only_contains_nextpy(mocker):
+    mocker.patch("nextpy.utils.hosting.check_requirements_txt_exist", return_value=True)
+    mocker.patch("builtins.open", mock_open(read_data="\nnextpy=1.2.3\n\n"))
+    assert hosting.check_requirements_for_non_nextpy_packages() is False
 
 
 def test_requirements_txt_only_contains_other_packages(mocker):
-    mocker.patch("reflex.utils.hosting.check_requirements_txt_exist", return_value=True)
+    mocker.patch("nextpy.utils.hosting.check_requirements_txt_exist", return_value=True)
     mocker.patch(
-        "builtins.open", mock_open(read_data="\nreflex=1.2.3\n\npynonexist=3.2.1")
+        "builtins.open", mock_open(read_data="\nnextpy=1.2.3\n\npynonexist=3.2.1")
     )
-    assert hosting.check_requirements_for_non_reflex_packages() is True
+    assert hosting.check_requirements_for_non_nextpy_packages() is True

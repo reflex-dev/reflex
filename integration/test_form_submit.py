@@ -1,4 +1,3 @@
-"""Integration tests for forms."""
 import time
 from typing import Generator
 
@@ -6,14 +5,14 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-from reflex.testing import AppHarness
+from nextpy.core.testing import AppHarness
 
 
 def FormSubmit():
     """App with a form using on_submit."""
-    import reflex as rx
+    import nextpy as xt
 
-    class FormState(rx.State):
+    class FormState(xt.State):
         form_data: dict = {}
 
         var_options: list[str] = ["option3", "option4"]
@@ -21,41 +20,41 @@ def FormSubmit():
         def form_submit(self, form_data: dict):
             self.form_data = form_data
 
-    app = rx.App(state=FormState)
+    app = xt.App(state=FormState)
 
     @app.add_page
     def index():
-        return rx.vstack(
-            rx.input(
+        return xt.vstack(
+            xt.input(
                 value=FormState.router.session.client_token,
                 is_read_only=True,
                 id="token",
             ),
-            rx.form(
-                rx.vstack(
-                    rx.input(id="name_input"),
-                    rx.hstack(rx.pin_input(length=4, id="pin_input")),
-                    rx.number_input(id="number_input"),
-                    rx.checkbox(id="bool_input"),
-                    rx.switch(id="bool_input2"),
-                    rx.slider(id="slider_input"),
-                    rx.range_slider(id="range_input"),
-                    rx.radio_group(["option1", "option2"], id="radio_input"),
-                    rx.radio_group(FormState.var_options, id="radio_input_var"),
-                    rx.select(["option1", "option2"], id="select_input"),
-                    rx.select(FormState.var_options, id="select_input_var"),
-                    rx.text_area(id="text_area_input"),
-                    rx.input(
+            xt.form(
+                xt.vstack(
+                    xt.input(id="name_input"),
+                    xt.hstack(xt.pin_input(length=4, id="pin_input")),
+                    xt.number_input(id="number_input"),
+                    xt.checkbox(id="bool_input"),
+                    xt.switch(id="bool_input2"),
+                    xt.slider(id="slider_input"),
+                    xt.range_slider(id="range_input"),
+                    xt.radio_group(["option1", "option2"], id="radio_input"),
+                    xt.radio_group(FormState.var_options, id="radio_input_var"),
+                    xt.select(["option1", "option2"], id="select_input"),
+                    xt.select(FormState.var_options, id="select_input_var"),
+                    xt.text_area(id="text_area_input"),
+                    xt.input(
                         id="debounce_input",
                         debounce_timeout=0,
-                        on_change=rx.console_log,
+                        on_change=xt.console_log,
                     ),
-                    rx.button("Submit", type_="submit"),
+                    xt.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
             ),
-            rx.spacer(),
+            xt.spacer(),
             height="100vh",
         )
 

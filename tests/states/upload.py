@@ -2,13 +2,13 @@
 from pathlib import Path
 from typing import ClassVar, List
 
-import reflex as rx
+import nextpy as xt
 
 
-class UploadState(rx.State):
+class UploadState(xt.State):
     """The base state for uploading a file."""
 
-    async def handle_upload1(self, files: List[rx.UploadFile]):
+    async def handle_upload1(self, files: List[xt.UploadFile]):
         """Handle the upload of a file.
 
         Args:
@@ -17,7 +17,7 @@ class UploadState(rx.State):
         pass
 
 
-class BaseState(rx.State):
+class BaseState(xt.State):
     """The test base state."""
 
     pass
@@ -28,7 +28,7 @@ class SubUploadState(BaseState):
 
     img: str
 
-    async def handle_upload(self, files: List[rx.UploadFile]):
+    async def handle_upload(self, files: List[xt.UploadFile]):
         """Handle the upload of a file.
 
         Args:
@@ -37,7 +37,7 @@ class SubUploadState(BaseState):
         pass
 
 
-class FileUploadState(rx.State):
+class FileUploadState(xt.State):
     """The base state for uploading a file."""
 
     img_list: List[str]
@@ -60,7 +60,7 @@ class FileUploadState(rx.State):
             # Update the img var.
             self.img_list.append(file.filename)
 
-    async def multi_handle_upload(self, files: List[rx.UploadFile]):
+    async def multi_handle_upload(self, files: List[xt.UploadFile]):
         """Handle the upload of a file.
 
         Args:
@@ -79,7 +79,7 @@ class FileUploadState(rx.State):
             self.img_list.append(file.filename)
 
 
-class FileStateBase1(rx.State):
+class FileStateBase1(xt.State):
     """The base state for a child FileUploadState."""
 
     pass
@@ -108,7 +108,7 @@ class ChildFileUploadState(FileStateBase1):
             # Update the img var.
             self.img_list.append(file.filename)
 
-    async def multi_handle_upload(self, files: List[rx.UploadFile]):
+    async def multi_handle_upload(self, files: List[xt.UploadFile]):
         """Handle the upload of a file.
 
         Args:
@@ -156,7 +156,7 @@ class GrandChildFileUploadState(FileStateBase2):
             # Update the img var.
             self.img_list.append(file.filename)
 
-    async def multi_handle_upload(self, files: List[rx.UploadFile]):
+    async def multi_handle_upload(self, files: List[xt.UploadFile]):
         """Handle the upload of a file.
 
         Args:

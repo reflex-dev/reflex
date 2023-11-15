@@ -1,0 +1,131 @@
+{# ==============================
+    OVERVIEW: Context Management for Nextpy Web Apps
+============================== #}
+{# 
+This Jinja2 template is responsible for generating context-based JavaScript code
+for Nextpy web applications. It dynamically defines initial states,
+contexts, and event-related functionalities based on provided context data.
+
+Concepts:
+- Context: In React, a context provides a way to share values (like state or functions) between components without having to explicitly pass them as props.
+- State: Represents data that might change over time and affect the app's behavior or UI.
+
+#}
+import { createContext, useState } from "react"
+import { Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
+
+{# ==============================
+     INITIAL STATE DEFINITION
+============================== #}
+{# 
+Purpose:
+- Define the initial state of the app based on context data.
+
+Parameters: 
+- 'initial_state': The starting state data for the app, if provided.
+
+Note: 
+- State is essential for dynamic web applications as it allows for reactive updates in response to user interactions or other events.
+#}
+{% if initial_state %}
+export const initialState = {{ initial_state|json_dumps }}
+{% else %}
+export const initialState = {}
+{% endif %}
+
+{# ==============================
+     CONTEXT CREATION
+============================== #}
+{# 
+Purpose:
+- Create contexts to hold various aspects of the app, such as color modes, state, and events.
+
+Note:
+- Contexts can be seen as global variables for React components, allowing them to share data without prop drilling.
+#}
+export const ColorModeContext = createContext(null);
+export const StateContext = createContext(null);
+export const EventLoopContext = createContext(null);
+
+{# ==============================
+     CLIENT STORAGE DEFINITION
+============================== #}
+{# 
+Purpose:
+- Define client storage mechanisms based on provided context.
+
+Parameters: 
+- 'client_storage': Details about client-side storage mechanisms, if provided.
+
+Note:
+- Client storage refers to mechanisms (like cookies or localStorage) that allow web apps to store data on the user's browser for persistence.
+#}
+{% if client_storage %}
+export const clientStorage = {{ client_storage|json_dumps }}
+{% else %}
+export const clientStorage = {}
+{% endif %}
+
+{# ==============================
+     INITIAL EVENTS DEFINITION
+============================== #}
+{# 
+Purpose:
+- Define initial events for the app based on provided state name.
+
+Parameters: 
+- 'state_name': Name of the state for which events are to be defined.
+
+Note:
+- Events are actions or occurrences that can be detected and handled by the application.
+#}
+{% if state_name %}
+export const initialEvents = () => [
+    Event('{{state_name}}.{{const.hydrate}}', hydrateClientStorage(clientStorage)),
+]
+{% else %}
+export const initialEvents = () => []
+{% endif %}
+
+{# ==============================
+     DEVELOPMENT MODE FLAG
+============================== #}
+{# 
+Purpose:
+- Define a flag indicating whether the app is in development mode.
+
+Parameters: 
+- 'is_dev_mode': Boolean indicating development mode status.
+
+Note:
+- Development mode typically provides more verbose error messages and debugging capabilities but might be less optimized than production mode.
+#}
+export const isDevMode = {{ is_dev_mode|json_dumps }}
+
+{# ==============================
+     EVENT LOOP CONTEXT PROVIDER
+============================== #}
+{# 
+Purpose:
+- A React component to provide the event loop context to its children.
+
+Parameters: 
+- 'children': Child components that will have access to the event loop context.
+
+Note:
+- The context provider wraps child components, allowing them to access the provided context without being passed it directly as a prop.
+#}
+export function EventLoopProvider({ children }) {
+  const [state, addEvents, connectError] = useEventLoop(
+    initialState,
+    initialEvents,
+    clientStorage,
+  )
+  return (
+    <EventLoopContext.Provider value={[addEvents, connectError]}>
+      <StateContext.Provider value={state}>
+        {children}
+      </StateContext.Provider>
+    </EventLoopContext.Provider>
+  )
+}

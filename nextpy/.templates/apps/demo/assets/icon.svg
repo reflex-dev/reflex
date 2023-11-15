@@ -1,0 +1,37 @@
+<svg width="67" height="14" viewBox="0 0 67 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="67" height="14" fill="#1E1E1E"/>
+<g id="Nav Template &#62; Initial" clip-path="url(#clip0_0_1)">
+<rect width="1440" height="1024" transform="translate(-16 -17)" fill="white"/>
+<g id="Sidebar">
+<g clip-path="url(#clip1_0_1)">
+<path d="M-16 -17H264V1007H-16V-17Z" fill="white"/>
+<g id="Header">
+<path d="M-16 -17H264V31H-16V-17Z" fill="white"/>
+<g id="Button">
+<rect x="-4" y="-3" width="74.316" height="20" rx="6" fill="white"/>
+<g id="Logo">
+<g id="nextpy">
+<path d="M0 13.6316V0.368408H10.6106V5.67369H7.95792V3.02105H2.65264V5.67369H7.95792V8.32633H2.65264V13.6316H0ZM7.95792 13.6316V8.32633H10.6106V13.6316H7.95792Z" fill="#110F1F"/>
+<path d="M13.2632 13.6316V0.368408H21.2211V3.02105H15.9158V5.67369H21.2211V8.32633H15.9158V10.979H21.2211V13.6316H13.2632Z" fill="#110F1F"/>
+<path d="M23.8738 13.6316V0.368408H31.8317V3.02105H26.5264V5.67369H31.8317V8.32633H26.5264V13.6316H23.8738Z" fill="#110F1F"/>
+<path d="M34.4843 13.6316V0.368408H37.137V10.979H42.4422V13.6316H34.4843Z" fill="#110F1F"/>
+<path d="M45.0949 13.6316V0.368408H53.0528V3.02105H47.7475V5.67369H53.0528V8.32633H47.7475V10.979H53.0528V13.6316H45.0949Z" fill="#110F1F"/>
+<path d="M55.7054 5.67369V0.368408H58.3581V5.67369H55.7054ZM63.6634 5.67369V0.368408H66.316V5.67369H63.6634ZM58.3581 8.32633V5.67369H63.6634V8.32633H58.3581ZM55.7054 13.6316V8.32633H58.3581V13.6316H55.7054ZM63.6634 13.6316V8.32633H66.316V13.6316H63.6634Z" fill="#110F1F"/>
+</g>
+</g>
+</g>
+<path d="M264 30.5H-16V31.5H264V30.5Z" fill="#F4F3F6"/>
+</g>
+</g>
+<path d="M263.5 -17V1007H264.5V-17H263.5Z" fill="#F4F3F6"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_1">
+<rect width="1440" height="1024" fill="white" transform="translate(-16 -17)"/>
+</clipPath>
+<clipPath id="clip1_0_1">
+<path d="M-16 -17H264V1007H-16V-17Z" fill="white"/>
+</clipPath>
+</defs>
+</svg>

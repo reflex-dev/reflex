@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from reflex.testing import AppHarness, AppHarnessProd
+from nextpy.core.testing import AppHarness, AppHarnessProd
 
 DISPLAY = None
 XVFB_DIMENSIONS = (800, 600)

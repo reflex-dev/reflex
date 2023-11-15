@@ -2,13 +2,13 @@ from unittest.mock import mock_open
 
 import pytest
 
-from reflex import constants
-from reflex.config import Config
-from reflex.utils.prerequisites import initialize_requirements_txt, update_next_config
+from nextpy import constants
+from nextpy.core.config import Config
+from nextpy.utils.prerequisites import initialize_requirements_txt, update_next_config
 
 
 @pytest.mark.parametrize(
-    "template_next_config, reflex_config, expected_next_config",
+    "template_next_config, nextpy_config, expected_next_config",
     [
         (
             """
@@ -100,25 +100,24 @@ from reflex.utils.prerequisites import initialize_requirements_txt, update_next_
         ),
     ],
 )
-def test_update_next_config(template_next_config, reflex_config, expected_next_config):
+def test_update_next_config(template_next_config, nextpy_config, expected_next_config):
     assert (
-        update_next_config(template_next_config, reflex_config) == expected_next_config
+        update_next_config(template_next_config, nextpy_config) == expected_next_config
     )
 
 
 def test_initialize_requirements_txt(mocker):
-    # File exists, reflex is included, do nothing
+    # File exists, nextpy is included, do nothing
     mocker.patch("os.path.exists", return_value=True)
-    open_mock = mock_open(read_data="reflex==0.2.9")
+    open_mock = mock_open(read_data="nextpy==0.2.0")
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
     assert open_mock.call_count == 1
     assert open_mock().write.call_count == 0
 
 
-def test_initialize_requirements_txt_missing_reflex(mocker):
-    # File exists, reflex is not included, add reflex
-    open_mock = mock_open(read_data="random-package=1.2.3")
+def test_initialize_requirements_txt_missing_nextpy(mocker):
+    # File exists, nextpy is not included, add nextpy    open_mock = mock_open(read_data="random-package=1.2.3")
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
     # Currently open for read, then open for append
@@ -126,13 +125,12 @@ def test_initialize_requirements_txt_missing_reflex(mocker):
     assert open_mock().write.call_count == 1
     assert (
         open_mock().write.call_args[0][0]
-        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Nextpy.VERSION}\n"
     )
 
 
 def test_initialize_requirements_txt_not_exist(mocker):
-    # File does not exist, create file with reflex
-    mocker.patch("os.path.exists", return_value=False)
+    # File does not exist, create file with nextpy    mocker.patch("os.path.exists", return_value=False)
     open_mock = mock_open()
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
@@ -140,5 +138,5 @@ def test_initialize_requirements_txt_not_exist(mocker):
     assert open_mock().write.call_count == 1
     assert (
         open_mock().write.call_args[0][0]
-        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+        == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Nextpy.VERSION}\n"
     )
