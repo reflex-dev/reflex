@@ -142,6 +142,8 @@ def save_token_to_config(token: str, code: str | None = None):
     if code:
         hosting_config["code"] = code
     try:
+        if not os.path.exists(constants.Reflex.DIR):
+            os.makedirs(constants.Reflex.DIR)
         with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
