@@ -35,6 +35,9 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
 
+# This module used to export ImportVar itself, so we still import it for export here
+from reflex.utils.imports import ImportVar as ImportVar
+
 if TYPE_CHECKING:
     from reflex.state import State
 
