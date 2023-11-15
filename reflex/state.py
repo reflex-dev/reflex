@@ -215,8 +215,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # The router data for the current page
     router: RouterData = RouterData()
 
-    # The hydrated bool.
-    is_hydrated: bool = False
 
     def __init__(self, *args, parent_state: BaseState | None = None, **kwargs):
         """Initialize the state.
@@ -1301,6 +1299,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 class State(BaseState):
     """The app Base State."""
 
+    # The hydrated bool.
     is_hydrated: bool = False
 
 
