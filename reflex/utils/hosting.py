@@ -467,6 +467,7 @@ def deploy(
                 headers=authorization_header(token),
                 data=params.dict(exclude_none=True),
                 files=files,
+                timeout=HTTP_REQUEST_TIMEOUT,
             )
         # If the server explicitly states bad request,
         # display a different error
