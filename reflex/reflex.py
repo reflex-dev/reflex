@@ -316,7 +316,7 @@ def export(
 @cli.command()
 def login(
     loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.DEBUG, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
 ):
     """Authenticate with Reflex hosting service."""
@@ -343,7 +343,7 @@ def login(
 @cli.command()
 def logout(
     loglevel: constants.LogLevel = typer.Option(
-        constants.LogLevel.DEBUG, help="The log level to use."
+        config.loglevel, help="The log level to use."
     ),
 ):
     """Log out of access to Reflex hosting service."""
