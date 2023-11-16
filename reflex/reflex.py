@@ -14,7 +14,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-import httpx
 import typer
 import typer.core
 from alembic.util.exc import CommandError
@@ -256,47 +255,6 @@ def run(
 ):
     """Run the app in the current directory."""
     _run(env, frontend, backend, frontend_port, backend_port, backend_host, loglevel)
-
-
-@cli.command()
-def deploy_legacy(
-    dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
-    loglevel: constants.LogLevel = typer.Option(
-        console._LOG_LEVEL, help="The log level to use."
-    ),
-):
-    """Deploy the app to the Reflex hosting service."""
-    # Set the log level.
-    console.set_log_level(loglevel)
-
-    # Show system info
-    exec.output_system_info()
-
-    # Check if the deploy url is set.
-    if config.rxdeploy_url is None:
-        console.info("This feature is coming soon!")
-        return
-
-    # Compile the app in production mode.
-    export(loglevel=loglevel)
-
-    # Exit early if this is a dry run.
-    if dry_run:
-        return
-
-    # Deploy the app.
-    data = {"userId": config.username, "projectId": config.app_name}
-    original_response = httpx.get(config.rxdeploy_url, params=data)
-    response = original_response.json()
-    frontend = response["frontend_resources_url"]
-    backend = response["backend_resources_url"]
-
-    # Upload the frontend and backend.
-    with open(constants.ComponentName.FRONTEND.zip(), "rb") as f:
-        httpx.put(frontend, data=f)  # type: ignore
-
-    with open(constants.ComponentName.BACKEND.zip(), "rb") as f:
-        httpx.put(backend, data=f)  # type: ignore
 
 
 @cli.command()
@@ -569,7 +527,7 @@ def deploy(
             enabled_regions = pre_deploy_response.enabled_regions
 
     except Exception as ex:
-        console.error(f"Unable to prepare deployment")
+        console.error(f"Unable to prepare deployment due to: {ex}")
         raise typer.Exit(1) from ex
 
     # The app prefix should not change during the time of preparation

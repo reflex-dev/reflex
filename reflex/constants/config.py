@@ -47,7 +47,7 @@ class RequirementsTxt(SimpleNamespace):
     # The requirements.txt file.
     FILE = "requirements.txt"
     # The partial text used to form requirement that pins a reflex version
-    DEFAULTS_STUB = f"{Reflex.MODULE_NAME}=="
+    DEFAULTS_STUB = f"{Reflex.MODULE_NAME}>="
 
 
 # The deployment URL.
