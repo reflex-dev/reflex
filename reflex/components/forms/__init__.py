@@ -50,18 +50,18 @@ from .upload import (
     Upload,
     cancel_upload,
     clear_selected_files,
-    clear_selected_files_for,
+    get_clear_selected_files,
+    get_selected_files,
     selected_files,
-    selected_files_for,
 )
 
 helpers = [
     "color_mode_cond",
     "cancel_upload",
     "clear_selected_files",
-    "clear_selected_files_for",
+    "get_clear_selected_files",
+    "get_selected_files",
     "selected_files",
-    "selected_files_for",
 ]
 
 __all__ = [f for f in dir() if f[0].isupper()] + helpers  # type: ignore

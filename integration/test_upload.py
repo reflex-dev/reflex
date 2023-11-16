@@ -90,14 +90,14 @@ def UploadFile():
             ),
             rx.box(
                 rx.foreach(
-                    rx.selected_files_for("secondary"),
+                    rx.get_selected_files("secondary"),
                     lambda f: rx.text(f),
                 ),
                 id="selected_files_secondary",
             ),
             rx.button(
                 "Clear",
-                on_click=rx.clear_selected_files_for("secondary"),
+                on_click=rx.get_clear_selected_files("secondary"),
                 id="clear_button_secondary",
             ),
             rx.vstack(

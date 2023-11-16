@@ -229,9 +229,12 @@ _ALL_COMPONENTS = [
 
 _ALL_COMPONENTS += [to_snake_case(component) for component in _ALL_COMPONENTS]
 _ALL_COMPONENTS += [
+    "cancel_upload",
     "components",
     "color_mode_cond",
     "desktop_only",
+    "get_clear_selected_files",
+    "get_selected_files",
     "mobile_only",
     "tablet_only",
     "mobile_and_tablet",

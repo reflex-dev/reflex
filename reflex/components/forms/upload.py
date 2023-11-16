@@ -14,7 +14,7 @@ from reflex.vars import BaseVar, ImportVar, Var
 DEFAULT_UPLOAD_ID: str = "default"
 
 
-def upload_file_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+def get_upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     """Get the file upload drop trigger.
 
     This var is passed to the dropzone component to update the file list when a
@@ -32,10 +32,10 @@ def upload_file_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     )
 
 
-upload_file: BaseVar = upload_file_for()
+upload_file: BaseVar = get_upload_file()
 
 
-def selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+def get_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     """Get the list of selected files.
 
     Args:
@@ -51,10 +51,10 @@ def selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
 
 
 # Use this var along with the Upload component to render the list of selected files.
-selected_files: BaseVar = selected_files_for()
+selected_files: BaseVar = get_selected_files()
 
 
-def clear_selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
+def get_clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     """Clear the list of selected files.
 
     Args:
@@ -66,7 +66,7 @@ def clear_selected_files_for(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     return call_script(f"upload_files.{id_}[1]((files) => [])")
 
 
-clear_selected_files: EventSpec = clear_selected_files_for()
+clear_selected_files: EventSpec = get_clear_selected_files()
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
@@ -152,7 +152,7 @@ class Upload(Component):
         # Create the component.
         upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
         return super().create(
-            zone, on_drop=upload_file_for(upload_props["id"]), **upload_props
+            zone, on_drop=get_upload_file(upload_props["id"]), **upload_props
         )
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
