@@ -8,17 +8,23 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Optional, Union
+from reflex import constants
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
-from reflex.constants import EventTriggers
-from reflex.event import EventChain
-from reflex.vars import BaseVar, Var
+from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
+from reflex.utils import imports
+from reflex.vars import BaseVar, CallableVar, ImportVar, Var
 
-files_state: str
-upload_file: BaseVar
-selected_files: BaseVar
-clear_selected_files: BaseVar
+DEFAULT_UPLOAD_ID: str
+
+@CallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
+@CallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
+@CallableEventSpec
+def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
+def cancel_upload(upload_id: str) -> EventSpec: ...
 
 class Upload(Component):
     @overload
