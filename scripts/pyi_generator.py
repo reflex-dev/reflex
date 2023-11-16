@@ -447,9 +447,7 @@ class StubGenerator(ast.NodeTransformer):
         self.current_class = node.name
         self._remove_docstring(node)
         self.generic_visit(node)  # Visit child nodes.
-        if not node.body:
-            # We should never return an empty body.
-            node.body.append(ast.Expr(value=ast.Ellipsis()))
+
         if (
             not any(
                 isinstance(child, ast.FunctionDef) and child.name == "create"
@@ -465,6 +463,9 @@ class StubGenerator(ast.NodeTransformer):
                     type_hint_globals=self.type_hint_globals,
                 )
             )
+        if not node.body:
+            # We should never return an empty body.
+            node.body.append(ast.Expr(value=ast.Ellipsis()))
         self.current_class = None
         return node
 
@@ -564,6 +565,8 @@ class PyiGenerator:
             # Bit of a hack here, since the AST cannot represent comments.
             if formatted_line == "    def create(":
                 pyi_content.append("    def create(  # type: ignore")
+            elif "Figure" in formatted_line:
+                pyi_content.append(formatted_line + "  # type: ignore")
             else:
                 pyi_content.append(formatted_line)
         pyi_content.append("")  # add empty line at the end for formatting
@@ -621,6 +624,7 @@ def generate_init():
         f"from {path if mod != path.rsplit('.')[-1] or mod == 'page' else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
         for mod, path in _MAPPING.items()
     ]
+    imports.append("")
 
     with open("reflex/__init__.pyi", "w") as pyi_file:
         pyi_file.writelines("\n".join(imports))
