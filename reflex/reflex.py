@@ -1,5 +1,7 @@
 """Reflex CLI to create, run, and deploy apps."""
 
+from __future__ import annotations
+
 import asyncio
 import atexit
 import json
@@ -12,8 +14,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-import httpx
 import typer
+import typer.core
 from alembic.util.exc import CommandError
 from tabulate import tabulate
 
@@ -30,8 +32,15 @@ from reflex.utils import (
     telemetry,
 )
 
+# Disable typer+rich integration for help panels
+typer.core.rich = False  # type: ignore
+
 # Create the app.
-cli = typer.Typer(add_completion=False)
+try:
+    cli = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+except TypeError:
+    # Fallback for older typer versions.
+    cli = typer.Typer(add_completion=False)
 
 # Get the config.
 config = get_config()
@@ -68,8 +77,8 @@ def main(
 
 def _init(
     name: str,
-    template: constants.Templates.Kind,
-    loglevel: constants.LogLevel,
+    template: constants.Templates.Kind | None = constants.Templates.Kind.BLANK,
+    loglevel: constants.LogLevel = config.loglevel,
 ):
     """Initialize a new Reflex app in the given directory."""
     # Set the log level.
@@ -90,6 +99,8 @@ def _init(
 
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
+        if template is None:
+            template = prerequisites.prompt_for_template()
         prerequisites.create_config(app_name)
         prerequisites.initialize_app_directory(app_name, template)
         telemetry.send("init")
@@ -112,7 +123,7 @@ def init(
         None, metavar="APP_NAME", help="The name of the app to initialize."
     ),
     template: constants.Templates.Kind = typer.Option(
-        constants.Templates.Kind.BASE.value,
+        None,
         help="The template to initialize the app with.",
     ),
     loglevel: constants.LogLevel = typer.Option(
@@ -172,6 +183,7 @@ def _run(
     console.rule("[bold]Starting Reflex App")
 
     if frontend:
+        prerequisites.update_next_config()
         # Get the app module.
         prerequisites.get_app()
 
@@ -246,47 +258,6 @@ def run(
 
 
 @cli.command()
-def deploy_legacy(
-    dry_run: bool = typer.Option(False, help="Whether to run a dry run."),
-    loglevel: constants.LogLevel = typer.Option(
-        console._LOG_LEVEL, help="The log level to use."
-    ),
-):
-    """Deploy the app to the Reflex hosting service."""
-    # Set the log level.
-    console.set_log_level(loglevel)
-
-    # Show system info
-    exec.output_system_info()
-
-    # Check if the deploy url is set.
-    if config.rxdeploy_url is None:
-        console.info("This feature is coming soon!")
-        return
-
-    # Compile the app in production mode.
-    export(loglevel=loglevel)
-
-    # Exit early if this is a dry run.
-    if dry_run:
-        return
-
-    # Deploy the app.
-    data = {"userId": config.username, "projectId": config.app_name}
-    original_response = httpx.get(config.rxdeploy_url, params=data)
-    response = original_response.json()
-    frontend = response["frontend_resources_url"]
-    backend = response["backend_resources_url"]
-
-    # Upload the frontend and backend.
-    with open(constants.ComponentName.FRONTEND.zip(), "rb") as f:
-        httpx.put(frontend, data=f)  # type: ignore
-
-    with open(constants.ComponentName.BACKEND.zip(), "rb") as f:
-        httpx.put(backend, data=f)  # type: ignore
-
-
-@cli.command()
 def export(
     zipping: bool = typer.Option(
         True, "--no-zip", help="Disable zip for backend and frontend exports."
@@ -325,6 +296,8 @@ def export(
     console.rule("[bold]Compiling production app and preparing for export.")
 
     if frontend:
+        # Update some parameters for export
+        prerequisites.update_next_config(export=True)
         # Ensure module can be imported and app.compile() is called.
         prerequisites.get_app()
         # Set up .web directory and install frontend dependencies.
@@ -452,7 +425,10 @@ def makemigrations(
 @cli.command()
 def deploy(
     key: Optional[str] = typer.Option(
-        None, "-k", "--deployment-key", help="The name of the deployment."
+        None,
+        "-k",
+        "--deployment-key",
+        help="The name of the deployment. Domain name safe characters only.",
     ),
     app_name: str = typer.Option(
         config.app_name,
@@ -531,6 +507,12 @@ def deploy(
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
     enabled_regions = None
+    # If there is already a key, then it is passed in from CLI option in the non-interactive mode
+    if key is not None and not hosting.is_valid_deployment_key(key):
+        console.error(
+            f"Deployment key {key} is not valid. Please use only domain name safe characters."
+        )
+        raise typer.Exit(1)
     try:
         # Send a request to server to obtain necessary information
         # in preparation of a deployment. For example,
@@ -545,7 +527,7 @@ def deploy(
             enabled_regions = pre_deploy_response.enabled_regions
 
     except Exception as ex:
-        console.error(f"Unable to prepare deployment")
+        console.error(f"Unable to prepare deployment due to: {ex}")
         raise typer.Exit(1) from ex
 
     # The app prefix should not change during the time of preparation
@@ -669,10 +651,14 @@ def deploy(
 
     console.print("Waiting for server to report progress ...")
     # Display the key events such as build, deploy, etc
-    server_report_deploy_success = asyncio.get_event_loop().run_until_complete(
-        hosting.display_deploy_milestones(key, from_iso_timestamp=deploy_requested_at)
+    server_report_deploy_success = hosting.poll_deploy_milestones(
+        key, from_iso_timestamp=deploy_requested_at
     )
-    if not server_report_deploy_success:
+
+    if server_report_deploy_success is None:
+        console.warn("Hosting server timed out.")
+        console.warn("The deployment may still be in progress. Proceeding ...")
+    elif not server_report_deploy_success:
         console.error("Hosting server reports failure.")
         console.error(
             f"Check the server logs using `reflex deployments build-logs {key}`"
@@ -797,7 +783,7 @@ def get_deployment_status(
         status = hosting.get_deployment_status(key)
 
         # TODO: refactor all these tabulate calls
-        status.backend.updated_at = hosting.convert_to_local_time(
+        status.backend.updated_at = hosting.convert_to_local_time_str(
             status.backend.updated_at or "N/A"
         )
         backend_status = status.backend.dict(exclude_none=True)
@@ -806,7 +792,7 @@ def get_deployment_status(
         console.print(tabulate([table], headers=headers))
         # Add a new line in console
         console.print("\n")
-        status.frontend.updated_at = hosting.convert_to_local_time(
+        status.frontend.updated_at = hosting.convert_to_local_time_str(
             status.frontend.updated_at or "N/A"
         )
         frontend_status = status.frontend.dict(exclude_none=True)

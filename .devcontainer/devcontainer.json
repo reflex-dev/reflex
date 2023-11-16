@@ -1,0 +1,14 @@
+{
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
+	"postCreateCommand": "/bin/bash -c 'python -m pip install poetry && python -m poetry install & git clone https://github.com/reflex-dev/reflex-examples; wait'",
+	"forwardPorts": [3000, 8000],
+	"portsAttributes": {
+		"3000": {
+			"label": "Frontend",
+			"onAutoForward": "notify"
+		},
+		"8000": {
+			"label": "Backend"
+		}
+	}
+}

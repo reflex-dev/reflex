@@ -95,8 +95,8 @@ class PackageJson(SimpleNamespace):
         """The commands to define in package.json."""
 
         DEV = "next dev"
-        EXPORT = "next build && next export -o _static"
-        EXPORT_SITEMAP = "next build && next-sitemap && next export -o _static"
+        EXPORT = "next build"
+        EXPORT_SITEMAP = "next build && next-sitemap"
         PROD = "next start"
 
     PATH = os.path.join(Dirs.WEB, "package.json")
@@ -106,7 +106,7 @@ class PackageJson(SimpleNamespace):
         "focus-visible": "5.2.0",
         "framer-motion": "10.16.4",
         "json5": "2.2.3",
-        "next": "13.5.4",
+        "next": "14.0.1",
         "next-sitemap": "4.1.8",
         "next-themes": "0.2.0",
         "react": "18.2.0",
@@ -116,5 +116,5 @@ class PackageJson(SimpleNamespace):
     }
     DEV_DEPENDENCIES = {
         "autoprefixer": "10.4.14",
-        "postcss": "8.4.24",
+        "postcss": "8.4.31",
     }

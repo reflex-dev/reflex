@@ -61,6 +61,7 @@ def test_deploy_required_args_missing(args):
 @pytest.fixture
 def setup_env_authentication(mocker):
     mocker.patch("reflex.utils.prerequisites.check_initialized")
+    mocker.patch("reflex.utils.dependency.check_requirements")
     mocker.patch("reflex.utils.hosting.authenticated_token", return_value="fake-token")
     mocker.patch("time.sleep")
 
@@ -118,7 +119,7 @@ def test_deploy_non_interactive_success(
         ),
     )
     mocker.patch("reflex.utils.hosting.wait_for_server_to_pick_up_request")
-    mocker.patch("reflex.utils.hosting.display_deploy_milestones")
+    mocker.patch("reflex.utils.hosting.poll_deploy_milestones")
     mocker.patch("reflex.utils.hosting.poll_backend", return_value=True)
     mocker.patch("reflex.utils.hosting.poll_frontend", return_value=True)
     # TODO: typer option default not working in test for app name
@@ -351,7 +352,7 @@ def test_deploy_interactive(
         ),
     )
     mocker.patch("reflex.utils.hosting.wait_for_server_to_pick_up_request")
-    mocker.patch("reflex.utils.hosting.display_deploy_milestones")
+    mocker.patch("reflex.utils.hosting.poll_deploy_milestones")
     mocker.patch("reflex.utils.hosting.poll_backend", return_value=True)
     mocker.patch("reflex.utils.hosting.poll_frontend", return_value=True)
 

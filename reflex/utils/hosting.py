@@ -9,7 +9,7 @@ import re
 import time
 import uuid
 import webbrowser
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -41,12 +41,14 @@ GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 GET_REGIONS_ENDPOINT = f"{config.cp_backend_url}/deployments/regions"
 # Websocket endpoint to stream logs of a deployment
 DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
+# The HTTP endpoint to fetch logs of a deployment
+POST_DEPLOYMENT_LOGS_ENDPOINT = f"{config.cp_backend_url}/deployments/logs"
 # Expected server response time to new deployment request. In seconds.
 DEPLOYMENT_PICKUP_DELAY = 30
 # End of deployment workflow message. Used to determine if it is the last message from server.
 END_OF_DEPLOYMENT_MESSAGES = ["deploy success"]
 # How many iterations to try and print the deployment event messages from server during deployment.
-DEPLOYMENT_EVENT_MESSAGES_RETRIES = 90
+DEPLOYMENT_EVENT_MESSAGES_RETRIES = 120
 # Timeout limit for http requests
 HTTP_REQUEST_TIMEOUT = 60  # seconds
 
@@ -140,12 +142,29 @@ def save_token_to_config(token: str, code: str | None = None):
     if code:
         hosting_config["code"] = code
     try:
+        if not os.path.exists(constants.Reflex.DIR):
+            os.makedirs(constants.Reflex.DIR)
         with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
         console.warn(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
+
+
+def requires_access_token() -> str:
+    """Fetch the access token from the existing config if applicable.
+
+    Returns:
+        The access token. If not found, return empty string for it instead.
+    """
+    # Check if the user is authenticated
+
+    access_token, _ = get_existing_access_token()
+    if not access_token:
+        console.debug("No access token found from the existing config.")
+
+    return access_token
 
 
 def authenticated_token() -> tuple[str, str]:
@@ -307,22 +326,22 @@ def prepare_deploy(
             enabled_regions=response_json.get("enabled_regions"),
         )
     except httpx.RequestError as re:
-        console.error(f"Unable to prepare launch due to {re}.")
+        console.debug(f"Unable to prepare launch due to {re}.")
         raise Exception(str(re)) from re
     except httpx.HTTPError as he:
-        console.error(f"Unable to prepare deploy due to {he}.")
+        console.debug(f"Unable to prepare deploy due to {he}.")
         raise Exception(f"{he}") from he
     except json.JSONDecodeError as jde:
-        console.error(f"Server did not respond with valid json: {jde}")
+        console.debug(f"Server did not respond with valid json: {jde}")
         raise Exception("internal errors") from jde
     except (KeyError, ValidationError) as kve:
-        console.error(f"The server response format is unexpected {kve}")
+        console.debug(f"The server response format is unexpected {kve}")
         raise Exception("internal errors") from kve
     except ValueError as ve:
         # This is a recognized client error, currently indicates forbidden
         raise Exception(f"{ve}") from ve
     except Exception as ex:
-        console.error(f"Unexpected error: {ex}.")
+        console.debug(f"Unexpected error: {ex}.")
         raise Exception("internal errors") from ex
 
 
@@ -339,7 +358,7 @@ class DeploymentsPostParam(Base):
     """Params for hosted instance deployment POST request."""
 
     # Key is the name of the deployment, it becomes part of the URL
-    key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
+    key: str = Field(..., regex=r"^[a-z0-9-]+$")
     # Name of the app
     app_name: str = Field(..., min_length=1)
     # json encoded list of regions to deploy to
@@ -414,7 +433,7 @@ def deploy(
         The response containing the URL of the site to be deployed if successful, None otherwise.
     """
     # Check if the user is authenticated
-    if not (token := requires_authenticated()):
+    if not (token := requires_access_token()):
         raise Exception("not authenticated")
 
     try:
@@ -448,6 +467,7 @@ def deploy(
                 headers=authorization_header(token),
                 data=params.dict(exclude_none=True),
                 files=files,
+                timeout=HTTP_REQUEST_TIMEOUT,
             )
         # If the server explicitly states bad request,
         # display a different error
@@ -551,15 +571,15 @@ def fetch_token(request_id: str) -> tuple[str, str]:
         access_token = (resp_json := resp.json()).get("access_token", "")
         invitation_code = resp_json.get("code", "")
     except httpx.RequestError as re:
-        console.error(f"Unable to fetch token due to request error: {re}")
+        console.debug(f"Unable to fetch token due to request error: {re}")
     except httpx.HTTPError as he:
-        console.error(f"Unable to fetch token due to {he}")
+        console.debug(f"Unable to fetch token due to {he}")
     except json.JSONDecodeError as jde:
-        console.error(f"Server did not respond with valid json: {jde}")
+        console.debug(f"Server did not respond with valid json: {jde}")
     except KeyError as ke:
-        console.error(f"Server response format unexpected: {ke}")
+        console.debug(f"Server response format unexpected: {ke}")
     except Exception:
-        console.error("Unexpected errors: {ex}")
+        console.debug("Unexpected errors: {ex}")
 
     return access_token, invitation_code
 
@@ -726,7 +746,23 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
         raise Exception("internal errors") from ex
 
 
-def convert_to_local_time(iso_timestamp: str) -> str:
+def convert_to_local_time_with_tz(iso_timestamp: str) -> datetime | None:
+    """Helper function to convert the iso timestamp to local time.
+
+    Args:
+        iso_timestamp: The iso timestamp to convert.
+
+    Returns:
+        The converted timestamp with timezone.
+    """
+    try:
+        return datetime.fromisoformat(iso_timestamp).astimezone()
+    except (TypeError, ValueError) as ex:
+        console.error(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
+        return None
+
+
+def convert_to_local_time_str(iso_timestamp: str) -> str:
     """Convert the iso timestamp to local time.
 
     Args:
@@ -735,12 +771,9 @@ def convert_to_local_time(iso_timestamp: str) -> str:
     Returns:
         The converted timestamp string.
     """
-    try:
-        local_dt = datetime.fromisoformat(iso_timestamp).astimezone()
-        return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
-    except Exception as ex:
-        console.error(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
+    if (local_dt := convert_to_local_time_with_tz(iso_timestamp)) is None:
         return iso_timestamp
+    return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
 
 
 class LogType(str, enum.Enum):
@@ -798,7 +831,7 @@ async def get_logs(
                         if v is None:
                             row_to_print[k] = str(v)
                         elif k == "timestamp":
-                            row_to_print[k] = convert_to_local_time(v)
+                            row_to_print[k] = convert_to_local_time_str(v)
                         else:
                             row_to_print[k] = v
                     print(" | ".join(row_to_print.values()))
@@ -902,6 +935,18 @@ def validate_token_with_retries(access_token: str) -> bool:
     return False
 
 
+def is_valid_deployment_key(key: str):
+    """Helper function to check if the deployment key is valid. Must be a domain name safe string.
+
+    Args:
+        key: The deployment key to check.
+
+    Returns:
+        True if the key contains only domain name safe characters, False otherwise.
+    """
+    return re.match(r"^[a-zA-Z0-9-]*$", key)
+
+
 def interactive_get_deployment_key_from_user_input(
     pre_deploy_response: DeploymentPrepareResponse,
     app_name: str,
@@ -940,6 +985,18 @@ def interactive_get_deployment_key_from_user_input(
             f"Choose a name for your deployed app. Enter to use default.",
             default=key_candidate,
         ):
+            if not is_valid_deployment_key(key_input):
+                console.error(
+                    "Invalid key input, should only contain domain name safe characters: letters, digits, or hyphens."
+                )
+                continue
+
+            elif any(x.isupper() for x in key_input):
+                key_input = key_input.lower()
+                console.info(
+                    f"Domain name is case insensitive, automatically converting to all lower cases: {key_input}"
+                )
+
             try:
                 pre_deploy_response = prepare_deploy(
                     app_name,
@@ -1006,6 +1063,78 @@ def log_out_on_browser():
         )
 
 
+def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool | None:
+    """Periodically poll the hosting server for deploy milestones.
+
+    Args:
+        key: The deployment key.
+        from_iso_timestamp: The timestamp of the deployment request time, this helps with the milestone query.
+
+    Raises:
+        ValueError: If a non-empty key is not provided.
+        Exception: If the user is not authenticated.
+
+    Returns:
+        False if server reports back failure, True otherwise. None if do not receive the end of deployment message.
+    """
+    if not key:
+        raise ValueError("Non-empty key is required for querying deploy status.")
+    if not (token := requires_authenticated()):
+        raise Exception("not authenticated")
+
+    for _ in range(DEPLOYMENT_EVENT_MESSAGES_RETRIES):
+        try:
+            response = httpx.post(
+                POST_DEPLOYMENT_LOGS_ENDPOINT,
+                json={
+                    "key": key,
+                    "log_type": LogType.DEPLOY_LOG.value,
+                    "from_iso_timestamp": from_iso_timestamp.astimezone().isoformat(),
+                },
+                headers=authorization_header(token),
+            )
+            response.raise_for_status()
+            # The return is expected to be a list of dicts
+            response_json = response.json()
+            for row in response_json:
+                console.print(
+                    " | ".join(
+                        [
+                            convert_to_local_time_str(row["timestamp"]),
+                            row["message"],
+                        ]
+                    )
+                )
+                # update the from timestamp to the last timestamp of received message
+                if (
+                    maybe_timestamp := convert_to_local_time_with_tz(row["timestamp"])
+                ) is not None:
+                    console.debug(
+                        f"Updating from {from_iso_timestamp} to {maybe_timestamp}"
+                    )
+                    # Add a small delta so does not poll the same logs
+                    from_iso_timestamp = maybe_timestamp + timedelta(microseconds=1e5)
+                else:
+                    console.warn(f"Unable to parse timestamp {row['timestamp']}")
+                server_message = row["message"].lower()
+                if "fail" in server_message:
+                    console.debug(
+                        "Received failure message, stop event message streaming"
+                    )
+                    return False
+                if any(msg in server_message for msg in END_OF_DEPLOYMENT_MESSAGES):
+                    console.debug(
+                        "Received end of deployment message, stop event message streaming"
+                    )
+                    return True
+            time.sleep(1)
+        except httpx.HTTPError as he:
+            # This includes HTTP server and client error
+            console.debug(f"Unable to get more deployment events due to {he}.")
+        except Exception as ex:
+            console.warn(f"Unable to parse server response due to {ex}.")
+
+
 async def display_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
     """Display the deploy milestone messages reported back from the hosting server.
 
@@ -1039,7 +1168,7 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime) -> b
                     console.print(
                         " | ".join(
                             [
-                                convert_to_local_time(row_json["timestamp"]),
+                                convert_to_local_time_str(row_json["timestamp"]),
                                 row_json["message"],
                             ]
                         )

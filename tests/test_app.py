@@ -308,7 +308,7 @@ def test_initialize_with_custom_admin_dashboard(
 
 
 def test_initialize_admin_dashboard_with_view_overrides(test_model):
-    """Test setting the admin dashboard of an app with view class overriden.
+    """Test setting the admin dashboard of an app with view class overridden.
 
     Args:
         test_model: The default model.

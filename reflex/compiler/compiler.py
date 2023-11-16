@@ -41,6 +41,9 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="StateContext"),
         ImportVar(tag="ColorModeContext"),
     },
+    "/utils/helpers/range.js": {
+        ImportVar(tag="range", is_default=True),
+    },
     "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
 }
 

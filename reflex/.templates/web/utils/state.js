@@ -12,6 +12,9 @@ import { initialEvents } from "utils/context.js"
 const EVENTURL = env.EVENT
 const UPLOADURL = env.UPLOAD
 
+// These hostnames indicate that the backend and frontend are reachable via the same domain.
+const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"]
+
 // Global variable to hold the token.
 let token;
 
@@ -79,12 +82,13 @@ export const getToken = () => {
 export const getEventURL = () => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(EVENTURL);
-  if (endpoint.hostname === "localhost") {
-    // If the backend URL references localhost, and the frontend is not on localhost,
-    // then use the frontend host.
+  if (SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
+    // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
-    if (frontend_hostname !== "localhost") {
-      endpoint.hostname = frontend_hostname;
+    endpoint.hostname = frontend_hostname;
+    if (window.location.protocol === "https:" && endpoint.protocol === "ws:") {
+      endpoint.protocol = "wss:";
+      endpoint.port = "";  // Assume websocket is on https port via load balancer.
     }
   }
   return endpoint
@@ -176,7 +180,8 @@ export const applyEvent = async (event, socket) => {
     const a = document.createElement('a');
     a.hidden = true;
     a.href = event.payload.url;
-    a.download = event.payload.filename;
+    if (event.payload.filename)
+      a.download = event.payload.filename;
     a.click();
     a.remove();
     return false;
@@ -205,7 +210,11 @@ export const applyEvent = async (event, socket) => {
     try {
       const eval_result = eval(event.payload.javascript_code);
       if (event.payload.callback) {
-        eval(event.payload.callback)(eval_result)
+        if (!!eval_result && typeof eval_result.then === 'function') {
+          eval(event.payload.callback)(await eval_result)
+        } else {
+          eval(event.payload.callback)(eval_result)
+        }
       }
     } catch (e) {
       console.log("_call_script", e);
@@ -536,10 +545,10 @@ export const useEventLoop = (
 
   // Function to add new events to the event queue.
   const addEvents = (events, _e, event_actions) => {
-    if (event_actions?.preventDefault && _e) {
+    if (event_actions?.preventDefault && _e?.preventDefault) {
       _e.preventDefault();
     }
-    if (event_actions?.stopPropagation && _e) {
+    if (event_actions?.stopPropagation && _e?.stopPropagation) {
       _e.stopPropagation();
     }
     queueEvents(events, socket)
@@ -613,7 +622,7 @@ export const getRefValues = (refs) => {
     return;
   }
   // getAttribute is used by RangeSlider because it doesn't assign value
-  return refs.map((ref) => ref.current.value || ref.current.getAttribute("aria-valuenow"));
+  return refs.map((ref) => ref.current ? ref.current.value || ref.current.getAttribute("aria-valuenow") : null);
 }
 
 /**

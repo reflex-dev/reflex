@@ -19,6 +19,7 @@ jobs:
     strategy:
       matrix:
         state_manager: [ "redis", "memory" ]
+        python-version: ["3.11.5", "3.12.0"]
     runs-on: ubuntu-latest
     services:
       # Label used to access the service container
@@ -37,7 +38,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: ./.github/actions/setup_build_env
       with:
-          python-version: "3.11.5"
+          python-version: ${{ matrix.python-version }}
           run-poetry-install: true
           create-venv-at-path: .venv
     - run: poetry run pip install pyvirtualdisplay pillow

@@ -185,7 +185,7 @@ def run_backend_prod(
     """
     num_workers = processes.get_num_workers()
     config = get_config()
-    RUN_BACKEND_PROD = f"gunicorn --worker-class uvicorn.workers.UvicornH11Worker --preload --timeout {config.timeout} --log-level critical".split()
+    RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
     RUN_BACKEND_PROD_WINDOWS = f"uvicorn --timeout-keep-alive {config.timeout}".split()
     app_module = f"{config.app_name}.{config.app_name}:{constants.CompileVars.APP}"
     command = (

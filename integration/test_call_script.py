@@ -28,6 +28,10 @@ def CallScript():
         inline_counter += 1
         return {inline3: 42, a: [1, 2, 3], s: 'js', o: {a: 1, b: 2}}
     }
+    async function inline4() {
+        inline_counter += 1
+        return "async inline4"
+    }
     """
 
     external_scripts = inline_scripts.replace("inline", "external")
@@ -47,6 +51,7 @@ def CallScript():
             yield rx.call_script("inline1()")
             yield rx.call_script("inline2()")
             yield rx.call_script("inline3()")
+            yield rx.call_script("inline4()")
 
         def call_script_inline_return(self):
             return rx.call_script("inline2()")
@@ -60,6 +65,9 @@ def CallScript():
             )
             yield rx.call_script(
                 "inline3()", callback=CallScriptState.call_script_callback
+            )
+            yield rx.call_script(
+                "inline4()", callback=CallScriptState.call_script_callback
             )
 
         def call_script_inline_return_callback(self):
@@ -85,6 +93,7 @@ def CallScript():
             yield rx.call_script("external1()")
             yield rx.call_script("external2()")
             yield rx.call_script("external3()")
+            yield rx.call_script("external4()")
 
         def call_script_external_return(self):
             return rx.call_script("external2()")
@@ -98,6 +107,9 @@ def CallScript():
             )
             yield rx.call_script(
                 "external3()", callback=CallScriptState.call_script_callback
+            )
+            yield rx.call_script(
+                "external4()", callback=CallScriptState.call_script_callback
             )
 
         def call_script_external_return_callback(self):
@@ -300,7 +312,7 @@ def test_call_script(
 
     yield_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "3"
+    assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
     reset_button.click()
     assert call_script.poll_for_value(counter, exp_not_equal="3") == "0"
     return_button.click()
@@ -311,10 +323,11 @@ def test_call_script(
 
     yield_callback_button.click()
     update_counter_button.click()
-    assert call_script.poll_for_value(counter, exp_not_equal="0") == "3"
+    assert call_script.poll_for_value(counter, exp_not_equal="0") == "4"
     assert call_script.poll_for_value(
         results, exp_not_equal="[]"
-    ) == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}}]' % (
+    ) == '["%s1",null,{"%s3":42,"a":[1,2,3],"s":"js","o":{"a":1,"b":2}},"async %s4"]' % (
+        script,
         script,
         script,
     )
