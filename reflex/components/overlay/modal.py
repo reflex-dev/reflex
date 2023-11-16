@@ -1,13 +1,15 @@
 """Modal components."""
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Literal
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent, LiteralAlertDialogSize
 from reflex.components.media import Icon
 from reflex.vars import Var
 
+
+ModalSizes = Literal['xs', 'sm', 'md', 'lg', 'xl', 'full']
 
 class Modal(ChakraComponent):
     """The wrapper that provides context for its children."""
@@ -47,8 +49,8 @@ class Modal(ChakraComponent):
     # If true, the modal will return focus to the element that triggered it when it closes.
     return_focus_on_close: Var[bool]
 
-    # "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "full"
-    size: Var[LiteralAlertDialogSize]
+    # "xs" | "sm" | "md" | "lg" | "xl" | "full"
+    size: Var[ModalSizes]
 
     # A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
     use_inert: Var[bool]
