@@ -214,6 +214,9 @@ def setup_frontend(
         root: The root path of the project.
         disable_telemetry: Whether to disable the Next telemetry.
     """
+    # Create the assets dir if it doesn't exist.
+    path_ops.mkdir(constants.Dirs.APP_ASSETS)
+
     # Copy asset files to public folder.
     path_ops.cp(
         src=str(root / constants.Dirs.APP_ASSETS),
