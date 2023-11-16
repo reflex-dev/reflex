@@ -5,7 +5,7 @@ For an extensive guide on the different ways to contribute to Reflex see our [Co
 
 
 ## Running a Local Build of Reflex 
-Here is a quick guide to how the run Reflex repo locally so you can start contributing to the project.
+Here is a quick guide on how to run Reflex repo locally so you can start contributing to the project.
 
 **Prerequisites:**
 - Python >= 3.8
@@ -34,23 +34,6 @@ cd examples
 poetry run reflex init
 poetry run reflex run
 ```
-All the changes you make to the repository will be reflected in your running app.
-
-
-## 🧪 Testing and QA
-
-Within the 'test' directory of Reflex you can add to a test file already there or create a new test python file if it doesn't fit into the existing layout.
-
-#### What to unit test?
-- Any feature or significant change that has been added.
-- Any edge cases or potential problem areas.
-- Any interactions between different parts of the code.
-
-Now Init/Run
-``` bash
-poetry run reflex init
-poetry run reflex run
-```
 
 All the changes you make to the repository will be reflected in your running app.
 * We have the examples folder in the .gitignore, so your changes in reflex/examples won't be reflected in your commit.
@@ -61,20 +44,20 @@ Any feature or significant change added should be accompanied with unit tests.
 
 Within the 'test' directory of Reflex you can add to a test file already there or create a new test python file if it doesn't fit into the existing layout.
 
-What to unit test?
+#### What to unit test?
 - Any feature or significant change that has been added.
 - Any edge cases or potential problem areas.
- -Any interactions between different parts of the code.
+- Any interactions between different parts of the code.
 
 
 ## ✅ Making a PR
 
-Once you solve a current issue or improvement to Reflex, you can make a pr, and we will review the changes. 
+Once you solve a current issue or improvement to Reflex, you can make a PR, and we will review the changes. 
 
 Before submitting, a pull request, ensure the following steps are taken and test passing.
 
 In your `reflex` directory run make sure all the unit tests are still passing using the following command.
-This will fail if code coverage is below 80%.
+This will fail if code coverage is below 70%.
 ``` bash
 poetry run pytest tests --cov --no-cov-on-fail --cov-report= 
 ```
@@ -95,4 +78,4 @@ Note that pre-commit will only be installed when you use a Python version >= 3.8
 pre-commit install
 ```
 
-That's it you can now submit your pr. Thanks for contributing to Reflex!
+That's it you can now submit your PR. Thanks for contributing to Reflex!

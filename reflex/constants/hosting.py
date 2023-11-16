@@ -19,6 +19,6 @@ class Hosting:
     # The time to sleep between requests to check if for authentication completion. In seconds.
     WEB_AUTH_SLEEP_DURATION = 5
     # The time to wait for the backend to come up after user initiates deployment. In seconds.
-    BACKEND_POLL_RETRIES = 30
+    BACKEND_POLL_RETRIES = 45
     # The time to wait for the frontend to come up after user initiates deployment. In seconds.
     FRONTEND_POLL_RETRIES = 30

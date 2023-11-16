@@ -194,7 +194,7 @@ def test_prepare_deploy_success(mocker):
 
 def test_deploy(mocker):
     mocker.patch(
-        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+        "reflex.utils.hosting.requires_access_token", return_value="fake_token"
     )
     mocker.patch("builtins.open")
     mocker.patch(

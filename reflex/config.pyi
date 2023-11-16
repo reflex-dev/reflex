@@ -69,6 +69,7 @@ class Config(Base):
     cp_backend_url: str
     cp_web_url: str
     username: Optional[str]
+    gunicorn_worker_class: str
 
     def __init__(
         self,
@@ -95,6 +96,7 @@ class Config(Base):
         cp_backend_url: Optional[str] = None,
         cp_web_url: Optional[str] = None,
         username: Optional[str] = None,
+        gunicorn_worker_class: Optional[str] = None,
         **kwargs
     ) -> None: ...
     @staticmethod

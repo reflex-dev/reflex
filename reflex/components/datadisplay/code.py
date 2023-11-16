@@ -1,19 +1,349 @@
 """A code component."""
 
-from typing import Dict, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.forms import Button
 from reflex.components.layout import Box
-from reflex.components.libs.chakra import ChakraComponent, LiteralTheme
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+)
 from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style
-from reflex.utils import imports
+from reflex.utils import format, imports
 from reflex.vars import ImportVar, Var
 
-# Path to the prism styles.
-PRISM_STYLES_PATH: str = "/styles/code/prism"
+LiteralCodeBlockTheme = Literal[
+    "a11y-dark",
+    "atom-dark",
+    "cb",
+    "coldark-cold",
+    "coldark-dark",
+    "coy",
+    "coy-without-shadows",
+    "darcula",
+    "dark",
+    "dracula",
+    "duotone-dark",
+    "duotone-earth",
+    "duotone-forest",
+    "duotone-light",
+    "duotone-sea",
+    "duotone-space",
+    "funky",
+    "ghcolors",
+    "gruvbox-dark",
+    "gruvbox-light",
+    "holi-theme",
+    "hopscotch",
+    "light",  # not present in react-syntax-highlighter styles
+    "lucario",
+    "material-dark",
+    "material-light",
+    "material-oceanic",
+    "night-owl",
+    "nord",
+    "okaidia",
+    "one-dark",
+    "one-light",
+    "pojoaque",
+    "prism",
+    "shades-of-purple",
+    "solarized-dark-atom",
+    "solarizedlight",
+    "synthwave84",
+    "tomorrow",
+    "twilight",
+    "vs",
+    "vs-dark",
+    "vsc-dark-plus",
+    "xonokai",
+    "z-touch",
+]
+
+
+LiteralCodeLanguage = Literal[
+    "abap",
+    "abnf",
+    "actionscript",
+    "ada",
+    "agda",
+    "al",
+    "antlr4",
+    "apacheconf",
+    "apex",
+    "apl",
+    "applescript",
+    "aql",
+    "arduino",
+    "arff",
+    "asciidoc",
+    "asm6502",
+    "asmatmel",
+    "aspnet",
+    "autohotkey",
+    "autoit",
+    "avisynth",
+    "avro-idl",
+    "bash",
+    "basic",
+    "batch",
+    "bbcode",
+    "bicep",
+    "birb",
+    "bison",
+    "bnf",
+    "brainfuck",
+    "brightscript",
+    "bro",
+    "bsl",
+    "c",
+    "cfscript",
+    "chaiscript",
+    "cil",
+    "clike",
+    "clojure",
+    "cmake",
+    "cobol",
+    "coffeescript",
+    "concurnas",
+    "coq",
+    "core",
+    "cpp",
+    "crystal",
+    "csharp",
+    "cshtml",
+    "csp",
+    "css",
+    "css-extras",
+    "csv",
+    "cypher",
+    "d",
+    "dart",
+    "dataweave",
+    "dax",
+    "dhall",
+    "diff",
+    "django",
+    "dns-zone-file",
+    "docker",
+    "dot",
+    "ebnf",
+    "editorconfig",
+    "eiffel",
+    "ejs",
+    "elixir",
+    "elm",
+    "erb",
+    "erlang",
+    "etlua",
+    "excel-formula",
+    "factor",
+    "false",
+    "firestore-security-rules",
+    "flow",
+    "fortran",
+    "fsharp",
+    "ftl",
+    "gap",
+    "gcode",
+    "gdscript",
+    "gedcom",
+    "gherkin",
+    "git",
+    "glsl",
+    "gml",
+    "gn",
+    "go",
+    "go-module",
+    "graphql",
+    "groovy",
+    "haml",
+    "handlebars",
+    "haskell",
+    "haxe",
+    "hcl",
+    "hlsl",
+    "hoon",
+    "hpkp",
+    "hsts",
+    "http",
+    "ichigojam",
+    "icon",
+    "icu-message-format",
+    "idris",
+    "iecst",
+    "ignore",
+    "index",
+    "inform7",
+    "ini",
+    "io",
+    "j",
+    "java",
+    "javadoc",
+    "javadoclike",
+    "javascript",
+    "javastacktrace",
+    "jexl",
+    "jolie",
+    "jq",
+    "js-extras",
+    "js-templates",
+    "jsdoc",
+    "json",
+    "json5",
+    "jsonp",
+    "jsstacktrace",
+    "jsx",
+    "julia",
+    "keepalived",
+    "keyman",
+    "kotlin",
+    "kumir",
+    "kusto",
+    "latex",
+    "latte",
+    "less",
+    "lilypond",
+    "liquid",
+    "lisp",
+    "livescript",
+    "llvm",
+    "log",
+    "lolcode",
+    "lua",
+    "magma",
+    "makefile",
+    "markdown",
+    "markup",
+    "markup-templating",
+    "matlab",
+    "maxscript",
+    "mel",
+    "mermaid",
+    "mizar",
+    "mongodb",
+    "monkey",
+    "moonscript",
+    "n1ql",
+    "n4js",
+    "nand2tetris-hdl",
+    "naniscript",
+    "nasm",
+    "neon",
+    "nevod",
+    "nginx",
+    "nim",
+    "nix",
+    "nsis",
+    "objectivec",
+    "ocaml",
+    "opencl",
+    "openqasm",
+    "oz",
+    "parigp",
+    "parser",
+    "pascal",
+    "pascaligo",
+    "pcaxis",
+    "peoplecode",
+    "perl",
+    "php",
+    "php-extras",
+    "phpdoc",
+    "plsql",
+    "powerquery",
+    "powershell",
+    "processing",
+    "prolog",
+    "promql",
+    "properties",
+    "protobuf",
+    "psl",
+    "pug",
+    "puppet",
+    "pure",
+    "purebasic",
+    "purescript",
+    "python",
+    "q",
+    "qml",
+    "qore",
+    "qsharp",
+    "r",
+    "racket",
+    "reason",
+    "regex",
+    "rego",
+    "renpy",
+    "rest",
+    "rip",
+    "roboconf",
+    "robotframework",
+    "ruby",
+    "rust",
+    "sas",
+    "sass",
+    "scala",
+    "scheme",
+    "scss",
+    "shell-session",
+    "smali",
+    "smalltalk",
+    "smarty",
+    "sml",
+    "solidity",
+    "solution-file",
+    "soy",
+    "sparql",
+    "splunk-spl",
+    "sqf",
+    "sql",
+    "squirrel",
+    "stan",
+    "stylus",
+    "swift",
+    "systemd",
+    "t4-cs",
+    "t4-templating",
+    "t4-vb",
+    "tap",
+    "tcl",
+    "textile",
+    "toml",
+    "tremor",
+    "tsx",
+    "tt2",
+    "turtle",
+    "twig",
+    "typescript",
+    "typoscript",
+    "unrealscript",
+    "uorazor",
+    "uri",
+    "v",
+    "vala",
+    "vbnet",
+    "velocity",
+    "verilog",
+    "vhdl",
+    "vim",
+    "visual-basic",
+    "warpscript",
+    "wasm",
+    "web-idl",
+    "wiki",
+    "wolfram",
+    "wren",
+    "xeora",
+    "xml-doc",
+    "xojo",
+    "xquery",
+    "yaml",
+    "yang",
+    "zig",
+]
 
 
 class CodeBlock(Component):
@@ -21,13 +351,15 @@ class CodeBlock(Component):
 
     library = "react-syntax-highlighter@15.5.0"
 
-    tag = "Prism"
+    tag = "PrismAsyncLight"
+
+    alias = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
-    theme: Var[LiteralTheme]
+    theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
 
     # The language to use.
-    language: Var[str]
+    language: Var[LiteralCodeLanguage] = "python"  # type: ignore
 
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
@@ -46,12 +378,42 @@ class CodeBlock(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         merged_imports = super()._get_imports()
-        if self.theme is not None:
+        merged_imports = imports.merge_imports(
+            merged_imports,
+            {
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.theme._var_name}": {
+                    ImportVar(
+                        tag=format.to_camel_case(self.theme._var_name),
+                        is_default=True,
+                        install=False,
+                    )
+                }
+            },
+        )
+        if (
+            self.language is not None
+            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+        ):
             merged_imports = imports.merge_imports(
                 merged_imports,
-                {PRISM_STYLES_PATH: {ImportVar(tag=self.theme._var_name)}},
+                {
+                    f"react-syntax-highlighter/dist/cjs/languages/prism/{self.language._var_name}": {
+                        ImportVar(
+                            tag=format.to_camel_case(self.language._var_name),
+                            is_default=True,
+                            install=False,
+                        )
+                    }
+                },
             )
         return merged_imports
+
+    def _get_custom_code(self) -> Optional[str]:
+        if (
+            self.language is not None
+            and self.language._var_name in LiteralCodeLanguage.__args__  # type: ignore
+        ):
+            return f"{self.alias}.registerLanguage('{self.language._var_name}', {format.to_camel_case(self.language._var_name)})"
 
     @classmethod
     def create(
@@ -74,6 +436,17 @@ class CodeBlock(Component):
         """
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
+
+        # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
+        # themes respectively to ensure code compatibility.
+        if "theme" in props:
+            props["theme"] = (
+                "one-light"
+                if props["theme"] == "light"
+                else "one-dark"
+                if props["theme"] == "dark"
+                else props["theme"]
+            )
 
         if can_copy:
             code = children[0]
@@ -112,10 +485,11 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
-        if self.theme is not None:
-            out.add_props(
-                style=Var.create(self.theme._var_name, _var_is_local=False)
-            ).remove_props("theme")
+        out.add_props(
+            style=Var.create(
+                format.to_camel_case(self.theme._var_name), _var_is_local=False
+            )
+        ).remove_props("theme")
         return out
 
 

@@ -12,6 +12,9 @@ import { initialEvents } from "utils/context.js"
 const EVENTURL = env.EVENT
 const UPLOADURL = env.UPLOAD
 
+// These hostnames indicate that the backend and frontend are reachable via the same domain.
+const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"]
+
 // Global variable to hold the token.
 let token;
 
@@ -74,12 +77,13 @@ export const getToken = () => {
 export const getEventURL = () => {
   // Get backend URL object from the endpoint.
   const endpoint = new URL(EVENTURL);
-  if (endpoint.hostname === "localhost") {
-    // If the backend URL references localhost, and the frontend is not on localhost,
-    // then use the frontend host.
+  if (SAME_DOMAIN_HOSTNAMES.includes(endpoint.hostname)) {
+    // Use the frontend domain to access the backend
     const frontend_hostname = window.location.hostname;
-    if (frontend_hostname !== "localhost") {
-      endpoint.hostname = frontend_hostname;
+    endpoint.hostname = frontend_hostname;
+    if (window.location.protocol === "https:" && endpoint.protocol === "ws:") {
+      endpoint.protocol = "wss:";
+      endpoint.port = "";  // Assume websocket is on https port via load balancer.
     }
   }
   return endpoint
@@ -171,7 +175,8 @@ export const applyEvent = async (event, socket) => {
     const a = document.createElement('a');
     a.hidden = true;
     a.href = event.payload.url;
-    a.download = event.payload.filename;
+    if (event.payload.filename)
+      a.download = event.payload.filename;
     a.click();
     a.remove();
     return false;
@@ -198,7 +203,14 @@ export const applyEvent = async (event, socket) => {
 
   if (event.name == "_call_script") {
     try {
-      eval(event.payload.javascript_code);
+      const eval_result = eval(event.payload.javascript_code);
+      if (event.payload.callback) {
+        if (!!eval_result && typeof eval_result.then === 'function') {
+          eval(event.payload.callback)(await eval_result)
+        } else {
+          eval(event.payload.callback)(eval_result)
+        }
+      }
     } catch (e) {
       console.log("_call_script", e);
     }
@@ -213,7 +225,7 @@ export const applyEvent = async (event, socket) => {
 
   // Send the event to the server.
   if (socket) {
-    socket.emit("event", JSON.stringify(event));
+    socket.emit("event", JSON.stringify(event, (k, v) => v === undefined ? null : v));
     return true;
   }
 
@@ -407,7 +419,10 @@ export const hydrateClientStorage = (client_storage) => {
     for (const state_key in client_storage.cookies) {
       const cookie_options = client_storage.cookies[state_key]
       const cookie_name = cookie_options.name || state_key
-      client_storage_values.cookies[state_key] = cookies.get(cookie_name)
+      const cookie_value = cookies.get(cookie_name)
+      if (cookie_value !== undefined) {
+        client_storage_values.cookies[state_key] = cookies.get(cookie_name)
+      }
     }
   }
   if (client_storage.local_storage && (typeof window !== 'undefined')) {
@@ -480,8 +495,13 @@ export const useEventLoop = (
   const [connectError, setConnectError] = useState(null)
 
   // Function to add new events to the event queue.
-  const addEvents = (events, _e) => {
-    preventDefault(_e);
+  const addEvents = (events, _e, event_actions) => {
+    if (event_actions?.preventDefault && _e?.preventDefault) {
+      _e.preventDefault();
+    }
+    if (event_actions?.stopPropagation && _e?.stopPropagation) {
+      _e.stopPropagation();
+    }
     queueEvents(events, socket)
   }
 
@@ -527,16 +547,6 @@ export const isTrue = (val) => {
 };
 
 /**
- * Prevent the default event for form submission.
- * @param event
- */
-export const preventDefault = (event) => {
-  if (event && event.type == "submit") {
-    event.preventDefault();
-  }
-};
-
-/**
  * Get the value from a ref.
  * @param ref The ref to get the value from.
  * @returns The value.
@@ -563,7 +573,7 @@ export const getRefValues = (refs) => {
     return;
   }
   // getAttribute is used by RangeSlider because it doesn't assign value
-  return refs.map((ref) => ref.current.value || ref.current.getAttribute("aria-valuenow"));
+  return refs.map((ref) => ref.current ? ref.current.value || ref.current.getAttribute("aria-valuenow") : null);
 }
 
 /**

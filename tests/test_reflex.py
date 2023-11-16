@@ -63,7 +63,6 @@ def setup_env_authentication(mocker):
     mocker.patch("reflex.utils.prerequisites.check_initialized")
     mocker.patch("reflex.utils.hosting.authenticated_token", return_value="fake-token")
     mocker.patch("time.sleep")
-    mocker.patch("reflex.utils.hosting.check_requirements_txt_exist")
 
 
 def test_deploy_non_interactive_prepare_failed(
@@ -119,7 +118,7 @@ def test_deploy_non_interactive_success(
         ),
     )
     mocker.patch("reflex.utils.hosting.wait_for_server_to_pick_up_request")
-    mocker.patch("reflex.utils.hosting.display_deploy_milestones")
+    mocker.patch("reflex.utils.hosting.poll_deploy_milestones")
     mocker.patch("reflex.utils.hosting.poll_backend", return_value=True)
     mocker.patch("reflex.utils.hosting.poll_frontend", return_value=True)
     # TODO: typer option default not working in test for app name
@@ -151,8 +150,8 @@ def test_deploy_non_interactive_success(
         app_prefix=app_prefix,
         cpus=None,
         memory_mb=None,
-        auto_start=True,
-        auto_stop=True,
+        auto_start=None,
+        auto_stop=None,
         frontend_hostname=None,
         envs=None,
         with_metrics=None,
@@ -352,7 +351,7 @@ def test_deploy_interactive(
         ),
     )
     mocker.patch("reflex.utils.hosting.wait_for_server_to_pick_up_request")
-    mocker.patch("reflex.utils.hosting.display_deploy_milestones")
+    mocker.patch("reflex.utils.hosting.poll_deploy_milestones")
     mocker.patch("reflex.utils.hosting.poll_backend", return_value=True)
     mocker.patch("reflex.utils.hosting.poll_frontend", return_value=True)
 
@@ -375,8 +374,8 @@ def test_deploy_interactive(
         app_prefix=app_prefix,
         cpus=None,
         memory_mb=None,
-        auto_start=True,
-        auto_stop=True,
+        auto_start=None,
+        auto_stop=None,
         frontend_hostname=None,
         envs=None,
         with_metrics=None,

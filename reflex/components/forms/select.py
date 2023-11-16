@@ -46,6 +46,9 @@ class Select(ChakraComponent):
     # The size of the select.
     size: Var[str]
 
+    # The name of the form field
+    name: Var[str]
+
     def get_event_triggers(self) -> Dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -76,7 +79,7 @@ class Select(ChakraComponent):
         if (
             len(children) == 1
             and isinstance(children[0], Var)
-            and _issubclass(children[0].type_, List)
+            and _issubclass(children[0]._var_type, List)
         ):
             children = [Foreach.create(children[0], lambda item: Option.create(item))]
         return super().create(*children, **props)

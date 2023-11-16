@@ -62,7 +62,7 @@ def get_base_component_map() -> dict[str, Callable]:
         "p": lambda value: Text.create(value, margin_y="1em"),
         "ul": lambda value: UnorderedList.create(value, margin_y="1em"),  # type: ignore
         "ol": lambda value: OrderedList.create(value, margin_y="1em"),  # type: ignore
-        "li": lambda value: ListItem.create(value),
+        "li": lambda value: ListItem.create(value, margin_y="0.5em"),
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
         "codeblock": lambda *_, **props: CodeBlock.create(
@@ -240,6 +240,16 @@ class Markdown(Component):
         ] = f"""{{({{inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
+    if (language) {{
+    (async () => {{
+      try {{
+        const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${{language}}`);
+        SyntaxHighlighter.registerLanguage(language, module.default);
+      }} catch (error) {{
+        console.error(`Error importing language module for ${{language}}:`, error);
+      }}
+    }})();
+  }}
     return inline ? (
         {self.format_component("code")}
     ) : (

@@ -114,6 +114,19 @@ def has_serializer(type_: Type) -> bool:
 
 
 @serializer
+def serialize_type(value: type) -> str:
+    """Serialize a python type.
+
+    Args:
+        value: the type to serialize.
+
+    Returns:
+        The serialized type.
+    """
+    return value.__name__
+
+
+@serializer
 def serialize_str(value: str) -> str:
     """Serialize a string.
 

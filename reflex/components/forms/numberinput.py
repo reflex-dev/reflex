@@ -68,6 +68,9 @@ class NumberInput(ChakraComponent):
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[LiteralInputVariant]
 
+    # The name of the form field
+    name: Var[str]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
