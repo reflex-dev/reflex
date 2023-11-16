@@ -27,6 +27,7 @@ jobs:
       - run: |
           poetry run python scripts/pyi_generator.py
           if [[ $(git status --porcelain) ]]; then
+            git status
             git diff
             echo "ERROR: pyi_generator.py output is out of date. Please run scripts/pyi_generator.py and commit the changes."
             exit 1
