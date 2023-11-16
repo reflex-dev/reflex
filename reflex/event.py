@@ -230,6 +230,50 @@ class EventSpec(EventActionsMixin):
         )
 
 
+class CallableEventSpec(EventSpec):
+    """Decorate an EventSpec-returning function to act as both a EventSpec and a function.
+
+    This is used as a compatibility shim for replacing EventSpec objects in the
+    API with functions that return a family of EventSpec.
+    """
+
+    fn: Callable[..., EventSpec] | None = None
+
+    def __init__(self, fn: Callable[..., EventSpec] | None = None, **kwargs):
+        """Initialize a CallableEventSpec.
+
+        Args:
+            fn: The function to decorate.
+            **kwargs: The kwargs to pass to pydantic initializer
+        """
+        if fn is not None:
+            default_event_spec = fn()
+            super().__init__(
+                fn=fn,  # type: ignore
+                **default_event_spec.dict(),
+                **kwargs,
+            )
+        else:
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs) -> EventSpec:
+        """Call the decorated function.
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Returns:
+            The EventSpec returned from calling the function.
+
+        Raises:
+            TypeError: If the CallableEventSpec has no associated function.
+        """
+        if self.fn is None:
+            raise TypeError("CallableEventSpec has no associated function.")
+        return self.fn(*args, **kwargs)
+
+
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 

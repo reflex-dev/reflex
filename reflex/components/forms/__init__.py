@@ -50,8 +50,6 @@ from .upload import (
     Upload,
     cancel_upload,
     clear_selected_files,
-    get_clear_selected_files,
-    get_selected_files,
     selected_files,
 )
 
@@ -59,8 +57,6 @@ helpers = [
     "color_mode_cond",
     "cancel_upload",
     "clear_selected_files",
-    "get_clear_selected_files",
-    "get_selected_files",
     "selected_files",
 ]
 

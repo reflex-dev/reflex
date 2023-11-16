@@ -431,8 +431,6 @@ from reflex.components import cancel_upload as cancel_upload
 from reflex import components as components
 from reflex.components import color_mode_cond as color_mode_cond
 from reflex.components import desktop_only as desktop_only
-from reflex.components import get_clear_selected_files as get_clear_selected_files
-from reflex.components import get_selected_files as get_selected_files
 from reflex.components import mobile_only as mobile_only
 from reflex.components import tablet_only as tablet_only
 from reflex.components import mobile_and_tablet as mobile_and_tablet

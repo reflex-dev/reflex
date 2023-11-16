@@ -12,24 +12,18 @@ from reflex import constants
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
-from reflex.event import EventChain, EventSpec, call_script
+from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
 from reflex.utils import imports
-from reflex.vars import BaseVar, ImportVar, Var
+from reflex.vars import BaseVar, CallableVar, ImportVar, Var
 
 DEFAULT_UPLOAD_ID: str
 
-def get_upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
-
-upload_file: BaseVar
-
-def get_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
-
-selected_files: BaseVar
-
-def get_clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
-
-clear_selected_files: EventSpec
-
+@CallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
+@CallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
+@CallableEventSpec
+def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
 
 class Upload(Component):

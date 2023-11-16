@@ -233,8 +233,6 @@ _ALL_COMPONENTS += [
     "components",
     "color_mode_cond",
     "desktop_only",
-    "get_clear_selected_files",
-    "get_selected_files",
     "mobile_only",
     "tablet_only",
     "mobile_and_tablet",
