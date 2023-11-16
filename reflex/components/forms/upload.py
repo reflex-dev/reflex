@@ -3,26 +3,75 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
+from reflex import constants
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
-from reflex.constants import EventTriggers
-from reflex.event import EventChain
-from reflex.vars import BaseVar, Var
+from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
+from reflex.utils import imports
+from reflex.vars import BaseVar, CallableVar, ImportVar, Var
 
-files_state: str = "const [files, setFiles] = useState([]);"
-upload_file: BaseVar = BaseVar(
-    _var_name="e => setFiles((files) => e)", _var_type=EventChain
-)
+DEFAULT_UPLOAD_ID: str = "default"
 
-# Use this var along with the Upload component to render the list of selected files.
-selected_files: BaseVar = BaseVar(
-    _var_name="files.map((f) => f.name)", _var_type=List[str]
-)
 
-clear_selected_files: BaseVar = BaseVar(
-    _var_name="_e => setFiles((files) => [])", _var_type=EventChain
-)
+@CallableVar
+def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+    """Get the file upload drop trigger.
+
+    This var is passed to the dropzone component to update the file list when a
+    drop occurs.
+
+    Args:
+        id_: The id of the upload to get the drop trigger for.
+
+    Returns:
+        A var referencing the file upload drop trigger.
+    """
+    return BaseVar(
+        _var_name=f"e => upload_files.{id_}[1]((files) => e)",
+        _var_type=EventChain,
+    )
+
+
+@CallableVar
+def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
+    """Get the list of selected files.
+
+    Args:
+        id_: The id of the upload to get the selected files for.
+
+    Returns:
+        A var referencing the list of selected file paths.
+    """
+    return BaseVar(
+        _var_name=f"(upload_files.{id_} ? upload_files.{id_}[0]?.map((f) => (f.path || f.name)) : [])",
+        _var_type=List[str],
+    )
+
+
+@CallableEventSpec
+def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
+    """Clear the list of selected files.
+
+    Args:
+        id_: The id of the upload to clear.
+
+    Returns:
+        An event spec that clears the list of selected files when triggered.
+    """
+    return call_script(f"upload_files.{id_}[1]((files) => [])")
+
+
+def cancel_upload(upload_id: str) -> EventSpec:
+    """Cancel an upload.
+
+    Args:
+        upload_id: The id of the upload to cancel.
+
+    Returns:
+        An event spec that cancels the upload when triggered.
+    """
+    return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 
 class Upload(Component):
@@ -94,7 +143,10 @@ class Upload(Component):
         zone.special_props = {BaseVar(_var_name="{...getRootProps()}", _var_type=None)}
 
         # Create the component.
-        return super().create(zone, on_drop=upload_file, **upload_props)
+        upload_props["id"] = props.get("id", DEFAULT_UPLOAD_ID)
+        return super().create(
+            zone, on_drop=upload_file(upload_props["id"]), **upload_props
+        )
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -104,7 +156,7 @@ class Upload(Component):
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_DROP: lambda e0: [e0],
+            constants.EventTriggers.ON_DROP: lambda e0: [e0],
         }
 
     def _render(self):
@@ -113,4 +165,15 @@ class Upload(Component):
         return out
 
     def _get_hooks(self) -> str | None:
-        return (super()._get_hooks() or "") + files_state
+        return (
+            (super()._get_hooks() or "")
+            + f"""
+        upload_files.{self.id or DEFAULT_UPLOAD_ID} = useState([]);
+        """
+        )
+
+    def _get_imports(self) -> imports.ImportDict:
+        return {
+            **super()._get_imports(),
+            f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="upload_files")},
+        }

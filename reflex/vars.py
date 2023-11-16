@@ -1590,3 +1590,33 @@ class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
 
     render: Optional[bool] = False
+
+
+class CallableVar(BaseVar):
+    """Decorate a Var-returning function to act as both a Var and a function.
+
+    This is used as a compatibility shim for replacing Var objects in the
+    API with functions that return a family of Var.
+    """
+
+    def __init__(self, fn: Callable[..., BaseVar]):
+        """Initialize a CallableVar.
+
+        Args:
+            fn: The function to decorate (must return Var)
+        """
+        self.fn = fn
+        default_var = fn()
+        super().__init__(**dataclasses.asdict(default_var))
+
+    def __call__(self, *args, **kwargs) -> BaseVar:
+        """Call the decorated function.
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Returns:
+            The Var returned from calling the function.
+        """
+        return self.fn(*args, **kwargs)
