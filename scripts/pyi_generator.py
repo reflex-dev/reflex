@@ -51,7 +51,7 @@ DEFAULT_TYPING_IMPORTS = {
     "overload",
     "Any",
     "Dict",
-    "List",
+    # "List",
     "Literal",
     "Optional",
     "Union",
@@ -118,7 +118,8 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
     """
     return [
         ast.ImportFrom(
-            module="typing", names=[ast.alias(name=imp) for imp in typing_imports]
+            module="typing",
+            names=[ast.alias(name=imp) for imp in sorted(typing_imports)],
         ),
         *ast.parse(  # type: ignore
             textwrap.dedent(
@@ -297,7 +298,7 @@ def _generate_component_create_functiondef(
             ast.arg(
                 arg=trigger,
                 annotation=ast.Name(
-                    id="Optional[Union[EventHandler, EventSpec, List, function, BaseVar]]"
+                    id="Optional[Union[EventHandler, EventSpec, list, function, BaseVar]]"
                 ),
             ),
             ast.Constant(value=None),
@@ -447,9 +448,7 @@ class StubGenerator(ast.NodeTransformer):
         self.current_class = node.name
         self._remove_docstring(node)
         self.generic_visit(node)  # Visit child nodes.
-        if not node.body:
-            # We should never return an empty body.
-            node.body.append(ast.Expr(value=ast.Ellipsis()))
+
         if (
             not any(
                 isinstance(child, ast.FunctionDef) and child.name == "create"
@@ -465,6 +464,9 @@ class StubGenerator(ast.NodeTransformer):
                     type_hint_globals=self.type_hint_globals,
                 )
             )
+        if not node.body:
+            # We should never return an empty body.
+            node.body.append(ast.Expr(value=ast.Ellipsis()))
         self.current_class = None
         return node
 
@@ -511,7 +513,10 @@ class StubGenerator(ast.NodeTransformer):
             and node.value.id == "Any"
         ):
             return node
-        return None
+        if self.current_class in self.classes:
+            # Remove annotated assignments in Component classes (props)
+            return None
+        return node
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.AnnAssign | None:
         """Visit an AnnAssign node (Annotated assignment).
@@ -559,10 +564,13 @@ class PyiGenerator:
             mode=black.mode.Mode(is_pyi=True),
         ).splitlines():
             # Bit of a hack here, since the AST cannot represent comments.
-            if formatted_line == "    def create(":
-                pyi_content.append("    def create(  # type: ignore")
+            if "def create(" in formatted_line:
+                pyi_content.append(formatted_line + "  # type: ignore")
+            elif "Figure" in formatted_line:
+                pyi_content.append(formatted_line + "  # type: ignore")
             else:
                 pyi_content.append(formatted_line)
+        pyi_content.append("")  # add empty line at the end for formatting
 
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text("\n".join(pyi_content))
@@ -617,6 +625,7 @@ def generate_init():
         f"from {path if mod != path.rsplit('.')[-1] or mod == 'page' else '.'.join(path.rsplit('.')[:-1])} import {mod} as {mod}"
         for mod, path in _MAPPING.items()
     ]
+    imports.append("")
 
     with open("reflex/__init__.pyi", "w") as pyi_file:
         pyi_file.writelines("\n".join(imports))
