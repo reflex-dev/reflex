@@ -1,15 +1,15 @@
 """Modal components."""
 from __future__ import annotations
 
-from typing import Any, Optional, Union, Literal
+from typing import Any, Literal, Optional, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralAlertDialogSize
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.media import Icon
 from reflex.vars import Var
 
+ModalSizes = Literal["xs", "sm", "md", "lg", "xl", "full"]
 
-ModalSizes = Literal['xs', 'sm', 'md', 'lg', 'xl', 'full']
 
 class Modal(ChakraComponent):
     """The wrapper that provides context for its children."""
