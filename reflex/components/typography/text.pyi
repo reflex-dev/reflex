@@ -17,6 +17,7 @@ class Text(ChakraComponent):
         cls,
         *children,
         as_: Optional[Union[Var[str], str]] = None,
+        no_of_lines: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -75,6 +76,7 @@ class Text(ChakraComponent):
         Args:
             *children: The children of the component.
             as_: Override the tag. The default tag is `<p>`.
+            no_of_lines: Truncate text after a specific number of lines. It will render an ellipsis when the text exceeds the width of the viewport or max_width prop.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
