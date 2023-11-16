@@ -7,12 +7,9 @@ import multiprocessing
 import platform
 from datetime import datetime
 
-import httpx
 import psutil
 
 from reflex import constants
-from reflex.base import Base
-from reflex.config import get_config
 
 
 def get_os() -> str:
@@ -60,16 +57,6 @@ def get_memory() -> int:
     return psutil.virtual_memory().total >> 20
 
 
-class Telemetry(Base):
-    """Anonymous telemetry for Reflex."""
-
-    user_os: str = get_os()
-    cpu_count: int = get_cpu_count()
-    memory: int = get_memory()
-    reflex_version: str = get_reflex_version()
-    python_version: str = get_python_version()
-
-
 def send(event: str, telemetry_enabled: bool | None = None) -> bool:
     """Send anonymous telemetry for Reflex.
 
@@ -80,6 +67,10 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
     Returns:
         Whether the telemetry was sent successfully.
     """
+    import httpx
+
+    from reflex.config import get_config
+
     # Get the telemetry_enabled from the config if it is not specified.
     if telemetry_enabled is None:
         telemetry_enabled = get_config().telemetry_enabled
@@ -89,7 +80,6 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
         return False
 
     try:
-        telemetry = Telemetry()
         with open(constants.Dirs.REFLEX_JSON) as f:
             reflex_json = json.load(f)
             distinct_id = reflex_json["project_hash"]
@@ -98,11 +88,11 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
             "event": event,
             "properties": {
                 "distinct_id": distinct_id,
-                "user_os": telemetry.user_os,
-                "reflex_version": telemetry.reflex_version,
-                "python_version": telemetry.python_version,
-                "cpu_count": telemetry.cpu_count,
-                "memory": telemetry.memory,
+                "user_os": get_os(),
+                "reflex_version": get_reflex_version(),
+                "python_version": get_python_version(),
+                "cpu_count": get_cpu_count(),
+                "memory": get_memory(),
             },
             "timestamp": datetime.utcnow().isoformat(),
         }
