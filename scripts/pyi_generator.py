@@ -118,7 +118,8 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
     """
     return [
         ast.ImportFrom(
-            module="typing", names=[ast.alias(name=imp) for imp in typing_imports]
+            module="typing",
+            names=[ast.alias(name=imp) for imp in sorted(typing_imports)],
         ),
         *ast.parse(  # type: ignore
             textwrap.dedent(
@@ -563,8 +564,8 @@ class PyiGenerator:
             mode=black.mode.Mode(is_pyi=True),
         ).splitlines():
             # Bit of a hack here, since the AST cannot represent comments.
-            if formatted_line == "    def create(":
-                pyi_content.append("    def create(  # type: ignore")
+            if "def create(" in formatted_line:
+                pyi_content.append(formatted_line + "  # type: ignore")
             elif "Figure" in formatted_line:
                 pyi_content.append(formatted_line + "  # type: ignore")
             else:
