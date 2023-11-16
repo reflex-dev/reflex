@@ -10,7 +10,7 @@ from reflex.vars import Var
 try:
     from plotly.graph_objects import Figure
 except ImportError:
-    Figure = Any
+    Figure = Any  # type: ignore
 
 
 class PlotlyLib(NoSSRComponent):
