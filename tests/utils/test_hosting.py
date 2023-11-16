@@ -194,7 +194,7 @@ def test_prepare_deploy_success(mocker):
 
 def test_deploy(mocker):
     mocker.patch(
-        "reflex.utils.hosting.requires_authenticated", return_value="fake_token"
+        "reflex.utils.hosting.requires_access_token", return_value="fake_token"
     )
     mocker.patch("builtins.open")
     mocker.patch(
@@ -353,3 +353,17 @@ def test_process_envs():
 def test_interactive_prompt_for_envs(mocker, inputs, expected):
     mocker.patch("reflex.utils.console.ask", side_effect=inputs)
     assert hosting.interactive_prompt_for_envs() == expected
+
+
+def test_requirements_txt_only_contains_reflex(mocker):
+    mocker.patch("reflex.utils.hosting.check_requirements_txt_exist", return_value=True)
+    mocker.patch("builtins.open", mock_open(read_data="\nreflex=1.2.3\n\n"))
+    assert hosting.check_requirements_for_non_reflex_packages() is False
+
+
+def test_requirements_txt_only_contains_other_packages(mocker):
+    mocker.patch("reflex.utils.hosting.check_requirements_txt_exist", return_value=True)
+    mocker.patch(
+        "builtins.open", mock_open(read_data="\nreflex=1.2.3\n\npynonexist=3.2.1")
+    )
+    assert hosting.check_requirements_for_non_reflex_packages() is True

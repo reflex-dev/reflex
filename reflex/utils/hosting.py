@@ -9,7 +9,7 @@ import re
 import time
 import uuid
 import webbrowser
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import List, Optional
 
@@ -41,12 +41,14 @@ GET_DEPLOYMENT_STATUS_ENDPOINT = f"{config.cp_backend_url}/deployments"
 GET_REGIONS_ENDPOINT = f"{config.cp_backend_url}/deployments/regions"
 # Websocket endpoint to stream logs of a deployment
 DEPLOYMENT_LOGS_ENDPOINT = f'{config.cp_backend_url.replace("http", "ws")}/deployments'
+# The HTTP endpoint to fetch logs of a deployment
+POST_DEPLOYMENT_LOGS_ENDPOINT = f"{config.cp_backend_url}/deployments/logs"
 # Expected server response time to new deployment request. In seconds.
 DEPLOYMENT_PICKUP_DELAY = 30
 # End of deployment workflow message. Used to determine if it is the last message from server.
-END_OF_DEPLOYMENT_MESSAGES = ["deploy success", "deploy failed"]
+END_OF_DEPLOYMENT_MESSAGES = ["deploy success"]
 # How many iterations to try and print the deployment event messages from server during deployment.
-DEPLOYMENT_EVENT_MESSAGES_RETRIES = 90
+DEPLOYMENT_EVENT_MESSAGES_RETRIES = 120
 # Timeout limit for http requests
 HTTP_REQUEST_TIMEOUT = 60  # seconds
 
@@ -93,7 +95,7 @@ def validate_token(token: str):
         response.raise_for_status()
     except httpx.RequestError as re:
         console.debug(f"Request to auth server failed due to {re}")
-        raise Exception("request error") from re
+        raise Exception(str(re)) from re
     except httpx.HTTPError as ex:
         console.debug(f"Unable to validate the token due to: {ex}")
         raise Exception("server error") from ex
@@ -140,12 +142,29 @@ def save_token_to_config(token: str, code: str | None = None):
     if code:
         hosting_config["code"] = code
     try:
+        if not os.path.exists(constants.Reflex.DIR):
+            os.makedirs(constants.Reflex.DIR)
         with open(constants.Hosting.HOSTING_JSON, "w") as config_file:
             json.dump(hosting_config, config_file)
     except Exception as ex:
         console.warn(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
+
+
+def requires_access_token() -> str:
+    """Fetch the access token from the existing config if applicable.
+
+    Returns:
+        The access token. If not found, return empty string for it instead.
+    """
+    # Check if the user is authenticated
+
+    access_token, _ = get_existing_access_token()
+    if not access_token:
+        console.debug("No access token found from the existing config.")
+
+    return access_token
 
 
 def authenticated_token() -> tuple[str, str]:
@@ -223,6 +242,7 @@ class DeploymentPrepareResponse(Base):
     # This is for a new deployment, user has not deployed this app before.
     # The server returns key suggestion based on the app name.
     suggestion: Optional[DeploymentPrepInfo] = None
+    enabled_regions: Optional[List[str]] = None
 
     @root_validator(pre=True)
     def ensure_at_least_one_deploy_params(cls, values):
@@ -303,10 +323,11 @@ def prepare_deploy(
             reply=response_json["reply"],
             suggestion=response_json["suggestion"],
             existing=response_json["existing"],
+            enabled_regions=response_json.get("enabled_regions"),
         )
     except httpx.RequestError as re:
         console.debug(f"Unable to prepare launch due to {re}.")
-        raise Exception("request error") from re
+        raise Exception(str(re)) from re
     except httpx.HTTPError as he:
         console.debug(f"Unable to prepare deploy due to {he}.")
         raise Exception(f"{he}") from he
@@ -337,7 +358,7 @@ class DeploymentsPostParam(Base):
     """Params for hosted instance deployment POST request."""
 
     # Key is the name of the deployment, it becomes part of the URL
-    key: str = Field(..., regex=r"^[a-zA-Z0-9-]+$")
+    key: str = Field(..., regex=r"^[a-z0-9-]+$")
     # Name of the app
     app_name: str = Field(..., min_length=1)
     # json encoded list of regions to deploy to
@@ -412,7 +433,7 @@ def deploy(
         The response containing the URL of the site to be deployed if successful, None otherwise.
     """
     # Check if the user is authenticated
-    if not (token := requires_authenticated()):
+    if not (token := requires_access_token()):
         raise Exception("not authenticated")
 
     try:
@@ -446,11 +467,12 @@ def deploy(
                 headers=authorization_header(token),
                 data=params.dict(exclude_none=True),
                 files=files,
+                timeout=HTTP_REQUEST_TIMEOUT,
             )
         # If the server explicitly states bad request,
         # display a different error
         if response.status_code == HTTPStatus.BAD_REQUEST:
-            raise AssertionError("Server rejected this request")
+            raise AssertionError(f"Server rejected this request: {response.text}")
         response.raise_for_status()
         response_json = response.json()
         return DeploymentPostResponse(
@@ -458,26 +480,26 @@ def deploy(
             backend_url=response_json["backend_url"],
         )
     except OSError as oe:
-        console.debug(f"Client side error related to file operation: {oe}")
+        console.error(f"Client side error related to file operation: {oe}")
         raise
     except httpx.RequestError as re:
-        console.debug(f"Unable to deploy due to request error: {re}")
+        console.error(f"Unable to deploy due to request error: {re}")
         raise Exception("request error") from re
     except httpx.HTTPError as he:
-        console.debug(f"Unable to deploy due to {he}.")
-        raise Exception("internal errors") from he
+        console.error(f"Unable to deploy due to {he}.")
+        raise Exception(str) from he
     except json.JSONDecodeError as jde:
-        console.debug(f"Server did not respond with valid json: {jde}")
+        console.error(f"Server did not respond with valid json: {jde}")
         raise Exception("internal errors") from jde
     except (KeyError, ValidationError) as kve:
-        console.debug(f"Post params or server response format unexpected: {kve}")
+        console.error(f"Post params or server response format unexpected: {kve}")
         raise Exception("internal errors") from kve
     except AssertionError as ve:
-        console.debug(f"Unable to deploy due to request error: {ve}")
+        console.error(f"Unable to deploy due to request error: {ve}")
         # re-raise the error back to the user as client side error
         raise
     except Exception as ex:
-        console.debug(f"Unable to deploy due to internal errors: {ex}.")
+        console.error(f"Unable to deploy due to internal errors: {ex}.")
         raise Exception("internal errors") from ex
 
 
@@ -486,27 +508,6 @@ class DeploymentsGetParam(Base):
 
     # The app name which is found in the config
     app_name: Optional[str]
-
-
-class DeploymentGetResponse(Base):
-    """The params/settings returned from the GET endpoint."""
-
-    # The deployment key
-    key: str
-    # The list of regions to deploy to
-    regions: List[str]
-    # The app name which is found in the config
-    app_name: str
-    # The VM type
-    vm_type: str
-    # The number of CPUs
-    cpus: int
-    # The memory in MB
-    memory_mb: int
-    # The site URL
-    url: str
-    # The list of environment variable names (values are never shown)
-    envs: List[str]
 
 
 def list_deployments(
@@ -536,27 +537,15 @@ def list_deployments(
             timeout=HTTP_REQUEST_TIMEOUT,
         )
         response.raise_for_status()
-        return [
-            DeploymentGetResponse(
-                key=deployment["key"],
-                regions=deployment["regions"],
-                app_name=deployment["app_name"],
-                vm_type=deployment["vm_type"],
-                cpus=deployment["cpus"],
-                memory_mb=deployment["memory_mb"],
-                url=deployment["url"],
-                envs=deployment["envs"],
-            ).dict()
-            for deployment in response.json()
-        ]
+        return response.json()
     except httpx.RequestError as re:
-        console.debug(f"Unable to list deployments due to request error: {re}")
+        console.error(f"Unable to list deployments due to request error: {re}")
         raise Exception("request timeout") from re
     except httpx.HTTPError as he:
-        console.debug(f"Unable to list deployments due to {he}.")
+        console.error(f"Unable to list deployments due to {he}.")
         raise Exception("internal errors") from he
     except (ValidationError, KeyError, json.JSONDecodeError) as vkje:
-        console.debug(f"Server response format unexpected: {vkje}")
+        console.error(f"Server response format unexpected: {vkje}")
         raise Exception("internal errors") from vkje
     except Exception as ex:
         console.error(f"Unexpected error: {ex}.")
@@ -606,7 +595,7 @@ def poll_backend(backend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling backend at {backend_url}")
-        resp = httpx.get(f"{backend_url}/ping", timeout=HTTP_REQUEST_TIMEOUT)
+        resp = httpx.get(f"{backend_url}/ping", timeout=1)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -624,7 +613,7 @@ def poll_frontend(frontend_url: str) -> bool:
     """
     try:
         console.debug(f"Polling frontend at {frontend_url}")
-        resp = httpx.get(f"{frontend_url}", timeout=HTTP_REQUEST_TIMEOUT)
+        resp = httpx.get(f"{frontend_url}", timeout=1)
         resp.raise_for_status()
         return True
     except httpx.HTTPError:
@@ -662,13 +651,13 @@ def delete_deployment(key: str):
         response.raise_for_status()
 
     except httpx.TimeoutException as te:
-        console.debug("Unable to delete deployment due to request timeout.")
+        console.error("Unable to delete deployment due to request timeout.")
         raise Exception("request timeout") from te
     except httpx.HTTPError as he:
-        console.debug(f"Unable to delete deployment due to {he}.")
+        console.error(f"Unable to delete deployment due to {he}.")
         raise Exception("internal errors") from he
     except Exception as ex:
-        console.debug(f"Unexpected errors {ex}.")
+        console.error(f"Unexpected errors {ex}.")
         raise Exception("internal errors") from ex
 
 
@@ -753,11 +742,27 @@ def get_deployment_status(key: str) -> DeploymentStatusResponse:
             ),
         )
     except Exception as ex:
-        console.debug(f"Unable to get deployment status due to {ex}.")
+        console.error(f"Unable to get deployment status due to {ex}.")
         raise Exception("internal errors") from ex
 
 
-def convert_to_local_time(iso_timestamp: str) -> str:
+def convert_to_local_time_with_tz(iso_timestamp: str) -> datetime | None:
+    """Helper function to convert the iso timestamp to local time.
+
+    Args:
+        iso_timestamp: The iso timestamp to convert.
+
+    Returns:
+        The converted timestamp with timezone.
+    """
+    try:
+        return datetime.fromisoformat(iso_timestamp).astimezone()
+    except (TypeError, ValueError) as ex:
+        console.error(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
+        return None
+
+
+def convert_to_local_time_str(iso_timestamp: str) -> str:
     """Convert the iso timestamp to local time.
 
     Args:
@@ -766,12 +771,9 @@ def convert_to_local_time(iso_timestamp: str) -> str:
     Returns:
         The converted timestamp string.
     """
-    try:
-        local_dt = datetime.fromisoformat(iso_timestamp).astimezone()
-        return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
-    except Exception as ex:
-        console.debug(f"Unable to convert iso timestamp {iso_timestamp} due to {ex}.")
+    if (local_dt := convert_to_local_time_with_tz(iso_timestamp)) is None:
         return iso_timestamp
+    return local_dt.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
 
 
 class LogType(str, enum.Enum):
@@ -829,7 +831,7 @@ async def get_logs(
                         if v is None:
                             row_to_print[k] = str(v)
                         elif k == "timestamp":
-                            row_to_print[k] = convert_to_local_time(v)
+                            row_to_print[k] = convert_to_local_time_str(v)
                         else:
                             row_to_print[k] = v
                     print(" | ".join(row_to_print.values()))
@@ -843,21 +845,40 @@ async def get_logs(
         )
 
 
-def check_requirements_txt_exist():
-    """Check if requirements.txt exists in the current directory.
+def check_requirements_txt_exist() -> bool:
+    """Check if requirements.txt exists in the top level app directory.
 
-    Raises:
-        Exception: If the requirements.txt does not exist.
+    Returns:
+        True if requirements.txt exists, False otherwise.
     """
-    if not os.path.exists(constants.RequirementsTxt.FILE):
-        raise Exception(
-            f"Unable to find {constants.RequirementsTxt.FILE} in the current directory."
-        )
+    return os.path.exists(constants.RequirementsTxt.FILE)
 
 
-def authenticate_on_browser(
-    invitation_code: str,
-) -> str:
+def check_requirements_for_non_reflex_packages() -> bool:
+    """Check the requirements.txt file for packages other than reflex.
+
+    Returns:
+        True if packages other than reflex are found, False otherwise.
+    """
+    if not check_requirements_txt_exist():
+        return False
+    try:
+        with open(constants.RequirementsTxt.FILE) as fp:
+            for req_line in fp.readlines():
+                package_name = re.search(r"^([^=<>!~]+)", req_line.lstrip())
+                # If we find a package that is not reflex
+                if (
+                    package_name
+                    and package_name.group(1) != constants.Reflex.MODULE_NAME
+                ):
+                    return True
+    except Exception as ex:
+        console.warn(f"Unable to scan requirements.txt for dependencies due to {ex}")
+
+    return False
+
+
+def authenticate_on_browser(invitation_code: str) -> str:
     """Open the browser to authenticate the user.
 
     Args:
@@ -914,6 +935,18 @@ def validate_token_with_retries(access_token: str) -> bool:
     return False
 
 
+def is_valid_deployment_key(key: str):
+    """Helper function to check if the deployment key is valid. Must be a domain name safe string.
+
+    Args:
+        key: The deployment key to check.
+
+    Returns:
+        True if the key contains only domain name safe characters, False otherwise.
+    """
+    return re.match(r"^[a-zA-Z0-9-]*$", key)
+
+
 def interactive_get_deployment_key_from_user_input(
     pre_deploy_response: DeploymentPrepareResponse,
     app_name: str,
@@ -948,7 +981,22 @@ def interactive_get_deployment_key_from_user_input(
         deploy_url = suggestion.deploy_url
 
         # If user takes the suggestion, we will use the suggested key and proceed
-        while key_input := console.ask(f"Name of deployment", default=key_candidate):
+        while key_input := console.ask(
+            f"Choose a name for your deployed app. Enter to use default.",
+            default=key_candidate,
+        ):
+            if not is_valid_deployment_key(key_input):
+                console.error(
+                    "Invalid key input, should only contain domain name safe characters: letters, digits, or hyphens."
+                )
+                continue
+
+            elif any(x.isupper() for x in key_input):
+                key_input = key_input.lower()
+                console.info(
+                    f"Domain name is case insensitive, automatically converting to all lower cases: {key_input}"
+                )
+
             try:
                 pre_deploy_response = prepare_deploy(
                     app_name,
@@ -1015,7 +1063,79 @@ def log_out_on_browser():
         )
 
 
-async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
+def poll_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool | None:
+    """Periodically poll the hosting server for deploy milestones.
+
+    Args:
+        key: The deployment key.
+        from_iso_timestamp: The timestamp of the deployment request time, this helps with the milestone query.
+
+    Raises:
+        ValueError: If a non-empty key is not provided.
+        Exception: If the user is not authenticated.
+
+    Returns:
+        False if server reports back failure, True otherwise. None if do not receive the end of deployment message.
+    """
+    if not key:
+        raise ValueError("Non-empty key is required for querying deploy status.")
+    if not (token := requires_authenticated()):
+        raise Exception("not authenticated")
+
+    for _ in range(DEPLOYMENT_EVENT_MESSAGES_RETRIES):
+        try:
+            response = httpx.post(
+                POST_DEPLOYMENT_LOGS_ENDPOINT,
+                json={
+                    "key": key,
+                    "log_type": LogType.DEPLOY_LOG.value,
+                    "from_iso_timestamp": from_iso_timestamp.astimezone().isoformat(),
+                },
+                headers=authorization_header(token),
+            )
+            response.raise_for_status()
+            # The return is expected to be a list of dicts
+            response_json = response.json()
+            for row in response_json:
+                console.print(
+                    " | ".join(
+                        [
+                            convert_to_local_time_str(row["timestamp"]),
+                            row["message"],
+                        ]
+                    )
+                )
+                # update the from timestamp to the last timestamp of received message
+                if (
+                    maybe_timestamp := convert_to_local_time_with_tz(row["timestamp"])
+                ) is not None:
+                    console.debug(
+                        f"Updating from {from_iso_timestamp} to {maybe_timestamp}"
+                    )
+                    # Add a small delta so does not poll the same logs
+                    from_iso_timestamp = maybe_timestamp + timedelta(microseconds=1e5)
+                else:
+                    console.warn(f"Unable to parse timestamp {row['timestamp']}")
+                server_message = row["message"].lower()
+                if "fail" in server_message:
+                    console.debug(
+                        "Received failure message, stop event message streaming"
+                    )
+                    return False
+                if any(msg in server_message for msg in END_OF_DEPLOYMENT_MESSAGES):
+                    console.debug(
+                        "Received end of deployment message, stop event message streaming"
+                    )
+                    return True
+            time.sleep(1)
+        except httpx.HTTPError as he:
+            # This includes HTTP server and client error
+            console.debug(f"Unable to get more deployment events due to {he}.")
+        except Exception as ex:
+            console.warn(f"Unable to parse server response due to {ex}.")
+
+
+async def display_deploy_milestones(key: str, from_iso_timestamp: datetime) -> bool:
     """Display the deploy milestone messages reported back from the hosting server.
 
     Args:
@@ -1025,6 +1145,9 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
     Raises:
         ValueError: If a non-empty key is not provided.
         Exception: If the user is not authenticated.
+
+    Returns:
+        False if server reports back failure, True otherwise.
     """
     if not key:
         raise ValueError("Non-empty key is required for querying deploy status.")
@@ -1045,23 +1168,27 @@ async def display_deploy_milestones(key: str, from_iso_timestamp: datetime):
                     console.print(
                         " | ".join(
                             [
-                                convert_to_local_time(row_json["timestamp"]),
+                                convert_to_local_time_str(row_json["timestamp"]),
                                 row_json["message"],
                             ]
                         )
                     )
-                    if any(
-                        msg in row_json["message"].lower()
-                        for msg in END_OF_DEPLOYMENT_MESSAGES
-                    ):
+                    server_message = row_json["message"].lower()
+                    if "fail" in server_message:
+                        console.debug(
+                            "Received failure message, stop event message streaming"
+                        )
+                        return False
+                    if any(msg in server_message for msg in END_OF_DEPLOYMENT_MESSAGES):
                         console.debug(
                             "Received end of deployment message, stop event message streaming"
                         )
-                        return
+                        return True
                 else:
                     console.debug("Server responded, no new events yet, this is normal")
     except Exception as ex:
         console.debug(f"Unable to get more deployment events due to {ex}.")
+    return False
 
 
 def wait_for_server_to_pick_up_request():
@@ -1083,7 +1210,7 @@ def interactive_prompt_for_envs() -> list[str]:
     envs_finished = False
     env_count = 1
     env_key_prompt = f" * env-{env_count} name (enter to skip)"
-    console.print("Environment variables ...")
+    console.print("Environment variables for your production App ...")
     while not envs_finished:
         env_key = console.ask(env_key_prompt)
         if not env_key:
@@ -1115,16 +1242,16 @@ def get_regions() -> list[dict]:
         response.raise_for_status()
         response_json = response.json()
         if response_json is None or not isinstance(response_json, list):
-            console.debug("Expect server to return a list ")
+            console.error("Expect server to return a list ")
             return []
         if (
             response_json
             and response_json[0] is not None
-            and isinstance(response_json[0], dict)
+            and not isinstance(response_json[0], dict)
         ):
-            console.debug("Expect return values are dict's")
+            console.error("Expect return values are dict's")
             return []
         return response_json
     except Exception as ex:
-        console.debug(f"Unable to get regions due to {ex}.")
+        console.error(f"Unable to get regions due to {ex}.")
         return []

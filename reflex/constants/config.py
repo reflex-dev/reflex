@@ -2,7 +2,7 @@
 import os
 from types import SimpleNamespace
 
-from reflex.constants.base import Dirs
+from reflex.constants.base import Dirs, Reflex
 
 from .compiler import Ext
 
@@ -47,7 +47,7 @@ class RequirementsTxt(SimpleNamespace):
     # The requirements.txt file.
     FILE = "requirements.txt"
     # The partial text used to form requirement that pins a reflex version
-    DEFAULTS_STUB = "reflex=="
+    DEFAULTS_STUB = f"{Reflex.MODULE_NAME}>="
 
 
 # The deployment URL.

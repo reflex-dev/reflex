@@ -25,7 +25,7 @@ from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, get_config
+from reflex.config import get_config
 from reflex.utils import console, path_ops, processes
 
 
@@ -249,17 +249,32 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
         template: The template to use.
     """
     console.log("Initializing the app directory.")
-    path_ops.cp(
-        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "code"),
-        app_name,
-    )
+
+    # Copy the template to the current directory.
+    template_dir = Path(constants.Templates.Dirs.BASE, "apps", template.value)
+
+    # Remove all pyc and __pycache__ dirs in template directory.
+    for pyc_file in template_dir.glob("**/*.pyc"):
+        pyc_file.unlink()
+    for pycache_dir in template_dir.glob("**/__pycache__"):
+        pycache_dir.rmdir()
+
+    for file in template_dir.iterdir():
+        # Copy the file to current directory but keep the name the same.
+        path_ops.cp(str(file), file.name)
+
+    # Rename the template app to the app name.
+    path_ops.mv(constants.Templates.Dirs.CODE, app_name)
     path_ops.mv(
-        os.path.join(app_name, template.value + ".py"),
+        os.path.join(app_name, template_dir.name + constants.Ext.PY),
         os.path.join(app_name, app_name + constants.Ext.PY),
     )
-    path_ops.cp(
-        os.path.join(constants.Templates.Dirs.BASE, "apps", template.value, "assets"),
-        constants.Dirs.APP_ASSETS,
+
+    # Fix up the imports.
+    path_ops.find_replace(
+        app_name,
+        f"from {constants.Templates.Dirs.CODE}",
+        f"from {app_name}",
     )
 
 
@@ -273,15 +288,7 @@ def initialize_web_directory():
 
     path_ops.mkdir(constants.Dirs.WEB_ASSETS)
 
-    # update nextJS config based on rxConfig
-    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
-
-    with open(next_config_file, "r") as file:
-        next_config = file.read()
-        next_config = update_next_config(next_config, get_config())
-
-    with open(next_config_file, "w") as file:
-        file.write(next_config)
+    update_next_config()
 
     # Initialize the reflex json file.
     init_reflex_json()
@@ -322,27 +329,34 @@ def init_reflex_json():
     path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(next_config: str, config: Config) -> str:
-    """Update Next.js config from Reflex config. Is its own function for testing.
+def update_next_config(export=False):
+    """Update Next.js config from Reflex config.
 
     Args:
-        next_config: Content of next.config.js.
-        config: A reflex Config object.
-
-    Returns:
-        The next_config updated from config.
+        export: if the method run during reflex export.
     """
-    next_config = re.sub(
-        "compress: (true|false)",
-        f'compress: {"true" if config.next_compression else "false"}',
-        next_config,
-    )
-    next_config = re.sub(
-        'basePath: ".*?"',
-        f'basePath: "{config.frontend_path or ""}"',
-        next_config,
-    )
-    return next_config
+    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
+
+    next_config = _update_next_config(get_config(), export=export)
+
+    with open(next_config_file, "w") as file:
+        file.write(next_config)
+        file.write("\n")
+
+
+def _update_next_config(config, export=False):
+    next_config = {
+        "basePath": config.frontend_path or "",
+        "compress": config.next_compression,
+        "reactStrictMode": True,
+        "trailingSlash": True,
+    }
+    if export:
+        next_config["output"] = "export"
+        next_config["distDir"] = constants.Dirs.STATIC
+
+    next_config_json = re.sub(r'"([^"]+)"(?=:)', r"\1", json.dumps(next_config))
+    return f"module.exports = {next_config_json};"
 
 
 def remove_existing_bun_installation():
@@ -688,6 +702,35 @@ def check_schema_up_to_date():
                 console.error(
                     f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
                 )
+
+
+def prompt_for_template() -> constants.Templates.Kind:
+    """Prompt the user to specify a template.
+
+    Returns:
+        The template the user selected.
+    """
+    # Show the user the URLs of each temlate to preview.
+    console.print("\nGet started with a template:")
+    console.print("blank (https://blank-template.reflex.run) - A minimal template.")
+    console.print(
+        "sidebar (https://sidebar-template.reflex.run) - A template with a sidebar to navigate pages."
+    )
+    console.print("")
+
+    # Prompt the user to select a template.
+    template = console.ask(
+        "Which template would you like to use?",
+        choices=[
+            template.value
+            for template in constants.Templates.Kind
+            if template.value != "demo"
+        ],
+        default=constants.Templates.Kind.BLANK.value,
+    )
+
+    # Return the template.
+    return constants.Templates.Kind(template)
 
 
 def migrate_to_reflex():

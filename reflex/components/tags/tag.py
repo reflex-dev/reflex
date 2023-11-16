@@ -83,8 +83,9 @@ class Tag(Base):
             The tag with the props removed.
         """
         for name in args:
-            if name in self.props:
-                del self.props[name]
+            prop_name = format.to_camel_case(name)
+            if prop_name in self.props:
+                del self.props[prop_name]
         return self
 
     @staticmethod

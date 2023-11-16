@@ -3,8 +3,25 @@
 {% block export %}
 {% for component in components %}
 
-export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => (
-  {{utils.render(component.render)}}
-))
+export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => {
+{% if component.name == "CodeBlock" and "language" in component.props %}
+    if (language) {
+      (async () => {
+        try {
+          const module = await import(`react-syntax-highlighter/dist/cjs/languages/prism/${language}`);
+          SyntaxHighlighter.registerLanguage(language, module.default);
+        } catch (error) {
+          console.error(`Error importing language module for ${language}:`, error);
+        }
+      })();
+
+
+    }
+{% endif %}
+    return(
+        {{utils.render(component.render)}}
+      )
+
+})
 {% endfor %}
 {% endblock %}
