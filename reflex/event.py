@@ -237,7 +237,7 @@ class CallableEventSpec(EventSpec):
     API with functions that return a family of EventSpec.
     """
 
-    fn: Callable[..., EventSpec] | None = None
+    fn: Optional[Callable[..., EventSpec]] = None
 
     def __init__(self, fn: Callable[..., EventSpec] | None = None, **kwargs):
         """Initialize a CallableEventSpec.
