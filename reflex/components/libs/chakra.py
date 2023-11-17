@@ -25,6 +25,22 @@ class ChakraComponent(Component):
             (60, "ChakraProvider"): chakra_provider,
         }
 
+    @classmethod
+    @lru_cache(maxsize=None)
+    def _get_dependencies_imports(cls) -> imports.ImportDict:
+        """Get the imports from lib_dependencies for installing.
+
+        Returns:
+            The dependencies imports of the component.
+        """
+        return {
+            dep: {ImportVar(tag=None, render=False)}
+            for dep in [
+                "@chakra-ui/system@2.5.7",
+                "framer-motion@10.16.4",
+            ]
+        }
+
 
 class Global(Component):
     """The emotion/react Global styling component."""
@@ -101,6 +117,7 @@ class ChakraColorModeProvider(Component):
     library = "/components/reflex/chakra_color_mode_provider.js"
     tag = "ChakraColorModeProvider"
     is_default = True
+
 
 chakra_color_mode_provider = ChakraColorModeProvider.create()
 

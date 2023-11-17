@@ -642,9 +642,7 @@ class Component(Base, ABC):
         Returns:
             The dependencies imports of the component.
         """
-        return imports.merge_imports(
-            {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
-        )
+        return {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
 
     def _get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.

@@ -8,6 +8,8 @@ from reflex.utils import imports
 from reflex.vars import BaseVar, Var
 
 
+next_link = NextLink.create()
+
 class Link(ChakraComponent):
     """Link to another page."""
 
@@ -29,7 +31,7 @@ class Link(ChakraComponent):
     is_external: Var[bool]
 
     def _get_imports(self) -> imports.ImportDict:
-        return {**super()._get_imports(), **NextLink.create()._get_imports()}
+        return {**super()._get_imports(), **next_link._get_imports()}
 
     @classmethod
     def create(cls, *children, **props) -> Component:
