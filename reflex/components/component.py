@@ -812,12 +812,19 @@ class Component(Base, ABC):
         """
         return {}
 
-    def get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def get_app_wrap_components() -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component and its children.
 
         Returns:
             The app wrap components.
         """
+        from reflex.components.libs.chakra import chakra_provider, chakra_color_mode_provider
+        return {
+            (60, "ChakraProvider"): chakra_provider,
+            (50, "ChakraColorModeProvider"): chakra_color_mode_provider,
+        }
         # Store the components in a set to avoid duplicates.
         components = self._get_app_wrap_components()
 
