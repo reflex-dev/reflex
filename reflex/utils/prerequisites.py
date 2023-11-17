@@ -278,12 +278,28 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     )
 
 
+def get_project_hash_if_exists():
+    """Check if the reflex.json file exists in .web folder and 
+    if it does then extract the project_hash number so that we 
+    do not overwrite it every time we run the reflex init command"""
+    if os.path.exists(constants.Reflex.JSON):
+        # Open and read the file
+        with open(constants.Reflex.JSON, 'r') as file:
+            data = json.load(file)
+            project_hash = data["project_hash"]
+            return project_hash
+    else:
+        return None
+
+
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
 
-    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, constants.Dirs.WEB)
+    project_hash = get_project_hash_if_exists()
 
+    path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, constants.Dirs.WEB)
+    
     initialize_package_json()
 
     path_ops.mkdir(constants.Dirs.WEB_ASSETS)
@@ -291,7 +307,7 @@ def initialize_web_directory():
     update_next_config()
 
     # Initialize the reflex json file.
-    init_reflex_json()
+    init_reflex_json(project_hash=project_hash)
 
 
 def _compile_package_json():
@@ -315,11 +331,15 @@ def initialize_package_json():
         file.write(code)
 
 
-def init_reflex_json():
+def init_reflex_json(project_hash):
     """Write the hash of the Reflex project to a REFLEX_JSON."""
-    # Get a random project hash.
-    project_hash = random.getrandbits(128)
-    console.debug(f"Setting project hash to {project_hash}.")
+    
+    if project_hash != None:
+        console.debug(f"Project hash is already set to {project_hash}.")
+    else:
+        # Get a random project hash.
+        project_hash = random.getrandbits(128)
+        console.debug(f"Setting project hash to {project_hash}.")
 
     # Write the hash and version to the reflex json file.
     reflex_json = {
