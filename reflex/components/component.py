@@ -628,13 +628,11 @@ class Component(Base, ABC):
         Returns:
             The  imports for the components props of the component.
         """
-        return imports.merge_imports(
-            *[
+        return [
                 getattr(self, prop).get_imports()
                 for prop in self.get_component_props()
                 if getattr(self, prop) is not None
             ]
-        )
 
     def _get_dependencies_imports(self) -> imports.ImportDict:
         """Get the imports from lib_dependencies for installing.
@@ -655,7 +653,7 @@ class Component(Base, ABC):
             _imports[self.library] = {self.import_var}
 
         return imports.merge_imports(
-            self._get_props_imports(),
+            *self._get_props_imports(),
             self._get_dependencies_imports(),
             _imports,
         )
