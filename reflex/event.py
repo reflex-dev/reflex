@@ -843,7 +843,7 @@ def fix_events(
         event_router_data = {
             k: v
             for k, v in (router_data or {}).items()
-            if k in constants.ROUTER_DATA_INCLUDE
+            if k in constants.route.ROUTER_DATA_INCLUDE
         }
         # Create an event and append it to the list.
         out.append(

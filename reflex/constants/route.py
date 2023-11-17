@@ -30,6 +30,10 @@ class RouteVar(SimpleNamespace):
     COOKIE = "cookie"
 
 
+# This subset of router_data is included in chained on_load events.
+ROUTER_DATA_INCLUDE = set((RouteVar.PATH, RouteVar.ORIGIN, RouteVar.QUERY))
+
+
 class RouteRegex(SimpleNamespace):
     """Regex used for extracting route args in route."""
 
