@@ -4,32 +4,28 @@ from __future__ import annotations
 
 import atexit
 import os
-import shutil
-import tempfile
-import time
 import webbrowser
-from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
 import typer
 import typer.core
 from alembic.util.exc import CommandError
-from cli.cli import deployments_cli
-from cli.constants.hosting import Hosting
-from cli.utils import hosting
+from cli import cli as hosting_cli
+from cli.deployments import deployments_cli
+from cli.utils import dependency
 
 from reflex import constants, model
 from reflex.config import get_config
 from reflex.utils import (
     build,
     console,
-    dependency,
     exec,
     prerequisites,
     processes,
     telemetry,
 )
+from reflex.utils import export as export_utils
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -110,7 +106,7 @@ def _init(
     prerequisites.initialize_gitignore()
 
     # Initialize the requirements.txt.
-    prerequisites.initialize_requirements_txt()
+    dependency.initialize_requirements_txt(constants.Reflex.VERSION)
 
     # Finish initializing the app.
     console.success(f"Initialized {app_name}")
@@ -282,38 +278,14 @@ def export(
     ),
 ):
     """Export the app to a zip file."""
-    # Set the log level.
-    console.set_log_level(loglevel)
-
-    # Show system info
-    exec.output_system_info()
-
-    # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
-
-    # Compile the app in production mode and export it.
-    console.rule("[bold]Compiling production app and preparing for export.")
-
-    if frontend:
-        # Update some parameters for export
-        prerequisites.update_next_config(export=True)
-        # Ensure module can be imported and app.compile() is called.
-        prerequisites.get_app()
-        # Set up .web directory and install frontend dependencies.
-        build.setup_frontend(Path.cwd())
-
-    # Export the app.
-    build.export(
-        backend=backend,
+    export_utils.export(
+        zipping=zipping,
         frontend=frontend,
-        zip=zipping,
+        backend=backend,
         zip_dest_dir=zip_dest_dir,
-        deploy_url=config.deploy_url,
         upload_db_file=upload_db_file,
+        loglevel=loglevel,
     )
-
-    # Post a telemetry event.
-    telemetry.send("export")
 
 
 @cli.command()
@@ -323,22 +295,7 @@ def login(
     ),
 ):
     """Authenticate with Reflex hosting service."""
-    # Set the log level.
-    console.set_log_level(loglevel)
-
-    access_token, invitation_code = hosting.authenticated_token()
-    if access_token:
-        console.print("You already logged in.")
-        return
-
-    # If not already logged in, open a browser window/tab to the login page.
-    access_token = hosting.authenticate_on_browser(invitation_code)
-
-    if not access_token:
-        console.error(f"Unable to authenticate. Please try again or contact support.")
-        raise typer.Exit(1)
-
-    console.print("Successfully logged in.")
+    hosting_cli.login(loglevel.value)
 
 
 @cli.command()
@@ -348,11 +305,7 @@ def logout(
     ),
 ):
     """Log out of access to Reflex hosting service."""
-    console.set_log_level(loglevel)
-
-    hosting.log_out_on_browser()
-    console.debug("Deleting access token from config locally")
-    hosting.delete_token_from_config(include_invitation_code=True)
+    hosting_cli.logout(loglevel.value)
 
 
 db_cli = typer.Typer()
@@ -495,201 +448,37 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    if not interactive and not key:
-        console.error(
-            "Please provide a name for the deployed instance when not in interactive mode."
-        )
-        raise typer.Exit(1)
-
     dependency.check_requirements()
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
-    enabled_regions = None
-    # If there is already a key, then it is passed in from CLI option in the non-interactive mode
-    if key is not None and not hosting.is_valid_deployment_key(key):
-        console.error(
-            f"Deployment key {key} is not valid. Please use only domain name safe characters."
-        )
-        raise typer.Exit(1)
-    try:
-        # Send a request to server to obtain necessary information
-        # in preparation of a deployment. For example,
-        # server can return confirmation of a particular deployment key,
-        # is available, or suggest a new key, or return an existing deployment.
-        # Some of these are used in the interactive mode.
-        pre_deploy_response = hosting.prepare_deploy(
-            app_name, key=key, frontend_hostname=frontend_hostname
-        )
-        # Note: we likely won't need to fetch this twice
-        if pre_deploy_response.enabled_regions is not None:
-            enabled_regions = pre_deploy_response.enabled_regions
 
-    except Exception as ex:
-        console.error(f"Unable to prepare deployment due to: {ex}")
-        raise typer.Exit(1) from ex
-
-    # The app prefix should not change during the time of preparation
-    app_prefix = pre_deploy_response.app_prefix
-    if not interactive:
-        # in this case, the key was supplied for the pre_deploy call, at this point the reply is expected
-        if (reply := pre_deploy_response.reply) is None:
-            console.error(f"Unable to deploy at this name {key}.")
-            raise typer.Exit(1)
-        api_url = reply.api_url
-        deploy_url = reply.deploy_url
-    else:
-        (
-            key_candidate,
-            api_url,
-            deploy_url,
-        ) = hosting.interactive_get_deployment_key_from_user_input(
-            pre_deploy_response, app_name, frontend_hostname=frontend_hostname
-        )
-        if not key_candidate or not api_url or not deploy_url:
-            console.error("Unable to find a suitable deployment key.")
-            raise typer.Exit(1)
-
-        # Now copy over the candidate to the key
-        key = key_candidate
-
-        # Then CP needs to know the user's location, which requires user permission
-        while True:
-            region_input = console.ask(
-                "Region to deploy to. Enter to use default.",
-                default=regions[0] if regions else "sjc",
-            )
-
-            if enabled_regions is None or region_input in enabled_regions:
-                break
-            else:
-                console.warn(
-                    f"{region_input} is not a valid region. Must be one of {enabled_regions}"
-                )
-                console.warn("Run `reflex deploymemts regions` to see details.")
-        regions = regions or [region_input]
-
-        # process the envs
-        envs = hosting.interactive_prompt_for_envs()
-
-    # Check the required params are valid
-    console.debug(f"{key=}, {regions=}, {app_name=}, {app_prefix=}, {api_url}")
-    if not key or not regions or not app_name or not app_prefix or not api_url:
-        console.error("Please provide all the required parameters.")
-        raise typer.Exit(1)
-    # Note: if the user uses --no-interactive mode, there was no prepare_deploy call
-    # so we do not check the regions until the call to hosting server
-
-    processed_envs = hosting.process_envs(envs) if envs else None
-
-    # Compile the app in production mode.
-    config.api_url = api_url
-    config.deploy_url = deploy_url
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        export(
+    hosting_cli.deploy(
+        app_name=app_name,
+        export_fn=lambda zip_dest_dir, api_url, deploy_url: export_utils.export(
+            zip_dest_dir=zip_dest_dir,
+            api_url=api_url,
+            deploy_url=deploy_url,
             frontend=True,
             backend=True,
             zipping=True,
-            zip_dest_dir=tmp_dir,
             loglevel=loglevel,
             upload_db_file=upload_db_file,
-        )
-    except ImportError as ie:
-        console.error(
-            f"Encountered ImportError, did you install all the dependencies? {ie}"
-        )
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        raise typer.Exit(1) from ie
-    except Exception as ex:
-        console.error(f"Unable to export due to: {ex}")
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-        raise typer.Exit(1) from ex
-
-    frontend_file_name = constants.ComponentName.FRONTEND.zip()
-    backend_file_name = constants.ComponentName.BACKEND.zip()
-
-    console.print("Uploading code and sending request ...")
-    deploy_requested_at = datetime.now().astimezone()
-    try:
-        deploy_response = hosting.deploy(
-            frontend_file_name=frontend_file_name,
-            backend_file_name=backend_file_name,
-            export_dir=tmp_dir,
-            key=key,
-            app_name=app_name,
-            regions=regions,
-            app_prefix=app_prefix,
-            cpus=cpus,
-            memory_mb=memory_mb,
-            auto_start=auto_start,
-            auto_stop=auto_stop,
-            frontend_hostname=frontend_hostname,
-            envs=processed_envs,
-            with_metrics=with_metrics,
-            with_tracing=with_tracing,
-        )
-    except Exception as ex:
-        console.error(f"Unable to deploy due to: {ex}")
-        raise typer.Exit(1) from ex
-    finally:
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
-
-    # Deployment will actually start when data plane reconciles this request
-    console.debug(f"deploy_response: {deploy_response}")
-    console.rule("[bold]Deploying production app.")
-    console.print(
-        "[bold]Deployment will start shortly. Closing this command now will not affect your deployment."
+        ),
+        key=key,
+        reflex_version=constants.Reflex.VERSION,
+        regions=regions,
+        envs=envs,
+        cpus=cpus,
+        memory_mb=memory_mb,
+        auto_start=auto_start,
+        auto_stop=auto_stop,
+        frontend_hostname=frontend_hostname,
+        interactive=interactive,
+        with_metrics=with_metrics,
+        with_tracing=with_tracing,
+        loglevel=loglevel.value,
     )
-
-    # It takes a few seconds for the deployment request to be picked up by server
-    hosting.wait_for_server_to_pick_up_request()
-
-    console.print("Waiting for server to report progress ...")
-    # Display the key events such as build, deploy, etc
-    server_report_deploy_success = hosting.poll_deploy_milestones(
-        key, from_iso_timestamp=deploy_requested_at
-    )
-
-    if server_report_deploy_success is None:
-        console.warn("Hosting server timed out.")
-        console.warn("The deployment may still be in progress. Proceeding ...")
-    elif not server_report_deploy_success:
-        console.error("Hosting server reports failure.")
-        console.error(
-            f"Check the server logs using `reflex deployments build-logs {key}`"
-        )
-        raise typer.Exit(1)
-    console.print("Waiting for the new deployment to come up")
-    backend_up = frontend_up = False
-
-    with console.status("Checking backend ..."):
-        for _ in range(Hosting.BACKEND_POLL_RETRIES):
-            if backend_up := hosting.poll_backend(deploy_response.backend_url):
-                break
-            time.sleep(1)
-    if not backend_up:
-        console.print("Backend unreachable")
-
-    with console.status("Checking frontend ..."):
-        for _ in range(Hosting.FRONTEND_POLL_RETRIES):
-            if frontend_up := hosting.poll_frontend(deploy_response.frontend_url):
-                break
-            time.sleep(1)
-    if not frontend_up:
-        console.print("frontend is unreachable")
-
-    if frontend_up and backend_up:
-        console.print(
-            f"Your site [ {key} ] at {regions} is up: {deploy_response.frontend_url}"
-        )
-        return
-    console.warn(f"Your deployment is taking time.")
-    console.warn(f"Check back later on its status: `reflex deployments status {key}`")
-    console.warn(f"For logs: `reflex deployments logs {key}`")
 
 
 @cli.command()

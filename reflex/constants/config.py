@@ -2,7 +2,7 @@
 import os
 from types import SimpleNamespace
 
-from reflex.constants.base import Dirs, Reflex
+from reflex.constants.base import Dirs
 
 from .compiler import Ext
 
@@ -39,15 +39,6 @@ class GitIgnore(SimpleNamespace):
     FILE = ".gitignore"
     # Files to gitignore.
     DEFAULTS = {Dirs.WEB, "*.db", "__pycache__/", "*.py[cod]"}
-
-
-class RequirementsTxt(SimpleNamespace):
-    """Requirements.txt constants."""
-
-    # The requirements.txt file.
-    FILE = "requirements.txt"
-    # The partial text used to form requirement that pins a reflex version
-    DEFAULTS_STUB = f"{Reflex.MODULE_NAME}>="
 
 
 # The deployment URL.

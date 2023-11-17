@@ -30,7 +30,6 @@ from .config import (
     Config,
     Expiration,
     GitIgnore,
-    RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
 from .installer import (
@@ -67,7 +66,6 @@ __ALL__ = [
     Ext,
     Fnm,
     GitIgnore,
-    RequirementsTxt,
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,

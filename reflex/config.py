@@ -9,6 +9,7 @@ import urllib.parse
 from typing import Any, Dict, List, Optional, Set
 
 import pydantic
+from cli.constants.hosting import Hosting
 
 from reflex import constants
 from reflex.base import Base
@@ -186,9 +187,9 @@ class Config(Base):
     frontend_packages: List[str] = []
 
     # The hosting service backend URL.
-    cp_backend_url: str = constants.Hosting.CP_BACKEND_URL
+    cp_backend_url: str = Hosting.CP_BACKEND_URL
     # The hosting service frontend URL.
-    cp_web_url: str = constants.Hosting.CP_WEB_URL
+    cp_web_url: str = Hosting.CP_WEB_URL
 
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
