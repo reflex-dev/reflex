@@ -399,6 +399,7 @@ class Component(Base, ABC):
         return tag.add_props(**props)
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_props(cls) -> Set[str]:
         """Get the unique fields for the component.
 
@@ -408,6 +409,7 @@ class Component(Base, ABC):
         return set(cls.get_fields()) - set(Component.get_fields())
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_initial_props(cls) -> Set[str]:
         """Get the initial props to set for the component.
 
@@ -949,7 +951,7 @@ class CustomComponent(Component):
         # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_component().get_custom_components(seen=seen)
+            custom_components |= self.get_component(self).get_custom_components(seen=seen)
         return custom_components
 
     def _render(self) -> Tag:
@@ -976,6 +978,7 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
+    @lru_cache(maxsize=None)
     def get_component(self) -> Component:
         """Render the component.
 
