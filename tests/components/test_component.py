@@ -126,9 +126,9 @@ def component5() -> Type[Component]:
     class TestComponent5(Component):
         tag = "RandomComponent"
 
-        invalid_children: List[str] = ["Text"]
+        _invalid_children: List[str] = ["Text"]
 
-        valid_children: List[str] = ["Text"]
+        _valid_children: List[str] = ["Text"]
 
     return TestComponent5
 
@@ -144,7 +144,7 @@ def component6() -> Type[Component]:
     class TestComponent6(Component):
         tag = "RandomComponent"
 
-        invalid_children: List[str] = ["Text"]
+        _invalid_children: List[str] = ["Text"]
 
     return TestComponent6
 
@@ -160,7 +160,7 @@ def component7() -> Type[Component]:
     class TestComponent7(Component):
         tag = "RandomComponent"
 
-        valid_children: List[str] = ["Text"]
+        _valid_children: List[str] = ["Text"]
 
     return TestComponent7
 

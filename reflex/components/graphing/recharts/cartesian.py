@@ -243,7 +243,7 @@ class Area(Cartesian):
     stack_id: Var[str]
 
     # Valid children components
-    valid_children: List[str] = ["LabelList"]
+    _valid_children: List[str] = ["LabelList"]
 
 
 class Bar(Cartesian):
