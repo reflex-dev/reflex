@@ -469,7 +469,7 @@ def test_custom_component_wrapper():
     assert len(ccomponent.children) == 1
     assert isinstance(ccomponent.children[0], rx.Text)
 
-    component = ccomponent.get_component()
+    component = ccomponent.get_component(ccomponent)
     assert isinstance(component, Box)
 
 
