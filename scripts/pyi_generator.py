@@ -38,13 +38,13 @@ EXCLUDED_PROPS = [
     "alias",
     "children",
     "event_triggers",
-    "invalid_children",
     "library",
     "lib_dependencies",
     "tag",
     "is_default",
     "special_props",
-    "valid_children",
+    "_invalid_children",
+    "_valid_children",
 ]
 
 DEFAULT_TYPING_IMPORTS = {

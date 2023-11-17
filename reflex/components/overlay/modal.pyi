@@ -7,11 +7,13 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralAlertDialogSize
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.media import Icon
 from reflex.vars import Var
+
+ModalSizes = Literal["xs", "sm", "md", "lg", "xl", "full"]
 
 class Modal(ChakraComponent):
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
@@ -37,23 +39,8 @@ class Modal(ChakraComponent):
         return_focus_on_close: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
-                Var[
-                    Literal[
-                        "sm",
-                        "md",
-                        "lg",
-                        "xs",
-                        "2xl",
-                        "full",
-                        "3xl",
-                        "4xl",
-                        "5xl",
-                        "6xl",
-                    ]
-                ],
-                Literal[
-                    "sm", "md", "lg", "xs", "2xl", "full", "3xl", "4xl", "5xl", "6xl"
-                ],
+                Var[Literal["xs", "sm", "md", "lg", "xl", "full"]],
+                Literal["xs", "sm", "md", "lg", "xl", "full"],
             ]
         ] = None,
         use_inert: Optional[Union[Var[bool], bool]] = None,
@@ -141,7 +128,7 @@ class Modal(ChakraComponent):
             motion_preset: The transition that should be used for the modal
             preserve_scroll_bar_gap: If true, a `padding-right` will be applied to the body element that's equal to the width of the scrollbar. This can help prevent some unpleasant flickering effect and content adjustment when the modal opens
             return_focus_on_close: If true, the modal will return focus to the element that triggered it when it closes.
-            size: "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "full"
+            size: "xs" | "sm" | "md" | "lg" | "xl" | "full"
             use_inert: A11y: If true, the siblings of the modal will have `aria-hidden` set to true so that screen readers can only see the modal. This is commonly known as making the other elements **inert**
             style: The style of the component.
             key: A unique key for the component.

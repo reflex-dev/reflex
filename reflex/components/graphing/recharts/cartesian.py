@@ -278,7 +278,7 @@ class Bar(Cartesian):
     max_bar_size: Var[int]
 
     # Valid children components
-    valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
+    _valid_children: List[str] = ["Cell", "LabelList", "ErrorBar"]
 
 
 class Line(Cartesian):
@@ -313,7 +313,7 @@ class Line(Cartesian):
     connect_nulls: Var[bool]
 
     # Valid children components
-    valid_children: List[str] = ["LabelList", "ErrorBar"]
+    _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
 
 class Scatter(Cartesian):
@@ -345,7 +345,7 @@ class Scatter(Cartesian):
     name: Var[Union[str, int]]
 
     # Valid children components.
-    valid_children: List[str] = ["LabelList", "ErrorBar"]
+    _valid_children: List[str] = ["LabelList", "ErrorBar"]
 
 
 class Funnel(Cartesian):
@@ -368,7 +368,7 @@ class Funnel(Cartesian):
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    valid_children: List[str] = ["LabelList", "Cell"]
+    _valid_children: List[str] = ["LabelList", "Cell"]
 
 
 class ErrorBar(Recharts):
@@ -427,7 +427,7 @@ class ReferenceLine(Reference):
     stroke_width: Var[int]
 
     # Valid children components
-    valid_children: List[str] = ["Label"]
+    _valid_children: List[str] = ["Label"]
 
 
 class ReferenceDot(Reference):
@@ -438,7 +438,7 @@ class ReferenceDot(Reference):
     alias = "RechartsReferenceDot"
 
     # Valid children components
-    valid_children: List[str] = ["Label"]
+    _valid_children: List[str] = ["Label"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -497,7 +497,7 @@ class ReferenceArea(Recharts):
     is_front: Var[bool]
 
     # Valid children components
-    valid_children: List[str] = ["Label"]
+    _valid_children: List[str] = ["Label"]
 
 
 class Grid(Recharts):

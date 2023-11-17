@@ -65,7 +65,7 @@ class Pie(Recharts):
     label_line: Var[bool]
 
     # Valid children components
-    valid_children: List[str] = ["Cell", "LabelList"]
+    _valid_children: List[str] = ["Cell", "LabelList"]
 
     # fill color
     fill: Var[str]
@@ -130,7 +130,7 @@ class Radar(Recharts):
     animation_easing: Var[LiteralAnimationEasing]
 
     # Valid children components
-    valid_children: List[str] = ["LabelList"]
+    _valid_children: List[str] = ["LabelList"]
 
 
 class RadialBar(Recharts):
@@ -156,7 +156,7 @@ class RadialBar(Recharts):
     background: Var[bool]
 
     # Valid children components
-    valid_children: List[str] = ["LabelList"]
+    _valid_children: List[str] = ["LabelList"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -215,7 +215,7 @@ class PolarAngleAxis(Recharts):
     allow_duplicated_category: Var[bool]
 
     # Valid children components
-    valid_children: List[str] = ["Label"]
+    _valid_children: List[str] = ["Label"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
@@ -262,7 +262,7 @@ class PolarGrid(Recharts):
     grid_type: Var[LiteralGridType]
 
     # Valid children components
-    valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
+    _valid_children: List[str] = ["RadarChart", "RadiarBarChart"]
 
 
 class PolarRadiusAxis(Recharts):
@@ -306,7 +306,7 @@ class PolarRadiusAxis(Recharts):
     scale: Var[LiteralScale]
 
     # Valid children components
-    valid_children: List[str] = ["Label"]
+    _valid_children: List[str] = ["Label"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
