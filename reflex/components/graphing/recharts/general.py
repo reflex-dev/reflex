@@ -42,7 +42,7 @@ class ResponsiveContainer(Recharts):
     debounce: Var[int]
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "AreaChart",
         "BarChart",
         "LineChart",

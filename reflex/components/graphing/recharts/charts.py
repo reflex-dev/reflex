@@ -130,7 +130,7 @@ class AreaChart(ChartBase):
     stack_offset: Var[LiteralStackOffset]
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -170,7 +170,7 @@ class BarChart(ChartBase):
     reverse_stack_order: Var[bool]
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -192,7 +192,7 @@ class LineChart(ChartBase):
     alias = "RechartsLineChart"
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -229,7 +229,7 @@ class ComposedChart(ChartBase):
     reverse_stack_order: Var[bool]
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "XAxis",
         "YAxis",
         "ReferenceArea",
@@ -253,7 +253,7 @@ class PieChart(ChartBase):
     alias = "RechartsPieChart"
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -301,7 +301,7 @@ class RadarChart(ChartBase):
     outer_radius: Var[Union[int, str]]
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -359,7 +359,7 @@ class RadialBarChart(ChartBase):
     bar_size: Var[int]
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "PolarAngleAxis",
         "PolarRadiusAxis",
         "PolarGrid",
@@ -390,7 +390,7 @@ class ScatterChart(ChartBase):
     alias = "RechartsScatterChart"
 
     # Valid children components
-    valid_children: List[str] = [
+    _valid_children: List[str] = [
         "XAxis",
         "YAxis",
         "ZAxis",
@@ -455,7 +455,7 @@ class FunnelChart(RechartsCharts):
     layout: Var[str]
 
     # Valid children components
-    valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
+    _valid_children: List[str] = ["Legend", "GraphingTooltip", "Funnel"]
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.

@@ -67,10 +67,10 @@ class Component(Base, ABC):
     autofocus: bool = False
 
     # components that cannot be children
-    invalid_children: List[str] = []
+    _invalid_children: List[str] = []
 
-    # components that are only allowed as children
-    valid_children: List[str] = []
+    # only components that are allowed as children
+    _valid_children: List[str] = []
 
     # custom attribute
     custom_attrs: Dict[str, str] = {}
@@ -532,21 +532,21 @@ class Component(Base, ABC):
             children: The children of the component.
 
         """
-        if not self.invalid_children and not self.valid_children:
+        if not self._invalid_children and not self._valid_children:
             return
 
         comp_name = type(self).__name__
 
         def validate_invalid_child(child_name):
-            if child_name in self.invalid_children:
+            if child_name in self._invalid_children:
                 raise ValueError(
                     f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
         def validate_valid_child(child_name):
-            if child_name not in self.valid_children:
+            if child_name not in self._valid_children:
                 valid_child_list = ", ".join(
-                    [f"`{v_child}`" for v_child in self.valid_children]
+                    [f"`{v_child}`" for v_child in self._valid_children]
                 )
                 raise ValueError(
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
@@ -555,10 +555,10 @@ class Component(Base, ABC):
         for child in children:
             name = type(child).__name__
 
-            if self.invalid_children:
+            if self._invalid_children:
                 validate_invalid_child(name)
 
-            if self.valid_children:
+            if self._valid_children:
                 validate_valid_child(name)
 
     def _get_custom_code(self) -> str | None:
