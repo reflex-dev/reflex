@@ -118,6 +118,7 @@ class Radio(Text):
         is_read_only: Optional[Union[Var[bool], bool]] = None,
         is_required: Optional[Union[Var[bool], bool]] = None,
         as_: Optional[Union[Var[str], str]] = None,
+        no_of_lines: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -187,6 +188,7 @@ class Radio(Text):
             is_read_only: If true, the radio will be read-only
             is_required: If true, the radio button will be required. This also sets `aria-required` to true.
             as_: Override the tag. The default tag is `<p>`.
+            no_of_lines: Truncate text after a specific number of lines. It will render an ellipsis when the text exceeds the width of the viewport or max_width prop.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
