@@ -66,9 +66,9 @@ class RadixThemesComponent(Component):
         )
         return component
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            **super()._get_app_wrap_components(),
             (45, "RadixThemesColorModeProvider"): RadixThemesColorModeProvider.create(),
         }
 

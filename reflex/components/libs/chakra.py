@@ -1,6 +1,7 @@
 """Components that are based on Chakra-UI."""
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import List, Literal
 
 from reflex.components.component import Component
@@ -17,9 +18,10 @@ class ChakraComponent(Component):
         "framer-motion@10.16.4",
     ]
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            **super()._get_app_wrap_components(),
             (60, "ChakraProvider"): chakra_provider,
         }
 
@@ -82,9 +84,11 @@ const GlobalStyles = css`
 `;
 """
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            (50, "ChakraColorModeProvider"): ChakraColorModeProvider.create(),
+            (50, "ChakraColorModeProvider"): chakra_color_mode_provider,
         }
 
 
@@ -97,6 +101,8 @@ class ChakraColorModeProvider(Component):
     library = "/components/reflex/chakra_color_mode_provider.js"
     tag = "ChakraColorModeProvider"
     is_default = True
+
+chakra_color_mode_provider = ChakraColorModeProvider.create()
 
 
 LiteralColorScheme = Literal[

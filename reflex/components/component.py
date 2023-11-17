@@ -807,7 +807,8 @@ class Component(Base, ABC):
         alias = self.alias.partition(".")[0] if self.alias else None
         return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component.
 
         Returns:
