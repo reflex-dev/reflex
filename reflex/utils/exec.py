@@ -12,11 +12,10 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import psutil
-import uvicorn
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, path_ops, prerequisites, processes
+from reflex.utils import console, path_ops
 from reflex.utils.watch import AssetFolderWatch
 
 
@@ -73,6 +72,8 @@ def run_process_and_launch_url(run_command: list[str]):
     Args:
         run_command: The command to run.
     """
+    from reflex.utils import processes
+
     json_file_path = os.path.join(constants.Dirs.WEB, "package.json")
     last_hash = detect_package_change(json_file_path)
     process = None
@@ -113,6 +114,8 @@ def run_frontend(root: Path, port: str):
         root: The root path of the project.
         port: The port to run the frontend on.
     """
+    from reflex.utils import prerequisites
+
     # Start watching asset folder.
     start_watching_assets_folder(root)
     # validate dependencies before run
@@ -131,6 +134,8 @@ def run_frontend_prod(root: Path, port: str):
         root: The root path of the project (to keep same API as run_frontend).
         port: The port to run the frontend on.
     """
+    from reflex.utils import prerequisites
+
     # Set the port.
     os.environ["PORT"] = str(get_config().frontend_port if port is None else port)
     # validate dependencies before run
@@ -152,6 +157,8 @@ def run_backend(
         port: The app port
         loglevel: The log level.
     """
+    import uvicorn
+
     config = get_config()
     app_module = f"{config.app_name}.{config.app_name}:{constants.CompileVars.APP}"
 
@@ -183,6 +190,8 @@ def run_backend_prod(
         port: The app port
         loglevel: The log level.
     """
+    from reflex.utils import processes
+
     num_workers = processes.get_num_workers()
     config = get_config()
     RUN_BACKEND_PROD = f"gunicorn --worker-class {config.gunicorn_worker_class} --preload --timeout {config.timeout} --log-level critical".split()
@@ -226,6 +235,8 @@ def output_system_info():
     """Show system information if the loglevel is in DEBUG."""
     if console._LOG_LEVEL > constants.LogLevel.DEBUG:
         return
+
+    from reflex.utils import prerequisites
 
     config = get_config()
     try:
