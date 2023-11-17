@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typing
 from abc import ABC
-from functools import wraps
+from functools import lru_cache, wraps
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 from reflex.base import Base
@@ -417,6 +417,7 @@ class Component(Base, ABC):
         return set()
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_component_props(cls) -> set[str]:
         """Get the props that expected a component as value.
 
