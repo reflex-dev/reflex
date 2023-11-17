@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.3.2"
+version = "0.3.3"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -46,7 +46,6 @@ uvicorn = [
 ]
 watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
-websockets = "^10.4"
 starlette-admin = "^0.9.0"
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
@@ -58,6 +57,7 @@ wrapt = [
 ]
 packaging = "^23.1"
 pipdeptree = "^2.13.0"
+websockets = ">=10.4"
 reflex-hosting-cli = { path = "../reflex-hosting-cli", develop = true }
 
 [tool.poetry.group.dev.dependencies]

@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
 
-set -ex
+set -euxo pipefail
+
+export TELEMETRY_ENABLED=false
+
+function do_export () {
+    template=$1
+    mkdir ~/"$template"
+    cd ~/"$template"
+    rm -rf ~/.local/share/reflex ~/"$template"/.web
+    reflex init --template "$template"
+    reflex export
+}
 
 echo "Preparing test project dir"
-mkdir hello
-python3 -m venv ~/hello/venv
-source ~/hello/venv/bin/activate
+python3 -m venv ~/venv
+source ~/venv/bin/activate
 
 echo "Installing reflex from local repo code"
-cd /reflex-repo
-poetry install
+pip install /reflex-repo
+
 echo "Running reflex init in test project dir"
-export TELEMETRY_ENABLED=false
-poetry run /bin/bash -c "cd ~/hello && reflex init --template blank && rm -rf ~/.reflex .web && reflex export --backend-only"
+do_export blank
+do_export sidebar

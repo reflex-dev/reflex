@@ -174,13 +174,7 @@ class EventHandler(EventActionsMixin):
         for arg in args:
             # Special case for file uploads.
             if isinstance(arg, FileUpload):
-                return EventSpec(
-                    handler=self,
-                    client_handler_name="uploadFiles",
-                    # `files` is defined in the Upload component's _use_hooks
-                    args=((Var.create_safe("files"), Var.create_safe("files")),),
-                    event_actions=self.event_actions.copy(),
-                )
+                return arg.as_event_spec(handler=self)
 
             # Otherwise, convert to JSON.
             try:
@@ -236,6 +230,50 @@ class EventSpec(EventActionsMixin):
         )
 
 
+class CallableEventSpec(EventSpec):
+    """Decorate an EventSpec-returning function to act as both a EventSpec and a function.
+
+    This is used as a compatibility shim for replacing EventSpec objects in the
+    API with functions that return a family of EventSpec.
+    """
+
+    fn: Optional[Callable[..., EventSpec]] = None
+
+    def __init__(self, fn: Callable[..., EventSpec] | None = None, **kwargs):
+        """Initialize a CallableEventSpec.
+
+        Args:
+            fn: The function to decorate.
+            **kwargs: The kwargs to pass to pydantic initializer
+        """
+        if fn is not None:
+            default_event_spec = fn()
+            super().__init__(
+                fn=fn,  # type: ignore
+                **default_event_spec.dict(),
+                **kwargs,
+            )
+        else:
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs) -> EventSpec:
+        """Call the decorated function.
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Returns:
+            The EventSpec returned from calling the function.
+
+        Raises:
+            TypeError: If the CallableEventSpec has no associated function.
+        """
+        if self.fn is None:
+            raise TypeError("CallableEventSpec has no associated function.")
+        return self.fn(*args, **kwargs)
+
+
 class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
@@ -267,7 +305,80 @@ class FrontendEvent(Base):
 class FileUpload(Base):
     """Class to represent a file upload."""
 
-    pass
+    upload_id: Optional[str] = None
+    on_upload_progress: Optional[Union[EventHandler, Callable]] = None
+
+    @staticmethod
+    def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
+        """Args spec for on_upload_progress event handler.
+
+        Returns:
+            The arg mapping passed to backend event handler
+        """
+        return [_prog]
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+
+        Raises:
+            ValueError: If the on_upload_progress is not a valid event handler.
+        """
+        from reflex.components.forms.upload import DEFAULT_UPLOAD_ID
+
+        upload_id = self.upload_id or DEFAULT_UPLOAD_ID
+
+        spec_args = [
+            # `upload_files` is defined in state.js and assigned in the Upload component's _use_hooks
+            (Var.create_safe("files"), Var.create_safe(f"upload_files.{upload_id}[0]")),
+            (
+                Var.create_safe("upload_id"),
+                Var.create_safe(upload_id, _var_is_string=True),
+            ),
+        ]
+        if self.on_upload_progress is not None:
+            on_upload_progress = self.on_upload_progress
+            if isinstance(on_upload_progress, EventHandler):
+                events = [
+                    call_event_handler(
+                        on_upload_progress,
+                        self.on_upload_progress_args_spec,
+                    ),
+                ]
+            elif isinstance(on_upload_progress, Callable):
+                # Call the lambda to get the event chain.
+                events = call_event_fn(on_upload_progress, self.on_upload_progress_args_spec)  # type: ignore
+            else:
+                raise ValueError(f"{on_upload_progress} is not a valid event handler.")
+            on_upload_progress_chain = EventChain(
+                events=events,
+                args_spec=self.on_upload_progress_args_spec,
+            )
+            formatted_chain = str(format.format_prop(on_upload_progress_chain))
+            spec_args.append(
+                (
+                    Var.create_safe("on_upload_progress"),
+                    BaseVar(
+                        _var_name=formatted_chain.strip("{}"),
+                        _var_type=EventChain,
+                    ),
+                ),
+            )
+        return EventSpec(
+            handler=handler,
+            client_handler_name="uploadFiles",
+            args=tuple(spec_args),
+            event_actions=handler.event_actions.copy(),
+        )
+
+
+# Alias for rx.upload_files
+upload_files = FileUpload
 
 
 # Special server-side events.

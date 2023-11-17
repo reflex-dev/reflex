@@ -61,6 +61,7 @@ ICON_LIST: List[str] = [
     "attachment",
     "bell",
     "calendar",
+    "chat",
     "check_circle",
     "check",
     "chevron_down",
