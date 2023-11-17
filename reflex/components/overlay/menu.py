@@ -121,7 +121,7 @@ class MenuButton(ChakraComponent):
     variant: Var[str]
 
     # Components that are not allowed as children.
-    invalid_children: List[str] = ["Button", "MenuButton"]
+    _invalid_children: List[str] = ["Button", "MenuButton"]
 
     # The tag to use for the menu button.
     as_: Var[str]
