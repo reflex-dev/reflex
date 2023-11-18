@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
+from reflex.utils import format
 
 
 def FormSubmit():
@@ -15,6 +16,8 @@ def FormSubmit():
 
     class FormState(rx.State):
         form_data: dict = {}
+
+        var_options: list[str] = ["option3", "option4"]
 
         def form_submit(self, form_data: dict):
             self.form_data = form_data
@@ -36,10 +39,14 @@ def FormSubmit():
                     rx.number_input(id="number_input"),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
+                    rx.checkbox(id="bool_input3"),
+                    rx.switch(id="bool_input4"),
                     rx.slider(id="slider_input"),
                     rx.range_slider(id="range_input"),
                     rx.radio_group(["option1", "option2"], id="radio_input"),
+                    rx.radio_group(FormState.var_options, id="radio_input_var"),
                     rx.select(["option1", "option2"], id="select_input"),
+                    rx.select(FormState.var_options, id="select_input_var"),
                     rx.text_area(id="text_area_input"),
                     rx.input(
                         id="debounce_input",
@@ -49,6 +56,7 @@ def FormSubmit():
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
+                custom_attrs={"action": "/invalid"},
             ),
             rx.spacer(),
             height="100vh",
@@ -57,11 +65,65 @@ def FormSubmit():
     app.compile()
 
 
-@pytest.fixture(scope="session")
-def form_submit(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def FormSubmitName():
+    """App with a form using on_submit."""
+    import reflex as rx
+
+    class FormState(rx.State):
+        form_data: dict = {}
+
+        def form_submit(self, form_data: dict):
+            self.form_data = form_data
+
+    app = rx.App(state=FormState)
+
+    @app.add_page
+    def index():
+        return rx.vstack(
+            rx.input(
+                value=FormState.router.session.client_token,
+                is_read_only=True,
+                id="token",
+            ),
+            rx.form(
+                rx.vstack(
+                    rx.input(name="name_input"),
+                    rx.hstack(rx.pin_input(length=4, name="pin_input")),
+                    rx.number_input(name="number_input"),
+                    rx.checkbox(name="bool_input"),
+                    rx.switch(name="bool_input2"),
+                    rx.checkbox(name="bool_input3"),
+                    rx.switch(name="bool_input4"),
+                    rx.slider(name="slider_input"),
+                    rx.range_slider(name="range_input"),
+                    rx.radio_group(["option1", "option2"], name="radio_input"),
+                    rx.select(["option1", "option2"], name="select_input"),
+                    rx.text_area(name="text_area_input"),
+                    rx.input(
+                        name="debounce_input",
+                        debounce_timeout=0,
+                        on_change=rx.console_log,
+                    ),
+                    rx.button("Submit", type_="submit"),
+                ),
+                on_submit=FormState.form_submit,
+                custom_attrs={"action": "/invalid"},
+            ),
+            rx.spacer(),
+            height="100vh",
+        )
+
+    app.compile()
+
+
+@pytest.fixture(
+    scope="session", params=[FormSubmit, FormSubmitName], ids=["id", "name"]
+)
+def form_submit(request, tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start FormSubmit app at tmp_path via AppHarness.
 
     Args:
+        request: pytest request fixture
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
@@ -69,7 +131,7 @@ def form_submit(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("form_submit"),
-        app_source=FormSubmit,  # type: ignore
+        app_source=request.param,  # type: ignore
     ) as harness:
         assert harness.app_instance is not None, "app is not running"
         yield harness
@@ -102,6 +164,7 @@ async def test_submit(driver, form_submit: AppHarness):
         form_submit: harness for FormSubmit app
     """
     assert form_submit.app_instance is not None, "app is not running"
+    by = By.ID if form_submit.app_source is FormSubmit else By.NAME
 
     # get a reference to the connected client
     token_input = driver.find_element(By.ID, "token")
@@ -111,7 +174,7 @@ async def test_submit(driver, form_submit: AppHarness):
     token = form_submit.poll_for_value(token_input)
     assert token
 
-    name_input = driver.find_element(By.ID, "name_input")
+    name_input = driver.find_element(by, "name_input")
     name_input.send_keys("foo")
 
     pin_inputs = driver.find_elements(By.CLASS_NAME, "chakra-pin-input")
@@ -136,10 +199,12 @@ async def test_submit(driver, form_submit: AppHarness):
     textarea_input = driver.find_element(By.CLASS_NAME, "chakra-textarea")
     textarea_input.send_keys("Some", Keys.ENTER, "Text")
 
-    debounce_input = driver.find_element(By.ID, "debounce_input")
+    debounce_input = driver.find_element(by, "debounce_input")
     debounce_input.send_keys("bar baz")
 
     time.sleep(1)
+
+    prev_url = driver.current_url
 
     submit_input = driver.find_element(By.CLASS_NAME, "chakra-button")
     submit_input.click()
@@ -151,14 +216,22 @@ async def test_submit(driver, form_submit: AppHarness):
     form_data = await AppHarness._poll_for_async(get_form_data)
     assert isinstance(form_data, dict)
 
+    form_data = format.collect_form_dict_names(form_data)
+
     assert form_data["name_input"] == "foo"
     assert form_data["pin_input"] == pin_values
     assert form_data["number_input"] == "-3"
-    assert form_data["bool_input"] is True
-    assert form_data["bool_input2"] is True
+    assert form_data["bool_input"]
+    assert form_data["bool_input2"]
+    assert not form_data.get("bool_input3", False)
+    assert not form_data.get("bool_input4", False)
+
     assert form_data["slider_input"] == "50"
     assert form_data["range_input"] == ["25", "75"]
     assert form_data["radio_input"] == "option2"
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"
+
+    # submitting the form should NOT change the url (preventDefault on_submit event)
+    assert driver.current_url == prev_url

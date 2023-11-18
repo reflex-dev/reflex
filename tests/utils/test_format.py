@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 
 from reflex.components.tags.tag import Tag
-from reflex.event import EventChain, EventHandler, EventSpec
+from reflex.event import EventChain, EventHandler, EventSpec, FrontendEvent
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import BaseVar, Var
@@ -117,6 +117,8 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
         ("camelTwoHumps", "camel_two_humps"),
         ("_start_with_underscore", "_start_with_underscore"),
         ("__start_with_double_underscore", "__start_with_double_underscore"),
+        ("kebab-case", "kebab_case"),
+        ("double-kebab-case", "double_kebab_case"),
     ],
 )
 def test_to_snake_case(input: str, output: str):
@@ -137,6 +139,9 @@ def test_to_snake_case(input: str, output: str):
         ("Hello", "Hello"),
         ("snake_case", "snakeCase"),
         ("snake_case_two", "snakeCaseTwo"),
+        ("kebab-case", "kebabCase"),
+        ("kebab-case-two", "kebabCaseTwo"),
+        ("snake_kebab-case", "snakeKebabCase"),
     ],
 )
 def test_to_camel_case(input: str, output: str):
@@ -289,6 +294,49 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
                 "b": BaseVar(_var_name="val", _var_type="str"),
             },
             r'{{"a": "foo \"{ \"bar\" }\" baz", "b": val}}',
+        ),
+        (
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))],
+                args_spec=lambda: [],
+            ),
+            '{(_e) => addEvents([Event("mock_event", {})], (_e), {})}',
+        ),
+        (
+            EventChain(
+                events=[
+                    EventSpec(
+                        handler=EventHandler(fn=mock_event),
+                        args=(
+                            (
+                                Var.create_safe("arg"),
+                                BaseVar(
+                                    _var_name="_e",
+                                    _var_type=FrontendEvent,
+                                ).target.value,
+                            ),
+                        ),
+                    )
+                ],
+                args_spec=lambda: [],
+            ),
+            '{(_e) => addEvents([Event("mock_event", {arg:_e.target.value})], (_e), {})}',
+        ),
+        (
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))],
+                args_spec=lambda: [],
+                event_actions={"stopPropagation": True},
+            ),
+            '{(_e) => addEvents([Event("mock_event", {})], (_e), {"stopPropagation": true})}',
+        ),
+        (
+            EventChain(
+                events=[EventSpec(handler=EventHandler(fn=mock_event))],
+                args_spec=lambda: [],
+                event_actions={"preventDefault": True},
+            ),
+            '{(_e) => addEvents([Event("mock_event", {})], (_e), {"preventDefault": true})}',
         ),
         ({"a": "red", "b": "blue"}, '{{"a": "red", "b": "blue"}}'),
         (BaseVar(_var_name="var", _var_type="int"), "{var}"),

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from reflex.components.component import Component
-from reflex.event import EventHandler
+from typing import Any
 
 DECORATED_PAGES = []
 
@@ -14,8 +13,8 @@ def page(
     image: str | None = None,
     description: str | None = None,
     meta: str | None = None,
-    script_tags: list[Component] | None = None,
-    on_load: EventHandler | list[EventHandler] | None = None,
+    script_tags: list[Any] | None = None,
+    on_load: Any | list[Any] | None = None,
 ):
     """Decorate a function as a page.
 
@@ -61,3 +60,15 @@ def page(
         return render_fn
 
     return decorator
+
+
+def get_decorated_pages() -> list[dict]:
+    """Get the decorated pages.
+
+    Returns:
+        The decorated pages.
+    """
+    return sorted(
+        [page_data for render_fn, page_data in DECORATED_PAGES],
+        key=lambda x: x["route"],
+    )

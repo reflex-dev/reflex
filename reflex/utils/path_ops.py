@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -173,3 +174,21 @@ def update_json_file(file_path: str, update_dict: dict[str, int | str]):
     # Write the updated json object to the file
     with open(fp, "w") as f:
         json.dump(json_object, f, ensure_ascii=False)
+
+
+def find_replace(directory: str, find: str, replace: str):
+    """Recursively find and replace text in files in a directory.
+
+    Args:
+        directory: The directory to search.
+        find: The text to find.
+        replace: The text to replace.
+    """
+    for root, _dirs, files in os.walk(directory):
+        for file in files:
+            filepath = os.path.join(root, file)
+            with open(filepath, "r", encoding="utf-8") as f:
+                text = f.read()
+            text = re.sub(find, replace, text)
+            with open(filepath, "w") as f:
+                f.write(text)

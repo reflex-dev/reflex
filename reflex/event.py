@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import inspect
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -100,7 +101,36 @@ def _no_chain_background_task(
     raise TypeError(f"{fn} is marked as a background task, but is not async.")
 
 
-class EventHandler(Base):
+class EventActionsMixin(Base):
+    """Mixin for DOM event actions."""
+
+    # Whether to `preventDefault` or `stopPropagation` on the event.
+    event_actions: Dict[str, bool] = {}
+
+    @property
+    def stop_propagation(self):
+        """Stop the event from bubbling up the DOM tree.
+
+        Returns:
+            New EventHandler-like with stopPropagation set to True.
+        """
+        return self.copy(
+            update={"event_actions": {"stopPropagation": True, **self.event_actions}},
+        )
+
+    @property
+    def prevent_default(self):
+        """Prevent the default behavior of the event.
+
+        Returns:
+            New EventHandler-like with preventDefault set to True.
+        """
+        return self.copy(
+            update={"event_actions": {"preventDefault": True, **self.event_actions}},
+        )
+
+
+class EventHandler(EventActionsMixin):
     """An event handler responds to an event to update the state."""
 
     # The function to call in response to the event.
@@ -144,12 +174,7 @@ class EventHandler(Base):
         for arg in args:
             # Special case for file uploads.
             if isinstance(arg, FileUpload):
-                return EventSpec(
-                    handler=self,
-                    client_handler_name="uploadFiles",
-                    # `files` is defined in the Upload component's _use_hooks
-                    args=((Var.create_safe("files"), Var.create_safe("files")),),
-                )
+                return arg.as_event_spec(handler=self)
 
             # Otherwise, convert to JSON.
             try:
@@ -161,10 +186,12 @@ class EventHandler(Base):
         payload = tuple(zip(fn_args, values))
 
         # Return the event spec.
-        return EventSpec(handler=self, args=payload)
+        return EventSpec(
+            handler=self, args=payload, event_actions=self.event_actions.copy()
+        )
 
 
-class EventSpec(Base):
+class EventSpec(EventActionsMixin):
     """An event specification.
 
     Whereas an Event object is passed during runtime, a spec is used
@@ -186,13 +213,78 @@ class EventSpec(Base):
         # Required to allow tuple fields.
         frozen = True
 
+    def with_args(self, args: Tuple[Tuple[Var, Var], ...]) -> EventSpec:
+        """Copy the event spec, with updated args.
 
-class EventChain(Base):
+        Args:
+            args: The new args to pass to the function.
+
+        Returns:
+            A copy of the event spec, with the new args.
+        """
+        return type(self)(
+            handler=self.handler,
+            client_handler_name=self.client_handler_name,
+            args=args,
+            event_actions=self.event_actions.copy(),
+        )
+
+
+class CallableEventSpec(EventSpec):
+    """Decorate an EventSpec-returning function to act as both a EventSpec and a function.
+
+    This is used as a compatibility shim for replacing EventSpec objects in the
+    API with functions that return a family of EventSpec.
+    """
+
+    fn: Optional[Callable[..., EventSpec]] = None
+
+    def __init__(self, fn: Callable[..., EventSpec] | None = None, **kwargs):
+        """Initialize a CallableEventSpec.
+
+        Args:
+            fn: The function to decorate.
+            **kwargs: The kwargs to pass to pydantic initializer
+        """
+        if fn is not None:
+            default_event_spec = fn()
+            super().__init__(
+                fn=fn,  # type: ignore
+                **default_event_spec.dict(),
+                **kwargs,
+            )
+        else:
+            super().__init__(**kwargs)
+
+    def __call__(self, *args, **kwargs) -> EventSpec:
+        """Call the decorated function.
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Returns:
+            The EventSpec returned from calling the function.
+
+        Raises:
+            TypeError: If the CallableEventSpec has no associated function.
+        """
+        if self.fn is None:
+            raise TypeError("CallableEventSpec has no associated function.")
+        return self.fn(*args, **kwargs)
+
+
+class EventChain(EventActionsMixin):
     """Container for a chain of events that will be executed in order."""
 
     events: List[EventSpec]
 
     args_spec: Optional[Callable]
+
+
+# These chains can be used for their side effects when no other events are desired.
+stop_propagation = EventChain(events=[], args_spec=lambda: []).stop_propagation
+prevent_default = EventChain(events=[], args_spec=lambda: []).prevent_default
 
 
 class Target(Base):
@@ -213,7 +305,80 @@ class FrontendEvent(Base):
 class FileUpload(Base):
     """Class to represent a file upload."""
 
-    pass
+    upload_id: Optional[str] = None
+    on_upload_progress: Optional[Union[EventHandler, Callable]] = None
+
+    @staticmethod
+    def on_upload_progress_args_spec(_prog: dict[str, int | float | bool]):
+        """Args spec for on_upload_progress event handler.
+
+        Returns:
+            The arg mapping passed to backend event handler
+        """
+        return [_prog]
+
+    def as_event_spec(self, handler: EventHandler) -> EventSpec:
+        """Get the EventSpec for the file upload.
+
+        Args:
+            handler: The event handler.
+
+        Returns:
+            The event spec for the handler.
+
+        Raises:
+            ValueError: If the on_upload_progress is not a valid event handler.
+        """
+        from reflex.components.forms.upload import DEFAULT_UPLOAD_ID
+
+        upload_id = self.upload_id or DEFAULT_UPLOAD_ID
+
+        spec_args = [
+            # `upload_files` is defined in state.js and assigned in the Upload component's _use_hooks
+            (Var.create_safe("files"), Var.create_safe(f"upload_files.{upload_id}[0]")),
+            (
+                Var.create_safe("upload_id"),
+                Var.create_safe(upload_id, _var_is_string=True),
+            ),
+        ]
+        if self.on_upload_progress is not None:
+            on_upload_progress = self.on_upload_progress
+            if isinstance(on_upload_progress, EventHandler):
+                events = [
+                    call_event_handler(
+                        on_upload_progress,
+                        self.on_upload_progress_args_spec,
+                    ),
+                ]
+            elif isinstance(on_upload_progress, Callable):
+                # Call the lambda to get the event chain.
+                events = call_event_fn(on_upload_progress, self.on_upload_progress_args_spec)  # type: ignore
+            else:
+                raise ValueError(f"{on_upload_progress} is not a valid event handler.")
+            on_upload_progress_chain = EventChain(
+                events=events,
+                args_spec=self.on_upload_progress_args_spec,
+            )
+            formatted_chain = str(format.format_prop(on_upload_progress_chain))
+            spec_args.append(
+                (
+                    Var.create_safe("on_upload_progress"),
+                    BaseVar(
+                        _var_name=formatted_chain.strip("{}"),
+                        _var_type=EventChain,
+                    ),
+                ),
+            )
+        return EventSpec(
+            handler=handler,
+            client_handler_name="uploadFiles",
+            args=tuple(spec_args),
+            event_actions=handler.event_actions.copy(),
+        )
+
+
+# Alias for rx.upload_files
+upload_files = FileUpload
 
 
 # Special server-side events.
@@ -380,7 +545,7 @@ def set_clipboard(content: str) -> EventSpec:
     )
 
 
-def download(url: str, filename: Optional[str] = None) -> EventSpec:
+def download(url: str | Var, filename: Optional[str | Var] = None) -> EventSpec:
     """Download the file at a given path.
 
     Args:
@@ -393,12 +558,16 @@ def download(url: str, filename: Optional[str] = None) -> EventSpec:
     Returns:
         EventSpec: An event to download the associated file.
     """
-    if not url.startswith("/"):
-        raise ValueError("The URL argument should start with a /")
+    if isinstance(url, Var) and filename is None:
+        filename = ""
 
-    # if filename is not provided, infer it from url
-    if filename is None:
-        filename = url.rpartition("/")[-1]
+    if isinstance(url, str):
+        if not url.startswith("/"):
+            raise ValueError("The URL argument should start with a /")
+
+        # if filename is not provided, infer it from url
+        if filename is None:
+            filename = url.rpartition("/")[-1]
 
     return server_side(
         "_download",
@@ -408,19 +577,51 @@ def download(url: str, filename: Optional[str] = None) -> EventSpec:
     )
 
 
-def call_script(javascript_code: str) -> EventSpec:
+def _callback_arg_spec(eval_result):
+    """ArgSpec for call_script callback function.
+
+    Args:
+        eval_result: The result of the javascript execution.
+
+    Returns:
+        Args for the callback function
+    """
+    return [eval_result]
+
+
+def call_script(
+    javascript_code: str,
+    callback: EventHandler | Callable | None = None,
+) -> EventSpec:
     """Create an event handler that executes arbitrary javascript code.
 
     Args:
         javascript_code: The code to execute.
+        callback: EventHandler that will receive the result of evaluating the javascript code.
 
     Returns:
         EventSpec: An event that will execute the client side javascript.
+
+    Raises:
+        ValueError: If the callback is not a valid event handler.
     """
+    callback_kwargs = {}
+    if callback is not None:
+        arg_name = parse_args_spec(_callback_arg_spec)[0]._var_name
+        if isinstance(callback, EventHandler):
+            event_spec = call_event_handler(callback, _callback_arg_spec)
+        elif isinstance(callback, FunctionType):
+            event_spec = call_event_fn(callback, _callback_arg_spec)[0]
+        else:
+            raise ValueError("Cannot use {callback!r} as a call_script callback.")
+        callback_kwargs = {
+            "callback": f"({arg_name}) => queueEvents([{format.format_event(event_spec)}], {constants.CompileVars.SOCKET})"
+        }
     return server_side(
         "_call_script",
         get_fn_signature(call_script),
         javascript_code=javascript_code,
+        **callback_kwargs,
     )
 
 
@@ -479,8 +680,8 @@ def call_event_handler(
         else:
             source = inspect.getsource(arg_spec)  # type: ignore
             raise ValueError(
-                f"number of arguments in {event_handler.fn.__name__} "
-                f"doesn't match the definition '{source.strip().strip(',')}'"
+                f"number of arguments in {event_handler.fn.__qualname__} "
+                f"doesn't match the definition of the event trigger '{source.strip().strip(',')}'"
             )
     else:
         console.deprecate(

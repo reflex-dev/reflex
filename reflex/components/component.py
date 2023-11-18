@@ -20,6 +20,7 @@ from reflex.event import (
 )
 from reflex.style import Style
 from reflex.utils import console, format, imports, types
+from reflex.utils.serializers import serializer
 from reflex.vars import BaseVar, ImportVar, Var
 
 
@@ -66,10 +67,10 @@ class Component(Base, ABC):
     autofocus: bool = False
 
     # components that cannot be children
-    invalid_children: List[str] = []
+    _invalid_children: List[str] = []
 
-    # components that are only allowed as children
-    valid_children: List[str] = []
+    # only components that are allowed as children
+    _valid_children: List[str] = []
 
     # custom attribute
     custom_attrs: Dict[str, str] = {}
@@ -242,6 +243,9 @@ class Component(Base, ABC):
             if value._var_type is not EventChain:
                 raise ValueError(f"Invalid event chain: {value}")
             return value
+        elif isinstance(value, EventChain):
+            # Trust that the caller knows what they're doing passing an EventChain directly
+            return value
 
         arg_spec = triggers.get(event_trigger, lambda: [])
 
@@ -260,11 +264,16 @@ class Component(Base, ABC):
                     deprecation_version="0.2.8",
                     removal_version="0.3.0",
                 )
-            events = []
+            events: list[EventSpec] = []
             for v in value:
                 if isinstance(v, EventHandler):
                     # Call the event handler to get the event.
-                    event = call_event_handler(v, arg_spec)  # type: ignore
+                    try:
+                        event = call_event_handler(v, arg_spec)  # type: ignore
+                    except ValueError as err:
+                        raise ValueError(
+                            f" {err} defined in the `{type(self).__name__}` component"
+                        ) from err
 
                     # Add the event to the chain.
                     events.append(event)
@@ -286,20 +295,26 @@ class Component(Base, ABC):
             raise ValueError(f"Invalid event chain: {value}")
 
         # Add args to the event specs if necessary.
-        events = [
-            EventSpec(
-                handler=e.handler,
-                args=get_handler_args(e),
-                client_handler_name=e.client_handler_name,
-            )
-            for e in events
-        ]
+        events = [e.with_args(get_handler_args(e)) for e in events]
+
+        # Collect event_actions from each spec
+        event_actions = {}
+        for e in events:
+            event_actions.update(e.event_actions)
 
         # Return the event chain.
         if isinstance(arg_spec, Var):
-            return EventChain(events=events, args_spec=None)
+            return EventChain(
+                events=events,
+                args_spec=None,
+                event_actions=event_actions,
+            )
         else:
-            return EventChain(events=events, args_spec=arg_spec)  # type: ignore
+            return EventChain(
+                events=events,
+                args_spec=arg_spec,  # type: ignore
+                event_actions=event_actions,
+            )
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers for the component.
@@ -343,8 +358,11 @@ class Component(Base, ABC):
 
         return _compile_component(self)
 
-    def _render(self) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
+
+        Args:
+            props: The props to render (if None, then use get_props).
 
         Returns:
             The tag to render.
@@ -355,16 +373,28 @@ class Component(Base, ABC):
             special_props=self.special_props,
         )
 
-        # Add component props to the tag.
-        props = {
-            attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
-            for attr in self.get_props()
-        }
+        if props is None:
+            # Add component props to the tag.
+            props = {
+                attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
+                for attr in self.get_props()
+            }
 
-        # Add ref to element if `id` is not None.
-        ref = self.get_ref()
-        if ref is not None:
-            props["ref"] = Var.create(ref, _var_is_local=False)
+            # Add ref to element if `id` is not None.
+            ref = self.get_ref()
+            if ref is not None:
+                props["ref"] = Var.create(ref, _var_is_local=False)
+        else:
+            props = props.copy()
+
+        props.update(
+            self.event_triggers,
+            key=self.key,
+            id=self.id,
+            class_name=self.class_name,
+        )
+        props.update(self._get_style())
+        props.update(self.custom_attrs)
 
         return tag.add_props(**props)
 
@@ -385,6 +415,20 @@ class Component(Base, ABC):
             The initial props to set.
         """
         return set()
+
+    @classmethod
+    def get_component_props(cls) -> set[str]:
+        """Get the props that expected a component as value.
+
+        Returns:
+            The components props.
+        """
+        return {
+            name
+            for name, field in cls.get_fields().items()
+            if name in cls.get_props()
+            and types._issubclass(field.outer_type_, Component)
+        }
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -456,6 +500,14 @@ class Component(Base, ABC):
             child.add_style(style)
         return self
 
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        return {"sx": self.style}
+
     def render(self) -> Dict:
         """Render the component.
 
@@ -464,14 +516,7 @@ class Component(Base, ABC):
         """
         tag = self._render()
         rendered_dict = dict(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                sx=self.style,
-                id=self.id,
-                class_name=self.class_name,
-                **self.custom_attrs,
-            ).set(
+            tag.set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
                 props=tag.format_props(),
@@ -487,21 +532,21 @@ class Component(Base, ABC):
             children: The children of the component.
 
         """
-        if not self.invalid_children and not self.valid_children:
+        if not self._invalid_children and not self._valid_children:
             return
 
         comp_name = type(self).__name__
 
         def validate_invalid_child(child_name):
-            if child_name in self.invalid_children:
+            if child_name in self._invalid_children:
                 raise ValueError(
                     f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
         def validate_valid_child(child_name):
-            if child_name not in self.valid_children:
+            if child_name not in self._valid_children:
                 valid_child_list = ", ".join(
-                    [f"`{v_child}`" for v_child in self.valid_children]
+                    [f"`{v_child}`" for v_child in self._valid_children]
                 )
                 raise ValueError(
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
@@ -510,10 +555,10 @@ class Component(Base, ABC):
         for child in children:
             name = type(child).__name__
 
-            if self.invalid_children:
+            if self._invalid_children:
                 validate_invalid_child(name)
 
-            if self.valid_children:
+            if self._valid_children:
                 validate_valid_child(name)
 
     def _get_custom_code(self) -> str | None:
@@ -574,19 +619,48 @@ class Component(Base, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_dependencies_imports(self):
-        return {
-            dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies
-        }
+    def _get_props_imports(self) -> imports.ImportDict:
+        """Get the imports needed for components props.
+
+        Returns:
+            The  imports for the components props of the component.
+        """
+        return imports.merge_imports(
+            *[
+                getattr(self, prop).get_imports()
+                for prop in self.get_component_props()
+                if getattr(self, prop) is not None
+            ]
+        )
+
+    def _get_dependencies_imports(self) -> imports.ImportDict:
+        """Get the imports from lib_dependencies for installing.
+
+        Returns:
+            The dependencies imports of the component.
+        """
+        return imports.merge_imports(
+            {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
+        )
 
     def _get_imports(self) -> imports.ImportDict:
-        imports = {}
+        """Get all the libraries and fields that are used by the component.
+
+        Returns:
+            The imports needed by the component.
+        """
+        _imports = {}
         if self.library is not None and self.tag is not None:
-            imports[self.library] = {self.import_var}
-        return {**self._get_dependencies_imports(), **imports}
+            _imports[self.library] = {self.import_var}
+
+        return imports.merge_imports(
+            self._get_props_imports(),
+            self._get_dependencies_imports(),
+            _imports,
+        )
 
     def get_imports(self) -> imports.ImportDict:
-        """Get all the libraries and fields that are used by the component.
+        """Get all the libraries and fields that are used by the component and its children.
 
         Returns:
             The import dict with the required imports.
@@ -883,10 +957,7 @@ class CustomComponent(Component):
         Returns:
             The tag to render.
         """
-        return Tag(
-            name=self.tag if not self.alias else self.alias,
-            special_props=self.special_props,
-        ).add_props(**self.props)
+        return super()._render(props=self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.
@@ -934,17 +1005,21 @@ def custom_component(
     return wrapper
 
 
+# Alias memo to custom_component.
+memo = custom_component
+
+
 class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
-    def _get_imports(self):
-        imports = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+    def _get_imports(self) -> imports.ImportDict:
+        dynamic_import = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
 
-        return {
-            **imports,
-            self.library: {ImportVar(tag=None, render=False)},
-            **self._get_dependencies_imports(),
-        }
+        return imports.merge_imports(
+            dynamic_import,
+            {self.library: {ImportVar(tag=None, render=False)}},
+            self._get_dependencies_imports(),
+        )
 
     def _get_dynamic_imports(self) -> str:
         opts_fragment = ", { ssr: false });"
@@ -966,3 +1041,16 @@ class NoSSRComponent(Component):
             else ""
         )
         return "".join((library_import, mod_import, opts_fragment))
+
+
+@serializer
+def serialize_component(comp: Component):
+    """Serialize a component.
+
+    Args:
+        comp: The component to serialize.
+
+    Returns:
+        The serialized component.
+    """
+    return str(comp)

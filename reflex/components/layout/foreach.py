@@ -1,6 +1,7 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
+import typing
 from typing import Any, Callable, Iterable
 
 from reflex.components.component import Component
@@ -47,15 +48,20 @@ class Foreach(Component):
                 f"Could not foreach over var of type Any. (If you are trying to foreach over a state var, add a type annotation to the var.)"
             )
         arg = BaseVar(_var_name="_", _var_type=type_, _var_is_local=True)
+        comp = IterTag(iterable=iterable, render_fn=render_fn).render_component(arg)
         return cls(
             iterable=iterable,
             render_fn=render_fn,
-            children=[IterTag.render_component(render_fn, arg=arg)],
+            children=[comp],
             **props,
         )
 
     def _render(self) -> IterTag:
-        return IterTag(iterable=self.iterable, render_fn=self.render_fn)
+        return IterTag(
+            iterable=self.iterable,
+            render_fn=self.render_fn,
+            index_var_name=get_unique_variable_name(),
+        )
 
     def render(self):
         """Render the component.
@@ -66,9 +72,9 @@ class Foreach(Component):
         tag = self._render()
         try:
             type_ = (
-                self.iterable._var_type
-                if self.iterable._var_type.mro()[0] == dict
-                else self.iterable._var_type.__args__[0]
+                tag.iterable._var_type
+                if tag.iterable._var_type.mro()[0] == dict
+                else typing.get_args(tag.iterable._var_type)[0]
             )
         except Exception:
             type_ = Any
@@ -77,7 +83,7 @@ class Foreach(Component):
             _var_type=type_,
         )
         index_arg = tag.get_index_var_arg()
-        component = tag.render_component(self.render_fn, arg)
+        component = tag.render_component(arg)
         return dict(
             tag.add_props(
                 **self.event_triggers,

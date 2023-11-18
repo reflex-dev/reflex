@@ -7,7 +7,7 @@ import functools
 import json
 import os
 import sys
-from typing import Dict, Generator, List
+from typing import Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -30,7 +30,7 @@ from reflex.state import (
     StateProxy,
     StateUpdate,
 )
-from reflex.utils import prerequisites
+from reflex.utils import prerequisites, types
 from reflex.utils.format import json_dumps
 from reflex.vars import BaseVar, ComputedVar
 
@@ -905,7 +905,7 @@ class InterdependentState(State):
         Returns:
             ComputedVar v1x2 multiplied by 2
         """
-        return self.v1x2 * 2
+        return self.v1x2 * 2  # type: ignore
 
 
 @pytest.fixture
@@ -1105,7 +1105,7 @@ def test_computed_var_cached_depends_on_non_cached():
 
         @rx.cached_var
         def dep_v(self) -> int:
-            return self.no_cache_v
+            return self.no_cache_v  # type: ignore
 
         @rx.cached_var
         def comp_v(self) -> int:
@@ -1148,7 +1148,7 @@ def test_computed_var_depends_on_parent_non_cached():
     class ChildState(ParentState):
         @rx.cached_var
         def dep_v(self) -> int:
-            return self.no_cache_v
+            return self.no_cache_v  # type: ignore
 
     ps = ParentState()
     cs = ps.substates[ChildState.get_name()]
@@ -1577,7 +1577,7 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app.state = TestState
-    app.state_manager = state_manager
+    app._state_manager = state_manager
     app.event_namespace.emit = AsyncMock()  # type: ignore
     monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
     return app
@@ -1662,6 +1662,15 @@ class BackgroundTaskState(State):
 
     order: List[str] = []
     dict_list: Dict[str, List[int]] = {"foo": [1, 2, 3]}
+
+    @rx.var
+    def computed_order(self) -> List[str]:
+        """Get the order as a computed var.
+
+        Returns:
+            The value of 'order' var.
+        """
+        return self.order
 
     @rx.background
     async def background_task(self):
@@ -1791,6 +1800,10 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
                         "background_task:start",
                         "other",
                     ],
+                    "computed_order": [
+                        "background_task:start",
+                        "other",
+                    ],
                 }
             }
         )
@@ -1800,13 +1813,57 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
         await task
     assert not mock_app.background_tasks
 
-    assert (await mock_app.state_manager.get_state(token)).order == [
+    exp_order = [
         "background_task:start",
         "other",
         "background_task:stop",
         "other",
         "private",
     ]
+
+    assert (await mock_app.state_manager.get_state(token)).order == exp_order
+
+    assert mock_app.event_namespace is not None
+    emit_mock = mock_app.event_namespace.emit
+
+    assert json.loads(emit_mock.mock_calls[0].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "order": ["background_task:start"],
+                "computed_order": ["background_task:start"],
+            }
+        },
+        "events": [],
+        "final": True,
+    }
+    for call in emit_mock.mock_calls[1:5]:
+        assert json.loads(call.args[1]) == {
+            "delta": {
+                "background_task_state": {"computed_order": ["background_task:start"]}
+            },
+            "events": [],
+            "final": True,
+        }
+    assert json.loads(emit_mock.mock_calls[-2].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "order": exp_order,
+                "computed_order": exp_order,
+                "dict_list": {},
+            }
+        },
+        "events": [],
+        "final": True,
+    }
+    assert json.loads(emit_mock.mock_calls[-1].args[1]) == {
+        "delta": {
+            "background_task_state": {
+                "computed_order": exp_order,
+            },
+        },
+        "events": [],
+        "final": True,
+    }
 
 
 @pytest.mark.asyncio
@@ -2182,3 +2239,52 @@ def test_reset_with_mutables():
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
+
+
+class Custom1(Base):
+    """A custom class with a str field."""
+
+    foo: str
+
+
+class Custom2(Base):
+    """A custom class with a Custom1 field."""
+
+    c1: Optional[Custom1] = None
+    c1r: Custom1
+
+
+class Custom3(Base):
+    """A custom class with a Custom2 field."""
+
+    c2: Optional[Custom2] = None
+    c2r: Custom2
+
+
+def test_state_union_optional():
+    """Test that state can be defined with Union and Optional vars."""
+
+    class UnionState(State):
+        int_float: Union[int, float] = 0
+        opt_int: Optional[int]
+        c3: Optional[Custom3]
+        c3i: Custom3  # implicitly required
+        c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
+        custom_union: Union[Custom1, Custom2, Custom3] = Custom1(foo="")
+
+    assert UnionState.c3.c2._var_name == "c3?.c2"  # type: ignore
+    assert UnionState.c3.c2.c1._var_name == "c3?.c2?.c1"  # type: ignore
+    assert UnionState.c3.c2.c1.foo._var_name == "c3?.c2?.c1?.foo"  # type: ignore
+    assert UnionState.c3.c2.c1r.foo._var_name == "c3?.c2?.c1r.foo"  # type: ignore
+    assert UnionState.c3.c2r.c1._var_name == "c3?.c2r.c1"  # type: ignore
+    assert UnionState.c3.c2r.c1.foo._var_name == "c3?.c2r.c1?.foo"  # type: ignore
+    assert UnionState.c3.c2r.c1r.foo._var_name == "c3?.c2r.c1r.foo"  # type: ignore
+    assert UnionState.c3i.c2._var_name == "c3i.c2"  # type: ignore
+    assert UnionState.c3r.c2._var_name == "c3r.c2"  # type: ignore
+    assert UnionState.custom_union.foo is not None  # type: ignore
+    assert UnionState.custom_union.c1 is not None  # type: ignore
+    assert UnionState.custom_union.c1r is not None  # type: ignore
+    assert UnionState.custom_union.c2 is not None  # type: ignore
+    assert UnionState.custom_union.c2r is not None  # type: ignore
+    assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
+    assert types.is_union(UnionState.int_float._var_type)  # type: ignore

@@ -23,6 +23,9 @@ class RadioGroup(ChakraComponent):
     # The default value.
     default_value: Var[Any]
 
+    # The name of the form field
+    name: Var[str]
+
     def get_event_triggers(self) -> Dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
@@ -50,7 +53,7 @@ class RadioGroup(ChakraComponent):
         if (
             len(children) == 1
             and isinstance(children[0], Var)
-            and _issubclass(children[0].type_, List)
+            and _issubclass(children[0]._var_type, List)
         ):
             children = [Foreach.create(children[0], lambda item: Radio.create(item))]
         return super().create(*children, **props)

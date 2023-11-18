@@ -185,13 +185,13 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
-    # Params to remove eventually.
-    # For rest are for deploy only.
-    # The rxdeploy url.
-    rxdeploy_url: Optional[str] = None
+    # The hosting service backend URL.
+    cp_backend_url: str = constants.Hosting.CP_BACKEND_URL
+    # The hosting service frontend URL.
+    cp_web_url: str = constants.Hosting.CP_WEB_URL
 
-    # The username.
-    username: Optional[str] = None
+    # The worker class used in production mode
+    gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: Set[str] = pydantic.PrivateAttr(set())
@@ -305,6 +305,18 @@ class Config(Base):
             and "frontend_port" in kwargs
         ):
             self.deploy_url = f"http://localhost:{kwargs['frontend_port']}"
+
+        # If running in Github Codespaces, override API_URL
+        codespace_name = os.getenv("CODESPACE_NAME")
+        if "api_url" not in self._non_default_attributes and codespace_name:
+            GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
+                "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
+            )
+            if codespace_name:
+                self.api_url = (
+                    f"https://{codespace_name}-{kwargs.get('backend_port', self.backend_port)}"
+                    f".{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+                )
 
     def _set_persistent(self, **kwargs):
         """Set values in this config and in the environment so they persist into subprocess.

@@ -17,7 +17,7 @@
 </div>
 
 ---
-[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md)
+[English](https://github.com/reflex-dev/reflex/blob/main/README.md) | [简体中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_cn/README.md) | [繁體中文](https://github.com/reflex-dev/reflex/blob/main/docs/zh/zh_tw/README.md) | [Türkçe](https://github.com/reflex-dev/reflex/blob/main/docs/tr/README.md) | [한국어](https://github.com/reflex-dev/reflex/blob/main/docs/kr/README.md)
 ---
 ## ⚙️ İndirme
 
@@ -142,7 +142,7 @@ Bu `index` fonkisyonu uygulamanın frontend'ini tanımlar.
 Farklı bileşenler kullanıyoruz misal `center`, `vstack`, `input`, ve `button` frontend'i oluşturmak için kullanıyoruz. Bileşenler birbirinin içine yerleştirilebilir
 karmaşık düzenler oluşturmak için. Ayrıca bunları CSS'nin tüm gücüyle şekillendirmek için args'ı kullanabilirsiniz.
 
-Reflex size yardım için [60'tan fazla yerleşik bileşen](https://reflex.dev/docs/library) içerir. Aktif olarak çok daha fazla yeni bileşen ekliyoruz, ve bunları oluşturmak çok kolay [Kendi bileşenlerinizi oluşturun](https://reflex.dev/docs/advanced-guide/wrapping-react).
+Reflex size yardım için [60'tan fazla yerleşik bileşen](https://reflex.dev/docs/library) içerir. Aktif olarak çok daha fazla yeni bileşen ekliyoruz, ve bunları oluşturmak çok kolay [Kendi bileşenlerinizi oluşturun](https://reflex.dev/docs/wrapping-react/overview/).
 
 ### **Durum**
 

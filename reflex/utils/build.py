@@ -35,21 +35,25 @@ def set_os_env(**kwargs):
         os.environ[key.upper()] = value
 
 
-def generate_sitemap_config(deploy_url: str):
+def generate_sitemap_config(deploy_url: str, export=False):
     """Generate the sitemap config file.
 
     Args:
         deploy_url: The URL of the deployed app.
+        export: If the sitemap are generated for an export.
     """
     # Import here to avoid circular imports.
     from reflex.compiler import templates
 
-    config = json.dumps(
-        {
-            "siteUrl": deploy_url,
-            "generateRobotsTxt": True,
-        }
-    )
+    config = {
+        "siteUrl": deploy_url,
+        "generateRobotsTxt": True,
+    }
+
+    if export:
+        config["outDir"] = constants.Dirs.STATIC
+
+    config = json.dumps(config)
 
     with open(constants.Next.SITEMAP_CONFIG_FILE, "w") as f:
         f.write(templates.SITEMAP_CONFIG(config=config))
@@ -59,6 +63,8 @@ def _zip(
     component_name: constants.ComponentName,
     target: str,
     root_dir: str,
+    exclude_venv_dirs: bool,
+    upload_db_file: bool = False,
     dirs_to_exclude: set[str] | None = None,
     files_to_exclude: set[str] | None = None,
 ) -> None:
@@ -68,6 +74,8 @@ def _zip(
         component_name: The name of the component: backend or frontend.
         target: The target zip file.
         root_dir: The root directory to zip.
+        exclude_venv_dirs: Whether to exclude venv directories.
+        upload_db_file: Whether to include local sqlite db files.
         dirs_to_exclude: The directories to exclude.
         files_to_exclude: The files to exclude.
 
@@ -85,9 +93,16 @@ def _zip(
             if (basename := os.path.basename(os.path.normpath(d)))
             not in dirs_to_exclude
             and not basename.startswith(".")
+            and (
+                not exclude_venv_dirs or not _looks_like_venv_dir(os.path.join(root, d))
+            )
         ]
-        # Modify the files in-place so the hidden files are excluded.
-        files[:] = [f for f in files if not f.startswith(".")]
+        # Modify the files in-place so the hidden files and db files are excluded.
+        files[:] = [
+            f
+            for f in files
+            if not f.startswith(".") and (upload_db_file or not f.endswith(".db"))
+        ]
         files_to_zip += [
             os.path.join(root, file) for file in files if file not in files_to_exclude
         ]
@@ -104,7 +119,7 @@ def _zip(
 
     with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file in files_to_zip:
-            console.debug(f"{target}: {file}")
+            console.debug(f"{target}: {file}", progress=progress)
             progress.advance(task)
             zipf.write(file, os.path.relpath(file, root_dir))
 
@@ -115,6 +130,7 @@ def export(
     zip: bool = False,
     zip_dest_dir: str = os.getcwd(),
     deploy_url: str | None = None,
+    upload_db_file: bool = False,
 ):
     """Export the app for deployment.
 
@@ -124,6 +140,7 @@ def export(
         zip: Whether to zip the app.
         zip_dest_dir: The destination directory for created zip files (if any)
         deploy_url: The URL of the deployed app.
+        upload_db_file: Whether to include local sqlite db files from the backend zip.
     """
     # Remove the static folder.
     path_ops.rm(constants.Dirs.WEB_STATIC)
@@ -132,22 +149,23 @@ def export(
     command = "export"
 
     if frontend:
-        # Generate a sitemap if a deploy URL is provided.
-        if deploy_url is not None:
-            generate_sitemap_config(deploy_url)
-            command = "export-sitemap"
-
         checkpoints = [
             "Linting and checking ",
-            "Compiled successfully",
+            "Creating an optimized production build",
             "Route (pages)",
+            "prerendered as static HTML",
             "Collecting page data",
-            "automatically rendered as static HTML",
-            'Copying "static build" directory',
-            'Copying "public" directory',
             "Finalizing page optimization",
-            "Export successful",
+            "Collecting build traces",
         ]
+
+        # Generate a sitemap if a deploy URL is provided.
+        if deploy_url is not None:
+            generate_sitemap_config(deploy_url, export=zip)
+            command = "export-sitemap"
+
+            checkpoints.extend(["Loading next-sitemap", "Generation completed"])
+
         # Start the subprocess with the progress bar.
         process = processes.new_process(
             [prerequisites.get_package_manager(), "run", command],
@@ -168,8 +186,9 @@ def export(
                 target=os.path.join(
                     zip_dest_dir, constants.ComponentName.FRONTEND.zip()
                 ),
-                root_dir=".web/_static",
+                root_dir=constants.Dirs.WEB_STATIC,
                 files_to_exclude=files_to_exclude,
+                exclude_venv_dirs=False,
             )
         if backend:
             _zip(
@@ -180,6 +199,8 @@ def export(
                 root_dir=".",
                 dirs_to_exclude={"assets", "__pycache__"},
                 files_to_exclude=files_to_exclude,
+                exclude_venv_dirs=True,
+                upload_db_file=upload_db_file,
             )
 
 
@@ -193,6 +214,9 @@ def setup_frontend(
         root: The root path of the project.
         disable_telemetry: Whether to disable the Next telemetry.
     """
+    # Create the assets dir if it doesn't exist.
+    path_ops.mkdir(constants.Dirs.APP_ASSETS)
+
     # Copy asset files to public folder.
     path_ops.cp(
         src=str(root / constants.Dirs.APP_ASSETS),
@@ -230,3 +254,7 @@ def setup_frontend_prod(
     """
     setup_frontend(root, disable_telemetry)
     export(deploy_url=get_config().deploy_url)
+
+
+def _looks_like_venv_dir(dir_to_check: str) -> bool:
+    return os.path.exists(os.path.join(dir_to_check, "pyvenv.cfg"))

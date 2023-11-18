@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import dis
+import inspect
 import json
 import random
 import string
@@ -15,16 +16,17 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
     Union,
     _GenericAlias,  # type: ignore
     cast,
+    get_args,
+    get_origin,
     get_type_hints,
 )
-
-from pydantic.fields import ModelField
 
 from reflex import constants
 from reflex.base import Base
@@ -417,15 +419,12 @@ class Var:
                 raise TypeError(
                     f"You must provide an annotation for the state var `{self._var_full_name}`. Annotation cannot be `{self._var_type}`"
                 ) from None
-            if (
-                hasattr(self._var_type, "__fields__")
-                and name in self._var_type.__fields__
-            ):
-                type_ = self._var_type.__fields__[name].outer_type_
-                if isinstance(type_, ModelField):
-                    type_ = type_.type_
+            is_optional = types.is_optional(self._var_type)
+            type_ = types.get_attribute_access_type(self._var_type, name)
+
+            if type_ is not None:
                 return BaseVar(
-                    _var_name=f"{self._var_name}.{name}",
+                    _var_name=f"{self._var_name}{'?' if is_optional else ''}.{name}",
                     _var_type=type_,
                     _var_state=self._var_state,
                     _var_is_local=self._var_is_local,
@@ -1140,15 +1139,74 @@ class Var:
 
         Returns:
             A var representing foreach operation.
+
+        Raises:
+            TypeError: If the var is not a list.
         """
+        inner_types = get_args(self._var_type)
+        if not inner_types:
+            raise TypeError(
+                f"Cannot foreach over non-sequence var {self._var_full_name} of type {self._var_type}."
+            )
         arg = BaseVar(
             _var_name=get_unique_variable_name(),
-            _var_type=self._var_type,
+            _var_type=inner_types[0],
         )
+        index = BaseVar(
+            _var_name=get_unique_variable_name(),
+            _var_type=int,
+        )
+        fn_signature = inspect.signature(fn)
+        fn_args = (arg, index)
+        fn_ret = fn(*fn_args[: len(fn_signature.parameters)])
         return BaseVar(
-            _var_name=f"{self._var_full_name}.map(({arg._var_name}, i) => {fn(arg, key='i')})",
+            _var_name=f"{self._var_full_name}.map(({arg._var_name}, {index._var_name}) => {fn_ret})",
             _var_type=self._var_type,
             _var_is_local=self._var_is_local,
+        )
+
+    @classmethod
+    def range(
+        cls,
+        v1: Var | int = 0,
+        v2: Var | int | None = None,
+        step: Var | int | None = None,
+    ) -> Var:
+        """Return an iterator over indices from v1 to v2 (or 0 to v1).
+
+        Args:
+            v1: The start of the range or end of range if v2 is not given.
+            v2: The end of the range.
+            step: The number of numbers between each item.
+
+        Returns:
+            A var representing range operation.
+
+        Raises:
+            TypeError: If the var is not an int.
+        """
+        if not isinstance(v1, Var):
+            v1 = Var.create_safe(v1)
+        if v1._var_type != int:
+            raise TypeError(f"Cannot get range on non-int var {v1._var_full_name}.")
+        if not isinstance(v2, Var):
+            v2 = Var.create(v2)
+        if v2 is None:
+            v2 = Var.create_safe("undefined")
+        elif v2._var_type != int:
+            raise TypeError(f"Cannot get range on non-int var {v2._var_full_name}.")
+
+        if not isinstance(step, Var):
+            step = Var.create(step)
+        if step is None:
+            step = Var.create_safe(1)
+        elif step._var_type != int:
+            raise TypeError(f"Cannot get range on non-int var {step._var_full_name}.")
+
+        return BaseVar(
+            _var_name=f"Array.from(range({v1._var_full_name}, {v2._var_full_name}, {step._var_name}))",
+            _var_type=list[int],
+            _var_is_local=False,
         )
 
     def to(self, type_: Type) -> Var:
@@ -1232,11 +1290,17 @@ class BaseVar(Var):
         Raises:
             ImportError: If the var is a dataframe and pandas is not installed.
         """
+        if types.is_optional(self._var_type):
+            return None
+
         type_ = (
-            self._var_type.__origin__
+            get_origin(self._var_type)
             if types.is_generic_alias(self._var_type)
             else self._var_type
         )
+        if type_ is Literal:
+            args = get_args(self._var_type)
+            return args[0] if args else None
         if issubclass(type_, str):
             return ""
         if issubclass(type_, types.get_args(Union[int, float])):
@@ -1414,17 +1478,25 @@ class ComputedVar(Var, property):
                 # is referencing an attribute on self
                 self_is_top_of_stack = True
                 continue
-            if self_is_top_of_stack and instruction.opname == "LOAD_ATTR":
-                # direct attribute access
-                d.add(instruction.argval)
-            elif self_is_top_of_stack and instruction.opname == "LOAD_METHOD":
-                # method call on self
-                d.update(
-                    self._deps(
-                        objclass=objclass,
-                        obj=getattr(objclass, instruction.argval),
+            if self_is_top_of_stack and instruction.opname in (
+                "LOAD_ATTR",
+                "LOAD_METHOD",
+            ):
+                try:
+                    ref_obj = getattr(objclass, instruction.argval)
+                except Exception:
+                    ref_obj = None
+                if callable(ref_obj):
+                    # recurse into callable attributes
+                    d.update(
+                        self._deps(
+                            objclass=objclass,
+                            obj=ref_obj,
+                        )
                     )
-                )
+                else:
+                    # normal attribute access
+                    d.add(instruction.argval)
             elif instruction.opname == "LOAD_CONST" and isinstance(
                 instruction.argval, CodeType
             ):
@@ -1518,3 +1590,33 @@ class NoRenderImportVar(ImportVar):
     """A import that doesn't need to be rendered."""
 
     render: Optional[bool] = False
+
+
+class CallableVar(BaseVar):
+    """Decorate a Var-returning function to act as both a Var and a function.
+
+    This is used as a compatibility shim for replacing Var objects in the
+    API with functions that return a family of Var.
+    """
+
+    def __init__(self, fn: Callable[..., BaseVar]):
+        """Initialize a CallableVar.
+
+        Args:
+            fn: The function to decorate (must return Var)
+        """
+        self.fn = fn
+        default_var = fn()
+        super().__init__(**dataclasses.asdict(default_var))
+
+    def __call__(self, *args, **kwargs) -> BaseVar:
+        """Call the decorated function.
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Returns:
+            The Var returned from calling the function.
+        """
+        return self.fn(*args, **kwargs)

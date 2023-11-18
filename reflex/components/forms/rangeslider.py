@@ -45,6 +45,9 @@ class RangeSlider(ChakraComponent):
     # The minimum distance between slider thumbs. Useful for preventing the thumbs from being too close together.
     min_steps_between_thumbs: Var[int]
 
+    # The name of the form field
+    name: Var[str]
+
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 

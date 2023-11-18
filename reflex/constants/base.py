@@ -89,6 +89,8 @@ class Templates(SimpleNamespace):
         WEB_TEMPLATE = os.path.join(BASE, "web")
         # The jinja template directory.
         JINJA_TEMPLATE = os.path.join(BASE, "jinja")
+        # Where the code for the templates is stored.
+        CODE = "code"
 
 
 class Next(SimpleNamespace):
