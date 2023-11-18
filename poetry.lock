@@ -135,13 +135,13 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "certifi"
-version = "2023.7.22"
+version = "2023.11.17"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "certifi-2023.7.22-py3-none-any.whl", hash = "sha256:92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9"},
-    {file = "certifi-2023.7.22.tar.gz", hash = "sha256:539cc1d13202e33ca466e88b2807e29f4c13049d6d87031a3c110744495cb082"},
+    {file = "certifi-2023.11.17-py3-none-any.whl", hash = "sha256:e036ab49d5b79556f99cfc2d9320b34cfbe5be05c5871b51de9329f0603b0474"},
+    {file = "certifi-2023.11.17.tar.gz", hash = "sha256:9b469f3a900bf28dc19b8cfbf8019bf47f7fdd1a65a1d4ffb98fc14166beb4d1"},
 ]
 
 [[package]]
@@ -1272,13 +1272,13 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pyright"
-version = "1.1.336"
+version = "1.1.334"
 description = "Command line wrapper for pyright"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pyright-1.1.336-py3-none-any.whl", hash = "sha256:8f6a8f365730c8d6c1af840d937371fd5cf0137b6e1827b8b066bc0bb7327aa6"},
-    {file = "pyright-1.1.336.tar.gz", hash = "sha256:f92d6d6845e4175833ea60dee5b1ef4d5d66663438fdaedccc1c3ba0f8efa3e3"},
+    {file = "pyright-1.1.334-py3-none-any.whl", hash = "sha256:dcb13e8358e021189672c4d6ebcad192ab061e4c7225036973ec493183c6da68"},
+    {file = "pyright-1.1.334.tar.gz", hash = "sha256:3adaf10f1f4209575dc022f9c897f7ef024639b7ea5b3cbe49302147e6949cd4"},
 ]
 
 [package.dependencies]
@@ -1541,13 +1541,13 @@ ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.0.1a0"
+version = "0.0.1b0"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "reflex_hosting_cli-0.0.1a0-py3-none-any.whl", hash = "sha256:3e9eb5542f1a6ca6444ef1d2e46bd29f4acbb430867117f8c06810795fcba935"},
-    {file = "reflex_hosting_cli-0.0.1a0.tar.gz", hash = "sha256:959cb63e075ef36762d4acdd89314b57a772dea458780169798b8cdd78d10e6e"},
+    {file = "reflex_hosting_cli-0.0.1b0-py3-none-any.whl", hash = "sha256:55adc692648941368be031cfff5cb1628e21a37c0907f208c89b616bf990f46c"},
+    {file = "reflex_hosting_cli-0.0.1b0.tar.gz", hash = "sha256:da68032deeaeaccdbb367716eb6c03ebcd556f5816082f94f506879f2c9d21a4"},
 ]
 
 [package.dependencies]
@@ -2312,4 +2312,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "2a6e24dca48cd921d7c163350fadbea04083d846a8fc217e06ffca70d49ff73d"
+content-hash = "e54daabe89d01cd6bf720074a42e7add51f70caa28796dadf88f99449c8dc9d0"
