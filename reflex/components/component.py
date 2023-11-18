@@ -67,10 +67,10 @@ class Component(Base, ABC):
     autofocus: bool = False
 
     # components that cannot be children
-    invalid_children: List[str] = []
+    _invalid_children: List[str] = []
 
-    # components that are only allowed as children
-    valid_children: List[str] = []
+    # only components that are allowed as children
+    _valid_children: List[str] = []
 
     # custom attribute
     custom_attrs: Dict[str, str] = {}
@@ -358,8 +358,11 @@ class Component(Base, ABC):
 
         return _compile_component(self)
 
-    def _render(self) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
+
+        Args:
+            props: The props to render (if None, then use get_props).
 
         Returns:
             The tag to render.
@@ -370,16 +373,28 @@ class Component(Base, ABC):
             special_props=self.special_props,
         )
 
-        # Add component props to the tag.
-        props = {
-            attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
-            for attr in self.get_props()
-        }
+        if props is None:
+            # Add component props to the tag.
+            props = {
+                attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
+                for attr in self.get_props()
+            }
 
-        # Add ref to element if `id` is not None.
-        ref = self.get_ref()
-        if ref is not None:
-            props["ref"] = Var.create(ref, _var_is_local=False)
+            # Add ref to element if `id` is not None.
+            ref = self.get_ref()
+            if ref is not None:
+                props["ref"] = Var.create(ref, _var_is_local=False)
+        else:
+            props = props.copy()
+
+        props.update(
+            self.event_triggers,
+            key=self.key,
+            id=self.id,
+            class_name=self.class_name,
+        )
+        props.update(self._get_style())
+        props.update(self.custom_attrs)
 
         return tag.add_props(**props)
 
@@ -501,14 +516,7 @@ class Component(Base, ABC):
         """
         tag = self._render()
         rendered_dict = dict(
-            tag.add_props(
-                **self.event_triggers,
-                key=self.key,
-                id=self.id,
-                class_name=self.class_name,
-                **self._get_style(),
-                **self.custom_attrs,
-            ).set(
+            tag.set(
                 children=[child.render() for child in self.children],
                 contents=str(tag.contents),
                 props=tag.format_props(),
@@ -524,21 +532,21 @@ class Component(Base, ABC):
             children: The children of the component.
 
         """
-        if not self.invalid_children and not self.valid_children:
+        if not self._invalid_children and not self._valid_children:
             return
 
         comp_name = type(self).__name__
 
         def validate_invalid_child(child_name):
-            if child_name in self.invalid_children:
+            if child_name in self._invalid_children:
                 raise ValueError(
                     f"The component `{comp_name}` cannot have `{child_name}` as a child component"
                 )
 
         def validate_valid_child(child_name):
-            if child_name not in self.valid_children:
+            if child_name not in self._valid_children:
                 valid_child_list = ", ".join(
-                    [f"`{v_child}`" for v_child in self.valid_children]
+                    [f"`{v_child}`" for v_child in self._valid_children]
                 )
                 raise ValueError(
                     f"The component `{comp_name}` only allows the components: {valid_child_list} as children. Got `{child_name}` instead."
@@ -547,10 +555,10 @@ class Component(Base, ABC):
         for child in children:
             name = type(child).__name__
 
-            if self.invalid_children:
+            if self._invalid_children:
                 validate_invalid_child(name)
 
-            if self.valid_children:
+            if self._valid_children:
                 validate_valid_child(name)
 
     def _get_custom_code(self) -> str | None:
@@ -949,10 +957,7 @@ class CustomComponent(Component):
         Returns:
             The tag to render.
         """
-        return Tag(
-            name=self.tag if not self.alias else self.alias,
-            special_props=self.special_props,
-        ).add_props(**self.props)
+        return super()._render(props=self.props)
 
     def get_prop_vars(self) -> List[BaseVar]:
         """Get the prop vars.
@@ -998,6 +1003,10 @@ def custom_component(
         return CustomComponent(component_fn=component_fn, children=children, **props)
 
     return wrapper
+
+
+# Alias memo to custom_component.
+memo = custom_component
 
 
 class NoSSRComponent(Component):

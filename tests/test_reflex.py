@@ -61,6 +61,7 @@ def test_deploy_required_args_missing(args):
 @pytest.fixture
 def setup_env_authentication(mocker):
     mocker.patch("reflex.utils.prerequisites.check_initialized")
+    mocker.patch("reflex.utils.dependency.check_requirements")
     mocker.patch("reflex.utils.hosting.authenticated_token", return_value="fake-token")
     mocker.patch("time.sleep")
 

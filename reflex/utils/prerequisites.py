@@ -25,7 +25,7 @@ from redis.asyncio import Redis
 
 from reflex import constants, model
 from reflex.compiler import templates
-from reflex.config import Config, get_config
+from reflex.config import get_config
 from reflex.utils import console, path_ops, processes
 
 
@@ -288,15 +288,7 @@ def initialize_web_directory():
 
     path_ops.mkdir(constants.Dirs.WEB_ASSETS)
 
-    # update nextJS config based on rxConfig
-    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
-
-    with open(next_config_file, "r") as file:
-        next_config = file.read()
-        next_config = update_next_config(next_config, get_config())
-
-    with open(next_config_file, "w") as file:
-        file.write(next_config)
+    update_next_config()
 
     # Initialize the reflex json file.
     init_reflex_json()
@@ -337,27 +329,34 @@ def init_reflex_json():
     path_ops.update_json_file(constants.Reflex.JSON, reflex_json)
 
 
-def update_next_config(next_config: str, config: Config) -> str:
-    """Update Next.js config from Reflex config. Is its own function for testing.
+def update_next_config(export=False):
+    """Update Next.js config from Reflex config.
 
     Args:
-        next_config: Content of next.config.js.
-        config: A reflex Config object.
-
-    Returns:
-        The next_config updated from config.
+        export: if the method run during reflex export.
     """
-    next_config = re.sub(
-        "compress: (true|false)",
-        f'compress: {"true" if config.next_compression else "false"}',
-        next_config,
-    )
-    next_config = re.sub(
-        'basePath: ".*?"',
-        f'basePath: "{config.frontend_path or ""}"',
-        next_config,
-    )
-    return next_config
+    next_config_file = os.path.join(constants.Dirs.WEB, constants.Next.CONFIG_FILE)
+
+    next_config = _update_next_config(get_config(), export=export)
+
+    with open(next_config_file, "w") as file:
+        file.write(next_config)
+        file.write("\n")
+
+
+def _update_next_config(config, export=False):
+    next_config = {
+        "basePath": config.frontend_path or "",
+        "compress": config.next_compression,
+        "reactStrictMode": True,
+        "trailingSlash": True,
+    }
+    if export:
+        next_config["output"] = "export"
+        next_config["distDir"] = constants.Dirs.STATIC
+
+    next_config_json = re.sub(r'"([^"]+)"(?=:)', r"\1", json.dumps(next_config))
+    return f"module.exports = {next_config_json};"
 
 
 def remove_existing_bun_installation():
