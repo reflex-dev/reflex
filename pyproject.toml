@@ -63,7 +63,7 @@ websockets = ">=10.4"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
 pytest-mock = "^3.10.0"
-pyright = "^1.1.229"
+pyright = ">=1.1.229,<1.1.335"
 darglint = "^1.8.1"
 toml = "^0.10.2"
 pytest-asyncio = "^0.20.1"
