@@ -32,6 +32,11 @@ let event_processing = false
 // Array holding pending events to be processed.
 const event_queue = [];
 
+// Pending upload promises, by id
+const upload_controllers = {};
+// Upload files state by id
+export const upload_files = {};
+
 /**
  * Generate a UUID (Used for session tokens).
  * Taken from: https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
@@ -208,14 +213,22 @@ export const applyEvent = async (event, socket) => {
 /**
  * Send an event to the server via REST.
  * @param event The current event.
- * @param state The state with the event queue.
+ * @param socket The socket object to send the response event(s) on.
  *
  * @returns Whether the event was sent.
  */
-export const applyRestEvent = async (event) => {
+export const applyRestEvent = async (event, socket) => {
   let eventSent = false;
   if (event.handler == "uploadFiles") {
-    eventSent = await uploadFiles(event.name, event.payload.files);
+    // Start upload, but do not wait for it, which would block other events.
+    uploadFiles(
+      event.name,
+      event.payload.files,
+      event.payload.upload_id,
+      event.payload.on_upload_progress,
+      socket
+    );
+    return false;
   }
   return eventSent;
 };
@@ -256,7 +269,7 @@ export const processEvent = async (
   let eventSent = false
   // Process events with handlers via REST and all others via websockets.
   if (event.handler) {
-    eventSent = await applyRestEvent(event);
+    eventSent = await applyRestEvent(event, socket);
   } else {
     eventSent = await applyEvent(event, socket);
   }
@@ -322,50 +335,86 @@ export const connect = async (
  *
  * @param state The state to apply the delta to.
  * @param handler The handler to use.
+ * @param upload_id The upload id to use.
+ * @param on_upload_progress The function to call on upload progress.
+ * @param socket the websocket connection
  *
- * @returns Whether the files were uploaded.
+ * @returns The response from posting to the UPLOADURL endpoint.
  */
-export const uploadFiles = async (handler, files) => {
+export const uploadFiles = async (handler, files, upload_id, on_upload_progress, socket) => {
   // return if there's no file to upload
   if (files.length == 0) {
     return false;
   }
 
-  const headers = {
-    "Content-Type": files[0].type,
-  };
+  if (upload_controllers[upload_id]) {
+    console.log("Upload already in progress for ", upload_id)
+    return false;
+  }
+
+  let resp_idx = 0;
+  const eventHandler = (progressEvent) => {
+    // handle any delta / event streamed from the upload event handler
+    const chunks = progressEvent.event.target.responseText.trim().split("\n")
+    chunks.slice(resp_idx).map((chunk) => {
+      try {
+        socket._callbacks.$event.map((f) => {
+          f(chunk)
+        })
+        resp_idx += 1
+      } catch (e) {
+        console.log("Error parsing chunk", chunk, e)
+        return
+      }
+    })
+  }
+
+  const controller = new AbortController()
+  const config = {
+    headers: {
+      "Reflex-Client-Token": getToken(),
+      "Reflex-Event-Handler": handler,
+    },
+    signal: controller.signal,
+    onDownloadProgress: eventHandler,
+  }
+  if (on_upload_progress) {
+    config["onUploadProgress"] = on_upload_progress
+  }
   const formdata = new FormData();
 
   // Add the token and handler to the file name.
-  for (let i = 0; i < files.length; i++) {
+  files.forEach((file) => {
     formdata.append(
       "files",
-      files[i],
-      getToken() + ":" + handler + ":" + files[i].name
+      file,
+      file.path || file.name
     );
-  }
+  })
 
   // Send the file to the server.
-  await axios.post(UPLOADURL, formdata, headers)
-    .then(() => { return true; })
-    .catch(
-      error => {
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          console.log(error.response.data);
-        } else if (error.request) {
-          // The request was made but no response was received
-          // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-          // http.ClientRequest in node.js
-          console.log(error.request);
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.log(error.message);
-        }
-        return false;
-      }
-    )
+  upload_controllers[upload_id] = controller
+
+  try {
+    return await axios.post(UPLOADURL, formdata, config)
+  } catch (error) {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.log(error.response.data);
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      console.log(error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log(error.message);
+    }
+    return false;
+  } finally {
+    delete upload_controllers[upload_id]
+  }
 };
 
 /**

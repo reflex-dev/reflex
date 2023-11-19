@@ -62,6 +62,9 @@ _ALL_COMPONENTS = [
     "Container",
     "DataTable",
     "DataEditor",
+    "DataEditorTheme",
+    "DatePicker",
+    "DateTimePicker",
     "DebounceInput",
     "Divider",
     "Drawer",
@@ -226,7 +229,9 @@ _ALL_COMPONENTS = [
 
 _ALL_COMPONENTS += [to_snake_case(component) for component in _ALL_COMPONENTS]
 _ALL_COMPONENTS += [
+    "cancel_upload",
     "components",
+    "color_mode_cond",
     "desktop_only",
     "mobile_only",
     "tablet_only",
@@ -234,7 +239,9 @@ _ALL_COMPONENTS += [
     "tablet_and_desktop",
     "selected_files",
     "clear_selected_files",
+    "EditorButtonList",
     "EditorOptions",
+    "NoSSRComponent",
 ]
 
 _MAPPING = {

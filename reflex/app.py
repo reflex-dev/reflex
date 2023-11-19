@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import inspect
+import functools
 import os
 from multiprocessing.pool import ThreadPool
 from typing import (
@@ -17,10 +17,13 @@ from typing import (
     Set,
     Type,
     Union,
+    get_args,
+    get_type_hints,
 )
 
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
+from fastapi.responses import StreamingResponse
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
@@ -880,62 +883,90 @@ def upload(app: App):
         The upload function.
     """
 
-    async def upload_file(files: List[UploadFile]):
+    async def upload_file(request: Request, files: List[UploadFile]):
         """Upload a file.
 
         Args:
+            request: The FastAPI request object.
             files: The file(s) to upload.
+
+        Returns:
+            StreamingResponse yielding newline-delimited JSON of StateUpdate
+            emitted by the upload handler.
 
         Raises:
             ValueError: if there are no args with supported annotation.
+            TypeError: if a background task is used as the handler.
+            HTTPException: when the request does not include token / handler headers.
         """
-        assert files[0].filename is not None
-        token, handler = files[0].filename.split(":")[:2]
-        for file in files:
-            assert file.filename is not None
-            file.filename = file.filename.split(":")[-1]
+        token = request.headers.get("reflex-client-token")
+        handler = request.headers.get("reflex-event-handler")
+
+        if not token or not handler:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing reflex-client-token or reflex-event-handler header.",
+            )
 
         # Get the state for the session.
-        async with app.state_manager.modify_state(token) as state:
-            # get the current session ID
-            sid = state.router.session.session_id
-            # get the current state(parent state/substate)
-            path = handler.split(".")[:-1]
-            current_state = state.get_substate(path)
-            handler_upload_param = ()
+        state = await app.state_manager.get_state(token)
 
-            # get handler function
-            func = getattr(current_state, handler.split(".")[-1])
+        # get the current session ID
+        # get the current state(parent state/substate)
+        path = handler.split(".")[:-1]
+        current_state = state.get_substate(path)
+        handler_upload_param = ()
 
-            # check if there exists any handler args with annotation, List[UploadFile]
-            for k, v in inspect.getfullargspec(
-                func.fn if isinstance(func, EventHandler) else func
-            ).annotations.items():
-                if types.is_generic_alias(v) and types._issubclass(
-                    v.__args__[0], UploadFile
-                ):
-                    handler_upload_param = (k, v)
-                    break
+        # get handler function
+        func = getattr(type(current_state), handler.split(".")[-1])
 
-            if not handler_upload_param:
-                raise ValueError(
-                    f"`{handler}` handler should have a parameter annotated as List["
-                    f"rx.UploadFile]"
+        # check if there exists any handler args with annotation, List[UploadFile]
+        if isinstance(func, EventHandler):
+            if func.is_background:
+                raise TypeError(
+                    f"@rx.background is not supported for upload handler `{handler}`.",
                 )
+            func = func.fn
+        if isinstance(func, functools.partial):
+            func = func.func
+        for k, v in get_type_hints(func).items():
+            if types.is_generic_alias(v) and types._issubclass(
+                get_args(v)[0],
+                UploadFile,
+            ):
+                handler_upload_param = (k, v)
+                break
 
-            event = Event(
-                token=token,
-                name=handler,
-                payload={handler_upload_param[0]: files},
+        if not handler_upload_param:
+            raise ValueError(
+                f"`{handler}` handler should have a parameter annotated as "
+                "List[rx.UploadFile]"
             )
-            async for update in state._process(event):
-                # Postprocess the event.
-                update = await app.postprocess(state, event, update)
-                # Send update to client
-                await app.event_namespace.emit_update(  # type: ignore
-                    update=update,
-                    sid=sid,
-                )
+
+        event = Event(
+            token=token,
+            name=handler,
+            payload={handler_upload_param[0]: files},
+        )
+
+        async def _ndjson_updates():
+            """Process the upload event, generating ndjson updates.
+
+            Yields:
+                Each state update as JSON followed by a new line.
+            """
+            # Process the event.
+            async with app.state_manager.modify_state(token) as state:
+                async for update in state._process(event):
+                    # Postprocess the event.
+                    update = await app.postprocess(state, event, update)
+                    yield update.json() + "\n"
+
+        # Stream updates to client
+        return StreamingResponse(
+            _ndjson_updates(),
+            media_type="application/x-ndjson",
+        )
 
     return upload_file
 

@@ -128,9 +128,9 @@ def component5() -> Type[Component]:
     class TestComponent5(Component):
         tag = "RandomComponent"
 
-        invalid_children: List[str] = ["Text"]
+        _invalid_children: List[str] = ["Text"]
 
-        valid_children: List[str] = ["Text"]
+        _valid_children: List[str] = ["Text"]
 
     return TestComponent5
 
@@ -146,7 +146,7 @@ def component6() -> Type[Component]:
     class TestComponent6(Component):
         tag = "RandomComponent"
 
-        invalid_children: List[str] = ["Text"]
+        _invalid_children: List[str] = ["Text"]
 
     return TestComponent6
 
@@ -162,7 +162,7 @@ def component7() -> Type[Component]:
     class TestComponent7(Component):
         tag = "RandomComponent"
 
-        valid_children: List[str] = ["Text"]
+        _valid_children: List[str] = ["Text"]
 
     return TestComponent7
 
@@ -716,17 +716,17 @@ class EventState(rx.State):
             id="fstring-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": TEST_VAR}),
+            rx.fragment(style={"background_color": TEST_VAR}),  # type: ignore
             [STYLE_VAR],
             id="direct-style-background_color",
         ),
         pytest.param(
-            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),
+            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),  # type: ignore
             [STYLE_VAR],
             id="fstring-style-background_color",
         ),
         pytest.param(
-            rx.fragment(on_click=EVENT_CHAIN_VAR),
+            rx.fragment(on_click=EVENT_CHAIN_VAR),  # type: ignore
             [EVENT_CHAIN_VAR],
             id="direct-event-chain",
         ),

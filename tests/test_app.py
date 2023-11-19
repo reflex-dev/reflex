@@ -746,23 +746,28 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     bio.write(data)
 
     state_name = state.get_full_name().partition(".")[2] or state.get_name()
-    handler_prefix = f"{token}:{state_name}"
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{state_name}.multi_handle_upload",
+    }
 
     file1 = UploadFile(
-        filename=f"{handler_prefix}.multi_handle_upload:True:image1.jpg",
+        filename=f"image1.jpg",
         file=bio,
     )
     file2 = UploadFile(
-        filename=f"{handler_prefix}.multi_handle_upload:True:image2.jpg",
+        filename=f"image2.jpg",
         file=bio,
     )
     upload_fn = upload(app)
-    await upload_fn([file1, file2])
-    state_update = StateUpdate(delta=delta, events=[], final=True)
+    streaming_response = await upload_fn(request_mock, [file1, file2])
+    async for state_update in streaming_response.body_iterator:
+        assert (
+            state_update
+            == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
+        )
 
-    app.event_namespace.emit.assert_called_with(  # type: ignore
-        "event", state_update.json(), to=current_state.router.session.session_id
-    )
     current_state = await app.state_manager.get_state(token)
     state_dict = current_state.dict()[state.get_full_name()]
     assert state_dict["img_list"] == [
@@ -787,33 +792,59 @@ async def test_upload_file_without_annotation(state, tmp_path, token):
         tmp_path: Temporary path.
         token: a Token.
     """
-    data = b"This is binary data"
-
-    # Create a binary IO object and write data to it
-    bio = io.BytesIO()
-    bio.write(data)
-
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App(state=state if state is FileUploadState else FileStateBase1)
 
     state_name = state.get_full_name().partition(".")[2] or state.get_name()
-    handler_prefix = f"{token}:{state_name}"
-
-    file1 = UploadFile(
-        filename=f"{handler_prefix}.handle_upload2:True:image1.jpg",
-        file=bio,
-    )
-    file2 = UploadFile(
-        filename=f"{handler_prefix}.handle_upload2:True:image2.jpg",
-        file=bio,
-    )
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{state_name}.handle_upload2",
+    }
+    file_mock = unittest.mock.Mock(filename="image1.jpg")
     fn = upload(app)
     with pytest.raises(ValueError) as err:
-        await fn([file1, file2])
+        await fn(request_mock, [file_mock])
     assert (
         err.value.args[0]
         == f"`{state_name}.handle_upload2` handler should have a parameter annotated as List[rx.UploadFile]"
+    )
+
+    if isinstance(app.state_manager, StateManagerRedis):
+        await app.state_manager.redis.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "state",
+    [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
+)
+async def test_upload_file_background(state, tmp_path, token):
+    """Test that an error is thrown handler is a background task.
+
+    Args:
+        state: The state class.
+        tmp_path: Temporary path.
+        token: a Token.
+    """
+    state._tmp_path = tmp_path
+    # The App state must be the "root" of the state tree
+    app = App(state=state if state is FileUploadState else FileStateBase1)
+
+    state_name = state.get_full_name().partition(".")[2] or state.get_name()
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{state_name}.bg_upload",
+    }
+    file_mock = unittest.mock.Mock(filename="image1.jpg")
+    fn = upload(app)
+    with pytest.raises(TypeError) as err:
+        await fn(request_mock, [file_mock])
+    assert (
+        err.value.args[0]
+        == f"@rx.background is not supported for upload handler `{state_name}.bg_upload`."
     )
 
     if isinstance(app.state_manager, StateManagerRedis):
