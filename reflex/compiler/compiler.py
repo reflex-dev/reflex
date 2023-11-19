@@ -219,7 +219,7 @@ def _compile_stateful_components(page_components: list[BaseComponent]) -> str:
     Returns:
         The rendered stateful components code.
     """
-    all_imports = {}
+    all_import_dicts = []
     rendered_components = {}
 
     def get_shared_components_recursive(component: BaseComponent):
@@ -228,8 +228,6 @@ def _compile_stateful_components(page_components: list[BaseComponent]) -> str:
         Args:
             component: The component to collect shared StatefulComponents for.
         """
-        nonlocal all_imports
-
         for child in component.children:
             get_shared_components_recursive(child)
         if isinstance(component, StatefulComponent) and component.references > 1:
@@ -237,13 +235,14 @@ def _compile_stateful_components(page_components: list[BaseComponent]) -> str:
             rendered_components.update(
                 {code: None for code in component.get_custom_code()},
             )
-            all_imports = utils.merge_imports(all_imports, component.get_imports())
+            all_import_dicts.append(component.get_imports())
             component.rendered_as_shared = True
 
     for page_component in page_components:
         get_shared_components_recursive(page_component)
 
     # Don't import from the file that we're about to create.
+    all_imports = utils.merge_imports(*all_import_dicts)
     all_imports.pop(
         f"/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
     )
