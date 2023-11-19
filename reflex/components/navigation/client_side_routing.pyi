@@ -10,7 +10,7 @@ from reflex.style import Style
 from reflex import constants
 from ...vars import Var
 from ..component import Component
-from ..layout.cond import Cond
+from ..layout.cond import cond
 
 route_not_found: Var
 

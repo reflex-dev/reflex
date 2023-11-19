@@ -12,7 +12,7 @@ from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.utils import imports, types
 from reflex.utils.serializers import serialize, serializer
-from reflex.vars import BaseVar, ComputedVar, ImportVar, Var
+from reflex.vars import BaseVar, ComputedVar, Var
 
 class Gridjs(Component):
     @overload

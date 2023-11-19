@@ -16,7 +16,8 @@ from reflex.components.media import Icon
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format, imports
-from reflex.vars import ImportVar, Var
+from reflex.utils.imports import ImportVar
+from reflex.vars import Var
 
 LiteralCodeBlockTheme = Literal[
     "a11y-dark",

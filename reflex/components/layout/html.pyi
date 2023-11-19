@@ -7,8 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any
+from typing import Dict
 from reflex.components.layout.box import Box
+from reflex.vars import Var
 
 class Html(Box):
     @overload
@@ -16,7 +17,9 @@ class Html(Box):
     def create(  # type: ignore
         cls,
         *children,
-        dangerouslySetInnerHTML: Optional[Any] = None,
+        dangerouslySetInnerHTML: Optional[
+            Union[Var[Dict[str, str]], Dict[str, str]]
+        ] = None,
         element: Optional[Union[Var[str], str]] = None,
         src: Optional[Union[Var[str], str]] = None,
         alt: Optional[Union[Var[str], str]] = None,
