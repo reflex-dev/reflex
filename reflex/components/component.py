@@ -1341,7 +1341,10 @@ class StatefulComponent(BaseComponent):
                 return None  # never memoize non-visual components
             tag, code = cls._render_stateful_code(component)
             stateful_component = cls.tag_to_stateful_component.setdefault(
-                tag, cls(component=component, tag=tag, code=code)
+                tag,
+                cls(
+                    children=component.children, component=component, tag=tag, code=code
+                ),
             )
             stateful_component.references += 1
             return stateful_component
@@ -1539,9 +1542,9 @@ class StatefulComponent(BaseComponent):
         Returns:
             The memoized component tree.
         """
-        component.children = [
-            cls.compile_from(child) or child for child in component.children
-        ]
+        component.children = [cls.compile_from(child) for child in component.children]
         if isinstance(component, Component):
-            return cls.create(component) or component
+            stateful_component = cls.create(component)
+            if stateful_component is not None:
+                return stateful_component
         return component
