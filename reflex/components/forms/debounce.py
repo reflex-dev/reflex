@@ -1,20 +1,11 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, Type
+from typing import Any, Dict, Type
 
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var, VarData
-
-
-def _empty_iterator() -> Iterator[Var]:
-    """Return an empty iterator.
-
-    Yields:
-        No values, ever. Will raise StopIteration immediately.
-    """
-    yield from []
 
 
 class DebounceInput(Component):

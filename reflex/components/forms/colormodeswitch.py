@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from reflex.components.component import Component
+from reflex.components.component import BaseComponent, Component
 from reflex.components.layout.cond import Cond, cond
 from reflex.components.media.icon import Icon
 from reflex.style import color_mode, toggle_color_mode
@@ -55,8 +55,8 @@ class ColorModeIcon(Cond):
     @classmethod
     def create(
         cls,
-        light_component: Component | None = None,
-        dark_component: Component | None = None,
+        light_component: BaseComponent | None = None,
+        dark_component: BaseComponent | None = None,
     ):
         """Create an icon component based on color_mode.
 

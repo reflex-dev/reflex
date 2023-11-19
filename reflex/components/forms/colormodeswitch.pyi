@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any
-from reflex.components.component import Component
+from reflex.components.component import BaseComponent, Component
 from reflex.components.layout.cond import Cond, cond
 from reflex.components.media.icon import Icon
 from reflex.style import color_mode, toggle_color_mode
@@ -29,14 +29,14 @@ class ColorModeIcon(Cond):
         cls,
         *children,
         cond: Optional[Union[Var[Any], Any]] = None,
-        comp1: Optional[Component] = None,
-        comp2: Optional[Component] = None,
+        comp1: Optional[BaseComponent] = None,
+        comp2: Optional[BaseComponent] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Var | str]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -164,7 +164,7 @@ class ColorModeSwitch(Switch):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Var | str]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -322,7 +322,7 @@ class ColorModeButton(Button):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Var | str]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
