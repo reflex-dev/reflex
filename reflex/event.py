@@ -329,13 +329,20 @@ class FileUpload(Base):
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
         """
-        from reflex.components.forms.upload import DEFAULT_UPLOAD_ID
+        from reflex.components.forms.upload import (
+            DEFAULT_UPLOAD_ID,
+            upload_files_context_var_data,
+        )
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
 
         spec_args = [
-            # `upload_files` is defined in state.js and assigned in the Upload component's _use_hooks
-            (Var.create_safe("files"), Var.create_safe(f"upload_files.{upload_id}[0]")),
+            (
+                Var.create_safe("files"),
+                Var.create_safe(f"filesById.{upload_id}")._replace(
+                    _var_data=upload_files_context_var_data
+                ),
+            ),
             (
                 Var.create_safe("upload_id"),
                 Var.create_safe(upload_id, _var_is_string=True),

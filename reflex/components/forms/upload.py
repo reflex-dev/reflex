@@ -14,6 +14,18 @@ from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
+upload_files_context_var_data: VarData = VarData(  # type: ignore
+    imports={
+        "react": {imports.ImportVar(tag="useContext")},
+        f"/{Dirs.CONTEXTS_PATH}": {
+            imports.ImportVar(tag="UploadFilesContext"),
+        },
+    },
+    hooks={
+        "const [filesById, setFilesById] = useContext(UploadFilesContext);",
+    },
+)
+
 
 @CallableVar
 def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
@@ -29,15 +41,9 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
         A var referencing the file upload drop trigger.
     """
     return BaseVar(
-        _var_name=f"e => upload_files.{id_}[1]((files) => e)",
+        _var_name="e => setFilesById(filesById => ({...filesById, %s: e}))" % id_,
         _var_type=EventChain,
-        _var_data=VarData(  # type: ignore
-            imports={
-                f"/{Dirs.STATE_PATH}": {
-                    imports.ImportVar(tag="upload_files"),
-                },
-            },
-        ),
+        _var_data=upload_files_context_var_data,
     )
 
 
@@ -52,15 +58,9 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
         A var referencing the list of selected file paths.
     """
     return BaseVar(
-        _var_name=f"(upload_files.{id_} ? upload_files.{id_}[0]?.map((f) => (f.path || f.name)) : [])",
+        _var_name=f"(filesById.{id_} ? filesById.{id_}.map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
-        _var_data=VarData(  # type: ignore
-            imports={
-                f"/{Dirs.STATE_PATH}": {
-                    imports.ImportVar(tag="upload_files"),
-                },
-            },
-        ),
+        _var_data=upload_files_context_var_data,
     )
 
 
@@ -74,7 +74,10 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec:
     Returns:
         An event spec that clears the list of selected files when triggered.
     """
-    return call_script(f"upload_files.{id_}[1]((files) => [])")
+    # UploadFilesProvider assigns a special function to clear selected files
+    # into the shared global refs object to make it accessible outside a React
+    # component via `call_script` (otherwise backend could never clear files).
+    return call_script(f"refs['__clear_selected_files']({id_!r})")
 
 
 def cancel_upload(upload_id: str) -> EventSpec:
@@ -87,6 +90,13 @@ def cancel_upload(upload_id: str) -> EventSpec:
         An event spec that cancels the upload when triggered.
     """
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
+
+
+class UploadFilesProvider(Component):
+    """AppWrap component that provides a dict of selected files by ID via useContext."""
+
+    library = f"/{Dirs.CONTEXTS_PATH}"
+    tag = "UploadFilesProvider"
 
 
 class Upload(Component):
@@ -179,18 +189,7 @@ class Upload(Component):
         out.args = ("getRootProps", "getInputProps")
         return out
 
-    def _get_hooks(self) -> str | None:
-        return (
-            (super()._get_hooks() or "")
-            + f"""
-                upload_files.{self.id or DEFAULT_UPLOAD_ID} = useState([]);
-                """
-        )
-
-    def _get_imports(self) -> imports.ImportDict:
-        return imports.merge_imports(
-            super()._get_imports(),
-            {
-                "react": {imports.ImportVar(tag="useState")},
-            },
-        )
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        return {
+            (5, "UploadFilesProvider"): UploadFilesProvider(),
+        }
