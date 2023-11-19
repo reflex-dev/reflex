@@ -31,6 +31,8 @@ from typing import (
     get_type_hints,
 )
 
+import pydantic
+
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
@@ -193,7 +195,11 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
         # Extract the state name from a formatted var
         while m := re.match(r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)", value):
             value = m.group(1) + m.group(3)
-            var_datas.append(VarData.parse_raw(m.group(2)))
+            try:
+                var_datas.append(VarData.parse_raw(m.group(2)))
+            except pydantic.ValidationError:
+                # If the VarData is invalid, it was probably json-encoded twice...
+                var_datas.append(VarData.parse_raw(json.loads(f'"{m.group(2)}"')))
     return VarData.merge(*var_datas), value
 
 
@@ -1484,6 +1490,10 @@ class Var:
             The state name associated with the var.
         """
         return self._var_data.state if self._var_data else ""
+
+
+# Allow automatic serialization of Var within JSON structures
+serializers.serializer(_encode_var)
 
 
 @dataclasses.dataclass(

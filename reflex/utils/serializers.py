@@ -175,10 +175,8 @@ def serialize_list(value: Union[List, Tuple, Set]) -> str:
     Returns:
         The serialized list.
     """
-    from reflex.vars import Var
-
-    # Convert any var values to strings.
-    fprop = format.json_dumps([str(v) if isinstance(v, Var) else v for v in value])
+    # Dump the list to a string.
+    fprop = format.json_dumps(list(value))
 
     # Unwrap var values.
     return format.unwrap_vars(fprop)
@@ -199,11 +197,9 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
     """
     # Import here to avoid circular imports.
     from reflex.event import EventHandler
-    from reflex.vars import Var
 
     prop_dict = {}
 
-    # Convert any var keys to strings.
     for key, value in prop.items():
         if types._issubclass(type(value), Callable):
             raise exceptions.InvalidStylePropError(
@@ -211,7 +207,7 @@ def serialize_dict(prop: Dict[str, Any]) -> str:
                 f"`{value.fn.__qualname__ if isinstance(value, EventHandler) else value.__qualname__ if isinstance(value, builtin_types.FunctionType) else value}`, "
                 f"an event handler or callable as its value"
             )
-        prop_dict[key] = str(value) if isinstance(value, Var) else value
+        prop_dict[key] = value
 
     # Dump the dict to a string.
     fprop = format.json_dumps(prop_dict)

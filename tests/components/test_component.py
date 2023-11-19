@@ -660,6 +660,43 @@ STYLE_VAR = TEST_VAR._replace(_var_name="style", _var_is_local=False)
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
 ARG_VAR = Var.create("arg")
 
+TEST_VAR_DICT_OF_DICT = Var.create_safe({"a": {"b": "test"}})._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_DICT_OF_DICT = Var.create_safe({"a": {"b": f"footestbar"}})._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_LIST = Var.create_safe([["test"]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_LIST = Var.create_safe([["footestbar"]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_LIST_OF_LIST = Var.create_safe([[["test"]]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = Var.create_safe([[["footestbar"]]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_DICT = Var.create_safe([{"a": "test"}])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_DICT = Var.create_safe([{"a": "footestbar"}])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+
+class ComponentNestedVar(Component):
+    """A component with nested Var types."""
+
+    dict_of_dict: Var[dict[str, dict[str, str]]]
+    list_of_list: Var[list[list[str]]]
+    list_of_list_of_list: Var[list[list[list[str]]]]
+    list_of_dict: Var[list[dict[str, str]]]
+
 
 class EventState(rx.State):
     """State for testing event handlers with _get_vars."""
@@ -795,6 +832,46 @@ class EventState(rx.State):
             rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # type: ignore
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(dict_of_dict={"a": {"b": TEST_VAR}}),
+            [TEST_VAR_DICT_OF_DICT],
+            id="direct-dict_of_dict",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(dict_of_dict={"a": {"b": f"foo{TEST_VAR}bar"}}),
+            [FORMATTED_TEST_VAR_DICT_OF_DICT],
+            id="fstring-dict_of_dict",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list=[[TEST_VAR]]),
+            [TEST_VAR_LIST_OF_LIST],
+            id="direct-list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list=[[f"foo{TEST_VAR}bar"]]),
+            [FORMATTED_TEST_VAR_LIST_OF_LIST],
+            id="fstring-list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list_of_list=[[[TEST_VAR]]]),
+            [TEST_VAR_LIST_OF_LIST_OF_LIST],
+            id="direct-list_of_list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list_of_list=[[[f"foo{TEST_VAR}bar"]]]),
+            [FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST],
+            id="fstring-list_of_list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_dict=[{"a": TEST_VAR}]),
+            [TEST_VAR_LIST_OF_DICT],
+            id="direct-list_of_dict",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_dict=[{"a": f"foo{TEST_VAR}bar"}]),
+            [FORMATTED_TEST_VAR_LIST_OF_DICT],
+            id="fstring-list_of_dict",
         ),
     ),
 )
