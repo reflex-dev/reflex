@@ -8,7 +8,7 @@ from reflex.components.layout.fragment import Fragment
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
 from reflex.utils import format, imports
-from reflex.vars import Var, VarData
+from reflex.vars import BaseVar, Var, VarData
 
 _IS_TRUE_IMPORT = {
     f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
@@ -122,17 +122,15 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     Raises:
         ValueError: If the arguments are invalid.
     """
-    # Import here to avoid circular imports.
-    from reflex.vars import BaseVar, Var
+    var_datas: list[VarData | None] = [
+        VarData(  # type: ignore
+            imports=_IS_TRUE_IMPORT,
+        ),
+    ]
 
     # Convert the condition to a Var.
     cond_var = Var.create(condition)
     assert cond_var is not None, "The condition must be set."
-    cond_var = cond_var._replace(
-        merge_var_data=VarData(  # type: ignore
-            imports=_IS_TRUE_IMPORT,
-        ),
-    )
 
     # If the first component is a component, create a Cond component.
     if isinstance(c1, Component):
@@ -140,6 +138,8 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             c2, Component
         ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
+    elif isinstance(c1, Var):
+        var_datas.append(c1._var_data)
 
     # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
@@ -147,6 +147,8 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         raise ValueError("Both arguments must be props.")
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
+    elif isinstance(c2, Var):
+        var_datas.append(c2._var_data)
 
     # Create the conditional var.
     return cond_var._replace(
@@ -159,4 +161,5 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         _var_type=c1._var_type if isinstance(c1, BaseVar) else type(c1),
         _var_is_local=False,
         _var_full_name_needs_state_prefix=False,
+        merge_var_data=VarData.merge(*var_datas),
     )
