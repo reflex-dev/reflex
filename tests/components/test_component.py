@@ -4,6 +4,7 @@ import pytest
 
 import reflex as rx
 from reflex.base import Base
+from reflex.components.base.bare import Bare
 from reflex.components.component import (
     Component,
     CustomComponent,
@@ -12,12 +13,12 @@ from reflex.components.component import (
 )
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
-from reflex.event import EventHandler
+from reflex.event import EventChain, EventHandler
 from reflex.state import State
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.imports import ImportVar
-from reflex.vars import Var
+from reflex.vars import Var, VarData
 
 
 @pytest.fixture
@@ -132,9 +133,9 @@ def component5() -> Type[Component]:
     class TestComponent5(Component):
         tag = "RandomComponent"
 
-        invalid_children: List[str] = ["Text"]
+        _invalid_children: List[str] = ["Text"]
 
-        valid_children: List[str] = ["Text"]
+        _valid_children: List[str] = ["Text"]
 
     return TestComponent5
 
@@ -150,7 +151,7 @@ def component6() -> Type[Component]:
     class TestComponent6(Component):
         tag = "RandomComponent"
 
-        invalid_children: List[str] = ["Text"]
+        _invalid_children: List[str] = ["Text"]
 
     return TestComponent6
 
@@ -166,7 +167,7 @@ def component7() -> Type[Component]:
     class TestComponent7(Component):
         tag = "RandomComponent"
 
-        valid_children: List[str] = ["Text"]
+        _valid_children: List[str] = ["Text"]
 
     return TestComponent7
 
@@ -647,3 +648,161 @@ def test_stateful_banner():
     connection_modal_component = rx.connection_modal()
     stateful_component = StatefulComponent.compile_from(connection_modal_component)
     assert isinstance(stateful_component, StatefulComponent)
+
+
+TEST_VAR = Var.create_safe("test")._replace(
+    merge_var_data=VarData(
+        hooks={"useTest"}, imports={"test": {ImportVar(tag="test")}}, state="Test"
+    )
+)
+FORMATTED_TEST_VAR = Var.create(f"foo{TEST_VAR}bar")
+STYLE_VAR = TEST_VAR._replace(_var_name="style", _var_is_local=False)
+EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
+ARG_VAR = Var.create("arg")
+
+
+class EventState(rx.State):
+    """State for testing event handlers with _get_vars."""
+
+    v: int = 42
+
+    def handler(self):
+        """A handler that does nothing."""
+
+    def handler2(self, arg):
+        """A handler that takes an arg.
+
+        Args:
+            arg: An arg.
+        """
+
+
+@pytest.mark.parametrize(
+    ("component", "exp_vars"),
+    (
+        pytest.param(
+            Bare.create(TEST_VAR),
+            [TEST_VAR],
+            id="direct-bare",
+        ),
+        pytest.param(
+            Bare.create(f"foo{TEST_VAR}bar"),
+            [FORMATTED_TEST_VAR],
+            id="fstring-bare",
+        ),
+        pytest.param(
+            rx.text(as_=TEST_VAR),
+            [TEST_VAR],
+            id="direct-prop",
+        ),
+        pytest.param(
+            rx.text(as_=f"foo{TEST_VAR}bar"),
+            [FORMATTED_TEST_VAR],
+            id="fstring-prop",
+        ),
+        pytest.param(
+            rx.fragment(id=TEST_VAR),
+            [TEST_VAR],
+            id="direct-id",
+        ),
+        pytest.param(
+            rx.fragment(id=f"foo{TEST_VAR}bar"),
+            [FORMATTED_TEST_VAR],
+            id="fstring-id",
+        ),
+        pytest.param(
+            rx.fragment(key=TEST_VAR),
+            [TEST_VAR],
+            id="direct-key",
+        ),
+        pytest.param(
+            rx.fragment(key=f"foo{TEST_VAR}bar"),
+            [FORMATTED_TEST_VAR],
+            id="fstring-key",
+        ),
+        pytest.param(
+            rx.fragment(class_name=TEST_VAR),
+            [TEST_VAR],
+            id="direct-class_name",
+        ),
+        pytest.param(
+            rx.fragment(class_name=f"foo{TEST_VAR}bar"),
+            [FORMATTED_TEST_VAR],
+            id="fstring-class_name",
+        ),
+        pytest.param(
+            rx.fragment(special_props={TEST_VAR}),
+            [TEST_VAR],
+            id="direct-special_props",
+        ),
+        pytest.param(
+            rx.fragment(special_props={Var.create(f"foo{TEST_VAR}bar")}),
+            [FORMATTED_TEST_VAR],
+            id="fstring-special_props",
+        ),
+        pytest.param(
+            # custom_attrs cannot accept a Var directly as a value
+            rx.fragment(custom_attrs={"href": f"{TEST_VAR}"}),
+            [TEST_VAR],
+            id="fstring-custom_attrs-nofmt",
+        ),
+        pytest.param(
+            rx.fragment(custom_attrs={"href": f"foo{TEST_VAR}bar"}),
+            [FORMATTED_TEST_VAR],
+            id="fstring-custom_attrs",
+        ),
+        pytest.param(
+            rx.fragment(background_color=TEST_VAR),
+            [STYLE_VAR],
+            id="direct-background_color",
+        ),
+        pytest.param(
+            rx.fragment(background_color=f"foo{TEST_VAR}bar"),
+            [STYLE_VAR],
+            id="fstring-background_color",
+        ),
+        pytest.param(
+            rx.fragment(style={"background_color": TEST_VAR}),  # type: ignore
+            [STYLE_VAR],
+            id="direct-style-background_color",
+        ),
+        pytest.param(
+            rx.fragment(style={"background_color": f"foo{TEST_VAR}bar"}),  # type: ignore
+            [STYLE_VAR],
+            id="fstring-style-background_color",
+        ),
+        pytest.param(
+            rx.fragment(on_click=EVENT_CHAIN_VAR),  # type: ignore
+            [EVENT_CHAIN_VAR],
+            id="direct-event-chain",
+        ),
+        pytest.param(
+            rx.fragment(on_click=EventState.handler),
+            [],
+            id="direct-event-handler",
+        ),
+        pytest.param(
+            rx.fragment(on_click=EventState.handler2(TEST_VAR)),  # type: ignore
+            [ARG_VAR, TEST_VAR],
+            id="direct-event-handler-arg",
+        ),
+        pytest.param(
+            rx.fragment(on_click=EventState.handler2(EventState.v)),  # type: ignore
+            [ARG_VAR, EventState.v],
+            id="direct-event-handler-arg2",
+        ),
+        pytest.param(
+            rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # type: ignore
+            [ARG_VAR, TEST_VAR],
+            id="direct-event-handler-lambda",
+        ),
+    ),
+)
+def test_get_vars(component, exp_vars):
+    comp_vars = sorted(component._get_vars(), key=lambda v: v._var_name)
+    assert len(comp_vars) == len(exp_vars)
+    for comp_var, exp_var in zip(
+        comp_vars,
+        sorted(exp_vars, key=lambda v: v._var_name),
+    ):
+        assert comp_var.equals(exp_var)

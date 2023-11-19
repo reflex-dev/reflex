@@ -108,7 +108,7 @@ class DebounceInput(Component):
                 _var_is_string=False,
             )._replace(
                 _var_type=Type[Component],
-                merge_var_data=VarData(
+                merge_var_data=VarData(  # type: ignore
                     imports=child._get_imports(),
                     hooks=child._get_hooks_internal(),
                 ),

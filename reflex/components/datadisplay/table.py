@@ -65,7 +65,7 @@ class Thead(ChakraComponent):
     tag = "Thead"
 
     # invalid children components
-    invalid_children: List[str] = ["Tbody", "Thead", "Tfoot"]
+    _invalid_children: List[str] = ["Tbody", "Thead", "Tfoot"]
 
     @classmethod
     def create(cls, *children, headers=None, **props) -> Component:
@@ -117,7 +117,7 @@ class Tbody(ChakraComponent):
     tag = "Tbody"
 
     # invalid children components
-    invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Td", "Th"]
+    _invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Td", "Th"]
 
     @classmethod
     def create(cls, *children, rows=None, **props) -> Component:
@@ -191,7 +191,7 @@ class Tfoot(ChakraComponent):
     tag = "Tfoot"
 
     # invalid children components
-    invalid_children: List[str] = ["Tbody", "Thead", "Td", "Th", "Tfoot"]
+    _invalid_children: List[str] = ["Tbody", "Thead", "Td", "Th", "Tfoot"]
 
     @classmethod
     def create(cls, *children, footers=None, **props) -> Component:
@@ -240,7 +240,7 @@ class Tr(ChakraComponent):
     tag = "Tr"
 
     # invalid children components
-    invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Tr"]
+    _invalid_children: List[str] = ["Tbody", "Thead", "Tfoot", "Tr"]
 
     @classmethod
     def create(cls, *children, cell_type: str = "", cells=None, **props) -> Component:
@@ -271,7 +271,7 @@ class Th(ChakraComponent):
     tag = "Th"
 
     # invalid children components
-    invalid_children: List[str] = ["Tbody", "Thead", "Tr", "Td", "Th"]
+    _invalid_children: List[str] = ["Tbody", "Thead", "Tr", "Td", "Th"]
 
     # Aligns the cell content to the right.
     is_numeric: Var[bool]
@@ -283,7 +283,7 @@ class Td(ChakraComponent):
     tag = "Td"
 
     # invalid children components
-    invalid_children: List[str] = ["Tbody", "Thead"]
+    _invalid_children: List[str] = ["Tbody", "Thead"]
 
     # Aligns the cell content to the right.
     is_numeric: Var[bool]

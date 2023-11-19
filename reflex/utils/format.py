@@ -230,9 +230,9 @@ def format_route(route: str, format_case=True) -> str:
 
 
 def format_cond(
-    cond: str,
-    true_value: str,
-    false_value: str = '""',
+    cond: str | Var,
+    true_value: str | Var,
+    false_value: str | Var = '""',
     is_prop=False,
 ) -> str:
     """Format a conditional expression.
@@ -246,9 +246,6 @@ def format_cond(
     Returns:
         The formatted conditional expression.
     """
-    # Import here to avoid circular imports.
-    from reflex.vars import Var
-
     # Use Python truthiness.
     cond = f"isTrue({cond})"
 
@@ -264,6 +261,7 @@ def format_cond(
             _var_is_string=type(false_value) is str,
         )
         prop2._var_is_local = True
+        prop1, prop2 = str(prop1), str(prop2)  # avoid f-string semantics for Var
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
     # Format component conds.

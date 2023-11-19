@@ -35,6 +35,9 @@ from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
 
+# This module used to export ImportVar itself, so we still import it for export here
+from reflex.utils.imports import ImportVar as ImportVar
+
 if TYPE_CHECKING:
     from reflex.state import State
 
@@ -332,8 +335,15 @@ class Var:
             self._var_data = VarData.merge(self._var_data, _var_data)
 
     def _replace(self, merge_var_data=None, **kwargs: Any) -> Var:
-        # Cannot use dataclasses.replace because ComputedVar uses multiple inheritance
-        # and it's __init__ has a required fget argument
+        """Make a copy of this Var with updated fields.
+
+        Args:
+            merge_var_data: VarData to merge into the existing VarData.
+            **kwargs: Var fields to update.
+
+        Returns:
+            A new BaseVar with the updated fields overwriting the corresponding fields in this Var.
+        """
         field_values = dict(
             _var_name=kwargs.pop("_var_name", self._var_name),
             _var_type=kwargs.pop("_var_type", self._var_type),
@@ -1778,3 +1788,39 @@ def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
     cvar = ComputedVar(fget=fget)
     cvar._cache = True
     return cvar
+
+
+class NoRenderImportVar(ImportVar):
+    """A import that doesn't need to be rendered."""
+
+    render: Optional[bool] = False
+
+
+class CallableVar(BaseVar):
+    """Decorate a Var-returning function to act as both a Var and a function.
+
+    This is used as a compatibility shim for replacing Var objects in the
+    API with functions that return a family of Var.
+    """
+
+    def __init__(self, fn: Callable[..., BaseVar]):
+        """Initialize a CallableVar.
+
+        Args:
+            fn: The function to decorate (must return Var)
+        """
+        self.fn = fn
+        default_var = fn()
+        super().__init__(**dataclasses.asdict(default_var))
+
+    def __call__(self, *args, **kwargs) -> BaseVar:
+        """Call the decorated function.
+
+        Args:
+            *args: The args to pass to the function.
+            **kwargs: The kwargs to pass to the function.
+
+        Returns:
+            The Var returned from calling the function.
+        """
+        return self.fn(*args, **kwargs)
