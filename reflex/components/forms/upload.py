@@ -192,8 +192,5 @@ class Upload(Component):
             super()._get_imports(),
             {
                 "react": {imports.ImportVar(tag="useState")},
-                f"/{Dirs.STATE_PATH}": {
-                    imports.ImportVar(tag="uploadFiles"),
-                },
             },
         )
