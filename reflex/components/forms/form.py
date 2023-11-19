@@ -1,7 +1,7 @@
 """Form components."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 from jinja2 import Environment
 
@@ -12,7 +12,6 @@ from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain
 from reflex.utils import imports
 from reflex.utils.format import format_event_chain, to_camel_case
-from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, Var, get_unique_variable_name
 
 FORM_DATA = Var.create("form_data")
@@ -80,7 +79,7 @@ class Form(ChakraComponent):
         return HANDLE_SUBMIT_JS_JINJA2.render(
             handle_submit_unique_name=self.handle_submit_unique_name,
             form_data=FORM_DATA,
-            field_ref_mapping=serialize(self._get_form_refs()),
+            field_ref_mapping=str(Var.create_safe(self._get_form_refs())),
             on_submit_event_chain=format_event_chain(
                 self.event_triggers[EventTriggers.ON_SUBMIT]
             ),
@@ -136,6 +135,10 @@ class Form(ChakraComponent):
             **super().get_event_triggers(),
             EventTriggers.ON_SUBMIT: lambda e0: [FORM_DATA],
         }
+
+    def _get_vars(self) -> Iterator[Var]:
+        yield from super()._get_vars()
+        yield from self._get_form_refs().values()
 
 
 class FormControl(ChakraComponent):
