@@ -487,7 +487,9 @@ def install_bun():
         return
 
     # Skip if bun is already installed.
-    if os.path.exists(get_config().bun_path):
+    if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
+        constants.Bun.VERSION
+    ):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
