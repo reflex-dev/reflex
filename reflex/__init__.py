@@ -255,7 +255,7 @@ _MAPPING = {
     "reflex.components.graphing": ["recharts"],
     "reflex.config": ["config", "Config", "DBConfig"],
     "reflex.constants": ["constants", "Env"],
-    "reflex.el": ["el"],
+    "reflex.components.el": ["el"],
     "reflex.event": [
         "event",
         "EventChain",
