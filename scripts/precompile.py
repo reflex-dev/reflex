@@ -14,7 +14,7 @@ import os
 
 from reflex.utils import path_ops
 
-from .constants import ELEMENT_TO_PROPS, ELEMENTS
+from ..reflex.components.el.constants import ELEMENT_TO_PROPS, ELEMENTS
 
 FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 ELEMENTS_DIR = os.path.join(FILE_DIR, "elements")
