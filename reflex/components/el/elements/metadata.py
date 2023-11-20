@@ -48,16 +48,6 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     http_equiv: Var_[Union[str, int, bool]]
     name: Var_[Union[str, int, bool]]
 
-
-class Style(BaseHTML):  # Inherits common attributes from BaseHTML
-    """Display the style element."""
-
-    tag = "style"
-    media: Var_[Union[str, int, bool]]
-    scoped: Var_[Union[str, int, bool]]
-    type: Var_[Union[str, int, bool]]
-
-
 class Title(Element):  # noqa: E742
     """Display the title element."""
 
