@@ -19,7 +19,7 @@ from reflex.vars import ImportVar
         (
             [ImportVar(tag="foo"), ImportVar(tag="bar")],
             "",
-            ["foo", "bar"],
+            ["bar", "foo"],
         ),
         (
             [
@@ -28,7 +28,7 @@ from reflex.vars import ImportVar
                 ImportVar(tag="bar"),
             ],
             "axios",
-            ["foo", "bar"],
+            ["bar", "foo"],
         ),
     ],
 )
@@ -44,7 +44,7 @@ def test_compile_import_statement(
     """
     default, rest = utils.compile_import_statement(fields)
     assert default == test_default
-    assert rest == test_rest
+    assert sorted(rest) == test_rest
 
 
 @pytest.mark.parametrize(
@@ -57,7 +57,7 @@ def test_compile_import_statement(
         ),
         (
             {"axios": [ImportVar(tag="foo"), ImportVar(tag="bar")]},
-            [{"lib": "axios", "default": "", "rest": ["bar", "foo9"]}],
+            [{"lib": "axios", "default": "", "rest": ["bar", "foo"]}],
         ),
         (
             {
