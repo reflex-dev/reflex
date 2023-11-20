@@ -318,3 +318,20 @@ class Source(BaseHTML):
 
     # Media type of the source
     type: Var_[Union[str, int, bool]]
+
+
+class Svg(BaseHTML):
+    tag = "svg"
+
+    # Specifies the width of the element
+    width: Var_[Union[str, int, bool]]
+
+    # Specifies the height of the element
+    height: Var_[Union[str, int, bool]]
+
+
+class Path(BaseHTML):
+    tag = "path"
+
+    # Defines the shape of the path
+    d: Var_[Union[str, int, bool]]

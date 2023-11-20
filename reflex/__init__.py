@@ -4,14 +4,13 @@ Anything imported here will be available in the default Reflex import as `rx.*`.
 To signal to typecheckers that something should be reexported,
 we use the Flask "import name as name" syntax.
 """
-
-from . import el as el
 from .admin import AdminDash as AdminDash
 from .app import App as App
 from .app import UploadFile as UploadFile
 from .base import Base as Base
 from .compiler.utils import get_asset_path
 from .components import *
+from .components import el as el
 from .components.component import custom_component as memo
 from .components.graphing import recharts as recharts
 from .config import Config as Config

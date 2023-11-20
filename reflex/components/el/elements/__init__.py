@@ -46,6 +46,22 @@ from .inline import (
     Wbr,
 )
 from .metadata import Base, Head, Link, Meta, Style, Title
+from .media import (
+    Area,
+    Audio,
+    Img,
+    Map,
+    Track,
+    Video,
+    Embed,
+    Iframe,
+    Object,
+    Picture,
+    Portal,
+    Source,
+    Svg,
+    Path,
+)
 from .other import Details, Dialog, Html, Math, Slot, Summary, Svg, Template
 from .scripts import Canvas, Noscript, Script
 from .sectioning import (
@@ -109,6 +125,22 @@ tfoot = Tfoot.create
 th = Th.create
 thead = Thead.create
 tr = Tr.create
+
+# Media
+area = Area.create
+audio = Audio.create
+img = Img.create
+map = Map.create
+track = Track.create
+video = Video.create
+embed = Embed.create
+iframe = Iframe.create
+object = Object.create
+picture = Picture.create
+portal = Portal.create
+source = Source.create
+svg = Svg.create
+path = Path.create
 
 # Sectioning
 address = Address.create

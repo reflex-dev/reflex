@@ -6,7 +6,7 @@
 from typing import Any, Dict, List, Literal, Optional, Union, overload
 from reflex.components.radix.themes.base import CommonMarginProps
 from reflex.components.component import Component
-from reflex.el.elements import Input
+from reflex.components.el import Input
 from reflex.components.radix.themes.base import RadixThemesComponent
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventHandler, EventChain, EventSpec
