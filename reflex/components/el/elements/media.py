@@ -321,6 +321,8 @@ class Source(BaseHTML):
 
 
 class Svg(BaseHTML):
+    """Display the svg element."""
+
     tag = "svg"
 
     # Specifies the width of the element
@@ -331,6 +333,8 @@ class Svg(BaseHTML):
 
 
 class Path(BaseHTML):
+    """Display the path element."""
+
     tag = "path"
 
     # Defines the shape of the path

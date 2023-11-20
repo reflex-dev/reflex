@@ -45,13 +45,6 @@ class Template(BaseHTML):
     # No unique attributes, only common ones are inherited; used for declaring fragments of HTML that can be cloned and inserted in the document
 
 
-class Svg(BaseHTML):
-    """Display the svg element."""
-
-    tag = "svg"
-    # No unique attributes, only common ones are inherited; used for embedding SVG graphics
-
-
 class Math(BaseHTML):
     """Display the math element."""
 

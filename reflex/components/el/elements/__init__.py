@@ -45,24 +45,24 @@ from .inline import (
     Var,
     Wbr,
 )
-from .metadata import Base, Head, Link, Meta, Style, Title
 from .media import (
     Area,
     Audio,
-    Img,
-    Map,
-    Track,
-    Video,
     Embed,
     Iframe,
+    Img,
+    Map,
     Object,
+    Path,
     Picture,
     Portal,
     Source,
     Svg,
-    Path,
+    Track,
+    Video,
 )
-from .other import Details, Dialog, Html, Math, Slot, Summary, Svg, Template
+from .metadata import Base, Head, Link, Meta, Style, Title
+from .other import Details, Dialog, Html, Math, Slot, Summary, Template
 from .scripts import Canvas, Noscript, Script
 from .sectioning import (
     H1,
