@@ -142,6 +142,11 @@ def test_to_snake_case(input: str, output: str):
         ("kebab-case", "kebabCase"),
         ("kebab-case-two", "kebabCaseTwo"),
         ("snake_kebab-case", "snakeKebabCase"),
+        ("_hover", "_hover"),
+        ("-starts-with-hyphen", "-startsWithHyphen"),
+        ("--starts-with-double-hyphen", "--startsWithDoubleHyphen"),
+        ("_starts_with_underscore", "_startsWithUnderscore"),
+        ("__starts_with_double_underscore", "__startsWithDoubleUnderscore"),
     ],
 )
 def test_to_camel_case(input: str, output: str):

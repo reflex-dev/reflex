@@ -49,16 +49,7 @@ class FileUploadState(rx.State):
         Args:
             files: The uploaded files.
         """
-        for file in files:
-            upload_data = await file.read()
-            outfile = f"{self._tmp_path}/{file.filename}"
-
-            # Save the file.
-            with open(outfile, "wb") as file_object:
-                file_object.write(upload_data)
-
-            # Update the img var.
-            self.img_list.append(file.filename)
+        pass
 
     async def multi_handle_upload(self, files: List[rx.UploadFile]):
         """Handle the upload of a file.
@@ -77,6 +68,15 @@ class FileUploadState(rx.State):
             # Update the img var.
             assert file.filename is not None
             self.img_list.append(file.filename)
+
+    @rx.background
+    async def bg_upload(self, files: List[rx.UploadFile]):
+        """Background task cannot be upload handler.
+
+        Args:
+            files: The uploaded files.
+        """
+        pass
 
 
 class FileStateBase1(rx.State):
@@ -97,16 +97,7 @@ class ChildFileUploadState(FileStateBase1):
         Args:
             files: The uploaded files.
         """
-        for file in files:
-            upload_data = await file.read()
-            outfile = f"{self._tmp_path}/{file.filename}"
-
-            # Save the file.
-            with open(outfile, "wb") as file_object:
-                file_object.write(upload_data)
-
-            # Update the img var.
-            self.img_list.append(file.filename)
+        pass
 
     async def multi_handle_upload(self, files: List[rx.UploadFile]):
         """Handle the upload of a file.
@@ -125,6 +116,15 @@ class ChildFileUploadState(FileStateBase1):
             # Update the img var.
             assert file.filename is not None
             self.img_list.append(file.filename)
+
+    @rx.background
+    async def bg_upload(self, files: List[rx.UploadFile]):
+        """Background task cannot be upload handler.
+
+        Args:
+            files: The uploaded files.
+        """
+        pass
 
 
 class FileStateBase2(FileStateBase1):
@@ -145,16 +145,7 @@ class GrandChildFileUploadState(FileStateBase2):
         Args:
             files: The uploaded files.
         """
-        for file in files:
-            upload_data = await file.read()
-            outfile = f"{self._tmp_path}/{file.filename}"
-
-            # Save the file.
-            with open(outfile, "wb") as file_object:
-                file_object.write(upload_data)
-
-            # Update the img var.
-            self.img_list.append(file.filename)
+        pass
 
     async def multi_handle_upload(self, files: List[rx.UploadFile]):
         """Handle the upload of a file.
@@ -173,3 +164,12 @@ class GrandChildFileUploadState(FileStateBase2):
             # Update the img var.
             assert file.filename is not None
             self.img_list.append(file.filename)
+
+    @rx.background
+    async def bg_upload(self, files: List[rx.UploadFile]):
+        """Background task cannot be upload handler.
+
+        Args:
+            files: The uploaded files.
+        """
+        pass

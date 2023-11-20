@@ -52,8 +52,10 @@ def test_upload_component_render(upload_component):
     # upload
     assert upload["name"] == "ReactDropzone"
     assert upload["props"] == [
+        "id={`default`}",
         "multiple={true}",
-        "onDrop={e => setFiles((files) => e)}",
+        "onDrop={e => upload_files.default[1]((files) => e)}",
+        "ref={ref_default}",
     ]
     assert upload["args"] == ("getRootProps", "getInputProps")
 
@@ -89,8 +91,10 @@ def test_upload_component_with_props_render(upload_component_with_props):
     upload = upload_component_with_props.render()
 
     assert upload["props"] == [
+        "id={`default`}",
         "maxFiles={2}",
         "multiple={true}",
         "noDrag={true}",
-        "onDrop={e => setFiles((files) => e)}",
+        "onDrop={e => upload_files.default[1]((files) => e)}",
+        "ref={ref_default}",
     ]

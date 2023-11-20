@@ -54,7 +54,7 @@ class Button(ChakraComponent):
     type_: Var[str]
 
     # Components that are not allowed as children.
-    invalid_children: List[str] = ["Button", "MenuButton"]
+    _invalid_children: List[str] = ["Button", "MenuButton"]
 
     # The name of the form field
     name: Var[str]

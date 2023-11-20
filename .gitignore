@@ -6,4 +6,5 @@ examples/
 .vscode
 .coverage
 .coverage.*
+.venv
 venv

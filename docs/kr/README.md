@@ -47,7 +47,7 @@ reflex init
 reflex run
 ```
 
-http://localhost:3000에서 앱이 실행됩니다.
+http://localhost:3000 에서 앱이 실행 됩니다.
 
 이제 `my_app_name/my_app_name.py`에서 소스코드를 수정할 수 있습니다. Reflex는 빠른 새로고침을 지원하므로 코드를 저장할 때마다 즉시 변경 사항을 볼 수 있습니다.
 

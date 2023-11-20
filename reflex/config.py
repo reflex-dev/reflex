@@ -185,18 +185,10 @@ class Config(Base):
     # Additional frontend packages to install.
     frontend_packages: List[str] = []
 
-    # Params to remove eventually.
-    # For rest are for deploy only.
-    # The rxdeploy url.
-    rxdeploy_url: Optional[str] = None
-
     # The hosting service backend URL.
     cp_backend_url: str = constants.Hosting.CP_BACKEND_URL
     # The hosting service frontend URL.
     cp_web_url: str = constants.Hosting.CP_WEB_URL
-
-    # The username.
-    username: Optional[str] = None
 
     # The worker class used in production mode
     gunicorn_worker_class: str = "uvicorn.workers.UvicornH11Worker"

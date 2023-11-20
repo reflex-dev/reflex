@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reflex"
-version = "0.3.2"
+version = "0.3.4"
 description = "Web apps in pure Python."
 license = "Apache-2.0"
 authors = [
@@ -30,7 +30,7 @@ python = "^3.8"
 cloudpickle = "^2.2.1"
 fastapi = "^0.96.0"
 gunicorn = "^20.1.0"
-httpx = "^0.24.0"
+httpx = ">=0.24.0, <0.26.0"
 jinja2 = "^3.1.2"
 psutil = "^5.9.4"
 pydantic = "^1.10.2"
@@ -46,7 +46,6 @@ uvicorn = [
 ]
 watchdog = "^2.3.1"
 watchfiles = "^0.19.0"
-websockets = "^10.4"
 starlette-admin = "^0.9.0"
 alembic = "^1.11.1"
 platformdirs = "^3.10.0"
@@ -59,11 +58,12 @@ wrapt = [
 packaging = "^23.1"
 tabulate = "^0.9.0"
 pipdeptree = "^2.13.0"
+websockets = ">=10.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
 pytest-mock = "^3.10.0"
-pyright = "^1.1.229"
+pyright = ">=1.1.229,<1.1.335"
 darglint = "^1.8.1"
 toml = "^0.10.2"
 pytest-asyncio = "^0.20.1"

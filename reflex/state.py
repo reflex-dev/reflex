@@ -47,6 +47,7 @@ from reflex.utils.serializers import SerializedType, serialize, serializer
 from reflex.vars import BaseVar, ComputedVar, Var
 
 Delta = Dict[str, Any]
+var = ComputedVar
 
 
 class HeaderData(Base):
@@ -192,6 +193,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     # The router data for the current page
     router: RouterData = RouterData()
+
+    # The hydrated bool.
+    is_hydrated: bool = False
 
     def __init__(self, *args, parent_state: State | None = None, **kwargs):
         """Initialize the state.
