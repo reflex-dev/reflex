@@ -79,3 +79,14 @@ pre-commit install
 ```
 
 That's it you can now submit your PR. Thanks for contributing to Reflex!
+
+
+## Other Notes
+
+For some pull request when adding new components you will have to generate a pyi file for the new component. This is done by running the following command in the `reflex` directory.
+
+(Please check in with the team before adding a new component to Reflex we are cautious about adding new components to Reflex's core.)
+
+``` bash
+poetry run python scripts/pyi_generator.py 
+```
