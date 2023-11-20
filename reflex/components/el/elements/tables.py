@@ -1,7 +1,7 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 from typing import Union
 
-from reflex.vars import Var as Var_
+from reflex.vars import Var as Var
 
 from .base import BaseHTML
 
@@ -12,7 +12,7 @@ class Caption(BaseHTML):
     tag = "caption"
 
     # Alignment of the caption
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
 
 class Col(BaseHTML):
@@ -21,13 +21,13 @@ class Col(BaseHTML):
     tag = "col"
 
     # Alignment of the content within the column
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background color of the column
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
 
     # Number of columns the col element spans
-    span: Var_[Union[str, int, bool]]
+    span: Var[Union[str, int, bool]]
 
 
 class Colgroup(BaseHTML):
@@ -36,13 +36,13 @@ class Colgroup(BaseHTML):
     tag = "colgroup"
 
     # Alignment of the content within the column group
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background color of the column group
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
 
     # Number of columns the colgroup element spans
-    span: Var_[Union[str, int, bool]]
+    span: Var[Union[str, int, bool]]
 
 
 class Table(BaseHTML):
@@ -51,19 +51,19 @@ class Table(BaseHTML):
     tag = "table"
 
     # Alignment of the table
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background image for the table
-    background: Var_[Union[str, int, bool]]
+    background: Var[Union[str, int, bool]]
 
     # Background color of the table
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
 
     # Specifies the width of the border around the table
-    border: Var_[Union[str, int, bool]]
+    border: Var[Union[str, int, bool]]
 
     # Provides a summary of the table's purpose and structure
-    summary: Var_[Union[str, int, bool]]
+    summary: Var[Union[str, int, bool]]
 
 
 class Tbody(BaseHTML):
@@ -72,10 +72,10 @@ class Tbody(BaseHTML):
     tag = "tbody"
 
     # Alignment of the content within the table body
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background color of the table body
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
 
 
 class Td(BaseHTML):
@@ -84,22 +84,22 @@ class Td(BaseHTML):
     tag = "td"
 
     # Alignment of the content within the table cell
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background image for the table cell
-    background: Var_[Union[str, int, bool]]
+    background: Var[Union[str, int, bool]]
 
     # Background color of the table cell
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
 
     # Number of columns a cell should span
-    col_span: Var_[Union[str, int, bool]]
+    col_span: Var[Union[str, int, bool]]
 
     # IDs of the headers associated with this cell
-    headers: Var_[Union[str, int, bool]]
+    headers: Var[Union[str, int, bool]]
 
     # Number of rows a cell should span
-    row_span: Var_[Union[str, int, bool]]
+    row_span: Var[Union[str, int, bool]]
 
 
 class Tfoot(BaseHTML):
@@ -108,10 +108,10 @@ class Tfoot(BaseHTML):
     tag = "tfoot"
 
     # Alignment of the content within the table footer
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background color of the table footer
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
 
 
 class Th(BaseHTML):
@@ -120,25 +120,25 @@ class Th(BaseHTML):
     tag = "th"
 
     # Alignment of the content within the table header cell
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background image for the table header cell
-    background: Var_[Union[str, int, bool]]
+    background: Var[Union[str, int, bool]]
 
     # Background color of the table header cell
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
 
     # Number of columns a header cell should span
-    col_span: Var_[Union[str, int, bool]]
+    col_span: Var[Union[str, int, bool]]
 
     # IDs of the headers associated with this header cell
-    headers: Var_[Union[str, int, bool]]
+    headers: Var[Union[str, int, bool]]
 
     # Number of rows a header cell should span
-    row_span: Var_[Union[str, int, bool]]
+    row_span: Var[Union[str, int, bool]]
 
     # Scope of the header cell (row, col, rowgroup, colgroup)
-    scope: Var_[Union[str, int, bool]]
+    scope: Var[Union[str, int, bool]]
 
 
 class Thead(BaseHTML):
@@ -147,7 +147,7 @@ class Thead(BaseHTML):
     tag = "thead"
 
     # Alignment of the content within the table header
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
 
 class Tr(BaseHTML):
@@ -156,7 +156,7 @@ class Tr(BaseHTML):
     tag = "tr"
 
     # Alignment of the content within the table row
-    align: Var_[Union[str, int, bool]]
+    align: Var[Union[str, int, bool]]
 
     # Background color of the table row
-    bgcolor: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]

@@ -9,7 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Union
 from reflex.components.el.element import Element
-from reflex.vars import Var as Var_
+from reflex.vars import Var as Var
 from .base import BaseHTML
 
 class Base(BaseHTML):

@@ -2,7 +2,7 @@
 from typing import Union
 
 from reflex.components.el.element import Element
-from reflex.vars import Var as Var_
+from reflex.vars import Var as Var
 
 from .base import BaseHTML
 
@@ -13,8 +13,8 @@ class Base(BaseHTML):  # noqa: E742
     tag = "base"
 
     tag = "base"
-    href: Var_[Union[str, int, bool]]
-    target: Var_[Union[str, int, bool]]
+    href: Var[Union[str, int, bool]]
+    target: Var[Union[str, int, bool]]
 
 
 class Head(BaseHTML):  # noqa: E742
@@ -28,25 +28,26 @@ class Link(BaseHTML):  # noqa: E742
 
     tag = "link"
 
-    cross_origin: Var_[Union[str, int, bool]]
-    href: Var_[Union[str, int, bool]]
-    href_lang: Var_[Union[str, int, bool]]
-    integrity: Var_[Union[str, int, bool]]
-    media: Var_[Union[str, int, bool]]
-    referrer_policy: Var_[Union[str, int, bool]]
-    rel: Var_[Union[str, int, bool]]
-    sizes: Var_[Union[str, int, bool]]
-    type: Var_[Union[str, int, bool]]
+    cross_origin: Var[Union[str, int, bool]]
+    href: Var[Union[str, int, bool]]
+    href_lang: Var[Union[str, int, bool]]
+    integrity: Var[Union[str, int, bool]]
+    media: Var[Union[str, int, bool]]
+    referrer_policy: Var[Union[str, int, bool]]
+    rel: Var[Union[str, int, bool]]
+    sizes: Var[Union[str, int, bool]]
+    type: Var[Union[str, int, bool]]
 
 
 class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     """Display the meta element."""
 
     tag = "meta"
-    char_set: Var_[Union[str, int, bool]]
-    content: Var_[Union[str, int, bool]]
-    http_equiv: Var_[Union[str, int, bool]]
-    name: Var_[Union[str, int, bool]]
+    char_set: Var[Union[str, int, bool]]
+    content: Var[Union[str, int, bool]]
+    http_equiv: Var[Union[str, int, bool]]
+    name: Var[Union[str, int, bool]]
+
 
 class Title(Element):  # noqa: E742
     """Display the title element."""

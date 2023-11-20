@@ -1,7 +1,7 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
 from typing import Union
 
-from reflex.vars import Var as Var_
+from reflex.vars import Var as Var
 
 from .base import BaseHTML
 
@@ -11,8 +11,8 @@ class Body(BaseHTML):  # noqa: E742
 
     tag = "body"
 
-    bgcolor: Var_[Union[str, int, bool]]
-    background: Var_[Union[str, int, bool]]
+    bgcolor: Var[Union[str, int, bool]]
+    background: Var[Union[str, int, bool]]
 
 
 class Address(BaseHTML):  # noqa: E742
