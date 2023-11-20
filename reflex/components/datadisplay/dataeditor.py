@@ -180,7 +180,7 @@ class DataEditor(NoSSRComponent):
     vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
     # Allow columns selections. ("none", "single", "multi")
-    column_select: Literal["none", "single", "multi"]
+    column_select: Var[Literal["none", "single", "multi"]]
 
     # Prevent diagonal scrolling.
     prevent_diagonal_scrolling: Var[bool]
