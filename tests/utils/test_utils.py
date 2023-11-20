@@ -437,6 +437,32 @@ def test_bun_install_without_unzip(mocker):
         prerequisites.install_bun()
 
 
+@pytest.mark.parametrize("bun_version", [constants.Bun.VERSION, "1.0.0"])
+def test_bun_install_version(mocker, bun_version):
+    """Test that bun is downloaded when the host version(installed by reflex)
+    different from the current version set in reflex.
+
+    Args:
+        mocker: Pytest mocker object.
+        bun_version: the host bun version
+
+    """
+    mocker.patch("reflex.utils.prerequisites.constants.IS_WINDOWS", False)
+    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch(
+        "reflex.utils.prerequisites.get_bun_version",
+        return_value=version.parse(bun_version),
+    )
+    mocker.patch("reflex.utils.path_ops.which")
+    mock = mocker.patch("reflex.utils.prerequisites.download_and_run")
+
+    prerequisites.install_bun()
+    if bun_version == constants.Bun.VERSION:
+        mock.assert_not_called()
+    else:
+        mock.assert_called_once()
+
+
 @pytest.mark.parametrize("is_windows", [True, False])
 def test_create_reflex_dir(mocker, is_windows):
     """Test that a reflex directory is created on initializing frontend
