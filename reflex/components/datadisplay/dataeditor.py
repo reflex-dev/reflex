@@ -283,7 +283,7 @@ class DataEditor(NoSSRComponent):
         Returns:
             The DataEditor component.&
         """
-        from reflex.el.elements import Div
+        from reflex.components.el import Div
 
         columns = props.get("columns", [])
         data = props.get("data", [])
@@ -339,7 +339,7 @@ class DataEditor(NoSSRComponent):
         Returns:
             The app wrap components.
         """
-        from reflex.el.elements import Div
+        from reflex.components.el import Div
 
         class Portal(Div):
             def get_ref(self):
