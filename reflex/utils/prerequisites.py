@@ -278,28 +278,30 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     )
 
 
-def get_project_hash_if_exists():
-    """Check if the reflex.json file exists in .web folder and 
-    if it does then extract the project_hash number so that we 
-    do not overwrite it every time we run the reflex init command"""
-    if os.path.exists(constants.Reflex.JSON):
-        # Open and read the file
-        with open(constants.Reflex.JSON, 'r') as file:
-            data = json.load(file)
-            project_hash = data["project_hash"]
-            return project_hash
-    else:
+def get_project_hash() -> int | None:
+    """Get the project hash from the reflex.json file if the file exists.
+
+    Returns:
+        project_hash (int): The app hash.
+    """
+    if not os.path.exists(constants.Reflex.JSON):
         return None
+    # Open and read the file
+    with open(constants.Reflex.JSON, "r") as file:
+        data = json.load(file)
+        project_hash = data["project_hash"]
+        return project_hash
 
 
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
 
-    project_hash = get_project_hash_if_exists()
+    # Re-use the hash if one is already created, so we don't over-write it when running reflex init
+    project_hash = get_project_hash()
 
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, constants.Dirs.WEB)
-    
+
     initialize_package_json()
 
     path_ops.mkdir(constants.Dirs.WEB_ASSETS)
@@ -331,10 +333,16 @@ def initialize_package_json():
         file.write(code)
 
 
-def init_reflex_json(project_hash):
-    """Write the hash of the Reflex project to a REFLEX_JSON."""
-    
-    if project_hash != None:
+def init_reflex_json(project_hash: int | None):
+    """Write the hash of the Reflex project to a REFLEX_JSON.
+    Re-use the hash if one is already created, therefore do not
+    overwrite it every time we run the reflex init command
+    .
+
+    Args:
+        project_hash (int): The app hash.
+    """
+    if project_hash is not None:
         console.debug(f"Project hash is already set to {project_hash}.")
     else:
         # Get a random project hash.
