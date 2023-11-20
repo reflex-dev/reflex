@@ -335,12 +335,13 @@ def initialize_package_json():
 
 def init_reflex_json(project_hash: int | None):
     """Write the hash of the Reflex project to a REFLEX_JSON.
+
     Re-use the hash if one is already created, therefore do not
     overwrite it every time we run the reflex init command
     .
 
     Args:
-        project_hash (int): The app hash.
+        project_hash: The app hash.
     """
     if project_hash is not None:
         console.debug(f"Project hash is already set to {project_hash}.")
