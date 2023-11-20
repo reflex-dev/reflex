@@ -95,7 +95,7 @@ try:
             The serialized image.
         """
         buff = io.BytesIO()
-        image.save(buff, format=getattr(image, "format", "PNG"))
+        image.save(buff, format=getattr(image, "format", None) or "PNG")
         image_bytes = buff.getvalue()
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
         mime_type = getattr(image, "get_format_mimetype", lambda: "image/png")()
