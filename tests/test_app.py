@@ -1205,16 +1205,18 @@ def test_app_wrap_compile_theme(compilable_app):
     app.theme = rdxt.theme(accent_color="plum")
     app.compile()
     app_js_contents = (web_dir / "pages" / "_app.js").read_text()
-    [line.strip() for line in app_js_contents.splitlines() if line.strip()]
-    # assert (
-    #     "function AppWrap({children}) {"
-    #     "return ("
-    #     "<RadixThemesTheme accentColor={`plum`}>"
-    #     "{children}"
-    #     "</RadixThemesTheme>"
-    #     ")"
-    #     "}"
-    # ) in "".join(app_js_lines)
+    app_js_lines = [
+        line.strip() for line in app_js_contents.splitlines() if line.strip()
+    ]
+    assert (
+        "function AppWrap({children}) {"
+        "return ("
+        "<RadixThemesTheme accentColor={`plum`}>"
+        "{children}"
+        "</RadixThemesTheme>"
+        ")"
+        "}"
+    ) in "".join(app_js_lines)
 
 
 def test_app_wrap_priority(compilable_app):
@@ -1249,22 +1251,24 @@ def test_app_wrap_priority(compilable_app):
     app.add_page(page)
     app.compile()
     app_js_contents = (web_dir / "pages" / "_app.js").read_text()
-    [line.strip() for line in app_js_contents.splitlines() if line.strip()]
-    # assert (
-    #     "function AppWrap({children}) {"
-    #     "return ("
-    #     "<Box>"
-    #     "<ChakraProvider theme={extendTheme(theme)}>"
-    #     "<Global styles={GlobalStyles}/>"
-    #     "<ChakraColorModeProvider>"
-    #     "<Text>"
-    #     "<Fragment2>"
-    #     "{children}"
-    #     "</Fragment2>"
-    #     "</Text>"
-    #     "</ChakraColorModeProvider>"
-    #     "</ChakraProvider>"
-    #     "</Box>"
-    #     ")"
-    #     "}"
-    # ) in "".join(app_js_lines)
+    app_js_lines = [
+        line.strip() for line in app_js_contents.splitlines() if line.strip()
+    ]
+    assert (
+        "function AppWrap({children}) {"
+        "return ("
+        "<Box>"
+        "<ChakraProvider theme={extendTheme(theme)}>"
+        "<Global styles={GlobalStyles}/>"
+        "<ChakraColorModeProvider>"
+        "<Text>"
+        "<Fragment2>"
+        "{children}"
+        "</Fragment2>"
+        "</Text>"
+        "</ChakraColorModeProvider>"
+        "</ChakraProvider>"
+        "</Box>"
+        ")"
+        "}"
+    ) in "".join(app_js_lines)
