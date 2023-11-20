@@ -345,7 +345,11 @@ class DataEditor(NoSSRComponent):
             def get_ref(self):
                 return None
 
-        return {(-1, "DataEditorPortal"): Portal.create(id="portal")}
+        return {
+            (-1, "DataEditorPortal"): Portal.create(
+                id="portal", style={"position": "fixed", "top": 0}
+            )
+        }
 
 
 # try:
