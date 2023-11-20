@@ -978,7 +978,7 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=None)  # noqa
     def get_component(self) -> Component:
         """Render the component.
 
