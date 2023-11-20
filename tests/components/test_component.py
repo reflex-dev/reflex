@@ -44,7 +44,7 @@ def component1() -> Type[Component]:
         number: Var[int]
 
         def _get_imports(self) -> imports.ImportDict:
-            return {"react": {ImportVar(tag="Component")}}
+            return {"react": [ImportVar(tag="Component")]}
 
         def _get_custom_code(self) -> str:
             return "console.log('component1')"
@@ -77,7 +77,7 @@ def component2() -> Type[Component]:
             }
 
         def _get_imports(self) -> imports.ImportDict:
-            return {"react-redux": {ImportVar(tag="connect")}}
+            return {"react-redux": [ImportVar(tag="connect")]}
 
         def _get_custom_code(self) -> str:
             return "console.log('component2')"

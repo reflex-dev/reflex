@@ -622,17 +622,17 @@ class Component(Base, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_props_imports(self) -> imports.ImportDict:
+    def _get_props_imports(self) -> List[str]:
         """Get the imports needed for components props.
 
         Returns:
             The  imports for the components props of the component.
         """
         return [
-                getattr(self, prop).get_imports()
-                for prop in self.get_component_props()
-                if getattr(self, prop) is not None
-            ]
+            getattr(self, prop).get_imports()
+            for prop in self.get_component_props()
+            if getattr(self, prop) is not None
+        ]
 
     def _get_dependencies_imports(self) -> imports.ImportDict:
         """Get the imports from lib_dependencies for installing.
@@ -640,7 +640,9 @@ class Component(Base, ABC):
         Returns:
             The dependencies imports of the component.
         """
-        return {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
+        return {
+            dep: [ImportVar(tag=None, render=False)] for dep in self.lib_dependencies
+        }
 
     def _get_imports(self) -> imports.ImportDict:
         """Get all the libraries and fields that are used by the component.
@@ -820,23 +822,15 @@ class Component(Base, ABC):
         Returns:
             The app wrap components.
         """
-        from reflex.components.libs.chakra import chakra_provider, chakra_color_mode_provider
+        from reflex.components.libs.chakra import (
+            chakra_color_mode_provider,
+            chakra_provider,
+        )
+
         return {
             (60, "ChakraProvider"): chakra_provider,
             (50, "ChakraColorModeProvider"): chakra_color_mode_provider,
         }
-        # Store the components in a set to avoid duplicates.
-        components = self._get_app_wrap_components()
-
-        for component in tuple(components.values()):
-            components.update(component.get_app_wrap_components())
-
-        # Add the app wrap components for the children.
-        for child in self.children:
-            components.update(child.get_app_wrap_components())
-
-        # Return the components.
-        return components
 
 
 # Map from component to styling.
@@ -955,7 +949,9 @@ class CustomComponent(Component):
         # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_component(self).get_custom_components(seen=seen)
+            custom_components |= self.get_component(self).get_custom_components(
+                seen=seen
+            )
         return custom_components
 
     def _render(self) -> Tag:

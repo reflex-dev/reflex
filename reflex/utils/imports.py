@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, Set
+from typing import Dict, List
 
 from reflex.vars import ImportVar
 
-ImportDict = Dict[str, Set[ImportVar]]
+ImportDict = Dict[str, List[ImportVar]]
 
 
 def merge_imports(*imports) -> ImportDict:

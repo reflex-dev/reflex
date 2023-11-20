@@ -147,7 +147,7 @@ class Theme(RadixThemesComponent):
     def _get_imports(self) -> imports.ImportDict:
         return {
             **super()._get_imports(),
-            "": {ImportVar(tag="@radix-ui/themes/styles.css", install=False)},
+            "": [ImportVar(tag="@radix-ui/themes/styles.css", install=False)],
         }
 
 

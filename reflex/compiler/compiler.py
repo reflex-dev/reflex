@@ -15,15 +15,15 @@ from reflex.vars import ImportVar
 
 # Imports to be included in every Reflex app.
 DEFAULT_IMPORTS: imports.ImportDict = {
-    "react": {
+    "react": [
         ImportVar(tag="Fragment"),
         ImportVar(tag="useEffect"),
         ImportVar(tag="useRef"),
         ImportVar(tag="useState"),
         ImportVar(tag="useContext"),
-    },
-    "next/router": {ImportVar(tag="useRouter")},
-    f"/{constants.Dirs.STATE_PATH}": {
+    ],
+    "next/router": [ImportVar(tag="useRouter")],
+    f"/{constants.Dirs.STATE_PATH}": [
         ImportVar(tag="uploadFiles"),
         ImportVar(tag="Event"),
         ImportVar(tag="isTrue"),
@@ -34,17 +34,17 @@ DEFAULT_IMPORTS: imports.ImportDict = {
         ImportVar(tag="getRefValues"),
         ImportVar(tag="getAllLocalStorageItems"),
         ImportVar(tag="useEventLoop"),
-    },
-    "/utils/context.js": {
+    ],
+    "/utils/context.js": [
         ImportVar(tag="EventLoopContext"),
         ImportVar(tag="initialEvents"),
         ImportVar(tag="StateContext"),
         ImportVar(tag="ColorModeContext"),
-    },
-    "/utils/helpers/range.js": {
+    ],
+    "/utils/helpers/range.js": [
         ImportVar(tag="range", is_default=True),
-    },
-    "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
+    ],
+    "": [ImportVar(tag="focus-visible/dist/focus-visible", install=False)],
 }
 
 
@@ -129,7 +129,7 @@ def _compile_page(
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
-    imports = {k: set(v) for k, v in imports.items()}
+    imports = {k: list(set(v)) for k, v in imports.items()}
     utils.validate_imports(imports)
     imports = utils.compile_imports(imports)
 
@@ -217,8 +217,8 @@ def _compile_components(components: set[CustomComponent]) -> str:
         The compiled components.
     """
     imports = {
-        "react": {ImportVar(tag="memo")},
-        f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
+        "react": [ImportVar(tag="memo")],
+        f"/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
     }
     component_renders = []
 

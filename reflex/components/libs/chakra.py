@@ -34,7 +34,7 @@ class ChakraComponent(Component):
             The dependencies imports of the component.
         """
         return {
-            dep: {ImportVar(tag=None, render=False)}
+            dep: [ImportVar(tag=None, render=False)]
             for dep in [
                 "@chakra-ui/system@2.5.7",
                 "framer-motion@10.16.4",
@@ -79,7 +79,7 @@ class ChakraProvider(ChakraComponent):
         imports.setdefault(self.__fields__["library"].default, []).append(
             ImportVar(tag="extendTheme", is_default=False),
         )
-        imports.setdefault("/utils/theme.js", set()).add(
+        imports.setdefault("/utils/theme.js", []).append(
             ImportVar(tag="theme", is_default=True),
         )
         imports.setdefault(Global.__fields__["library"].default, []).append(

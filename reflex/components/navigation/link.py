@@ -7,8 +7,8 @@ from reflex.components.navigation.nextlink import NextLink
 from reflex.utils import imports
 from reflex.vars import BaseVar, Var
 
-
 next_link = NextLink.create()
+
 
 class Link(ChakraComponent):
     """Link to another page."""
