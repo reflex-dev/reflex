@@ -268,10 +268,10 @@ def test_get_imports(component1, component2):
     """
     c1 = component1.create()
     c2 = component2.create(c1)
-    assert c1.get_imports() == {"react": {ImportVar(tag="Component")}}
+    assert c1.get_imports() == {"react": [ImportVar(tag="Component")]}
     assert c2.get_imports() == {
-        "react-redux": {ImportVar(tag="connect")},
-        "react": {ImportVar(tag="Component")},
+        "react-redux": [ImportVar(tag="connect")],
+        "react": [ImportVar(tag="Component")],
     }
 
 
