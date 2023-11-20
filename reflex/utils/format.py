@@ -137,9 +137,11 @@ def to_camel_case(text: str) -> str:
     Returns:
         The camel case string.
     """
-    words = re.split("[_-]", text)
+    words = re.split("[_-]", text.lstrip("-_"))
+    leading_underscores_or_hyphens = "".join(re.findall(r"^[_-]+", text))
     # Capitalize the first letter of each word except the first one
-    return words[0] + "".join(x.capitalize() for x in words[1:])
+    converted_word = words[0] + "".join(x.capitalize() for x in words[1:])
+    return leading_underscores_or_hyphens + converted_word
 
 
 def to_title_case(text: str) -> str:
