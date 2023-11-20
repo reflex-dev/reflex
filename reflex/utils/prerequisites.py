@@ -282,7 +282,7 @@ def get_project_hash() -> int | None:
     """Get the project hash from the reflex.json file if the file exists.
 
     Returns:
-        project_hash (int): The app hash.
+        project_hash: The app hash.
     """
     if not os.path.exists(constants.Reflex.JSON):
         return None
