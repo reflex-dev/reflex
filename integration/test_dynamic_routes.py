@@ -1,10 +1,13 @@
 """Integration tests for dynamic route page behavior."""
 from typing import Callable, Coroutine, Generator, Type
+from urllib.parse import urlsplit
 
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness, AppHarnessProd, WebDriver
+
+from .utils import poll_for_navigation
 
 
 def DynamicRoute():
@@ -140,10 +143,12 @@ def poll_for_order(
             return await dynamic_route.get_state(token)
 
         async def _check():
-            return (await _backend_state()).order == exp_order
+            return (await _backend_state()).substates[
+                "dynamic_state"
+            ].order == exp_order
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).order == exp_order
+        assert (await _backend_state()).substates["dynamic_state"].order == exp_order
 
     return _poll_for_order
 
