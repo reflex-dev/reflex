@@ -53,16 +53,21 @@ class Foreach(Component):
 
     def _render(self, props: dict[str, Any] | None = None) -> IterTag:
         props = {} if props is None else props.copy()
+
+        # Determine the arg var name based on the params accepted by render_fn.
         render_sig = inspect.signature(self.render_fn)
         params = list(render_sig.parameters.values())
         if len(params) >= 1:
             props.setdefault("arg_var_name", params[0].name)
+
         if len(params) >= 2:
+            # Determine the index var name based on the params accepted by render_fn.
             props.setdefault("index_var_name", params[1].name)
         elif "index_var_name" not in props:
-            # Use a deterministic index, based on the rendered component.
+            # Otherwise, use a deterministic index, based on the rendered code.
             code_hash = md5(str(self.children[0]).encode("utf-8")).hexdigest()
             props.setdefault("index_var_name", f"index_{code_hash}")
+
         return IterTag(
             iterable=self.iterable,
             render_fn=self.render_fn,
