@@ -54,17 +54,17 @@ def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list
     return default, list(rest)
 
 
-def validate_imports(imports: imports.ImportDict):
+def validate_imports(import_dict: imports.ImportDict):
     """Verify that the same Tag is not used in multiple import.
 
     Args:
-        imports: The dict of imports to validate
+        import_dict: The dict of imports to validate
 
     Raises:
         ValueError: if a conflict on "tag/alias" is detected for an import.
     """
     used_tags = {}
-    for lib, _imports in imports.items():
+    for lib, _imports in import_dict.items():
         for _import in _imports:
             import_name = (
                 f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
@@ -77,17 +77,19 @@ def validate_imports(imports: imports.ImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(imports: imports.ImportDict) -> list[dict]:
+def compile_imports(import_dict: imports.ImportDict) -> list[dict]:
     """Compile an import dict.
 
     Args:
-        imports: The import dict to compile.
+        import_dict: The import dict to compile.
 
     Returns:
         The list of import dict.
     """
+    collapsed_import_dict = imports.collapse_imports(import_dict)
+    validate_imports(collapsed_import_dict)
     import_dicts = []
-    for lib, fields in imports.items():
+    for lib, fields in collapsed_import_dict.items():
         default, rest = compile_import_statement(fields)
 
         # prevent lib from being rendered on the page if all imports are non rendered kind

@@ -24,6 +24,18 @@ def merge_imports(*imports) -> ImportDict:
     return all_imports
 
 
+def collapse_imports(imports: ImportDict) -> ImportDict:
+    """Remove all duplicate ImportVar within an ImportDict.
+
+    Args:
+        imports: The import dict to collapse.
+
+    Returns:
+        The collapsed import dict.
+    """
+    return {lib: list(set(import_vars)) for lib, import_vars in imports.items()}
+
+
 class ImportVar(Base):
     """An import var."""
 

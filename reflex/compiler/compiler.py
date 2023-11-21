@@ -105,8 +105,6 @@ def _compile_page(
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
-    imports = {k: list(set(v)) for k, v in imports.items()}
-    utils.validate_imports(imports)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.

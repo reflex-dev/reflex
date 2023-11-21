@@ -149,6 +149,24 @@ class VarData(Base):
         """
         return bool(self.state or self.imports or self.hooks)
 
+    def __eq__(self, other: Any) -> bool:
+        """Check if two var data objects are equal.
+
+        Args:
+            other: The other var data object to compare.
+
+        Returns:
+            True if all fields are equal and collapsed imports are equal.
+        """
+        if not isinstance(other, VarData):
+            return False
+        return (
+            self.state == other.state
+            and self.hooks == other.hooks
+            and imports.collapse_imports(self.imports)
+            == imports.collapse_imports(other.imports)
+        )
+
     def dict(self) -> dict:
         """Convert the var data to a dictionary.
 
