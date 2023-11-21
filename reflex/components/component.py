@@ -851,9 +851,9 @@ class Component(Base, ABC):
                 for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
                 if hook
             )
-            .union(self._get_vars_hooks())
-            .union(self._get_events_hooks())
-            .union(self._get_special_hooks())
+            | self._get_vars_hooks()
+            | self._get_events_hooks()
+            | self._get_special_hooks()
         )
 
     def _get_hooks(self) -> str | None:
