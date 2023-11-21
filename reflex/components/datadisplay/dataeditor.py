@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
+from reflex.style import Style
 from reflex.utils import console, format, imports, types
 from reflex.utils.serializers import serializer
 from reflex.vars import ImportVar, Var, get_unique_variable_name
@@ -347,7 +348,7 @@ class DataEditor(NoSSRComponent):
 
         return {
             (-1, "DataEditorPortal"): Portal.create(
-                id="portal", style={"position": "fixed", "top": 0}
+                id="portal", style=Style({"position": "fixed", "top": 0})
             )
         }
 
