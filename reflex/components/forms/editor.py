@@ -178,9 +178,9 @@ class Editor(NoSSRComponent):
 
     def _get_imports(self):
         imports = super()._get_imports()
-        imports[""] = {
+        imports[""] = [
             ImportVar(tag="suneditor/dist/css/suneditor.min.css", install=False)
-        }
+        ]
         return imports
 
     def get_event_triggers(self) -> Dict[str, Any]:

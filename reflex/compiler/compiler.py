@@ -14,7 +14,7 @@ from reflex.utils.imports import ImportDict, ImportVar
 
 # Imports to be included in every Reflex app.
 DEFAULT_IMPORTS: ImportDict = {
-    "": {ImportVar(tag="focus-visible/dist/focus-visible", install=False)},
+    "": [ImportVar(tag="focus-visible/dist/focus-visible", install=False)],
 }
 
 
@@ -99,6 +99,7 @@ def _compile_page(
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    imports = {k: list(set(v)) for k, v in imports.items()}
     utils.validate_imports(imports)
     imports = utils.compile_imports(imports)
 
@@ -186,8 +187,8 @@ def _compile_components(components: set[CustomComponent]) -> str:
         The compiled components.
     """
     imports = {
-        "react": {ImportVar(tag="memo")},
-        f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="E"), ImportVar(tag="isTrue")},
+        "react": [ImportVar(tag="memo")],
+        f"/{constants.Dirs.STATE_PATH}": [ImportVar(tag="E"), ImportVar(tag="isTrue")],
     }
     component_renders = []
 

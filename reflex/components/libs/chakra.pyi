@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from functools import lru_cache
 from typing import List, Literal
 from reflex.components.component import Component
 from reflex.utils import imports
@@ -238,6 +239,8 @@ class ChakraProvider(ChakraComponent):
         """
         ...
 
+chakra_provider = ChakraProvider.create()
+
 class ChakraColorModeProvider(Component):
     @overload
     @classmethod
@@ -317,6 +320,7 @@ class ChakraColorModeProvider(Component):
         """
         ...
 
+chakra_color_mode_provider = ChakraColorModeProvider.create()
 LiteralColorScheme = Literal[
     "none",
     "gray",

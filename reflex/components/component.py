@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typing
 from abc import ABC
-from functools import wraps
+from functools import lru_cache, wraps
 from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Type, Union
 
 from reflex.base import Base
@@ -404,6 +404,7 @@ class Component(Base, ABC):
         return tag.add_props(**props)
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_props(cls) -> Set[str]:
         """Get the unique fields for the component.
 
@@ -413,6 +414,7 @@ class Component(Base, ABC):
         return set(cls.get_fields()) - set(Component.get_fields())
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_initial_props(cls) -> Set[str]:
         """Get the initial props to set for the component.
 
@@ -422,6 +424,7 @@ class Component(Base, ABC):
         return set()
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_component_props(cls) -> set[str]:
         """Get the props that expected a component as value.
 
@@ -689,19 +692,17 @@ class Component(Base, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_props_imports(self) -> imports.ImportDict:
+    def _get_props_imports(self) -> List[str]:
         """Get the imports needed for components props.
 
         Returns:
             The  imports for the components props of the component.
         """
-        return imports.merge_imports(
-            *[
-                getattr(self, prop).get_imports()
-                for prop in self.get_component_props()
-                if getattr(self, prop) is not None
-            ]
-        )
+        return [
+            getattr(self, prop).get_imports()
+            for prop in self.get_component_props()
+            if getattr(self, prop) is not None
+        ]
 
     def _get_dependencies_imports(self) -> imports.ImportDict:
         """Get the imports from lib_dependencies for installing.
@@ -709,9 +710,9 @@ class Component(Base, ABC):
         Returns:
             The dependencies imports of the component.
         """
-        return imports.merge_imports(
-            {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
-        )
+        return {
+            dep: [ImportVar(tag=None, render=False)] for dep in self.lib_dependencies
+        }
 
     def _get_hooks_imports(self) -> imports.ImportDict:
         """Get the imports required by certain hooks.
@@ -761,7 +762,7 @@ class Component(Base, ABC):
         ]
 
         return imports.merge_imports(
-            self._get_props_imports(),
+            *self._get_props_imports(),
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
             _imports,
@@ -960,7 +961,8 @@ class Component(Base, ABC):
         alias = self.alias.partition(".")[0] if self.alias else None
         return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component.
 
         Returns:
@@ -1104,7 +1106,9 @@ class CustomComponent(Component):
         # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_component().get_custom_components(seen=seen)
+            custom_components |= self.get_component(self).get_custom_components(
+                seen=seen
+            )
         return custom_components
 
     def _render(self) -> Tag:
@@ -1131,6 +1135,7 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
+    @lru_cache(maxsize=None)  # noqa
     def get_component(self) -> Component:
         """Render the component.
 
@@ -1175,14 +1180,14 @@ class NoSSRComponent(Component):
             The imports for dynamically importing the component at module load time.
         """
         # Next.js dynamic import mechanism.
-        dynamic_import = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+        dynamic_import = {"next/dynamic": [ImportVar(tag="dynamic", is_default=True)]}
 
         # The normal imports for this component.
         _imports = super()._get_imports()
 
         # Do NOT import the main library/tag statically.
         if self.library is not None:
-            _imports[self.library] = {ImportVar(tag=None, render=False)}
+            _imports[self.library] = [imports.ImportVar(tag=None, render=False)]
 
         return imports.merge_imports(
             dynamic_import,
