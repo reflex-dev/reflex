@@ -236,13 +236,21 @@ def _compile_stateful_components(
             component: The component to collect shared StatefulComponents for.
         """
         for child in component.children:
+            # Depth-first traversal.
             get_shared_components_recursive(child)
+
+        # When the component is referenced by more than one page, render it
+        # to be included in the STATEFUL_COMPONENTS module.
         if isinstance(component, StatefulComponent) and component.references > 1:
+            # Reset this flag to render the actual component.
             component.rendered_as_shared = False
+
             rendered_components.update(
                 {code: None for code in component.get_custom_code()},
             )
             all_import_dicts.append(component.get_imports())
+
+            # Indicate that this component now imports from the shared file.
             component.rendered_as_shared = True
 
     for page_component in page_components:
@@ -257,7 +265,7 @@ def _compile_stateful_components(
 
     return templates.STATEFUL_COMPONENTS.render(
         imports=utils.compile_imports(all_imports),
-        memoized_code="\n".join(rendered_components.keys()),
+        memoized_code="\n".join(rendered_components),
     )
 
 
