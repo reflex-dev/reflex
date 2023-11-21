@@ -66,9 +66,12 @@ class DebounceInput(Component):
                 "Provide a single child for DebounceInput, such as rx.input() or "
                 "rx.text_area()",
             )
+
         child = children[0]
         if "on_change" not in child.event_triggers:
             raise ValueError("DebounceInput child requires an on_change handler")
+
+        # Carry known props and event_triggers from the child.
         props_from_child = {
             p: getattr(child, p)
             for p in cls.get_props()
@@ -76,21 +79,25 @@ class DebounceInput(Component):
         }
         props_from_child.update(child.event_triggers)
         props = {**props_from_child, **props}
+
+        # Carry all other child props directly via custom_attrs
         other_props = {
             p: getattr(child, p)
             for p in child.get_props()
             if p not in props_from_child and getattr(child, p) is not None
         }
-        # Carry all other child props directly via custom_attrs
         props.setdefault("custom_attrs", {}).update(other_props, **child.custom_attrs)
+
+        # Carry base Component props.
         props.setdefault("style", {}).update(child.style)
         if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
-
         child_ref = child.get_ref()
         if not props.get("input_ref") and child_ref:
             props["input_ref"] = Var.create_safe(child_ref, _var_is_local=False)
             props["id"] = child.id
+
+        # Set the child element to wrap, including any imports/hooks from the child.
         props.setdefault(
             "element",
             Var.create_safe(

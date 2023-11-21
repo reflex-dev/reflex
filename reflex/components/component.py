@@ -1439,10 +1439,16 @@ class StatefulComponent(BaseComponent):
         Returns:
             The tag for the stateful component.
         """
+        # Get the render dict for the component.
         rendered_code = component.render()
         if not rendered_code:
-            return None  # never memoize non-visual components
+            # Never memoize non-visual components.
+            return None
+
+        # Compute the hash based on the rendered code.
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
+
+        # Format the tag name including the hash.
         return format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
 
     @classmethod
@@ -1460,18 +1466,29 @@ class StatefulComponent(BaseComponent):
         Returns:
             The rendered code.
         """
-        render_component = copy.copy(component)
+        # Memoize event triggers useCallback to avoid unnecessary re-renders.
+        memo_event_triggers = tuple(cls._get_memoized_event_triggers(component).items())
+
+        # Trigger hooks stored separately to write after the normal hooks (see stateful_component.js.jinja2)
         memo_trigger_hooks = []
-        for event_trigger, (
-            memo_trigger,
-            memo_trigger_hook,
-        ) in cls._get_memoized_event_triggers(component).items():
-            memo_trigger_hooks.append(memo_trigger_hook)
-            render_component.event_triggers[event_trigger] = memo_trigger
+
+        if memo_event_triggers:
+            # Copy the component to avoid mutating the original.
+            component = copy.copy(component)
+
+            for event_trigger, (
+                memo_trigger,
+                memo_trigger_hook,
+            ) in memo_event_triggers:
+                # Replace the event trigger with the memoized version.
+                memo_trigger_hooks.append(memo_trigger_hook)
+                component.event_triggers[event_trigger] = memo_trigger
+
+        # Render the code for this component and hooks.
         return STATEFUL_COMPONENT.render(
             tag_name=tag_name,
             memo_trigger_hooks=memo_trigger_hooks,
-            component=render_component or component,
+            component=component,
         )
 
     @staticmethod
@@ -1486,7 +1503,7 @@ class StatefulComponent(BaseComponent):
         """
         var_name = hook.partition("=")[0].strip().split(None, 1)[1].strip()
         if var_name.startswith("["):
-            # Break up array destructuring
+            # Break up array destructuring.
             return [v.strip() for v in var_name.strip("[]").split(",")]
         return [var_name]
 
@@ -1502,7 +1519,7 @@ class StatefulComponent(BaseComponent):
 
         Returns:
             A dict of event trigger name to a tuple of the memoized event trigger Var and
-            the hook code that memoizes the component.
+            the hook code that memoizes the event handler.
         """
         trigger_memo = {}
         for event_trigger, event_args in component._get_vars_from_event_triggers(
@@ -1513,13 +1530,20 @@ class StatefulComponent(BaseComponent):
                 EventTriggers.ON_UNMOUNT,
                 EventTriggers.ON_SUBMIT,
             }:
-                continue  # do not memoize lifecycle or submit events
+                # Do not memoize lifecycle or submit events.
+                continue
+
+            # Get the actual EventSpec and render it.
             event = component.event_triggers[event_trigger]
             rendered_chain = format.format_prop(event)
             if isinstance(rendered_chain, str):
                 rendered_chain = rendered_chain.strip("{}")
+
+            # Hash the rendered EventChain to get a deterministic function name.
             chain_hash = md5(str(rendered_chain).encode("utf-8")).hexdigest()
             memo_name = f"{event_trigger}_{chain_hash}"
+
+            # Calculate Var dependencies accessed by the handler for useCallback dep array.
             var_deps = ["addEvents", "Event"]
             for arg in event_args:
                 if arg._var_data is None:
@@ -1532,6 +1556,8 @@ class StatefulComponent(BaseComponent):
                     imports={"react": {ImportVar(tag="useCallback")}},
                 ),
             )
+
+            # Store the memoized function name and hook code for this event trigger.
             trigger_memo[event_trigger] = (
                 Var.create_safe(memo_name)._replace(
                     _var_type=EventChain, merge_var_data=memo_var_data
