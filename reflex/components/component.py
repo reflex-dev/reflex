@@ -594,14 +594,17 @@ class Component(Base, ABC):
         Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
+        # Get Vars associated with event trigger arguments.
         for _, event_vars in self._get_vars_from_event_triggers(self.event_triggers):
             yield from event_vars
 
+        # Get Vars associated with component props.
         for prop in self.get_props():
             prop_var = getattr(self, prop)
             if isinstance(prop_var, Var):
                 yield prop_var
 
+        # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
         if self.style:
             yield BaseVar(
                 _var_name="style",
@@ -609,8 +612,10 @@ class Component(Base, ABC):
                 _var_data=self.style._var_data,
             )
 
+        # Special props are always Var instances.
         yield from self.special_props
 
+        # Get Vars associated with common Component props.
         for comp_prop in (
             self.class_name,
             self.id,
@@ -621,7 +626,7 @@ class Component(Base, ABC):
             if isinstance(comp_prop, Var):
                 yield comp_prop
             elif isinstance(comp_prop, str):
-                # catch f-strings containing Vars
+                # Collapse VarData encoded in f-strings.
                 var = Var.create_safe(comp_prop)
                 if var._var_data is not None:
                     yield var
@@ -715,12 +720,18 @@ class Component(Base, ABC):
             The imports required for all selected hooks.
         """
         _imports = {}
+
         if self._get_ref_hook():
+            # Handle hooks needed for attaching react refs to DOM nodes.
             _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
             _imports.setdefault(f"/{Dirs.STATE_PATH}", set()).add(ImportVar(tag="refs"))
+
         if self._get_mount_lifecycle_hook():
+            # Handle hooks for `on_mount` / `on_unmount`.
             _imports.setdefault("react", set()).add(ImportVar(tag="useEffect"))
+
         if self._get_special_hooks():
+            # Handle additional internal hooks (autofocus, etc).
             _imports.setdefault("react", set()).update(
                 {
                     ImportVar(tag="useRef"),
@@ -736,13 +747,19 @@ class Component(Base, ABC):
             The imports needed by the component.
         """
         _imports = {}
+
+        # Import this component's tag from the main library.
         if self.library is not None and self.tag is not None:
             _imports[self.library] = {self.import_var}
+
+        # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
-        # determine imports from Vars
+
+        # Collect imports from Vars used directly by this component.
         var_imports = [
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
+
         return imports.merge_imports(
             self._get_props_imports(),
             self._get_dependencies_imports(),
@@ -1152,10 +1169,21 @@ class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
     def _get_imports(self) -> imports.ImportDict:
+        """Get the imports for the component.
+
+        Returns:
+            The imports for dynamically importing the component at module load time.
+        """
+        # Next.js dynamic import mechanism.
         dynamic_import = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+
+        # The normal imports for this component.
         _imports = super()._get_imports()
+
+        # Do NOT import the main library/tag statically.
         if self.library is not None:
             _imports[self.library] = {ImportVar(tag=None, render=False)}
+
         return imports.merge_imports(
             dynamic_import,
             _imports,
