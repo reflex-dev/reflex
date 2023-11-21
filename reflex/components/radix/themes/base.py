@@ -66,9 +66,9 @@ class RadixThemesComponent(Component):
         )
         return component
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            **super()._get_app_wrap_components(),
             (45, "RadixThemesColorModeProvider"): RadixThemesColorModeProvider.create(),
         }
 
@@ -147,7 +147,7 @@ class Theme(RadixThemesComponent):
     def _get_imports(self) -> imports.ImportDict:
         return {
             **super()._get_imports(),
-            "": {ImportVar(tag="@radix-ui/themes/styles.css", install=False)},
+            "": [ImportVar(tag="@radix-ui/themes/styles.css", install=False)],
         }
 
 

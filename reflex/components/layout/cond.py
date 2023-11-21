@@ -53,6 +53,14 @@ class Cond(Component):
             )
         )
 
+    def _get_props_imports(self):
+        """Get the imports needed for components props.
+
+        Returns:
+            The  imports for the components props of the component.
+        """
+        return []
+
     def _render(self) -> Tag:
         return CondTag(
             cond=self.cond,

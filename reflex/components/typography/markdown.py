@@ -151,19 +151,19 @@ class Markdown(Component):
         # Special markdown imports.
         imports.update(
             {
-                "": {ImportVar(tag="katex/dist/katex.min.css")},
-                "remark-math@5.1.1": {
+                "": [ImportVar(tag="katex/dist/katex.min.css")],
+                "remark-math@5.1.1": [
                     ImportVar(tag=_REMARK_MATH._var_name, is_default=True)
-                },
-                "remark-gfm@3.0.1": {
+                ],
+                "remark-gfm@3.0.1": [
                     ImportVar(tag=_REMARK_GFM._var_name, is_default=True)
-                },
-                "rehype-katex@6.0.3": {
+                ],
+                "rehype-katex@6.0.3": [
                     ImportVar(tag=_REHYPE_KATEX._var_name, is_default=True)
-                },
-                "rehype-raw@6.1.1": {
+                ],
+                "rehype-raw@6.1.1": [
                     ImportVar(tag=_REHYPE_RAW._var_name, is_default=True)
-                },
+                ],
             }
         )
 

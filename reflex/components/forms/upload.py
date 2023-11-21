@@ -175,5 +175,5 @@ class Upload(Component):
     def _get_imports(self) -> imports.ImportDict:
         return {
             **super()._get_imports(),
-            f"/{constants.Dirs.STATE_PATH}": {ImportVar(tag="upload_files")},
+            f"/{constants.Dirs.STATE_PATH}": [ImportVar(tag="upload_files")],
         }

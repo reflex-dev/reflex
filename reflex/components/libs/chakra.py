@@ -1,6 +1,7 @@
 """Components that are based on Chakra-UI."""
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import List, Literal
 
 from reflex.components.component import Component
@@ -17,10 +18,27 @@ class ChakraComponent(Component):
         "framer-motion@10.16.4",
     ]
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            **super()._get_app_wrap_components(),
-            (60, "ChakraProvider"): ChakraProvider.create(),
+            (60, "ChakraProvider"): chakra_provider,
+        }
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def _get_dependencies_imports(cls) -> imports.ImportDict:
+        """Get the imports from lib_dependencies for installing.
+
+        Returns:
+            The dependencies imports of the component.
+        """
+        return {
+            dep: [ImportVar(tag=None, render=False)]
+            for dep in [
+                "@chakra-ui/system@2.5.7",
+                "framer-motion@10.16.4",
+            ]
         }
 
 
@@ -58,13 +76,13 @@ class ChakraProvider(ChakraComponent):
 
     def _get_imports(self) -> imports.ImportDict:
         imports = super()._get_imports()
-        imports.setdefault(self.__fields__["library"].default, set()).add(
+        imports.setdefault(self.__fields__["library"].default, []).append(
             ImportVar(tag="extendTheme", is_default=False),
         )
-        imports.setdefault("/utils/theme.js", set()).add(
+        imports.setdefault("/utils/theme.js", []).append(
             ImportVar(tag="theme", is_default=True),
         )
-        imports.setdefault(Global.__fields__["library"].default, set()).add(
+        imports.setdefault(Global.__fields__["library"].default, []).append(
             ImportVar(tag="css", is_default=False),
         )
         return imports
@@ -82,10 +100,15 @@ const GlobalStyles = css`
 `;
 """
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    @lru_cache(maxsize=None)
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            (50, "ChakraColorModeProvider"): ChakraColorModeProvider.create(),
+            (50, "ChakraColorModeProvider"): chakra_color_mode_provider,
         }
+
+
+chakra_provider = ChakraProvider.create()
 
 
 class ChakraColorModeProvider(Component):
@@ -94,6 +117,9 @@ class ChakraColorModeProvider(Component):
     library = "/components/reflex/chakra_color_mode_provider.js"
     tag = "ChakraColorModeProvider"
     is_default = True
+
+
+chakra_color_mode_provider = ChakraColorModeProvider.create()
 
 
 LiteralColorScheme = Literal[
