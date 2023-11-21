@@ -62,7 +62,7 @@ class BaseComponent(Base, ABC):
         """Render the component.
 
         Returns:
-            The dictionary for template of component.
+            The dictionary for template of the component.
         """
 
     @abstractmethod
@@ -579,6 +579,7 @@ class Component(BaseComponent, ABC):
 
         # Recursively add style to the children.
         for child in self.children:
+            # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
             child.add_style(style)
@@ -1029,6 +1030,7 @@ class Component(BaseComponent, ABC):
         if seen is None:
             seen = set()
         for child in self.children:
+            # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
             custom_components |= child.get_custom_components(seen=seen)
@@ -1069,6 +1071,7 @@ class Component(BaseComponent, ABC):
 
         # Add the app wrap components for the children.
         for child in self.children:
+            # Skip BaseComponent and StatefulComponent children.
             if not isinstance(child, Component):
                 continue
             components.update(child.get_app_wrap_components())
@@ -1348,33 +1351,41 @@ class StatefulComponent(BaseComponent):
         Returns:
             The stateful component or None if the component should not be memoized.
         """
-        from reflex.components.base.bare import Bare
-
         if component.tag is None:
             # Only memoize components with a tag.
             return None
 
-        prop_var_datas = []
+        # If _var_data is found in this component, it is a candidate for auto-memoization.
+        has_var_data = False
 
-        if not isinstance(component, Bare):
-            for prop_var in component._get_vars():
-                if prop_var._var_data:
-                    prop_var_datas.append(prop_var._var_data)
+        # Determine if any Vars have associated data.
+        for prop_var in component._get_vars():
+            if prop_var._var_data:
+                has_var_data = True
+                break
 
-        for child in component.children:
-            if not isinstance(child, Component):
-                continue
-            child = cls._child_var(child)
-            if isinstance(child, Var) and child._var_data:
-                prop_var_datas.append(child._var_data)
+        if not has_var_data:
+            # Check for special-cases in child components.
+            for child in component.children:
+                if not isinstance(child, Component):
+                    continue
+                child = cls._child_var(child)
+                if isinstance(child, Var) and child._var_data:
+                    has_var_data = True
+                    break
 
-        if prop_var_datas or component.event_triggers:
-            if not component.render():
-                return None  # never memoize non-visual components
+        if has_var_data or component.event_triggers:
+            # Render the component to determine tag+hash based on component code.
             tag_name = cls._get_tag_name(component)
+            if tag_name is None:
+                return None
+
+            # Look up the tag in the cache
             stateful_component = cls.tag_to_stateful_component.get(tag_name)
             if stateful_component is None:
+                # Render the component as a string of javascript code.
                 code = cls._render_stateful_code(component, tag_name=tag_name)
+                # Set the stateful component in the cache for the given tag.
                 stateful_component = cls.tag_to_stateful_component.setdefault(
                     tag_name,
                     cls(
@@ -1384,8 +1395,12 @@ class StatefulComponent(BaseComponent):
                         code=code,
                     ),
                 )
+            # Bump the reference count -- multiple pages referencing the same component
+            # will result in writing it to a common file.
             stateful_component.references += 1
             return stateful_component
+
+        # Return None to indicate this component should not be memoized.
         return None
 
     @staticmethod
@@ -1415,7 +1430,7 @@ class StatefulComponent(BaseComponent):
         return child
 
     @classmethod
-    def _get_tag_name(cls, component: Component) -> str:
+    def _get_tag_name(cls, component: Component) -> str | None:
         """Get the tag based on rendering the given component.
 
         Args:
@@ -1425,6 +1440,8 @@ class StatefulComponent(BaseComponent):
             The tag for the stateful component.
         """
         rendered_code = component.render()
+        if not rendered_code:
+            return None  # never memoize non-visual components
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
         return format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
 
