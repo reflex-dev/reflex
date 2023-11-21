@@ -594,21 +594,13 @@ class Component(Base, ABC):
         Yields:
             Each var referenced by the component (props, styles, event handlers).
         """
-        from reflex.components.base.bare import Bare
+        for _, event_vars in self._get_vars_from_event_triggers(self.event_triggers):
+            yield from event_vars
 
-        if isinstance(self, Bare):
-            if isinstance(self.contents, Var):
-                yield self.contents
-        else:
-            for _, event_vars in self._get_vars_from_event_triggers(
-                self.event_triggers
-            ):
-                yield from event_vars
-
-            for prop in self.get_props():
-                prop_var = getattr(self, prop)
-                if isinstance(prop_var, Var):
-                    yield prop_var
+        for prop in self.get_props():
+            prop_var = getattr(self, prop)
+            if isinstance(prop_var, Var):
+                yield prop_var
 
         if self.style:
             yield BaseVar(
