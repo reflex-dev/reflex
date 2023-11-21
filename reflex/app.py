@@ -7,7 +7,6 @@ import contextlib
 import copy
 import functools
 import os
-from multiprocessing.pool import ThreadPool
 from typing import (
     Any,
     AsyncIterator,
@@ -646,7 +645,6 @@ class App(Base):
         # Compile the pages in parallel.
         custom_components = set()
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
-        thread_pool = ThreadPool()
         all_imports = {}
         app_wrappers: Dict[tuple[int, str], Component] = {
             # Default app wrap component renders {children}
@@ -673,11 +671,13 @@ class App(Base):
                 progress.advance(task)
 
             for _route, component in self.pages.items():
+                # Merge the component style with the app style.
                 component.add_style(self.style)
-                # add component.get_imports() to all_imports
+
+                # Add component.get_imports() to all_imports.
                 all_imports.update(component.get_imports())
 
-                # add the app wrappers from this component
+                # Add the app wrappers from this component.
                 app_wrappers.update(component.get_app_wrap_components())
 
                 # Add the custom components from the page to the set.
@@ -686,7 +686,7 @@ class App(Base):
                 # Count pre-processing task for this page.
                 progress.advance(task)
 
-            # Perform auto-memoization of stateful components
+            # Perform auto-memoization of stateful components.
             progress.update(task, description="Memoize:")
             (
                 stateful_components_path,
@@ -701,10 +701,20 @@ class App(Base):
             result_futures = []
 
             def submit_work(fn, *args, **kwargs):
+                """Submit work to the thread pool and add a callback to mark the task as complete.
+
+                The Future will be added to the `result_futures` list.
+
+                Args:
+                    fn: The function to submit.
+                    *args: The args to submit.
+                    **kwargs: The kwargs to submit.
+                """
                 f = thread_pool.submit(fn, *args, **kwargs)
                 f.add_done_callback(mark_complete)
                 result_futures.append(f)
 
+            # Compile all page components.
             for route, component in zip(self.pages, page_components):
                 submit_work(
                     compiler.compile_page,
@@ -742,17 +752,17 @@ class App(Base):
             # Get imports from AppWrap components.
             all_imports.update(app_root.get_imports())
 
-            # Iterate through all the custom components and add their imports to the all_imports
+            # Iterate through all the custom components and add their imports to the all_imports.
             for component in custom_components:
                 all_imports.update(component.get_imports())
 
-            # Empty the .web pages directory
+            # Empty the .web pages directory.
             compiler.purge_web_pages_dir()
 
-            # install frontend packages
+            # Install frontend packages.
             self.get_frontend_packages(all_imports)
 
-            # Wait for all compilation tasks to complete
+            # Wait for all compilation tasks to complete.
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
 
