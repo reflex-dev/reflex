@@ -253,7 +253,6 @@ def test_class_vars(test_state):
     """
     cls = type(test_state)
     assert set(cls.vars.keys()) == {
-        CompileVars.IS_HYDRATED,  # added by hydrate_middleware to all State
         "router",
         "num1",
         "num2",
@@ -641,7 +640,6 @@ def test_reset(test_state, child_state):
         "obj",
         "upper",
         "complex",
-        "is_hydrated",
         "fig",
         "key",
         "sum",
@@ -1165,21 +1163,18 @@ def test_computed_var_depends_on_parent_non_cached():
     dict1 = ps.dict()
     assert dict1[ps.get_full_name()] == {
         "no_cache_v": 1,
-        CompileVars.IS_HYDRATED: False,
         "router": formatted_router,
     }
     assert dict1[cs.get_full_name()] == {"dep_v": 2}
     dict2 = ps.dict()
     assert dict2[ps.get_full_name()] == {
         "no_cache_v": 3,
-        CompileVars.IS_HYDRATED: False,
         "router": formatted_router,
     }
     assert dict2[cs.get_full_name()] == {"dep_v": 4}
     dict3 = ps.dict()
     assert dict3[ps.get_full_name()] == {
         "no_cache_v": 5,
-        CompileVars.IS_HYDRATED: False,
         "router": formatted_router,
     }
     assert dict3[cs.get_full_name()] == {"dep_v": 6}
@@ -2216,7 +2211,7 @@ def test_json_dumps_with_mutables():
     f_formatted_router = str(formatted_router).replace("'", '"')
     assert (
         val
-        == f'{{"{MutableContainsBase.get_full_name()}": {{"is_hydrated": false, "items": {f_items}, "router": {f_formatted_router}}}}}'
+        == f'{{"{MutableContainsBase.get_full_name()}": {{"items": {f_items}, "router": {f_formatted_router}}}}}'
     )
 
 

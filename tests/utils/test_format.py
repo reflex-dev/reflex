@@ -528,7 +528,6 @@ formatted_router = {
                     },
                     "dt": "1989-11-09 18:53:00+01:00",
                     "fig": [],
-                    "is_hydrated": False,
                     "key": "",
                     "map_key": "a",
                     "mapping": {"a": [1, 2, 3], "b": [4, 5, 6]},
@@ -553,7 +552,6 @@ formatted_router = {
                 DateTimeState.get_full_name(): {
                     "d": "1989-11-09",
                     "dt": "1989-11-09 18:53:00+01:00",
-                    "is_hydrated": False,
                     "t": "18:53:00+01:00",
                     "td": "11 days, 0:11:00",
                     "router": formatted_router,

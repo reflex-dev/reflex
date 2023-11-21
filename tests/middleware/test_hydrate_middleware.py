@@ -6,7 +6,7 @@ from reflex.app import App
 from reflex.constants import CompileVars
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
 from reflex.state import BaseState, StateUpdate
-
+from reflex import constants
 
 def exp_is_hydrated(state: BaseState) -> Dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
@@ -97,6 +97,7 @@ async def test_preprocess(
         event_fixture: The event fixture(an Event).
         expected: Expected delta.
     """
+    test_state.add_var(constants.CompileVars.IS_HYDRATED,type_=bool, default_value=False)
     app = App(state=test_state, load_events={"index": [test_state.test_handler]})
     state = test_state()
 

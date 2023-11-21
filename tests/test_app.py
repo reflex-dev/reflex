@@ -749,7 +749,7 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
         "reflex-client-token": token,
-        "reflex-event-handler": f"{state_name}.multi_handle_upload",
+        "reflex-event-handler": f"state.{state_name}.multi_handle_upload",
     }
 
     file1 = UploadFile(
@@ -894,6 +894,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     index_page,
     windows_platform: bool,
     token: str,
+    mocker
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -905,6 +906,11 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         windows_platform: Whether the system is windows.
         token: a Token.
     """
+    class_subclasses = {
+        State: {DynamicState}
+    }
+    mocker.patch("reflex.state.State.class_subclasses", class_subclasses)
+    DynamicState.add_var(constants.CompileVars.IS_HYDRATED,type_=bool, default_value=False)
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
     if windows_platform:
