@@ -181,11 +181,8 @@ class Upload(Component):
 
     def _get_hooks(self) -> str | None:
         return (
-            (super()._get_hooks() or "")
-            + f"""
-                upload_files.{self.id or DEFAULT_UPLOAD_ID} = useState([]);
-                """
-        )
+            super()._get_hooks() or ""
+        ) + f"upload_files.{self.id or DEFAULT_UPLOAD_ID} = useState([]);"
 
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
