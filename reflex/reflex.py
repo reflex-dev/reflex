@@ -10,8 +10,8 @@ from typing import List, Optional
 
 import typer
 import typer.core
-from cli.deployments import deployments_cli
-from cli.utils import dependency
+from relfex_cli.deployments import deployments_cli
+from relfex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
@@ -101,7 +101,7 @@ def _init(
     prerequisites.initialize_gitignore()
 
     # Initialize the requirements.txt.
-    dependency.initialize_requirements_txt(constants.Reflex.VERSION)
+    dependency.initialize_requirements_txt()
 
     # Finish initializing the app.
     console.success(f"Initialized {app_name}")
@@ -294,7 +294,7 @@ def login(
     ),
 ):
     """Authenticate with Reflex hosting service."""
-    from cli.utils import hosting
+    from relfex_cli.utils import hosting
 
     # Set the log level.
     console.set_log_level(loglevel)
@@ -321,7 +321,7 @@ def logout(
     ),
 ):
     """Log out of access to Reflex hosting service."""
-    from cli.utils import hosting
+    from relfex_cli.utils import hosting
 
     console.set_log_level(loglevel)
 
@@ -478,7 +478,7 @@ def deploy(
     ),
 ):
     """Deploy the app to the Reflex hosting service."""
-    from cli import cli as hosting_cli
+    from relfex_cli import cli as hosting_cli
 
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
@@ -504,7 +504,6 @@ def deploy(
             upload_db_file=upload_db_file,
         ),
         key=key,
-        reflex_version=constants.Reflex.VERSION,
         regions=regions,
         envs=envs,
         cpus=cpus,

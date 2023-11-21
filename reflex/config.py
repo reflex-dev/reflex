@@ -9,7 +9,7 @@ import urllib.parse
 from typing import Any, Dict, List, Optional, Set
 
 import pydantic
-from cli.constants.hosting import Hosting
+from reflex_cli.constants.hosting import Hosting
 
 from reflex import constants
 from reflex.base import Base
