@@ -692,10 +692,10 @@ FORMATTED_TEST_VAR_LIST_OF_DICT = Var.create_safe([{"a": "footestbar"}])._replac
 class ComponentNestedVar(Component):
     """A component with nested Var types."""
 
-    dict_of_dict: Var[dict[str, dict[str, str]]]
-    list_of_list: Var[list[list[str]]]
-    list_of_list_of_list: Var[list[list[list[str]]]]
-    list_of_dict: Var[list[dict[str, str]]]
+    dict_of_dict: Var[Dict[str, Dict[str, str]]]
+    list_of_list: Var[List[List[str]]]
+    list_of_list_of_list: Var[List[List[List[str]]]]
+    list_of_dict: Var[List[Dict[str, str]]]
 
 
 class EventState(rx.State):
