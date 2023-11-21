@@ -347,7 +347,9 @@ class DataEditor(NoSSRComponent):
 
         return {
             (-1, "DataEditorPortal"): Portal.create(
-                id="portal", style={"position": "fixed", "top": 0}
+                id="portal",
+                position="fixed",
+                top=0,
             )
         }
 
