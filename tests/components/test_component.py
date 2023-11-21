@@ -44,7 +44,7 @@ def component1() -> Type[Component]:
         number: Var[int]
 
         def _get_imports(self) -> imports.ImportDict:
-            return {"react": {ImportVar(tag="Component")}}
+            return {"react": [ImportVar(tag="Component")]}
 
         def _get_custom_code(self) -> str:
             return "console.log('component1')"
@@ -77,7 +77,7 @@ def component2() -> Type[Component]:
             }
 
         def _get_imports(self) -> imports.ImportDict:
-            return {"react-redux": {ImportVar(tag="connect")}}
+            return {"react-redux": [ImportVar(tag="connect")]}
 
         def _get_custom_code(self) -> str:
             return "console.log('component2')"
@@ -268,10 +268,10 @@ def test_get_imports(component1, component2):
     """
     c1 = component1.create()
     c2 = component2.create(c1)
-    assert c1.get_imports() == {"react": {ImportVar(tag="Component")}}
+    assert c1.get_imports() == {"react": [ImportVar(tag="Component")]}
     assert c2.get_imports() == {
-        "react-redux": {ImportVar(tag="connect")},
-        "react": {ImportVar(tag="Component")},
+        "react-redux": [ImportVar(tag="connect")],
+        "react": [ImportVar(tag="Component")],
     }
 
 
@@ -469,7 +469,7 @@ def test_custom_component_wrapper():
     assert len(ccomponent.children) == 1
     assert isinstance(ccomponent.children[0], rx.Text)
 
-    component = ccomponent.get_component()
+    component = ccomponent.get_component(ccomponent)
     assert isinstance(component, Box)
 
 

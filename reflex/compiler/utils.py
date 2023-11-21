@@ -30,7 +30,7 @@ from reflex.vars import ImportVar
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(fields: set[ImportVar]) -> tuple[str, set[str]]:
+def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
     """Compile an import statement.
 
     Args:
@@ -42,17 +42,17 @@ def compile_import_statement(fields: set[ImportVar]) -> tuple[str, set[str]]:
         rest: rest of libraries. When install "import {rest1, rest2} from library"
     """
     # ignore the ImportVar fields with render=False during compilation
-    fields = {field for field in fields if field.render}
+    fields_set = {field for field in fields if field.render}
 
     # Check for default imports.
-    defaults = {field for field in fields if field.is_default}
+    defaults = {field for field in fields_set if field.is_default}
     assert len(defaults) < 2
 
     # Get the default import, and the specific imports.
     default = next(iter({field.name for field in defaults}), "")
-    rest = {field.name for field in fields - defaults}
+    rest = {field.name for field in fields_set - defaults}
 
-    return default, rest
+    return default, list(rest)
 
 
 def validate_imports(imports: imports.ImportDict):
@@ -109,7 +109,7 @@ def compile_imports(imports: imports.ImportDict) -> list[dict]:
     return import_dicts
 
 
-def get_import_dict(lib: str, default: str = "", rest: set[str] | None = None) -> dict:
+def get_import_dict(lib: str, default: str = "", rest: list[str] | None = None) -> dict:
     """Get dictionary for import template.
 
     Args:
@@ -123,7 +123,7 @@ def get_import_dict(lib: str, default: str = "", rest: set[str] | None = None) -
     return {
         "lib": lib,
         "default": default,
-        "rest": rest if rest else set(),
+        "rest": rest if rest else [],
     }
 
 
@@ -235,7 +235,7 @@ def compile_custom_component(
         A tuple of the compiled component and the imports required by the component.
     """
     # Render the component.
-    render = component.get_component()
+    render = component.get_component(component)
 
     # Get the imports.
     imports = {

@@ -1,5 +1,5 @@
 import os
-from typing import List, Set
+from typing import List
 
 import pytest
 
@@ -12,28 +12,28 @@ from reflex.vars import ImportVar
     "fields,test_default,test_rest",
     [
         (
-            {ImportVar(tag="axios", is_default=True)},
+            [ImportVar(tag="axios", is_default=True)],
             "axios",
-            set(),
+            [],
         ),
         (
-            {ImportVar(tag="foo"), ImportVar(tag="bar")},
+            [ImportVar(tag="foo"), ImportVar(tag="bar")],
             "",
-            {"foo", "bar"},
+            ["bar", "foo"],
         ),
         (
-            {
+            [
                 ImportVar(tag="axios", is_default=True),
                 ImportVar(tag="foo"),
                 ImportVar(tag="bar"),
-            },
+            ],
             "axios",
-            {"foo", "bar"},
+            ["bar", "foo"],
         ),
     ],
 )
 def test_compile_import_statement(
-    fields: Set[ImportVar], test_default: str, test_rest: str
+    fields: List[ImportVar], test_default: str, test_rest: str
 ):
     """Test the compile_import_statement function.
 
@@ -44,7 +44,7 @@ def test_compile_import_statement(
     """
     default, rest = utils.compile_import_statement(fields)
     assert default == test_default
-    assert rest == test_rest
+    assert sorted(rest) == test_rest
 
 
 @pytest.mark.parametrize(
@@ -52,43 +52,43 @@ def test_compile_import_statement(
     [
         ({}, []),
         (
-            {"axios": {ImportVar(tag="axios", is_default=True)}},
-            [{"lib": "axios", "default": "axios", "rest": set()}],
+            {"axios": [ImportVar(tag="axios", is_default=True)]},
+            [{"lib": "axios", "default": "axios", "rest": []}],
         ),
         (
-            {"axios": {ImportVar(tag="foo"), ImportVar(tag="bar")}},
-            [{"lib": "axios", "default": "", "rest": {"foo", "bar"}}],
+            {"axios": [ImportVar(tag="foo"), ImportVar(tag="bar")]},
+            [{"lib": "axios", "default": "", "rest": ["bar", "foo"]}],
         ),
         (
             {
-                "axios": {
+                "axios": [
                     ImportVar(tag="axios", is_default=True),
                     ImportVar(tag="foo"),
                     ImportVar(tag="bar"),
-                },
-                "react": {ImportVar(tag="react", is_default=True)},
+                ],
+                "react": [ImportVar(tag="react", is_default=True)],
             },
             [
-                {"lib": "axios", "default": "axios", "rest": {"foo", "bar"}},
-                {"lib": "react", "default": "react", "rest": set()},
+                {"lib": "axios", "default": "axios", "rest": ["bar", "foo"]},
+                {"lib": "react", "default": "react", "rest": []},
             ],
         ),
         (
-            {"": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")}},
+            {"": [ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")]},
             [
-                {"lib": "lib1.js", "default": "", "rest": set()},
-                {"lib": "lib2.js", "default": "", "rest": set()},
+                {"lib": "lib1.js", "default": "", "rest": []},
+                {"lib": "lib2.js", "default": "", "rest": []},
             ],
         ),
         (
             {
-                "": {ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")},
-                "axios": {ImportVar(tag="axios", is_default=True)},
+                "": [ImportVar(tag="lib1.js"), ImportVar(tag="lib2.js")],
+                "axios": [ImportVar(tag="axios", is_default=True)],
             },
             [
-                {"lib": "lib1.js", "default": "", "rest": set()},
-                {"lib": "lib2.js", "default": "", "rest": set()},
-                {"lib": "axios", "default": "axios", "rest": set()},
+                {"lib": "lib1.js", "default": "", "rest": []},
+                {"lib": "lib2.js", "default": "", "rest": []},
+                {"lib": "axios", "default": "axios", "rest": []},
             ],
         ),
     ],
@@ -104,7 +104,7 @@ def test_compile_imports(import_dict: imports.ImportDict, test_dicts: List[dict]
     for import_dict, test_dict in zip(imports, test_dicts):
         assert import_dict["lib"] == test_dict["lib"]
         assert import_dict["default"] == test_dict["default"]
-        assert import_dict["rest"] == test_dict["rest"]
+        assert sorted(import_dict["rest"]) == test_dict["rest"]  # type: ignore
 
 
 def test_compile_stylesheets(tmp_path, mocker):

@@ -55,7 +55,8 @@ try:
 except ImportError:
     has_selenium = False
 
-DEFAULT_TIMEOUT = 10
+# The timeout (minutes) to check for the port.
+DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
