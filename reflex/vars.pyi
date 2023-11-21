@@ -138,9 +138,6 @@ class ComputedVar(Var):
 
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
 
-class NoRenderImportVar(ImportVar):
-    """A import that doesn't need to be rendered."""
-
 class CallableVar(BaseVar):
     def __init__(self, fn: Callable[..., BaseVar]): ...
     def __call__(self, *args, **kwargs) -> BaseVar: ...

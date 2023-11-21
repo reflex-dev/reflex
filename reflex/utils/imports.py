@@ -61,10 +61,4 @@ class ImportVar(Base):
         return hash((self.tag, self.is_default, self.alias, self.install, self.render))
 
 
-class NoRenderImportVar(ImportVar):
-    """A import that doesn't need to be rendered."""
-
-    render: Optional[bool] = False
-
-
 ImportDict = Dict[str, Set[ImportVar]]

@@ -1772,12 +1772,6 @@ def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
     return cvar
 
 
-class NoRenderImportVar(ImportVar):
-    """A import that doesn't need to be rendered."""
-
-    render: Optional[bool] = False
-
-
 class CallableVar(BaseVar):
     """Decorate a Var-returning function to act as both a Var and a function.
 
