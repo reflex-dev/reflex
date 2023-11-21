@@ -228,6 +228,10 @@ def _compile_stateful_components(
     def get_shared_components_recursive(component: BaseComponent):
         """Get the shared components for a component and its children.
 
+        A shared component is a StatefulComponent that appears in 2 or more
+        pages and is a candidate for writing to a common file and importing
+        into each page where it is used.
+
         Args:
             component: The component to collect shared StatefulComponents for.
         """
