@@ -138,7 +138,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             c2, Component
         ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
-    elif isinstance(c1, Var):
+    if isinstance(c1, Var):
         var_datas.append(c1._var_data)
 
     # Otherwise, create a conditional Var.
@@ -147,7 +147,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
         raise ValueError("Both arguments must be props.")
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
-    elif isinstance(c2, Var):
+    if isinstance(c2, Var):
         var_datas.append(c2._var_data)
 
     # Create the conditional var.
