@@ -213,7 +213,12 @@ def _compile_stateful_components(
     page_components: list[BaseComponent],
     on_complete: Callable[[], None],
 ) -> str:
-    """Compile the stateful components.
+    """Walk the page components and extract shared stateful components.
+
+    Any StatefulComponent that is shared by more than one page will be rendered
+    to a separate module and marked rendered_as_shared so subsequent
+    renderings will import the component from the shared module instead of
+    directly including the code for it.
 
     Args:
         page_components: The Components or StatefulComponents to compile.
@@ -398,7 +403,11 @@ def compile_stateful_components(
     pages: Iterable[Component],
     on_complete: Callable[[], None],
 ) -> tuple[str, str, list[BaseComponent]]:
-    """Compile the stateful components.
+    """Separately compile components that depend on State vars.
+
+    StatefulComponents are compiled as their own component functions with their own
+    useContext declarations, which allows page components to be stateless and avoid
+    re-rendering along with parts of the page that actually depend on state.
 
     Args:
         pages: The pages to extract stateful components from.
