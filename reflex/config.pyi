@@ -54,6 +54,7 @@ class Config(Base):
     backend_port: int
     api_url: str
     deploy_url: Optional[str]
+    event_url: Optional[str]
     backend_host: str
     db_url: Optional[str]
     redis_url: Optional[str]
@@ -81,6 +82,7 @@ class Config(Base):
         backend_port: Optional[int] = None,
         api_url: Optional[str] = None,
         deploy_url: Optional[str] = None,
+        event_url: Optional[str] = None,
         backend_host: Optional[str] = None,
         db_url: Optional[str] = None,
         redis_url: Optional[str] = None,

@@ -86,6 +86,23 @@ def test_update_from_env(base_config_values, monkeypatch, env_var, value):
             {"app_name": "test_app", "api_url": "http://example.com/api"},
             f"/api{Endpoint.EVENT}",
         ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com/api",
+                "event_url": "http://example.com/",
+            },
+            f"/{Endpoint.EVENT}",
+        ),
+        (
+            {
+                "app_name": "test_app",
+                "api_url": "http://example.com/api",
+                "event_url": "http://example.com/",
+                "event_namespace": "/event_",
+            },
+            "/event_",
+        ),
         ({"app_name": "test_app", "event_namespace": "/event"}, f"/event"),
         ({"app_name": "test_app", "event_namespace": "event"}, f"/event"),
         ({"app_name": "test_app", "event_namespace": "event/"}, f"/event"),
@@ -125,6 +142,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
                 "backend_port": DEFAULT_CONFIG.backend_port,
                 "deploy_url": DEFAULT_CONFIG.deploy_url,
                 "frontend_port": DEFAULT_CONFIG.frontend_port,
+                "event_url": DEFAULT_CONFIG.event_url,
             },
         ),
         # Ports set in config kwargs
@@ -137,6 +155,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
                 "backend_port": 8001,
                 "deploy_url": "http://localhost:3001",
                 "frontend_port": 3001,
+                "event_url": None,
             },
         ),
         # Ports set in environment take precedence
@@ -149,6 +168,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
                 "backend_port": 8002,
                 "deploy_url": "http://localhost:3001",
                 "frontend_port": 3001,
+                "event_url": None,
             },
         ),
         # Ports set on the command line take precedence
@@ -161,6 +181,7 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
                 "backend_port": 8002,
                 "deploy_url": "http://localhost:3005",
                 "frontend_port": 3005,
+                "event_url": None,
             },
         ),
         # api_url / deploy_url already set should not be overridden
@@ -173,6 +194,46 @@ DEFAULT_CONFIG = rx.Config(app_name="a")
                 "backend_port": 8002,
                 "deploy_url": "http://foo.bar:3001",
                 "frontend_port": 3005,
+                "event_url": None,
+            },
+        ),
+        # event_url set via environment var should be set
+        (
+            {"api_url": "http://localhost:9000"},
+            {"EVENT_URL": "http://localhost:8004"},
+            {},
+            {
+                "api_url": "http://localhost:9000",
+                "backend_port": 8000,
+                "deploy_url": "http://localhost:3000",
+                "frontend_port": 3000,
+                "event_url": "http://localhost:8004",
+            },
+        ),
+        # event_url already set should not be overridden
+        (
+            {"event_url": "http://localhost:8000"},
+            {"EVENT_URL": "http://localhost:8004"},
+            {},
+            {
+                "api_url": "http://localhost:8000",
+                "backend_port": 8000,
+                "deploy_url": "http://localhost:3000",
+                "frontend_port": 3000,
+                "event_url": "http://localhost:8004",
+            },
+        ),
+        # event_url already set should not be overridden by persistent_vars
+        (
+            {"event_url": "http://localhost:8000"},
+            {"EVENT_URL": "http://localhost:8004"},
+            {"event_url": "http://localhost:9000"},
+            {
+                "api_url": "http://localhost:8000",
+                "backend_port": 8000,
+                "deploy_url": "http://localhost:3000",
+                "frontend_port": 3000,
+                "event_url": "http://localhost:9000",
             },
         ),
     ],

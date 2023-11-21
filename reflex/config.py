@@ -152,6 +152,9 @@ class Config(Base):
     # The url the frontend will be hosted on.
     deploy_url: Optional[str] = f"http://localhost:{frontend_port}"
 
+    # The url the frontend will send / receive websockets messages.
+    event_url: Optional[str] = None
+
     # The url the backend will be hosted on.
     backend_host: str = "0.0.0.0"
 
@@ -317,6 +320,9 @@ class Config(Base):
                     f"https://{codespace_name}-{kwargs.get('backend_port', self.backend_port)}"
                     f".{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
                 )
+
+        if "event_url" in kwargs:
+            self.event_url = kwargs["event_url"]
 
     def _set_persistent(self, **kwargs):
         """Set values in this config and in the environment so they persist into subprocess.
