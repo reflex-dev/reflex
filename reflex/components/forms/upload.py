@@ -41,7 +41,7 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
         A var referencing the file upload drop trigger.
     """
     return BaseVar(
-        _var_name="e => setFilesById(filesById => ({...filesById, %s: e}))" % id_,
+        _var_name=f"e => setFilesById(filesById => ({{...filesById, {id_}: e}}))",
         _var_type=EventChain,
         _var_data=upload_files_context_var_data,
     )
