@@ -89,7 +89,10 @@ class Style(dict):
         """
         if kwargs:
             style_dict = {**(style_dict or {}), **kwargs}
-        converted_dict = type(self)(style_dict)
+        if not isinstance(style_dict, Style):
+            converted_dict = type(self)(style_dict)
+        else:
+            converted_dict = style_dict
         # Combine our VarData with that of any Vars in the style_dict that was passed.
         self._var_data = VarData.merge(self._var_data, converted_dict._var_data)
         super().update(converted_dict)
