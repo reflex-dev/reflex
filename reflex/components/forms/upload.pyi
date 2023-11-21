@@ -12,9 +12,10 @@ from reflex import constants
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
+from reflex.constants import Dirs
 from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
 from reflex.utils import imports
-from reflex.vars import BaseVar, CallableVar, ImportVar, Var
+from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str
 

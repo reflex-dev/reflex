@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, List
 from reflex.components.component import Component, NoSSRComponent
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 class Moment(NoSSRComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...

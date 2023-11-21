@@ -1211,12 +1211,16 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             if include_computed
             else {}
         )
-        substate_vars = {
-            k: v.dict(include_computed=include_computed, **kwargs)
-            for k, v in self.substates.items()
+        variables = {**base_vars, **computed_vars}
+        d = {
+            self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }
-        variables = {**base_vars, **computed_vars, **substate_vars}
-        return {k: variables[k] for k in sorted(variables)}
+        for substate_d in [
+            v.dict(include_computed=include_computed, **kwargs)
+            for v in self.substates.values()
+        ]:
+            d.update(substate_d)
+        return d
 
     async def __aenter__(self) -> State:
         """Enter the async context manager protocol.

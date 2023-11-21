@@ -6,11 +6,13 @@ from reflex import constants as constants
 from reflex.base import Base as Base
 from reflex.state import State as State
 from reflex.utils import console as console, format as format, types as types
+from reflex.utils.imports import ImportVar
 from types import FunctionType
 from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Set,
@@ -22,13 +24,24 @@ from typing import (
 USED_VARIABLES: Incomplete
 
 def get_unique_variable_name() -> str: ...
+def _encode_var(value: Var) -> str: ...
+def _decode_var(value: str) -> tuple[VarData, str]: ...
+def _extract_var_data(value: Iterable) -> list[VarData | None]: ...
+
+class VarData(Base):
+    state: str
+    imports: dict[str, set[ImportVar]]
+    hooks: set[str]
+    @classmethod
+    def merge(cls, *others: VarData | None) -> VarData | None: ...
 
 class Var:
     _var_name: str
     _var_type: Type
-    _var_state: str = ""
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_full_name_needs_state_prefix: bool = False
+    _var_data: VarData | None = None
     @classmethod
     def create(
         cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
@@ -38,7 +51,8 @@ class Var:
         cls, value: Any, _var_is_local: bool = False, _var_is_string: bool = False
     ) -> Var: ...
     @classmethod
-    def __class_getitem__(cls, type_: str) -> _GenericAlias: ...
+    def __class_getitem__(cls, type_: Type) -> _GenericAlias: ...
+    def _replace(self, merge_var_data=None, **kwargs: Any) -> Var: ...
     def equals(self, other: Var) -> bool: ...
     def to_string(self) -> Var: ...
     def __hash__(self) -> int: ...
@@ -95,15 +109,16 @@ class Var:
     def to(self, type_: Type) -> Var: ...
     @property
     def _var_full_name(self) -> str: ...
-    def _var_set_state(self, state: Type[State]) -> Any: ...
+    def _var_set_state(self, state: Type[State] | str) -> Any: ...
 
 @dataclass(eq=False)
 class BaseVar(Var):
     _var_name: str
     _var_type: Any
-    _var_state: str = ""
     _var_is_local: bool = False
     _var_is_string: bool = False
+    _var_full_name_needs_state_prefix: bool = False
+    _var_data: VarData | None = None
     def __hash__(self) -> int: ...
     def get_default_value(self) -> Any: ...
     def get_setter_name(self, include_state: bool = ...) -> str: ...
@@ -122,21 +137,6 @@ class ComputedVar(Var):
     def __init__(self, func) -> None: ...
 
 def cached_var(fget: Callable[[Any], Any]) -> ComputedVar: ...
-
-class ImportVar(Base):
-    tag: Optional[str]
-    is_default: Optional[bool] = False
-    alias: Optional[str] = None
-    install: Optional[bool] = True
-    render: Optional[bool] = True
-    @property
-    def name(self) -> str: ...
-    def __hash__(self) -> int: ...
-
-class NoRenderImportVar(ImportVar):
-    """A import that doesn't need to be rendered."""
-
-def get_local_storage(key: Optional[Union[Var, str]] = ...) -> BaseVar: ...
 
 class CallableVar(BaseVar):
     def __init__(self, fn: Callable[..., BaseVar]): ...

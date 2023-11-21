@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from reflex.components.component import Component, NoSSRComponent
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 
 class Moment(NoSSRComponent):
@@ -78,7 +78,7 @@ class Moment(NoSSRComponent):
         if self.tz is not None:
             merged_imports = imports.merge_imports(
                 merged_imports,
-                {"moment-timezone": {ImportVar(tag="")}},
+                {"moment-timezone": {imports.ImportVar(tag="")}},
             )
         return merged_imports
 

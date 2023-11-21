@@ -29,6 +29,8 @@ class Dirs(SimpleNamespace):
     STATE_PATH = "/".join([UTILS, "state"])
     # The name of the components file.
     COMPONENTS_PATH = "/".join([UTILS, "components"])
+    # The name of the contexts file.
+    CONTEXTS_PATH = "/".join([UTILS, "context"])
     # The directory where the app pages are compiled to.
     WEB_PAGES = os.path.join(WEB, "pages")
     # The directory where the static build is located.

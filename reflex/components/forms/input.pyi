@@ -17,7 +17,7 @@ from reflex.components.libs.chakra import (
 )
 from reflex.constants import EventTriggers
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 class Input(ChakraComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...

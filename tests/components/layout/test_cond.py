@@ -110,7 +110,7 @@ def test_cond_no_else():
 
     # Props do not support the use of cond without else
     with pytest.raises(ValueError):
-        cond(True, "hello")
+        cond(True, "hello")  # type: ignore
 
 
 def test_mobile_only():

@@ -8,7 +8,7 @@ from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.utils import imports, types
 from reflex.utils.serializers import serialize, serializer
-from reflex.vars import BaseVar, ComputedVar, ImportVar, Var
+from reflex.vars import BaseVar, ComputedVar, Var
 
 
 class Gridjs(Component):
@@ -105,7 +105,7 @@ class DataTable(Gridjs):
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
-            {"": {ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
+            {"": {imports.ImportVar(tag="gridjs/dist/theme/mermaid.css")}},
         )
 
     def _render(self) -> Tag:
@@ -113,13 +113,13 @@ class DataTable(Gridjs):
             self.columns = BaseVar(
                 _var_name=f"{self.data._var_name}.columns",
                 _var_type=List[Any],
-                _var_state=self.data._var_state,
-            )
+                _var_full_name_needs_state_prefix=True,
+            )._replace(merge_var_data=self.data._var_data)
             self.data = BaseVar(
                 _var_name=f"{self.data._var_name}.data",
                 _var_type=List[List[Any]],
-                _var_state=self.data._var_state,
-            )
+                _var_full_name_needs_state_prefix=True,
+            )._replace(merge_var_data=self.data._var_data)
         if types.is_dataframe(type(self.data)):
             # If given a pandas df break up the data and columns
             data = serialize(self.data)

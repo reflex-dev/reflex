@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Literal
 from reflex.components import Component
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]

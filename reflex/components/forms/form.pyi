@@ -12,7 +12,7 @@ from jinja2 import Environment
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
-from reflex.constants import EventTriggers
+from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain
 from reflex.utils import imports
 from reflex.utils.format import format_event_chain, to_camel_case

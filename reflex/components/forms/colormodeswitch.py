@@ -22,7 +22,7 @@ from reflex.components.component import Component
 from reflex.components.layout.cond import Cond, cond
 from reflex.components.media.icon import Icon
 from reflex.style import color_mode, toggle_color_mode
-from reflex.vars import BaseVar
+from reflex.vars import Var
 
 from .button import Button
 from .switch import Switch
@@ -32,7 +32,7 @@ DEFAULT_LIGHT_ICON: Icon = Icon.create(tag="sun")
 DEFAULT_DARK_ICON: Icon = Icon.create(tag="moon")
 
 
-def color_mode_cond(light: Any, dark: Any = None) -> BaseVar | Component:
+def color_mode_cond(light: Any, dark: Any = None) -> Var | Component:
     """Create a component or Prop based on color_mode.
 
     Args:

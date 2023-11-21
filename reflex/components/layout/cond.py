@@ -1,13 +1,18 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, overload
 
 from reflex.components.component import Component
 from reflex.components.layout.fragment import Fragment
 from reflex.components.tags import CondTag, Tag
-from reflex.utils import format
-from reflex.vars import Var
+from reflex.constants import Dirs
+from reflex.utils import format, imports
+from reflex.vars import BaseVar, Var, VarData
+
+_IS_TRUE_IMPORT = {
+    f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="isTrue")},
+}
 
 
 class Cond(Component):
@@ -88,6 +93,28 @@ class Cond(Component):
             cond_state=f"isTrue({self.cond._var_full_name})",
         )
 
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            getattr(self.cond._var_data, "imports", {}),
+            _IS_TRUE_IMPORT,
+        )
+
+
+@overload
+def cond(condition: Any, c1: Component, c2: Any) -> Component:
+    ...
+
+
+@overload
+def cond(condition: Any, c1: Component) -> Component:
+    ...
+
+
+@overload
+def cond(condition: Any, c1: Any, c2: Any) -> Var:
+    ...
+
 
 def cond(condition: Any, c1: Any, c2: Any = None):
     """Create a conditional component or Prop.
@@ -103,8 +130,11 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     Raises:
         ValueError: If the arguments are invalid.
     """
-    # Import here to avoid circular imports.
-    from reflex.vars import BaseVar, Var
+    var_datas: list[VarData | None] = [
+        VarData(  # type: ignore
+            imports=_IS_TRUE_IMPORT,
+        ),
+    ]
 
     # Convert the condition to a Var.
     cond_var = Var.create(condition)
@@ -116,16 +146,20 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             c2, Component
         ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
+    if isinstance(c1, Var):
+        var_datas.append(c1._var_data)
 
-    # Otherwise, create a conditionl Var.
+    # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
     if isinstance(c2, Component):
         raise ValueError("Both arguments must be props.")
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")
+    if isinstance(c2, Var):
+        var_datas.append(c2._var_data)
 
     # Create the conditional var.
-    return BaseVar(
+    return cond_var._replace(
         _var_name=format.format_cond(
             cond=cond_var._var_full_name,
             true_value=c1,
@@ -133,4 +167,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
             is_prop=True,
         ),
         _var_type=c1._var_type if isinstance(c1, BaseVar) else type(c1),
+        _var_is_local=False,
+        _var_full_name_needs_state_prefix=False,
+        merge_var_data=VarData.merge(*var_datas),
     )
