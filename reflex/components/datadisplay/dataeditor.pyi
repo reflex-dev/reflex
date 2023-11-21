@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.components.literals import LiteralRowMarker
@@ -115,7 +115,12 @@ class DataEditor(NoSSRComponent):
         smooth_scroll_x: Optional[Union[Var[bool], bool]] = None,
         smooth_scroll_y: Optional[Union[Var[bool], bool]] = None,
         vertical_border: Optional[Union[Var[bool], bool]] = None,
-        column_select: Optional[Union[Var[str], str]] = None,
+        column_select: Optional[
+            Union[
+                Var[Literal["none", "single", "multi"]],
+                Literal["none", "single", "multi"],
+            ]
+        ] = None,
         prevent_diagonal_scrolling: Optional[Union[Var[bool], bool]] = None,
         overscroll_x: Optional[Union[Var[int], int]] = None,
         overscroll_y: Optional[Union[Var[int], int]] = None,
@@ -206,7 +211,7 @@ class DataEditor(NoSSRComponent):
             smooth_scroll_x: Enable horizontal smooth scrolling.
             smooth_scroll_y: Enable vertical smooth scrolling.
             vertical_border: Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
-            column_select: Allow columns selections. ("none", "single", "multiple")
+            column_select: Allow columns selections. ("none", "single", "multi")
             prevent_diagonal_scrolling: Prevent diagonal scrolling.
             overscroll_x: Allow to scroll past the limit of the actual content on the horizontal axis.
             overscroll_y: Allow to scroll past the limit of the actual content on the vertical axis.

@@ -38,7 +38,7 @@ from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
 
 # This module used to export ImportVar itself, so we still import it for export here
-from reflex.utils.imports import ImportVar as ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 
 if TYPE_CHECKING:
     from reflex.state import State
@@ -108,7 +108,7 @@ class VarData(Base):
     state: str = ""
 
     # Imports needed to render this var
-    imports: Dict[str, Set[imports.ImportVar]] = {}
+    imports: ImportDict = {}
 
     # Hooks that need to be present in the component to render this var
     hooks: Set[str] = set()
@@ -123,21 +123,19 @@ class VarData(Base):
         Returns:
             The merged var data object.
         """
-        from reflex.utils.imports import merge_imports
-
         state = ""
-        imports = {}
+        _imports = {}
         hooks = set()
         for var_data in others:
             if var_data is None:
                 continue
             state = state or var_data.state
-            imports = merge_imports(imports, var_data.imports)
+            _imports = imports.merge_imports(_imports, var_data.imports)
             hooks.update(var_data.hooks)
         return (
             cls(
                 state=state,
-                imports=imports,
+                imports=_imports,
                 hooks=hooks,
             )
             or None
@@ -200,34 +198,36 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
             except pydantic.ValidationError:
                 # If the VarData is invalid, it was probably json-encoded twice...
                 var_datas.append(VarData.parse_raw(json.loads(f'"{m.group(2)}"')))
-    return VarData.merge(*var_datas), value
+    if var_datas:
+        return VarData.merge(*var_datas), value
+    return None, value
 
 
-def _extract_var_data(value: Iterable) -> VarData | None:
+def _extract_var_data(value: Iterable) -> list[VarData | None]:
     """Extract the var imports and hooks from an iterable containing a Var.
 
     Args:
         value: The iterable to extract the VarData from
 
     Returns:
-        The extracted VarData.
+        The extracted VarDatas.
     """
-    var_data = None
+    var_datas = []
     with contextlib.suppress(TypeError):
         for sub in value:
             if isinstance(sub, Var):
-                var_data = VarData.merge(var_data, sub._var_data)
+                var_datas.append(sub._var_data)
             elif not isinstance(sub, str):
                 # Recurse into dict values.
                 if hasattr(sub, "values") and callable(sub.values):
-                    var_data = VarData.merge(var_data, _extract_var_data(sub.values()))
+                    var_datas.extend(_extract_var_data(sub.values()))
                 # Recurse into iterable values (or dict keys).
-                var_data = VarData.merge(var_data, _extract_var_data(sub))
+                var_datas.extend(_extract_var_data(sub))
     # Recurse when value is a dict itself.
     values = getattr(value, "values", None)
     if callable(values):
-        var_data = VarData.merge(var_data, _extract_var_data(values()))
-    return var_data
+        var_datas.extend(_extract_var_data(values()))
+    return var_datas
 
 
 class Var:
@@ -279,11 +279,11 @@ class Var:
         # Try to pull the imports and hooks from contained values.
         _var_data = None
         if not isinstance(value, str):
-            _var_data = _extract_var_data(value)
+            _var_data = VarData.merge(*_extract_var_data(value))
 
         # Try to serialize the value.
         type_ = type(value)
-        name = serializers.serialize(value)
+        name = value if type_ in types.JSONType else serializers.serialize(value)
         if name is None:
             raise TypeError(
                 f"No JSON serializer found for var {value} of type {type_}."
@@ -870,9 +870,9 @@ class Var:
             )._replace(
                 merge_var_data=VarData(
                     imports={
-                        f"/{constants.Dirs.STATE_PATH}": {
-                            imports.ImportVar(tag="spreadArraysOrObjects")
-                        }
+                        f"/{constants.Dirs.STATE_PATH}": [
+                            ImportVar(tag="spreadArraysOrObjects")
+                        ]
                     },
                 ),
             )
@@ -1400,9 +1400,9 @@ class Var:
                 step._var_data,
                 VarData(
                     imports={
-                        "/utils/helpers/range.js": {
-                            imports.ImportVar(tag="range", is_default=True),
-                        },
+                        "/utils/helpers/range.js": [
+                            ImportVar(tag="range", is_default=True),
+                        ],
                     },
                 ),
             ),
@@ -1432,7 +1432,7 @@ class Var:
             _var_full_name_needs_state_prefix=False,
             merge_var_data=VarData(
                 imports={
-                    f"/{constants.Dirs.STATE_PATH}": {imports.ImportVar(tag="refs")},
+                    f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")],
                 },
             ),
         )
@@ -1472,10 +1472,8 @@ class Var:
                 )
             },
             imports={
-                f"/{constants.Dirs.CONTEXTS_PATH}": {
-                    imports.ImportVar(tag="StateContexts")
-                },
-                "react": {imports.ImportVar(tag="useContext")},
+                f"/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
+                "react": [ImportVar(tag="useContext")],
             },
         )
         self._var_data = VarData.merge(self._var_data, new_var_data)
@@ -1798,12 +1796,6 @@ def cached_var(fget: Callable[[Any], Any]) -> ComputedVar:
     cvar = ComputedVar(fget=fget)
     cvar._cache = True
     return cvar
-
-
-class NoRenderImportVar(ImportVar):
-    """A import that doesn't need to be rendered."""
-
-    render: Optional[bool] = False
 
 
 class CallableVar(BaseVar):

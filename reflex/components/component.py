@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import typing
 from abc import ABC, abstractmethod
-from functools import wraps
+from functools import lru_cache, wraps
 from hashlib import md5
 from typing import (
     Any,
@@ -478,6 +478,7 @@ class Component(BaseComponent, ABC):
         return tag.add_props(**props)
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_props(cls) -> Set[str]:
         """Get the unique fields for the component.
 
@@ -487,6 +488,7 @@ class Component(BaseComponent, ABC):
         return set(cls.get_fields()) - set(Component.get_fields())
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_initial_props(cls) -> Set[str]:
         """Get the initial props to set for the component.
 
@@ -496,6 +498,7 @@ class Component(BaseComponent, ABC):
         return set()
 
     @classmethod
+    @lru_cache(maxsize=None)
     def get_component_props(cls) -> set[str]:
         """Get the props that expected a component as value.
 
@@ -564,7 +567,7 @@ class Component(BaseComponent, ABC):
         """
         if type(self) in style:
             # Extract the style for this component.
-            component_style = Style(style[type(self)])
+            component_style = style[type(self)]
 
             # Only add style props that are not overridden.
             component_style = {
@@ -664,37 +667,40 @@ class Component(BaseComponent, ABC):
                         event_args.extend(args)
                 yield event_trigger, event_args
 
-    def _get_vars(self) -> Iterator[Var]:
+    def _get_vars(self) -> list[Var]:
         """Walk all Vars used in this component.
 
-        Yields:
+        Returns:
             Each var referenced by the component (props, styles, event handlers).
         """
-        from reflex.components.base.bare import Bare
+        vars = getattr(self, "__vars", None)
+        if vars is not None:
+            return vars
+        vars = self.__vars = []
+        # Get Vars associated with event trigger arguments.
+        for _, event_vars in self._get_vars_from_event_triggers(self.event_triggers):
+            vars.extend(event_vars)
 
-        if isinstance(self, Bare):
-            if isinstance(self.contents, Var):
-                yield self.contents
-        else:
-            for _, event_vars in self._get_vars_from_event_triggers(
-                self.event_triggers
-            ):
-                yield from event_vars
+        # Get Vars associated with component props.
+        for prop in self.get_props():
+            prop_var = getattr(self, prop)
+            if isinstance(prop_var, Var):
+                vars.append(prop_var)
 
-            for prop in self.get_props():
-                prop_var = getattr(self, prop)
-                if isinstance(prop_var, Var):
-                    yield prop_var
-
+        # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
         if self.style:
-            yield BaseVar(
-                _var_name="style",
-                _var_type=str,
-                _var_data=self.style._var_data,
+            vars.append(
+                BaseVar(
+                    _var_name="style",
+                    _var_type=str,
+                    _var_data=self.style._var_data,
+                )
             )
 
-        yield from self.special_props
+        # Special props are always Var instances.
+        vars.extend(self.special_props)
 
+        # Get Vars associated with common Component props.
         for comp_prop in (
             self.class_name,
             self.id,
@@ -703,12 +709,13 @@ class Component(BaseComponent, ABC):
             *self.custom_attrs.values(),
         ):
             if isinstance(comp_prop, Var):
-                yield comp_prop
+                vars.append(comp_prop)
             elif isinstance(comp_prop, str):
-                # catch f-strings containing Vars
+                # Collapse VarData encoded in f-strings.
                 var = Var.create_safe(comp_prop)
                 if var._var_data is not None:
-                    yield var
+                    vars.append(var)
+        return vars
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
@@ -768,19 +775,17 @@ class Component(BaseComponent, ABC):
         # Return the dynamic imports
         return dynamic_imports
 
-    def _get_props_imports(self) -> imports.ImportDict:
+    def _get_props_imports(self) -> List[str]:
         """Get the imports needed for components props.
 
         Returns:
             The  imports for the components props of the component.
         """
-        return imports.merge_imports(
-            *[
-                getattr(self, prop).get_imports()
-                for prop in self.get_component_props()
-                if getattr(self, prop) is not None
-            ]
-        )
+        return [
+            getattr(self, prop).get_imports()
+            for prop in self.get_component_props()
+            if getattr(self, prop) is not None
+        ]
 
     def _get_dependencies_imports(self) -> imports.ImportDict:
         """Get the imports from lib_dependencies for installing.
@@ -788,9 +793,9 @@ class Component(BaseComponent, ABC):
         Returns:
             The dependencies imports of the component.
         """
-        return imports.merge_imports(
-            {dep: {ImportVar(tag=None, render=False)} for dep in self.lib_dependencies}
-        )
+        return {
+            dep: [ImportVar(tag=None, render=False)] for dep in self.lib_dependencies
+        }
 
     def _get_hooks_imports(self) -> imports.ImportDict:
         """Get the imports required by certain hooks.
@@ -799,12 +804,18 @@ class Component(BaseComponent, ABC):
             The imports required for all selected hooks.
         """
         _imports = {}
+
         if self._get_ref_hook():
+            # Handle hooks needed for attaching react refs to DOM nodes.
             _imports.setdefault("react", set()).add(ImportVar(tag="useRef"))
             _imports.setdefault(f"/{Dirs.STATE_PATH}", set()).add(ImportVar(tag="refs"))
+
         if self._get_mount_lifecycle_hook():
+            # Handle hooks for `on_mount` / `on_unmount`.
             _imports.setdefault("react", set()).add(ImportVar(tag="useEffect"))
+
         if self._get_special_hooks():
+            # Handle additional internal hooks (autofocus, etc).
             _imports.setdefault("react", set()).update(
                 {
                     ImportVar(tag="useRef"),
@@ -820,15 +831,21 @@ class Component(BaseComponent, ABC):
             The imports needed by the component.
         """
         _imports = {}
+
+        # Import this component's tag from the main library.
         if self.library is not None and self.tag is not None:
             _imports[self.library] = {self.import_var}
+
+        # Get static imports required for event processing.
         event_imports = Imports.EVENTS if self.event_triggers else {}
-        # determine imports from Vars
+
+        # Collect imports from Vars used directly by this component.
         var_imports = [
             var._var_data.imports for var in self._get_vars() if var._var_data
         ]
+
         return imports.merge_imports(
-            self._get_props_imports(),
+            *self._get_props_imports(),
             self._get_dependencies_imports(),
             self._get_hooks_imports(),
             _imports,
@@ -935,9 +952,9 @@ class Component(BaseComponent, ABC):
                 for hook in [self._get_mount_lifecycle_hook(), self._get_ref_hook()]
                 if hook
             )
-            .union(self._get_vars_hooks())
-            .union(self._get_events_hooks())
-            .union(self._get_special_hooks())
+            | self._get_vars_hooks()
+            | self._get_events_hooks()
+            | self._get_special_hooks()
         )
 
     def _get_hooks(self) -> str | None:
@@ -1029,7 +1046,8 @@ class Component(BaseComponent, ABC):
         alias = self.alias.partition(".")[0] if self.alias else None
         return ImportVar(tag=tag, is_default=self.is_default, alias=alias)
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component.
 
         Returns:
@@ -1170,7 +1188,9 @@ class CustomComponent(Component):
         # Avoid adding the same component twice.
         if self.tag not in seen:
             seen.add(self.tag)
-            custom_components |= self.get_component().get_custom_components(seen=seen)
+            custom_components |= self.get_component(self).get_custom_components(
+                seen=seen
+            )
         return custom_components
 
     def _render(self) -> Tag:
@@ -1197,6 +1217,7 @@ class CustomComponent(Component):
             for name, prop in self.props.items()
         ]
 
+    @lru_cache(maxsize=None)  # noqa
     def get_component(self) -> Component:
         """Render the component.
 
@@ -1235,10 +1256,21 @@ class NoSSRComponent(Component):
     """A dynamic component that is not rendered on the server."""
 
     def _get_imports(self) -> imports.ImportDict:
-        dynamic_import = {"next/dynamic": {ImportVar(tag="dynamic", is_default=True)}}
+        """Get the imports for the component.
+
+        Returns:
+            The imports for dynamically importing the component at module load time.
+        """
+        # Next.js dynamic import mechanism.
+        dynamic_import = {"next/dynamic": [ImportVar(tag="dynamic", is_default=True)]}
+
+        # The normal imports for this component.
         _imports = super()._get_imports()
+
+        # Do NOT import the main library/tag statically.
         if self.library is not None:
-            _imports[self.library] = {ImportVar(tag=None, render=False)}
+            _imports[self.library] = [imports.ImportVar(tag=None, render=False)]
+
         return imports.merge_imports(
             dynamic_import,
             _imports,
@@ -1488,9 +1520,9 @@ class StatefulComponent(BaseComponent):
         """
         if self.rendered_as_shared:
             return {
-                f"/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": {
+                f"/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
                     ImportVar(tag=self.tag)
-                }
+                ]
             }
         return self.component.get_imports()
 

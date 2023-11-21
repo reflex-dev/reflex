@@ -8,9 +8,9 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex import constants
-from ...vars import Var
-from ..component import Component
-from ..layout.cond import cond
+from reflex.components.component import Component
+from reflex.components.layout.cond import cond
+from reflex.vars import Var
 
 route_not_found: Var
 

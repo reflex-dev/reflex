@@ -33,7 +33,7 @@ class WebsocketTargetURL(Bare):
 
     def _get_imports(self) -> imports.ImportDict:
         return {
-            "/utils/state.js": {imports.ImportVar(tag="getEventURL")},
+            "/utils/state.js": [imports.ImportVar(tag="getEventURL")],
         }
 
     @classmethod

@@ -189,7 +189,8 @@ class Upload(Component):
         out.args = ("getRootProps", "getInputProps")
         return out
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
             (5, "UploadFilesProvider"): UploadFilesProvider(),
         }

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
@@ -180,8 +180,8 @@ class DataEditor(NoSSRComponent):
     # Controls the drawing of the left hand vertical border of a column. If set to a boolean value it controls all borders.
     vertical_border: Var[bool]  # TODO: support a mapping (dict[int, bool])
 
-    # Allow columns selections. ("none", "single", "multiple")
-    column_select: Var[str]
+    # Allow columns selections. ("none", "single", "multi")
+    column_select: Var[Literal["none", "single", "multi"]]
 
     # Prevent diagonal scrolling.
     prevent_diagonal_scrolling: Var[bool]
@@ -284,7 +284,7 @@ class DataEditor(NoSSRComponent):
         Returns:
             The DataEditor component.&
         """
-        from reflex.el.elements import Div
+        from reflex.components.el import Div
 
         columns = props.get("columns", [])
         data = props.get("data", [])
@@ -334,19 +334,26 @@ class DataEditor(NoSSRComponent):
             height=props.pop("height", "100%"),
         )
 
-    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         """Get the app wrap components for the component.
 
         Returns:
             The app wrap components.
         """
-        from reflex.el.elements import Div
+        from reflex.components.el import Div
 
         class Portal(Div):
             def get_ref(self):
                 return None
 
-        return {(-1, "DataEditorPortal"): Portal.create(id="portal")}
+        return {
+            (-1, "DataEditorPortal"): Portal.create(
+                id="portal",
+                position="fixed",
+                top=0,
+            )
+        }
 
 
 # try:

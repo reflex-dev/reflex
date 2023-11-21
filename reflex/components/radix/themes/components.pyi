@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
-from reflex import el
+from reflex.components import el
 from reflex.components.component import Component
 from reflex.components.forms.debounce import DebounceInput
 from reflex.constants import EventTriggers
@@ -808,13 +808,7 @@ class TextField(TextFieldRoot, el.Input):
         accept: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        access_key: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         alt: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        auto_capitalize: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         auto_complete: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -827,23 +821,10 @@ class TextField(TextFieldRoot, el.Input):
         checked: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        content_editable: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        context_menu: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        dir: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         dirname: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         disabled: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        draggable: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        enter_key_hint: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         form: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
@@ -865,16 +846,6 @@ class TextField(TextFieldRoot, el.Input):
         height: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        hidden: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        input_mode: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        item_prop: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        lang: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         list: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         max: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         max_length: Optional[
@@ -900,22 +871,8 @@ class TextField(TextFieldRoot, el.Input):
         required: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        role: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        slot: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        spell_check: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         src: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         step: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        tab_index: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        title: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
-        translate: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         type: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         use_map: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -924,6 +881,49 @@ class TextField(TextFieldRoot, el.Input):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         width: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        access_key: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        dir: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        draggable: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        hidden: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        input_mode: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        item_prop: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        lang: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        role: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        slot: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        spell_check: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        tab_index: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        title: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         style: Optional[Style] = None,
@@ -992,7 +992,7 @@ class TextField(TextFieldRoot, el.Input):
 
         Args:
             *children: The children of the component.
-            size: Text field size "1" - "3"
+            size: Specifies the visible width of a text control
             variant: Variant of text field: "classic" | "surface" | "soft"
             color: Override theme color for text field
             radius: Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
@@ -1003,6 +1003,55 @@ class TextField(TextFieldRoot, el.Input):
             mr: Margin right: "0" - "9"
             mb: Margin bottom: "0" - "9"
             ml: Margin left: "0" - "9"
+            accept: Accepted types of files when the input is file type
+            alt: Alternate text for input type="image"
+            auto_complete: Whether the input should have autocomplete enabled
+            auto_focus: Automatically focuses the input when the page loads
+            capture: Captures media from the user (camera or microphone)
+            checked: Indicates whether the input is checked (for checkboxes and radio buttons)
+            dirname: Name part of the input to submit in 'dir' and 'name' pair when form is submitted
+            disabled: Disables the input
+            form: Associates the input with a form (by id)
+            form_action: URL to send the form data to (for type="submit" buttons)
+            form_enc_type: How the form data should be encoded when submitting to the server (for type="submit" buttons)
+            form_method: HTTP method to use for sending form data (for type="submit" buttons)
+            form_no_validate: Bypasses form validation when submitting (for type="submit" buttons)
+            form_target: Specifies where to display the response after submitting the form (for type="submit" buttons)
+            height: The height of the input (only for type="image")
+            list: References a datalist for suggested options
+            max: Specifies the maximum value for the input
+            max_length: Specifies the maximum number of characters allowed in the input
+            min_length: Specifies the minimum number of characters required in the input
+            min: Specifies the minimum value for the input
+            multiple: Indicates whether multiple values can be entered in an input of the type email or file
+            name: Name of the input, used when sending form data
+            pattern: Regex pattern the input's value must match to be valid
+            placeholder: Placeholder text in the input
+            read_only: Indicates whether the input is read-only
+            required: Indicates that the input is required
+            src: URL for image inputs
+            step: Specifies the legal number intervals for an input
+            type: Specifies the type of input
+            use_map: Name of the image map used with the input
+            value: Value of the input
+            width: The width of the input (only for type="image")
+            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
+            content_editable: Indicates whether the element's content is editable.
+            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
+            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
+            draggable: Defines whether the element can be dragged.
+            enter_key_hint: Hints what media types the media element is able to play.
+            hidden: Defines whether the element is hidden.
+            input_mode: Defines the type of the element.
+            item_prop: Defines the name of the element for metadata purposes.
+            lang: Defines the language used in the element.
+            role: Defines the role of the element.
+            slot: Assigns a slot in a shadow DOM shadow tree to an element.
+            spell_check: Defines whether the element may be checked for spelling errors.
+            tab_index: Defines the position of the current element in the tabbing order.
+            title: Defines a tooltip for the element.
+            translate: Specifies whether the content of an element should be translated or not.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

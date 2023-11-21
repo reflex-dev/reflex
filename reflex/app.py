@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import copy
 import functools
 import os
 from multiprocessing.pool import ThreadPool
@@ -589,9 +590,9 @@ class App(Base):
 
     def _app_root(self, app_wrappers):
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
-        root = parent = app_wrappers[order[0]]
+        root = parent = copy.deepcopy(app_wrappers[order[0]])
         for key in order[1:]:
-            child = app_wrappers[key]
+            child = copy.deepcopy(app_wrappers[key])
             parent.children.append(child)
             parent = child
         return root

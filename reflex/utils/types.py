@@ -27,6 +27,7 @@ from reflex.utils import serializers
 GenericType = Union[Type, _GenericAlias]
 
 # Valid state var types.
+JSONType = {str, int, float, bool}
 PrimitiveType = Union[int, float, bool, str, list, dict, set, tuple]
 StateVar = Union[PrimitiveType, Base, None]
 StateIterVar = Union[list, set, tuple]

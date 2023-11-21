@@ -10,10 +10,9 @@ routeNotFound becomes true.
 from __future__ import annotations
 
 from reflex import constants
-
-from ...vars import Var
-from ..component import Component
-from ..layout.cond import cond
+from reflex.components.component import Component
+from reflex.components.layout.cond import cond
+from reflex.vars import Var
 
 route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND)
 

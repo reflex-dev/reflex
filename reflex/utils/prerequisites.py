@@ -278,9 +278,27 @@ def initialize_app_directory(app_name: str, template: constants.Templates.Kind):
     )
 
 
+def get_project_hash() -> int | None:
+    """Get the project hash from the reflex.json file if the file exists.
+
+    Returns:
+        project_hash: The app hash.
+    """
+    if not os.path.exists(constants.Reflex.JSON):
+        return None
+    # Open and read the file
+    with open(constants.Reflex.JSON, "r") as file:
+        data = json.load(file)
+        project_hash = data["project_hash"]
+        return project_hash
+
+
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
     console.log("Initializing the web directory.")
+
+    # Re-use the hash if one is already created, so we don't over-write it when running reflex init
+    project_hash = get_project_hash()
 
     path_ops.cp(constants.Templates.Dirs.WEB_TEMPLATE, constants.Dirs.WEB)
 
@@ -291,7 +309,7 @@ def initialize_web_directory():
     update_next_config()
 
     # Initialize the reflex json file.
-    init_reflex_json()
+    init_reflex_json(project_hash=project_hash)
 
 
 def _compile_package_json():
@@ -315,11 +333,22 @@ def initialize_package_json():
         file.write(code)
 
 
-def init_reflex_json():
-    """Write the hash of the Reflex project to a REFLEX_JSON."""
-    # Get a random project hash.
-    project_hash = random.getrandbits(128)
-    console.debug(f"Setting project hash to {project_hash}.")
+def init_reflex_json(project_hash: int | None):
+    """Write the hash of the Reflex project to a REFLEX_JSON.
+
+    Re-use the hash if one is already created, therefore do not
+    overwrite it every time we run the reflex init command
+    .
+
+    Args:
+        project_hash: The app hash.
+    """
+    if project_hash is not None:
+        console.debug(f"Project hash is already set to {project_hash}.")
+    else:
+        # Get a random project hash.
+        project_hash = random.getrandbits(128)
+        console.debug(f"Setting project hash to {project_hash}.")
 
     # Write the hash and version to the reflex json file.
     reflex_json = {
@@ -487,7 +516,9 @@ def install_bun():
         return
 
     # Skip if bun is already installed.
-    if os.path.exists(get_config().bun_path):
+    if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
+        constants.Bun.VERSION
+    ):
         console.debug("Skipping bun installation as it is already installed.")
         return
 
