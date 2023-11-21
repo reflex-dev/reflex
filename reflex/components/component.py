@@ -1354,30 +1354,36 @@ class StatefulComponent(BaseComponent):
             # Only memoize components with a tag.
             return None
 
-        prop_var_data = None
+        prop_var_datas = []
 
         if not isinstance(component, Bare):
             for prop_var in component._get_vars():
                 if prop_var._var_data:
-                    prop_var_data = VarData.merge(prop_var_data, prop_var._var_data)
+                    prop_var_datas.append(prop_var._var_data)
 
         for child in component.children:
             if not isinstance(child, Component):
                 continue
             child = cls._child_var(child)
             if isinstance(child, Var) and child._var_data:
-                prop_var_data = VarData.merge(prop_var_data, child._var_data)
+                prop_var_datas.append(child._var_data)
 
-        if prop_var_data is not None or component.event_triggers:
+        if prop_var_datas or component.event_triggers:
             if not component.render():
                 return None  # never memoize non-visual components
-            tag, code = cls._render_stateful_code(component)
-            stateful_component = cls.tag_to_stateful_component.setdefault(
-                tag,
-                cls(
-                    children=component.children, component=component, tag=tag, code=code
-                ),
-            )
+            tag_name = cls._get_tag_name(component)
+            stateful_component = cls.tag_to_stateful_component.get(tag_name)
+            if stateful_component is None:
+                code = cls._render_stateful_code(component, tag_name=tag_name)
+                stateful_component = cls.tag_to_stateful_component.setdefault(
+                    tag_name,
+                    cls(
+                        children=component.children,
+                        component=component,
+                        tag=tag_name,
+                        code=code,
+                    ),
+                )
             stateful_component.references += 1
             return stateful_component
         return None
@@ -1409,21 +1415,34 @@ class StatefulComponent(BaseComponent):
         return child
 
     @classmethod
-    def _render_stateful_code(
-        cls,
-        component: Component,
-    ) -> tuple[str, str]:
-        """Render the code for a stateful component.
+    def _get_tag_name(cls, component: Component) -> str:
+        """Get the tag based on rendering the given component.
 
         Args:
             component: The component to render.
 
         Returns:
-            The tag name and the rendered code.
+            The tag for the stateful component.
         """
         rendered_code = component.render()
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
-        tag_name = format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
+        return format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
+
+    @classmethod
+    def _render_stateful_code(
+        cls,
+        component: Component,
+        tag_name: str,
+    ) -> str:
+        """Render the code for a stateful component.
+
+        Args:
+            component: The component to render.
+            tag_name: The tag name for the stateful component (see _get_tag_name).
+
+        Returns:
+            The rendered code.
+        """
         render_component = copy.copy(component)
         memo_trigger_hooks = []
         for event_trigger, (
@@ -1432,7 +1451,7 @@ class StatefulComponent(BaseComponent):
         ) in cls._get_memoized_event_triggers(component).items():
             memo_trigger_hooks.append(memo_trigger_hook)
             render_component.event_triggers[event_trigger] = memo_trigger
-        return tag_name, STATEFUL_COMPONENT.render(
+        return STATEFUL_COMPONENT.render(
             tag_name=tag_name,
             memo_trigger_hooks=memo_trigger_hooks,
             component=render_component or component,
