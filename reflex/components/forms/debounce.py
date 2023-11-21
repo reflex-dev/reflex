@@ -1,9 +1,9 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any, Dict, Type
+from typing import Any, Type
 
-from reflex.components.component import Component
+from reflex.components import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var, VarData
 
@@ -108,7 +108,7 @@ class DebounceInput(Component):
 
         return super().create(**props)
 
-    def get_event_triggers(self) -> Dict[str, Any]:
+    def get_event_triggers(self) -> dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:

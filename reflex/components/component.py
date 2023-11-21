@@ -567,7 +567,7 @@ class Component(BaseComponent, ABC):
         """
         if type(self) in style:
             # Extract the style for this component.
-            component_style = Style(style[type(self)])
+            component_style = style[type(self)]
 
             # Only add style props that are not overridden.
             component_style = {
