@@ -192,34 +192,36 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
         while m := re.match(r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)", value):
             value = m.group(1) + m.group(3)
             var_datas.append(VarData.parse_raw(m.group(2)))
-    return VarData.merge(*var_datas), value
+    if var_datas:
+        return VarData.merge(*var_datas), value
+    return None, value
 
 
-def _extract_var_data(value: Iterable) -> VarData | None:
+def _extract_var_data(value: Iterable) -> list[VarData | None]:
     """Extract the var imports and hooks from an iterable containing a Var.
 
     Args:
         value: The iterable to extract the VarData from
 
     Returns:
-        The extracted VarData.
+        The extracted VarDatas.
     """
-    var_data = None
+    var_datas = []
     with contextlib.suppress(TypeError):
         for sub in value:
             if isinstance(sub, Var):
-                var_data = VarData.merge(var_data, sub._var_data)
+                var_datas.append(sub._var_data)
             elif not isinstance(sub, str):
                 # Recurse into dict values.
                 if hasattr(sub, "values") and callable(sub.values):
-                    var_data = VarData.merge(var_data, _extract_var_data(sub.values()))
+                    var_datas.extend(_extract_var_data(sub.values()))
                 # Recurse into iterable values (or dict keys).
-                var_data = VarData.merge(var_data, _extract_var_data(sub))
+                var_datas.extend(_extract_var_data(sub))
     # Recurse when value is a dict itself.
     values = getattr(value, "values", None)
     if callable(values):
-        var_data = VarData.merge(var_data, _extract_var_data(values()))
-    return var_data
+        var_datas.extend(_extract_var_data(values()))
+    return var_datas
 
 
 class Var:
@@ -271,11 +273,11 @@ class Var:
         # Try to pull the imports and hooks from contained values.
         _var_data = None
         if not isinstance(value, str):
-            _var_data = _extract_var_data(value)
+            _var_data = VarData.merge(*_extract_var_data(value))
 
         # Try to serialize the value.
         type_ = type(value)
-        name = serializers.serialize(value)
+        name = value if type_ in types.JSONType else serializers.serialize(value)
         if name is None:
             raise TypeError(
                 f"No JSON serializer found for var {value} of type {type_}."

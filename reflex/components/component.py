@@ -493,7 +493,7 @@ class Component(Base, ABC):
         """
         if type(self) in style:
             # Extract the style for this component.
-            component_style = Style(style[type(self)])
+            component_style = style[type(self)]
 
             # Only add style props that are not overridden.
             component_style = {
@@ -591,32 +591,38 @@ class Component(Base, ABC):
                         event_args.extend(args)
                 yield event_trigger, event_args
 
-    def _get_vars(self) -> Iterator[Var]:
+    def _get_vars(self) -> list[Var]:
         """Walk all Vars used in this component.
 
-        Yields:
+        Returns:
             Each var referenced by the component (props, styles, event handlers).
         """
+        vars = getattr(self, "__vars", None)
+        if vars is not None:
+            return vars
+        vars = self.__vars = []
         # Get Vars associated with event trigger arguments.
         for _, event_vars in self._get_vars_from_event_triggers(self.event_triggers):
-            yield from event_vars
+            vars.extend(event_vars)
 
         # Get Vars associated with component props.
         for prop in self.get_props():
             prop_var = getattr(self, prop)
             if isinstance(prop_var, Var):
-                yield prop_var
+                vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
         if self.style:
-            yield BaseVar(
-                _var_name="style",
-                _var_type=str,
-                _var_data=self.style._var_data,
+            vars.append(
+                BaseVar(
+                    _var_name="style",
+                    _var_type=str,
+                    _var_data=self.style._var_data,
+                )
             )
 
         # Special props are always Var instances.
-        yield from self.special_props
+        vars.extend(self.special_props)
 
         # Get Vars associated with common Component props.
         for comp_prop in (
@@ -627,12 +633,13 @@ class Component(Base, ABC):
             *self.custom_attrs.values(),
         ):
             if isinstance(comp_prop, Var):
-                yield comp_prop
+                vars.append(comp_prop)
             elif isinstance(comp_prop, str):
                 # Collapse VarData encoded in f-strings.
                 var = Var.create_safe(comp_prop)
                 if var._var_data is not None:
-                    yield var
+                    vars.append(var)
+        return vars
 
     def _get_custom_code(self) -> str | None:
         """Get custom code for the component.
