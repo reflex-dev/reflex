@@ -7,10 +7,22 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.utils import imports
 from reflex.vars import Var
+
+class MomentDelta(Base):
+    years: Optional[int]
+    quarters: Optional[int]
+    months: Optional[int]
+    weeks: Optional[int]
+    days: Optional[int]
+    hours: Optional[int]
+    minutess: Optional[int]
+    seconds: Optional[int]
+    milliseconds: Optional[int]
 
 class Moment(NoSSRComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -23,6 +35,8 @@ class Moment(NoSSRComponent):
         format: Optional[Union[Var[str], str]] = None,
         trim: Optional[Union[Var[bool], bool]] = None,
         parse: Optional[Union[Var[str], str]] = None,
+        add: Optional[Union[Var[MomentDelta], MomentDelta]] = None,
+        subtract: Optional[Union[Var[MomentDelta], MomentDelta]] = None,
         from_now: Optional[Union[Var[bool], bool]] = None,
         from_now_during: Optional[Union[Var[int], int]] = None,
         to_now: Optional[Union[Var[bool], bool]] = None,
@@ -101,7 +115,9 @@ class Moment(NoSSRComponent):
             format: Formats the date according to the given format string.
             trim: When formatting duration time, the largest-magnitude tokens are automatically trimmed when they have no value.
             parse:  Use the parse attribute to tell moment how to parse the given date when non-standard.
-            from_now: NOT IMPLEMENTED :  add  substract  Displays the date as the time from now, e.g. "5 minutes ago".
+            add: Add a delta to the base date (keys are "years", "quarters", "months", "weeks", "days", "hours", "minutes", "seconds")
+            subtract: Subtract a delta to the base date (keys are "years", "quarters", "months", "weeks", "days", "hours", "minutes", "seconds")
+            from_now: Displays the date as the time from now, e.g. "5 minutes ago".
             from_now_during: Setting fromNowDuring will display the relative time as with fromNow but just during its value in milliseconds, after that format will be used instead.
             to_now: Similar to fromNow, but gives the opposite interval.
             with_title: Adds a title attribute to the element with the complete date.
