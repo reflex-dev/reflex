@@ -13,7 +13,7 @@ from reflex.components.forms import Button
 from reflex.components.layout import Box
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.media import Icon
-from reflex.event import set_clipboard
+from reflex.event import EventChain
 from reflex.style import Style
 from reflex.utils import format, imports
 from reflex.utils.imports import ImportVar
