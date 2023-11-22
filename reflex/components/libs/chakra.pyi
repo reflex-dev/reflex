@@ -14,6 +14,7 @@ from reflex.utils import imports
 from reflex.vars import Var
 
 class ChakraComponent(Component):
+    def get_imports(self) -> imports.ImportDict: ...
     @overload
     @classmethod
     def create(  # type: ignore
