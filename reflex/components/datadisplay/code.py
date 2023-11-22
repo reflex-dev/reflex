@@ -9,7 +9,7 @@ from reflex.components.libs.chakra import (
     ChakraComponent,
 )
 from reflex.components.media import Icon
-from reflex.event import set_clipboard
+from reflex.event import EventChain
 from reflex.style import Style
 from reflex.utils import format, imports
 from reflex.utils.imports import ImportVar
@@ -438,6 +438,9 @@ class CodeBlock(Component):
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
 
+        # Support markdown component_map style code blocks.
+        special_props = []
+
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
         if "theme" in props:
@@ -450,13 +453,22 @@ class CodeBlock(Component):
             )
 
         if can_copy:
-            code = children[0]
+            if not children:
+                # Handle markdown component_map style code blocks.
+                code = Var.create_safe("String(children)", _var_is_local=False)
+                special_props.append(Var.create_safe(f"children={str(code)}"))
+            else:
+                code = children[0]
             copy_button = (  # type: ignore
                 copy_button
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy"),
-                    on_click=set_clipboard(code),
+                    on_click=Var.create_safe(  # type: ignore
+                        f"() => navigator.clipboard.writeText(`{code}`)",
+                        _var_is_local=False,
+                        _var_is_string=False,
+                    )._replace(_var_type=EventChain),
                     style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
                 )
             )
@@ -474,6 +486,7 @@ class CodeBlock(Component):
             *children,
             **props,
             custom_style=Style(custom_style),
+            special_props=special_props,
         )
 
         if copy_button:
