@@ -658,14 +658,11 @@ class App(Base):
             fixed_pages = 7
             compile_total = sum(
                 [
-                    len(self.pages),  # Pre-processing
                     len(self.pages),  # Memoize stateful components
                     len(self.pages) + fixed_pages,  # Compile pages
-                    len(self.pages) + fixed_pages,  # Write pages
-                    1,  # Write stateful components
                 ]
             )
-            task = progress.add_task("Process:", total=compile_total)
+            task = progress.add_task("Memoize:", total=compile_total)
 
             def mark_complete(_=None):
                 progress.advance(task)
@@ -683,11 +680,7 @@ class App(Base):
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
 
-                # Count pre-processing task for this page.
-                progress.advance(task)
-
             # Perform auto-memoization of stateful components.
-            progress.update(task, description="Memoize:")
             (
                 stateful_components_path,
                 stateful_components_code,
@@ -767,7 +760,6 @@ class App(Base):
                 compile_results.append(future.result())
 
             # Write the pages at the end to trigger the NextJS hot reload only once.
-            progress.update(task, description="Write:")
             write_page_futures = []
             for output_path, code in compile_results:
                 write_page_futures.append(
@@ -775,7 +767,6 @@ class App(Base):
                 )
             for future in concurrent.futures.as_completed(write_page_futures):
                 future.result()
-                progress.advance(task)
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[State]:
