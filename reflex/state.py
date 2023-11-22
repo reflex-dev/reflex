@@ -587,7 +587,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for substate_class in cls.__subclasses__():
             substate_class.vars.setdefault(name, var)
 
-        # Reinitialize dependency tracking dicts
+        # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
 
     @classmethod
@@ -798,6 +798,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             func._var_name = param
             cls.vars[param] = cls.computed_vars[param] = func._var_set_state(cls)  # type: ignore
             setattr(cls, param, func)
+
+            # Reinitialize dependency tracking dicts.
+            cls._init_var_dependency_dicts()
 
     def __getattribute__(self, name: str) -> Any:
         """Get the state var.
