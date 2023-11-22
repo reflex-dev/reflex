@@ -65,6 +65,7 @@ class ChakraComponent(Component):
             dep: [imports.ImportVar(tag=None, render=False)]
             for dep in [
                 "@chakra-ui/system@2.5.7",
+                "focus-visible@5.2.0",
                 "framer-motion@10.16.4",
             ]
         }
