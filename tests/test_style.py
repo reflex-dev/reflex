@@ -22,7 +22,8 @@ def test_convert(style_dict, expected):
         style_dict: The style to check.
         expected: The expected formatted style.
     """
-    assert style.convert(style_dict) == expected
+    converted_dict, _var_data = style.convert(style_dict)
+    assert converted_dict == expected
 
 
 @pytest.mark.parametrize(

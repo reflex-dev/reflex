@@ -1,10 +1,11 @@
 """Wrapper around react-debounce-input."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Set
 
 from reflex.components import Component
 from reflex.components.tags import Tag
+from reflex.utils import imports
 from reflex.vars import Var
 
 
@@ -76,6 +77,17 @@ class DebounceInput(Component):
         # do NOT render the child, DebounceInput will create it
         object.__setattr__(child, "render", lambda: "")
         return tag
+
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(), *[c._get_imports() for c in self.children]
+        )
+
+    def _get_hooks_internal(self) -> Set[str]:
+        hooks = super()._get_hooks_internal()
+        for child in self.children:
+            hooks.update(child._get_hooks_internal())
+        return hooks
 
 
 def props_not_none(c: Component) -> dict[str, Any]:

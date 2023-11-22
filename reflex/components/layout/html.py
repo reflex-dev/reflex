@@ -1,8 +1,8 @@
 """A html component."""
-
-from typing import Any
+from typing import Dict
 
 from reflex.components.layout.box import Box
+from reflex.vars import Var
 
 
 class Html(Box):
@@ -13,7 +13,7 @@ class Html(Box):
     """
 
     # The HTML to render.
-    dangerouslySetInnerHTML: Any
+    dangerouslySetInnerHTML: Var[Dict[str, str]]
 
     @classmethod
     def create(cls, *children, **props):

@@ -2,6 +2,9 @@
 from enum import Enum
 from types import SimpleNamespace
 
+from reflex.constants import Dirs
+from reflex.utils.imports import ImportVar
+
 # The prefix used to create setters for state vars.
 SETTER_PREFIX = "set_"
 
@@ -47,6 +50,12 @@ class CompileVars(SimpleNamespace):
     HYDRATE = "hydrate"
     # The name of the is_hydrated variable.
     IS_HYDRATED = "is_hydrated"
+    # The name of the function to add events to the queue.
+    ADD_EVENTS = "addEvents"
+    # The name of the var storing any connection error.
+    CONNECT_ERROR = "connectError"
+    # The name of the function for converting a dict to an event.
+    TO_EVENT = "Event"
 
 
 class PageNames(SimpleNamespace):
@@ -77,3 +86,19 @@ class ComponentName(Enum):
             The lower-case filename with zip extension.
         """
         return self.value.lower() + Ext.ZIP
+
+
+class Imports(SimpleNamespace):
+    """Common sets of import vars."""
+
+    EVENTS = {
+        "react": {ImportVar(tag="useContext")},
+        f"/{Dirs.CONTEXTS_PATH}": {ImportVar(tag="EventLoopContext")},
+        f"/{Dirs.STATE_PATH}": {ImportVar(tag=CompileVars.TO_EVENT)},
+    }
+
+
+class Hooks(SimpleNamespace):
+    """Common sets of hook declarations."""
+
+    EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"

@@ -8,7 +8,7 @@ from jinja2 import Environment
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent
 from reflex.components.tags import Tag
-from reflex.constants import EventTriggers
+from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain
 from reflex.utils import imports
 from reflex.utils.format import format_event_chain, to_camel_case
@@ -65,7 +65,13 @@ class Form(ChakraComponent):
     def _get_imports(self) -> imports.ImportDict:
         return imports.merge_imports(
             super()._get_imports(),
-            {"react": {imports.ImportVar(tag="useCallback")}},
+            {
+                "react": {imports.ImportVar(tag="useCallback")},
+                f"/{Dirs.STATE_PATH}": {
+                    imports.ImportVar(tag="getRefValue"),
+                    imports.ImportVar(tag="getRefValues"),
+                },
+            },
         )
 
     def _get_hooks(self) -> str | None:

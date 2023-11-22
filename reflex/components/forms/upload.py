@@ -7,9 +7,10 @@ from reflex import constants
 from reflex.components.component import Component
 from reflex.components.forms.input import Input
 from reflex.components.layout.box import Box
+from reflex.constants import Dirs
 from reflex.event import CallableEventSpec, EventChain, EventSpec, call_script
 from reflex.utils import imports
-from reflex.vars import BaseVar, CallableVar, ImportVar, Var
+from reflex.vars import BaseVar, CallableVar, Var, VarData
 
 DEFAULT_UPLOAD_ID: str = "default"
 
@@ -30,6 +31,13 @@ def upload_file(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     return BaseVar(
         _var_name=f"e => upload_files.{id_}[1]((files) => e)",
         _var_type=EventChain,
+        _var_data=VarData(  # type: ignore
+            imports={
+                f"/{Dirs.STATE_PATH}": {
+                    imports.ImportVar(tag="upload_files"),
+                },
+            },
+        ),
     )
 
 
@@ -46,6 +54,13 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar:
     return BaseVar(
         _var_name=f"(upload_files.{id_} ? upload_files.{id_}[0]?.map((f) => (f.path || f.name)) : [])",
         _var_type=List[str],
+        _var_data=VarData(  # type: ignore
+            imports={
+                f"/{Dirs.STATE_PATH}": {
+                    imports.ImportVar(tag="upload_files"),
+                },
+            },
+        ),
     )
 
 
@@ -166,14 +181,16 @@ class Upload(Component):
 
     def _get_hooks(self) -> str | None:
         return (
-            (super()._get_hooks() or "")
-            + f"""
-        upload_files.{self.id or DEFAULT_UPLOAD_ID} = useState([]);
-        """
-        )
+            super()._get_hooks() or ""
+        ) + f"upload_files.{self.id or DEFAULT_UPLOAD_ID} = useState([]);"
 
     def _get_imports(self) -> imports.ImportDict:
-        return {
-            **super()._get_imports(),
-            f"/{constants.Dirs.STATE_PATH}": [ImportVar(tag="upload_files")],
-        }
+        return imports.merge_imports(
+            super()._get_imports(),
+            {
+                "react": {imports.ImportVar(tag="useState")},
+                f"/{constants.Dirs.STATE_PATH}": [
+                    imports.ImportVar(tag="upload_files")
+                ],
+            },
+        )

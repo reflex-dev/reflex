@@ -18,7 +18,8 @@ from reflex.components.typography.heading import Heading
 from reflex.components.typography.text import Text
 from reflex.style import Style
 from reflex.utils import console, imports, types
-from reflex.vars import ImportVar, Var
+from reflex.utils.imports import ImportVar
+from reflex.vars import Var
 
 _CHILDREN = Var.create_safe("children", _var_is_local=False)
 _PROPS = Var.create_safe("...props", _var_is_local=False)

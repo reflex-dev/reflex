@@ -11,7 +11,7 @@ from functools import lru_cache
 from typing import List, Literal
 from reflex.components.component import Component
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 class ChakraComponent(Component):
     @overload

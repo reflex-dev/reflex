@@ -10,40 +10,10 @@ from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.config import get_config
 from reflex.state import State
-from reflex.utils import imports
-from reflex.vars import ImportVar
+from reflex.utils.imports import ImportDict, ImportVar
 
 # Imports to be included in every Reflex app.
-DEFAULT_IMPORTS: imports.ImportDict = {
-    "react": [
-        ImportVar(tag="Fragment"),
-        ImportVar(tag="useEffect"),
-        ImportVar(tag="useRef"),
-        ImportVar(tag="useState"),
-        ImportVar(tag="useContext"),
-    ],
-    "next/router": [ImportVar(tag="useRouter")],
-    f"/{constants.Dirs.STATE_PATH}": [
-        ImportVar(tag="uploadFiles"),
-        ImportVar(tag="Event"),
-        ImportVar(tag="isTrue"),
-        ImportVar(tag="spreadArraysOrObjects"),
-        ImportVar(tag="preventDefault"),
-        ImportVar(tag="refs"),
-        ImportVar(tag="getRefValue"),
-        ImportVar(tag="getRefValues"),
-        ImportVar(tag="getAllLocalStorageItems"),
-        ImportVar(tag="useEventLoop"),
-    ],
-    "/utils/context.js": [
-        ImportVar(tag="EventLoopContext"),
-        ImportVar(tag="initialEvents"),
-        ImportVar(tag="StateContext"),
-        ImportVar(tag="ColorModeContext"),
-    ],
-    "/utils/helpers/range.js": [
-        ImportVar(tag="range", is_default=True),
-    ],
+DEFAULT_IMPORTS: ImportDict = {
     "": [ImportVar(tag="focus-visible/dist/focus-visible", install=False)],
 }
 

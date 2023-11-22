@@ -6,7 +6,7 @@ from typing import Literal
 
 from reflex.components import Component
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
@@ -147,7 +147,7 @@ class Theme(RadixThemesComponent):
     def _get_imports(self) -> imports.ImportDict:
         return {
             **super()._get_imports(),
-            "": [ImportVar(tag="@radix-ui/themes/styles.css", install=False)],
+            "": [imports.ImportVar(tag="@radix-ui/themes/styles.css", install=False)],
         }
 
 
