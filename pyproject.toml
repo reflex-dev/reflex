@@ -57,7 +57,7 @@ wrapt = [
 ]
 packaging = "^23.1"
 pipdeptree = "^2.13.0"
-reflex-hosting-cli = "==0.0.1a3"
+reflex-hosting-cli = ">=0.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
