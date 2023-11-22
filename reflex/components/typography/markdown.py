@@ -233,6 +233,7 @@ class Markdown(Component):
         components = {
             tag: f"{{({{{_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
+            if tag not in ("codeblock", "code")
         }
 
         # Separate out inline code and code blocks.
