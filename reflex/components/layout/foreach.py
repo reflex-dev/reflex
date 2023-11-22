@@ -65,7 +65,7 @@ class Foreach(Component):
             props.setdefault("index_var_name", params[1].name)
         elif "index_var_name" not in props:
             # Otherwise, use a deterministic index, based on the rendered code.
-            code_hash = md5(str(self.children[0]).encode("utf-8")).hexdigest()
+            code_hash = md5(str(self.children[0].render()).encode("utf-8")).hexdigest()
             props.setdefault("index_var_name", f"index_{code_hash}")
 
         return IterTag(
