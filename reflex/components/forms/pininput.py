@@ -68,9 +68,11 @@ class PinInput(ChakraComponent):
         Returns:
             The merged import dict.
         """
+        range_var = Var.range(0)
         return merge_imports(
             super()._get_imports(),
             PinInputField().get_imports(),  # type: ignore
+            range_var._var_data.imports if range_var._var_data is not None else {},
         )
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
@@ -117,7 +119,7 @@ class PinInput(ChakraComponent):
             )
             refs_declaration._var_is_local = True
             if ref:
-                return f"const {ref} = {refs_declaration}"
+                return f"const {ref} = {str(refs_declaration)}"
             return super()._get_ref_hook()
 
     def _render(self) -> Tag:

@@ -232,9 +232,9 @@ def format_route(route: str, format_case=True) -> str:
 
 
 def format_cond(
-    cond: str,
-    true_value: str,
-    false_value: str = '""',
+    cond: str | Var,
+    true_value: str | Var,
+    false_value: str | Var = '""',
     is_prop=False,
 ) -> str:
     """Format a conditional expression.
@@ -248,9 +248,6 @@ def format_cond(
     Returns:
         The formatted conditional expression.
     """
-    # Import here to avoid circular imports.
-    from reflex.vars import Var
-
     # Use Python truthiness.
     cond = f"isTrue({cond})"
 
@@ -266,6 +263,7 @@ def format_cond(
             _var_is_string=type(false_value) is str,
         )
         prop2._var_is_local = True
+        prop1, prop2 = str(prop1), str(prop2)  # avoid f-string semantics for Var
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
     # Format component conds.
@@ -515,6 +513,21 @@ def format_state(value: Any) -> Any:
         return serialized
 
     raise TypeError(f"No JSON serializer found for var {value} of type {type(value)}.")
+
+
+def format_state_name(state_name: str) -> str:
+    """Format a state name, replacing dots with double underscore.
+
+    This allows individual substates to be accessed independently as javascript vars
+    without using dot notation.
+
+    Args:
+        state_name: The state name to format.
+
+    Returns:
+        The formatted state name.
+    """
+    return state_name.replace(".", "__")
 
 
 def format_ref(ref: str) -> str:

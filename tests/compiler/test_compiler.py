@@ -5,7 +5,7 @@ import pytest
 
 from reflex.compiler import compiler, utils
 from reflex.utils import imports
-from reflex.vars import ImportVar
+from reflex.utils.imports import ImportVar
 
 
 @pytest.mark.parametrize(

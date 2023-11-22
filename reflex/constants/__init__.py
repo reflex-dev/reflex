@@ -22,6 +22,8 @@ from .compiler import (
     CompileVars,
     ComponentName,
     Ext,
+    Hooks,
+    Imports,
     PageNames,
 )
 from .config import (
@@ -68,7 +70,9 @@ __ALL__ = [
     Ext,
     Fnm,
     GitIgnore,
+    Hooks,
     RequirementsTxt,
+    Imports,
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,

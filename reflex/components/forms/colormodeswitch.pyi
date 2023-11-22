@@ -12,7 +12,7 @@ from reflex.components.component import Component
 from reflex.components.layout.cond import Cond, cond
 from reflex.components.media.icon import Icon
 from reflex.style import color_mode, toggle_color_mode
-from reflex.vars import BaseVar
+from reflex.vars import Var
 from .button import Button
 from .switch import Switch
 
@@ -20,7 +20,7 @@ DEFAULT_COLOR_MODE: str
 DEFAULT_LIGHT_ICON: Icon
 DEFAULT_DARK_ICON: Icon
 
-def color_mode_cond(light: Any, dark: Any = None) -> BaseVar | Component: ...
+def color_mode_cond(light: Any, dark: Any = None) -> Var | Component: ...
 
 class ColorModeIcon(Cond):
     @overload

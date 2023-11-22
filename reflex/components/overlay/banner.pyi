@@ -10,15 +10,16 @@ from reflex.style import Style
 from typing import Optional
 from reflex.components.base.bare import Bare
 from reflex.components.component import Component
-from reflex.components.layout import Box, Cond
+from reflex.components.layout import Box, cond
 from reflex.components.overlay.modal import Modal
 from reflex.components.typography import Text
+from reflex.constants import Hooks, Imports
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var, VarData
 
+connect_error_var_data: VarData
 connection_error: Var
 has_connection_error: Var
-has_connection_error._var_type = bool
 
 class WebsocketTargetURL(Bare):
     @overload

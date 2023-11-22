@@ -24,13 +24,12 @@ from reflex.components.component import Component, ComponentStyle, CustomCompone
 from reflex.state import Cookie, LocalStorage, State
 from reflex.style import Style
 from reflex.utils import console, format, imports, path_ops
-from reflex.vars import ImportVar
 
 # To re-export this function.
 merge_imports = imports.merge_imports
 
 
-def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
+def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list[str]]:
     """Compile an import statement.
 
     Args:
@@ -343,7 +342,9 @@ def get_context_path() -> str:
     Returns:
         The path of the context module.
     """
-    return os.path.join(constants.Dirs.WEB_UTILS, "context" + constants.Ext.JS)
+    return os.path.join(
+        constants.Dirs.WEB, constants.Dirs.CONTEXTS_PATH + constants.Ext.JS
+    )
 
 
 def get_components_path() -> str:

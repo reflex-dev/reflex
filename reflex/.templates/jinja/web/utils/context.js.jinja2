@@ -1,5 +1,5 @@
-import { createContext, useState } from "react"
-import { Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
+import { createContext, useContext, useMemo, useReducer, useState } from "react"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -8,7 +8,12 @@ export const initialState = {}
 {% endif %}
 
 export const ColorModeContext = createContext(null);
-export const StateContext = createContext(null);
+export const DispatchContext = createContext(null);
+export const StateContexts = {
+  {% for state_name in initial_state %}
+  {{state_name|var_name}}: createContext(null),
+  {% endfor %}
+}
 export const EventLoopContext = createContext(null);
 {% if client_storage %}
 export const clientStorage = {{ client_storage|json_dumps }}
@@ -27,16 +32,40 @@ export const initialEvents = () => []
 export const isDevMode = {{ is_dev_mode|json_dumps }}
 
 export function EventLoopProvider({ children }) {
-  const [state, addEvents, connectError] = useEventLoop(
-    initialState,
+  const dispatch = useContext(DispatchContext)
+  const [addEvents, connectError] = useEventLoop(
+    dispatch,
     initialEvents,
     clientStorage,
   )
   return (
     <EventLoopContext.Provider value={[addEvents, connectError]}>
-      <StateContext.Provider value={state}>
-        {children}
-      </StateContext.Provider>
+      {children}
     </EventLoopContext.Provider>
+  )
+}
+
+export function StateProvider({ children }) {
+  {% for state_name in initial_state %}
+  const [{{state_name|var_name}}, dispatch_{{state_name|var_name}}] = useReducer(applyDelta, initialState["{{state_name}}"])
+  {% endfor %}
+  const dispatchers = useMemo(() => {
+    return {
+      {% for state_name in initial_state %}
+      "{{state_name}}": dispatch_{{state_name|var_name}},
+      {% endfor %}
+    }
+  }, [])
+
+  return (
+    {% for state_name in initial_state %}
+    <StateContexts.{{state_name|var_name}}.Provider value={ {{state_name|var_name}} }>
+    {% endfor %}
+      <DispatchContext.Provider value={dispatchers}>
+        {children}
+      </DispatchContext.Provider>
+    {% for state_name in initial_state|reverse %}
+    </StateContexts.{{state_name|var_name}}.Provider>
+    {% endfor %}
   )
 }

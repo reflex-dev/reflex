@@ -10,10 +10,9 @@ routeNotFound becomes true.
 from __future__ import annotations
 
 from reflex import constants
-
-from ...vars import Var
-from ..component import Component
-from ..layout.cond import Cond
+from reflex.components.component import Component
+from reflex.components.layout.cond import cond
+from reflex.vars import Var
 
 route_not_found: Var = Var.create_safe(constants.ROUTE_NOT_FOUND)
 
@@ -52,10 +51,10 @@ def wait_for_client_redirect(component) -> Component:
     Returns:
         The conditionally rendered component.
     """
-    return Cond.create(
-        cond=route_not_found,
-        comp1=component,
-        comp2=ClientSideRouting.create(),
+    return cond(
+        condition=route_not_found,
+        c1=component,
+        c2=ClientSideRouting.create(),
     )
 
 

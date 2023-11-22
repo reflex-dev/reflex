@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, List, Optional
 from reflex.components.component import Component, NoSSRComponent
 from reflex.utils import imports
-from reflex.vars import ImportVar, Var
+from reflex.vars import Var
 from reflex.base import Base
 
 class MomentDelta(Base):
