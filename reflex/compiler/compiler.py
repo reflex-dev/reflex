@@ -10,12 +10,7 @@ from reflex.compiler import templates, utils
 from reflex.components.component import Component, ComponentStyle, CustomComponent
 from reflex.config import get_config
 from reflex.state import State
-from reflex.utils.imports import ImportDict, ImportVar
-
-# Imports to be included in every Reflex app.
-DEFAULT_IMPORTS: ImportDict = {
-    "": [ImportVar(tag="focus-visible/dist/focus-visible", install=False)],
-}
+from reflex.utils.imports import ImportVar
 
 
 def _compile_document_root(root: Component) -> str:
@@ -97,8 +92,7 @@ def _compile_page(
     Returns:
         The compiled component.
     """
-    # Merge the default imports with the app-specific imports.
-    imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
+    imports = component.get_imports()
     imports = {k: list(set(v)) for k, v in imports.items()}
     utils.validate_imports(imports)
     imports = utils.compile_imports(imports)

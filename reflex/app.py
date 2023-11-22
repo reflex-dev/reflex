@@ -563,7 +563,6 @@ class App(Base):
             for i, tags in imports.items()
             if i
             not in [
-                *compiler.DEFAULT_IMPORTS.keys(),
                 *constants.PackageJson.DEPENDENCIES.keys(),
                 *constants.PackageJson.DEV_DEPENDENCIES.keys(),
             ]
