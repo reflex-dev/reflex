@@ -97,7 +97,7 @@ def ClientSide():
             rx.box(ClientSideSubSubState.l1s, id="l1s"),
         )
 
-    app = rx.App()
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.add_page(index, route="/foo")
     app.compile()

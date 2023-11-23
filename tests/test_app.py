@@ -37,6 +37,7 @@ from .conftest import chdir
 from .states import (
     ChildFileUploadState,
     FileStateBase1,
+    FileStateBase2,
     FileUploadState,
     GenState,
     GrandChildFileUploadState,
@@ -699,18 +700,100 @@ async def test_dict_mutation_detection__plain_list(
         assert result.delta == expected_delta
 
 
+# @pytest.mark.asyncio
+# @pytest.mark.parametrize(
+#     ("state", "delta"),
+#     [
+#         (
+#             FileUploadState,
+#             {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+#         ),
+#         (
+#             ChildFileUploadState,
+#             {
+#                 "file_state_base1.child_file_upload_state": {
+#                     "img_list": ["image1.jpg", "image2.jpg"]
+#                 }
+#             },
+#         ),
+#         (
+#             GrandChildFileUploadState,
+#             {
+#                 "file_state_base1.file_state_base2.grand_child_file_upload_state": {
+#                     "img_list": ["image1.jpg", "image2.jpg"]
+#                 }
+#             },
+#         ),
+#     ],
+# )
+# async def test_upload_file(tmp_path, state, delta, token: str):
+#     """Test that file upload works correctly.
+#
+#     Args:
+#         tmp_path: Temporary path.
+#         state: The state class.
+#         delta: Expected delta
+#         token: a Token.
+#     """
+#     state._tmp_path = tmp_path
+#     # The App state must be the "root" of the state tree
+#     app = App(state=state if state is FileUploadState else FileStateBase1)
+#     app.event_namespace.emit = AsyncMock()  # type: ignore
+#     current_state = await app.state_manager.get_state(token)
+#     data = b"This is binary data"
+#
+#     # Create a binary IO object and write data to it
+#     bio = io.BytesIO()
+#     bio.write(data)
+#
+#     state_name = state.get_full_name().partition(".")[2] or state.get_name()
+#     request_mock = unittest.mock.Mock()
+#     request_mock.headers = {
+#         "reflex-client-token": token,
+#         "reflex-event-handler": f"{state_name}.multi_handle_upload",
+#     }
+#
+#     file1 = UploadFile(
+#         filename=f"image1.jpg",
+#         file=bio,
+#     )
+#     file2 = UploadFile(
+#         filename=f"image2.jpg",
+#         file=bio,
+#     )
+#     upload_fn = upload(app)
+#     streaming_response = await upload_fn(request_mock, [file1, file2])
+#     async for state_update in streaming_response.body_iterator:
+#         assert (
+#             state_update
+#             == StateUpdate(delta=delta, events=[], final=True).json() + "\n"
+#         )
+#
+#     current_state = await app.state_manager.get_state(token)
+#     state_dict = current_state.dict()
+#     for substate in state.get_full_name().split(".")[1:]:
+#         state_dict = state_dict[substate]
+#     assert state_dict["img_list"] == [
+#         "image1.jpg",
+#         "image2.jpg",
+#     ]
+#
+#     if isinstance(app.state_manager, StateManagerRedis):
+#         await app.state_manager.redis.close()
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("state", "delta"),
     [
         (
             FileUploadState,
-            {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+            {"state.file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
         ),
         (
             ChildFileUploadState,
             {
-                "file_state_base1.child_file_upload_state": {
+                "state.file_state_base1.child_file_upload_state": {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
@@ -718,14 +801,14 @@ async def test_dict_mutation_detection__plain_list(
         (
             GrandChildFileUploadState,
             {
-                "file_state_base1.file_state_base2.grand_child_file_upload_state": {
+                "state.file_state_base1.file_state_base2.grand_child_file_upload_state": {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
     ],
 )
-async def test_upload_file(tmp_path, state, delta, token: str):
+async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     """Test that file upload works correctly.
 
     Args:
@@ -734,9 +817,19 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         delta: Expected delta
         token: a Token.
     """
+    class_subclasses = {
+        State: {state if state is FileUploadState else FileStateBase1},
+        FileUploadState : set(),
+        FileStateBase1: {ChildFileUploadState, FileStateBase2},
+        FileStateBase2: {GrandChildFileUploadState},
+        GrandChildFileUploadState: set(),
+        ChildFileUploadState: set(),
+    }
+
+    mocker.patch("reflex.state.State.class_subclasses", class_subclasses)
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
-    app = App(state=state if state is FileUploadState else FileStateBase1)
+    app = App(state=State)
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(token)
     data = b"This is binary data"
@@ -777,7 +870,6 @@ async def test_upload_file(tmp_path, state, delta, token: str):
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
-
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(

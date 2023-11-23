@@ -113,7 +113,7 @@ def UploadFile():
             ),
         )
 
-    app = rx.App()
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.compile()
 

@@ -153,10 +153,6 @@ class App(Base):
         state_subclasses = BaseState.__subclasses__()
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
-        # For tests, make rx.State the state if not provided(Typically useful for app harness tests)
-        if is_testing_env and not self.state:
-            self.state = State
-
         # Special case to allow test cases have multiple subclasses of rx.BaseState.
         if not is_testing_env:
             # Only one Base State class is allowed.

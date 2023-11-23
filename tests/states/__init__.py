@@ -6,6 +6,7 @@ from .mutation import DictMutationTestState, ListMutationTestState, MutableTestS
 from .upload import (
     ChildFileUploadState,
     FileStateBase1,
+    FileStateBase2,
     FileUploadState,
     GrandChildFileUploadState,
     SubUploadState,

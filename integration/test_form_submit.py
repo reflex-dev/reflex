@@ -22,7 +22,7 @@ def FormSubmit():
         def form_submit(self, form_data: dict):
             self.form_data = form_data
 
-    app = rx.App()
+    app = rx.App(state=rx.State)
 
     @app.add_page
     def index():
@@ -75,7 +75,7 @@ def FormSubmitName():
         def form_submit(self, form_data: dict):
             self.form_data = form_data
 
-    app = rx.App()
+    app = rx.App(state=rx.State)
 
     @app.add_page
     def index():
