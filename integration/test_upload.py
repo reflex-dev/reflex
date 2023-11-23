@@ -205,8 +205,8 @@ async def test_upload_file(
     state = await upload_file.get_state(token)
     if secondary:
         # only the secondary form tracks progress and chain events
-        assert state.event_order.count("upload_progress") == 1
-        assert state.event_order.count("chain_event") == 1
+        assert state.substates["upload_state"].event_order.count("upload_progress") == 1
+        assert state.substates["upload_state"].event_order.count("chain_event") == 1
 
 
 @pytest.mark.asyncio
@@ -349,7 +349,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
 
     # look up the backend state and assert on progress
     state = await upload_file.get_state(token)
-    assert state.progress_dicts
-    assert exp_name not in state._file_data
+    assert state.substates["upload_state"].progress_dicts
+    assert exp_name not in state.substates["upload_state"]._file_data
 
     target_file.unlink()
