@@ -14,8 +14,6 @@ from reflex.components.component import (
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler
-from reflex.state import State
-from reflex.event import EventHandler
 from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports

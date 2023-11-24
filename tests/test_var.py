@@ -6,7 +6,6 @@ import pytest
 from pandas import DataFrame
 
 from reflex.base import Base
-from reflex.state import State
 from reflex.state import BaseState
 from reflex.vars import (
     BaseVar,

@@ -15,7 +15,6 @@ from reflex.components.component import (
     StatefulComponent,
 )
 from reflex.config import get_config
-from reflex.state import State
 from reflex.state import BaseState
 from reflex.utils.imports import ImportVar
 
