@@ -362,6 +362,9 @@ class CodeBlock(Component):
     # The language to use.
     language: Var[LiteralCodeLanguage] = "python"  # type: ignore
 
+    # The code to display.
+    code: Var[str]
+
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
 
@@ -469,9 +472,14 @@ class CodeBlock(Component):
             if key not in cls.get_fields():
                 custom_style[key] = value
 
+        # Carry the children (code) via props
+        if children:
+            props["code"] = children[0]
+            if not isinstance(props["code"], Var):
+                props["code"] = Var.create(props["code"], _var_is_string=True)
+
         # Create the component.
         code_block = super().create(
-            *children,
             **props,
             custom_style=Style(custom_style),
         )
@@ -490,7 +498,9 @@ class CodeBlock(Component):
             style=Var.create(
                 format.to_camel_case(self.theme._var_name), _var_is_local=False
             )
-        ).remove_props("theme")
+        ).remove_props("theme", "code")
+        if self.code is not None:
+            out.special_props.add(Var.create_safe(f"children={str(self.code)}"))
         return out
 
 
