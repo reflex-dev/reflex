@@ -81,7 +81,8 @@ def RadixThemesApp():
         )
 
     app = rx.App(
-        state=rx.State, theme=rdxt.theme(rdxt.theme_panel(), accent_color="grass"),
+        state=rx.State,
+        theme=rdxt.theme(rdxt.theme_panel(), accent_color="grass"),
     )
     app.add_page(index)
     app.compile()

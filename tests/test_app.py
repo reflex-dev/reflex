@@ -816,10 +816,11 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         state: The state class.
         delta: Expected delta
         token: a Token.
+        mocker: pytest mocker object.
     """
     class_subclasses = {
         State: {state if state is FileUploadState else FileStateBase1},
-        FileUploadState : set(),
+        FileUploadState: set(),
         FileStateBase1: {ChildFileUploadState, FileStateBase2},
         FileStateBase2: {GrandChildFileUploadState},
         GrandChildFileUploadState: set(),
@@ -870,6 +871,7 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
 
     if isinstance(app.state_manager, StateManagerRedis):
         await app.state_manager.redis.close()
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -983,10 +985,7 @@ class DynamicState(BaseState):
 
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    index_page,
-    windows_platform: bool,
-    token: str,
-    mocker
+    index_page, windows_platform: bool, token: str, mocker
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -997,12 +996,13 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         index_page: The index page.
         windows_platform: Whether the system is windows.
         token: a Token.
+        mocker: pytest mocker object.
     """
-    class_subclasses = {
-        State: {DynamicState}
-    }
+    class_subclasses = {State: {DynamicState}}
     mocker.patch("reflex.state.State.class_subclasses", class_subclasses)
-    DynamicState.add_var(constants.CompileVars.IS_HYDRATED,type_=bool, default_value=False)
+    DynamicState.add_var(
+        constants.CompileVars.IS_HYDRATED, type_=bool, default_value=False
+    )
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
     if windows_platform:

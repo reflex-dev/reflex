@@ -7,6 +7,7 @@ import copy
 import functools
 import inspect
 import json
+import os
 import traceback
 import urllib.parse
 import uuid
@@ -285,6 +286,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
         """
+        reload = os.getenv(constants.RELOAD_CONFIG) == "True"
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
@@ -295,9 +297,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
             # fix up parent class_substates
-            cls.class_subclasses[parent_state].add(cls) if not any(
-                [c.__name__ == cls.__name__ for c in cls.class_subclasses[parent_state]]
-            ) else None
+            if not reload:
+                cls.class_subclasses[parent_state].add(cls)
+            else:
+                cls.class_subclasses[parent_state].add(cls) if not any(
+                    [
+                        c.__name__ == cls.__name__
+                        for c in cls.class_subclasses[parent_state]
+                    ]
+                ) else None
 
         cls.new_backend_vars = {
             name: value
