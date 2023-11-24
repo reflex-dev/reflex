@@ -1,5 +1,5 @@
 """A code component."""
-
+import re
 from typing import Dict, Literal, Optional, Union
 
 from reflex.components.component import Component
@@ -382,16 +382,21 @@ class CodeBlock(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         merged_imports = super()._get_imports()
+        # Get all themes from a cond literal
+        themes = re.findall(r"`(.*?)`", self.theme._var_name)
+        if not themes:
+            themes = [self.theme._var_name]
         merged_imports = imports.merge_imports(
             merged_imports,
             {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.theme._var_name}": {
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{theme}": {
                     ImportVar(
-                        tag=format.to_camel_case(self.theme._var_name),
+                        tag=format.to_camel_case(theme),
                         is_default=True,
                         install=False,
                     )
                 }
+                for theme in themes
             },
         )
         if (
@@ -443,7 +448,7 @@ class CodeBlock(Component):
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
-        if "theme" in props:
+        if "theme" in props and not isinstance(props["theme"], Var):
             props["theme"] = (
                 "one-light"
                 if props["theme"] == "light"
@@ -494,9 +499,13 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
+        theme_cond_predicate, qmark, theme_cond_value = self.theme._var_name.partition("?")
         out.add_props(
             style=Var.create(
-                format.to_camel_case(self.theme._var_name), _var_is_local=False
+                format.to_camel_case(
+                    f"{theme_cond_predicate}{qmark}{theme_cond_value.replace('`', '')}"
+                ),
+                _var_is_local=False,
             )
         ).remove_props("theme", "code")
         if self.code is not None:
