@@ -8,6 +8,7 @@ import importlib
 from typing import Type
 
 from reflex.page import page as page
+from reflex.utils import console
 from reflex.utils.format import to_snake_case
 
 _ALL_COMPONENTS = [
@@ -181,10 +182,6 @@ _ALL_COMPONENTS = [
     "StatGroup",
     "StatHelpText",
     "StatLabel",
-    "StatArrow",
-    "StatGroup",
-    "StatHelpText",
-    "StatLabel",
     "StatNumber",
     "Step",
     "StepDescription",
@@ -250,7 +247,7 @@ _MAPPING = {
     "reflex.base": ["base", "Base"],
     "reflex.compiler": ["compiler"],
     "reflex.compiler.utils": ["get_asset_path"],
-    "reflex.components": _ALL_COMPONENTS,
+    "reflex.components": _ALL_COMPONENTS + ["chakra", "next"],
     "reflex.components.component": ["memo"],
     "reflex.components.graphing": ["recharts"],
     "reflex.config": ["config", "Config", "DBConfig"],
@@ -285,7 +282,31 @@ _MAPPING = {
     "reflex.utils": ["utils"],
     "reflex.vars": ["vars", "cached_var", "Var"],
 }
-_MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
+
+
+def _reverse_mapping(mapping: dict[str, list]) -> dict[str, str]:
+    """Reverse the mapping used to lazy loading, and check for conflicting name.
+
+    Args:
+        mapping: The mapping to reverse.
+
+    Returns:
+        The reversed mapping.
+    """
+    reversed_mapping = {}
+    for key, values in mapping.items():
+        for value in values:
+            if value not in reversed_mapping:
+                reversed_mapping[value] = key
+            else:
+                console.warn(
+                    f"Key {value} is present multiple times in the imports _MAPPING: {key} / {reversed_mapping[value]}"
+                )
+    return reversed_mapping
+
+
+# _MAPPING = {value: key for key, values in _MAPPING.items() for value in values}
+_MAPPING = _reverse_mapping(_MAPPING)
 
 
 def _removeprefix(text, prefix):

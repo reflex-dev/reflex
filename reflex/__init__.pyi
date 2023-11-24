@@ -440,6 +440,8 @@ from reflex.components import clear_selected_files as clear_selected_files
 from reflex.components import EditorButtonList as EditorButtonList
 from reflex.components import EditorOptions as EditorOptions
 from reflex.components import NoSSRComponent as NoSSRComponent
+from reflex.components import chakra as chakra
+from reflex.components import next as next
 from reflex.components.component import memo as memo
 from reflex.components.graphing import recharts as recharts
 from reflex import config as config

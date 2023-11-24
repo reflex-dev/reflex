@@ -1,13 +1,10 @@
 """An image component."""
 from __future__ import annotations
 
-import base64
-import io
 from typing import Any, Optional, Union
 
 from reflex.components.component import Component
 from reflex.components.libs.chakra import ChakraComponent, LiteralImageLoading
-from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
 
@@ -15,7 +12,7 @@ class Image(ChakraComponent):
     """Display an image."""
 
     tag = "Image"
-
+    alias = "ChakraImage"
     # How to align the image within its bounds. It maps to css `object-position` property.
     align: Var[str]
 
@@ -79,27 +76,3 @@ class Image(ChakraComponent):
         if src is not None and not isinstance(src, (Var)):
             props["src"] = Var.create(value=src, _var_is_string=True)
         return super().create(*children, **props)
-
-
-try:
-    from PIL.Image import Image as Img
-
-    @serializer
-    def serialize_image(image: Img) -> str:
-        """Serialize a plotly figure.
-
-        Args:
-            image: The image to serialize.
-
-        Returns:
-            The serialized image.
-        """
-        buff = io.BytesIO()
-        image.save(buff, format=getattr(image, "format", None) or "PNG")
-        image_bytes = buff.getvalue()
-        base64_image = base64.b64encode(image_bytes).decode("utf-8")
-        mime_type = getattr(image, "get_format_mimetype", lambda: "image/png")()
-        return f"data:{mime_type};base64,{base64_image}"
-
-except ImportError:
-    pass

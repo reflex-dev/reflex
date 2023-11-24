@@ -49,7 +49,10 @@ class ImportVar(Base):
         Returns:
             The name(tag name with alias) of tag.
         """
-        return self.tag if not self.alias else " as ".join([self.tag, self.alias])  # type: ignore
+        if self.alias:
+            return self.alias if self.is_default else " as ".join([self.tag, self.alias])  # type: ignore
+        else:
+            return self.tag or ""
 
     def __hash__(self) -> int:
         """Define a hash function for the import var.
