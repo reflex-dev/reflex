@@ -233,14 +233,14 @@ class Markdown(Component):
             The formatted component map.
         """
         components = {
-            tag: f"{{({{{_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
+            tag: f"{{({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
         components[
             "code"
-        ] = f"""{{({{inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        ] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{
