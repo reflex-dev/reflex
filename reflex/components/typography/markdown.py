@@ -32,6 +32,7 @@ _REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
 _REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
+
 # Component Mapping
 def get_base_component_map() -> dict[str, Callable]:
     """Get the base component map.
@@ -105,10 +106,10 @@ class Markdown(Component):
         # Custom styles are deprecated.
         if "custom_styles" in props:
             console.deprecate(
-                "rx.markdown custom_styles",
-                "Use the component_map prop instead.",
-                "0.2.9",
-                "0.3.1",
+                feature_name="rx.markdown custom_styles",
+                reason="Use the component_map prop instead.",
+                deprecation_version="0.2.9",
+                removal_version="0.4.0",
             )
 
         # Update the base component map with the custom component map.

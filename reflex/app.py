@@ -428,7 +428,7 @@ class App(Base):
                 feature_name="Passing script tags to add_page",
                 reason="Add script components as children to the page component instead",
                 deprecation_version="0.2.9",
-                removal_version="0.3.1",
+                removal_version="0.4.0",
             )
             component.children.extend(script_tags)
 
