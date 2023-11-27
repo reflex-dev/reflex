@@ -4,6 +4,8 @@ Anything imported here will be available in the default Reflex import as `rx.*`.
 To signal to typecheckers that something should be reexported,
 we use the Flask "import name as name" syntax.
 """
+from __future__ import annotations
+
 import importlib
 from typing import Type
 
