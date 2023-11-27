@@ -656,13 +656,7 @@ class App(Base):
 
         with progress, concurrent.futures.ThreadPoolExecutor() as thread_pool:
             fixed_pages = 7
-            compile_total = sum(
-                [
-                    len(self.pages),  # Memoize stateful components
-                    len(self.pages) + fixed_pages,  # Compile pages
-                ]
-            )
-            task = progress.add_task("Memoize:", total=compile_total)
+            task = progress.add_task("Compiling:", total=len(self.pages) + fixed_pages)
 
             def mark_complete(_=None):
                 progress.advance(task)
@@ -685,12 +679,9 @@ class App(Base):
                 stateful_components_path,
                 stateful_components_code,
                 page_components,
-            ) = compiler.compile_stateful_components(
-                self.pages.values(), on_complete=mark_complete
-            )
+            ) = compiler.compile_stateful_components(self.pages.values())
             compile_results.append((stateful_components_path, stateful_components_code))
 
-            progress.update(task, description="Compile:")
             result_futures = []
 
             def submit_work(fn, *args, **kwargs):
@@ -749,15 +740,18 @@ class App(Base):
             for component in custom_components:
                 all_imports.update(component.get_imports())
 
-            # Empty the .web pages directory.
-            compiler.purge_web_pages_dir()
-
-            # Install frontend packages.
-            self.get_frontend_packages(all_imports)
-
             # Wait for all compilation tasks to complete.
             for future in concurrent.futures.as_completed(result_futures):
                 compile_results.append(future.result())
+
+            # Empty the .web pages directory.
+            compiler.purge_web_pages_dir()
+
+            # Avoid flickering when installing frontend packages
+            progress.stop()
+
+            # Install frontend packages.
+            self.get_frontend_packages(all_imports)
 
             # Write the pages at the end to trigger the NextJS hot reload only once.
             write_page_futures = []

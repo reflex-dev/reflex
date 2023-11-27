@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Callable, Iterable, Optional, Type
+from typing import Iterable, Optional, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
@@ -211,7 +211,6 @@ def _compile_components(components: set[CustomComponent]) -> str:
 
 def _compile_stateful_components(
     page_components: list[BaseComponent],
-    on_complete: Callable[[], None],
 ) -> str:
     """Walk the page components and extract shared stateful components.
 
@@ -222,7 +221,6 @@ def _compile_stateful_components(
 
     Args:
         page_components: The Components or StatefulComponents to compile.
-        on_complete: The function to call when the stateful components from a single page are compiled.
 
     Returns:
         The rendered stateful components code.
@@ -260,7 +258,6 @@ def _compile_stateful_components(
 
     for page_component in page_components:
         get_shared_components_recursive(page_component)
-        on_complete()
 
     # Don't import from the file that we're about to create.
     all_imports = utils.merge_imports(*all_import_dicts)
@@ -401,7 +398,6 @@ def compile_components(components: set[CustomComponent]):
 
 def compile_stateful_components(
     pages: Iterable[Component],
-    on_complete: Callable[[], None],
 ) -> tuple[str, str, list[BaseComponent]]:
     """Separately compile components that depend on State vars.
 
@@ -411,7 +407,6 @@ def compile_stateful_components(
 
     Args:
         pages: The pages to extract stateful components from.
-        on_complete: The function to call when the stateful components are compiled.
 
     Returns:
         The path and code of the compiled stateful components.
@@ -420,7 +415,7 @@ def compile_stateful_components(
 
     # Compile the stateful components.
     page_components = [StatefulComponent.compile_from(page) or page for page in pages]
-    code = _compile_stateful_components(page_components, on_complete=on_complete)
+    code = _compile_stateful_components(page_components)
     return output_path, code, page_components
 
 
