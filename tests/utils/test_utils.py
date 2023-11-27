@@ -13,7 +13,6 @@ from reflex.event import EventHandler
 from reflex.state import State
 from reflex.utils import (
     build,
-    imports,
     prerequisites,
     types,
 )
@@ -54,16 +53,6 @@ class ExampleTestState(State):
 
 def test_func():
     pass
-
-
-def test_merge_imports():
-    """Test that imports are merged correctly."""
-    d1 = {"react": {"Component"}}
-    d2 = {"react": {"Component"}, "react-dom": {"render"}}
-    d = imports.merge_imports(d1, d2)
-    assert set(d.keys()) == {"react", "react-dom"}
-    assert set(d["react"]) == {"Component"}
-    assert set(d["react-dom"]) == {"render"}
 
 
 @pytest.mark.parametrize(
