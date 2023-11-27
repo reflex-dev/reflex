@@ -24,12 +24,6 @@ test_vars = [
 ]
 
 
-# class BaseState(State):
-#     """A Test State."""
-#
-#     val: str = "key"
-
-
 @pytest.fixture
 def TestObj():
     class TestObj(Base):
