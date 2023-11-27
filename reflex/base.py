@@ -33,6 +33,8 @@ def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None
             ) from te
 
 
+# monkeypatch pydantic validate_field_name method to skip validating
+# shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
 pydantic.main.validate_field_name = validate_field_name  # type: ignore
 
 

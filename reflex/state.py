@@ -291,13 +291,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
-            # fix up parent class_substates
+
             if (
                 any(
                     [
-                        x
-                        for x in cls.class_subclasses[parent_state]
-                        if x.__name__ == cls.__name__
+                        c
+                        for c in cls.class_subclasses[parent_state]
+                        if c.__name__ == cls.__name__
                     ]
                 )
                 and not is_testing_env
@@ -306,15 +306,16 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                     f"The substate class '{cls.__name__}' has been defined multiple times. Shadowing "
                     f"substate classes is not allowed."
                 )
-
+            # clear all existing subclasses when app is reloaded via
+            # utils.prerequisites.get_app(reload=True)
             cls.class_subclasses[parent_state] = set(
                 [
-                    x
-                    for x in cls.class_subclasses[parent_state]
-                    if x.__name__ != cls.__name__
+                    c
+                    for c in cls.class_subclasses[parent_state]
+                    if c.__name__ != cls.__name__
                 ]
             )
-
+            # fix up parent class_substates
             cls.class_subclasses[parent_state].add(cls)
 
         cls.new_backend_vars = {
@@ -483,7 +484,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The substates of the state.
         """
-        # return set(cls.__subclasses__())
         return cls.class_subclasses[cls]
 
     @classmethod
