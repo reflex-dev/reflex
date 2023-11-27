@@ -1351,6 +1351,8 @@ class StatefulComponent(BaseComponent):
         Returns:
             The stateful component or None if the component should not be memoized.
         """
+        from reflex.components.layout.foreach import Foreach
+
         if component.tag is None:
             # Only memoize components with a tag.
             return None
@@ -1367,8 +1369,13 @@ class StatefulComponent(BaseComponent):
         if not has_var_data:
             # Check for special-cases in child components.
             for child in component.children:
+                # Skip BaseComponent and StatefulComponent children.
                 if not isinstance(child, Component):
                     continue
+                # Always consider Foreach something that must be memoized by the parent.
+                if isinstance(child, Foreach):
+                    has_var_data = True
+                    break
                 child = cls._child_var(child)
                 if isinstance(child, Var) and child._var_data:
                     has_var_data = True
@@ -1636,7 +1643,13 @@ class StatefulComponent(BaseComponent):
         Returns:
             The memoized component tree.
         """
-        component.children = [cls.compile_from(child) for child in component.children]
+        from reflex.components.layout.foreach import Foreach
+
+        # Foreach must be memoized as a single component to retain index Var context.
+        if not isinstance(component, Foreach):
+            component.children = [
+                cls.compile_from(child) for child in component.children
+            ]
         if isinstance(component, Component):
             stateful_component = cls.create(component)
             if stateful_component is not None:
