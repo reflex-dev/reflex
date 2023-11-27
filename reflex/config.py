@@ -290,7 +290,7 @@ class Config(Base):
                 feature_name="Passing event_namespace in the config",
                 reason="",
                 deprecation_version="0.3.5",
-                removal_version="0.3.10",
+                removal_version="0.4.0",
             )
             return f'/{self.event_namespace.strip("/")}'
 
