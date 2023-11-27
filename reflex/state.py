@@ -7,6 +7,7 @@ import copy
 import functools
 import inspect
 import json
+import os
 import traceback
 import urllib.parse
 import uuid
@@ -223,21 +224,13 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             parent_state: The parent state.
             **kwargs: The kwargs to pass to the Pydantic init method.
 
-        Raises:
-            ValueError: If a substate class shadows another.
         """
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
         # Setup the substates.
         for substate in self.get_substates():
-            substate_name = substate.get_name()
-            if substate_name in self.substates:
-                raise ValueError(
-                    f"The substate class '{substate_name}' has been defined multiple times. Shadowing "
-                    f"substate classes is not allowed."
-                )
-            self.substates[substate_name] = substate(parent_state=self)
+            self.substates[substate.get_name()] = substate(parent_state=self)
         # Convert the event handlers to functions.
         self._init_event_handlers()
 
@@ -284,7 +277,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
+
+        Raises:
+            ValueError: If a substate class shadows another.
         """
+        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
@@ -295,6 +292,20 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
             # fix up parent class_substates
+            if (
+                any(
+                    [
+                        x
+                        for x in cls.class_subclasses[parent_state]
+                        if x.__name__ == cls.__name__
+                    ]
+                )
+                and not is_testing_env
+            ):
+                raise ValueError(
+                    f"The substate class '{cls.__name__}' has been defined multiple times. Shadowing "
+                    f"substate classes is not allowed."
+                )
 
             cls.class_subclasses[parent_state] = set(
                 [

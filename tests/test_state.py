@@ -2187,9 +2187,20 @@ def test_mutable_copy_vars(mutable_state, copy_func):
         assert not isinstance(var_copy, MutableProxy)
 
 
-def test_duplicate_substate_class(duplicate_substate):
+def test_duplicate_substate_class(mocker):
+    mocker.patch("reflex.state.os.environ", {})
     with pytest.raises(ValueError):
-        duplicate_substate()
+
+        class TestState(BaseState):
+            pass
+
+        class ChildTestState(TestState):  # type: ignore # noqa
+            pass
+
+        class ChildTestState(TestState):  # type: ignore # noqa
+            pass
+
+        return TestState
 
 
 class Foo(Base):
