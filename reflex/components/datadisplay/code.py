@@ -3,7 +3,7 @@ import re
 from typing import Dict, Literal, Optional, Union
 
 from reflex.components.component import Component
-from reflex.components.forms import Button
+from reflex.components.forms import Button, color_mode_cond
 from reflex.components.layout import Box
 from reflex.components.libs.chakra import (
     ChakraComponent,
@@ -445,6 +445,10 @@ class CodeBlock(Component):
         """
         # This component handles style in a special prop.
         custom_style = props.pop("custom_style", {})
+
+        if "theme" not in props:
+            # Default color scheme responds to global color mode.
+            props["theme"] = color_mode_cond(light="one-light", dark="one-dark")
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
