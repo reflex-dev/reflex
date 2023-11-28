@@ -11,11 +11,11 @@ from typing import List, Optional
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
-from reflex_cli.utils import dependency as cli_dependency
+from reflex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, dependency, telemetry
+from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -98,7 +98,7 @@ def _init(
     prerequisites.initialize_gitignore()
 
     # Initialize the requirements.txt.
-    dependency.initialize_requirements_txt()
+    prerequisites.initialize_requirements_txt()
 
     # Finish initializing the app.
     console.success(f"Initialized {app_name}")
@@ -483,7 +483,7 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    cli_dependency.check_requirements()
+    dependency.check_requirements()
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
