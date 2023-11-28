@@ -540,6 +540,29 @@ def VarOperations():
             rx.text(rx.Var.range(2, 10, 2).join(","), id="list_join_range2"),
             rx.text(rx.Var.range(5, 0, -1).join(","), id="list_join_range3"),
             rx.text(rx.Var.range(0, 3).join(","), id="list_join_range4"),
+            rx.box(
+                rx.foreach(
+                    rx.Var.range(0, 2), lambda x: rx.text(VarOperationState.list1[x])
+                ),
+                id="foreach_list_arg",
+            ),
+            rx.box(
+                rx.foreach(
+                    rx.Var.range(0, 2),
+                    lambda x, ix: rx.text(VarOperationState.list1[ix]),
+                ),
+                id="foreach_list_ix",
+            ),
+            rx.box(
+                rx.foreach(
+                    rx.Var.create_safe(list(range(0, 3))).to(list[int]),
+                    lambda x: rx.foreach(
+                        rx.Var.range(x),
+                        lambda y: rx.text(VarOperationState.list1[y]),
+                    ),
+                ),
+                id="foreach_list_nested",
+            ),
         )
 
     app.compile()
@@ -731,6 +754,10 @@ def test_var_operations(driver, var_operations: AppHarness):
         ("list_index_mod", "second"),
         # html component with var
         ("html_str", "hello"),
+        # index into list with foreach
+        ("foreach_list_arg", "1\n2"),
+        ("foreach_list_ix", "1\n2"),
+        ("foreach_list_nested", "1\n1\n2"),
     ]
 
     for tag, expected in tests:

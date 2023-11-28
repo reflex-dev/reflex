@@ -103,8 +103,6 @@ class PackageJson(SimpleNamespace):
 
     DEPENDENCIES = {
         "axios": "1.4.0",
-        "focus-visible": "5.2.0",
-        "framer-motion": "10.16.4",
         "json5": "2.2.3",
         "next": "14.0.1",
         "next-sitemap": "4.1.8",

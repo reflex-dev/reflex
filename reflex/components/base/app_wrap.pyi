@@ -8,21 +8,21 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.components.component import Component
-from .bare import Bare
+from reflex.components.layout.fragment import Fragment
+from reflex.vars import Var
 
-class AppWrap(Bare):
+class AppWrap(Fragment):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        contents: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,

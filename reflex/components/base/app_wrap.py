@@ -1,10 +1,10 @@
 """Top-level component that wraps the entire app."""
 from reflex.components.component import Component
+from reflex.components.layout.fragment import Fragment
+from reflex.vars import Var
 
-from .bare import Bare
 
-
-class AppWrap(Bare):
+class AppWrap(Fragment):
     """Top-level component that wraps the entire app."""
 
     @classmethod
@@ -14,4 +14,6 @@ class AppWrap(Bare):
         Returns:
             A new AppWrap component containing {children}.
         """
-        return super().create(contents="{children}")
+        return super().create(
+            Var.create("{children}", _var_is_local=False, _var_is_string=False)
+        )

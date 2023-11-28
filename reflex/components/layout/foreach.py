@@ -1,13 +1,14 @@
 """Create a list of components from an iterable."""
 from __future__ import annotations
 
-import typing
+import inspect
+from hashlib import md5
 from typing import Any, Callable, Iterable
 
 from reflex.components.component import Component
 from reflex.components.layout.fragment import Fragment
 from reflex.components.tags import IterTag
-from reflex.vars import BaseVar, Var, get_unique_variable_name
+from reflex.vars import Var
 
 
 class Foreach(Component):
@@ -34,33 +35,43 @@ class Foreach(Component):
         Raises:
             TypeError: If the iterable is of type Any.
         """
-        try:
-            type_ = (
-                iterable._var_type
-                if iterable._var_type.mro()[0] == dict
-                else iterable._var_type.__args__[0]
-            )
-        except Exception:
-            type_ = Any
         iterable = Var.create(iterable)  # type: ignore
         if iterable._var_type == Any:
             raise TypeError(
                 f"Could not foreach over var of type Any. (If you are trying to foreach over a state var, add a type annotation to the var.)"
             )
-        arg = BaseVar(_var_name="_", _var_type=type_, _var_is_local=True)
-        comp = IterTag(iterable=iterable, render_fn=render_fn).render_component(arg)
-        return cls(
+        component = cls(
             iterable=iterable,
             render_fn=render_fn,
-            children=[comp],
             **props,
         )
+        # Keep a ref to a rendered component to determine correct imports.
+        component.children = [
+            component._render(props=dict(index_var_name="i")).render_component()
+        ]
+        return component
 
-    def _render(self) -> IterTag:
+    def _render(self, props: dict[str, Any] | None = None) -> IterTag:
+        props = {} if props is None else props.copy()
+
+        # Determine the arg var name based on the params accepted by render_fn.
+        render_sig = inspect.signature(self.render_fn)
+        params = list(render_sig.parameters.values())
+        if len(params) >= 1:
+            props.setdefault("arg_var_name", params[0].name)
+
+        if len(params) >= 2:
+            # Determine the index var name based on the params accepted by render_fn.
+            props.setdefault("index_var_name", params[1].name)
+        elif "index_var_name" not in props:
+            # Otherwise, use a deterministic index, based on the rendered code.
+            code_hash = md5(str(self.children[0].render()).encode("utf-8")).hexdigest()
+            props.setdefault("index_var_name", f"index_{code_hash}")
+
         return IterTag(
             iterable=self.iterable,
             render_fn=self.render_fn,
-            index_var_name=get_unique_variable_name(),
+            **props,
         )
 
     def render(self):
@@ -70,20 +81,7 @@ class Foreach(Component):
             The dictionary for template of component.
         """
         tag = self._render()
-        try:
-            type_ = (
-                tag.iterable._var_type
-                if tag.iterable._var_type.mro()[0] == dict
-                else typing.get_args(tag.iterable._var_type)[0]
-            )
-        except Exception:
-            type_ = Any
-        arg = BaseVar(
-            _var_name=get_unique_variable_name(),
-            _var_type=type_,
-        )
-        index_arg = tag.get_index_var_arg()
-        component = tag.render_component(arg)
+        component = tag.render_component()
         return dict(
             tag.add_props(
                 **self.event_triggers,
@@ -96,7 +94,7 @@ class Foreach(Component):
                 props=tag.format_props(),
             ),
             iterable_state=tag.iterable._var_full_name,
-            arg_name=arg._var_name,
-            arg_index=index_arg,
+            arg_name=tag.arg_var_name,
+            arg_index=tag.get_index_var_arg(),
             iterable_type=tag.iterable._var_type.mro()[0].__name__,
         )

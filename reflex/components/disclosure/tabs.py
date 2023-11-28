@@ -44,6 +44,9 @@ class Tabs(ChakraComponent):
     # The color scheme of the tabs.
     color_scheme: Var[LiteralColorScheme]
 
+    # Index of the selected tab (in controlled mode).
+    index: Var[int]
+
     @classmethod
     def create(
         cls, *children, items: Optional[List[Tuple[str, str]]] = None, **props
