@@ -11,11 +11,11 @@ from typing import List, Optional
 import typer
 import typer.core
 from reflex_cli.deployments import deployments_cli
-from reflex_cli.utils import dependency
+from reflex_cli.utils import dependency as cli_dependency
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, telemetry
+from reflex.utils import console, dependency, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -483,7 +483,7 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    dependency.check_requirements()
+    cli_dependency.check_requirements()
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
