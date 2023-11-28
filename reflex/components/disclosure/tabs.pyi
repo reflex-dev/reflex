@@ -106,6 +106,7 @@ class Tabs(ChakraComponent):
                 ],
             ]
         ] = None,
+        index: Optional[Union[Var[int], int]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -173,6 +174,7 @@ class Tabs(ChakraComponent):
             orientation: The orientation of the tab list.
             variant: "line" | "enclosed" | "enclosed-colored" | "soft-rounded" | "solid-rounded" | "unstyled"
             color_scheme: The color scheme of the tabs.
+            index: Index of the selected tab (in controlled mode).
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
