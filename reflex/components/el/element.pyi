@@ -7,11 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Dict
 from reflex.components.component import Component
 
 class Element(Component):
-    def render(self) -> Dict: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -22,7 +20,7 @@ class Element(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,

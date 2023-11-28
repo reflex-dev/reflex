@@ -7,7 +7,6 @@ from pandas import DataFrame
 
 from reflex.base import Base
 from reflex.state import State
-from reflex.utils.imports import ImportVar
 from reflex.vars import (
     BaseVar,
     ComputedVar,
@@ -23,8 +22,6 @@ test_vars = [
     ),
     BaseVar(_var_name="local2", _var_type=str, _var_is_local=True),
 ]
-
-test_import_vars = [ImportVar(tag="DataGrid"), ImportVar(tag="DataGrid", alias="Grid")]
 
 
 class BaseState(State):
@@ -608,26 +605,6 @@ def test_computed_var_with_annotation_error(request, fixture, full_name):
         err.value.args[0]
         == f"The State var `{full_name}` has no attribute 'foo' or may have been annotated wrongly."
     )
-
-
-@pytest.mark.parametrize(
-    "import_var,expected",
-    zip(
-        test_import_vars,
-        [
-            "DataGrid",
-            "DataGrid as Grid",
-        ],
-    ),
-)
-def test_import_var(import_var, expected):
-    """Test that the import var name is computed correctly.
-
-    Args:
-        import_var: The import var.
-        expected: expected name
-    """
-    assert import_var.name == expected
 
 
 @pytest.mark.parametrize(

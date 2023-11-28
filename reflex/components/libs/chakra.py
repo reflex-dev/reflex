@@ -15,6 +15,7 @@ class ChakraComponent(Component):
     library = "@chakra-ui/react@2.6.1"
     lib_dependencies: List[str] = [
         "@chakra-ui/system@2.5.7",
+        "focus-visible@5.2.0",
         "framer-motion@10.16.4",
     ]
 
@@ -24,6 +25,33 @@ class ChakraComponent(Component):
         return {
             (60, "ChakraProvider"): chakra_provider,
         }
+
+    def get_imports(self) -> imports.ImportDict:
+        """Chakra requires focus-visible and imported into each page.
+
+        This allows the GlobalStyle defined by the ChakraProvider to hide the blue border.
+
+        Returns:
+            The imports for the component.
+        """
+        return imports.merge_imports(
+            super().get_imports(),
+            {
+                "": {
+                    imports.ImportVar(
+                        tag="focus-visible/dist/focus-visible", install=False
+                    )
+                }
+            },
+        )
+
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        return {"sx": self.style}
 
     @classmethod
     @lru_cache(maxsize=None)
@@ -37,6 +65,7 @@ class ChakraComponent(Component):
             dep: [imports.ImportVar(tag=None, render=False)]
             for dep in [
                 "@chakra-ui/system@2.5.7",
+                "focus-visible@5.2.0",
                 "framer-motion@10.16.4",
             ]
         }
@@ -89,8 +118,6 @@ class ChakraProvider(ChakraComponent):
 
     def _get_custom_code(self) -> str | None:
         return """
-import '/styles/styles.css'
-
 const GlobalStyles = css`
   /* Hide the blue border around Chakra components. */
   .js-focus-visible :focus:not([data-focus-visible-added]) {

@@ -5,7 +5,12 @@ import pytest
 import reflex as rx
 from reflex.base import Base
 from reflex.components.base.bare import Bare
-from reflex.components.component import Component, CustomComponent, custom_component
+from reflex.components.component import (
+    Component,
+    CustomComponent,
+    StatefulComponent,
+    custom_component,
+)
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler
@@ -604,6 +609,47 @@ def test_format_component(component, rendered):
     assert str(component) == rendered
 
 
+def test_stateful_component(test_state):
+    """Test that a stateful component is created correctly.
+
+    Args:
+        test_state: A test state.
+    """
+    text_component = rx.text(test_state.num)
+    stateful_component = StatefulComponent.compile_from(text_component)
+    assert isinstance(stateful_component, StatefulComponent)
+    assert stateful_component.tag is not None
+    assert stateful_component.tag.startswith("Text_")
+    assert stateful_component.references == 1
+    sc2 = StatefulComponent.compile_from(rx.text(test_state.num))
+    assert isinstance(sc2, StatefulComponent)
+    assert stateful_component.references == 2
+    assert sc2.references == 2
+
+
+def test_stateful_component_memoize_event_trigger(test_state):
+    """Test that a stateful component is created correctly with events.
+
+    Args:
+        test_state: A test state.
+    """
+    button_component = rx.button("Click me", on_click=test_state.do_something)
+    stateful_component = StatefulComponent.compile_from(button_component)
+    assert isinstance(stateful_component, StatefulComponent)
+
+    # No event trigger? No StatefulComponent
+    assert not isinstance(
+        StatefulComponent.compile_from(rx.button("Click me")), StatefulComponent
+    )
+
+
+def test_stateful_banner():
+    """Test that a stateful component is created correctly with events."""
+    connection_modal_component = rx.connection_modal()
+    stateful_component = StatefulComponent.compile_from(connection_modal_component)
+    assert isinstance(stateful_component, StatefulComponent)
+
+
 TEST_VAR = Var.create_safe("test")._replace(
     merge_var_data=VarData(
         hooks={"useTest"}, imports={"test": {ImportVar(tag="test")}}, state="Test"
@@ -613,6 +659,43 @@ FORMATTED_TEST_VAR = Var.create(f"foo{TEST_VAR}bar")
 STYLE_VAR = TEST_VAR._replace(_var_name="style", _var_is_local=False)
 EVENT_CHAIN_VAR = TEST_VAR._replace(_var_type=EventChain)
 ARG_VAR = Var.create("arg")
+
+TEST_VAR_DICT_OF_DICT = Var.create_safe({"a": {"b": "test"}})._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_DICT_OF_DICT = Var.create_safe({"a": {"b": f"footestbar"}})._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_LIST = Var.create_safe([["test"]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_LIST = Var.create_safe([["footestbar"]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_LIST_OF_LIST = Var.create_safe([[["test"]]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST = Var.create_safe([[["footestbar"]]])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+TEST_VAR_LIST_OF_DICT = Var.create_safe([{"a": "test"}])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+FORMATTED_TEST_VAR_LIST_OF_DICT = Var.create_safe([{"a": "footestbar"}])._replace(
+    merge_var_data=TEST_VAR._var_data
+)
+
+
+class ComponentNestedVar(Component):
+    """A component with nested Var types."""
+
+    dict_of_dict: Var[Dict[str, Dict[str, str]]]
+    list_of_list: Var[List[List[str]]]
+    list_of_list_of_list: Var[List[List[List[str]]]]
+    list_of_dict: Var[List[Dict[str, str]]]
 
 
 class EventState(rx.State):
@@ -749,6 +832,46 @@ class EventState(rx.State):
             rx.fragment(on_click=lambda: EventState.handler2(TEST_VAR)),  # type: ignore
             [ARG_VAR, TEST_VAR],
             id="direct-event-handler-lambda",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(dict_of_dict={"a": {"b": TEST_VAR}}),
+            [TEST_VAR_DICT_OF_DICT],
+            id="direct-dict_of_dict",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(dict_of_dict={"a": {"b": f"foo{TEST_VAR}bar"}}),
+            [FORMATTED_TEST_VAR_DICT_OF_DICT],
+            id="fstring-dict_of_dict",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list=[[TEST_VAR]]),
+            [TEST_VAR_LIST_OF_LIST],
+            id="direct-list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list=[[f"foo{TEST_VAR}bar"]]),
+            [FORMATTED_TEST_VAR_LIST_OF_LIST],
+            id="fstring-list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list_of_list=[[[TEST_VAR]]]),
+            [TEST_VAR_LIST_OF_LIST_OF_LIST],
+            id="direct-list_of_list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_list_of_list=[[[f"foo{TEST_VAR}bar"]]]),
+            [FORMATTED_TEST_VAR_LIST_OF_LIST_OF_LIST],
+            id="fstring-list_of_list_of_list",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_dict=[{"a": TEST_VAR}]),
+            [TEST_VAR_LIST_OF_DICT],
+            id="direct-list_of_dict",
+        ),
+        pytest.param(
+            ComponentNestedVar.create(list_of_dict=[{"a": f"foo{TEST_VAR}bar"}]),
+            [FORMATTED_TEST_VAR_LIST_OF_DICT],
+            id="fstring-list_of_dict",
         ),
     ),
 )

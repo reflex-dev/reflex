@@ -54,17 +54,17 @@ def compile_import_statement(fields: list[imports.ImportVar]) -> tuple[str, list
     return default, list(rest)
 
 
-def validate_imports(imports: imports.ImportDict):
+def validate_imports(import_dict: imports.ImportDict):
     """Verify that the same Tag is not used in multiple import.
 
     Args:
-        imports: The dict of imports to validate
+        import_dict: The dict of imports to validate
 
     Raises:
         ValueError: if a conflict on "tag/alias" is detected for an import.
     """
     used_tags = {}
-    for lib, _imports in imports.items():
+    for lib, _imports in import_dict.items():
         for _import in _imports:
             import_name = (
                 f"{_import.tag}/{_import.alias}" if _import.alias else _import.tag
@@ -77,17 +77,19 @@ def validate_imports(imports: imports.ImportDict):
                 used_tags[import_name] = lib
 
 
-def compile_imports(imports: imports.ImportDict) -> list[dict]:
+def compile_imports(import_dict: imports.ImportDict) -> list[dict]:
     """Compile an import dict.
 
     Args:
-        imports: The import dict to compile.
+        import_dict: The import dict to compile.
 
     Returns:
         The list of import dict.
     """
+    collapsed_import_dict = imports.collapse_imports(import_dict)
+    validate_imports(collapsed_import_dict)
     import_dicts = []
-    for lib, fields in imports.items():
+    for lib, fields in collapsed_import_dict.items():
         default, rest = compile_import_statement(fields)
 
         # prevent lib from being rendered on the page if all imports are non rendered kind
@@ -252,6 +254,7 @@ def compile_custom_component(
             "name": component.tag,
             "props": props,
             "render": render.render(),
+            "custom_code": render.get_custom_code(),
         },
         imports,
     )
@@ -354,6 +357,18 @@ def get_components_path() -> str:
         The path of the compiled components.
     """
     return os.path.join(constants.Dirs.WEB_UTILS, "components" + constants.Ext.JS)
+
+
+def get_stateful_components_path() -> str:
+    """Get the path of the compiled stateful components.
+
+    Returns:
+        The path of the compiled stateful components.
+    """
+    return os.path.join(
+        constants.Dirs.WEB_UTILS,
+        constants.PageNames.STATEFUL_COMPONENTS + constants.Ext.JS,
+    )
 
 
 def get_asset_path(filename: str | None = None) -> str:

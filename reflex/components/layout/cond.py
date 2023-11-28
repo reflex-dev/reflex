@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, overload
 
-from reflex.components.component import Component
+from reflex.components.component import BaseComponent, Component
 from reflex.components.layout.fragment import Fragment
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs
@@ -22,17 +22,17 @@ class Cond(Component):
     cond: Var[Any]
 
     # The component to render if the cond is true.
-    comp1: Component = Fragment.create()
+    comp1: BaseComponent = Fragment.create()
 
     # The component to render if the cond is false.
-    comp2: Component = Fragment.create()
+    comp2: BaseComponent = Fragment.create()
 
     @classmethod
     def create(
         cls,
         cond: Var,
-        comp1: Component,
-        comp2: Optional[Component] = None,
+        comp1: BaseComponent,
+        comp2: Optional[BaseComponent] = None,
     ) -> Component:
         """Create a conditional component.
 
@@ -141,9 +141,9 @@ def cond(condition: Any, c1: Any, c2: Any = None):
     assert cond_var is not None, "The condition must be set."
 
     # If the first component is a component, create a Cond component.
-    if isinstance(c1, Component):
+    if isinstance(c1, BaseComponent):
         assert c2 is None or isinstance(
-            c2, Component
+            c2, BaseComponent
         ), "Both arguments must be components."
         return Cond.create(cond_var, c1, c2)
     if isinstance(c1, Var):
@@ -151,7 +151,7 @@ def cond(condition: Any, c1: Any, c2: Any = None):
 
     # Otherwise, create a conditional Var.
     # Check that the second argument is valid.
-    if isinstance(c2, Component):
+    if isinstance(c2, BaseComponent):
         raise ValueError("Both arguments must be props.")
     if c2 is None:
         raise ValueError("For conditional vars, the second argument must be set.")

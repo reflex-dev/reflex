@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+import re
 from typing import Dict, Literal, Optional, Union
 from reflex.components.component import Component
 from reflex.components.forms import Button
@@ -1024,6 +1025,7 @@ class CodeBlock(Component):
                 ],
             ]
         ] = None,
+        code: Optional[Union[Var[str], str]] = None,
         show_line_numbers: Optional[Union[Var[bool], bool]] = None,
         starting_line_number: Optional[Union[Var[int], int]] = None,
         wrap_long_lines: Optional[Union[Var[bool], bool]] = None,
@@ -1034,7 +1036,7 @@ class CodeBlock(Component):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -1090,6 +1092,7 @@ class CodeBlock(Component):
             copy_button: A custom copy button to override the default one.
             theme: The theme to use ("light" or "dark").
             language: The language to use.
+            code: The code to display.
             show_line_numbers: If this is enabled line numbers will be shown next to the code block.
             starting_line_number: The starting line number to use.
             wrap_long_lines: Whether to wrap long lines.
@@ -1119,7 +1122,7 @@ class Code(ChakraComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,

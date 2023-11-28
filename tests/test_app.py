@@ -257,7 +257,7 @@ def test_add_page_set_route_dynamic(index_page, windows_platform: bool):
     assert app.state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
         constants.ROUTER
     }
-    assert constants.ROUTER in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state()._computed_var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page, windows_platform: bool):
@@ -917,7 +917,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert app.state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
         constants.ROUTER
     }
-    assert constants.ROUTER in app.state().computed_var_dependencies
+    assert constants.ROUTER in app.state()._computed_var_dependencies
 
     sid = "mock_sid"
     client_ip = "127.0.0.1"
@@ -1210,7 +1210,9 @@ def test_app_wrap_compile_theme(compilable_app):
         "function AppWrap({children}) {"
         "return ("
         "<RadixThemesTheme accentColor={`plum`}>"
+        "<Fragment>"
         "{children}"
+        "</Fragment>"
         "</RadixThemesTheme>"
         ")"
         "}"
@@ -1261,7 +1263,9 @@ def test_app_wrap_priority(compilable_app):
         "<ChakraColorModeProvider>"
         "<Text>"
         "<Fragment2>"
+        "<Fragment>"
         "{children}"
+        "</Fragment>"
         "</Fragment2>"
         "</Text>"
         "</ChakraColorModeProvider>"

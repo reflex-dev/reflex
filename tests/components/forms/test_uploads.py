@@ -54,7 +54,7 @@ def test_upload_component_render(upload_component):
     assert upload["props"] == [
         "id={`default`}",
         "multiple={true}",
-        "onDrop={e => upload_files.default[1]((files) => e)}",
+        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
         "ref={ref_default}",
     ]
     assert upload["args"] == ("getRootProps", "getInputProps")
@@ -95,6 +95,6 @@ def test_upload_component_with_props_render(upload_component_with_props):
         "maxFiles={2}",
         "multiple={true}",
         "noDrag={true}",
-        "onDrop={e => upload_files.default[1]((files) => e)}",
+        "onDrop={e => setFilesById(filesById => ({...filesById, default: e}))}",
         "ref={ref_default}",
     ]
