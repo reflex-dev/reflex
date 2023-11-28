@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import textwrap
+from hashlib import md5
 from typing import Any, Callable, Dict, Union
 from reflex.compiler import utils
 from reflex.components.component import Component, CustomComponent
