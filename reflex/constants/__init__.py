@@ -35,7 +35,6 @@ from .config import (
     RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
-from .hosting import Hosting
 from .installer import (
     Bun,
     Fnm,
@@ -71,7 +70,6 @@ __ALL__ = [
     Fnm,
     GitIgnore,
     Hooks,
-    RequirementsTxt,
     Imports,
     IS_WINDOWS,
     LOCAL_STORAGE,
@@ -87,6 +85,7 @@ __ALL__ = [
     PYTEST_CURRENT_TEST,
     PRODUCTION_BACKEND_URL,
     Reflex,
+    RequirementsTxt,
     RouteArgType,
     RouteRegex,
     RouteVar,
@@ -100,5 +99,4 @@ __ALL__ = [
     Tailwind,
     Templates,
     CompileVars,
-    Hosting,
 ]
