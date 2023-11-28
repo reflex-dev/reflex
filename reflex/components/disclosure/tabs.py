@@ -45,7 +45,7 @@ class Tabs(ChakraComponent):
     color_scheme: Var[LiteralColorScheme]
 
     # Index of the selected tab (in controlled mode).
-    index: Var[int]
+    #index: Var[int]
 
     @classmethod
     def create(
