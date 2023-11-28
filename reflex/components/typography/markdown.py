@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+from hashlib import md5
 from typing import Any, Callable, Dict, Union
 
 from reflex.compiler import utils
@@ -67,8 +68,8 @@ def get_base_component_map() -> dict[str, Callable]:
         "li": lambda value: ListItem.create(value, margin_y="0.5em"),
         "a": lambda value: Link.create(value),
         "code": lambda value: Code.create(value),
-        "codeblock": lambda *_, **props: CodeBlock.create(
-            theme="light", margin_y="1em", **props
+        "codeblock": lambda value, **props: CodeBlock.create(
+            value, theme="light", margin_y="1em", **props
         ),
     }
 
@@ -232,14 +233,14 @@ class Markdown(Component):
             The formatted component map.
         """
         components = {
-            tag: f"{{({{{_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
+            tag: f"{{({{node, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {self.format_component(tag)}}}"
             for tag in self.component_map
         }
 
         # Separate out inline code and code blocks.
         components[
             "code"
-        ] = f"""{{({{inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
+        ] = f"""{{({{node, inline, className, {_CHILDREN._var_name}, {_PROPS._var_name}}}) => {{
     const match = (className || '').match(/language-(?<lang>.*)/);
     const language = match ? match[1] : '';
     if (language) {{
@@ -255,7 +256,7 @@ class Markdown(Component):
     return inline ? (
         {self.format_component("code")}
     ) : (
-        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False), children=Var.create_safe("String(children)", _var_is_local=False))}
+        {self.format_component("codeblock", language=Var.create_safe("language", _var_is_local=False))}
     );
       }}}}""".replace(
             "\n", " "
@@ -263,14 +264,41 @@ class Markdown(Component):
 
         return components
 
+    def _component_map_hash(self) -> str:
+        return md5(str(self.component_map).encode()).hexdigest()
+
+    def _get_component_map_name(self) -> str:
+        return f"ComponentMap_{self._component_map_hash()}"
+
+    def _get_custom_code(self) -> str | None:
+        hooks = set()
+        for component in self.component_map.values():
+            hooks |= component(_MOCK_ARG).get_hooks()
+        formatted_hooks = "\n".join(hooks)
+        return f"""
+        function {self._get_component_map_name()} () {{
+            {formatted_hooks}
+            return (
+                {str(Var.create(self.format_component_map()))}
+            )
+        }}
+        """
+
     def _render(self) -> Tag:
-        return (
+        tag = (
             super()
             ._render()
             .add_props(
-                components=self.format_component_map(),
                 remark_plugins=_REMARK_PLUGINS,
                 rehype_plugins=_REHYPE_PLUGINS,
             )
             .remove_props("componentMap")
         )
+        tag.special_props.add(
+            Var.create_safe(
+                f"components={{{self._get_component_map_name()}()}}",
+                _var_is_local=True,
+                _var_is_string=False,
+            ),
+        )
+        return tag
