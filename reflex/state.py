@@ -19,7 +19,6 @@ from typing import (
     AsyncIterator,
     Callable,
     ClassVar,
-    DefaultDict,
     Dict,
     List,
     Optional,
@@ -178,10 +177,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     # The event handlers.
     event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
-    # A mapping of classes and corresponding subclassses.
-    class_subclasses: ClassVar[
-        DefaultDict[Type[BaseState], Set[Type[BaseState]]]
-    ] = defaultdict(set)
+    # A set of subclassses of this class.
+    class_subclasses: ClassVar[Set[Type[BaseState]]] = set()
 
     # Mapping of var name to set of computed variables that depend on it
     _computed_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
@@ -286,6 +283,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
 
+        # Reset subclass tracking for this class.
+        cls.class_subclasses = set()
+
         # Get the parent vars.
         parent_state = cls.get_parent_state()
         if parent_state is not None:
@@ -293,25 +293,15 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             if (
-                cls.__name__
-                in set(c.__name__ for c in cls.class_subclasses[parent_state])
+                cls.__name__ in set(c.__name__ for c in parent_state.class_subclasses)
                 and not is_testing_env
             ):
                 raise ValueError(
                     f"The substate class '{cls.__name__}' has been defined multiple times. Shadowing "
                     f"substate classes is not allowed."
                 )
-            # clear all existing subclasses when app is reloaded via
-            # utils.prerequisites.get_app(reload=True)
-            cls.class_subclasses[parent_state] = set(
-                [
-                    c
-                    for c in cls.class_subclasses[parent_state]
-                    if c.__name__ != cls.__name__
-                ]
-            )
-            # fix up parent class_substates
-            cls.class_subclasses[parent_state].add(cls)
+            # Track this new subclass in the parent state's subclasses set.
+            parent_state.class_subclasses.add(cls)
 
         cls.new_backend_vars = {
             name: value
@@ -479,7 +469,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The substates of the state.
         """
-        return cls.class_subclasses[cls]
+        return cls.class_subclasses
 
     @classmethod
     @functools.lru_cache()

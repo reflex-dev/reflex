@@ -37,7 +37,6 @@ from .conftest import chdir
 from .states import (
     ChildFileUploadState,
     FileStateBase1,
-    FileStateBase2,
     FileUploadState,
     GenState,
     GrandChildFileUploadState,
@@ -736,16 +735,10 @@ async def test_upload_file(tmp_path, state, delta, token: str, mocker):
         token: a Token.
         mocker: pytest mocker object.
     """
-    class_subclasses = {
-        State: {state if state is FileUploadState else FileStateBase1},
-        FileUploadState: set(),
-        FileStateBase1: {ChildFileUploadState, FileStateBase2},
-        FileStateBase2: {GrandChildFileUploadState},
-        GrandChildFileUploadState: set(),
-        ChildFileUploadState: set(),
-    }
-
-    mocker.patch("reflex.state.State.class_subclasses", class_subclasses)
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {state if state is FileUploadState else FileStateBase1},
+    )
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
     app = App(state=State)
@@ -916,8 +909,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         token: a Token.
         mocker: pytest mocker object.
     """
-    class_subclasses = {State: {DynamicState}}
-    mocker.patch("reflex.state.State.class_subclasses", class_subclasses)
+    mocker.patch("reflex.state.State.class_subclasses", {DynamicState})
     DynamicState.add_var(
         constants.CompileVars.IS_HYDRATED, type_=bool, default_value=False
     )
