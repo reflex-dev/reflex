@@ -591,7 +591,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        return {"sx": self.style}
+        return {"style": self.style}
 
     def render(self) -> Dict:
         """Render the component.
