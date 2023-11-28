@@ -293,7 +293,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             if (
-                cls.__name__ in set(c.__name__ for c in cls.class_subclasses[parent_state])
+                cls.__name__
+                in set(c.__name__ for c in cls.class_subclasses[parent_state])
                 and not is_testing_env
             ):
                 raise ValueError(
