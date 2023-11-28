@@ -1,5 +1,5 @@
 """A code component."""
-
+import re
 from typing import Dict, Literal, Optional, Union
 
 from reflex.components.component import Component
@@ -362,6 +362,9 @@ class CodeBlock(Component):
     # The language to use.
     language: Var[LiteralCodeLanguage] = "python"  # type: ignore
 
+    # The code to display.
+    code: Var[str]
+
     # If this is enabled line numbers will be shown next to the code block.
     show_line_numbers: Var[bool]
 
@@ -379,16 +382,21 @@ class CodeBlock(Component):
 
     def _get_imports(self) -> imports.ImportDict:
         merged_imports = super()._get_imports()
+        # Get all themes from a cond literal
+        themes = re.findall(r"`(.*?)`", self.theme._var_name)
+        if not themes:
+            themes = [self.theme._var_name]
         merged_imports = imports.merge_imports(
             merged_imports,
             {
-                f"react-syntax-highlighter/dist/cjs/styles/prism/{self.theme._var_name}": {
+                f"react-syntax-highlighter/dist/cjs/styles/prism/{theme}": {
                     ImportVar(
-                        tag=format.to_camel_case(self.theme._var_name),
+                        tag=format.to_camel_case(theme),
                         is_default=True,
                         install=False,
                     )
                 }
+                for theme in themes
             },
         )
         if (
@@ -440,7 +448,7 @@ class CodeBlock(Component):
 
         # react-syntax-highlighter doesnt have an explicit "light" or "dark" theme so we use one-light and one-dark
         # themes respectively to ensure code compatibility.
-        if "theme" in props:
+        if "theme" in props and not isinstance(props["theme"], Var):
             props["theme"] = (
                 "one-light"
                 if props["theme"] == "light"
@@ -469,9 +477,14 @@ class CodeBlock(Component):
             if key not in cls.get_fields():
                 custom_style[key] = value
 
+        # Carry the children (code) via props
+        if children:
+            props["code"] = children[0]
+            if not isinstance(props["code"], Var):
+                props["code"] = Var.create(props["code"], _var_is_string=True)
+
         # Create the component.
         code_block = super().create(
-            *children,
             **props,
             custom_style=Style(custom_style),
         )
@@ -486,11 +499,15 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
+        predicate, qmark, value = self.theme._var_name.partition("?")
         out.add_props(
             style=Var.create(
-                format.to_camel_case(self.theme._var_name), _var_is_local=False
+                format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
+                _var_is_local=False,
             )
-        ).remove_props("theme")
+        ).remove_props("theme", "code")
+        if self.code is not None:
+            out.special_props.add(Var.create_safe(f"children={str(self.code)}"))
         return out
 
 

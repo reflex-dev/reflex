@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import contextlib
 import copy
 import functools
 import os
-from multiprocessing.pool import ThreadPool
 from typing import (
     Any,
     AsyncIterator,
@@ -428,7 +428,7 @@ class App(Base):
                 feature_name="Passing script tags to add_page",
                 reason="Add script components as children to the page component instead",
                 deprecation_version="0.2.9",
-                removal_version="0.3.1",
+                removal_version="0.4.0",
             )
             component.children.extend(script_tags)
 
@@ -635,9 +635,6 @@ class App(Base):
             TimeElapsedColumn(),
         )
 
-        task = progress.add_task("Compiling: ", total=len(self.pages))
-        # TODO: include all work done in progress indicator, not just self.pages
-
         # Get the env mode.
         config = get_config()
 
@@ -647,9 +644,7 @@ class App(Base):
         # Compile the pages in parallel.
         custom_components = set()
         # TODO Anecdotally, processes=2 works 10% faster (cpu_count=12)
-        thread_pool = ThreadPool()
         all_imports = {}
-        page_futures = []
         app_wrappers: Dict[tuple[int, str], Component] = {
             # Default app wrap component renders {children}
             (0, "AppWrap"): AppWrap.create()
@@ -658,81 +653,113 @@ class App(Base):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
-        with progress:
-            for route, component in self.pages.items():
-                # TODO: this progress does not reflect actual threaded task completion
+        with progress, concurrent.futures.ThreadPoolExecutor() as thread_pool:
+            fixed_pages = 7
+            task = progress.add_task("Compiling:", total=len(self.pages) + fixed_pages)
+
+            def mark_complete(_=None):
                 progress.advance(task)
+
+            for _route, component in self.pages.items():
+                # Merge the component style with the app style.
                 component.add_style(self.style)
-                page_futures.append(
-                    thread_pool.apply_async(
-                        compiler.compile_page,
-                        args=(
-                            route,
-                            component,
-                            self.state,
-                        ),
-                    )
-                )
-                # add component.get_imports() to all_imports
+
+                # Add component.get_imports() to all_imports.
                 all_imports.update(component.get_imports())
 
-                # add the app wrappers from this component
+                # Add the app wrappers from this component.
                 app_wrappers.update(component.get_app_wrap_components())
 
                 # Add the custom components from the page to the set.
                 custom_components |= component.get_custom_components()
 
-        thread_pool.close()
-        thread_pool.join()
+            # Perform auto-memoization of stateful components.
+            (
+                stateful_components_path,
+                stateful_components_code,
+                page_components,
+            ) = compiler.compile_stateful_components(self.pages.values())
+            compile_results.append((stateful_components_path, stateful_components_code))
 
-        # Compile the app wrapper.
-        app_root = self._app_root(app_wrappers=app_wrappers)
-        all_imports.update(app_root.get_imports())
-        compile_results.append(compiler.compile_app(app_root))
+            result_futures = []
 
-        # Get the compiled pages.
-        compile_results.extend(result.get() for result in page_futures)
+            def submit_work(fn, *args, **kwargs):
+                """Submit work to the thread pool and add a callback to mark the task as complete.
 
-        # TODO the compile tasks below may also benefit from parallelization too
+                The Future will be added to the `result_futures` list.
 
-        # Compile the custom components.
-        compile_results.append(compiler.compile_components(custom_components))
+                Args:
+                    fn: The function to submit.
+                    *args: The args to submit.
+                    **kwargs: The kwargs to submit.
+                """
+                f = thread_pool.submit(fn, *args, **kwargs)
+                f.add_done_callback(mark_complete)
+                result_futures.append(f)
 
-        # Iterate through all the custom components and add their imports to the all_imports
-        for component in custom_components:
-            all_imports.update(component.get_imports())
+            # Compile all page components.
+            for route, component in zip(self.pages, page_components):
+                submit_work(
+                    compiler.compile_page,
+                    route,
+                    component,
+                    self.state,
+                )
 
-        # Compile the root stylesheet with base styles.
-        compile_results.append(compiler.compile_root_stylesheet(self.stylesheets))
+            # Compile the app wrapper.
+            app_root = self._app_root(app_wrappers=app_wrappers)
+            submit_work(compiler.compile_app, app_root)
 
-        # Compile the root document.
-        compile_results.append(compiler.compile_document_root(self.head_components))
+            # Compile the custom components.
+            submit_work(compiler.compile_components, custom_components)
 
-        # Compile the theme.
-        compile_results.append(compiler.compile_theme(style=self.style))
+            # Compile the root stylesheet with base styles.
+            submit_work(compiler.compile_root_stylesheet, self.stylesheets)
 
-        # Compile the contexts.
-        compile_results.append(compiler.compile_contexts(self.state))
+            # Compile the root document.
+            submit_work(compiler.compile_document_root, self.head_components)
 
-        # Compile the Tailwind config.
-        if config.tailwind is not None:
-            config.tailwind["content"] = config.tailwind.get(
-                "content", constants.Tailwind.CONTENT
-            )
-            compile_results.append(compiler.compile_tailwind(config.tailwind))
+            # Compile the theme.
+            submit_work(compiler.compile_theme, style=self.style)
 
-        # Empty the .web pages directory
-        compiler.purge_web_pages_dir()
+            # Compile the contexts.
+            submit_work(compiler.compile_contexts, self.state)
 
-        # install frontend packages
-        self.get_frontend_packages(all_imports)
+            # Compile the Tailwind config.
+            if config.tailwind is not None:
+                config.tailwind["content"] = config.tailwind.get(
+                    "content", constants.Tailwind.CONTENT
+                )
+            submit_work(compiler.compile_tailwind, config.tailwind)
 
-        # Write the pages at the end to trigger the NextJS hot reload only once.
-        thread_pool = ThreadPool()
-        for output_path, code in compile_results:
-            thread_pool.apply_async(compiler_utils.write_page, args=(output_path, code))
-        thread_pool.close()
-        thread_pool.join()
+            # Get imports from AppWrap components.
+            all_imports.update(app_root.get_imports())
+
+            # Iterate through all the custom components and add their imports to the all_imports.
+            for component in custom_components:
+                all_imports.update(component.get_imports())
+
+            # Wait for all compilation tasks to complete.
+            for future in concurrent.futures.as_completed(result_futures):
+                compile_results.append(future.result())
+
+            # Empty the .web pages directory.
+            compiler.purge_web_pages_dir()
+
+            # Avoid flickering when installing frontend packages
+            progress.stop()
+
+            # Install frontend packages.
+            self.get_frontend_packages(all_imports)
+
+            # Write the pages at the end to trigger the NextJS hot reload only once.
+            write_page_futures = []
+            for output_path, code in compile_results:
+                write_page_futures.append(
+                    thread_pool.submit(compiler_utils.write_page, output_path, code)
+                )
+            for future in concurrent.futures.as_completed(write_page_futures):
+                future.result()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[State]:

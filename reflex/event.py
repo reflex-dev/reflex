@@ -329,13 +329,20 @@ class FileUpload(Base):
         Raises:
             ValueError: If the on_upload_progress is not a valid event handler.
         """
-        from reflex.components.forms.upload import DEFAULT_UPLOAD_ID
+        from reflex.components.forms.upload import (
+            DEFAULT_UPLOAD_ID,
+            upload_files_context_var_data,
+        )
 
         upload_id = self.upload_id or DEFAULT_UPLOAD_ID
 
         spec_args = [
-            # `upload_files` is defined in state.js and assigned in the Upload component's _use_hooks
-            (Var.create_safe("files"), Var.create_safe(f"upload_files.{upload_id}[0]")),
+            (
+                Var.create_safe("files"),
+                Var.create_safe(f"filesById.{upload_id}")._replace(
+                    _var_data=upload_files_context_var_data
+                ),
+            ),
             (
                 Var.create_safe("upload_id"),
                 Var.create_safe(upload_id, _var_is_string=True),
@@ -459,7 +466,7 @@ def set_focus(ref: str) -> EventSpec:
     return server_side(
         "_set_focus",
         get_fn_signature(set_focus),
-        ref=Var.create_safe(format.format_ref(ref)),
+        ref=Var.create_safe(format.format_ref(ref), _var_is_string=True),
     )
 
 
@@ -476,7 +483,7 @@ def set_value(ref: str, value: Any) -> EventSpec:
     return server_side(
         "_set_value",
         get_fn_signature(set_value),
-        ref=Var.create_safe(format.format_ref(ref)),
+        ref=Var.create_safe(format.format_ref(ref), _var_is_string=True),
         value=value,
     )
 
@@ -688,7 +695,7 @@ def call_event_handler(
             feature_name="EVENT_ARG API for triggers",
             reason="Replaced by new API using lambda allow arbitrary number of args",
             deprecation_version="0.2.8",
-            removal_version="0.3.0",
+            removal_version="0.4.0",
         )
         if len(args) == 1:
             return event_handler()

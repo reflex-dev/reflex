@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useReducer, useState } from "react"
-import { applyDelta, Event, hydrateClientStorage, useEventLoop } from "/utils/state.js"
+import { applyDelta, Event, hydrateClientStorage, useEventLoop, refs } from "/utils/state.js"
 
 {% if initial_state %}
 export const initialState = {{ initial_state|json_dumps }}
@@ -8,6 +8,7 @@ export const initialState = {}
 {% endif %}
 
 export const ColorModeContext = createContext(null);
+export const UploadFilesContext = createContext(null);
 export const DispatchContext = createContext(null);
 export const StateContexts = {
   {% for state_name in initial_state %}
@@ -30,6 +31,20 @@ export const initialEvents = () => []
 {% endif %}
 
 export const isDevMode = {{ is_dev_mode|json_dumps }}
+
+export function UploadFilesProvider({ children }) {
+  const [filesById, setFilesById] = useState({})
+  refs["__clear_selected_files"] = (id) => setFilesById(filesById => {
+    const newFilesById = {...filesById}
+    delete newFilesById[id]
+    return newFilesById
+  })
+  return (
+    <UploadFilesContext.Provider value={[filesById, setFilesById]}>
+      {children}
+    </UploadFilesContext.Provider>
+  )
+}
 
 export function EventLoopProvider({ children }) {
   const dispatch = useContext(DispatchContext)

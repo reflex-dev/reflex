@@ -253,6 +253,7 @@ _MAPPING = {
     "reflex.components": _ALL_COMPONENTS,
     "reflex.components.component": ["memo"],
     "reflex.components.graphing": ["recharts"],
+    "reflex.components.datadisplay.moment": ["MomentDelta"],
     "reflex.config": ["config", "Config", "DBConfig"],
     "reflex.constants": ["constants", "Env"],
     "reflex.components.el": ["el"],

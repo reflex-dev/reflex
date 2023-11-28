@@ -34,8 +34,6 @@ const event_queue = [];
 
 // Pending upload promises, by id
 const upload_controllers = {};
-// Upload files state by id
-export const upload_files = {};
 
 /**
  * Generate a UUID (Used for session tokens).
@@ -363,7 +361,10 @@ export const uploadFiles = async (handler, files, upload_id, on_upload_progress,
         })
         resp_idx += 1
       } catch (e) {
-        console.log("Error parsing chunk", chunk, e)
+        if (progressEvent.progress === 1) {
+          // Chunk may be incomplete, so only report errors when full response is available.
+          console.log("Error parsing chunk", chunk, e)
+        }
         return
       }
     })

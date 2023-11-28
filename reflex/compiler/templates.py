@@ -82,6 +82,12 @@ PAGE = get_template("web/pages/index.js.jinja2")
 # Code to render the custom components page.
 COMPONENTS = get_template("web/pages/custom_component.js.jinja2")
 
+# Code to render Component instances as part of StatefulComponent
+STATEFUL_COMPONENT = get_template("web/pages/stateful_component.js.jinja2")
+
+# Code to render StatefulComponent to an external file to be shared
+STATEFUL_COMPONENTS = get_template("web/pages/stateful_components.js.jinja2")
+
 # Sitemap config file.
 SITEMAP_CONFIG = "module.exports = {config}".format
 

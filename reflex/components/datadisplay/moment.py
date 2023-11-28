@@ -1,10 +1,25 @@
 """Moment component for humanized date rendering."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from reflex.base import Base
 from reflex.components.component import Component, NoSSRComponent
 from reflex.utils import imports
 from reflex.vars import Var
+
+
+class MomentDelta(Base):
+    """A delta used for add/subtract prop in Moment."""
+
+    years: Optional[int]
+    quarters: Optional[int]
+    months: Optional[int]
+    weeks: Optional[int]
+    days: Optional[int]
+    hours: Optional[int]
+    minutess: Optional[int]
+    seconds: Optional[int]
+    milliseconds: Optional[int]
 
 
 class Moment(NoSSRComponent):
@@ -27,9 +42,11 @@ class Moment(NoSSRComponent):
     #  Use the parse attribute to tell moment how to parse the given date when non-standard.
     parse: Var[str]
 
-    # NOT IMPLEMENTED :
-    # add
-    # substract
+    # Add a delta to the base date (keys are "years", "quarters", "months", "weeks", "days", "hours", "minutes", "seconds")
+    add: Var[MomentDelta]
+
+    # Subtract a delta to the base date (keys are "years", "quarters", "months", "weeks", "days", "hours", "minutes", "seconds")
+    subtract: Var[MomentDelta]
 
     # Displays the date as the time from now, e.g. "5 minutes ago".
     from_now: Var[bool]

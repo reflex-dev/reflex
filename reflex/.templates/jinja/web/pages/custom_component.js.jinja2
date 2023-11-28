@@ -3,6 +3,10 @@
 {% block export %}
 {% for component in components %}
 
+{% for custom_code in component.custom_code %}
+{{custom_code}}
+{% endfor %}
+
 export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) => {
 {% if component.name == "CodeBlock" and "language" in component.props %}
     if (language) {

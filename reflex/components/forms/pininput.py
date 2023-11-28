@@ -119,7 +119,10 @@ class PinInput(ChakraComponent):
             )
             refs_declaration._var_is_local = True
             if ref:
-                return f"const {ref} = {str(refs_declaration)}"
+                return (
+                    f"const {ref} = {str(refs_declaration)}; "
+                    f"{str(Var.create_safe(ref).as_ref())} = {ref}"
+                )
             return super()._get_ref_hook()
 
     def _render(self) -> Tag:

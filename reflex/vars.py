@@ -31,6 +31,8 @@ from typing import (
     get_type_hints,
 )
 
+import pydantic
+
 from reflex import constants
 from reflex.base import Base
 from reflex.utils import console, format, imports, serializers, types
@@ -147,6 +149,24 @@ class VarData(Base):
         """
         return bool(self.state or self.imports or self.hooks)
 
+    def __eq__(self, other: Any) -> bool:
+        """Check if two var data objects are equal.
+
+        Args:
+            other: The other var data object to compare.
+
+        Returns:
+            True if all fields are equal and collapsed imports are equal.
+        """
+        if not isinstance(other, VarData):
+            return False
+        return (
+            self.state == other.state
+            and self.hooks == other.hooks
+            and imports.collapse_imports(self.imports)
+            == imports.collapse_imports(other.imports)
+        )
+
     def dict(self) -> dict:
         """Convert the var data to a dictionary.
 
@@ -191,7 +211,11 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
         # Extract the state name from a formatted var
         while m := re.match(r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)", value):
             value = m.group(1) + m.group(3)
-            var_datas.append(VarData.parse_raw(m.group(2)))
+            try:
+                var_datas.append(VarData.parse_raw(m.group(2)))
+            except pydantic.ValidationError:
+                # If the VarData is invalid, it was probably json-encoded twice...
+                var_datas.append(VarData.parse_raw(json.loads(f'"{m.group(2)}"')))
     if var_datas:
         return VarData.merge(*var_datas), value
     return None, value
@@ -1413,6 +1437,24 @@ class Var:
         """
         return self._replace(_var_type=type_)
 
+    def as_ref(self) -> Var:
+        """Convert the var to a ref.
+
+        Returns:
+            The var as a ref.
+        """
+        return self._replace(
+            _var_name=f"refs['{self._var_full_name}']",
+            _var_is_local=True,
+            _var_is_string=False,
+            _var_full_name_needs_state_prefix=False,
+            merge_var_data=VarData(
+                imports={
+                    f"/{constants.Dirs.STATE_PATH}": [imports.ImportVar(tag="refs")],
+                },
+            ),
+        )
+
     @property
     def _var_full_name(self) -> str:
         """Get the full name of the var.
@@ -1464,6 +1506,10 @@ class Var:
             The state name associated with the var.
         """
         return self._var_data.state if self._var_data else ""
+
+
+# Allow automatic serialization of Var within JSON structures
+serializers.serializer(_encode_var)
 
 
 @dataclasses.dataclass(

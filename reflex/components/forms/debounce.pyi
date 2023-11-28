@@ -7,11 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Set
+from typing import Any, Type
 from reflex.components import Component
-from reflex.components.tags import Tag
-from reflex.utils import imports
-from reflex.vars import Var
+from reflex.constants import EventTriggers
+from reflex.vars import Var, VarData
 
 class DebounceInput(Component):
     @overload
@@ -24,13 +23,18 @@ class DebounceInput(Component):
         force_notify_by_enter: Optional[Union[Var[bool], bool]] = None,
         force_notify_on_blur: Optional[Union[Var[bool], bool]] = None,
         value: Optional[Union[Var[str], str]] = None,
+        input_ref: Optional[Union[Var[str], str]] = None,
+        element: Optional[Union[Var[Type[Component]], Type[Component]]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -77,29 +81,24 @@ class DebounceInput(Component):
         ] = None,
         **props
     ) -> "DebounceInput":
-        """Create the component.
+        """Create a DebounceInput component.
+
+        Carry first child props directly on this tag.
+
+        Since react-debounce-input wants to create and manage the underlying
+        input component itself, we carry all props, events, and styles from
+        the child, and then neuter the child's render method so it produces no output.
 
         Args:
-            *children: The children of the component.
-            min_length: Minimum input characters before triggering the on_change event
-            debounce_timeout: Time to wait between end of input and triggering on_change
-            force_notify_by_enter: If true, notify when Enter key is pressed
-            force_notify_on_blur: If true, notify when form control loses focus
-            value: If provided, create a fully-controlled input
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: The props of the component.
+            children: The child component to wrap.
+            props: The component props.
 
         Returns:
-            The component.
+            The DebounceInput component.
 
         Raises:
-            TypeError: If an invalid child is passed.
+            RuntimeError: unless exactly one child element is provided.
+            ValueError: if the child element does not have an on_change handler.
         """
         ...
-
-def props_not_none(c: Component) -> dict[str, Any]: ...
+    def get_event_triggers(self) -> dict[str, Any]: ...

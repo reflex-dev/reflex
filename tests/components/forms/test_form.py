@@ -10,7 +10,7 @@ def test_render_on_submit():
         _var_type=EventChain,
     )
     f = Form.create(on_submit=submit_it)
-    exp_submit_name = f"handleSubmit{f.handle_submit_unique_name}"  # type: ignore
+    exp_submit_name = f"handleSubmit_{f.handle_submit_unique_name}"  # type: ignore
     assert f"onSubmit={{{exp_submit_name}}}" in f.render()["props"]
 
 
