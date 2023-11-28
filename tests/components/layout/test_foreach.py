@@ -67,11 +67,11 @@ def display_nested_color_with_shades_v2(color):
 
 
 def display_color_tuple(color):
-    return box(text(color))
+    return box(text(color, "tuple"))
 
 
 def display_colors_set(color):
-    return box(text(color))
+    return box(text(color, "set"))
 
 
 def display_nested_list_element(element: str, index: int):

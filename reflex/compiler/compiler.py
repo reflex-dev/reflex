@@ -3,11 +3,17 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional, Type
+from typing import Iterable, Optional, Type
 
 from reflex import constants
 from reflex.compiler import templates, utils
-from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.components.component import (
+    BaseComponent,
+    Component,
+    ComponentStyle,
+    CustomComponent,
+    StatefulComponent,
+)
 from reflex.config import get_config
 from reflex.state import State
 from reflex.utils.imports import ImportDict, ImportVar
@@ -99,8 +105,6 @@ def _compile_page(
     """
     # Merge the default imports with the app-specific imports.
     imports = utils.merge_imports(DEFAULT_IMPORTS, component.get_imports())
-    imports = {k: list(set(v)) for k, v in imports.items()}
-    utils.validate_imports(imports)
     imports = utils.compile_imports(imports)
 
     # Compile the code to render the component.
@@ -202,6 +206,68 @@ def _compile_components(components: set[CustomComponent]) -> str:
     return templates.COMPONENTS.render(
         imports=utils.compile_imports(imports),
         components=component_renders,
+    )
+
+
+def _compile_stateful_components(
+    page_components: list[BaseComponent],
+) -> str:
+    """Walk the page components and extract shared stateful components.
+
+    Any StatefulComponent that is shared by more than one page will be rendered
+    to a separate module and marked rendered_as_shared so subsequent
+    renderings will import the component from the shared module instead of
+    directly including the code for it.
+
+    Args:
+        page_components: The Components or StatefulComponents to compile.
+
+    Returns:
+        The rendered stateful components code.
+    """
+    all_import_dicts = []
+    rendered_components = {}
+
+    def get_shared_components_recursive(component: BaseComponent):
+        """Get the shared components for a component and its children.
+
+        A shared component is a StatefulComponent that appears in 2 or more
+        pages and is a candidate for writing to a common file and importing
+        into each page where it is used.
+
+        Args:
+            component: The component to collect shared StatefulComponents for.
+        """
+        for child in component.children:
+            # Depth-first traversal.
+            get_shared_components_recursive(child)
+
+        # When the component is referenced by more than one page, render it
+        # to be included in the STATEFUL_COMPONENTS module.
+        if isinstance(component, StatefulComponent) and component.references > 1:
+            # Reset this flag to render the actual component.
+            component.rendered_as_shared = False
+
+            rendered_components.update(
+                {code: None for code in component.get_custom_code()},
+            )
+            all_import_dicts.append(component.get_imports())
+
+            # Indicate that this component now imports from the shared file.
+            component.rendered_as_shared = True
+
+    for page_component in page_components:
+        get_shared_components_recursive(page_component)
+
+    # Don't import from the file that we're about to create.
+    all_imports = utils.merge_imports(*all_import_dicts)
+    all_imports.pop(
+        f"/{constants.Dirs.UTILS}/{constants.PageNames.STATEFUL_COMPONENTS}", None
+    )
+
+    return templates.STATEFUL_COMPONENTS.render(
+        imports=utils.compile_imports(all_imports),
+        memoized_code="\n".join(rendered_components),
     )
 
 
@@ -328,6 +394,29 @@ def compile_components(components: set[CustomComponent]):
     # Compile the components.
     code = _compile_components(components)
     return output_path, code
+
+
+def compile_stateful_components(
+    pages: Iterable[Component],
+) -> tuple[str, str, list[BaseComponent]]:
+    """Separately compile components that depend on State vars.
+
+    StatefulComponents are compiled as their own component functions with their own
+    useContext declarations, which allows page components to be stateless and avoid
+    re-rendering along with parts of the page that actually depend on state.
+
+    Args:
+        pages: The pages to extract stateful components from.
+
+    Returns:
+        The path and code of the compiled stateful components.
+    """
+    output_path = utils.get_stateful_components_path()
+
+    # Compile the stateful components.
+    page_components = [StatefulComponent.compile_from(page) or page for page in pages]
+    code = _compile_stateful_components(page_components)
+    return output_path, code, page_components
 
 
 def compile_tailwind(

@@ -2,14 +2,28 @@
 
 from __future__ import annotations
 
+import copy
 import typing
-from abc import ABC
+from abc import ABC, abstractmethod
 from functools import lru_cache, wraps
-from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Type, Union
+from hashlib import md5
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Type,
+    Union,
+)
 
 from reflex.base import Base
+from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.tags import Tag
-from reflex.constants import Dirs, EventTriggers, Hooks, Imports
+from reflex.constants import Dirs, EventTriggers, Hooks, Imports, PageNames
 from reflex.event import (
     EventChain,
     EventHandler,
@@ -22,20 +36,17 @@ from reflex.style import Style
 from reflex.utils import console, format, imports, types
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
-from reflex.vars import BaseVar, Var
+from reflex.vars import BaseVar, Var, VarData
 
 
-class Component(Base, ABC):
-    """The base class for all Reflex components."""
+class BaseComponent(Base, ABC):
+    """The base class for all Reflex components.
+
+    This is something that can be rendered as a Component via the Reflex compiler.
+    """
 
     # The children nested within the component.
-    children: List[Component] = []
-
-    # The style of the component.
-    style: Style = Style()
-
-    # A mapping from event triggers to event chains.
-    event_triggers: Dict[str, Union[EventChain, Var]] = {}
+    children: List[BaseComponent] = []
 
     # The library that the component is based on.
     library: Optional[str] = None
@@ -45,6 +56,69 @@ class Component(Base, ABC):
 
     # The tag to use when rendering the component.
     tag: Optional[str] = None
+
+    @abstractmethod
+    def render(self) -> dict:
+        """Render the component.
+
+        Returns:
+            The dictionary for template of the component.
+        """
+
+    @abstractmethod
+    def get_hooks(self) -> set[str]:
+        """Get the React hooks for this component.
+
+        Returns:
+            The code that should appear just before returning the rendered component.
+        """
+
+    @abstractmethod
+    def get_imports(self) -> imports.ImportDict:
+        """Get all the libraries and fields that are used by the component.
+
+        Returns:
+            The import dict with the required imports.
+        """
+
+    @abstractmethod
+    def get_dynamic_imports(self) -> set[str]:
+        """Get dynamic imports for the component.
+
+        Returns:
+            The dynamic imports.
+        """
+
+    @abstractmethod
+    def get_custom_code(self) -> set[str]:
+        """Get custom code for the component.
+
+        Returns:
+            The custom code.
+        """
+
+    @abstractmethod
+    def get_refs(self) -> set[str]:
+        """Get the refs for the children of the component.
+
+        Returns:
+            The refs for the children.
+        """
+
+
+# Map from component to styling.
+ComponentStyle = Dict[Union[str, Type[BaseComponent]], Any]
+ComponentChild = Union[types.PrimitiveType, Var, BaseComponent]
+
+
+class Component(BaseComponent, ABC):
+    """A component with style, event trigger and other props."""
+
+    # The style of the component.
+    style: Style = Style()
+
+    # A mapping from event triggers to event chains.
+    event_triggers: Dict[str, Union[EventChain, Var]] = {}
 
     # The alias for the tag.
     alias: Optional[str] = None
@@ -74,7 +148,7 @@ class Component(Base, ABC):
     _valid_children: List[str] = []
 
     # custom attribute
-    custom_attrs: Dict[str, str] = {}
+    custom_attrs: Dict[str, Union[Var, str]] = {}
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -493,7 +567,7 @@ class Component(Base, ABC):
         """
         if type(self) in style:
             # Extract the style for this component.
-            component_style = style[type(self)]
+            component_style = Style(style[type(self)])
 
             # Only add style props that are not overridden.
             component_style = {
@@ -505,6 +579,9 @@ class Component(Base, ABC):
 
         # Recursively add style to the children.
         for child in self.children:
+            # Skip BaseComponent and StatefulComponent children.
+            if not isinstance(child, Component):
+                continue
             child.add_style(style)
         return self
 
@@ -818,7 +895,7 @@ class Component(Base, ABC):
         """
         ref = self.get_ref()
         if ref is not None:
-            return f"const {ref} = useRef(null); refs['{ref}'] = {ref};"
+            return f"const {ref} = useRef(null); {str(Var.create_safe(ref).as_ref())} = {ref};"
 
     def _get_vars_hooks(self) -> set[str]:
         """Get the hooks required by vars referenced in this component.
@@ -953,6 +1030,9 @@ class Component(Base, ABC):
         if seen is None:
             seen = set()
         for child in self.children:
+            # Skip BaseComponent and StatefulComponent children.
+            if not isinstance(child, Component):
+                continue
             custom_components |= child.get_custom_components(seen=seen)
         return custom_components
 
@@ -991,15 +1071,13 @@ class Component(Base, ABC):
 
         # Add the app wrap components for the children.
         for child in self.children:
+            # Skip BaseComponent and StatefulComponent children.
+            if not isinstance(child, Component):
+                continue
             components.update(child.get_app_wrap_components())
 
         # Return the components.
         return components
-
-
-# Map from component to styling.
-ComponentStyle = Dict[Union[str, Type[Component]], Any]
-ComponentChild = Union[types.PrimitiveType, Var, Component]
 
 
 class CustomComponent(Component):
@@ -1235,3 +1313,345 @@ def serialize_component(comp: Component):
         The serialized component.
     """
     return str(comp)
+
+
+class StatefulComponent(BaseComponent):
+    """A component that depends on state and is rendered outside of the page component.
+
+    If a StatefulComponent is used in multiple pages, it will be rendered to a common file and
+    imported into each page that uses it.
+
+    A stateful component has a tag name that includes a hash of the code that it renders
+    to. This tag name refers to the specific component with the specific props that it
+    was created with.
+    """
+
+    # A lookup table to caching memoized component instances.
+    tag_to_stateful_component: ClassVar[Dict[str, StatefulComponent]] = {}
+
+    # Reference to the original component that was memoized into this component.
+    component: Component
+
+    # The rendered (memoized) code that will be emitted.
+    code: str
+
+    # How many times this component is referenced in the app.
+    references: int = 0
+
+    # Whether the component has already been rendered to a shared file.
+    rendered_as_shared: bool = False
+
+    @classmethod
+    def create(cls, component: Component) -> StatefulComponent | None:
+        """Create a stateful component from a component.
+
+        Args:
+            component: The component to memoize.
+
+        Returns:
+            The stateful component or None if the component should not be memoized.
+        """
+        from reflex.components.layout.foreach import Foreach
+
+        if component.tag is None:
+            # Only memoize components with a tag.
+            return None
+
+        # If _var_data is found in this component, it is a candidate for auto-memoization.
+        has_var_data = False
+
+        # Determine if any Vars have associated data.
+        for prop_var in component._get_vars():
+            if prop_var._var_data:
+                has_var_data = True
+                break
+
+        if not has_var_data:
+            # Check for special-cases in child components.
+            for child in component.children:
+                # Skip BaseComponent and StatefulComponent children.
+                if not isinstance(child, Component):
+                    continue
+                # Always consider Foreach something that must be memoized by the parent.
+                if isinstance(child, Foreach):
+                    has_var_data = True
+                    break
+                child = cls._child_var(child)
+                if isinstance(child, Var) and child._var_data:
+                    has_var_data = True
+                    break
+
+        if has_var_data or component.event_triggers:
+            # Render the component to determine tag+hash based on component code.
+            tag_name = cls._get_tag_name(component)
+            if tag_name is None:
+                return None
+
+            # Look up the tag in the cache
+            stateful_component = cls.tag_to_stateful_component.get(tag_name)
+            if stateful_component is None:
+                # Render the component as a string of javascript code.
+                code = cls._render_stateful_code(component, tag_name=tag_name)
+                # Set the stateful component in the cache for the given tag.
+                stateful_component = cls.tag_to_stateful_component.setdefault(
+                    tag_name,
+                    cls(
+                        children=component.children,
+                        component=component,
+                        tag=tag_name,
+                        code=code,
+                    ),
+                )
+            # Bump the reference count -- multiple pages referencing the same component
+            # will result in writing it to a common file.
+            stateful_component.references += 1
+            return stateful_component
+
+        # Return None to indicate this component should not be memoized.
+        return None
+
+    @staticmethod
+    def _child_var(child: Component) -> Var | Component:
+        """Get the Var from a child component.
+
+        This method is used for special cases when the StatefulComponent should actually
+        wrap the parent component of the child instead of recursing into the children
+        and memoizing them independently.
+
+        Args:
+            child: The child component.
+
+        Returns:
+            The Var from the child component or the child itself (for regular cases).
+        """
+        from reflex.components.base.bare import Bare
+        from reflex.components.layout.cond import Cond
+        from reflex.components.layout.foreach import Foreach
+
+        if isinstance(child, Bare):
+            return child.contents
+        if isinstance(child, Cond):
+            return child.cond
+        if isinstance(child, Foreach):
+            return child.iterable
+        return child
+
+    @classmethod
+    def _get_tag_name(cls, component: Component) -> str | None:
+        """Get the tag based on rendering the given component.
+
+        Args:
+            component: The component to render.
+
+        Returns:
+            The tag for the stateful component.
+        """
+        # Get the render dict for the component.
+        rendered_code = component.render()
+        if not rendered_code:
+            # Never memoize non-visual components.
+            return None
+
+        # Compute the hash based on the rendered code.
+        code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
+
+        # Format the tag name including the hash.
+        return format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
+
+    @classmethod
+    def _render_stateful_code(
+        cls,
+        component: Component,
+        tag_name: str,
+    ) -> str:
+        """Render the code for a stateful component.
+
+        Args:
+            component: The component to render.
+            tag_name: The tag name for the stateful component (see _get_tag_name).
+
+        Returns:
+            The rendered code.
+        """
+        # Memoize event triggers useCallback to avoid unnecessary re-renders.
+        memo_event_triggers = tuple(cls._get_memoized_event_triggers(component).items())
+
+        # Trigger hooks stored separately to write after the normal hooks (see stateful_component.js.jinja2)
+        memo_trigger_hooks = []
+
+        if memo_event_triggers:
+            # Copy the component to avoid mutating the original.
+            component = copy.copy(component)
+
+            for event_trigger, (
+                memo_trigger,
+                memo_trigger_hook,
+            ) in memo_event_triggers:
+                # Replace the event trigger with the memoized version.
+                memo_trigger_hooks.append(memo_trigger_hook)
+                component.event_triggers[event_trigger] = memo_trigger
+
+        # Render the code for this component and hooks.
+        return STATEFUL_COMPONENT.render(
+            tag_name=tag_name,
+            memo_trigger_hooks=memo_trigger_hooks,
+            component=component,
+        )
+
+    @staticmethod
+    def _get_hook_deps(hook: str) -> list[str]:
+        """Extract var deps from a hook.
+
+        Args:
+            hook: The hook line to extract deps from.
+
+        Returns:
+            A list of var names created by the hook declaration.
+        """
+        var_name = hook.partition("=")[0].strip().split(None, 1)[1].strip()
+        if var_name.startswith("["):
+            # Break up array destructuring.
+            return [v.strip() for v in var_name.strip("[]").split(",")]
+        return [var_name]
+
+    @classmethod
+    def _get_memoized_event_triggers(
+        cls,
+        component: Component,
+    ) -> dict[str, tuple[Var, str]]:
+        """Memoize event handler functions with useCallback to avoid unnecessary re-renders.
+
+        Args:
+            component: The component with events to memoize.
+
+        Returns:
+            A dict of event trigger name to a tuple of the memoized event trigger Var and
+            the hook code that memoizes the event handler.
+        """
+        trigger_memo = {}
+        for event_trigger, event_args in component._get_vars_from_event_triggers(
+            component.event_triggers
+        ):
+            if event_trigger in {
+                EventTriggers.ON_MOUNT,
+                EventTriggers.ON_UNMOUNT,
+                EventTriggers.ON_SUBMIT,
+            }:
+                # Do not memoize lifecycle or submit events.
+                continue
+
+            # Get the actual EventSpec and render it.
+            event = component.event_triggers[event_trigger]
+            rendered_chain = format.format_prop(event)
+            if isinstance(rendered_chain, str):
+                rendered_chain = rendered_chain.strip("{}")
+
+            # Hash the rendered EventChain to get a deterministic function name.
+            chain_hash = md5(str(rendered_chain).encode("utf-8")).hexdigest()
+            memo_name = f"{event_trigger}_{chain_hash}"
+
+            # Calculate Var dependencies accessed by the handler for useCallback dep array.
+            var_deps = ["addEvents", "Event"]
+            for arg in event_args:
+                if arg._var_data is None:
+                    continue
+                for hook in arg._var_data.hooks:
+                    var_deps.extend(cls._get_hook_deps(hook))
+            memo_var_data = VarData.merge(
+                *[var._var_data for var in event_args],
+                VarData(  # type: ignore
+                    imports={"react": {ImportVar(tag="useCallback")}},
+                ),
+            )
+
+            # Store the memoized function name and hook code for this event trigger.
+            trigger_memo[event_trigger] = (
+                Var.create_safe(memo_name)._replace(
+                    _var_type=EventChain, merge_var_data=memo_var_data
+                ),
+                f"const {memo_name} = useCallback({rendered_chain}, [{', '.join(var_deps)}])",
+            )
+        return trigger_memo
+
+    def get_hooks(self) -> set[str]:
+        """Get the React hooks for this component.
+
+        Returns:
+            The code that should appear just before returning the rendered component.
+        """
+        return set()
+
+    def get_imports(self) -> imports.ImportDict:
+        """Get all the libraries and fields that are used by the component.
+
+        Returns:
+            The import dict with the required imports.
+        """
+        if self.rendered_as_shared:
+            return {
+                f"/{Dirs.UTILS}/{PageNames.STATEFUL_COMPONENTS}": [
+                    ImportVar(tag=self.tag)
+                ]
+            }
+        return self.component.get_imports()
+
+    def get_dynamic_imports(self) -> set[str]:
+        """Get dynamic imports for the component.
+
+        Returns:
+            The dynamic imports.
+        """
+        if self.rendered_as_shared:
+            return set()
+        return self.component.get_dynamic_imports()
+
+    def get_custom_code(self) -> set[str]:
+        """Get custom code for the component.
+
+        Returns:
+            The custom code.
+        """
+        if self.rendered_as_shared:
+            return set()
+        return self.component.get_custom_code().union({self.code})
+
+    def get_refs(self) -> set[str]:
+        """Get the refs for the children of the component.
+
+        Returns:
+            The refs for the children.
+        """
+        if self.rendered_as_shared:
+            return set()
+        return self.component.get_refs()
+
+    def render(self) -> dict:
+        """Define how to render the component in React.
+
+        Returns:
+            The tag to render.
+        """
+        return dict(Tag(name=self.tag))
+
+    @classmethod
+    def compile_from(cls, component: BaseComponent) -> BaseComponent:
+        """Walk through the component tree and memoize all stateful components.
+
+        Args:
+            component: The component to memoize.
+
+        Returns:
+            The memoized component tree.
+        """
+        from reflex.components.layout.foreach import Foreach
+
+        # Foreach must be memoized as a single component to retain index Var context.
+        if not isinstance(component, Foreach):
+            component.children = [
+                cls.compile_from(child) for child in component.children
+            ]
+        if isinstance(component, Component):
+            stateful_component = cls.create(component)
+            if stateful_component is not None:
+                return stateful_component
+        return component
