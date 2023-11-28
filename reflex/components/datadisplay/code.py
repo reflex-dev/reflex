@@ -499,12 +499,10 @@ class CodeBlock(Component):
 
     def _render(self):
         out = super()._render()
-        theme_cond_predicate, qmark, theme_cond_value = self.theme._var_name.partition("?")
+        predicate, qmark, value = self.theme._var_name.partition("?")
         out.add_props(
             style=Var.create(
-                format.to_camel_case(
-                    f"{theme_cond_predicate}{qmark}{theme_cond_value.replace('`', '')}"
-                ),
+                format.to_camel_case(f"{predicate}{qmark}{value.replace('`', '')}"),
                 _var_is_local=False,
             )
         ).remove_props("theme", "code")
