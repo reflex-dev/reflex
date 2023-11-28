@@ -1209,11 +1209,13 @@ def test_app_wrap_compile_theme(compilable_app):
     assert (
         "function AppWrap({children}) {"
         "return ("
+        "<RadixThemesColorModeProvider>"
         "<RadixThemesTheme accentColor={`plum`}>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</RadixThemesTheme>"
+        "</RadixThemesColorModeProvider>"
         ")"
         "}"
     ) in "".join(app_js_lines)
