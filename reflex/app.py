@@ -587,7 +587,9 @@ class App(Base):
         page_imports.update(_frontend_packages)
         prerequisites.install_frontend_packages(page_imports)
 
-    def _app_root(self, app_wrappers):
+    def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
+        for component in tuple(app_wrappers.values()):
+            app_wrappers.update(component.get_app_wrap_components())
         order = sorted(app_wrappers, key=lambda k: k[0], reverse=True)
         root = parent = copy.deepcopy(app_wrappers[order[0]])
         for key in order[1:]:
