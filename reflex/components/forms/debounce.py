@@ -113,7 +113,9 @@ class DebounceInput(Component):
             ),
         )
 
-        return super().create(**props)
+        component = super().create(**props)
+        component._get_style = child._get_style
+        return component
 
     def get_event_triggers(self) -> dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
