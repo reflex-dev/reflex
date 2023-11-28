@@ -15,10 +15,7 @@ from reflex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import (
-    console,
-    telemetry,
-)
+from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore

@@ -32,6 +32,7 @@ from .config import (
     Config,
     Expiration,
     GitIgnore,
+    RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
 from .installer import (
@@ -84,6 +85,7 @@ __ALL__ = [
     PYTEST_CURRENT_TEST,
     PRODUCTION_BACKEND_URL,
     Reflex,
+    RequirementsTxt,
     RouteArgType,
     RouteRegex,
     RouteVar,
