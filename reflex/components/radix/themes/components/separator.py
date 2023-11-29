@@ -7,7 +7,7 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .base import (
+from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
@@ -15,3 +15,17 @@ from .base import (
     LiteralVariant,
     RadixThemesComponent,
 )
+
+LiteralButtonSize = Literal[1, 2, 3, 4]
+
+
+class Seperator(CommonMarginProps, RadixThemesComponent):
+    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+
+    tag = "Seperator"
+
+    # The size of the select: "1" | "2" | "3" 
+    size: Var[Literal[1, 2, 3, 4]]
+
+    # The color of the select
+    color: Var[LiteralAccentColor]
