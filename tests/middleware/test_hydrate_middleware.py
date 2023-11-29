@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from reflex import constants
 from reflex.app import App
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
-from reflex.state import BaseState, StateUpdate
+from reflex.state import State, StateUpdate
 
 
 class TestState(State):
@@ -31,19 +30,21 @@ def hydrate_middleware() -> HydrateMiddleware:
 
 
 @pytest.mark.asyncio
-async def test_preprocess_no_events(hydrate_middleware, event1):
+async def test_preprocess_no_events(hydrate_middleware, event1, mocker):
     """Test that app without on_load is processed correctly.
 
     Args:
         hydrate_middleware: Instance of HydrateMiddleware
         event1: An Event.
+        mocker: pytest mock object.
     """
-    state = TestState()
+    mocker.patch("reflex.state.State.class_subclasses", {TestState})
+    state = State()
     update = await hydrate_middleware.preprocess(
-        app=App(state=TestState),
+        app=App(state=State),
         event=event1,
         state=state,
     )
     assert isinstance(update, StateUpdate)
-    assert update.delta == {"test_state": state.dict()}
+    assert update.delta == state.dict()
     assert not update.events

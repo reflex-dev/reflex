@@ -28,7 +28,7 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import BaseState, StateManagerRedis, StateUpdate
+from reflex.state import BaseState, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -900,7 +900,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     windows_platform: bool,
     token: str,
     app_module_mock: unittest.mock.Mock,
-    mocker
+    mocker,
 ):
     """Create app with dynamic route var, and simulate navigation.
 

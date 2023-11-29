@@ -24,6 +24,7 @@ from reflex.state import (
     LockExpiredError,
     MutableProxy,
     RouterData,
+    State,
     StateManager,
     StateManagerMemory,
     StateManagerRedis,
@@ -2321,7 +2322,7 @@ def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
     Returns:
         dict similar to that returned by `State.get_delta` with IS_HYDRATED: is_hydrated
     """
-    return {state.get_name(): {CompileVars.IS_HYDRATED: is_hydrated}}
+    return {state.get_full_name(): {CompileVars.IS_HYDRATED: is_hydrated}}
 
 
 class OnLoadState(State):
@@ -2373,7 +2374,7 @@ class OnLoadState3(State):
         (OnLoadState3, {"on_load_state3": {"num": 1}}),
     ],
 )
-async def test_preprocess(app_module_mock, token, test_state, expected):
+async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
     """Test that a state hydrate event is processed correctly.
 
     Args:
@@ -2381,11 +2382,13 @@ async def test_preprocess(app_module_mock, token, test_state, expected):
         token: A token.
         test_state: State to process event.
         expected: Expected delta.
+        mocker: pytest mock object.
     """
+    mocker.patch("reflex.state.State.class_subclasses", {test_state})
     app = app_module_mock.app = App(
-        state=test_state, load_events={"index": [test_state.test_handler]}
+        state=State, load_events={"index": [test_state.test_handler]}
     )
-    state = test_state()
+    state = State()
 
     updates = []
     async for update in rx.app.process(
@@ -2407,31 +2410,33 @@ async def test_preprocess(app_module_mock, token, test_state, expected):
     events = updates[0].events
     assert len(events) == 2
     assert (await state._process(events[0]).__anext__()).delta == {
-        state.get_name(): {"num": 1}
+        test_state.get_full_name(): {"num": 1}
     }
     assert (await state._process(events[1]).__anext__()).delta == exp_is_hydrated(state)
 
 
 @pytest.mark.asyncio
-async def test_preprocess_multiple_load_events(app_module_mock, token):
+async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
     """Test that a state hydrate event for multiple on-load events is processed correctly.
 
     Args:
         app_module_mock: The app module that will be returned by get_app().
         token: A token.
+        mocker: pytest mock object.
     """
+    mocker.patch("reflex.state.State.class_subclasses", {OnLoadState})
     app = app_module_mock.app = App(
-        state=OnLoadState,
+        state=State,
         load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
     )
-    state = OnLoadState()
+    state = State()
 
     updates = []
     async for update in rx.app.process(
         app=app,
         event=Event(
             token=token,
-            name=f"{state.get_name()}.{CompileVars.ON_LOAD_INTERNAL}",
+            name=f"{state.get_full_name()}.{CompileVars.ON_LOAD_INTERNAL}",
             router_data={RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}},
         ),
         sid="sid",
@@ -2446,9 +2451,9 @@ async def test_preprocess_multiple_load_events(app_module_mock, token):
     events = updates[0].events
     assert len(events) == 3
     assert (await state._process(events[0]).__anext__()).delta == {
-        state.get_name(): {"num": 1}
+        OnLoadState.get_full_name(): {"num": 1}
     }
     assert (await state._process(events[1]).__anext__()).delta == {
-        state.get_name(): {"num": 2}
+        OnLoadState.get_full_name(): {"num": 2}
     }
     assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)
