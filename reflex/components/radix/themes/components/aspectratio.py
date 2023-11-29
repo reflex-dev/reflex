@@ -7,7 +7,7 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .base import (
+from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
@@ -15,3 +15,14 @@ from .base import (
     LiteralVariant,
     RadixThemesComponent,
 )
+
+LiteralSwitchSize = Literal["1", "2", "3", "4"]
+
+
+class AspectRatio(CommonMarginProps, RadixThemesComponent):
+    """A toggle switch alternative to the checkbox."""
+
+    tag = "AspectRatio"
+
+    # The ratio of the width to the height of the element
+    ration: Var[float]

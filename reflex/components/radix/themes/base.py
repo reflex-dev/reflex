@@ -10,8 +10,13 @@ from reflex.vars import Var
 
 LiteralAlign = Literal["start", "center", "end", "baseline", "stretch"]
 LiteralJustify = Literal["start", "center", "end", "between"]
-LiteralSize = Literal["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-LiteralVariant = Literal["solid", "soft", "outline", "ghost"]
+LiteralSize = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9]
+LiteralVariant = Literal["classic", "solid", "soft", "surface", "outline", "ghost"]
+LiteralAppearance = Literal["inherit", "light", "dark"]
+LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
+LiteralPanelBackground = Literal["solid", "transparent"]
+LiteralRadius = Literal["none", "small", "medium", "large", "full"]
+LiteralScaling = Literal["90%", "95%", "100%", "105%", "110%"]
 
 
 class CommonMarginProps(Component):
@@ -101,12 +106,6 @@ LiteralAccentColor = Literal[
     "bronze",
     "gray",
 ]
-LiteralAppearance = Literal["inherit", "light", "dark"]
-LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "auto"]
-LiteralPanelBackground = Literal["solid", "transparent"]
-LiteralRadius = Literal["none", "small", "medium", "large", "full"]
-LiteralScaling = Literal["90%", "95%", "100%", "105%", "110%"]
-
 
 class Theme(RadixThemesComponent):
     """A theme provider for radix components.
