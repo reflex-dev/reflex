@@ -1,11 +1,11 @@
 """An icon component."""
 from typing import List
 
-from reflex.components.component import Component
+from reflex.components.libs.chakra import ChakraComponent
 from reflex.utils import format
 
 
-class ChakraIconComponent(Component):
+class ChakraIconComponent(ChakraComponent):
     """A component that wraps a Chakra icon component."""
 
     library = "@chakra-ui/icons@2.0.19"
