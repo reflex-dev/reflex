@@ -1,10 +1,41 @@
 """Define the base Reflex class."""
 from __future__ import annotations
 
-from typing import Any
+import os
+from typing import Any, List, Type
 
 import pydantic
+from pydantic import BaseModel
 from pydantic.fields import ModelField
+
+from reflex import constants
+
+
+def validate_field_name(bases: List[Type["BaseModel"]], field_name: str) -> None:
+    """Ensure that the field's name does not shadow an existing attribute of the model.
+
+    Args:
+        bases: List of base models to check for shadowed attrs.
+        field_name: name of attribute
+
+    Raises:
+        NameError: If state var field shadows another in its parent state
+    """
+    reload = os.getenv(constants.RELOAD_CONFIG) == "True"
+    for base in bases:
+        try:
+            if not reload and getattr(base, field_name, None):
+                pass
+        except TypeError as te:
+            raise NameError(
+                f'State var "{field_name}" in {base} has been shadowed by a substate var; '
+                f'use a different field name instead".'
+            ) from te
+
+
+# monkeypatch pydantic validate_field_name method to skip validating
+# shadowed state vars when reloading app via utils.prerequisites.get_app(reload=True)
+pydantic.main.validate_field_name = validate_field_name  # type: ignore
 
 
 class Base(pydantic.BaseModel):

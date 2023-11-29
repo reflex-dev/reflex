@@ -113,7 +113,7 @@ def UploadFile():
             ),
         )
 
-    app = rx.App(state=UploadState)
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.compile()
 
@@ -192,7 +192,7 @@ async def test_upload_file(
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token))._file_data
+        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
@@ -205,8 +205,8 @@ async def test_upload_file(
     state = await upload_file.get_state(token)
     if secondary:
         # only the secondary form tracks progress and chain events
-        assert state.event_order.count("upload_progress") == 1
-        assert state.event_order.count("chain_event") == 1
+        assert state.substates["upload_state"].event_order.count("upload_progress") == 1
+        assert state.substates["upload_state"].event_order.count("chain_event") == 1
 
 
 @pytest.mark.asyncio
@@ -251,7 +251,7 @@ async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
 
     # look up the backend state and assert on uploaded contents
     async def get_file_data():
-        return (await upload_file.get_state(token))._file_data
+        return (await upload_file.get_state(token)).substates["upload_state"]._file_data
 
     file_data = await AppHarness._poll_for_async(get_file_data)
     assert isinstance(file_data, dict)
@@ -349,7 +349,7 @@ async def test_cancel_upload(tmp_path, upload_file: AppHarness, driver: WebDrive
 
     # look up the backend state and assert on progress
     state = await upload_file.get_state(token)
-    assert state.progress_dicts
-    assert exp_name not in state._file_data
+    assert state.substates["upload_state"].progress_dicts
+    assert exp_name not in state.substates["upload_state"]._file_data
 
     target_file.unlink()

@@ -8,7 +8,6 @@ from typing import Dict, Generator
 
 import pytest
 
-import reflex as rx
 from reflex.app import App
 from reflex.event import EventSpec
 
@@ -225,23 +224,3 @@ def token() -> str:
         A fresh/unique token string.
     """
     return str(uuid.uuid4())
-
-
-@pytest.fixture
-def duplicate_substate():
-    """Create a Test state that has duplicate child substates.
-
-    Returns:
-        The test state.
-    """
-
-    class TestState(rx.State):
-        pass
-
-    class ChildTestState(TestState):  # type: ignore # noqa
-        pass
-
-    class ChildTestState(TestState):  # type: ignore # noqa
-        pass
-
-    return TestState

@@ -4,10 +4,10 @@ import pytest
 
 from reflex.components import box, foreach, text
 from reflex.components.layout import Foreach
-from reflex.state import State
+from reflex.state import BaseState
 
 
-class ForEachState(State):
+class ForEachState(BaseState):
     """A state for testing the ForEach component."""
 
     colors_list: List[str] = ["red", "yellow"]

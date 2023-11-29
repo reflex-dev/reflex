@@ -56,7 +56,7 @@ def DynamicRoute():
     def redirect_page():
         return rx.fragment(rx.text("redirecting..."))
 
-    app = rx.App(state=DynamicState)
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.add_page(index, route="/page/[page_id]", on_load=DynamicState.on_load)  # type: ignore
     app.add_page(index, route="/static/x", on_load=DynamicState.on_load)  # type: ignore
@@ -143,10 +143,12 @@ def poll_for_order(
             return await dynamic_route.get_state(token)
 
         async def _check():
-            return (await _backend_state()).order == exp_order
+            return (await _backend_state()).substates[
+                "dynamic_state"
+            ].order == exp_order
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).order == exp_order
+        assert (await _backend_state()).substates["dynamic_state"].order == exp_order
 
     return _poll_for_order
 

@@ -6,7 +6,7 @@ import pytest
 from pandas import DataFrame
 
 from reflex.base import Base
-from reflex.state import State
+from reflex.state import BaseState
 from reflex.vars import (
     BaseVar,
     ComputedVar,
@@ -24,12 +24,6 @@ test_vars = [
 ]
 
 
-class BaseState(State):
-    """A Test State."""
-
-    val: str = "key"
-
-
 @pytest.fixture
 def TestObj():
     class TestObj(Base):
@@ -41,7 +35,7 @@ def TestObj():
 
 @pytest.fixture
 def ParentState(TestObj):
-    class ParentState(State):
+    class ParentState(BaseState):
         foo: int
         bar: int
 
@@ -74,7 +68,7 @@ def GrandChildState(ChildState, TestObj):
 
 @pytest.fixture
 def StateWithAnyVar(TestObj):
-    class StateWithAnyVar(State):
+    class StateWithAnyVar(BaseState):
         @ComputedVar
         def var_without_annotation(self) -> typing.Any:
             return TestObj
@@ -84,7 +78,7 @@ def StateWithAnyVar(TestObj):
 
 @pytest.fixture
 def StateWithCorrectVarAnnotation():
-    class StateWithCorrectVarAnnotation(State):
+    class StateWithCorrectVarAnnotation(BaseState):
         @ComputedVar
         def var_with_annotation(self) -> str:
             return "Correct annotation"
@@ -94,7 +88,7 @@ def StateWithCorrectVarAnnotation():
 
 @pytest.fixture
 def StateWithWrongVarAnnotation(TestObj):
-    class StateWithWrongVarAnnotation(State):
+    class StateWithWrongVarAnnotation(BaseState):
         @ComputedVar
         def var_with_annotation(self) -> str:
             return TestObj

@@ -4,7 +4,7 @@ import pytest
 
 from reflex import event
 from reflex.event import Event, EventHandler, EventSpec, fix_events
-from reflex.state import State
+from reflex.state import BaseState
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -303,7 +303,7 @@ def test_event_actions():
 
 
 def test_event_actions_on_state():
-    class EventActionState(State):
+    class EventActionState(BaseState):
         def handler(self):
             pass
 

@@ -28,7 +28,7 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event, get_hydrate_event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import RouterData, State, StateManagerRedis, StateUpdate
+from reflex.state import BaseState, RouterData, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -43,7 +43,7 @@ from .states import (
 )
 
 
-class EmptyState(State):
+class EmptyState(BaseState):
     """An empty state."""
 
     pass
@@ -77,14 +77,14 @@ def about_page():
     return about
 
 
-class ATestState(State):
+class ATestState(BaseState):
     """A simple state for testing."""
 
     var: int
 
 
 @pytest.fixture()
-def test_state() -> Type[State]:
+def test_state() -> Type[BaseState]:
     """A default state.
 
     Returns:
@@ -94,14 +94,14 @@ def test_state() -> Type[State]:
 
 
 @pytest.fixture()
-def redundant_test_state() -> Type[State]:
+def redundant_test_state() -> Type[BaseState]:
     """A default state.
 
     Returns:
         A default state.
     """
 
-    class RedundantTestState(State):
+    class RedundantTestState(BaseState):
         var: int
 
     return RedundantTestState
@@ -198,12 +198,12 @@ def test_default_app(app: App):
 
 
 def test_multiple_states_error(monkeypatch, test_state, redundant_test_state):
-    """Test that an error is thrown when multiple classes subclass rx.State.
+    """Test that an error is thrown when multiple classes subclass rx.BaseState.
 
     Args:
         monkeypatch: Pytest monkeypatch object.
-        test_state: A test state subclassing rx.State.
-        redundant_test_state: Another test state subclassing rx.State.
+        test_state: A test state subclassing rx.BaseState.
+        redundant_test_state: Another test state subclassing rx.BaseState.
     """
     monkeypatch.delenv(constants.PYTEST_CURRENT_TEST)
     with pytest.raises(ValueError):
@@ -705,12 +705,12 @@ async def test_dict_mutation_detection__plain_list(
     [
         (
             FileUploadState,
-            {"file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
+            {"state.file_upload_state": {"img_list": ["image1.jpg", "image2.jpg"]}},
         ),
         (
             ChildFileUploadState,
             {
-                "file_state_base1.child_file_upload_state": {
+                "state.file_state_base1.child_file_upload_state": {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
@@ -718,14 +718,14 @@ async def test_dict_mutation_detection__plain_list(
         (
             GrandChildFileUploadState,
             {
-                "file_state_base1.file_state_base2.grand_child_file_upload_state": {
+                "state.file_state_base1.file_state_base2.grand_child_file_upload_state": {
                     "img_list": ["image1.jpg", "image2.jpg"]
                 }
             },
         ),
     ],
 )
-async def test_upload_file(tmp_path, state, delta, token: str):
+async def test_upload_file(tmp_path, state, delta, token: str, mocker):
     """Test that file upload works correctly.
 
     Args:
@@ -733,10 +733,15 @@ async def test_upload_file(tmp_path, state, delta, token: str):
         state: The state class.
         delta: Expected delta
         token: a Token.
+        mocker: pytest mocker object.
     """
+    mocker.patch(
+        "reflex.state.State.class_subclasses",
+        {state if state is FileUploadState else FileStateBase1},
+    )
     state._tmp_path = tmp_path
     # The App state must be the "root" of the state tree
-    app = App(state=state if state is FileUploadState else FileStateBase1)
+    app = App(state=State)
     app.event_namespace.emit = AsyncMock()  # type: ignore
     current_state = await app.state_manager.get_state(token)
     data = b"This is binary data"
@@ -749,7 +754,7 @@ async def test_upload_file(tmp_path, state, delta, token: str):
     request_mock = unittest.mock.Mock()
     request_mock.headers = {
         "reflex-client-token": token,
-        "reflex-event-handler": f"{state_name}.multi_handle_upload",
+        "reflex-event-handler": f"state.{state_name}.multi_handle_upload",
     }
 
     file1 = UploadFile(
@@ -851,7 +856,7 @@ async def test_upload_file_background(state, tmp_path, token):
         await app.state_manager.redis.close()
 
 
-class DynamicState(State):
+class DynamicState(BaseState):
     """State class for testing dynamic route var.
 
     This is defined at module level because event handlers cannot be addressed
@@ -891,9 +896,7 @@ class DynamicState(State):
 
 @pytest.mark.asyncio
 async def test_dynamic_route_var_route_change_completed_on_load(
-    index_page,
-    windows_platform: bool,
-    token: str,
+    index_page, windows_platform: bool, token: str, mocker
 ):
     """Create app with dynamic route var, and simulate navigation.
 
@@ -904,7 +907,12 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         index_page: The index page.
         windows_platform: Whether the system is windows.
         token: a Token.
+        mocker: pytest mocker object.
     """
+    mocker.patch("reflex.state.State.class_subclasses", {DynamicState})
+    DynamicState.add_var(
+        constants.CompileVars.IS_HYDRATED, type_=bool, default_value=False
+    )
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
     if windows_platform:

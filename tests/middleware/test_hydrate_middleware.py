@@ -2,13 +2,14 @@ from typing import Any, Dict
 
 import pytest
 
+from reflex import constants
 from reflex.app import App
 from reflex.constants import CompileVars
 from reflex.middleware.hydrate_middleware import HydrateMiddleware
-from reflex.state import State, StateUpdate
+from reflex.state import BaseState, StateUpdate
 
 
-def exp_is_hydrated(state: State) -> Dict[str, Any]:
+def exp_is_hydrated(state: BaseState) -> Dict[str, Any]:
     """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
 
     Args:
@@ -20,7 +21,7 @@ def exp_is_hydrated(state: State) -> Dict[str, Any]:
     return {state.get_name(): {CompileVars.IS_HYDRATED: True}}
 
 
-class TestState(State):
+class TestState(BaseState):
     """A test state with no return in handler."""
 
     __test__ = False
@@ -32,7 +33,7 @@ class TestState(State):
         self.num += 1
 
 
-class TestState2(State):
+class TestState2(BaseState):
     """A test state with return in handler."""
 
     __test__ = False
@@ -54,7 +55,7 @@ class TestState2(State):
         self.name = "random"
 
 
-class TestState3(State):
+class TestState3(BaseState):
     """A test state with async handler."""
 
     __test__ = False
@@ -97,6 +98,9 @@ async def test_preprocess(
         event_fixture: The event fixture(an Event).
         expected: Expected delta.
     """
+    test_state.add_var(
+        constants.CompileVars.IS_HYDRATED, type_=bool, default_value=False
+    )
     app = App(state=test_state, load_events={"index": [test_state.test_handler]})
     state = test_state()
 

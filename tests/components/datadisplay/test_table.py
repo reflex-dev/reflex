@@ -4,12 +4,12 @@ from typing import List, Tuple
 import pytest
 
 from reflex.components.datadisplay.table import Tbody, Tfoot, Thead
-from reflex.state import State
+from reflex.state import BaseState
 
 PYTHON_GT_V38 = sys.version_info.major >= 3 and sys.version_info.minor > 8
 
 
-class TableState(State):
+class TableState(BaseState):
     """Test State class."""
 
     rows_List_List_str: List[List[str]] = [["random", "row"]]

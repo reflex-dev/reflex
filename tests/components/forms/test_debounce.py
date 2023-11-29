@@ -3,6 +3,7 @@
 import pytest
 
 import reflex as rx
+from reflex.state import BaseState
 from reflex.vars import BaseVar
 
 
@@ -24,7 +25,7 @@ def test_render_many_child():
         _ = rx.debounce_input("foo", "bar").render()
 
 
-class S(rx.State):
+class S(BaseState):
     """Example state for debounce tests."""
 
     value: str = ""

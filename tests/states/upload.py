@@ -3,9 +3,10 @@ from pathlib import Path
 from typing import ClassVar, List
 
 import reflex as rx
+from reflex.state import BaseState, State
 
 
-class UploadState(rx.State):
+class UploadState(BaseState):
     """The base state for uploading a file."""
 
     async def handle_upload1(self, files: List[rx.UploadFile]):
@@ -17,7 +18,7 @@ class UploadState(rx.State):
         pass
 
 
-class BaseState(rx.State):
+class BaseState(BaseState):
     """The test base state."""
 
     pass
@@ -37,7 +38,7 @@ class SubUploadState(BaseState):
         pass
 
 
-class FileUploadState(rx.State):
+class FileUploadState(State):
     """The base state for uploading a file."""
 
     img_list: List[str]
@@ -79,7 +80,7 @@ class FileUploadState(rx.State):
         pass
 
 
-class FileStateBase1(rx.State):
+class FileStateBase1(State):
     """The base state for a child FileUploadState."""
 
     pass

@@ -97,7 +97,7 @@ def ClientSide():
             rx.box(ClientSideSubSubState.l1s, id="l1s"),
         )
 
-    app = rx.App(state=ClientSideState)
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.add_page(index, route="/foo")
     app.compile()
@@ -263,7 +263,6 @@ async def test_client_side_state(
     state_var_input.send_keys("c7")
     input_value_input.send_keys("c7 value")
     set_sub_state_button.click()
-
     state_var_input.send_keys("l1")
     input_value_input.send_keys("l1 value")
     set_sub_state_button.click()
@@ -276,7 +275,6 @@ async def test_client_side_state(
     state_var_input.send_keys("l4")
     input_value_input.send_keys("l4 value")
     set_sub_state_button.click()
-
     state_var_input.send_keys("c1s")
     input_value_input.send_keys("c1s value")
     set_sub_sub_state_button.click()
@@ -285,28 +283,28 @@ async def test_client_side_state(
     set_sub_sub_state_button.click()
 
     exp_cookies = {
-        "client_side_state.client_side_sub_state.c1": {
+        "state.client_side_state.client_side_sub_state.c1": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "client_side_state.client_side_sub_state.c1",
+            "name": "state.client_side_state.client_side_sub_state.c1",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c1%20value",
         },
-        "client_side_state.client_side_sub_state.c2": {
+        "state.client_side_state.client_side_sub_state.c2": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "client_side_state.client_side_sub_state.c2",
+            "name": "state.client_side_state.client_side_sub_state.c2",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c2%20value",
         },
-        "client_side_state.client_side_sub_state.c4": {
+        "state.client_side_state.client_side_sub_state.c4": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "client_side_state.client_side_sub_state.c4",
+            "name": "state.client_side_state.client_side_sub_state.c4",
             "path": "/",
             "sameSite": "Strict",
             "secure": False,
@@ -321,19 +319,19 @@ async def test_client_side_state(
             "secure": False,
             "value": "c6%20value",
         },
-        "client_side_state.client_side_sub_state.c7": {
+        "state.client_side_state.client_side_sub_state.c7": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "client_side_state.client_side_sub_state.c7",
+            "name": "state.client_side_state.client_side_sub_state.c7",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
             "value": "c7%20value",
         },
-        "client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s": {
+        "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s": {
             "domain": "localhost",
             "httpOnly": False,
-            "name": "client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s",
+            "name": "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.c1s",
             "path": "/",
             "sameSite": "Lax",
             "secure": False,
@@ -354,40 +352,45 @@ async def test_client_side_state(
     input_value_input.send_keys("c3 value")
     set_sub_state_button.click()
     AppHarness._poll_for(
-        lambda: "client_side_state.client_side_sub_state.c3" in cookie_info_map(driver)
+        lambda: "state.client_side_state.client_side_sub_state.c3"
+        in cookie_info_map(driver)
     )
-    c3_cookie = cookie_info_map(driver)["client_side_state.client_side_sub_state.c3"]
+    c3_cookie = cookie_info_map(driver)[
+        "state.client_side_state.client_side_sub_state.c3"
+    ]
     assert c3_cookie.pop("expiry") is not None
     assert c3_cookie == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.c3",
+        "name": "state.client_side_state.client_side_sub_state.c3",
         "path": "/",
         "sameSite": "Lax",
         "secure": False,
         "value": "c3%20value",
     }
     time.sleep(2)  # wait for c3 to expire
-    assert "client_side_state.client_side_sub_state.c3" not in cookie_info_map(driver)
+    assert "state.client_side_state.client_side_sub_state.c3" not in cookie_info_map(
+        driver
+    )
 
     local_storage_items = local_storage.items()
     local_storage_items.pop("chakra-ui-color-mode", None)
     assert (
-        local_storage_items.pop("client_side_state.client_side_sub_state.l1")
+        local_storage_items.pop("state.client_side_state.client_side_sub_state.l1")
         == "l1 value"
     )
     assert (
-        local_storage_items.pop("client_side_state.client_side_sub_state.l2")
+        local_storage_items.pop("state.client_side_state.client_side_sub_state.l2")
         == "l2 value"
     )
     assert local_storage_items.pop("l3") == "l3 value"
     assert (
-        local_storage_items.pop("client_side_state.client_side_sub_state.l4")
+        local_storage_items.pop("state.client_side_state.client_side_sub_state.l4")
         == "l4 value"
     )
     assert (
         local_storage_items.pop(
-            "client_side_state.client_side_sub_state.client_side_sub_sub_state.l1s"
+            "state.client_side_state.client_side_sub_state.client_side_sub_sub_state.l1s"
         )
         == "l1s value"
     )
@@ -482,12 +485,15 @@ async def test_client_side_state(
 
     # make sure c5 cookie shows up on the `/foo` route
     AppHarness._poll_for(
-        lambda: "client_side_state.client_side_sub_state.c5" in cookie_info_map(driver)
+        lambda: "state.client_side_state.client_side_sub_state.c5"
+        in cookie_info_map(driver)
     )
-    assert cookie_info_map(driver)["client_side_state.client_side_sub_state.c5"] == {
+    assert cookie_info_map(driver)[
+        "state.client_side_state.client_side_sub_state.c5"
+    ] == {
         "domain": "localhost",
         "httpOnly": False,
-        "name": "client_side_state.client_side_sub_state.c5",
+        "name": "state.client_side_state.client_side_sub_state.c5",
         "path": "/foo/",
         "sameSite": "Lax",
         "secure": False,

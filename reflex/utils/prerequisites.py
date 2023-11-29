@@ -124,11 +124,13 @@ def get_app(reload: bool = False) -> ModuleType:
     Returns:
         The app based on the default config.
     """
+    os.environ[constants.RELOAD_CONFIG] = str(reload)
     config = get_config()
     module = ".".join([config.app_name, config.app_name])
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
+
         importlib.reload(app)
     return app
 

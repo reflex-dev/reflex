@@ -7,6 +7,7 @@ import copy
 import functools
 import inspect
 import json
+import os
 import traceback
 import urllib.parse
 import uuid
@@ -81,7 +82,7 @@ class HeaderData(Base):
 class PageData(Base):
     """An object containing page data."""
 
-    host: str = ""  #  repeated with self.headers.origin (remove or keep the duplicate?)
+    host: str = ""  # repeated with self.headers.origin (remove or keep the duplicate?)
     path: str = ""
     raw_path: str = ""
     full_path: str = ""
@@ -152,7 +153,7 @@ RESERVED_BACKEND_VAR_NAMES = {
 }
 
 
-class State(Base, ABC, extra=pydantic.Extra.allow):
+class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -176,6 +177,9 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # The event handlers.
     event_handlers: ClassVar[Dict[str, EventHandler]] = {}
 
+    # A set of subclassses of this class.
+    class_subclasses: ClassVar[Set[Type[BaseState]]] = set()
+
     # Mapping of var name to set of computed variables that depend on it
     _computed_var_dependencies: ClassVar[Dict[str, Set[str]]] = {}
 
@@ -189,10 +193,10 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     _always_dirty_substates: ClassVar[Set[str]] = set()
 
     # The parent state.
-    parent_state: Optional[State] = None
+    parent_state: Optional[BaseState] = None
 
     # The substates of the state.
-    substates: Dict[str, State] = {}
+    substates: Dict[str, BaseState] = {}
 
     # The set of dirty vars.
     dirty_vars: Set[str] = set()
@@ -209,10 +213,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
     # The router data for the current page
     router: RouterData = RouterData()
 
-    # The hydrated bool.
-    is_hydrated: bool = False
-
-    def __init__(self, *args, parent_state: State | None = None, **kwargs):
+    def __init__(self, *args, parent_state: BaseState | None = None, **kwargs):
         """Initialize the state.
 
         Args:
@@ -220,28 +221,20 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             parent_state: The parent state.
             **kwargs: The kwargs to pass to the Pydantic init method.
 
-        Raises:
-            ValueError: If a substate class shadows another.
         """
         kwargs["parent_state"] = parent_state
         super().__init__(*args, **kwargs)
 
         # Setup the substates.
         for substate in self.get_substates():
-            substate_name = substate.get_name()
-            if substate_name in self.substates:
-                raise ValueError(
-                    f"The substate class '{substate_name}' has been defined multiple times. Shadowing "
-                    f"substate classes is not allowed."
-                )
-            self.substates[substate_name] = substate(parent_state=self)
+            self.substates[substate.get_name()] = substate(parent_state=self)
         # Convert the event handlers to functions.
         self._init_event_handlers()
 
         # Create a fresh copy of the backend variables for this instance
         self._backend_vars = copy.deepcopy(self.backend_vars)
 
-    def _init_event_handlers(self, state: State | None = None):
+    def _init_event_handlers(self, state: BaseState | None = None):
         """Initialize event handlers.
 
         Allow event handlers to be called directly on the instance. This is
@@ -281,16 +274,43 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
         Args:
             **kwargs: The kwargs to pass to the pydantic init_subclass method.
+
+        Raises:
+            ValueError: If a substate class shadows another.
         """
+        is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
         super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
+
+        # Reset subclass tracking for this class.
+        cls.class_subclasses = set()
 
         # Get the parent vars.
         parent_state = cls.get_parent_state()
         if parent_state is not None:
             cls.inherited_vars = parent_state.vars
             cls.inherited_backend_vars = parent_state.backend_vars
+
+            # Check if another substate class with the same name has already been defined.
+            if cls.__name__ in set(c.__name__ for c in parent_state.class_subclasses):
+                if is_testing_env:
+                    # Clear existing subclass with same name when app is reloaded via
+                    # utils.prerequisites.get_app(reload=True)
+                    parent_state.class_subclasses = set(
+                        c
+                        for c in parent_state.class_subclasses
+                        if c.__name__ != cls.__name__
+                    )
+                else:
+                    # During normal operation, subclasses cannot have the same name, even if they are
+                    # defined in different modules.
+                    raise ValueError(
+                        f"The substate class '{cls.__name__}' has been defined multiple times. "
+                        "Shadowing substate classes is not allowed."
+                    )
+            # Track this new subclass in the parent state's subclasses set.
+            parent_state.class_subclasses.add(cls)
 
         cls.new_backend_vars = {
             name: value
@@ -437,7 +457,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @classmethod
     @functools.lru_cache()
-    def get_parent_state(cls) -> Type[State] | None:
+    def get_parent_state(cls) -> Type[BaseState] | None:
         """Get the parent state.
 
         Returns:
@@ -446,20 +466,19 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         parent_states = [
             base
             for base in cls.__bases__
-            if types._issubclass(base, State) and base is not State
+            if types._issubclass(base, BaseState) and base is not BaseState
         ]
         assert len(parent_states) < 2, "Only one parent state is allowed."
         return parent_states[0] if len(parent_states) == 1 else None  # type: ignore
 
     @classmethod
-    @functools.lru_cache()
-    def get_substates(cls) -> set[Type[State]]:
+    def get_substates(cls) -> set[Type[BaseState]]:
         """Get the substates of the state.
 
         Returns:
             The substates of the state.
         """
-        return set(cls.__subclasses__())
+        return cls.class_subclasses
 
     @classmethod
     @functools.lru_cache()
@@ -487,7 +506,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     @classmethod
     @functools.lru_cache()
-    def get_class_substate(cls, path: Sequence[str]) -> Type[State]:
+    def get_class_substate(cls, path: Sequence[str]) -> Type[BaseState]:
         """Get the class substate.
 
         Args:
@@ -643,7 +662,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         """
         return {
             func[0]: func[1]
-            for func in inspect.getmembers(State, predicate=inspect.isfunction)
+            for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
             if not func[0].startswith("__")
         }
 
@@ -909,7 +928,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> State | None:
+    def get_substate(self, path: Sequence[str]) -> BaseState | None:
         """Get the substate.
 
         Args:
@@ -933,7 +952,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
 
     def _get_event_handler(
         self, event: Event
-    ) -> tuple[State | StateProxy, EventHandler]:
+    ) -> tuple[BaseState | StateProxy, EventHandler]:
         """Get the event handler for the given event.
 
         Args:
@@ -1050,7 +1069,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
         )
 
     async def _process_event(
-        self, handler: EventHandler, state: State | StateProxy, payload: Dict
+        self, handler: EventHandler, state: BaseState | StateProxy, payload: Dict
     ) -> AsyncIterator[StateUpdate]:
         """Process event.
 
@@ -1263,7 +1282,7 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             d.update(substate_d)
         return d
 
-    async def __aenter__(self) -> State:
+    async def __aenter__(self) -> BaseState:
         """Enter the async context manager protocol.
 
         This should not be used for the State class, but exists for
@@ -1286,6 +1305,13 @@ class State(Base, ABC, extra=pydantic.Extra.allow):
             exc_info: The exception info tuple.
         """
         pass
+
+
+class State(BaseState):
+    """The app Base State."""
+
+    # The hydrated bool.
+    is_hydrated: bool = False
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -1455,10 +1481,10 @@ class StateManager(Base, ABC):
     """A class to manage many client states."""
 
     # The state class to use.
-    state: Type[State]
+    state: Type[BaseState]
 
     @classmethod
-    def create(cls, state: Type[State]):
+    def create(cls, state: Type[BaseState]):
         """Create a new state manager.
 
         Args:
@@ -1473,7 +1499,7 @@ class StateManager(Base, ABC):
         return StateManagerMemory(state=state)
 
     @abstractmethod
-    async def get_state(self, token: str) -> State:
+    async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.
 
         Args:
@@ -1485,7 +1511,7 @@ class StateManager(Base, ABC):
         pass
 
     @abstractmethod
-    async def set_state(self, token: str, state: State):
+    async def set_state(self, token: str, state: BaseState):
         """Set the state for a token.
 
         Args:
@@ -1496,7 +1522,7 @@ class StateManager(Base, ABC):
 
     @abstractmethod
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -1512,7 +1538,7 @@ class StateManagerMemory(StateManager):
     """A state manager that stores states in memory."""
 
     # The mapping of client ids to states.
-    states: Dict[str, State] = {}
+    states: Dict[str, BaseState] = {}
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock = asyncio.Lock()
@@ -1527,7 +1553,7 @@ class StateManagerMemory(StateManager):
             "_states_locks": {"exclude": True},
         }
 
-    async def get_state(self, token: str) -> State:
+    async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.
 
         Args:
@@ -1540,7 +1566,7 @@ class StateManagerMemory(StateManager):
             self.states[token] = self.state()
         return self.states[token]
 
-    async def set_state(self, token: str, state: State):
+    async def set_state(self, token: str, state: BaseState):
         """Set the state for a token.
 
         Args:
@@ -1550,7 +1576,7 @@ class StateManagerMemory(StateManager):
         pass
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -1598,7 +1624,7 @@ class StateManagerRedis(StateManager):
         b"evicted",
     }
 
-    async def get_state(self, token: str) -> State:
+    async def get_state(self, token: str) -> BaseState:
         """Get the state for a token.
 
         Args:
@@ -1613,7 +1639,9 @@ class StateManagerRedis(StateManager):
             return await self.get_state(token)
         return cloudpickle.loads(redis_state)
 
-    async def set_state(self, token: str, state: State, lock_id: bytes | None = None):
+    async def set_state(
+        self, token: str, state: BaseState, lock_id: bytes | None = None
+    ):
         """Set the state for a token.
 
         Args:
@@ -1637,7 +1665,7 @@ class StateManagerRedis(StateManager):
         await self.redis.set(token, cloudpickle.dumps(state), ex=self.token_expiration)
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state for a token while holding exclusive lock.
 
         Args:
@@ -1879,7 +1907,7 @@ class MutableProxy(wrapt.ObjectProxy):
 
     __mutable_types__ = (list, dict, set, Base)
 
-    def __init__(self, wrapped: Any, state: State, field_name: str):
+    def __init__(self, wrapped: Any, state: BaseState, field_name: str):
         """Create a proxy for a mutable object that tracks changes.
 
         Args:

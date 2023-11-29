@@ -93,7 +93,7 @@ def BackgroundTask():
             rx.button("Reset", on_click=State.reset_counter, id="reset"),
         )
 
-    app = rx.App(state=State)
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.compile()
 

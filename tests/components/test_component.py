@@ -14,7 +14,7 @@ from reflex.components.component import (
 from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler
-from reflex.state import State
+from reflex.state import BaseState
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.utils.imports import ImportVar
@@ -23,7 +23,7 @@ from reflex.vars import Var, VarData
 
 @pytest.fixture
 def test_state():
-    class TestState(State):
+    class TestState(BaseState):
         num: int
 
         def do_something(self):
@@ -400,7 +400,7 @@ def test_get_event_triggers(component1, component2):
     )
 
 
-class C1State(State):
+class C1State(BaseState):
     """State for testing C1 component."""
 
     def mock_handler(self, _e, _bravo, _charlie):

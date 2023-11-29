@@ -57,6 +57,7 @@ from reflex.route import (
     verify_route_validity,
 )
 from reflex.state import (
+    BaseState,
     RouterData,
     State,
     StateManager,
@@ -98,7 +99,7 @@ class App(Base):
     socket_app: Optional[ASGIApp] = None
 
     # The state class to use for the app.
-    state: Optional[Type[State]] = None
+    state: Optional[Type[BaseState]] = None
 
     # Class to manage many client states.
     _state_manager: Optional[StateManager] = None
@@ -149,25 +150,24 @@ class App(Base):
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
             )
         super().__init__(*args, **kwargs)
-        state_subclasses = State.__subclasses__()
-        inferred_state = state_subclasses[-1] if state_subclasses else None
+        state_subclasses = BaseState.__subclasses__()
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
 
-        # Special case to allow test cases have multiple subclasses of rx.State.
+        # Special case to allow test cases have multiple subclasses of rx.BaseState.
         if not is_testing_env:
-            # Only one State class is allowed.
+            # Only one Base State class is allowed.
             if len(state_subclasses) > 1:
                 raise ValueError(
-                    "rx.State has been subclassed multiple times. Only one subclass is allowed"
+                    "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
                 )
 
             # verify that provided state is valid
-            if self.state and inferred_state and self.state is not inferred_state:
+            if self.state and self.state is not State:
                 console.warn(
                     f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
-                    f" Defaulting to root state: ({inferred_state.__name__})"
+                    f" Defaulting to root state: ({State.__name__})"
                 )
-            self.state = inferred_state
+            self.state = State
         # Get the config
         config = get_config()
 
@@ -265,7 +265,7 @@ class App(Base):
             raise ValueError("The state manager has not been initialized.")
         return self._state_manager
 
-    async def preprocess(self, state: State, event: Event) -> StateUpdate | None:
+    async def preprocess(self, state: BaseState, event: Event) -> StateUpdate | None:
         """Preprocess the event.
 
         This is where middleware can modify the event before it is processed.
@@ -290,7 +290,7 @@ class App(Base):
                 return out  # type: ignore
 
     async def postprocess(
-        self, state: State, event: Event, update: StateUpdate
+        self, state: BaseState, event: Event, update: StateUpdate
     ) -> StateUpdate:
         """Postprocess the event.
 
@@ -764,7 +764,7 @@ class App(Base):
                 future.result()
 
     @contextlib.asynccontextmanager
-    async def modify_state(self, token: str) -> AsyncIterator[State]:
+    async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
         """Modify the state out of band.
 
         Args:
@@ -792,7 +792,9 @@ class App(Base):
                     sid=state.router.session.session_id,
                 )
 
-    def _process_background(self, state: State, event: Event) -> asyncio.Task | None:
+    def _process_background(
+        self, state: BaseState, event: Event
+    ) -> asyncio.Task | None:
         """Process an event in the background and emit updates as they arrive.
 
         Args:

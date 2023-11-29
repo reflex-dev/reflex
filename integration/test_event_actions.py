@@ -130,7 +130,7 @@ def TestEventAction():
             on_click=EventActionState.on_click("outer"),  # type: ignore
         )
 
-    app = rx.App(state=EventActionState)
+    app = rx.App(state=rx.State)
     app.add_page(index)
     app.compile()
 
@@ -211,10 +211,14 @@ def poll_for_order(
             return await event_action.get_state(token)
 
         async def _check():
-            return (await _backend_state()).order == exp_order
+            return (await _backend_state()).substates[
+                "event_action_state"
+            ].order == exp_order
 
         await AppHarness._poll_for_async(_check)
-        assert (await _backend_state()).order == exp_order
+        assert (await _backend_state()).substates[
+            "event_action_state"
+        ].order == exp_order
 
     return _poll_for_order
 

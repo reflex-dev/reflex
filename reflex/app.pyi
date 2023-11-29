@@ -33,6 +33,7 @@ from reflex.route import (
 )
 from reflex.state import (
     State as State,
+    BaseState as BaseState,
     StateManager as StateManager,
     StateUpdate as StateUpdate,
 )
@@ -69,7 +70,7 @@ class App(Base):
     api: FastAPI
     sio: Optional[AsyncServer]
     socket_app: Optional[ASGIApp]
-    state: Type[State]
+    state: Type[BaseState]
     state_manager: StateManager
     style: ComponentStyle
     middleware: List[Middleware]

@@ -10,7 +10,7 @@ from packaging import version
 from reflex import constants
 from reflex.base import Base
 from reflex.event import EventHandler
-from reflex.state import State
+from reflex.state import BaseState
 from reflex.utils import (
     build,
     prerequisites,
@@ -43,7 +43,7 @@ V056 = version.parse("0.5.6")
 VMAXPLUS1 = version.parse(get_above_max_version())
 
 
-class ExampleTestState(State):
+class ExampleTestState(BaseState):
     """Test state class."""
 
     def test_event_handler(self):
