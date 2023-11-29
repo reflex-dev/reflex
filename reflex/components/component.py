@@ -1643,10 +1643,11 @@ class StatefulComponent(BaseComponent):
         Returns:
             The memoized component tree.
         """
+        from reflex.components.forms.input import InputGroup
         from reflex.components.layout.foreach import Foreach
 
         # Foreach must be memoized as a single component to retain index Var context.
-        if not isinstance(component, Foreach):
+        if not isinstance(component, (Foreach, InputGroup)):
             component.children = [
                 cls.compile_from(child) for child in component.children
             ]
