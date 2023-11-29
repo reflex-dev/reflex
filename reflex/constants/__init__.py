@@ -36,7 +36,6 @@ from .config import (
     RequirementsTxt,
 )
 from .event import Endpoint, EventTriggers, SocketEvent
-from .hosting import Hosting
 from .installer import (
     Bun,
     Fnm,
@@ -72,7 +71,6 @@ __ALL__ = [
     Fnm,
     GitIgnore,
     Hooks,
-    RequirementsTxt,
     Imports,
     IS_WINDOWS,
     LOCAL_STORAGE,
@@ -89,6 +87,7 @@ __ALL__ = [
     PRODUCTION_BACKEND_URL,
     Reflex,
     RELOAD_CONFIG,
+    RequirementsTxt,
     RouteArgType,
     RouteRegex,
     RouteVar,
@@ -102,5 +101,4 @@ __ALL__ = [
     Tailwind,
     Templates,
     CompileVars,
-    Hosting,
 ]
