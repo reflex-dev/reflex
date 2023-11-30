@@ -20,7 +20,7 @@ LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
 
-class TextFieldRoot(CommonMarginProps, RadixThemesComponent):
+class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
     tag = "TextField.Root"
@@ -38,7 +38,7 @@ class TextFieldRoot(CommonMarginProps, RadixThemesComponent):
     radius: Var[LiteralRadius]
 
 
-class TextField(TextFieldRoot, el.Input):
+class TextFieldInput(el.Input, TextFieldRoot, el.Input):
     """The input part of a TextField, may be used by itself."""
 
     tag = "TextField.Input"

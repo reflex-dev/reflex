@@ -19,7 +19,7 @@ from ..base import (
 LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 
-class Badge(CommonMarginProps, RadixThemesComponent):
+class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
     tag = "Badge"

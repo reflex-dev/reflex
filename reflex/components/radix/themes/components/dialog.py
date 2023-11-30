@@ -33,7 +33,7 @@ class DialogTitle(CommonMarginProps, RadixThemesComponent):
 
     tag = "Dialog.Title"
 
-class DialogContent(CommonMarginProps, RadixThemesComponent):
+class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Content"

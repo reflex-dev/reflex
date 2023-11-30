@@ -17,7 +17,7 @@ from ..base import (
 )
 
 
-class Card(CommonMarginProps, RadixThemesComponent):
+class Card(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Card"

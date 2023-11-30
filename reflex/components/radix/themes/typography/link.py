@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex import el
 from reflex.vars import Var
 
 from ..base import (
@@ -26,7 +27,7 @@ from .base import (
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 
 
-class Link(CommonMarginProps, RadixThemesComponent):
+class Link(el.A, CommonMarginProps, RadixThemesComponent):
     """A semantic element for navigation between pages."""
 
     tag = "Link"

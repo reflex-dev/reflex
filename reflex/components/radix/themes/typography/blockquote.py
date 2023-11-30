@@ -5,7 +5,7 @@ https://www.radix-ui.com/themes/docs/theme/typography
 from __future__ import annotations
 
 from typing import Literal
-
+from reflex import el
 from reflex.vars import Var
 
 from ..base import (
@@ -23,7 +23,7 @@ from .base import (
 
 )
 
-class Blockquote(CommonMarginProps, RadixThemesComponent):
+class Blockquote(el.Blockquote, CommonMarginProps, RadixThemesComponent):
     """A block level extended quotation."""
 
     tag = "Blockquote"

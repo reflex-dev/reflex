@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex import el
 from reflex.vars import Var
 
 from ..base import (
@@ -24,7 +25,7 @@ from .base import (
 
 )
 
-class Text(CommonMarginProps, RadixThemesComponent):
+class Text(el.Span, CommonMarginProps, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Text"

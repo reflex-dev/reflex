@@ -28,7 +28,7 @@ class PopoverTrigger(CommonMarginProps, RadixThemesComponent):
 
     tag = "Popover.Trigger"
 
-class PopoverContent(CommonMarginProps, RadixThemesComponent):
+class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Popover.Content"

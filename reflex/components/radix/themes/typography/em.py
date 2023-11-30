@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex import el
 from reflex.vars import Var
 
 from ..base import (
@@ -23,7 +24,7 @@ from .base import (
 
 )
 
-class Em(CommonMarginProps, RadixThemesComponent):
+class Em(el.Em, CommonMarginProps, RadixThemesComponent):
     """Marks text to stress emphasis."""
 
     tag = "Em"

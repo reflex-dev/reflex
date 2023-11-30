@@ -17,7 +17,7 @@ from ..base import (
 )
 
 
-class CalloutRoot(CommonMarginProps, RadixThemesComponent):
+class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Callout.Root"
@@ -40,12 +40,12 @@ class CalloutRoot(CommonMarginProps, RadixThemesComponent):
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
 
-class CalloutIcon(CommonMarginProps, RadixThemesComponent):
+class CalloutIcon(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Callout.Icon"
 
-class CalloutText(CommonMarginProps, RadixThemesComponent):
+class CalloutText(el.P, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Callout.Text"
