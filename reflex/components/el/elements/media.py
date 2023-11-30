@@ -359,6 +359,21 @@ class Defs(BaseHTML):
     tag = "defs"
 
 
+class Stop(BaseHTML):
+    """Defines a color and its position to use on a gradient. This element is always a child of a <linearGradient> or <radialGradient> element."""
+
+    tag = "stop"
+
+    # Defines where the gradient stop is placed along the gradient vector
+    offset: Var[Union[str, int, bool]]
+
+    # Defines the color of the gradient stop
+    stop_color: Var[Union[str, int, bool]]
+
+    # Defines the opacity of the gradient stop
+    stop_opacity: Var[Union[str, int, bool]]
+
+
 class Path(BaseHTML):
     """Display the path element."""
 

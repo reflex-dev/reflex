@@ -59,6 +59,7 @@ from .media import (
     Svg,
     Lineargradient,
     Defs,
+    Stop,
     Track,
     Video,
 )
@@ -143,6 +144,7 @@ source = Source.create
 svg = Svg.create
 lineargradient = Lineargradient.create
 defs = Defs.create
+stop = Stop.create
 path = Path.create
 
 # Sectioning
