@@ -82,6 +82,10 @@ class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
             "on_interact_outside": lambda e0: e0,
         }
 
+class ContextMenuSub(CommonMarginProps, RadixThemesComponent):
+    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+
+    tag = "ContextMenu.Sub"
 
 class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
