@@ -1330,7 +1330,7 @@ class State(BaseState):
                 self.router.session.client_token,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),  # type: ignore
+            type(self).set_is_hydrated(True),  # type: ignore
         ]
 
 
