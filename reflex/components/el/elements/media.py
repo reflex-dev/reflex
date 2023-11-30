@@ -374,6 +374,24 @@ class Stop(BaseHTML):
     stop_opacity: Var[Union[str, int, bool]]
 
 
+class Circle(BaseHTML):
+    """An SVG basic shape, used to draw circles based on a center point and a radius."""
+
+    tag = "circle"
+
+    # The x-axis coordinate of the center of the circle
+    cx: Var[Union[str, int, bool]]
+
+    # The y-axis coordinate of the center of the circle
+    cy: Var[Union[str, int, bool]]
+
+    # The radius of the circle
+    r: Var[Union[str, int, bool]]
+
+    # The total length for the circle's circumference, in user units.
+    path_length: Var[Union[str, int, bool]]
+
+
 class Path(BaseHTML):
     """Display the path element."""
 
