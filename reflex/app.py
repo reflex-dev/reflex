@@ -145,6 +145,13 @@ class App(Base):
                         Also, if there are multiple client subclasses of rx.State(Subclasses of rx.State should consist
                         of the DefaultState and the client app state).
         """
+        if "state" in kwargs:
+            console.deprecate(
+                feature_name="`state` argument for App()",
+                reason="due to multiple rx.State subclasses being allowed.",
+                deprecation_version="0.3.5",
+                removal_version="0.4.0",
+            )
         if "connect_error_component" in kwargs:
             raise ValueError(
                 "`connect_error_component` is deprecated, use `overlay_component` instead"
@@ -161,12 +168,6 @@ class App(Base):
                     "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
                 )
 
-            # verify that provided state is valid
-            if self.state and self.state is not State:
-                console.warn(
-                    f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
-                    f" Defaulting to root state: ({State.__name__})"
-                )
             self.state = State
         # Get the config
         config = get_config()
