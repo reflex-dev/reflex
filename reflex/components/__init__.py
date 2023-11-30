@@ -1,8 +1,9 @@
 """Import all the components."""
 from __future__ import annotations
 
-from . import chakra as chakra
+from . import next as next
 from .base import Script
+from .chakra import *
 from .component import Component
 from .component import NoSSRComponent as NoSSRComponent
 from .datadisplay import *
@@ -13,7 +14,6 @@ from .graphing import *
 from .layout import *
 from .media import *
 from .navigation import *
-from .next import *
 from .overlay import *
 from .typography import *
 

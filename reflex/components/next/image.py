@@ -1,8 +1,9 @@
 """Image component from next/image."""
 import base64
 import io
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
 
+from reflex.utils import types
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
@@ -20,10 +21,10 @@ class Image(NextComponent):
     src: Var[Any]
 
     # Represents the rendered width in pixels, so it will affect how large the image appears.
-    width: Var[int]
+    width: Var[Any]
 
     # Represents the rendered height in pixels, so it will affect how large the image appears.
-    height: Var[int]
+    height: Var[Any]
 
     # Used to describe the image for screen readers and search engines.
     alt: Var[str]
@@ -68,21 +69,50 @@ class Image(NextComponent):
         }
 
     @classmethod
-    def create(cls, *children, **props):
+    def create(
+        cls,
+        *children,
+        width: Optional[int | str] = None,
+        height: Optional[int | str] = None,
+        **props,
+    ):
         """Create an Image component from next/image.
 
         Args:
             *children: The children of the component.
+            width: The width of the image.
+            height: The height of the image.
             **props:The props of the component.
 
         Returns:
             _type_: _description_
         """
-        props.setdefault("width", 100)
-        props.setdefault("height", 100)
+        style = props.get("style", {})
+        DEFAULT_W_H = "100%"
+
+        def check_prop_type(prop_name, prop_value):
+            if types.check_prop_in_allowed_types(prop_value, allowed_types=[int]):
+                props[prop_name] = prop_value
+
+            elif types.check_prop_in_allowed_types(prop_value, allowed_types=[str]):
+                props[prop_name] = 0
+                style[prop_name] = prop_value
+            else:
+                props[prop_name] = 0
+                style[prop_name] = DEFAULT_W_H
+
+        check_prop_type("width", width)
+        check_prop_type("height", height)
+
+        props["style"] = style
+
+        # mysteriously, following `sizes` prop is needed to avoid blury images.
+        props["sizes"] = "100vw"
+
         src = props.get("src", None)
         if src is not None and not isinstance(src, (Var)):
             props["src"] = Var.create(value=src, _var_is_string=True)
+
         return super().create(*children, **props)
 
 

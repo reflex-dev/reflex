@@ -272,6 +272,23 @@ def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bo
     return get_base_class(value_type) in allowed_types
 
 
+def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
+    """Check that a prop value is in a list of allowed types.
+    Does the check in a way that works regardless if it's a raw value or a state Var.
+
+    Args:
+        prop: The prop to check.
+        allowed_types: The list of allowed types.
+
+    Returns:
+        If the prop type match one of the allowed_types.
+    """
+    from reflex.vars import Var
+
+    type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
+    return type_ in allowed_types
+
+
 # Store this here for performance.
 StateBases = get_base_class(StateVar)
 StateIterBases = get_base_class(StateIterVar)

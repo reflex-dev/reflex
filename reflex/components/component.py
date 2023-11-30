@@ -773,6 +773,10 @@ class Component(BaseComponent, ABC):
         for child in self.children:
             dynamic_imports |= child.get_dynamic_imports()
 
+        for prop in self.get_component_props():
+            if getattr(self, prop) is not None:
+                dynamic_imports |= getattr(self, prop).get_dynamic_imports()
+
         # Return the dynamic imports
         return dynamic_imports
 
