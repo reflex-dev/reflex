@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex import el
 from reflex.vars import Var
 
 from ..base import (
@@ -20,7 +21,7 @@ from .base import (
 LiteralContainerSize = Literal["1", "2", "3", "4"]
 
 
-class Container(LayoutComponent):
+class Container(el.Div, LayoutComponent):
     """Constrains the maximum width of page content.
 
     See https://www.radix-ui.com/themes/docs/components/container
