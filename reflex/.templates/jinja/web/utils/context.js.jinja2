@@ -30,6 +30,8 @@ export const initialEvents = () => [
     ...onLoadInternalEvent()
 ]
 {% else %}
+export const onLoadInternalEvent = () => []
+
 export const initialEvents = () => []
 {% endif %}
 
