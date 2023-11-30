@@ -27,6 +27,33 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
     # The size of the select: "1" | "2" | "3" 
     size: Var[Literal[1, 2, 3]]
 
+    # The value of the select when initially rendered. Use when you do not need to control the state of the select.
+    default_value: Var[str]
+
+    # The controlled value of the select. Use when you need to control the state of the select.
+    value: Var[str]
+
+    # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
+    default_open: Var[bool]
+
+    # The controlled open state of the select. Must be used in conjunction with onOpenChange.
+    open: Var[bool]
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            "on_open_change": lambda e0: e0,
+            "on_value_change": lambda e0: e0,
+        }
+
+
+
+
 class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
@@ -54,6 +81,34 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
 
     # Whether to render the select content with higher contrast color against background
     high_contrast: Var[bool]
+
+    # The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu.
+    position: Var[Literal["item-aligned", "popper"]]
+
+    # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled. Only available when position is set to popper.
+    side: Var[Literal["top", "right", "bottom", "left"]]
+
+    # The distance in pixels from the anchor. Only available when position is set to popper.
+    side_offset: Var[int]
+
+    # The preferred alignment against the anchor. May change when collisions occur. Only available when position is set to popper.
+    align: Var[Literal["start", "center", "end"]]
+
+    # The vertical distance in pixels from the anchor. Only available when position is set to popper.
+    align_offset: Var[int]
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            "on_close_auto_focus": lambda e0: e0,
+            "on_escape_key_down": lambda e0: e0,
+            "on_pointer_down_outside": lambda e0: e0,
+        }
 
 class SelectGroup(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

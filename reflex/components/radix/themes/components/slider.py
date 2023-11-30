@@ -36,3 +36,36 @@ class Slider(CommonMarginProps, RadixThemesComponent):
 
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
+
+    # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
+    default_value: Var[float]
+
+    # The controlled value of the slider. Must be used in conjunction with onValueChange.
+    value: Var[float]
+
+    # The minimum value of the slider.
+    min: Var[float]
+
+    # The maximum value of the slider.
+    max: Var[float]
+
+    # The step value of the slider.
+    step: Var[float]
+
+    # Whether the slider is disabled
+    disabled: Var[bool]
+
+    # The orientation of the slider.
+    orientation: Var[Literal["horizontal", "vertical"]]
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            "on_value_change": lambda e0: e0,
+            "on_vallue_commit": lambda e0: e0,
+        }

@@ -51,14 +51,17 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
     # Whether the checkbox is disabled
     disabled: Var[bool]
 
+    # Whether the checkbox is required
+    required: Var[bool]
 
-    def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
-        """Get the event triggers that pass the component's value to the handler.
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
 
         Returns:
-            A dict mapping the event trigger to the var that is passed to the handler.
+            The signatures of the event triggers.
         """
         return {
             **super().get_event_triggers(),
-            EventTriggers.ON_CHANGE: lambda e0: [e0.target.checked],
+            "on_checked_change": lambda e0: e0,
         }

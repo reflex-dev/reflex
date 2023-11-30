@@ -17,31 +17,62 @@ from ..base import (
 )
 
 
-class DropdownRoot(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dropdown.Root"
+    tag = "DropdownMenu.Root"
+
+    # The controlled open state of the dropdown menu. Must be used in conjunction with onOpenChange.
+    open: Var[bool]
+
+    # The modality of the dropdown menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
+    modal: Var[bool]
+    
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            "on_open_change": lambda e0: e0,
+        }
 
 
-class DropdownTrigger(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dropdown.Trigger"
+    tag = "DropdownMenu.Trigger"
 
-class DropdownContent(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dropdown.Content"
+    tag = "DropdownMenu.Content"
 
-class DropdownSubTrigger(CommonMarginProps, RadixThemesComponent):
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            "on_close_auto_focus": lambda e0: e0,
+            "on_escape_key_down": lambda e0: e0,
+            "on_pointer_down_outside": lambda e0: e0,
+            "on_interact_outside": lambda e0: e0,
+        }
+
+class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dropdown.SubTrigger"
+    tag = "DropdownMenu.SubTrigger"
 
-class DropdownSubContent(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dropdown.SubContent"
+    tag = "DropdownMenu.SubContent"
 
     # Button size "1" - "4"
     size: Var[Literal["1", "2"]]
@@ -56,10 +87,10 @@ class DropdownSubContent(CommonMarginProps, RadixThemesComponent):
     high_contrast: Var[bool]
 
 
-class DropdownItem(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dropdown.Item"
+    tag = "DropdownMenu.Item"
 
     # Override theme color for button
     color: Var[LiteralAccentColor]
@@ -68,7 +99,7 @@ class DropdownItem(CommonMarginProps, RadixThemesComponent):
     shortcut: Var[str]
 
 
-class DropdownSeparator(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuSeparator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dropdown.Separator"
+    tag = "DropdownMenu.Separator"
