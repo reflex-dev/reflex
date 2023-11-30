@@ -16,16 +16,16 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralButtonSize = Literal[1, 2, 3, 4]
+LiteralSeperatorSize = Literal["1", "2", "3", "4"]
 
 
-class Seperator(CommonMarginProps, RadixThemesComponent):
+class Separator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Seperator"
+    tag = "Separator"
 
     # The size of the select: "1" | "2" | "3" 
-    size: Var[Literal[1, 2, 3, 4]]
+    size: Var[LiteralSeperatorSize]
 
     # The color of the select
     color: Var[LiteralAccentColor]

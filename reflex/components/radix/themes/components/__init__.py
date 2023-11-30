@@ -15,8 +15,8 @@ from .inset import Inset
 from .popover import PopoverRoot, PopoverTrigger, PopoverContent, PopoverClose
 from .radiogroup import RadioGroupRoot, RadioGroupItem
 from .scrollarea import ScrollArea
-from .select import SelectRoot, SelectTrigger, SelectContent, SelectItem, SelectSeparator
-from .separator import Seperator
+from .select import SelectRoot, SelectTrigger, SelectContent, SelectItem, SelectSeparator, SelectGroup, SelectLabel
+from .separator import Separator
 from .switch import Switch
 from .table import TableRoot, TableHeader, TableBody, TableRow, TableCell, TableColumnHeaderCell, TableRowHeaderCell
 from .tabs import TabsRoot, TabsList, TabsTrigger
@@ -110,9 +110,11 @@ selecttrigger = SelectTrigger.create
 selectcontent = SelectContent.create
 selectitem = SelectItem.create
 selectseparator = SelectSeparator.create
+selectgroup = SelectGroup.create
+selectlabel = SelectLabel.create
 
 # Separator
-separator = Seperator.create
+separator = Separator.create
 
 # Switch
 switch = Switch.create

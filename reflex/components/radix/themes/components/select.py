@@ -68,6 +68,9 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     # The radius of the select trigger
     radius: Var[LiteralRadius]
 
+    # The placeholder of the select trigger
+    placeholder: Var[str]
+
 class SelectContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
