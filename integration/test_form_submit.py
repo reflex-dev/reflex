@@ -71,6 +71,8 @@ def FormSubmitName():
 
     class FormState(rx.State):
         form_data: dict = {}
+        val: str = "foo"
+        options: list[str] = ["option1", "option2"]
 
         def form_submit(self, form_data: dict):
             self.form_data = form_data
@@ -96,15 +98,24 @@ def FormSubmitName():
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input"),
                     rx.range_slider(name="range_input"),
-                    rx.radio_group(["option1", "option2"], name="radio_input"),
-                    rx.select(["option1", "option2"], name="select_input"),
+                    rx.radio_group(FormState.options, name="radio_input"),
+                    rx.select(FormState.options, name="select_input"),
                     rx.text_area(name="text_area_input"),
-                    rx.input(
-                        name="debounce_input",
-                        debounce_timeout=0,
-                        on_change=rx.console_log,
+                    rx.input_group(
+                        rx.input_left_element(rx.icon(tag="chevron_right")),
+                        rx.input(
+                            name="debounce_input",
+                            debounce_timeout=0,
+                            on_change=rx.console_log,
+                        ),
+                        rx.input_right_element(rx.icon(tag="chevron_left")),
                     ),
-                    rx.button("Submit", type_="submit"),
+                    rx.button_group(
+                        rx.button("Submit", type_="submit"),
+                        rx.icon_button(FormState.val, icon=rx.icon(tag="add")),
+                        variant="outline",
+                        is_attached=True,
+                    ),
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},

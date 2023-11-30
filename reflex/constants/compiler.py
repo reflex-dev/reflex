@@ -1,7 +1,9 @@
 """Compiler variables."""
+import enum
 from enum import Enum
 from types import SimpleNamespace
 
+from reflex.base import Base
 from reflex.constants import Dirs
 from reflex.utils.imports import ImportVar
 
@@ -104,3 +106,21 @@ class Hooks(SimpleNamespace):
     """Common sets of hook declarations."""
 
     EVENTS = f"const [{CompileVars.ADD_EVENTS}, {CompileVars.CONNECT_ERROR}] = useContext(EventLoopContext);"
+
+
+class MemoizationDisposition(enum.Enum):
+    """The conditions under which a component should be memoized."""
+
+    # If the component uses state or events, it should be memoized.
+    STATEFUL = "stateful"
+    # TODO: add more modes, like always and never
+
+
+class MemoizationMode(Base):
+    """The mode for memoizing a Component."""
+
+    # The conditions under which the component should be memoized.
+    disposition: MemoizationDisposition = MemoizationDisposition.STATEFUL
+
+    # Whether children of this component should be memoized first.
+    recursive: bool = True

@@ -8,11 +8,14 @@ from typing import Any, Callable, Iterable
 from reflex.components.component import Component
 from reflex.components.layout.fragment import Fragment
 from reflex.components.tags import IterTag
+from reflex.constants import MemoizationMode
 from reflex.vars import Var
 
 
 class Foreach(Component):
     """A component that takes in an iterable and a render function and renders a list of components."""
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
     # The iterable to create components from.
     iterable: Var[Iterable]

@@ -15,7 +15,7 @@ from reflex.components.libs.chakra import (
     LiteralButtonSize,
     LiteralInputVariant,
 )
-from reflex.constants import EventTriggers
+from reflex.constants import EventTriggers, MemoizationMode
 from reflex.utils import imports
 from reflex.vars import Var
 
