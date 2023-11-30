@@ -58,6 +58,8 @@ class CompileVars(SimpleNamespace):
     CONNECT_ERROR = "connectError"
     # The name of the function for converting a dict to an event.
     TO_EVENT = "Event"
+    # The name of the internal on_load event.
+    ON_LOAD_INTERNAL = "on_load_internal"
 
 
 class PageNames(SimpleNamespace):

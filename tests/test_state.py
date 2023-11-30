@@ -7,7 +7,7 @@ import functools
 import json
 import os
 import sys
-from typing import Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -24,6 +24,7 @@ from reflex.state import (
     LockExpiredError,
     MutableProxy,
     RouterData,
+    State,
     StateManager,
     StateManagerMemory,
     StateManagerRedis,
@@ -1374,8 +1375,13 @@ def test_error_on_state_method_shadow():
     )
 
 
-def test_state_with_invalid_yield():
-    """Test that an error is thrown when a state yields an invalid value."""
+@pytest.mark.asyncio
+async def test_state_with_invalid_yield(capsys):
+    """Test that an error is thrown when a state yields an invalid value.
+
+    Args:
+        capsys: Pytest fixture for capture standard streams.
+    """
 
     class StateWithInvalidYield(BaseState):
         """A state that yields an invalid value."""
@@ -1389,15 +1395,16 @@ def test_state_with_invalid_yield():
             yield 1
 
     invalid_state = StateWithInvalidYield()
-    with pytest.raises(TypeError) as err:
-        invalid_state._check_valid(
-            invalid_state.event_handlers["invalid_handler"],
-            rx.event.Event(token="fake_token", name="invalid_handler"),
+    async for update in invalid_state._process(
+        rx.event.Event(token="fake_token", name="invalid_handler")
+    ):
+        assert not update.delta
+        assert update.events == rx.event.fix_events(
+            [rx.window_alert("An error occurred. See logs for details.")],
+            token="",
         )
-    assert (
-        "must only return/yield: None, Events or other EventHandlers"
-        in err.value.args[0]
-    )
+    captured = capsys.readouterr()
+    assert "must only return/yield: None, Events or other EventHandlers" in captured.out
 
 
 @pytest.fixture(scope="function", params=["in_process", "redis"])
@@ -2303,3 +2310,150 @@ def test_state_union_optional():
     assert UnionState.custom_union.c2r is not None  # type: ignore
     assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
     assert types.is_union(UnionState.int_float._var_type)  # type: ignore
+
+
+def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:
+    """Expected IS_HYDRATED delta that would be emitted by HydrateMiddleware.
+
+    Args:
+        state: the State that is hydrated.
+        is_hydrated: whether the state is hydrated.
+
+    Returns:
+        dict similar to that returned by `State.get_delta` with IS_HYDRATED: is_hydrated
+    """
+    return {state.get_full_name(): {CompileVars.IS_HYDRATED: is_hydrated}}
+
+
+class OnLoadState(State):
+    """A test state with no return in handler."""
+
+    num: int = 0
+
+    def test_handler(self):
+        """Test handler."""
+        self.num += 1
+
+
+class OnLoadState2(State):
+    """A test state with return in handler."""
+
+    num: int = 0
+    name: str
+
+    def test_handler(self):
+        """Test handler that calls another handler.
+
+        Returns:
+            Chain of EventHandlers
+        """
+        self.num += 1
+        return self.change_name
+
+    def change_name(self):
+        """Test handler to change name."""
+        self.name = "random"
+
+
+class OnLoadState3(State):
+    """A test state with async handler."""
+
+    num: int = 0
+
+    async def test_handler(self):
+        """Test handler."""
+        self.num += 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "test_state, expected",
+    [
+        (OnLoadState, {"on_load_state": {"num": 1}}),
+        (OnLoadState2, {"on_load_state2": {"num": 1}}),
+        (OnLoadState3, {"on_load_state3": {"num": 1}}),
+    ],
+)
+async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
+    """Test that a state hydrate event is processed correctly.
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        test_state: State to process event.
+        expected: Expected delta.
+        mocker: pytest mock object.
+    """
+    mocker.patch("reflex.state.State.class_subclasses", {test_state})
+    app = app_module_mock.app = App(
+        state=State, load_events={"index": [test_state.test_handler]}
+    )
+    state = State()
+
+    updates = []
+    async for update in rx.app.process(
+        app=app,
+        event=Event(
+            token=token,
+            name=f"{state.get_name()}.{CompileVars.ON_LOAD_INTERNAL}",
+            router_data={RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}},
+        ),
+        sid="sid",
+        headers={},
+        client_ip="",
+    ):
+        assert isinstance(update, StateUpdate)
+        updates.append(update)
+    assert len(updates) == 1
+    assert updates[0].delta == exp_is_hydrated(state, False)
+
+    events = updates[0].events
+    assert len(events) == 2
+    assert (await state._process(events[0]).__anext__()).delta == {
+        test_state.get_full_name(): {"num": 1}
+    }
+    assert (await state._process(events[1]).__anext__()).delta == exp_is_hydrated(state)
+
+
+@pytest.mark.asyncio
+async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
+    """Test that a state hydrate event for multiple on-load events is processed correctly.
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        mocker: pytest mock object.
+    """
+    mocker.patch("reflex.state.State.class_subclasses", {OnLoadState})
+    app = app_module_mock.app = App(
+        state=State,
+        load_events={"index": [OnLoadState.test_handler, OnLoadState.test_handler]},
+    )
+    state = State()
+
+    updates = []
+    async for update in rx.app.process(
+        app=app,
+        event=Event(
+            token=token,
+            name=f"{state.get_full_name()}.{CompileVars.ON_LOAD_INTERNAL}",
+            router_data={RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}},
+        ),
+        sid="sid",
+        headers={},
+        client_ip="",
+    ):
+        assert isinstance(update, StateUpdate)
+        updates.append(update)
+    assert len(updates) == 1
+    assert updates[0].delta == exp_is_hydrated(state, False)
+
+    events = updates[0].events
+    assert len(events) == 3
+    assert (await state._process(events[0]).__anext__()).delta == {
+        OnLoadState.get_full_name(): {"num": 1}
+    }
+    assert (await state._process(events[1]).__anext__()).delta == {
+        OnLoadState.get_full_name(): {"num": 2}
+    }
+    assert (await state._process(events[2]).__anext__()).delta == exp_is_hydrated(state)

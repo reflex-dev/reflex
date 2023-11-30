@@ -1016,7 +1016,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
 
         def _is_valid_type(events: Any) -> bool:
-            return isinstance(events, (EventHandler, EventSpec))
+            return isinstance(events, (Event, EventHandler, EventSpec))
 
         if events is None or _is_valid_type(events):
             return events
@@ -1312,6 +1312,26 @@ class State(BaseState):
 
     # The hydrated bool.
     is_hydrated: bool = False
+
+    def on_load_internal(self) -> list[Event | EventSpec] | None:
+        """Queue on_load handlers for the current page.
+
+        Returns:
+            The list of events to queue for on load handling.
+        """
+        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        load_events = app.get_load_events(self.router.page.path)
+        if not load_events and self.is_hydrated:
+            return  # Fast path for page-to-page navigation
+        self.is_hydrated = False
+        return [
+            *fix_events(
+                load_events,
+                self.router.session.client_token,
+                router_data=self.router_data,
+            ),
+            type(self).set_is_hydrated(True),  # type: ignore
+        ]
 
 
 class StateProxy(wrapt.ObjectProxy):

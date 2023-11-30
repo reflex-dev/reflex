@@ -5,11 +5,13 @@ import platform
 import uuid
 from pathlib import Path
 from typing import Dict, Generator
+from unittest import mock
 
 import pytest
 
 from reflex.app import App
 from reflex.event import EventSpec
+from reflex.utils import prerequisites
 
 from .states import (
     DictMutationTestState,
@@ -28,6 +30,26 @@ def app() -> App:
         The app.
     """
     return App()
+
+
+@pytest.fixture
+def app_module_mock(monkeypatch) -> mock.Mock:
+    """Mock the app module.
+
+    This overwrites prerequisites.get_app to return the mock for the app module.
+
+    To use this in your test, assign `app_module_mock.app = rx.App(...)`.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+
+    Returns:
+        The mock for the main app module.
+    """
+    app_module_mock = mock.Mock()
+    get_app_mock = mock.Mock(return_value=app_module_mock)
+    monkeypatch.setattr(prerequisites, "get_app", get_app_mock)
+    return app_module_mock
 
 
 @pytest.fixture(scope="session")
