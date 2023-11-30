@@ -19,7 +19,7 @@ from ..base import (
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class Button(el.Button, CommonMarginProps, RadixThemesComponent):
+class IconButton(el.Button, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Button"

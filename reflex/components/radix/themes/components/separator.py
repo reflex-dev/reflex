@@ -29,3 +29,9 @@ class Seperator(CommonMarginProps, RadixThemesComponent):
 
     # The color of the select
     color: Var[LiteralAccentColor]
+
+    # The orientation of the separator.
+    orientation: Var[Literal["horizontal", "vertical"]]
+
+    # When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
+    decorative: Var[bool]
