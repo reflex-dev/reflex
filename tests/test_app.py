@@ -25,12 +25,12 @@ from reflex.app import (
     upload,
 )
 from reflex.components import Box, Component, Cond, Fragment, Text
-from reflex.event import Event, EventSpec, fix_events
+from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
 from reflex.state import BaseState, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
-from reflex.utils import format, prerequisites
+from reflex.utils import format
 from reflex.vars import ComputedVar
 
 from .conftest import chdir
@@ -894,25 +894,7 @@ class DynamicState(BaseState):
         # self.side_effect_counter = self.side_effect_counter + 1
         return self.dynamic
 
-    def on_load_internal(self) -> list[Event | EventSpec] | None:
-        """Queue on_load handlers for the current page.
-
-        Returns:
-            The list of events to queue for on load handling.
-        """
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
-        load_events = app.get_load_events(self.router.page.path)
-        if not load_events and self.is_hydrated:
-            return  # Fast path for page-to-page navigation
-        self.is_hydrated = False
-        return [
-            *fix_events(
-                load_events,
-                self.router.session.client_token,
-                router_data=self.router_data,
-            ),
-            DynamicState.set_is_hydrated(True),  # type: ignore
-        ]
+    on_load_internal = State.on_load_internal.fn
 
 
 @pytest.mark.asyncio
@@ -935,8 +917,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         app_module_mock: Mocked app module.
         mocker: pytest mocker object.
     """
-    mocker.patch("reflex.state.State.class_subclasses", {DynamicState})
-
     arg_name = "dynamic"
     route = f"/test/[{arg_name}]"
     if windows_platform:
