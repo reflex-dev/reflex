@@ -30,7 +30,7 @@ class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
 
     tag = "AlertDialog.Trigger"
 
-class AlertDialogContent(CommonMarginProps, RadixThemesComponent):
+class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
     tag = "AlertDialog.Content"

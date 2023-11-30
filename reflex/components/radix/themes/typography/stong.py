@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex import el
 from reflex.vars import Var
 
 from ..base import (
@@ -25,7 +26,7 @@ from .base import (
 
 
 
-class Strong(CommonMarginProps, RadixThemesComponent):
+class Strong(el.Strong, CommonMarginProps, RadixThemesComponent):
     """Marks text to signify strong importance."""
 
     tag = "Strong"
