@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex import el
 from reflex.vars import Var
 
 from ..base import (
@@ -22,7 +23,7 @@ LiteralFlexDisplay = Literal["none", "inline-flex", "flex"]
 LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 
 
-class Flex(LayoutComponent):
+class Flex(el.Div, LayoutComponent):
     """Component for creating flex layouts."""
 
     tag = "Flex"
