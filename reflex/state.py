@@ -1317,9 +1317,6 @@ class State(BaseState):
     def on_load_internal(self) -> list[Event | EventSpec] | None:
         """Queue on_load handlers for the current page.
 
-        Args:
-            self: The state instance.
-
         Returns:
             The list of events to queue for on load handling.
         """
