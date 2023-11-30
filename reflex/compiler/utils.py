@@ -254,6 +254,7 @@ def compile_custom_component(
             "name": component.tag,
             "props": props,
             "render": render.render(),
+            "hooks": render.get_hooks(),
             "custom_code": render.get_custom_code(),
         },
         imports,

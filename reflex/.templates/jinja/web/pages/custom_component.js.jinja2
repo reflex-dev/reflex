@@ -22,6 +22,9 @@ export const {{component.name}} = memo(({ {{-component.props|join(", ")-}} }) =>
 
     }
 {% endif %}
+    {% for hook in component.hooks %}
+    {{ hook }}
+    {% endfor %}
     return(
         {{utils.render(component.render)}}
       )
