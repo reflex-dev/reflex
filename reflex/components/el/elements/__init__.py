@@ -96,6 +96,7 @@ from .typography import (
     P,
     Pre,
     Ul,
+    Kbd
 )
 
 # Forms
@@ -156,6 +157,7 @@ dl = Dl.create
 dt = Dt.create
 figcaption = Figcaption.create
 hr = Hr.create
+kbd = Kbd.create
 li = Li.create
 ol = Ol.create
 p = P.create

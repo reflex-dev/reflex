@@ -127,3 +127,8 @@ class Del(BaseHTML):
 
     # Specifies the date and time of when the text was deleted.
     date_time: Var[Union[str, int, bool]]
+
+class Kbd(BaseHTML):
+    """Display the kbd element."""
+
+    tag = "kbd" 

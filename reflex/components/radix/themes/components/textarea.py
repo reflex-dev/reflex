@@ -7,7 +7,7 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
-from .base import (
+from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
