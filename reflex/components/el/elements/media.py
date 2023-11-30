@@ -332,6 +332,33 @@ class Svg(BaseHTML):
     height: Var[Union[str, int, bool]]
 
 
+class Lineargradient(BaseHTML):
+    """Lets authors define linear gradients to apply to other SVG elements."""
+
+    tag = "lineargradient"
+    
+    # Defines the coordinate system for attributes x1, x2, y1, y2
+    gradient_units: Var[Union[str, int, bool]]
+
+    # Defines the x coordinate of the starting point of the vector gradient along which the linear gradient is drawn
+    x1: Var[Union[str, int, bool]]
+
+    # Defines the x coordinate of the ending point of the vector gradient along which the linear gradient is drawn
+    x2: Var[Union[str, int, bool]]
+
+    # Defines the y coordinate of the starting point of the vector gradient along which the linear gradient is drawn
+    y1: Var[Union[str, int, bool]]
+
+    # Defines the y coordinate of the ending point of the vector gradient along which the linear gradient is drawn
+    y2: Var[Union[str, int, bool]]
+
+
+class Defs(BaseHTML):
+    """Used to store graphical objects that will be used at a later time."""
+
+    tag = "defs"
+
+
 class Path(BaseHTML):
     """Display the path element."""
 

@@ -57,6 +57,8 @@ from .media import (
     Portal,
     Source,
     Svg,
+    Lineargradient,
+    Defs,
     Track,
     Video,
 )
@@ -139,6 +141,8 @@ picture = Picture.create
 portal = Portal.create
 source = Source.create
 svg = Svg.create
+lineargradient = Lineargradient.create
+defs = Defs.create
 path = Path.create
 
 # Sectioning
@@ -147,6 +151,7 @@ article = Article.create
 aside = Aside.create
 body = Body.create
 footer = Footer.create
+header = Header.create
 
 # Typography
 blockquote = Blockquote.create
