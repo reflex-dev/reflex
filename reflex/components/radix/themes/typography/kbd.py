@@ -24,7 +24,7 @@ from .base import (
 
 )
 
-class Kbd(el.Kdb, CommonMarginProps, RadixThemesComponent):
+class Kbd(el.Kbd, CommonMarginProps, RadixThemesComponent):
     """Represents keyboard input or a hotkey."""
 
     tag = "Kbd"

@@ -38,7 +38,7 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     radius: Var[LiteralRadius]
 
 
-class TextFieldInput(el.Input, TextFieldRoot, el.Input):
+class TextFieldInput(el.Input, TextFieldRoot):
     """The input part of a TextField, may be used by itself."""
 
     tag = "TextField.Input"

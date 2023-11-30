@@ -5,7 +5,7 @@ from typing import Literal
 
 from reflex.vars import Var
 
-from .base import (
+from ..base import (
     CommonMarginProps,
     LiteralAlign,
     LiteralJustify,
