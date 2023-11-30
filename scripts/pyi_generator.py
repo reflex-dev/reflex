@@ -44,6 +44,7 @@ EXCLUDED_PROPS = [
     "is_default",
     "special_props",
     "_invalid_children",
+    "_memoization_mode",
     "_valid_children",
 ]
 

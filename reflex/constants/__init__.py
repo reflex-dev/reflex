@@ -25,6 +25,8 @@ from .compiler import (
     Ext,
     Hooks,
     Imports,
+    MemoizationDisposition,
+    MemoizationMode,
     PageNames,
 )
 from .config import (
@@ -75,6 +77,8 @@ __ALL__ = [
     IS_WINDOWS,
     LOCAL_STORAGE,
     LogLevel,
+    MemoizationDisposition,
+    MemoizationMode,
     Next,
     Node,
     NOCOMPILE_FILE,

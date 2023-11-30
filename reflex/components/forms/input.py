@@ -9,7 +9,7 @@ from reflex.components.libs.chakra import (
     LiteralButtonSize,
     LiteralInputVariant,
 )
-from reflex.constants import EventTriggers
+from reflex.constants import EventTriggers, MemoizationMode
 from reflex.utils import imports
 from reflex.vars import Var
 
@@ -106,6 +106,8 @@ class InputGroup(ChakraComponent):
     """The InputGroup component is a component that is used to group a set of inputs."""
 
     tag = "InputGroup"
+
+    _memoization_mode = MemoizationMode(recursive=False)
 
 
 class InputLeftAddon(ChakraComponent):

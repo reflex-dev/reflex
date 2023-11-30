@@ -23,7 +23,14 @@ from typing import (
 from reflex.base import Base
 from reflex.compiler.templates import STATEFUL_COMPONENT
 from reflex.components.tags import Tag
-from reflex.constants import Dirs, EventTriggers, Hooks, Imports, PageNames
+from reflex.constants import (
+    Dirs,
+    EventTriggers,
+    Hooks,
+    Imports,
+    MemoizationMode,
+    PageNames,
+)
 from reflex.event import (
     EventChain,
     EventHandler,
@@ -149,6 +156,9 @@ class Component(BaseComponent, ABC):
 
     # custom attribute
     custom_attrs: Dict[str, Union[Var, str]] = {}
+
+    # When to memoize this component and its children.
+    _memoization_mode: MemoizationMode = MemoizationMode()
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -1643,15 +1653,13 @@ class StatefulComponent(BaseComponent):
         Returns:
             The memoized component tree.
         """
-        from reflex.components.forms.input import InputGroup
-        from reflex.components.layout.foreach import Foreach
-
-        # Foreach must be memoized as a single component to retain index Var context.
-        if not isinstance(component, (Foreach, InputGroup)):
-            component.children = [
-                cls.compile_from(child) for child in component.children
-            ]
         if isinstance(component, Component):
+            if component._memoization_mode.recursive:
+                # Recursively memoize stateful children (default).
+                component.children = [
+                    cls.compile_from(child) for child in component.children
+                ]
+            # Memoize this component if it depends on state.
             stateful_component = cls.create(component)
             if stateful_component is not None:
                 return stateful_component
