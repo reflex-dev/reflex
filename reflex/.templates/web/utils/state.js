@@ -6,7 +6,7 @@ import env from "env.json";
 import Cookies from "universal-cookie";
 import { useEffect, useReducer, useRef, useState } from "react";
 import Router, { useRouter } from "next/router";
-import { initialEvents, initialState } from "utils/context.js"
+import { initialEvents, initialState, onLoadInternalEvent } from "utils/context.js"
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT
@@ -565,7 +565,7 @@ export const useEventLoop = (
 
   // Route after the initial page hydration.
   useEffect(() => {
-    const change_complete = () => addEvents([Event('state.on_load_internal')])
+    const change_complete = () => addEvents(onLoadInternalEvent())
     router.events.on('routeChangeComplete', change_complete)
     return () => {
       router.events.off('routeChangeComplete', change_complete)
