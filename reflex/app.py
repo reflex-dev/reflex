@@ -161,11 +161,12 @@ class App(Base):
                     "rx.BaseState cannot be subclassed multiple times. use rx.State instead"
                 )
 
-            # verify that provided state is valid
-            if self.state and self.state is not State:
-                console.warn(
-                    f"Using substate ({self.state.__name__}) as root state in `rx.App` is currently not supported."
-                    f" Defaulting to root state: ({State.__name__})"
+            if "state" in kwargs:
+                console.deprecate(
+                    feature_name="`state` argument for App()",
+                    reason="due to all `rx.State` subclasses being inferred.",
+                    deprecation_version="0.3.5",
+                    removal_version="0.4.0",
                 )
             self.state = State
         # Get the config
