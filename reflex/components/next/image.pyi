@@ -9,7 +9,8 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import base64
 import io
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Optional
+from reflex.utils import types
 from reflex.utils.serializers import serializer
 from reflex.vars import Var
 from .base import NextComponent
@@ -21,9 +22,9 @@ class Image(NextComponent):
     def create(  # type: ignore
         cls,
         *children,
+        width: Optional[Union[str, int]] = None,
+        height: Optional[Union[str, int]] = None,
         src: Optional[Union[Var[Any], Any]] = None,
-        width: Optional[Union[Var[int], int]] = None,
-        height: Optional[Union[Var[int], int]] = None,
         alt: Optional[Union[Var[str], str]] = None,
         loader: Optional[Union[Var[Any], Any]] = None,
         fill: Optional[Union[Var[bool], bool]] = None,
@@ -40,7 +41,7 @@ class Image(NextComponent):
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
         autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, str]] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -98,9 +99,9 @@ class Image(NextComponent):
 
         Args:
             *children: The children of the component.
+            width: The width of the image.
+            height: The height of the image.
             src: This can be either an absolute external URL, or an internal path
-            width: Represents the rendered width in pixels, so it will affect how large the image appears.
-            height: Represents the rendered height in pixels, so it will affect how large the image appears.
             alt: Used to describe the image for screen readers and search engines.
             loader: A custom function used to resolve image URLs.
             fill: A boolean that causes the image to fill the parent element, which is useful when the width and height are unknown. Default to True
