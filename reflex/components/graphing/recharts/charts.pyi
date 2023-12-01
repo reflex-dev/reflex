@@ -770,10 +770,10 @@ class FunnelChart(RechartsCharts):
         ] = None,
         **props
     ) -> "FunnelChart":
-        """Create a Recharts chart container component (mixin).
+        """Create a new memoization leaf component.
 
         Args:
-            *children: The children components.
+            *children: The children of the component.
             data: The source data, in which each element is an object.
             sync_id: If any two categorical charts(rx.line_chart, rx.area_chart, rx.bar_chart, rx.composed_chart) have the same sync_id, these two charts can sync the position GraphingTooltip, and the start_index, end_index of Brush.
             sync_method: When sync_id is provided, allows customisation of how the charts will synchronize GraphingTooltips and brushes. Using 'index' (default setting), other charts will reuse current datum's index within the data array. In cases where data does not have the same length, this might yield unexpected results. In that case use 'value' which will try to match other charts values, or a fully custom function which will receive tick, data as argument and should return an index. 'index' | 'value' | function
@@ -791,7 +791,7 @@ class FunnelChart(RechartsCharts):
             **props: The props of the component.
 
         Returns:
-            A Recharts component.
+            The memoization leaf
         """
         ...
 

@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Union
+from reflex.components.component import MemoizationLeaf
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from .recharts import (
@@ -17,10 +18,9 @@ from .recharts import (
     LiteralPosition,
     LiteralVerticalAlign,
     Recharts,
-    RechartsMemoizationLeafMixin,
 )
 
-class ResponsiveContainer(Recharts, RechartsMemoizationLeafMixin):
+class ResponsiveContainer(Recharts, MemoizationLeaf):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -85,10 +85,10 @@ class ResponsiveContainer(Recharts, RechartsMemoizationLeafMixin):
         ] = None,
         **props
     ) -> "ResponsiveContainer":
-        """Create a Recharts chart container component (mixin).
+        """Create a new memoization leaf component.
 
         Args:
-            *children: The children components.
+            *children: The children of the component.
             aspect: The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
             width: The width of chart container. Can be a number or string
             height: The height of chart container. Number
@@ -104,7 +104,7 @@ class ResponsiveContainer(Recharts, RechartsMemoizationLeafMixin):
             **props: The props of the component.
 
         Returns:
-            A Recharts component.
+            The memoization leaf
         """
         ...
 

@@ -1,6 +1,6 @@
 """The head component."""
 
-from reflex.components.component import Component
+from reflex.components.component import Component, MemoizationLeaf
 
 
 class NextHeadLib(Component):
@@ -9,7 +9,7 @@ class NextHeadLib(Component):
     library = "next/head"
 
 
-class Head(NextHeadLib):
+class Head(NextHeadLib, MemoizationLeaf):
     """Head Component."""
 
     tag = "NextHead"

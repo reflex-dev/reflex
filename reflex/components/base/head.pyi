@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.component import Component
+from reflex.components.component import Component, MemoizationLeaf
 
 class NextHeadLib(Component):
     @overload
@@ -88,7 +88,7 @@ class NextHeadLib(Component):
         """
         ...
 
-class Head(NextHeadLib):
+class Head(NextHeadLib, MemoizationLeaf):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -147,7 +147,7 @@ class Head(NextHeadLib):
         ] = None,
         **props
     ) -> "Head":
-        """Create the component.
+        """Create a new memoization leaf component.
 
         Args:
             *children: The children of the component.
@@ -160,9 +160,6 @@ class Head(NextHeadLib):
             **props: The props of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The memoization leaf
         """
         ...

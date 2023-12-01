@@ -1674,3 +1674,35 @@ class StatefulComponent(BaseComponent):
             if stateful_component is not None:
                 return stateful_component
         return component
+
+
+class MemoizationLeaf(Component):
+    """A component that does not separately memoize its children.
+
+    Any component which depends on finding the exact names of children
+    components within it, should be a memoization leaf so the compiler
+    does not replace the provided child tags with memoized tags.
+
+    During creation, a memoization leaf will mark itself as wanting to be
+    memoized if any of its children return any hooks.
+    """
+
+    _memoization_mode = MemoizationMode(recursive=False)
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a new memoization leaf component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The memoization leaf
+        """
+        comp = super().create(*children, **props)
+        if comp.get_hooks():
+            comp._memoization_mode = cls._memoization_mode.copy(
+                update={"disposition": MemoizationDisposition.ALWAYS}
+            )
+        return comp
