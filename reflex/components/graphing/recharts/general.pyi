@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Union
+from reflex.components.component import MemoizationLeaf
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from .recharts import (
@@ -19,7 +20,7 @@ from .recharts import (
     Recharts,
 )
 
-class ResponsiveContainer(Recharts):
+class ResponsiveContainer(Recharts, MemoizationLeaf):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -84,7 +85,7 @@ class ResponsiveContainer(Recharts):
         ] = None,
         **props
     ) -> "ResponsiveContainer":
-        """Create the component.
+        """Create a new memoization leaf component.
 
         Args:
             *children: The children of the component.
@@ -103,10 +104,7 @@ class ResponsiveContainer(Recharts):
             **props: The props of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The memoization leaf
         """
         ...
 

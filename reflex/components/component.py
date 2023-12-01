@@ -28,6 +28,7 @@ from reflex.constants import (
     EventTriggers,
     Hooks,
     Imports,
+    MemoizationDisposition,
     MemoizationMode,
     PageNames,
 )
@@ -1363,20 +1364,29 @@ class StatefulComponent(BaseComponent):
         """
         from reflex.components.layout.foreach import Foreach
 
+        if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
+            # Never memoize this component.
+            return None
+
         if component.tag is None:
             # Only memoize components with a tag.
             return None
 
         # If _var_data is found in this component, it is a candidate for auto-memoization.
-        has_var_data = False
+        should_memoize = False
 
-        # Determine if any Vars have associated data.
-        for prop_var in component._get_vars():
-            if prop_var._var_data:
-                has_var_data = True
-                break
+        # If the component requests to be memoized, then ignore other checks.
+        if component._memoization_mode.disposition == MemoizationDisposition.ALWAYS:
+            should_memoize = True
 
-        if not has_var_data:
+        if not should_memoize:
+            # Determine if any Vars have associated data.
+            for prop_var in component._get_vars():
+                if prop_var._var_data:
+                    should_memoize = True
+                    break
+
+        if not should_memoize:
             # Check for special-cases in child components.
             for child in component.children:
                 # Skip BaseComponent and StatefulComponent children.
@@ -1384,14 +1394,14 @@ class StatefulComponent(BaseComponent):
                     continue
                 # Always consider Foreach something that must be memoized by the parent.
                 if isinstance(child, Foreach):
-                    has_var_data = True
+                    should_memoize = True
                     break
                 child = cls._child_var(child)
                 if isinstance(child, Var) and child._var_data:
-                    has_var_data = True
+                    should_memoize = True
                     break
 
-        if has_var_data or component.event_triggers:
+        if should_memoize or component.event_triggers:
             # Render the component to determine tag+hash based on component code.
             tag_name = cls._get_tag_name(component)
             if tag_name is None:
@@ -1664,3 +1674,35 @@ class StatefulComponent(BaseComponent):
             if stateful_component is not None:
                 return stateful_component
         return component
+
+
+class MemoizationLeaf(Component):
+    """A component that does not separately memoize its children.
+
+    Any component which depends on finding the exact names of children
+    components within it, should be a memoization leaf so the compiler
+    does not replace the provided child tags with memoized tags.
+
+    During creation, a memoization leaf will mark itself as wanting to be
+    memoized if any of its children return any hooks.
+    """
+
+    _memoization_mode = MemoizationMode(recursive=False)
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a new memoization leaf component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Returns:
+            The memoization leaf
+        """
+        comp = super().create(*children, **props)
+        if comp.get_hooks():
+            comp._memoization_mode = cls._memoization_mode.copy(
+                update={"disposition": MemoizationDisposition.ALWAYS}
+            )
+        return comp

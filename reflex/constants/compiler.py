@@ -115,7 +115,8 @@ class MemoizationDisposition(enum.Enum):
 
     # If the component uses state or events, it should be memoized.
     STATEFUL = "stateful"
-    # TODO: add more modes, like always and never
+    ALWAYS = "always"
+    NEVER = "never"
 
 
 class MemoizationMode(Base):

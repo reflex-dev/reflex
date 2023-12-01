@@ -1,17 +1,17 @@
 """A component that wraps a recharts lib."""
 from typing import Literal
 
-from reflex.components.component import Component, NoSSRComponent
+from reflex.components.component import Component, MemoizationLeaf, NoSSRComponent
 
 
 class Recharts(Component):
-    """A component that wraps a victory lib."""
+    """A component that wraps a recharts lib."""
 
     library = "recharts@2.8.0"
 
 
-class RechartsCharts(NoSSRComponent):
-    """A component that wraps a victory lib."""
+class RechartsCharts(NoSSRComponent, MemoizationLeaf):
+    """A component that wraps a recharts lib."""
 
     library = "recharts@2.8.0"
 

@@ -770,7 +770,7 @@ class FunnelChart(RechartsCharts):
         ] = None,
         **props
     ) -> "FunnelChart":
-        """Create the component.
+        """Create a new memoization leaf component.
 
         Args:
             *children: The children of the component.
@@ -791,10 +791,7 @@ class FunnelChart(RechartsCharts):
             **props: The props of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The memoization leaf
         """
         ...
 
