@@ -2268,6 +2268,22 @@ class Custom1(Base):
 
     foo: str
 
+    def set_foo(self, val: str):
+        """Set the attribute foo.
+
+        Args:
+            val: The value to set.
+        """
+        self.foo = val
+
+    def double_foo(self) -> str:
+        """Concantenate foo with foo.
+
+        Returns:
+            foo + foo
+        """
+        return self.foo + self.foo
+
 
 class Custom2(Base):
     """A custom class with a Custom1 field."""
@@ -2310,6 +2326,20 @@ def test_state_union_optional():
     assert UnionState.custom_union.c2r is not None  # type: ignore
     assert types.is_optional(UnionState.opt_int._var_type)  # type: ignore
     assert types.is_union(UnionState.int_float._var_type)  # type: ignore
+
+
+def test_set_base_field_via_setter():
+    """When calling a setter on a Base instance, also track changes."""
+
+    class BaseFieldSetterState(BaseState):
+        c1: Custom1 = Custom1(foo="")
+
+    bfss = BaseFieldSetterState()
+    assert "c1" not in bfss.dirty_vars
+    bfss.c1.double_foo()
+    assert "c1" not in bfss.dirty_vars
+    bfss.c1.set_foo("bar")
+    assert "c1" in bfss.dirty_vars
 
 
 def exp_is_hydrated(state: State, is_hydrated: bool = True) -> Dict[str, Any]:

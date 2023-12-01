@@ -1925,6 +1925,8 @@ class MutableProxy(wrapt.ObjectProxy):
         ]
     )
 
+    __never_wrap_base_attrs__ = set(Base.__dict__) | set(pydantic.BaseModel.__dict__)
+
     __mutable_types__ = (list, dict, set, Base)
 
     def __init__(self, wrapped: Any, state: BaseState, field_name: str):
@@ -2018,6 +2020,17 @@ class MutableProxy(wrapt.ObjectProxy):
                 # Wrap methods that may return mutable objects tied to the state.
                 value = wrapt.FunctionWrapper(
                     value,
+                    self._wrap_recursive_decorator,
+                )
+
+            if (
+                isinstance(self.__wrapped__, Base)
+                and __name not in self.__never_wrap_base_attrs__
+                and hasattr(value, "__func__")
+            ):
+                # Wrap methods called on Base subclasses, which might do _anything_
+                return wrapt.FunctionWrapper(
+                    functools.partial(value.__func__, self),
                     self._wrap_recursive_decorator,
                 )
 
