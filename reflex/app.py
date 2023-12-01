@@ -656,8 +656,9 @@ class App(Base):
             app_wrappers[(20, "Theme")] = self.theme
 
         with progress, concurrent.futures.ThreadPoolExecutor() as thread_pool:
-            fixed_pages = 7
-            task = progress.add_task("Compiling:", total=len(self.pages) + fixed_pages)
+            fixed_pages = 6
+            compile_total = len(self.pages) + fixed_pages
+            task = progress.add_task("Compiling:", total=compile_total)
 
             def mark_complete(_=None):
                 progress.advance(task)
@@ -732,7 +733,9 @@ class App(Base):
                 config.tailwind["content"] = config.tailwind.get(
                     "content", constants.Tailwind.CONTENT
                 )
-            submit_work(compiler.compile_tailwind, config.tailwind)
+                compile_total += 1
+                progress.update(task, total=compile_total)
+                submit_work(compiler.compile_tailwind, config.tailwind)
 
             # Get imports from AppWrap components.
             all_imports.update(app_root.get_imports())
