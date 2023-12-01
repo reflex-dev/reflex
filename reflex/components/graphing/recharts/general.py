@@ -13,10 +13,11 @@ from .recharts import (
     LiteralPosition,
     LiteralVerticalAlign,
     Recharts,
+    RechartsMemoizationLeafMixin,
 )
 
 
-class ResponsiveContainer(Recharts):
+class ResponsiveContainer(Recharts, RechartsMemoizationLeafMixin):
     """A base class for responsive containers in Recharts."""
 
     tag = "ResponsiveContainer"
