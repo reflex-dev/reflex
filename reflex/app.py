@@ -164,7 +164,7 @@ class App(Base):
             if "state" in kwargs:
                 console.deprecate(
                     feature_name="`state` argument for App()",
-                    reason="due to multiple rx.State subclasses being allowed.",
+                    reason="due to all `rx.State` subclasses being inferred.",
                     deprecation_version="0.3.5",
                     removal_version="0.4.0",
                 )
