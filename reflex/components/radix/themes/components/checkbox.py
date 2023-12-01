@@ -22,7 +22,7 @@ LiteralCheckboxSize = Literal["1", "2", "3"]
 class Checkbox(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Button"
+    tag = "Checkbox"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
@@ -54,6 +54,11 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
     # Whether the checkbox is required
     required: Var[bool]
 
+    # The name of the checkbox control when submitting the form.
+    name: Var[str]
+
+    # The value of the checkbox control when submitting the form.
+    value: Var[str]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
