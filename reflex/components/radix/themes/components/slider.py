@@ -66,6 +66,6 @@ class Slider(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: e0,
-            "on_vallue_commit": lambda e0: e0,
+            "on_value_change": lambda e0: [e0],
+            "on_value_commit": lambda e0: [e0],
         }

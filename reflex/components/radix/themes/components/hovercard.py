@@ -42,7 +42,7 @@ class HoverCardRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: e0,
+            "on_open_change": lambda e0: [e0],
         }
 
 

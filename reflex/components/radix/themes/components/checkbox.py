@@ -63,5 +63,5 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_checked_change": lambda e0: e0,
+            "on_checked_change": lambda e0: [e0],
         }
