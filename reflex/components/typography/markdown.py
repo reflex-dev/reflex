@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
 
@@ -35,6 +36,7 @@ _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
 
 # Component Mapping
+@lru_cache
 def get_base_component_map() -> dict[str, Callable]:
     """Get the base component map.
 
@@ -89,6 +91,9 @@ class Markdown(Component):
     # Custom styles for the markdown (deprecated in v0.2.9).
     custom_styles: Dict[str, Any] = {}
 
+    # The hash of the component map, generated at create() time.
+    component_map_hash: str = ""
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create a markdown component.
@@ -124,7 +129,12 @@ class Markdown(Component):
             src = textwrap.dedent(src)
 
         # Create the component.
-        return super().create(src, component_map=component_map, **props)
+        return super().create(
+            src,
+            component_map=component_map,
+            component_map_hash=cls._component_map_hash(component_map),
+            **props,
+        )
 
     def get_custom_components(
         self, seen: set[str] | None = None
@@ -264,11 +274,15 @@ class Markdown(Component):
 
         return components
 
-    def _component_map_hash(self) -> str:
-        return md5(str(self.component_map).encode()).hexdigest()
+    @staticmethod
+    def _component_map_hash(component_map) -> str:
+        inp = str(
+            {tag: component(_MOCK_ARG) for tag, component in component_map.items()}
+        ).encode()
+        return md5(inp).hexdigest()
 
     def _get_component_map_name(self) -> str:
-        return f"ComponentMap_{self._component_map_hash()}"
+        return f"ComponentMap_{self.component_map_hash}"
 
     def _get_custom_code(self) -> str | None:
         hooks = set()
@@ -292,7 +306,7 @@ class Markdown(Component):
                 remark_plugins=_REMARK_PLUGINS,
                 rehype_plugins=_REHYPE_PLUGINS,
             )
-            .remove_props("componentMap")
+            .remove_props("componentMap", "componentMapHash")
         )
         tag.special_props.add(
             Var.create_safe(
