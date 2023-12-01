@@ -9,7 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import base64
 import io
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, Union
 from reflex.utils import types
 from reflex.utils.serializers import serializer
 from reflex.vars import Var

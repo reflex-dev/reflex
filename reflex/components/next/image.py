@@ -1,7 +1,7 @@
 """Image component from next/image."""
 import base64
 import io
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, Union
 
 from reflex.utils import types
 from reflex.utils.serializers import serializer
@@ -72,8 +72,8 @@ class Image(NextComponent):
     def create(
         cls,
         *children,
-        width: Optional[int | str] = None,
-        height: Optional[int | str] = None,
+        width: Optional[Union[int, str]] = None,
+        height: Optional[Union[int, str]] = None,
         **props,
     ):
         """Create an Image component from next/image.
