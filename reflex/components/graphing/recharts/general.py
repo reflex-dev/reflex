@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
+from reflex.components.component import MemoizationLeaf
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -13,11 +14,10 @@ from .recharts import (
     LiteralPosition,
     LiteralVerticalAlign,
     Recharts,
-    RechartsMemoizationLeafMixin,
 )
 
 
-class ResponsiveContainer(Recharts, RechartsMemoizationLeafMixin):
+class ResponsiveContainer(Recharts, MemoizationLeaf):
     """A base class for responsive containers in Recharts."""
 
     tag = "ResponsiveContainer"
