@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import textwrap
+from functools import lru_cache
 from hashlib import md5
 from typing import Any, Callable, Dict, Union
 from reflex.compiler import utils
@@ -32,6 +33,7 @@ _REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
 _REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
+@lru_cache
 def get_base_component_map() -> dict[str, Callable]: ...
 
 class Markdown(Component):
@@ -42,6 +44,7 @@ class Markdown(Component):
         *children,
         component_map: Optional[Dict[str, Any]] = None,
         custom_styles: Optional[Dict[str, Any]] = None,
+        component_map_hash: Optional[str] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -101,6 +104,7 @@ class Markdown(Component):
             *children: The children of the component.
             component_map: The component map from a tag to a lambda that creates a component.
             custom_styles: Custom styles for the markdown (deprecated in v0.2.9).
+            component_map_hash: The hash of the component map, generated at create() time.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
