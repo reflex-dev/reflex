@@ -17,9 +17,10 @@ from .recharts import (
     LiteralPosition,
     LiteralVerticalAlign,
     Recharts,
+    RechartsMemoizationLeafMixin,
 )
 
-class ResponsiveContainer(Recharts):
+class ResponsiveContainer(Recharts, RechartsMemoizationLeafMixin):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -84,10 +85,10 @@ class ResponsiveContainer(Recharts):
         ] = None,
         **props
     ) -> "ResponsiveContainer":
-        """Create the component.
+        """Create a Recharts chart container component (mixin).
 
         Args:
-            *children: The children of the component.
+            *children: The children components.
             aspect: The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
             width: The width of chart container. Can be a number or string
             height: The height of chart container. Number
@@ -103,10 +104,7 @@ class ResponsiveContainer(Recharts):
             **props: The props of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            A Recharts component.
         """
         ...
 
