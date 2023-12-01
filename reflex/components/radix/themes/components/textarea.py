@@ -41,7 +41,7 @@ LiteralTextAreaSize = Literal["1", "2", "3"]
 class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
     """The input part of a TextArea, may be used by itself."""
 
-    tag = "TextArea.Input"
+    tag = "TextArea"
 
     # The size of the text area: "1" | "2" | "3"
     size: Var[LiteralTextAreaSize]

@@ -45,7 +45,7 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: e0,
+            "on_value_change": lambda e0: [e0],
         }
 
 class TabsList(CommonMarginProps, RadixThemesComponent):

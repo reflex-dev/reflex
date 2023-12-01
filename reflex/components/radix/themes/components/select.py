@@ -39,6 +39,9 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
     # The controlled open state of the select. Must be used in conjunction with onOpenChange.
     open: Var[bool]
 
+    # The name of the select control when submitting the form.
+    name: Var[str]
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -47,8 +50,8 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: e0,
-            "on_value_change": lambda e0: e0,
+            "on_open_change": lambda e0: [e0],
+            "on_value_change": lambda e0: [e0],
         }
 
 
@@ -108,9 +111,9 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_close_auto_focus": lambda e0: e0,
-            "on_escape_key_down": lambda e0: e0,
-            "on_pointer_down_outside": lambda e0: e0,
+            "on_close_auto_focus": lambda e0: [e0],
+            "on_escape_key_down": lambda e0: [e0],
+            "on_pointer_down_outside": lambda e0: [e0],
         }
 
 class SelectGroup(CommonMarginProps, RadixThemesComponent):
@@ -122,6 +125,9 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Item"
+
+    # The value of the select item when submitting the form.
+    value: Var[str]
 
 class SelectLabel(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

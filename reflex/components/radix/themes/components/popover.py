@@ -36,7 +36,7 @@ class PopoverRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_change": lambda e0: e0,
+            "on_open_change": lambda e0: [e0],
         }
 
 
@@ -76,12 +76,12 @@ class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_open_auto_focus": lambda e0: e0,
-            "on_close_auto_focus": lambda e0: e0,
-            "on_escape_key_down": lambda e0: e0,
-            "on_pointer_down_outside": lambda e0: e0,
-            "on_focus_outside": lambda e0: e0,
-            "on_interact_outside": lambda e0: e0,
+            "on_open_auto_focus": lambda e0: [e0],
+            "on_close_auto_focus": lambda e0: [e0],
+            "on_escape_key_down": lambda e0: [e0],
+            "on_pointer_down_outside": lambda e0: [e0],
+            "on_focus_outside": lambda e0: [e0],
+            "on_interact_outside": lambda e0: [e0],
         }
 
 class PopoverClose(CommonMarginProps, RadixThemesComponent):
