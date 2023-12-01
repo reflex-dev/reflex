@@ -35,7 +35,7 @@ class IterTag(Tag):
         try:
             return (
                 self.iterable._var_type
-                if self.iterable._var_type.mro()[0] == dict
+                if self.iterable._var_type.mro()[0] in [dict, list]
                 else self.iterable._var_type.__args__[0]
             )
         except Exception:
@@ -106,11 +106,12 @@ class IterTag(Tag):
         from reflex.components.layout.foreach import Foreach
         from reflex.components.layout.fragment import Fragment
 
+        print("A.1")
         # Get the render function arguments.
         args = inspect.getfullargspec(self.render_fn).args
         arg = self.get_arg_var()
         index = self.get_index_var()
-
+        print("A.2", args, arg._var_type)
         if len(args) == 1:
             # If the render function doesn't take the index as an argument.
             component = self.render_fn(arg)
@@ -126,5 +127,5 @@ class IterTag(Tag):
         # Set the component key.
         if component.key is None:
             component.key = index
-
+        print(component)
         return component
