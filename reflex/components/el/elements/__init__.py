@@ -47,20 +47,21 @@ from .inline import (
 from .media import (
     Area,
     Audio,
+    Circle,
+    Defs,
     Embed,
     Iframe,
     Img,
+    G,
+    Lineargradient,
     Map,
     Object,
     Path,
     Picture,
     Portal,
     Source,
-    Svg,
-    Lineargradient,
-    Defs,
     Stop,
-    Circle,
+    Svg,
     Track,
     Video,
 )
@@ -148,6 +149,7 @@ defs = Defs.create
 stop = Stop.create
 circle = Circle.create
 path = Path.create
+g = G.create
 
 # Sectioning
 address = Address.create

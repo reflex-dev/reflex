@@ -2828,3 +2828,242 @@ class Path(BaseHTML):
             TypeError: If an invalid child is passed.
         """
         ...
+
+class G(BaseHTML):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        clip_path: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        clip_rule: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        color: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        color_interpolation: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        color_rendering: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        cursor: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        display: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        fill: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        fill_opacity: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        fill_rule: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        filter: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        mask: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        opacity: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        pointer_events: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        shape_rendering: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke_dasharray: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke_dashoffset: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke_linecap: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke_linejoin: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke_miterlimit: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke_opacity: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        stroke_width: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        transform: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        vector_effect: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        visibility: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        access_key: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        auto_capitalize: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        content_editable: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        context_menu: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        dir: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        draggable: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        enter_key_hint: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        hidden: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        input_mode: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        item_prop: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        lang: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        role: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        slot: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        spell_check: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        tab_index: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        title: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        translate: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "G":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            clip_path: Defines or associates a clipping path with the element it is related to
+            clip_rule: Works as the fill-rule attribute, except that it applies to <clipPath> definitions
+            color: Provides a potential indirect value, currentcolor, for the fill, stroke, stop-color, flood-color, and lighting-color attributes
+            color_interpolation: Specifies the color space for gradient interpolations, color animations, and alpha compositing.
+            color_rendering: Specifies the color rendering intent of the element
+            cursor: Specifies the type of cursor to be displayed when pointing over an element
+            display: Lets you control the rendering of graphical or container elements
+            fill: Specifies the fill color of the element
+            fill_opacity: Specifies the opacity of the fill color
+            fill_rule: Specifies the algorithm used to determine the inside part of a shape for the purpose of determining the shape to be filled
+            filter: Specifies the filter effects applied to the element
+            mask: Used to bind a given <mask> element with the element the attribute belongs to
+            opacity: Specifies the transparency of an object or of a group of objects, that is, the degree to which the background behind the element is overlaid
+            pointer_events: Specifies whether the element can be the target of pointer events
+            shape_rendering: Provides hints to the renderer about what tradeoffs to make when rendering shapes like paths, circles, or rectangles
+            stroke: Specifies the color used to paint the outline of the shape
+            stroke_dasharray: Specifies the pattern of dashes and gaps used to paint the outline of the shape
+            stroke_dashoffset: Specifies the offset into the dash pattern
+            stroke_linecap: Specifies the shape to be used at the end of open subpaths when they are stroked
+            stroke_linejoin: Specifies the shape to be used at the corners of paths or basic shapes when they are stroked
+            stroke_miterlimit: Specifies the limit on the ratio of the miter length to the stroke width
+            stroke_opacity: Specifies the opacity of the stroke of the element
+            stroke_width: Specifies the width of the stroke of the element
+            transform: Specifies a list of transformations applied to the element and the element's children
+            vector_effect: Specifies the vector effect to be applied to the element
+            visibility: Specifies the visibility of the element (with a value of hidden or collapse the current graphics element is invisible)
+            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
+            content_editable: Indicates whether the element's content is editable.
+            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
+            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
+            draggable: Defines whether the element can be dragged.
+            enter_key_hint: Hints what media types the media element is able to play.
+            hidden: Defines whether the element is hidden.
+            input_mode: Defines the type of the element.
+            item_prop: Defines the name of the element for metadata purposes.
+            lang: Defines the language used in the element.
+            role: Defines the role of the element.
+            slot: Assigns a slot in a shadow DOM shadow tree to an element.
+            spell_check: Defines whether the element may be checked for spelling errors.
+            tab_index: Defines the position of the current element in the tabbing order.
+            title: Defines a tooltip for the element.
+            translate: Specifies whether the content of an element should be translated or not.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
+        """
+        ...
