@@ -41,6 +41,11 @@ def DynamicRoute():
                 id="token",
             ),
             rx.input(value=DynamicState.page_id, is_read_only=True, id="page_id"),
+            rx.input(
+                value=DynamicState.router.page.raw_path,
+                is_read_only=True,
+                id="raw_path",
+            ),
             rx.link("index", href="/", id="link_index"),
             rx.link("page_X", href="/static/x", id="link_page_x"),
             rx.link(
@@ -183,11 +188,13 @@ async def test_on_load_navigate(
 
         link = driver.find_element(By.ID, "link_page_next")
         page_id_input = driver.find_element(By.ID, "page_id")
+        raw_path_input = driver.find_element(By.ID, "raw_path")
 
         assert link
         assert page_id_input
 
         assert dynamic_route.poll_for_value(page_id_input) == str(ix)
+        assert dynamic_route.poll_for_value(raw_path_input) == f"/page/{ix}/"
     await poll_for_order(exp_order)
 
     # manually load the next page to trigger client side routing in prod mode
