@@ -1541,13 +1541,13 @@ ocsp = ["cryptography (>=36.0.1)", "pyopenssl (==20.0.1)", "requests (>=2.26.0)"
 
 [[package]]
 name = "reflex-hosting-cli"
-version = "0.1.1a2"
+version = "0.1.1"
 description = "Reflex Hosting CLI"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "reflex_hosting_cli-0.1.1a2-py3-none-any.whl", hash = "sha256:86f29f6f7aab20aca95229e76a3a1c59743b753a28670c622991d8fdc0b2d8d6"},
-    {file = "reflex_hosting_cli-0.1.1a2.tar.gz", hash = "sha256:cff0deeb72e4d487fb8c094114aef7da871e3c2a33f4da5d46f05983c1c5129a"},
+    {file = "reflex_hosting_cli-0.1.1-py3-none-any.whl", hash = "sha256:ced9fd5fed31e71bce4066b9931b46395020d067af5df13f7716ac8959cca607"},
+    {file = "reflex_hosting_cli-0.1.1.tar.gz", hash = "sha256:a035ad680a93d7c9612acbdf917b07d20191b6279c1b8474a494cc197be2efd1"},
 ]
 
 [package.dependencies]
@@ -2313,4 +2313,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "0ff1597f0ef650c1dcd471c44e2e9ac96b51b3cf0a262b5482338fe4d3e43da3"
+content-hash = "6ff97be141eda407d9fecdbdd2578dcc2557ca7e39f4c378d12a8783689837fb"
