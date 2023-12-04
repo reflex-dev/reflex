@@ -451,7 +451,7 @@ def deploy(
         help="The hostname of the frontend.",
         hidden=True,
     ),
-    interactive: Optional[bool] = typer.Option(
+    interactive: bool = typer.Option(
         True,
         help="Whether to list configuration options and ask for confirmation.",
     ),
