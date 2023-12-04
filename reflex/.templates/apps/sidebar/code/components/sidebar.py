@@ -1,7 +1,6 @@
 """Sidebar component for the app."""
 
 from code import styles
-from code.state import State
 
 import reflex as rx
 
@@ -76,8 +75,8 @@ def sidebar_item(text: str, icon: str, url: str) -> rx.Component:
         rx.Component: The sidebar item component.
     """
     # Whether the item is active.
-    active = (State.router.page.path == f"/{text.lower()}") | (
-        (State.router.page.path == "/") & text == "Home"
+    active = (rx.State.router.page.path == f"/{text.lower()}") | (
+        (rx.State.router.page.path == "/") & text == "Home"
     )
 
     return rx.link(
