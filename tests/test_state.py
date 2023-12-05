@@ -1837,7 +1837,9 @@ async def test_background_task_no_block(mock_app: rx.App, token: str):
     assert mock_app.event_namespace is not None
     emit_mock = mock_app.event_namespace.emit
 
-    assert json.loads(emit_mock.mock_calls[0].args[1]) == {
+    first_ws_message = json.loads(emit_mock.mock_calls[0].args[1])
+    assert first_ws_message["delta"]["background_task_state"].pop("router") is not None
+    assert first_ws_message == {
         "delta": {
             "background_task_state": {
                 "order": ["background_task:start"],
@@ -2405,6 +2407,7 @@ async def test_preprocess(app_module_mock, token, test_state, expected, mocker):
         assert isinstance(update, StateUpdate)
         updates.append(update)
     assert len(updates) == 1
+    assert updates[0].delta["state"].pop("router") is not None
     assert updates[0].delta == exp_is_hydrated(state, False)
 
     events = updates[0].events
@@ -2446,6 +2449,7 @@ async def test_preprocess_multiple_load_events(app_module_mock, token, mocker):
         assert isinstance(update, StateUpdate)
         updates.append(update)
     assert len(updates) == 1
+    assert updates[0].delta["state"].pop("router") is not None
     assert updates[0].delta == exp_is_hydrated(state, False)
 
     events = updates[0].events

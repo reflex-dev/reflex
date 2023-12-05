@@ -1084,9 +1084,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # Get the function to process the event.
         fn = functools.partial(handler.fn, state)
 
-        # Clean the state before processing the event.
-        self._clean()
-
         # Wrap the function in a try/except block.
         try:
             # Handle async functions.
