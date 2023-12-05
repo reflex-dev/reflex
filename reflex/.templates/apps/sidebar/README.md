@@ -27,7 +27,6 @@ This template has the following directory structure:
     │   ├── dashboard.py
     │   ├── index.py
     │   └── settings.py
-    ├── state.py
     ├── styles.py
     ├── templates
     │   ├── __init__.py
@@ -63,11 +62,7 @@ In this template, we have a sidebar component in `{your_app}/components/sidebar.
 
 ### Adding State
 
-In this template, we define the base state of the app in `{your_app}/state.py`.
-The base state is useful for general app state that is used across multiple pages.
-
-In this template, the base state handles the toggle for the sidebar.
-
 As your app grows, we recommend using [substates](https://reflex.dev/docs/state/substates/)
-to organize your state. You can either define substates in their own files, or if the state is
+to organize your state.
+You can either define substates in their own files, or if the state is
 specific to a page, you can define it in the page file itself.
