@@ -483,7 +483,9 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    dependency.check_requirements()
+    # Only check requirements if not interactive. There is user interaction for requirements update.
+    if not interactive:
+        dependency.check_requirements()
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
