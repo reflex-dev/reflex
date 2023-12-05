@@ -28,7 +28,7 @@ from reflex.components import Box, Component, Cond, Fragment, Text
 from reflex.event import Event
 from reflex.middleware import HydrateMiddleware
 from reflex.model import Model
-from reflex.state import BaseState, State, StateManagerRedis, StateUpdate
+from reflex.state import BaseState, RouterData, State, StateManagerRedis, StateUpdate
 from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import ComputedVar
@@ -961,6 +961,14 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             name=f"{state.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL}",
             val=exp_val,
         )
+        exp_router_data = {
+            "headers": {},
+            "ip": client_ip,
+            "sid": sid,
+            "token": token,
+            **on_load_internal.router_data,
+        }
+        exp_router = RouterData(exp_router_data)
         process_coro = process(
             app,
             event=on_load_internal,
@@ -977,6 +985,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     f"comp_{arg_name}": exp_val,
                     constants.CompileVars.IS_HYDRATED: False,
                     # "side_effect_counter": exp_index,
+                    "router": exp_router,
                 }
             },
             events=[
