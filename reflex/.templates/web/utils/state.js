@@ -549,7 +549,7 @@ export const useEventLoop = (
       return;
     }
     // only use websockets if state is present
-    if (Object.keys(initialState).length > 0) {
+    if (Object.keys(initialState).length > 1) {
       // Initialize the websocket connection.
       if (!socket.current) {
         connect(socket, dispatch, ['websocket', 'polling'], setConnectError, client_storage)
