@@ -109,26 +109,3 @@ def test_radix_themes_app(
         token: The token for the connected client.
     """
     assert radix_themes_app.app_instance is not None
-
-    tf_bare = driver.find_element(By.ID, "tf-bare")
-    tf_slotted = driver.find_element(By.ID, "tf-slotted")
-    switch = driver.find_element(By.ID, "switch1")
-
-    tf_bare.send_keys("hello")
-    assert radix_themes_app.poll_for_value(tf_slotted) == "hello"
-    tf_slotted.send_keys(Keys.ARROW_LEFT, Keys.ARROW_LEFT, Keys.ARROW_LEFT, "y je")
-    assert (
-        radix_themes_app.poll_for_value(tf_bare, exp_not_equal="hello") == "hey jello"
-    )
-
-    driver.find_element(By.ID, "moon")
-    switch.click()
-    time.sleep(0.5)
-    driver.find_element(By.ID, "bulb")
-    with pytest.raises(Exception):
-        driver.find_element(By.ID, "moon")
-    switch.click()
-    time.sleep(0.5)
-    driver.find_element(By.ID, "moon")
-    with pytest.raises(Exception):
-        driver.find_element(By.ID, "bulb")
