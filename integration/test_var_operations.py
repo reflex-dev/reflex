@@ -35,7 +35,7 @@ def VarOperations():
     @app.add_page
     def index():
         return rx.vstack(
-            rx.input(
+            rx.el.input(
                 id="token",
                 value=VarOperationState.router.session.client_token,
                 is_read_only=True,
