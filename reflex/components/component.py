@@ -1476,7 +1476,9 @@ class StatefulComponent(BaseComponent):
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
 
         # Format the tag name including the hash.
-        return format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
+        return format.format_state_name(
+            f"{component.tag or 'Comp'}_{code_hash}"
+        ).capitalize()
 
     @classmethod
     def _render_stateful_code(
