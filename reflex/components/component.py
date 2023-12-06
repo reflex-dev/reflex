@@ -266,8 +266,9 @@ class Component(BaseComponent, ABC):
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
                 if not types._issubclass(passed_type, expected_type):
+                    value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
-                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value} of type {passed_type}."
+                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
                     )
 
             # Check if the key is an event trigger.
