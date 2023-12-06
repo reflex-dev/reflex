@@ -33,7 +33,7 @@ class Text(CommonMarginProps, RadixThemesComponent):
     as_: Var[str]
 
     # Text size: "1" - "9"
-    size: Var[LiteralTextSize | dict]
+    size: Var[LiteralTextSize]
 
     # Thickness of text: "light" | "regular" | "medium" | "bold"
     weight: Var[LiteralTextWeight]
