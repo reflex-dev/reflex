@@ -636,7 +636,7 @@ def unwrap_vars(value: str) -> str:
         repl=unescape_double_quotes_in_var,
         string=value,
         flags=re.VERBOSE,
-    )
+    ).replace('"`', "`").replace('`"', "`")
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

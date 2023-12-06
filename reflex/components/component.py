@@ -624,7 +624,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        return {"css": self.style.format_as_emotion()}
+        return {"css": Var.create_safe(self.style.format_as_emotion())}
 
     def render(self) -> Dict:
         """Render the component.
