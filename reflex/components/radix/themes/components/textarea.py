@@ -10,32 +10,10 @@ from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
-    RadixThemesComponent,
-)
-
-"""Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
-
-from reflex.components import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
-from reflex.vars import Var
-
-from ..base import (
-    CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
 LiteralTextAreaSize = Literal["1", "2", "3"]
-
 
 
 class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):

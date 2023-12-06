@@ -1,18 +1,10 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal, Union
+from typing import Literal, Union
 
-from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -26,4 +18,3 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
 
     # The ratio of the width to the height of the element
     ration: Var[Union[float, int]]
-

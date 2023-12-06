@@ -1,18 +1,13 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Literal
 
 from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -28,10 +23,10 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
     ration: Var[float]
 
     # The variant of the avatar
-    variant: Var[Literal["solid","soft", "surface", "outline"]]
+    variant: Var[Literal["solid", "soft", "surface", "outline"]]
 
     # The size of the avatar
-    size: Var[Literal[1,2]]
+    size: Var[Literal[1, 2]]
 
     # Color theme of the avatar
     color: Var[LiteralAccentColor]

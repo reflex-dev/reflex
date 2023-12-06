@@ -1,18 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -22,7 +15,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
 
     tag = "RadioGroup.Root"
 
-    # The size of the radio group: "1" | "2" | "3" 
+    # The size of the radio group: "1" | "2" | "3"
     size: Var[Literal[1, 2, 3]]
 
     # The variant of the radio group
@@ -60,10 +53,8 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
         """
         return {
             **super().get_event_triggers(),
-            "on_value_change": lambda e0: [e0],   
+            "on_value_change": lambda e0: [e0],
         }
-
-
 
 
 class RadioGroupItem(CommonMarginProps, RadixThemesComponent):

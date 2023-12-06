@@ -1,3 +1,5 @@
+"""Layout components."""
+
 from .box import Box
 from .container import Container
 from .flex import Flex

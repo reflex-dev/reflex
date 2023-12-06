@@ -1,18 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal, Union
+from typing import Literal, Union
 
 from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -29,7 +22,7 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
 
     clip: Var[Literal["border-box", "padding-box"]]
 
-    # Padding 
+    # Padding
     p: Var[Union[int, str]]
 
     # Padding on the x axis
@@ -37,13 +30,13 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
 
     # Padding on the y axis
     py: Var[Union[int, str]]
-    
+
     # Padding on the top
     pt: Var[Union[int, str]]
-    
+
     # Padding on the right
     pr: Var[Union[int, str]]
-    
+
     # Padding on the bottom
     pb: Var[Union[int, str]]
 

@@ -1,17 +1,13 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Literal
 
 from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
-    LiteralSize,
     LiteralVariant,
     RadixThemesComponent,
 )
@@ -40,10 +36,12 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
 
+
 class CalloutIcon(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Callout.Icon"
+
 
 class CalloutText(el.P, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

@@ -1,37 +1,84 @@
-from .alertdialog import AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogTitle, AlertDialogDescription
+"""Radix themes components."""
+
+from .alertdialog import (
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+)
 from .aspectratio import AspectRatio
 from .avatar import Avatar
 from .badge import Badge
 from .button import Button
-from .callout import CalloutRoot, CalloutIcon, CalloutText
+from .callout import CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
 from .checkbox import Checkbox
-from .contextmenu import ContextMenuRoot, ContextMenuTrigger, ContextMenuContent, ContextMenuSubContent, ContextMenuSub, ContextMenuSubTrigger, ContextMenuItem, ContextMenuSeparator
-from .dialog import DialogRoot, DialogTrigger, DialogContent, DialogTitle, DialogDescription
-from .dropdownmenu import DropdownMenuRoot, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuItem, DropdownMenuSeparator 
-from .hovercard import HoverCardRoot, HoverCardTrigger, HoverCardContent
+from .contextmenu import (
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuRoot,
+    ContextMenuSeparator,
+    ContextMenuSub,
+    ContextMenuSubContent,
+    ContextMenuSubTrigger,
+    ContextMenuTrigger,
+)
+from .dialog import (
+    DialogContent,
+    DialogDescription,
+    DialogRoot,
+    DialogTitle,
+    DialogTrigger,
+)
+from .dropdownmenu import (
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuRoot,
+    DropdownMenuSeparator,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
+)
+from .hovercard import HoverCardContent, HoverCardRoot, HoverCardTrigger
 from .iconbutton import IconButton
 from .inset import Inset
-from .popover import PopoverRoot, PopoverTrigger, PopoverContent, PopoverClose
-from .radiogroup import RadioGroupRoot, RadioGroupItem
+from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
+from .radiogroup import RadioGroupItem, RadioGroupRoot
 from .scrollarea import ScrollArea
-from .select import SelectRoot, SelectTrigger, SelectContent, SelectItem, SelectSeparator, SelectGroup, SelectLabel
+from .select import (
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectRoot,
+    SelectSeparator,
+    SelectTrigger,
+)
 from .separator import Separator
 from .switch import Switch
-from .table import TableRoot, TableHeader, TableBody, TableRow, TableCell, TableColumnHeaderCell, TableRowHeaderCell
-from .tabs import TabsRoot, TabsList, TabsTrigger
+from .table import (
+    TableBody,
+    TableCell,
+    TableColumnHeaderCell,
+    TableHeader,
+    TableRoot,
+    TableRow,
+    TableRowHeaderCell,
+)
+from .tabs import TabsList, TabsRoot, TabsTrigger
 from .textarea import TextArea
-from .textfield import TextFieldRoot, TextFieldInput, TextFieldSlot
+from .textfield import TextFieldInput, TextFieldRoot, TextFieldSlot
 
 # Alert Dialog
-alertdialog = AlertDialog.create 
-alertdialogtrigger = AlertDialogTrigger.create
-alertdialogcontent = AlertDialogContent.create
-alertdialogtitle = AlertDialogTitle.create
-alertdialogdescription = AlertDialogDescription.create
+alertdialog = AlertDialog.create
+alertdialog_trigger = AlertDialogTrigger.create
+alertdialog_content = AlertDialogContent.create
+alertdialog_title = AlertDialogTitle.create
+alertdialog_description = AlertDialogDescription.create
 
 # Aspect Ratio
-aspectratio = AspectRatio.create
+aspect_ratio = AspectRatio.create
 
 # Avatar
 avatar = Avatar.create
@@ -43,9 +90,9 @@ badge = Badge.create
 button = Button.create
 
 # Callout
-calloutroot = CalloutRoot.create
-callouticon = CalloutIcon.create
-callouttext = CalloutText.create
+callout_root = CalloutRoot.create
+callout_icon = CalloutIcon.create
+callout_text = CalloutText.create
 
 # Card
 card = Card.create
@@ -54,64 +101,64 @@ card = Card.create
 checkbox = Checkbox.create
 
 # Context Menu
-contextmenuroot = ContextMenuRoot.create
-contextmenusub = ContextMenuSub.create
-contextmenutrigger = ContextMenuTrigger.create
-contextmenucontent = ContextMenuContent.create
-contextmenusubcontent = ContextMenuSubContent.create
-contextmenusubtrigger = ContextMenuSubTrigger.create
-contextmenuitem = ContextMenuItem.create
-contextmenuseparator = ContextMenuSeparator.create
+contextmenu_root = ContextMenuRoot.create
+contextmenu_sub = ContextMenuSub.create
+contextmenu_trigger = ContextMenuTrigger.create
+contextmenu_content = ContextMenuContent.create
+contextmenu_sub_content = ContextMenuSubContent.create
+contextmenu_sub_trigger = ContextMenuSubTrigger.create
+contextmenu_item = ContextMenuItem.create
+contextmenu_separator = ContextMenuSeparator.create
 
 
 # Dialog
-dialogroot = DialogRoot.create
-dialogtrigger = DialogTrigger.create
-dialogcontent = DialogContent.create
-dialogtitle = DialogTitle.create
-dialogdescription = DialogDescription.create
+dialog_root = DialogRoot.create
+dialog_trigger = DialogTrigger.create
+dialog_content = DialogContent.create
+dialog_title = DialogTitle.create
+dialog_description = DialogDescription.create
 
 # Dropdown Menu
-dropdownmenuroot = DropdownMenuRoot.create
-dropdownmenutrigger = DropdownMenuTrigger.create
-dropdownmenucontent = DropdownMenuContent.create
-dropdownmenusubcontent = DropdownMenuSubContent.create
-dropdownmenusubtrigger = DropdownMenuSubTrigger.create
-dropdownmenuitem = DropdownMenuItem.create
-dropdownmenuseparator = DropdownMenuSeparator.create
+dropdownmenu_root = DropdownMenuRoot.create
+dropdownmenu_trigger = DropdownMenuTrigger.create
+dropdownmenu_content = DropdownMenuContent.create
+dropdownmenu_sub_content = DropdownMenuSubContent.create
+dropdownmenu_sub_trigger = DropdownMenuSubTrigger.create
+dropdownmenu_item = DropdownMenuItem.create
+dropdownmenu_separator = DropdownMenuSeparator.create
 
 # Hover Card
-hovercardroot = HoverCardRoot.create
-hovercardtrigger = HoverCardTrigger.create
-hovercardcontent = HoverCardContent.create
+hovercard_root = HoverCardRoot.create
+hovercard_trigger = HoverCardTrigger.create
+hovercard_content = HoverCardContent.create
 
 # Icon Button
-iconbutton = IconButton.create
+icon_button = IconButton.create
 
 # Inset
 inset = Inset.create
 
 # Popover
-popoverroot = PopoverRoot.create
-popovertrigger = PopoverTrigger.create
-popovercontent = PopoverContent.create
-popoverclose = PopoverClose.create
+popover_root = PopoverRoot.create
+popover_trigger = PopoverTrigger.create
+popover_content = PopoverContent.create
+popover_close = PopoverClose.create
 
 # Radio Group
-radiogrouproot = RadioGroupRoot.create
-radiogroupitem = RadioGroupItem.create
+radio_group_root = RadioGroupRoot.create
+radio_group_item = RadioGroupItem.create
 
 # Scroll Area
-scrollarea = ScrollArea.create
+scroll_area = ScrollArea.create
 
 # Select
-selectroot = SelectRoot.create
-selecttrigger = SelectTrigger.create
-selectcontent = SelectContent.create
-selectitem = SelectItem.create
-selectseparator = SelectSeparator.create
-selectgroup = SelectGroup.create
-selectlabel = SelectLabel.create
+select_root = SelectRoot.create
+select_trigger = SelectTrigger.create
+select_content = SelectContent.create
+select_item = SelectItem.create
+select_separator = SelectSeparator.create
+select_group = SelectGroup.create
+select_label = SelectLabel.create
 
 # Separator
 separator = Separator.create
@@ -120,24 +167,23 @@ separator = Separator.create
 switch = Switch.create
 
 # Table
-tableroot = TableRoot.create
-tableheader = TableHeader.create
-tablebody = TableBody.create
-tablerow = TableRow.create
-tablecell = TableCell.create
-tablecolumnheadercell = TableColumnHeaderCell.create
-tablerowheadercell = TableRowHeaderCell.create
+table_root = TableRoot.create
+table_header = TableHeader.create
+table_body = TableBody.create
+table_row = TableRow.create
+table_cell = TableCell.create
+table_column_header_cell = TableColumnHeaderCell.create
+table_row_header_cell = TableRowHeaderCell.create
 
 # Tabs
-tabsroot = TabsRoot.create
-tabslist = TabsList.create
-tabstrigger = TabsTrigger.create
+tabs_root = TabsRoot.create
+tabs_list = TabsList.create
+tabs_trigger = TabsTrigger.create
 
 # Text Area
 textarea = TextArea.create
 
 # Text Field
-textfieldroot = TextFieldRoot.create
-textfieldinput = TextFieldInput.create
-textfieldslot = TextFieldSlot.create
-
+textfield_root = TextFieldRoot.create
+textfield_input = TextFieldInput.create
+textfield_slot = TextFieldSlot.create

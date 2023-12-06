@@ -2,17 +2,10 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -45,6 +38,7 @@ class PopoverTrigger(CommonMarginProps, RadixThemesComponent):
 
     tag = "Popover.Trigger"
 
+
 class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
@@ -53,7 +47,7 @@ class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
     # Size of the button: "1" | "2" | "3" | "4"
     size: Var[Literal[1, 2, 3, 4]]
 
-    # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.  
+    # The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
     side: Var[Literal["top", "right", "bottom", "left"]]
 
     # The distance in pixels from the anchor.
@@ -83,6 +77,7 @@ class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
             "on_focus_outside": lambda e0: [e0],
             "on_interact_outside": lambda e0: [e0],
         }
+
 
 class PopoverClose(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

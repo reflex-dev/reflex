@@ -2,17 +2,10 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -51,12 +44,13 @@ class DialogTitle(CommonMarginProps, RadixThemesComponent):
 
     tag = "Dialog.Title"
 
+
 class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Content"
 
-     # Button size "1" - "4"
+    # Button size "1" - "4"
     size: Var[Literal[1, 2, 3, 4]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -73,6 +67,7 @@ class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
             "on_pointer_down_outside": lambda e0: [e0],
             "on_interact_outside": lambda e0: [e0],
         }
+
 
 class DialogDescription(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

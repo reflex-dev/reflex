@@ -12,7 +12,6 @@ from ..base import (
     LiteralAccentColor,
     LiteralRadius,
     LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 

@@ -22,62 +22,11 @@ def RadixThemesApp():
         checked: bool = False
 
     def index() -> rx.Component:
-        return rdxt.box(
-            rdxt.text_field(
-                id="token", value=State.router.session.client_token, read_only=True
-            ),
-            rdxt.text_field(id="tf-bare", value=State.v, on_change=State.set_v),  # type: ignore
-            rdxt.text_field_root(
-                rdxt.text_field_slot("🧸"),
-                rdxt.text_field(id="tf-slotted", value=State.v, on_change=State.set_v),  # type: ignore
-            ),
-            rdxt.flex(
-                rdxt.switch(
-                    id="switch1",
-                    checked=State.checked,
-                    on_checked_change=State.set_checked,  # type: ignore
-                ),
-                rx.cond(
-                    State.checked,
-                    rdxt.text("💡", id="bulb"),
-                    rdxt.text("🌙", id="moon"),
-                ),
-                direction="row",
-                gap="2",
-            ),
-            rdxt.button("This is a button", size="4", variant="solid", color="plum"),
-            rdxt.grid(
-                *[
-                    rdxt.box(rdxt.text(f"Cell {i}"), width="10vw", height="10vw")
-                    for i in range(1, 10)
-                ],
-                columns="3",
-            ),
-            rdxt.container(
-                rdxt.section(
-                    rdxt.heading("Section 1"),
-                    rdxt.text(
-                        "text one with ",
-                        rdxt.kbd("K"),
-                        rdxt.kbd("E"),
-                        rdxt.kbd("Y"),
-                        "s",
-                    ),
-                ),
-                rdxt.section(
-                    rdxt.heading("Section 2", size="2"),
-                    rdxt.code("Inline code yo"),
-                ),
-                rdxt.section(
-                    rdxt.heading("Section 3"),
-                    rdxt.link("Link to google", href="https://google.com"),
-                    rdxt.strong("Strong text"),
-                    rdxt.em("Emphasized text"),
-                    rdxt.blockquote("Blockquote text"),
-                    rdxt.quote("Inline quote"),
-                ),
-            ),
-            p="5",
+        return rdxt.flex(
+            rdxt.textfield_root(
+                rdxt.textfield_slot("🧸"),
+                rdxt.textfield_input(id="tf-slotted", value=State.v, on_change=State.set_v),  # type: ignore
+            )
         )
 
     app = rx.App(

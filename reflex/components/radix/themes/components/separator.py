@@ -1,18 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Literal
 
-from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -24,7 +17,7 @@ class Separator(CommonMarginProps, RadixThemesComponent):
 
     tag = "Separator"
 
-    # The size of the select: "1" | "2" | "3" 
+    # The size of the select: "1" | "2" | "3"
     size: Var[LiteralSeperatorSize]
 
     # The color of the select

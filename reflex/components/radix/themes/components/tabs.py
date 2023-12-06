@@ -1,18 +1,10 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, Literal
 
-from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -48,10 +40,12 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
             "on_value_change": lambda e0: [e0],
         }
 
+
 class TabsList(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.List"
+
 
 class TabsTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -64,9 +58,8 @@ class TabsTrigger(CommonMarginProps, RadixThemesComponent):
     # Whether the tab is disabled
     disabled: Var[bool]
 
+
 class TabsContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Content"
-
-

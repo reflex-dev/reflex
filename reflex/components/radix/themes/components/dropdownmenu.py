@@ -1,18 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -27,7 +20,7 @@ class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
 
     # The modality of the dropdown menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
     modal: Var[bool]
-    
+
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
@@ -44,6 +37,7 @@ class DropdownMenuTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Trigger"
+
 
 class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -64,10 +58,12 @@ class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
             "on_interact_outside": lambda e0: [e0],
         }
 
+
 class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.SubTrigger"
+
 
 class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

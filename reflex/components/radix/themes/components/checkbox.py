@@ -1,23 +1,18 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, Literal
 
-from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
-    LiteralSize,
     LiteralVariant,
     RadixThemesComponent,
 )
 
-
 LiteralCheckboxSize = Literal["1", "2", "3"]
+
 
 class Checkbox(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""

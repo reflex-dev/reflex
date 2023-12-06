@@ -7,13 +7,11 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAlign,
     LiteralJustify,
     LiteralSize,
     RadixThemesComponent,
 )
-
 
 LiteralGridDisplay = Literal["none", "inline-grid", "grid"]
 LiteralGridFlow = Literal["row", "column", "dense", "row-dense", "column-dense"]
@@ -53,4 +51,3 @@ class Grid(el.Div, RadixThemesComponent):
 
     # Gap between children vertical: "0" - "9"
     gap_x: Var[LiteralSize]
-

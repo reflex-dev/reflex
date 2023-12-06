@@ -2,17 +2,10 @@
 from typing import Any, Dict, Literal
 
 from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -24,7 +17,7 @@ class AlertDialog(CommonMarginProps, RadixThemesComponent):
 
     tag = "AlertDialog.Root"
 
-    # The controlled open state of the dialog. 
+    # The controlled open state of the dialog.
     open: Var[bool]
 
     def get_event_triggers(self) -> Dict[str, Any]:
@@ -43,6 +36,7 @@ class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
     tag = "AlertDialog.Trigger"
+
 
 class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
@@ -70,6 +64,7 @@ class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
     tag = "AlertDialog.Title"
+
 
 class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""

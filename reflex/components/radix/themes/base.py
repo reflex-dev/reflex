@@ -107,6 +107,7 @@ LiteralAccentColor = Literal[
     "gray",
 ]
 
+
 class Theme(RadixThemesComponent):
     """A theme provider for radix components.
 

@@ -1,18 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
-from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -36,6 +29,7 @@ class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
             "on_open_change": lambda e0: [e0],
         }
 
+
 class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
@@ -43,6 +37,7 @@ class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
 
     # Whether the trigger is disabled
     disabled: Var[bool]
+
 
 class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -82,10 +77,12 @@ class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
             "on_interact_outside": lambda e0: [e0],
         }
 
+
 class ContextMenuSub(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.Sub"
+
 
 class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -95,11 +92,11 @@ class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     # Whether the trigger is disabled
     disabled: Var[bool]
 
+
 class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "ContextMenu.SubContent"
-
 
     # When true, keyboard navigation will loop from last item to first, and vice versa.
     loop: Var[bool]
@@ -119,8 +116,6 @@ class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
         }
 
 
-
-
 class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
@@ -128,7 +123,6 @@ class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
 
     # Override theme color for button
     color: Var[LiteralAccentColor]
-
 
     # Shortcut to render a menu item as a link
     shortcut: Var[str]

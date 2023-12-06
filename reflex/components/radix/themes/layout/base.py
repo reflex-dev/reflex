@@ -7,8 +7,6 @@ from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAlign,
-    LiteralJustify,
     LiteralSize,
     RadixThemesComponent,
 )
@@ -48,4 +46,3 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
 
     # Whether the element will take up the largest possible space: "0" | "1"
     grow: Var[LiteralBoolNumber]
-

@@ -1,18 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal, Union
+from typing import Literal, Union
 
 from reflex import el
-from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
-from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    LiteralVariant,
     RadixThemesComponent,
 )
 
@@ -28,10 +21,12 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
     # The variant of the table
     variant: Var[Literal["surface", "ghost"]]
 
+
 class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Table.Header"
+
 
 class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -40,6 +35,7 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
 
     # The alignment of the row
     align: Var[Literal["start", "center", "end", "baseline"]]
+
 
 class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -52,10 +48,12 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
+
 class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Table.Body"
+
 
 class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -68,6 +66,7 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
     # width of the column
     width: Var[Union[str, int]]
 
+
 class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
@@ -78,6 +77,3 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 
     # width of the column
     width: Var[Union[str, int]]
-
-
-
