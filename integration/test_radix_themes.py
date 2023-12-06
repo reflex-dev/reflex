@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import time
 from typing import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
 
