@@ -41,6 +41,7 @@ from .dropdownmenu import (
     DropdownMenuTrigger,
 )
 from .hovercard import HoverCardContent, HoverCardRoot, HoverCardTrigger
+from .icons import Icon
 from .iconbutton import IconButton
 from .inset import Inset
 from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
@@ -131,6 +132,9 @@ dropdownmenu_separator = DropdownMenuSeparator.create
 hovercard_root = HoverCardRoot.create
 hovercard_trigger = HoverCardTrigger.create
 hovercard_content = HoverCardContent.create
+
+# Icon
+icon = Icon.create
 
 # Icon Button
 icon_button = IconButton.create
