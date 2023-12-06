@@ -110,3 +110,28 @@ class Style(dict):
             # Carry the imports/hooks when setting a Var as a value.
             self._var_data = VarData.merge(self._var_data, _var._var_data)
         super().__setitem__(key, value)
+
+    @staticmethod
+    def _format_emotion_style_pseudo_selector(key: str) -> str:
+        """Format a pseudo selector for emotion CSS-in-JS.
+
+        Args:
+            key: Underscore-prefixed pseudo selector key (_hover).
+
+        Returns:
+            A self-referential pseudo selector key (&:hover).
+        """
+        if key.startswith("_"):
+            return f"&:{key[1:]}"
+        return key
+
+    def format_as_emotion(self) -> dict[str, Any]:
+        """Convert the style to an emotion-compatible CSS-in-JS dict.
+
+        Returns:
+            The emotion dict.
+        """
+        return {
+            self._format_emotion_style_pseudo_selector(key): value
+            for key, value in self.items()
+        }
