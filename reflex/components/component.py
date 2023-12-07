@@ -288,6 +288,7 @@ class Component(BaseComponent, ABC):
 
         kwargs["style"] = Style(
             {
+                **self.get_fields()["style"].default,
                 **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
@@ -603,7 +604,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        return {"style": self.style}
+        return {"css": self.style}
 
     def render(self) -> Dict:
         """Render the component.

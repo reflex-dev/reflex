@@ -92,6 +92,7 @@ class TextFieldSlot(RadixThemesComponent):
     gap: Var[LiteralSize]
 
 
+from reflex.style import Style
 from reflex.utils import imports
 
 
@@ -99,8 +100,6 @@ class AccordionComponent(Component):
     """Base class for all @radix-ui/accordion components."""
 
     library = "@radix-ui/react-accordion"
-
-    css: Var[dict]
 
     as_child: Var[bool]
 
@@ -112,12 +111,14 @@ class AccordionRoot(AccordionComponent):
 
     alias = "RadixAccordionRoot"
 
-    css: Var[dict] = {
-        "borderRadius": "6px",
-        "width": "300px",
-        "backgroundColor": "var(--accent-6)",
-        "boxShadow": "0 2px 10px var(--black-a4)",
-    }
+    style: Style = Style(
+        {
+            "borderRadius": "6px",
+            "width": "300px",
+            "backgroundColor": "var(--accent-6)",
+            "boxShadow": "0 2px 10px var(--black-a4)",
+        }
+    )
 
     value: Var[str]
 
@@ -139,24 +140,26 @@ class AccordionItem(AccordionComponent):
 
     alias = "RadixAccordionItem"
 
-    css: Var[dict] = {
-        "overflow": "hidden",
-        "marginTop": "1px",
-        "&:first-child": {
-            "marginTop": 0,
-            "borderTopLeftRadius": "4px",
-            "borderTopRightRadius": "4px",
-        },
-        "&:last-child": {
-            "borderBottomLeftRadius": "4px",
-            "borderBottomRightRadius": "4px",
-        },
-        "&:focus-within": {
-            "position": "relative",
-            "zIndex": 1,
-            "boxShadow": "0 0 0 2px var(--accent-7)",
-        },
-    }
+    style: Style = Style(
+        {
+            "overflow": "hidden",
+            "marginTop": "1px",
+            "&:first-child": {
+                "marginTop": 0,
+                "borderTopLeftRadius": "4px",
+                "borderTopRightRadius": "4px",
+            },
+            "&:last-child": {
+                "borderBottomLeftRadius": "4px",
+                "borderBottomRightRadius": "4px",
+            },
+            "&:focus-within": {
+                "position": "relative",
+                "zIndex": 1,
+                "boxShadow": "0 0 0 2px var(--accent-7)",
+            },
+        }
+    )
 
     value: Var[str]
 
@@ -170,9 +173,11 @@ class AccordionHeader(AccordionComponent):
 
     alias = "RadixAccordionHeader"
 
-    css: Var[dict] = {
-        "display": "flex",
-    }
+    style: Style = Style(
+        {
+            "display": "flex",
+        }
+    )
 
 
 class AccordionTrigger(AccordionComponent):
@@ -182,27 +187,29 @@ class AccordionTrigger(AccordionComponent):
 
     alias = "RadixAccordionTrigger"
 
-    css: Var[dict] = {
-        "fontFamily": "inherit",
-        "backgroundColor": "transparent",
-        "padding": "0 20px",
-        "height": "45px",
-        "flex": 1,
-        "display": "flex",
-        "alignItems": "center",
-        "justifyContent": "space-between",
-        "fontSize": "15px",
-        "lineHeight": 1,
-        "color": "var(--accent-11)",
-        "boxShadow": "0 1px 0 var(--accent-6)",
-        "backgroundColor": "white",
-        "&:hover": {
-            "backgroundColor": "var(--gray-2)",
-        },
-        "&[data-state='open'] > .AccordionChevron": {
-            "transform": "rotate(180deg)",
-        },
-    }
+    style: Style = Style(
+        {
+            "fontFamily": "inherit",
+            "backgroundColor": "transparent",
+            "padding": "0 20px",
+            "height": "45px",
+            "flex": 1,
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "space-between",
+            "fontSize": "15px",
+            "lineHeight": 1,
+            "color": "var(--accent-11)",
+            "boxShadow": "0 1px 0 var(--accent-6)",
+            "backgroundColor": "white",
+            "&:hover": {
+                "backgroundColor": "var(--gray-2)",
+            },
+            "&[data-state='open'] > .AccordionChevron": {
+                "transform": "rotate(180deg)",
+            },
+        }
+    )
 
 
 class AccordionContent(AccordionComponent):
@@ -212,19 +219,27 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
-    css: Var[dict] = {
-        "overflow": "hidden",
-        "fontSize": "15px",
-        "color": "var(--accent-11)",
-        "backgroundColor": "var(--accent-2)",
-        "padding": "15px, 20px",
-        "&[data-state='open']": {
-            "animation": Var.create("${slideDown} 500ms cubic-bezier(0.87, 0, 0.13, 1)", _var_is_string=True),
-        },
-        "&[data-state='closed']": {
-            "animation": Var.create("${slideUp} 500ms cubic-bezier(0.87, 0, 0.13, 1)", _var_is_string=True),
-        },
-    }
+    style: Style = Style(
+        {
+            "overflow": "hidden",
+            "fontSize": "15px",
+            "color": "var(--accent-11)",
+            "backgroundColor": "var(--accent-2)",
+            "padding": "15px, 20px",
+            "&[data-state='open']": {
+                "animation": Var.create(
+                    "${slideDown} 500ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+            "&[data-state='closed']": {
+                "animation": Var.create(
+                    "${slideUp} 500ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+        }
+    )
 
     def _get_imports(self):
         return {
@@ -258,7 +273,9 @@ class ChevronDownIcon(Component):
 
     tag = "ChevronDownIcon"
 
-    css: Var[dict] = {
-        "color": "var(--accent-10)",
-        "transition": "transform 300ms cubic-bezier(0.87, 0, 0.13, 1)",
-    }
+    style: Style = Style(
+        {
+            "color": "var(--accent-10)",
+            "transition": "transform 300ms cubic-bezier(0.87, 0, 0.13, 1)",
+        }
+    )

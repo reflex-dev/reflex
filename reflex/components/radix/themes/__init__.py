@@ -13,4 +13,3 @@ accordion_trigger = AccordionTrigger.create
 accordion_content = AccordionContent.create
 accordion_header = AccordionHeader.create
 chevron_down_icon = ChevronDownIcon.create
-
