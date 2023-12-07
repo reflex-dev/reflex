@@ -18,7 +18,6 @@ from pathlib import Path
 from types import ModuleType
 
 import httpx
-import requests
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -38,7 +37,7 @@ def check_latest_package_version(package_name: str):
     """
     url = f"https://pypi.org/pypi/{package_name}/json"
 
-    response = requests.get(url)
+    response = httpx.get(url)
     data = response.json()
 
     latest_version = data["info"]["version"]
