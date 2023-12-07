@@ -35,18 +35,21 @@ def check_latest_package_version(package_name: str):
     Args:
         package_name: The name of the package.
     """
-    url = f"https://pypi.org/pypi/{package_name}/json"
+    try:
+        url = f"https://pypi.org/pypi/{package_name}/json"
 
-    response = httpx.get(url)
-    data = response.json()
+        response = httpx.get(url)
+        data = response.json()
 
-    latest_version = data["info"]["version"]
-    current_version = version.parse(constants.Reflex.VERSION)
+        latest_version = data["info"]["version"]
+        current_version = version.parse(constants.Reflex.VERSION)
 
-    if current_version < version.parse(latest_version):
-        console.warn(
-            f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
-        )
+        if current_version < version.parse(latest_version):
+            console.warn(
+                f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
+            )
+    except Exception:
+        pass
 
 
 def check_node_version() -> bool:

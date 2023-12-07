@@ -72,6 +72,13 @@ class Reflex(SimpleNamespace):
     )
 
 
+class ReflexHostingCLI(SimpleNamespace):
+    """Base constants concerning Reflex Hosting CLI."""
+
+    # The name of the Reflex Hosting CLI package.
+    MODULE_NAME = "reflex-hosting-cli"
+
+
 class Templates(SimpleNamespace):
     """Constants related to Templates."""
 
