@@ -1,7 +1,8 @@
 """Element classes. This is an auto-generated file. Do not edit. See ../generate.py."""
-from typing import Union
+from typing import Any, Dict, Union
 
 from reflex.components.el.element import Element
+from reflex.constants.event import EventTriggers
 from reflex.vars import Var
 
 from .base import BaseHTML
@@ -205,6 +206,21 @@ class Input(BaseHTML):
     # The width of the input (only for type="image")
     width: Var[Union[str, int, bool]]
 
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
+            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
+            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
+            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
+            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
+        }
+
 
 class Label(BaseHTML):
     """Display the label element."""
@@ -341,6 +357,17 @@ class Select(BaseHTML):
     # Number of visible options in a drop-down list
     size: Var[Union[str, int, bool]]
 
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
+        }
+
 
 class Textarea(BaseHTML):
     """Display the textarea element."""
@@ -388,3 +415,18 @@ class Textarea(BaseHTML):
 
     # How the text in the textarea is to be wrapped when submitting the form
     wrap: Var[Union[str, int, bool]]
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
+            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
+            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
+            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
+            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
+        }

@@ -266,8 +266,9 @@ class Component(BaseComponent, ABC):
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
                 if not types._issubclass(passed_type, expected_type):
+                    value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
-                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value} of type {passed_type}."
+                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
                     )
 
             # Check if the key is an event trigger.
@@ -783,6 +784,10 @@ class Component(BaseComponent, ABC):
         # Get the dynamic imports from children
         for child in self.children:
             dynamic_imports |= child.get_dynamic_imports()
+
+        for prop in self.get_component_props():
+            if getattr(self, prop) is not None:
+                dynamic_imports |= getattr(self, prop).get_dynamic_imports()
 
         # Return the dynamic imports
         return dynamic_imports
@@ -1476,7 +1481,9 @@ class StatefulComponent(BaseComponent):
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
 
         # Format the tag name including the hash.
-        return format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
+        return format.format_state_name(
+            f"{component.tag or 'Comp'}_{code_hash}"
+        ).capitalize()
 
     @classmethod
     def _render_stateful_code(

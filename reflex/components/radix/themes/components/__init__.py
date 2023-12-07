@@ -41,8 +41,8 @@ from .dropdownmenu import (
     DropdownMenuTrigger,
 )
 from .hovercard import HoverCardContent, HoverCardRoot, HoverCardTrigger
-from .icons import Icon
 from .iconbutton import IconButton
+from .icons import Icon
 from .inset import Inset
 from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
 from .radiogroup import RadioGroupItem, RadioGroupRoot

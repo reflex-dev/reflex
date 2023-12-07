@@ -1324,7 +1324,7 @@ class Var:
             raise TypeError(f"Cannot join non-list var {self._var_full_name}.")
 
         if other is None:
-            other = Var.create_safe("")
+            other = Var.create_safe('""')
         if isinstance(other, str):
             other = Var.create_safe(json.dumps(other))
         else:
