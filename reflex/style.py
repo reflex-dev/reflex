@@ -160,14 +160,20 @@ class Style(dict):
         """Format a pseudo selector for emotion CSS-in-JS.
 
         Args:
-            key: Underscore-prefixed pseudo selector key (_hover).
+            key: Underscore-prefixed or colon-prefixed pseudo selector key (_hover).
 
         Returns:
             A self-referential pseudo selector key (&:hover).
         """
+        prefix = ""
         if key.startswith("_"):
-            return f"&:{key[1:]}"
-        return key
+            # Handle pseudo selectors in chakra style format.
+            prefix = "&:"
+            key = key[1:]
+        if key.startswith(":"):
+            # Handle pseudo selectors and elements in native format.
+            prefix = "&"
+        return prefix + format.to_kebab_case(key)
 
     def format_as_emotion(self) -> dict[str, Any]:
         """Convert the style to an emotion-compatible CSS-in-JS dict.
