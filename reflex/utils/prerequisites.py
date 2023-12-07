@@ -16,6 +16,7 @@ import zipfile
 from fileinput import FileInput
 from pathlib import Path
 from types import ModuleType
+import requests
 
 import httpx
 import typer
@@ -27,6 +28,30 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import get_config
 from reflex.utils import console, path_ops, processes
+
+
+
+
+def check_latest_package_version(package_name) -> bool:
+    """Check if the latest version of the package is installed.
+
+    Returns:
+        Whether the latest version of the package is installed.
+    """
+    url = f"https://pypi.org/pypi/{package_name}/json"
+
+    response = requests.get(url)
+    data = response.json()
+
+    latest_version = data["info"]["version"]
+    current_version = version.parse(constants.Reflex.VERSION)
+
+    if current_version < version.parse(latest_version):
+        console.warn(
+            f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
+        )
+        return False
+
 
 
 def check_node_version() -> bool:
