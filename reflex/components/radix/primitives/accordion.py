@@ -133,7 +133,7 @@ class AccordionTrigger(AccordionComponent):
     style: Style = Style(
         {
             "fontFamily": "inherit",
-            "backgroundColor": "transparent",
+            "backgroundColor": "white",
             "padding": "0 20px",
             "height": "45px",
             "flex": 1,

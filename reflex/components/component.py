@@ -446,6 +446,20 @@ class Component(BaseComponent, ABC):
 
         return _compile_component(self)
 
+    def _apply_theme(self, theme: Component):
+        pass
+
+    def apply_theme(self, theme: Component):
+        """Apply a theme to the component.
+
+        Args:
+            theme: The theme to apply.
+        """
+        for child in self.children:
+            if not isinstance(child, Component):
+                continue
+            child._apply_theme(theme)
+
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
 
