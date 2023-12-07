@@ -155,7 +155,7 @@ def get_redis() -> Redis | None:
     if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
         return Redis.from_url(config.redis_url)
     console.deprecate(
-        feature_name="host:port style redis urls",
+        feature_name="host[:port] style redis urls",
         reason="redis-py url syntax is now being used",
         deprecation_version="0.3.6",
         removal_version="0.4.0",
