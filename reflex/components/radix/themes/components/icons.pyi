@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from typing import List
 from reflex.components.component import Component
 from reflex.utils import format
 
@@ -171,14 +172,14 @@ class Icon(RadixIconComponent):
         """
         ...
 
-ICON_ABSTRACT: list[str]
-ICON_ALIGNS: list[str]
-ICON_ARROWS: list[str]
-ICON_BORDERS: list[str]
-ICON_COMPONENTS: list[str]
-ICON_DESIGN: list[str]
-ICON_LOGOS: list[str]
-ICON_MUSIC: list[str]
-ICON_OBJECTS: list[str]
-ICON_TYPOGRAPHY: list[str]
-ICON_LIST: list[str]
+ICON_ABSTRACT: List[str]
+ICON_ALIGNS: List[str]
+ICON_ARROWS: List[str]
+ICON_BORDERS: List[str]
+ICON_COMPONENTS: List[str]
+ICON_DESIGN: List[str]
+ICON_LOGOS: List[str]
+ICON_MUSIC: List[str]
+ICON_OBJECTS: List[str]
+ICON_TYPOGRAPHY: List[str]
+ICON_LIST: List[str]

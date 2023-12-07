@@ -1,6 +1,8 @@
 """Radix Icons."""
 
 
+from typing import List
+
 from reflex.components.component import Component
 from reflex.utils import format
 
@@ -47,7 +49,7 @@ class Icon(RadixIconComponent):
         return super().create(*children, **props)
 
 
-ICON_ABSTRACT: list[str] = [
+ICON_ABSTRACT: List[str] = [
     "hamburger_menu",
     "cross_1",
     "dots_vertical",
@@ -97,7 +99,7 @@ ICON_ABSTRACT: list[str] = [
     "copy",
     "square",
 ]
-ICON_ALIGNS: list[str] = [
+ICON_ALIGNS: List[str] = [
     "align_top",
     "align_center_vertically",
     "align_bottom",
@@ -115,7 +117,7 @@ ICON_ALIGNS: list[str] = [
     "pin_top",
     "pin_bottom",
 ]
-ICON_ARROWS: list[str] = [
+ICON_ARROWS: List[str] = [
     "arrow_left",
     "arrow_right",
     "arrow_up",
@@ -151,7 +153,7 @@ ICON_ARROWS: list[str] = [
     "move",
     "all_sides",
 ]
-ICON_BORDERS: list[str] = [
+ICON_BORDERS: List[str] = [
     "border_all",
     "border_split",
     "border_none",
@@ -170,7 +172,7 @@ ICON_BORDERS: list[str] = [
     "border_dashed",
     "border_dotted",
 ]
-ICON_COMPONENTS: list[str] = [
+ICON_COMPONENTS: List[str] = [
     "box",
     "aspect_ratio",
     "container",
@@ -200,7 +202,7 @@ ICON_COMPONENTS: list[str] = [
     "divider_horizontal",
     "divider_vertical",
 ]
-ICON_DESIGN: list[str] = [
+ICON_DESIGN: List[str] = [
     "frame",
     "crop",
     "layers",
@@ -241,7 +243,7 @@ ICON_DESIGN: list[str] = [
     "column_spacing",
     "row_spacing",
 ]
-ICON_LOGOS: list[str] = [
+ICON_LOGOS: List[str] = [
     "modulz_logo",
     "stitches_logo",
     "figma_logo",
@@ -256,7 +258,7 @@ ICON_LOGOS: list[str] = [
     "instagram_logo",
     "linked_in_logo",
 ]
-ICON_MUSIC: list[str] = [
+ICON_MUSIC: List[str] = [
     "play",
     "resume",
     "pause",
@@ -270,7 +272,7 @@ ICON_MUSIC: list[str] = [
     "speaker_quiet",
     "speaker_off",
 ]
-ICON_OBJECTS: list[str] = [
+ICON_OBJECTS: List[str] = [
     "magnifying_glass",
     "gear",
     "bell",
@@ -353,7 +355,7 @@ ICON_OBJECTS: list[str] = [
     "eraser",
     "cookie",
 ]
-ICON_TYPOGRAPHY: list[str] = [
+ICON_TYPOGRAPHY: List[str] = [
     "font_style",
     "font_italic",
     "font_roman",
@@ -384,7 +386,7 @@ ICON_TYPOGRAPHY: list[str] = [
     "dash",
 ]
 
-ICON_LIST: list[str] = [
+ICON_LIST: List[str] = [
     *ICON_ABSTRACT,
     *ICON_ALIGNS,
     *ICON_ARROWS,
