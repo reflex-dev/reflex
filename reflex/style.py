@@ -72,7 +72,9 @@ def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
     return style_item, None
 
 
-def convert_list(responsive_list: list[str | dict | Var]) -> tuple[list[str | dict], VarData | None]:
+def convert_list(
+    responsive_list: list[str | dict | Var],
+) -> tuple[list[str | dict], VarData | None]:
     converted_value = []
     item_var_datas = []
     for responsive_item in responsive_list:
@@ -155,47 +157,55 @@ class Style(dict):
             self._var_data = VarData.merge(self._var_data, _var._var_data)
         super().__setitem__(key, value)
 
-    @staticmethod
-    def _format_emotion_style_pseudo_selector(key: str) -> str:
-        """Format a pseudo selector for emotion CSS-in-JS.
 
-        Args:
-            key: Underscore-prefixed or colon-prefixed pseudo selector key (_hover).
+def _format_emotion_style_pseudo_selector(key: str) -> str:
+    """Format a pseudo selector for emotion CSS-in-JS.
 
-        Returns:
-            A self-referential pseudo selector key (&:hover).
-        """
-        prefix = ""
-        if key.startswith("_"):
-            # Handle pseudo selectors in chakra style format.
-            prefix = "&:"
-            key = key[1:]
-        if key.startswith(":"):
-            # Handle pseudo selectors and elements in native format.
-            prefix = "&"
+    Args:
+        key: Underscore-prefixed or colon-prefixed pseudo selector key (_hover).
+
+    Returns:
+        A self-referential pseudo selector key (&:hover).
+    """
+    prefix = None
+    if key.startswith("_"):
+        # Handle pseudo selectors in chakra style format.
+        prefix = "&:"
+        key = key[1:]
+    if key.startswith(":"):
+        # Handle pseudo selectors and elements in native format.
+        prefix = "&"
+    if prefix is not None:
         return prefix + format.to_kebab_case(key)
+    return key
 
-    def format_as_emotion(self) -> dict[str, Any] | None:
-        """Convert the style to an emotion-compatible CSS-in-JS dict.
 
-        Returns:
-            The emotion dict.
-        """
-        emotion_style = {}
-        for orig_key, value in self.items():
-            key = self._format_emotion_style_pseudo_selector(orig_key)
-            if isinstance(value, list):
-                # apply media queries
-                mbps = {
-                    media_query(bp): bp_value if isinstance(bp_value, dict) else {key: bp_value}
-                    for bp, bp_value in enumerate(value)
-                }
-                if key.startswith("&:"):
-                    emotion_style[key] = mbps
-                else:
-                    for mq, style_sub_dict in mbps.items():
-                        emotion_style.setdefault(mq, {}).update(style_sub_dict)
+def format_as_emotion(style_dict) -> dict[str, Any] | None:
+    """Convert the style to an emotion-compatible CSS-in-JS dict.
+
+    Returns:
+        The emotion dict.
+    """
+    emotion_style = {}
+    for orig_key, value in style_dict.items():
+        key = _format_emotion_style_pseudo_selector(orig_key)
+        if isinstance(value, list):
+            # Apply media queries from responsive value list.
+            mbps = {
+                media_query(bp): bp_value
+                if isinstance(bp_value, dict)
+                else {key: bp_value}
+                for bp, bp_value in enumerate(value)
+            }
+            if key.startswith("&:"):
+                emotion_style[key] = mbps
             else:
-                emotion_style[key] = value
-        if emotion_style:
-            return emotion_style
+                for mq, style_sub_dict in mbps.items():
+                    emotion_style.setdefault(mq, {}).update(style_sub_dict)
+        elif isinstance(value, dict):
+            # Recursively format nested style dictionaries.
+            emotion_style[key] = format_as_emotion(value)
+        else:
+            emotion_style[key] = value
+    if emotion_style:
+        return emotion_style
