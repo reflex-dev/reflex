@@ -15,7 +15,7 @@ from reflex_cli.utils import dependency
 
 from reflex import constants
 from reflex.config import get_config
-from reflex.utils import console, telemetry, prerequisites
+from reflex.utils import console, telemetry
 
 # Disable typer+rich integration for help panels
 typer.core.rich = False  # type: ignore
@@ -78,7 +78,7 @@ def _init(
     app_name = prerequisites.get_default_app_name() if name is None else name
     console.rule(f"[bold]Initializing {app_name}")
 
-    prerequisites.check_latest_package_version("reflex")    
+    prerequisites.check_latest_package_version("reflex")
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
@@ -173,7 +173,7 @@ def _run(
 
     console.rule("[bold]Starting Reflex App")
 
-    prerequisites.check_latest_package_version("reflex")  
+    prerequisites.check_latest_package_version("reflex")
 
     if frontend:
         prerequisites.update_next_config()
@@ -493,7 +493,7 @@ def deploy(
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
-    prerequisites.check_latest_package_version("reflex-hosting-cli")  
+    prerequisites.check_latest_package_version("reflex-hosting-cli")
 
     hosting_cli.deploy(
         app_name=app_name,
