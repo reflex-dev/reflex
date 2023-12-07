@@ -7,8 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Union
+from typing import Any, Dict, Union
 from reflex.components.el.element import Element
+from reflex.constants.event import EventTriggers
 from reflex.vars import Var
 from .base import BaseHTML
 
@@ -589,6 +590,7 @@ class Form(BaseHTML):
         ...
 
 class Input(BaseHTML):
+    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -725,6 +727,9 @@ class Input(BaseHTML):
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_change: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -735,6 +740,12 @@ class Input(BaseHTML):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_key_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_key_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mount: Optional[
@@ -1877,6 +1888,7 @@ class Progress(BaseHTML):
         ...
 
 class Select(BaseHTML):
+    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -1950,6 +1962,9 @@ class Select(BaseHTML):
         autofocus: Optional[bool] = None,
         custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
         on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_change: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_click: Optional[
@@ -2042,6 +2057,7 @@ class Select(BaseHTML):
         ...
 
 class Textarea(BaseHTML):
+    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -2131,6 +2147,9 @@ class Textarea(BaseHTML):
         on_blur: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_change: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         on_click: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
@@ -2141,6 +2160,12 @@ class Textarea(BaseHTML):
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_key_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_key_up: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
         on_mount: Optional[
