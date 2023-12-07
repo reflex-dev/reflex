@@ -30,7 +30,7 @@ class AccordionComponent(Component):
             ._render()
             .add_props(
                 **{
-                    "class_name": format.to_title_case(self.tag),
+                    "class_name": format.to_title_case(self.tag or ""),
                 }
             )
         )
