@@ -175,7 +175,7 @@ class Style(dict):
             prefix = "&"
         return prefix + format.to_kebab_case(key)
 
-    def format_as_emotion(self) -> dict[str, Any]:
+    def format_as_emotion(self) -> dict[str, Any] | None:
         """Convert the style to an emotion-compatible CSS-in-JS dict.
 
         Returns:
@@ -197,4 +197,5 @@ class Style(dict):
                         emotion_style.setdefault(mq, {}).update(style_sub_dict)
             else:
                 emotion_style[key] = value
-        return emotion_style
+        if emotion_style:
+            return emotion_style
