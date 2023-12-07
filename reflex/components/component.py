@@ -455,10 +455,11 @@ class Component(BaseComponent, ABC):
         Args:
             theme: The theme to apply.
         """
+        self._apply_theme(theme)
         for child in self.children:
             if not isinstance(child, Component):
                 continue
-            child._apply_theme(theme)
+            child.apply_theme(theme)
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.

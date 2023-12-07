@@ -262,10 +262,6 @@ class PieChart(ChartBase):
         "Pie",
     ]
 
-    def _apply_theme(self, theme: Component):
-        self.stroke = Var.create_safe(f"var(--accent-8)")
-        self.fill = Var.create_safe(f"var(--accent-5)")
-
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
 
