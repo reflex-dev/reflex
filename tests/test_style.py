@@ -8,6 +8,9 @@ test_style = [
     ({"a": Var.create("abc")}, {"a": "abc"}),
     ({"test_case": 1}, {"testCase": 1}),
     ({"test_case": {"a": 1}}, {"testCase": {"a": 1}}),
+    ({":test_case": {"a": 1}}, {":testCase": {"a": 1}}),
+    ({"::test_case": {"a": 1}}, {"::testCase": {"a": 1}}),
+    ({"::-webkit-scrollbar": {"display": "none"}}, {"::WebkitScrollbar": {"display": "none"}}),
 ]
 
 

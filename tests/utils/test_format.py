@@ -125,6 +125,8 @@ def test_indent(text: str, indent_level: int, expected: str, windows_platform: b
         ("__start_with_double_underscore", "__start_with_double_underscore"),
         ("kebab-case", "kebab_case"),
         ("double-kebab-case", "double_kebab_case"),
+        (":start-with-colon", ":start_with_colon"),
+        (":-start-with-colon-dash", ":_start_with_colon_dash"),
     ],
 )
 def test_to_snake_case(input: str, output: str):
@@ -153,6 +155,8 @@ def test_to_snake_case(input: str, output: str):
         ("--starts-with-double-hyphen", "--startsWithDoubleHyphen"),
         ("_starts_with_underscore", "_startsWithUnderscore"),
         ("__starts_with_double_underscore", "__startsWithDoubleUnderscore"),
+        (":start-with-colon", ":startWithColon"),
+        (":-start-with-colon-dash", ":StartWithColonDash"),
     ],
 )
 def test_to_camel_case(input: str, output: str):
@@ -193,6 +197,10 @@ def test_to_title_case(input: str, output: str):
         ("Hello", "hello"),
         ("snake_case", "snake-case"),
         ("snake_case_two", "snake-case-two"),
+        (":startWithColon", ":start-with-colon"),
+        (":StartWithColonDash", ":-start-with-colon-dash"),
+        (":start_with_colon", ":start-with-colon"),
+        (":_start_with_colon_dash", ":-start-with-colon-dash"),
     ],
 )
 def test_to_kebab_case(input: str, output: str):
