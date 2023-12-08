@@ -17,7 +17,7 @@ test_style = [
     ({"::test_case": {"a": 1}}, {"::testCase": {"a": 1}}),
     (
         {"::-webkit-scrollbar": {"display": "none"}},
-        {"::WebkitScrollbar": {"display": "none"}},
+        {"::-webkit-scrollbar": {"display": "none"}},
     ),
 ]
 
@@ -309,7 +309,7 @@ class StyleState(rx.State):
         ),
         (
             {"color": f"dark{StyleState.color}"},
-            {"css": Var.create({"color": f"dark" + StyleState.color})},
+            {"css": Var.create(f'{{"color": `dark{StyleState.color}`}}').to(dict)},
         ),
         (
             {"color": StyleState.color, "_hover": {"color": StyleState.color2}},
@@ -318,6 +318,80 @@ class StyleState(rx.State):
                     {
                         "color": StyleState.color,
                         "&:hover": {"color": StyleState.color2},
+                    }
+                )
+            },
+        ),
+        (
+            {"color": [StyleState.color, "gray", StyleState.color2, "yellow", "blue"]},
+            {
+                "css": Var.create(
+                    {
+                        "@media screen and (min-width: 0)": {"color": StyleState.color},
+                        "@media screen and (min-width: 30em)": {"color": "gray"},
+                        "@media screen and (min-width: 48em)": {
+                            "color": StyleState.color2
+                        },
+                        "@media screen and (min-width: 62em)": {"color": "yellow"},
+                        "@media screen and (min-width: 80em)": {"color": "blue"},
+                    }
+                )
+            },
+        ),
+        (
+            {
+                "_hover": [
+                    {"color": StyleState.color},
+                    {"color": StyleState.color2},
+                    {"color": "#333"},
+                    {"color": "#444"},
+                    {"color": "#555"},
+                ]
+            },
+            {
+                "css": Var.create(
+                    {
+                        "&:hover": {
+                            "@media screen and (min-width: 0)": {
+                                "color": StyleState.color
+                            },
+                            "@media screen and (min-width: 30em)": {
+                                "color": StyleState.color2
+                            },
+                            "@media screen and (min-width: 48em)": {"color": "#333"},
+                            "@media screen and (min-width: 62em)": {"color": "#444"},
+                            "@media screen and (min-width: 80em)": {"color": "#555"},
+                        }
+                    }
+                )
+            },
+        ),
+        (
+            {
+                "_hover": {
+                    "color": [
+                        StyleState.color,
+                        StyleState.color2,
+                        "#333",
+                        "#444",
+                        "#555",
+                    ]
+                }
+            },
+            {
+                "css": Var.create(
+                    {
+                        "&:hover": {
+                            "@media screen and (min-width: 0)": {
+                                "color": StyleState.color
+                            },
+                            "@media screen and (min-width: 30em)": {
+                                "color": StyleState.color2
+                            },
+                            "@media screen and (min-width: 48em)": {"color": "#333"},
+                            "@media screen and (min-width: 62em)": {"color": "#444"},
+                            "@media screen and (min-width: 80em)": {"color": "#555"},
+                        }
                     }
                 )
             },

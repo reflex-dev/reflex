@@ -67,7 +67,7 @@ def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
     new_var = Var.create(style_item)
     if new_var is not None and new_var._var_data:
         # The wrapped backtick is used to identify the Var for interpolation.
-        return f"`{style_item}`", new_var._var_data
+        return f"`{str(new_var)}`", new_var._var_data
 
     return style_item, None
 
