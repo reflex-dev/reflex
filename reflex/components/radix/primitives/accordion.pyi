@@ -106,7 +106,6 @@ class AccordionRoot(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        style: Optional[Style] = None,
         type_: Optional[
             Union[Var[Literal["single", "multiple"]], Literal["single", "multiple"]]
         ] = None,
@@ -122,6 +121,7 @@ class AccordionRoot(AccordionComponent):
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
@@ -208,10 +208,10 @@ class AccordionItem(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        style: Optional[Style] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
@@ -293,8 +293,8 @@ class AccordionHeader(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        style: Optional[Style] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
@@ -374,8 +374,8 @@ class AccordionTrigger(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        style: Optional[Style] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
@@ -455,8 +455,8 @@ class AccordionContent(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        style: Optional[Style] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
+        style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
         class_name: Optional[Any] = None,
@@ -608,3 +608,12 @@ class ChevronDownIcon(Component):
             TypeError: If an invalid child is passed.
         """
         ...
+
+accordion_root = AccordionRoot.create
+accordion_item = AccordionItem.create
+accordion_trigger = AccordionTrigger.create
+accordion_content = AccordionContent.create
+accordion_header = AccordionHeader.create
+chevron_down_icon = ChevronDownIcon.create
+
+def accordion(items: list[tuple[str, str]], **props) -> Component: ...

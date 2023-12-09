@@ -244,7 +244,7 @@ accordion_header = AccordionHeader.create
 chevron_down_icon = ChevronDownIcon.create
 
 
-def accordion(items: list[tuple[str, str]], **props) -> AccordionRoot:
+def accordion(items: list[tuple[str, str]], **props) -> Component:
     """High level API for the Radix accordion.
 
     #TODO: We need to handle taking in state here. This is just for a POC.
