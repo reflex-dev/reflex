@@ -1284,6 +1284,29 @@ class Var:
             _var_type=str,
         )
 
+    def strip(self, other: str | Var[str] = " ") -> Var:
+        """Strip a string var.
+
+        Args:
+            other: The string to strip the var with.
+
+        Returns:
+            A var with the stripped string.
+
+        Raises:
+            TypeError: If the var is not a string.
+        """
+        if not types._issubclass(self._var_type, str):
+            raise TypeError(f"Cannot strip non-string var {self._var_full_name}.")
+
+        other = Var.create_safe(json.dumps(other)) if isinstance(other, str) else other
+
+        return self._replace(
+            _var_name=f"{self._var_name}.replace(/^${other._var_full_name}|${other._var_full_name}$/g, '')",
+            _var_is_string=False,
+            merge_var_data=other._var_data,
+        )
+
     def split(self, other: str | Var[str] = " ") -> Var:
         """Split a string var into a list.
 
