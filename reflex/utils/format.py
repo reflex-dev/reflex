@@ -125,7 +125,7 @@ def to_snake_case(text: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
-def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
+def to_camel_case(text: str) -> str:
     """Convert a string to camel case.
 
     The first word in the text is converted to lowercase and
@@ -133,14 +133,12 @@ def to_camel_case(text: str, allow_hyphens: bool = False) -> str:
 
     Args:
         text: The string to convert.
-        allow_hyphens: Whether to allow hyphens in the text.
 
     Returns:
         The camel case string.
     """
-    chars = "-_" if not allow_hyphens else "_"
-    words = re.split(f"[{chars}]", text.lstrip(chars))
-    leading_underscores_or_hyphens = "".join(re.findall(rf"^[{chars}]+", text))
+    words = re.split("[_-]", text.lstrip("-_"))
+    leading_underscores_or_hyphens = "".join(re.findall(r"^[_-]+", text))
     # Capitalize the first letter of each word except the first one
     converted_word = words[0] + "".join(x.capitalize() for x in words[1:])
     return leading_underscores_or_hyphens + converted_word

@@ -447,10 +447,15 @@ class Component(BaseComponent, ABC):
         return _compile_component(self)
 
     def _apply_theme(self, theme: Component):
+        """Apply the theme to this component.
+
+        Args:
+            theme: The theme to apply.
+        """
         pass
 
     def apply_theme(self, theme: Component):
-        """Apply a theme to the component.
+        """Apply a theme to the component and its children.
 
         Args:
             theme: The theme to apply.

@@ -43,15 +43,6 @@ class AccordionRoot(AccordionComponent):
 
     alias = "RadixAccordionRoot"
 
-    style: Style = Style(
-        {
-            "borderRadius": "6px",
-            "width": "300px",
-            "backgroundColor": "var(--accent-6)",
-            "boxShadow": "0 2px 10px var(--black-a4)",
-        }
-    )
-
     # The type of accordion (single or multiple).
     type_: Var[LiteralAccordionType]
 
@@ -73,6 +64,16 @@ class AccordionRoot(AccordionComponent):
     # The orientation of the accordion.
     orientation: Var[LiteralAccordionOrientation]
 
+    def _apply_theme(self, theme: Component):
+        self.style = Style(
+            {
+                "border_radius": "6px",
+                "background_color": "var(--accent-6)",
+                "box_shadow": "0 2px 10px var(--black-a4)",
+                **self.style,
+            }
+        )
+
 
 class AccordionItem(AccordionComponent):
     """An accordion component."""
@@ -81,32 +82,34 @@ class AccordionItem(AccordionComponent):
 
     alias = "RadixAccordionItem"
 
-    style: Style = Style(
-        {
-            "overflow": "hidden",
-            "marginTop": "1px",
-            "&:first-child": {
-                "marginTop": 0,
-                "borderTopLeftRadius": "4px",
-                "borderTopRightRadius": "4px",
-            },
-            "&:last-child": {
-                "borderBottomLeftRadius": "4px",
-                "borderBottomRightRadius": "4px",
-            },
-            "&:focus-within": {
-                "position": "relative",
-                "zIndex": 1,
-                "boxShadow": "0 0 0 2px var(--accent-7)",
-            },
-        }
-    )
-
     # A unique identifier for the item.
     value: Var[str]
 
     # When true, prevents the user from interacting with the item.
     disabled: Var[bool]
+
+    def _apply_theme(self, theme: Component):
+        self.style = Style(
+            {
+                "overflow": "hidden",
+                "margin_top": "1px",
+                "&:first-child": {
+                    "margin_top": 0,
+                    "border_top_left_radius": "4px",
+                    "border_top_right_radius": "4px",
+                },
+                "&:last-child": {
+                    "border_bottom_left_radius": "4px",
+                    "border_bottom_right_radius": "4px",
+                },
+                "&:focus-within": {
+                    "position": "relative",
+                    "z_index": 1,
+                    "box_shadow": "0 0 0 2px var(--accent-7)",
+                },
+                **self.style,
+            }
+        )
 
 
 class AccordionHeader(AccordionComponent):
@@ -116,11 +119,13 @@ class AccordionHeader(AccordionComponent):
 
     alias = "RadixAccordionHeader"
 
-    style: Style = Style(
-        {
-            "display": "flex",
-        }
-    )
+    def _apply_theme(self, theme: Component):
+        self.style = Style(
+            {
+                "display": "flex",
+                **self.style,
+            }
+        )
 
 
 class AccordionTrigger(AccordionComponent):
@@ -130,28 +135,29 @@ class AccordionTrigger(AccordionComponent):
 
     alias = "RadixAccordionTrigger"
 
-    style: Style = Style(
-        {
-            "fontFamily": "inherit",
-            "backgroundColor": "white",
-            "padding": "0 20px",
-            "height": "45px",
-            "flex": 1,
-            "display": "flex",
-            "alignItems": "center",
-            "justifyContent": "space-between",
-            "fontSize": "15px",
-            "lineHeight": 1,
-            "color": "var(--accent-11)",
-            "boxShadow": "0 1px 0 var(--accent-6)",
-            "&:hover": {
-                "backgroundColor": "var(--gray-2)",
-            },
-            "&[data-state='open'] > .AccordionChevron": {
-                "transform": "rotate(180deg)",
-            },
-        }
-    )
+    def _apply_theme(self, theme: Component):
+        self.style = Style(
+            {
+                "font_family": "inherit",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "line_height": 1,
+                "color": "var(--accent-11)",
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "&:hover": {
+                    "background_color": "var(--gray-2)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+                **self.style,
+            }
+        )
 
 
 class AccordionContent(AccordionComponent):
@@ -161,27 +167,29 @@ class AccordionContent(AccordionComponent):
 
     alias = "RadixAccordionContent"
 
-    style: Style = Style(
-        {
-            "overflow": "hidden",
-            "fontSize": "15px",
-            "color": "var(--accent-11)",
-            "backgroundColor": "var(--accent-2)",
-            "padding": "15px, 20px",
-            "&[data-state='open']": {
-                "animation": Var.create(
-                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-            "&[data-state='closed']": {
-                "animation": Var.create(
-                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-        }
-    )
+    def _apply_theme(self, theme: Component):
+        self.style = Style(
+            {
+                "overflow": "hidden",
+                "fontSize": "15px",
+                "color": "var(--accent-11)",
+                "backgroundColor": "var(--accent-2)",
+                "padding": "15px, 20px",
+                "&[data-state='open']": {
+                    "animation": Var.create(
+                        f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        _var_is_string=True,
+                    ),
+                },
+                "&[data-state='closed']": {
+                    "animation": Var.create(
+                        f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        _var_is_string=True,
+                    ),
+                },
+                **self.style,
+            }
+        )
 
     def _get_imports(self):
         return {
@@ -218,9 +226,54 @@ class ChevronDownIcon(Component):
 
     tag = "ChevronDownIcon"
 
-    style: Style = Style(
-        {
-            "color": "var(--accent-10)",
-            "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-        }
+    def _apply_theme(self, theme: Component):
+        self.style = Style(
+            {
+                "color": "var(--accent-10)",
+                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                **self.style,
+            }
+        )
+
+
+accordion_root = AccordionRoot.create
+accordion_item = AccordionItem.create
+accordion_trigger = AccordionTrigger.create
+accordion_content = AccordionContent.create
+accordion_header = AccordionHeader.create
+chevron_down_icon = ChevronDownIcon.create
+
+
+def accordion(items: list[tuple[str, str]], **props) -> AccordionRoot:
+    """High level API for the Radix accordion.
+
+    #TODO: We need to handle taking in state here. This is just for a POC.
+
+
+    Args:
+        items: The items of the accordion component: list of tuples (label,panel)
+        **props: The properties of the component.
+
+    Returns:
+        The accordion component.
+    """
+    return accordion_root(
+        *[
+            accordion_item(
+                accordion_header(
+                    accordion_trigger(
+                        label,
+                        chevron_down_icon(
+                            class_name="AccordionChevron",
+                        ),
+                    ),
+                ),
+                accordion_content(
+                    panel,
+                ),
+                value=f"item-{i}",
+            )
+            for i, (label, panel) in enumerate(items)
+        ],
+        **props,
     )

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Union
 
-from reflex.components import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -195,10 +194,6 @@ class Cartesian(Recharts):
 
     # The type of icon in legend. If set to 'none', no legend item will be rendered. 'line' | 'plainline' | 'square' | 'rect'| 'circle' | 'cross' | 'diamond' | 'star' | 'triangle' | 'wye' | 'none'optional
     # legend_type: Var[LiteralLegendType]
-
-    def _apply_theme(self, theme: Component):
-        self.stroke = Var.create(f"var(--accent-8)")
-        self.fill = Var.create(f"var(--accent-5)")
 
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]:
         """Get the event triggers that pass the component's value to the handler.
