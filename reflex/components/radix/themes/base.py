@@ -54,7 +54,7 @@ class RadixThemesComponent(Component):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         **props,
     ) -> Component:
         """Create a new component instance.
