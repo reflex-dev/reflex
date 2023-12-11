@@ -31,7 +31,12 @@ def FullyControlledInput():
             ),
             rx.input(value=State.text, id="value_input", is_read_only=True),
             rx.input(on_change=State.set_text, id="on_change_input"),  # type: ignore
-            rx.el.input(value=State.text, id="plain_value_input", disabled=True, _disabled={"background_color": "#EEE"}),
+            rx.el.input(
+                value=State.text,
+                id="plain_value_input",
+                disabled=True,
+                _disabled={"background_color": "#EEE"},
+            ),
             rx.button("CLEAR", on_click=rx.set_value("on_change_input", "")),
         )
 
@@ -82,7 +87,10 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
     assert fully_controlled_input.poll_for_value(debounce_input) == "initial"
     assert fully_controlled_input.poll_for_value(value_input) == "initial"
     assert fully_controlled_input.poll_for_value(plain_value_input) == "initial"
-    assert plain_value_input.value_of_css_property("background-color") == "rgba(238, 238, 238, 1)"
+    assert (
+        plain_value_input.value_of_css_property("background-color")
+        == "rgba(238, 238, 238, 1)"
+    )
 
     # move cursor to home, then to the right and type characters
     debounce_input.send_keys(Keys.HOME, Keys.ARROW_RIGHT)
@@ -114,7 +122,10 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
         "state"
     ].text == "getting testing done"
     assert fully_controlled_input.poll_for_value(value_input) == "getting testing done"
-    assert fully_controlled_input.poll_for_value(plain_value_input) == "getting testing done"
+    assert (
+        fully_controlled_input.poll_for_value(plain_value_input)
+        == "getting testing done"
+    )
 
     # type into the on_change input
     on_change_input.send_keys("overwrite the state")
@@ -125,7 +136,10 @@ async def test_fully_controlled_input(fully_controlled_input: AppHarness):
         "state"
     ].text == "overwrite the state"
     assert fully_controlled_input.poll_for_value(value_input) == "overwrite the state"
-    assert fully_controlled_input.poll_for_value(plain_value_input) == "overwrite the state"
+    assert (
+        fully_controlled_input.poll_for_value(plain_value_input)
+        == "overwrite the state"
+    )
 
     clear_button.click()
     time.sleep(0.5)

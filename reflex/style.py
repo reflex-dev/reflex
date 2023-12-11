@@ -75,6 +75,14 @@ def convert_item(style_item: str | Var) -> tuple[str, VarData | None]:
 def convert_list(
     responsive_list: list[str | dict | Var],
 ) -> tuple[list[str | dict], VarData | None]:
+    """Format a responsive value list.
+
+    Args:
+        responsive_list: The raw responsive value list (one value per breakpoint).
+
+    Returns:
+        The recursively converted responsive value list and any associated VarData.
+    """
     converted_value = []
     item_var_datas = []
     for responsive_item in responsive_list:
@@ -100,7 +108,7 @@ def convert(style_dict):
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
     for key, value in style_dict.items():
-        key = format.to_camel_case(key, allow_hyphens=True)
+        key = format.to_camel_case(key)
         if isinstance(value, dict):
             # Recursively format nested style dictionaries.
             out[key], new_var_data = convert(value)
@@ -180,8 +188,11 @@ def _format_emotion_style_pseudo_selector(key: str) -> str:
     return key
 
 
-def format_as_emotion(style_dict) -> dict[str, Any] | None:
+def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
     """Convert the style to an emotion-compatible CSS-in-JS dict.
+
+    Args:
+        style_dict: The style dict to convert.
 
     Returns:
         The emotion dict.

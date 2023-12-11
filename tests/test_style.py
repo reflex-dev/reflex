@@ -17,7 +17,7 @@ test_style = [
     ({"::test_case": {"a": 1}}, {"::testCase": {"a": 1}}),
     (
         {"::-webkit-scrollbar": {"display": "none"}},
-        {"::-webkit-scrollbar": {"display": "none"}},
+        {"::WebkitScrollbar": {"display": "none"}},
     ),
 ]
 
@@ -288,8 +288,7 @@ def test_style_via_component(
         style_dict: The style_dict to pass to the component.
         expected_get_style: The expected style dict.
     """
-
-    comp = rx.el.div(style=style_dict, **kwargs)
+    comp = rx.el.div(style=style_dict, **kwargs)  # type: ignore
     compare_dict_of_var(comp._get_style(), expected_get_style)
 
 
@@ -309,7 +308,7 @@ class StyleState(rx.State):
         ),
         (
             {"color": f"dark{StyleState.color}"},
-            {"css": Var.create(f'{{"color": `dark{StyleState.color}`}}').to(dict)},
+            {"css": Var.create_safe(f'{{"color": `dark{StyleState.color}`}}').to(dict)},
         ),
         (
             {"color": StyleState.color, "_hover": {"color": StyleState.color2}},
@@ -408,7 +407,6 @@ def test_style_via_component_with_state(
         kwargs: The kwargs to pass to the component.
         expected_get_style: The expected style dict.
     """
-
     comp = rx.el.div(**kwargs)
 
     assert comp.style._var_data == expected_get_style["css"]._var_data
