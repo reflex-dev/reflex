@@ -18,6 +18,8 @@ class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
             Union[
@@ -124,6 +126,8 @@ class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             modal: The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
@@ -151,6 +155,8 @@ class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
             Union[
@@ -254,6 +260,8 @@ class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             disabled: Whether the trigger is disabled
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
@@ -282,71 +290,11 @@ class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
         variant: Optional[
             Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
-        ] = None,
-        color: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         align_offset: Optional[Union[Var[int], int]] = None,
@@ -468,9 +416,10 @@ class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             size: Button size "1" - "4"
             variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            color: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             align_offset: The vertical distance in pixels from the anchor.
             avoid_collisions: When true, overrides the side andalign preferences to prevent collisions with boundary edges.
@@ -500,6 +449,8 @@ class ContextMenuSub(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -602,6 +553,8 @@ class ContextMenuSub(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -628,6 +581,8 @@ class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
             Union[
@@ -731,6 +686,8 @@ class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             disabled: Whether the trigger is disabled
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
@@ -759,6 +716,8 @@ class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         loop: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
             Union[
@@ -874,6 +833,8 @@ class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             loop: When true, keyboard navigation will loop from last item to first, and vice versa.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
@@ -901,68 +862,8 @@ class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
-            ]
-        ] = None,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         shortcut: Optional[Union[Var[str], str]] = None,
         m: Optional[
             Union[
@@ -1066,7 +967,8 @@ class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: Override theme color for button
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             shortcut: Shortcut to render a menu item as a link
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
@@ -1094,6 +996,8 @@ class ContextMenuSeparator(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -1196,6 +1100,8 @@ class ContextMenuSeparator(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

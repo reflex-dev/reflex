@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from reflex.components import Component
 from reflex.utils import imports
@@ -50,7 +50,13 @@ class RadixThemesComponent(Component):
     library = "@radix-ui/themes@^2.0.0"
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(
+        cls,
+        *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
+        **props,
+    ) -> Component:
         """Create a new component instance.
 
         Will prepend "RadixThemes" to the component tag to avoid conflicts with
@@ -58,11 +64,21 @@ class RadixThemesComponent(Component):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             **props: Component properties.
 
         Returns:
             A new component instance.
         """
+        color = None
+        color_scheme = None
+        if color is not None:
+            style = props.get("style", {})
+            style["color"] = color
+            props["style"] = style
+        if color_scheme is not None:
+            props["color"] = color_scheme
         component = super().create(*children, **props)
         if component.library is None:
             component.library = RadixThemesComponent.__fields__["library"].default

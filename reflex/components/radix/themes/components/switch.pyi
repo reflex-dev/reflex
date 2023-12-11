@@ -27,6 +27,8 @@ class Switch(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         default_checked: Optional[Union[Var[bool], bool]] = None,
         checked: Optional[Union[Var[bool], bool]] = None,
@@ -41,68 +43,6 @@ class Switch(CommonMarginProps, RadixThemesComponent):
             Union[
                 Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
                 Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
-            ]
-        ] = None,
-        color: Optional[
-            Union[
-                Var[
-                    Literal[
-                        "tomato",
-                        "red",
-                        "ruby",
-                        "crimson",
-                        "pink",
-                        "plum",
-                        "purple",
-                        "violet",
-                        "iris",
-                        "indigo",
-                        "blue",
-                        "cyan",
-                        "teal",
-                        "jade",
-                        "green",
-                        "grass",
-                        "brown",
-                        "orange",
-                        "sky",
-                        "mint",
-                        "lime",
-                        "yellow",
-                        "amber",
-                        "gold",
-                        "bronze",
-                        "gray",
-                    ]
-                ],
-                Literal[
-                    "tomato",
-                    "red",
-                    "ruby",
-                    "crimson",
-                    "pink",
-                    "plum",
-                    "purple",
-                    "violet",
-                    "iris",
-                    "indigo",
-                    "blue",
-                    "cyan",
-                    "teal",
-                    "jade",
-                    "green",
-                    "grass",
-                    "brown",
-                    "orange",
-                    "sky",
-                    "mint",
-                    "lime",
-                    "yellow",
-                    "amber",
-                    "gold",
-                    "bronze",
-                    "gray",
-                ],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -217,6 +157,8 @@ class Switch(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             default_checked: Whether the switch is checked by default
             checked: Whether the switch is checked
@@ -226,7 +168,6 @@ class Switch(CommonMarginProps, RadixThemesComponent):
             value: The value associated with the "on" position
             size: Switch size "1" - "4"
             variant: Variant of switch: "solid" | "soft" | "outline" | "ghost"
-            color: Override theme color for switch
             high_contrast: Whether to render the switch with higher contrast color against background
             radius: Override theme radius for switch: "none" | "small" | "medium" | "large" | "full"
             m: Margin: "0" - "9"

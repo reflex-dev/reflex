@@ -18,6 +18,8 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[Var[Literal[1, 2, 3, 4, 5]], Literal[1, 2, 3, 4, 5]]
@@ -173,6 +175,8 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Button size "1" - "5"
             variant: Variant of button: "solid" | "soft" | "outline" | "ghost"

@@ -19,6 +19,8 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         p: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -165,6 +167,8 @@ class LayoutComponent(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             p: Padding: "0" - "9"
             px: Padding horizontal: "0" - "9"
             py: Padding vertical: "0" - "9"

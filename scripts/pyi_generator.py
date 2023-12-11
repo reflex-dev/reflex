@@ -95,6 +95,10 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 res = ", ".join(types)
                 res = f"Union[{res}]"
     elif isinstance(value, str):
+        if value == "Optional[str]":
+            from typing import Optional
+
+            type_hint_globals["Optional"] = Optional
         ev = eval(value, type_hint_globals)
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)

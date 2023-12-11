@@ -19,6 +19,8 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         ration: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
         m: Optional[
             Union[
@@ -122,6 +124,8 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             ration: The ratio of the width to the height of the element
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"

@@ -21,6 +21,8 @@ class Grid(el.Div, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         display: Optional[
             Union[
@@ -163,6 +165,8 @@ class Grid(el.Div, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             display: How to display the element: "none" | "inline-grid" | "grid"
             columns: Number of columns

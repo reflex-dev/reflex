@@ -20,6 +20,8 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[str] = None,
+        color_scheme: Optional[str] = None,
         side: Optional[
             Union[
                 Var[Literal["x", "y", "top", "bottom", "right", "left"]],
@@ -184,6 +186,8 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             side: The side
             p: Padding
             px: Padding on the x axis
