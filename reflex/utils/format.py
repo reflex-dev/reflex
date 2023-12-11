@@ -625,17 +625,21 @@ def unwrap_vars(value: str) -> str:
         return prefix + re.sub('\\\\"', '"', m.group(2))
 
     # This substitution is necessary to unwrap var values.
-    return re.sub(
-        pattern=r"""
+    return (
+        re.sub(
+            pattern=r"""
             (?<!\\)      # must NOT start with a backslash
             "            # match opening double quote of JSON value
             (<reflex.Var>.*?</reflex.Var>)?  # Optional encoded VarData (non-greedy)
             {(.*?)}      # extract the value between curly braces (non-greedy)
             "            # match must end with an unescaped double quote
         """,
-        repl=unescape_double_quotes_in_var,
-        string=value,
-        flags=re.VERBOSE,
+            repl=unescape_double_quotes_in_var,
+            string=value,
+            flags=re.VERBOSE,
+        )
+        .replace('"`', "`")
+        .replace('`"', "`")
     )
 
 

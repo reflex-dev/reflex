@@ -40,7 +40,7 @@ from reflex.event import (
     call_event_handler,
     get_handler_args,
 )
-from reflex.style import Style
+from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
@@ -624,7 +624,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        return {"css": self.style}
+        return {"css": Var.create(format_as_emotion(self.style))}
 
     def render(self) -> Dict:
         """Render the component.
