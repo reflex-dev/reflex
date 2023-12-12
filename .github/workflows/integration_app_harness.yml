@@ -45,7 +45,7 @@ jobs:
     - name: Run app harness tests
       env:
         SCREENSHOT_DIR: /tmp/screenshots
-        REDIS_URL: ${{ matrix.state_manager == 'redis' && 'localhost:6379' || '' }}
+        REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
       run: |
         poetry run pytest integration
     - uses: actions/upload-artifact@v3
