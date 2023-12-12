@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from reflex.components.radix.themes.base import LiteralAccentColor
 from typing import Literal, Union
 from reflex import el
 from reflex.vars import Var
@@ -21,7 +22,7 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         side: Optional[
             Union[
                 Var[Literal["x", "y", "top", "bottom", "right", "left"]],

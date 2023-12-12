@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from reflex.components.radix.themes.base import LiteralAccentColor
 from typing import Any, Dict, Literal
 from reflex.vars import Var
 from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
@@ -19,7 +20,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
         variant: Optional[
             Union[
@@ -182,7 +183,7 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         required: Optional[Union[Var[bool], bool]] = None,

@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from reflex.components.radix.themes.base import LiteralAccentColor
 from typing import Any, Dict, Literal
 from reflex.vars import Var
 from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
@@ -19,7 +20,7 @@ class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         open: Optional[Union[Var[bool], bool]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
@@ -158,7 +159,7 @@ class DropdownMenuTrigger(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -291,7 +292,7 @@ class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -435,7 +436,7 @@ class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -567,7 +568,7 @@ class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
         variant: Optional[
             Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
@@ -707,7 +708,7 @@ class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         shortcut: Optional[Union[Var[str], str]] = None,
         m: Optional[
             Union[
@@ -841,7 +842,7 @@ class DropdownMenuSeparator(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],

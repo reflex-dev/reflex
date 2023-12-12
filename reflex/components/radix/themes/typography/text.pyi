@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex import el
 from reflex.vars import Var
 from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
@@ -19,7 +20,7 @@ class Text(el.Span, CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         as_: Optional[Union[Var[str], str]] = None,
         size: Optional[

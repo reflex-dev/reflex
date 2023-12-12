@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from reflex.components.radix.themes.base import LiteralAccentColor
 from reflex import el
 from reflex.vars import Var
 from ..base import (
@@ -24,7 +25,7 @@ class Code(el.Code, CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],

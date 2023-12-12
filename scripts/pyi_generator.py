@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import textwrap
+import typing
 from inspect import getfullargspec
 from pathlib import Path
 from types import ModuleType
@@ -58,6 +59,10 @@ DEFAULT_TYPING_IMPORTS = {
     "Union",
 }
 
+EXTRA_IMPORTS = {
+    "reflex.components.radix.themes.base": ["LiteralAccentColor"],
+}
+
 
 def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
     """Resolve the type hint for value.
@@ -95,11 +100,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 res = ", ".join(types)
                 res = f"Union[{res}]"
     elif isinstance(value, str):
-        if value == "Optional[str]":
-            from typing import Optional
-
-            type_hint_globals["Optional"] = Optional
-        ev = eval(value, type_hint_globals)
+        ev = eval(value, type_hint_globals | sys.modules)
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
@@ -134,6 +135,10 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
                 from reflex.style import Style"""
             )
         ).body,
+        *[
+            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+            for name, values in EXTRA_IMPORTS.items()
+        ],
     ]
 
 
@@ -286,7 +291,13 @@ def _generate_component_create_functiondef(
     Returns:
         The create functiondef node for the ast.
     """
-    # kwargs defined on the actual create function
+    # add the imports needed by get_type_hint later
+    type_hint_globals.update(
+        {name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS}
+    )
+    for name, value in EXTRA_IMPORTS.items():
+        exec(f"from {name} import {','.join(value)}", type_hint_globals)
+
     kwargs = _extract_func_kwargs_as_ast_nodes(clz.create, type_hint_globals)
 
     # kwargs associated with props defined in the class and its parents
@@ -552,7 +563,6 @@ class PyiGenerator:
     modules: list = []
     root: str = ""
     current_module: Any = {}
-    default_typing_imports: set = DEFAULT_TYPING_IMPORTS
 
     def _write_pyi_file(self, module_path: Path, source: str):
         pyi_content = [

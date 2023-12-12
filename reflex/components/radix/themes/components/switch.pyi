@@ -7,6 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from reflex.components.radix.themes.base import LiteralAccentColor
 from typing import Any, Dict, Literal
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -28,7 +29,7 @@ class Switch(CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         color: Optional[str] = None,
-        color_scheme: Optional[str] = None,
+        color_scheme: Optional[LiteralAccentColor] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         default_checked: Optional[Union[Var[bool], bool]] = None,
         checked: Optional[Union[Var[bool], bool]] = None,
