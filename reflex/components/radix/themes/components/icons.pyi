@@ -7,7 +7,6 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.radix.themes.base import LiteralAccentColor
 from typing import List
 from reflex.components.component import Component
 from reflex.utils import format

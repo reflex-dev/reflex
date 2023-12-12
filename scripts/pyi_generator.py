@@ -13,7 +13,7 @@ import typing
 from inspect import getfullargspec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Iterable, Type, get_args
+from typing import Any, Callable, Iterable, Type, get_args, get_origin
 
 import black
 import black.mode
@@ -60,7 +60,7 @@ DEFAULT_TYPING_IMPORTS = {
 }
 
 EXTRA_IMPORTS = {
-    "reflex.components.radix.themes.base": ["LiteralAccentColor"],
+    # "reflex.components.radix.themes.base": ["LiteralAccentColor"],
 }
 
 
@@ -100,7 +100,7 @@ def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
                 res = ", ".join(types)
                 res = f"Union[{res}]"
     elif isinstance(value, str):
-        ev = eval(value, type_hint_globals | sys.modules)
+        ev = eval(value, type_hint_globals)
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
@@ -135,10 +135,10 @@ def _generate_imports(typing_imports: Iterable[str]) -> list[ast.ImportFrom]:
                 from reflex.style import Style"""
             )
         ).body,
-        *[
-            ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
-            for name, values in EXTRA_IMPORTS.items()
-        ],
+        # *[
+        #     ast.ImportFrom(module=name, names=[ast.alias(name=val) for val in values])
+        #     for name, values in EXTRA_IMPORTS.items()
+        # ],
     ]
 
 
@@ -276,6 +276,17 @@ def _extract_class_props_as_ast_nodes(
     return kwargs
 
 
+def _get_parent_imports(func):
+    _imports = {}
+    for type_hint in inspect.get_annotations(func).values():
+        match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
+        if match:
+            type_hint = match.group(1)
+            if type_hint in importlib.import_module(func.__module__).__dir__():
+                _imports.setdefault(func.__module__, []).append(type_hint)
+    return _imports
+
+
 def _generate_component_create_functiondef(
     node: ast.FunctionDef | None,
     clz: type[Component],
@@ -295,8 +306,14 @@ def _generate_component_create_functiondef(
     type_hint_globals.update(
         {name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS}
     )
-    for name, value in EXTRA_IMPORTS.items():
-        exec(f"from {name} import {','.join(value)}", type_hint_globals)
+    # for name, value in EXTRA_IMPORTS.items():
+    #     exec(f"from {name} import {','.join(value)}", type_hint_globals)
+
+    if clz.__module__ != clz.create.__module__:
+        # TODO: figure out how to pass that to the import section
+        _imports = _get_parent_imports(clz.create)
+        for name, values in _imports.items():
+            exec(f"from {name} import {','.join(values)}", type_hint_globals)
 
     kwargs = _extract_func_kwargs_as_ast_nodes(clz.create, type_hint_globals)
 
