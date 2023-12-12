@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.utils import imports, types
-from reflex.utils.serializers import serialize, serializer
+from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, ComputedVar, Var
 
 class Gridjs(Component):

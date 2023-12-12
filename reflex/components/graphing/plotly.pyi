@@ -7,10 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-import json
 from typing import Any, Dict, List
 from reflex.components.component import NoSSRComponent
-from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
 try:
