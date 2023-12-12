@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import types as builtin_types
 from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
@@ -227,3 +228,85 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
         The serialized datetime.
     """
     return str(dt)
+
+
+try:
+    from pandas import DataFrame
+
+    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
+        """Format dataframe values to a list of lists.
+
+        Args:
+            df: The dataframe to format.
+
+        Returns:
+            The dataframe as a list of lists.
+        """
+        return [
+            [str(d) if isinstance(d, (list, tuple)) else d for d in data]
+            for data in list(df.values.tolist())
+        ]
+
+    @serializer
+    def serialize_dataframe(df: DataFrame) -> dict:
+        """Serialize a pandas dataframe.
+
+        Args:
+            df: The dataframe to serialize.
+
+        Returns:
+            The serialized dataframe.
+        """
+        return {
+            "columns": df.columns.tolist(),
+            "data": format_dataframe_values(df),
+        }
+
+except ImportError:
+    pass
+
+try:
+    from plotly.graph_objects import Figure
+    from plotly.io import to_json
+
+    @serializer
+    def serialize_figure(figure: Figure) -> list:
+        """Serialize a plotly figure.
+
+        Args:
+            figure: The figure to serialize.
+
+        Returns:
+            The serialized figure.
+        """
+        return json.loads(str(to_json(figure)))["data"]
+
+except ImportError:
+    pass
+
+
+try:
+    import base64
+    import io
+
+    from PIL.Image import Image as Img
+
+    @serializer
+    def serialize_image(image: Img) -> str:
+        """Serialize a plotly figure.
+
+        Args:
+            image: The image to serialize.
+
+        Returns:
+            The serialized image.
+        """
+        buff = io.BytesIO()
+        image.save(buff, format=getattr(image, "format", None) or "PNG")
+        image_bytes = buff.getvalue()
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        mime_type = getattr(image, "get_format_mimetype", lambda: "image/png")()
+        return f"data:{mime_type};base64,{base64_image}"
+
+except ImportError:
+    pass

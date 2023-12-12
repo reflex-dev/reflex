@@ -7,11 +7,8 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-import base64
-import io
 from typing import Any, Dict, Literal, Optional, Union
 from reflex.utils import types
-from reflex.utils.serializers import serializer
 from reflex.vars import Var
 from .base import NextComponent
 
@@ -123,12 +120,3 @@ class Image(NextComponent):
             _type_: _description_
         """
         ...
-
-try:
-    from PIL.Image import Image as Img
-
-    @serializer
-    def serialize_image(image: Img) -> str: ...
-
-except ImportError:
-    pass

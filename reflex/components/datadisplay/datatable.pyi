@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.utils import imports, types
-from reflex.utils.serializers import serialize, serializer
+from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, ComputedVar, Var
 
 class Gridjs(Component):
@@ -183,13 +183,3 @@ class DataTable(Gridjs):
             ValueError: If a pandas dataframe is passed in and columns are also provided.
         """
         ...
-
-try:
-    from pandas import DataFrame
-
-    def format_dataframe_values(df: DataFrame) -> List[List[Any]]: ...
-    @serializer
-    def serialize_dataframe(df: DataFrame) -> dict: ...
-
-except ImportError:
-    pass
