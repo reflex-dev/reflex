@@ -18,6 +18,7 @@ from pathlib import Path
 from types import ModuleType
 
 import httpx
+import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -27,6 +28,26 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import get_config
 from reflex.utils import console, path_ops, processes
+
+
+def check_latest_package_version(package_name: str):
+    """Check if the latest version of the package is installed.
+
+    Args:
+        package_name: The name of the package.
+    """
+    try:
+        # Get the latest version from PyPI
+        current_version = pkg_resources.get_distribution(package_name).version
+        url = f"https://pypi.org/pypi/{package_name}/json"
+        response = httpx.get(url)
+        latest_version = response.json()["info"]["version"]
+        if version.parse(current_version) < version.parse(latest_version):
+            console.warn(
+                f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
+            )
+    except Exception:
+        pass
 
 
 def check_node_version() -> bool:

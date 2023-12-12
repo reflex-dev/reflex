@@ -40,7 +40,7 @@ from reflex.event import (
     call_event_handler,
     get_handler_args,
 )
-from reflex.style import Style
+from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
@@ -288,6 +288,7 @@ class Component(BaseComponent, ABC):
 
         kwargs["style"] = Style(
             {
+                **self.get_fields()["style"].default,
                 **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
@@ -444,6 +445,26 @@ class Component(BaseComponent, ABC):
         from reflex.compiler.compiler import _compile_component
 
         return _compile_component(self)
+
+    def _apply_theme(self, theme: Component):
+        """Apply the theme to this component.
+
+        Args:
+            theme: The theme to apply.
+        """
+        pass
+
+    def apply_theme(self, theme: Component):
+        """Apply a theme to the component and its children.
+
+        Args:
+            theme: The theme to apply.
+        """
+        self._apply_theme(theme)
+        for child in self.children:
+            if not isinstance(child, Component):
+                continue
+            child.apply_theme(theme)
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
@@ -603,7 +624,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        return {"style": self.style}
+        return {"css": Var.create(format_as_emotion(self.style))}
 
     def render(self) -> Dict:
         """Render the component.

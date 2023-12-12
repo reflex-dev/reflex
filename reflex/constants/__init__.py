@@ -15,6 +15,7 @@ from .base import (
     Next,
     Ping,
     Reflex,
+    ReflexHostingCLI,
     Templates,
 )
 from .compiler import (

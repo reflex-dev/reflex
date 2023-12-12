@@ -1,5 +1,7 @@
 {% import 'web/pages/utils.js.jinja2' as utils %}
 
+/** @jsxImportSource @emotion/react */
+
 {%- block imports_libs %}
 {% for module in imports%}
   {{- utils.get_import(module) }}

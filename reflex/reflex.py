@@ -78,6 +78,8 @@ def _init(
     app_name = prerequisites.get_default_app_name() if name is None else name
     console.rule(f"[bold]Initializing {app_name}")
 
+    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
+
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
 
@@ -170,6 +172,8 @@ def _run(
     get_config(reload=True)
 
     console.rule("[bold]Starting Reflex App")
+
+    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     if frontend:
         prerequisites.update_next_config()
@@ -489,6 +493,7 @@ def deploy(
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
+    prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
     hosting_cli.deploy(
         app_name=app_name,
