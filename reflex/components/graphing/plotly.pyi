@@ -185,13 +185,3 @@ class Plotly(PlotlyLib):
             TypeError: If an invalid child is passed.
         """
         ...
-
-try:
-    from plotly.graph_objects import Figure  # type: ignore
-    from plotly.io import to_json
-
-    @serializer
-    def serialize_figure(figure: Figure) -> list: ...  # type: ignore
-
-except ImportError:
-    pass

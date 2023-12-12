@@ -121,12 +121,3 @@ class Image(ChakraComponent):
             The Image component.
         """
         ...
-
-try:
-    from PIL.Image import Image as Img
-
-    @serializer
-    def serialize_image(image: Img) -> str: ...
-
-except ImportError:
-    pass

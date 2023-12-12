@@ -123,12 +123,3 @@ class Image(NextComponent):
             _type_: _description_
         """
         ...
-
-try:
-    from PIL.Image import Image as Img
-
-    @serializer
-    def serialize_image(image: Img) -> str: ...
-
-except ImportError:
-    pass

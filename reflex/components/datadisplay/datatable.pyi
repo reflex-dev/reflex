@@ -183,13 +183,3 @@ class DataTable(Gridjs):
             ValueError: If a pandas dataframe is passed in and columns are also provided.
         """
         ...
-
-try:
-    from pandas import DataFrame
-
-    def format_dataframe_values(df: DataFrame) -> List[List[Any]]: ...
-    @serializer
-    def serialize_dataframe(df: DataFrame) -> dict: ...
-
-except ImportError:
-    pass
