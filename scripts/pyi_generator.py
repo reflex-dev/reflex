@@ -13,7 +13,7 @@ import typing
 from inspect import getfullargspec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Iterable, Type, get_args, get_origin
+from typing import Any, Callable, Iterable, Type, get_args
 
 import black
 import black.mode
@@ -57,10 +57,6 @@ DEFAULT_TYPING_IMPORTS = {
     "Literal",
     "Optional",
     "Union",
-}
-
-EXTRA_IMPORTS = {
-    # "reflex.components.radix.themes.base": ["LiteralAccentColor"],
 }
 
 
@@ -277,7 +273,7 @@ def _extract_class_props_as_ast_nodes(
 
 
 def _get_parent_imports(func):
-    _imports = {}
+    _imports = {"reflex.vars": ["Var"]}
     for type_hint in inspect.get_annotations(func).values():
         match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
         if match:
@@ -306,8 +302,6 @@ def _generate_component_create_functiondef(
     type_hint_globals.update(
         {name: getattr(typing, name) for name in DEFAULT_TYPING_IMPORTS}
     )
-    # for name, value in EXTRA_IMPORTS.items():
-    #     exec(f"from {name} import {','.join(value)}", type_hint_globals)
 
     if clz.__module__ != clz.create.__module__:
         # TODO: figure out how to pass that to the import section
@@ -611,7 +605,7 @@ class PyiGenerator:
     def _scan_file(self, module_path: Path):
         module_import = str(module_path.with_suffix("")).replace("/", ".")
         module = importlib.import_module(module_import)
-
+        logger.debug(f"Read {module_path}")
         class_names = {
             name: obj
             for name, obj in vars(module).items()
@@ -664,10 +658,16 @@ def generate_init():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    sys.argv.pop(0)
+    if sys.argv[0] == "-l":
+        sys.argv.pop(0)
+        log_level = sys.argv.pop(0)
+    else:
+        log_level = logging.DEBUG
+    logging.basicConfig(level=log_level)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
-    targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
+    targets = sys.argv if len(sys.argv) else ["reflex/components"]
     logger.info(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
     gen.scan_all(targets)

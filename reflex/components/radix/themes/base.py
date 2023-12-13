@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from reflex.components import Component
 from reflex.utils import imports
@@ -17,6 +17,34 @@ LiteralGrayColor = Literal["gray", "mauve", "slate", "sage", "olive", "sand", "a
 LiteralPanelBackground = Literal["solid", "transparent"]
 LiteralRadius = Literal["none", "small", "medium", "large", "full"]
 LiteralScaling = Literal["90%", "95%", "100%", "105%", "110%"]
+LiteralAccentColor = Literal[
+    "tomato",
+    "red",
+    "ruby",
+    "crimson",
+    "pink",
+    "plum",
+    "purple",
+    "violet",
+    "iris",
+    "indigo",
+    "blue",
+    "cyan",
+    "teal",
+    "jade",
+    "green",
+    "grass",
+    "brown",
+    "orange",
+    "sky",
+    "mint",
+    "lime",
+    "yellow",
+    "amber",
+    "gold",
+    "bronze",
+    "gray",
+]
 
 
 class CommonMarginProps(Component):
@@ -53,8 +81,8 @@ class RadixThemesComponent(Component):
     def create(
         cls,
         *children,
-        color: Optional[str] = None,
-        color_scheme: Optional[LiteralAccentColor] = None,
+        color: Var[str] = None,  # type: ignore
+        color_scheme: Var[LiteralAccentColor] = None,  # type: ignore
         **props,
     ) -> Component:
         """Create a new component instance.
@@ -71,8 +99,6 @@ class RadixThemesComponent(Component):
         Returns:
             A new component instance.
         """
-        color = None
-        color_scheme = None
         if color is not None:
             style = props.get("style", {})
             style["color"] = color
@@ -92,36 +118,6 @@ class RadixThemesComponent(Component):
         return {
             (45, "RadixThemesColorModeProvider"): RadixThemesColorModeProvider.create(),
         }
-
-
-LiteralAccentColor = Literal[
-    "tomato",
-    "red",
-    "ruby",
-    "crimson",
-    "pink",
-    "plum",
-    "purple",
-    "violet",
-    "iris",
-    "indigo",
-    "blue",
-    "cyan",
-    "teal",
-    "jade",
-    "green",
-    "grass",
-    "brown",
-    "orange",
-    "sky",
-    "mint",
-    "lime",
-    "yellow",
-    "amber",
-    "gold",
-    "bronze",
-    "gray",
-]
 
 
 class Theme(RadixThemesComponent):
