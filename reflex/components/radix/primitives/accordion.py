@@ -4,9 +4,8 @@ from typing import Literal
 
 from reflex.components.component import Component
 from reflex.components.radix.themes.components.icons import Icon
-from reflex.components.tags import Tag
 from reflex.style import Style
-from reflex.utils import format, imports
+from reflex.utils import imports
 from reflex.vars import Var
 
 LiteralAccordionType = Literal["single", "multiple"]
@@ -24,17 +23,6 @@ class AccordionComponent(Component):
 
     # Change the default rendered element for the one passed as a child.
     as_child: Var[bool]
-
-    def _render(self) -> Tag:
-        return (
-            super()
-            ._render()
-            .add_props(
-                **{
-                    "class_name": format.to_title_case(self.tag or ""),
-                }
-            )
-        )
 
 
 class AccordionRoot(AccordionComponent):

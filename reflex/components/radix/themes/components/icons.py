@@ -10,7 +10,7 @@ from reflex.utils import format
 class RadixIconComponent(Component):
     """A component used as basis for Radix icons."""
 
-    library = "@radix-ui/react-icons"
+    library = "@radix-ui/react-icons@^1.3.0"
 
 
 class Icon(RadixIconComponent):
