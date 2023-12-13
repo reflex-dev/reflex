@@ -38,7 +38,7 @@ python-multipart = "^0.0.5"
 python-socketio = "^5.7.0"
 redis = "^4.3.5"
 rich = "^13.0.0"
-sqlmodel = "^0.0.8"
+sqlmodel = "^0.0.14"
 typer = ">=0.4.2,<1"
 uvicorn = [
     {version = "^0.24.0", python = ">=3.12"},
