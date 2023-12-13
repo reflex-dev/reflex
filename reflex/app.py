@@ -667,8 +667,8 @@ class App(Base):
                 # Merge the component style with the app style.
                 component.add_style(self.style)
 
-                if self.theme is not None:
-                    component.apply_theme(self.theme)
+                # if self.theme is not None:
+                component.apply_theme(self.theme)
 
                 # Add component.get_imports() to all_imports.
                 all_imports.update(component.get_imports())
