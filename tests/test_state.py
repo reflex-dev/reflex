@@ -1429,7 +1429,7 @@ def state_manager(request) -> Generator[StateManager, None, None]:
     yield state_manager
 
     if isinstance(state_manager, StateManagerRedis):
-        asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
+        asyncio.get_event_loop().run_until_complete(state_manager.close())
 
 
 @pytest.mark.asyncio
@@ -1507,7 +1507,7 @@ def state_manager_redis() -> Generator[StateManager, None, None]:
 
     yield state_manager
 
-    asyncio.get_event_loop().run_until_complete(state_manager.redis.close())
+    asyncio.get_event_loop().run_until_complete(state_manager.close())
 
 
 @pytest.mark.asyncio

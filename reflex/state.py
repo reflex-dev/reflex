@@ -1788,6 +1788,17 @@ class StateManagerRedis(StateManager):
                 # only delete our lock
                 await self.redis.delete(lock_key)
 
+    async def close(self):
+        """Explicitly close the redis connection and connection_pool.
+
+        It is necessary in testing scenarios to close between asyncio test cases
+        to avoid having lingering redis connections associated with event loops
+        that will be closed (each test case uses its own event loop).
+
+        Note: Connections will be automatically reopened when needed.
+        """
+        await self.redis.close(close_connection_pool=True)
+
 
 class ClientStorageBase:
     """Base class for client-side storage."""

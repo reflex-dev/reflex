@@ -1,10 +1,8 @@
 """Image component from next/image."""
-import base64
-import io
+
 from typing import Any, Dict, Literal, Optional, Union
 
 from reflex.utils import types
-from reflex.utils.serializers import serializer
 from reflex.vars import Var
 
 from .base import NextComponent
@@ -114,27 +112,3 @@ class Image(NextComponent):
             props["src"] = Var.create(value=src, _var_is_string=True)
 
         return super().create(*children, **props)
-
-
-try:
-    from PIL.Image import Image as Img
-
-    @serializer
-    def serialize_image(image: Img) -> str:
-        """Serialize a plotly figure.
-
-        Args:
-            image: The image to serialize.
-
-        Returns:
-            The serialized image.
-        """
-        buff = io.BytesIO()
-        image.save(buff, format=getattr(image, "format", None) or "PNG")
-        image_bytes = buff.getvalue()
-        base64_image = base64.b64encode(image_bytes).decode("utf-8")
-        mime_type = getattr(image, "get_format_mimetype", lambda: "image/png")()
-        return f"data:{mime_type};base64,{base64_image}"
-
-except ImportError:
-    pass
