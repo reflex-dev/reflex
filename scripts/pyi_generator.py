@@ -658,16 +658,10 @@ def generate_init():
 
 
 if __name__ == "__main__":
-    sys.argv.pop(0)
-    if sys.argv[0] == "-l":
-        sys.argv.pop(0)
-        log_level = sys.argv.pop(0)
-    else:
-        log_level = logging.DEBUG
-    logging.basicConfig(level=log_level)
+    logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
-    targets = sys.argv if len(sys.argv) else ["reflex/components"]
+    targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
     logger.info(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
     gen.scan_all(targets)
