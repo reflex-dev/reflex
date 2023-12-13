@@ -141,6 +141,10 @@ class AccordionTrigger(AccordionComponent):
                 "&:hover": {
                     "background_color": "var(--gray-2)",
                 },
+                "& > .AccordionChevron": {
+                    "color": "var(--accent-10)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
                 "&[data-state='open'] > .AccordionChevron": {
                     "transform": "rotate(180deg)",
                 },
