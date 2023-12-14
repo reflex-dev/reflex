@@ -275,7 +275,10 @@ def _extract_class_props_as_ast_nodes(
 def _get_parent_imports(func):
     _imports = {"reflex.vars": ["Var"]}
     for type_hint in inspect.get_annotations(func).values():
-        match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
+        try:
+            match = re.match(r"\w+\[([\w\d]+)\]", type_hint)
+        except TypeError:
+            continue
         if match:
             type_hint = match.group(1)
             if type_hint in importlib.import_module(func.__module__).__dir__():
@@ -304,7 +307,6 @@ def _generate_component_create_functiondef(
     )
 
     if clz.__module__ != clz.create.__module__:
-        # TODO: figure out how to pass that to the import section
         _imports = _get_parent_imports(clz.create)
         for name, values in _imports.items():
             exec(f"from {name} import {','.join(values)}", type_hint_globals)
