@@ -163,9 +163,17 @@ def slider(
     Returns:
         A slider component.
     """
-    # Support state vars ?
-    children = [
-        SliderTrack.create(SliderRange.create()),
-        *[SliderThumb.create() for _ in props.get("default_value", [])],
-    ]
+    track = SliderTrack.create(SliderRange.create())
+    # if default_value is not set, the thumbs will not render properly but the slider will still work
+    if "default_value" in props:
+        children = [
+            track,
+            *[SliderThumb.create() for _ in props.get("default_value", [])],
+        ]
+    else:
+        children = [
+            track,
+            #     Foreach.create(props.get("value"), lambda e: SliderThumb.create()),  # foreach doesn't render Thumbs properly
+        ]
+
     return slider_root(*children, **props)
