@@ -630,9 +630,9 @@ class App(Base):
         console.deprecate(
             feature_name="app.compile()",
             reason="Explicit calls to app.compile() are not needed."
-            " Method will be removed in 0.3.9",
-            deprecation_version="0.3.7",
-            removal_version="0.3.9",
+            " Method will be removed in 0.4.0",
+            deprecation_version="0.3.8",
+            removal_version="0.4.0",
         )
         return
 
