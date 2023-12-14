@@ -13,7 +13,7 @@ from ..base import (
 class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "DropdownMenu.Root"
+    tag: str = "DropdownMenu.Root"
 
     # The controlled open state of the dropdown menu. Must be used in conjunction with onOpenChange.
     open: Var[bool]
@@ -36,13 +36,13 @@ class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
 class DropdownMenuTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "DropdownMenu.Trigger"
+    tag: str = "DropdownMenu.Trigger"
 
 
 class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "DropdownMenu.Content"
+    tag: str = "DropdownMenu.Content"
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -62,13 +62,13 @@ class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
 class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "DropdownMenu.SubTrigger"
+    tag: str = "DropdownMenu.SubTrigger"
 
 
 class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "DropdownMenu.SubContent"
+    tag: str = "DropdownMenu.SubContent"
 
     # Button size "1" - "4"
     size: Var[Literal["1", "2"]]
@@ -86,7 +86,7 @@ class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
 class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "DropdownMenu.Item"
+    tag: str = "DropdownMenu.Item"
 
     # Override theme color for button
     color: Var[LiteralAccentColor]
@@ -98,4 +98,4 @@ class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
 class DropdownMenuSeparator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "DropdownMenu.Separator"
+    tag: str = "DropdownMenu.Separator"

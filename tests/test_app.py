@@ -1242,19 +1242,19 @@ def test_app_wrap_priority(compilable_app):
     app, web_dir = compilable_app
 
     class Fragment1(Component):
-        tag = "Fragment1"
+        tag: str = "Fragment1"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(99, "Box"): Box.create()}
 
     class Fragment2(Component):
-        tag = "Fragment2"
+        tag: str = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(50, "Text"): Text.create()}
 
     class Fragment3(Component):
-        tag = "Fragment3"
+        tag: str = "Fragment3"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
             return {(10, "Fragment2"): Fragment2.create()}

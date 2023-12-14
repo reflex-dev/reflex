@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Wrap(ChakraComponent):
     """Layout component used to add space between elements and wrap automatically if there isn't enough space."""
 
-    tag = "Wrap"
+    tag: str = "Wrap"
 
     # How to align the items.
     align: Var[str]
@@ -54,4 +54,4 @@ class Wrap(ChakraComponent):
 class WrapItem(ChakraComponent):
     """Item of the Wrap component."""
 
-    tag = "WrapItem"
+    tag: str = "WrapItem"

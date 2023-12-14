@@ -10,7 +10,7 @@ from reflex.vars import Var
 class Stepper(ChakraComponent):
     """The parent container for a stepper."""
 
-    tag = "Stepper"
+    tag: str = "Stepper"
 
     orientation: Var[Literal["vertical", "horizontal"]]
 
@@ -58,37 +58,37 @@ class Stepper(ChakraComponent):
 class Step(ChakraComponent):
     """A component for an individual step in the stepper."""
 
-    tag = "Step"
+    tag: str = "Step"
 
 
 class StepDescription(ChakraComponent):
     """The description text for a step component."""
 
-    tag = "StepDescription"
+    tag: str = "StepDescription"
 
 
 class StepIcon(ChakraComponent):
     """The icon displayed in a step indicator component."""
 
-    tag = "StepIcon"
+    tag: str = "StepIcon"
 
 
 class StepIndicator(ChakraComponent):
     """The component displaying the status of a step."""
 
-    tag = "StepIndicator"
+    tag: str = "StepIndicator"
 
 
 class StepNumber(ChakraComponent):
     """The number of a step displayed in a step indicator component."""
 
-    tag = "StepNumber"
+    tag: str = "StepNumber"
 
 
 class StepSeparator(ChakraComponent):
     """The component separting steps."""
 
-    tag = "StepSeparator"
+    tag: str = "StepSeparator"
 
 
 class StepStatus(ChakraComponent):
@@ -104,10 +104,10 @@ class StepStatus(ChakraComponent):
 
     incomplete: Var[str]
 
-    tag = "StepStatus"
+    tag: str = "StepStatus"
 
 
 class StepTitle(ChakraComponent):
     """The title text for a step component."""
 
-    tag = "StepTitle"
+    tag: str = "StepTitle"

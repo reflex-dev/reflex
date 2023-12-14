@@ -11,11 +11,11 @@ class ReactPlayerComponent(NoSSRComponent):
     reference: https://github.com/cookpete/react-player.
     """
 
-    library = "react-player@2.12.0"
+    library: str = "react-player@2.12.0"
 
-    tag = "ReactPlayer"
+    tag: str = "ReactPlayer"
 
-    is_default = True
+    is_default: bool = True
 
     # The url of a video or song to play
     url: Var[str]

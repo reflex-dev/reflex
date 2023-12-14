@@ -8,13 +8,13 @@ from reflex.utils import format
 class ChakraIconComponent(ChakraComponent):
     """A component that wraps a Chakra icon component."""
 
-    library = "@chakra-ui/icons@2.0.19"
+    library: str = "@chakra-ui/icons@2.0.19"
 
 
 class Icon(ChakraIconComponent):
     """An image icon."""
 
-    tag = "None"
+    tag: str = "None"
 
     @classmethod
     def create(cls, *children, **props):

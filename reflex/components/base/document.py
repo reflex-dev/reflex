@@ -7,35 +7,35 @@ from reflex.components.libs.chakra import ChakraComponent
 class NextDocumentLib(Component):
     """Root document components."""
 
-    library = "next/document"
+    library: str = "next/document"
 
 
 class Html(NextDocumentLib):
     """The document html."""
 
-    tag = "Html"
+    tag: str = "Html"
 
 
 class DocumentHead(NextDocumentLib):
     """The document head."""
 
-    tag = "Head"
+    tag: str = "Head"
 
 
 class Main(NextDocumentLib):
     """The document main section."""
 
-    tag = "Main"
+    tag: str = "Main"
 
 
 class NextScript(NextDocumentLib):
     """The document main scripts."""
 
-    tag = "NextScript"
+    tag: str = "NextScript"
 
 
 class ColorModeScript(ChakraComponent):
     """Chakra color mode script."""
 
-    tag = "ColorModeScript"
-    initialColorMode = "light"
+    tag: str = "ColorModeScript"
+    initialColorMode: str = "light"

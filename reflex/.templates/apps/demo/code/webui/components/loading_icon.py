@@ -4,8 +4,8 @@ import reflex as rx
 class LoadingIcon(rx.Component):
     """A custom loading icon component."""
 
-    library = "react-loading-icons"
-    tag = "SpinningCircles"
+    library: str = "react-loading-icons"
+    tag: str = "SpinningCircles"
     stroke: rx.Var[str]
     stroke_opacity: rx.Var[str]
     fill: rx.Var[str]

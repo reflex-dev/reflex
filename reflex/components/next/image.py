@@ -11,9 +11,9 @@ from .base import NextComponent
 class Image(NextComponent):
     """Display an image."""
 
-    tag = "Image"
-    library = "next/image"
-    is_default = True
+    tag: str = "Image"
+    library: str = "next/image"
+    is_default: bool = True
 
     # This can be either an absolute external URL, or an internal path
     src: Var[Any]

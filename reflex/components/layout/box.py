@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Box(ChakraComponent):
     """A generic container component that can contain other components."""
 
-    tag = "Box"
+    tag: str = "Box"
 
     # The type element to render. You can specify an image, video, or any other HTML element such as iframe.
     element: Var[str]

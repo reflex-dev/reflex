@@ -131,7 +131,7 @@ def component5() -> Type[Component]:
     """
 
     class TestComponent5(Component):
-        tag = "RandomComponent"
+        tag: str = "RandomComponent"
 
         _invalid_children: List[str] = ["Text"]
 
@@ -149,7 +149,7 @@ def component6() -> Type[Component]:
     """
 
     class TestComponent6(Component):
-        tag = "RandomComponent"
+        tag: str = "RandomComponent"
 
         _invalid_children: List[str] = ["Text"]
 
@@ -165,7 +165,7 @@ def component7() -> Type[Component]:
     """
 
     class TestComponent7(Component):
-        tag = "RandomComponent"
+        tag: str = "RandomComponent"
 
         _valid_children: List[str] = ["Text"]
 
@@ -418,8 +418,8 @@ def test_component_event_trigger_arbitrary_args():
         return [_e.target.value, bravo["nested"], charlie.custom + 42]
 
     class C1(Component):
-        library = "/local"
-        tag = "C1"
+        library: str = "/local"
+        tag: str = "C1"
 
         def get_event_triggers(self) -> Dict[str, Any]:
             return {

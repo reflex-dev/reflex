@@ -10,9 +10,9 @@ from .base import BaseHTML
 class Base(BaseHTML):  # noqa: E742
     """Display the base element."""
 
-    tag = "base"
+    tag: str = "base"
 
-    tag = "base"
+    tag: str = "base"
     href: Var[Union[str, int, bool]]
     target: Var[Union[str, int, bool]]
 
@@ -20,13 +20,13 @@ class Base(BaseHTML):  # noqa: E742
 class Head(BaseHTML):  # noqa: E742
     """Display the head element."""
 
-    tag = "head"
+    tag: str = "head"
 
 
 class Link(BaseHTML):  # noqa: E742
     """Display the link element."""
 
-    tag = "link"
+    tag: str = "link"
 
     cross_origin: Var[Union[str, int, bool]]
     href: Var[Union[str, int, bool]]
@@ -42,7 +42,7 @@ class Link(BaseHTML):  # noqa: E742
 class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
     """Display the meta element."""
 
-    tag = "meta"
+    tag: str = "meta"
     char_set: Var[Union[str, int, bool]]
     content: Var[Union[str, int, bool]]
     http_equiv: Var[Union[str, int, bool]]
@@ -52,4 +52,4 @@ class Meta(BaseHTML):  # Inherits common attributes from BaseHTML
 class Title(Element):  # noqa: E742
     """Display the title element."""
 
-    tag = "title"
+    tag: str = "title"

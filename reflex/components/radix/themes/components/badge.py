@@ -17,7 +17,7 @@ LiteralSwitchSize = Literal["1", "2", "3", "4"]
 class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "Badge"
+    tag: str = "Badge"
 
     # The ratio of the width to the height of the element
     ration: Var[float]

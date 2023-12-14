@@ -14,7 +14,7 @@ from reflex.vars import Var
 class Button(ChakraComponent):
     """The Button component is used to trigger an event or event, such as submitting a form, opening a dialog, canceling an event, or performing a delete operation."""
 
-    tag = "Button"
+    tag: str = "Button"
 
     # The space between the button icon and label.
     icon_spacing: Var[int]
@@ -63,7 +63,7 @@ class Button(ChakraComponent):
 class ButtonGroup(ChakraComponent):
     """A group of buttons."""
 
-    tag = "ButtonGroup"
+    tag: str = "ButtonGroup"
 
     # If true, the borderRadius of button that are direct children will be altered to look flushed together.
     is_attached: Var[bool]

@@ -10,7 +10,7 @@ from reflex.vars import Var
 class IconButton(Text):
     """A button with an icon."""
 
-    tag = "IconButton"
+    tag: str = "IconButton"
 
     # The type of button.
     type: Var[str]

@@ -18,7 +18,7 @@ from typing import (
     get_type_hints,
 )
 
-from pydantic.fields import ModelField
+# from pydantic.fields import ModelField
 from sqlalchemy.orm import Mapped
 
 from reflex.base import Base
@@ -121,7 +121,8 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         field = cls.__fields__[name]
-        type_ = field.outer_type_
+        type_ = field.annotation
+        raise RuntimeError("Pydantic V2 field type says what?")
         if isinstance(type_, ModelField):
             type_ = type_.type_
         if not field.required and field.default is None:
@@ -136,6 +137,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             type_origin = get_origin(type_)
             if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
                 return get_args(type_)[0]  # SQLAlchemy v2
+            raise RuntimeError("Pydantic V2 field type says what?")
             if isinstance(type_, ModelField):
                 return type_.type_  # SQLAlchemy v1.4
             return type_

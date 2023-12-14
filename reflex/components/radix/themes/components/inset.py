@@ -15,7 +15,7 @@ LiteralButtonSize = Literal["1", "2", "3", "4"]
 class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Inset"
+    tag: str = "Inset"
 
     # The side
     side: Var[Literal["x", "y", "top", "bottom", "right", "left"]]

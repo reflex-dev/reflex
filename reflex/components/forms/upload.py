@@ -95,18 +95,18 @@ def cancel_upload(upload_id: str) -> EventSpec:
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
-    library = f"/{Dirs.CONTEXTS_PATH}"
-    tag = "UploadFilesProvider"
+    library: str = f"/{Dirs.CONTEXTS_PATH}"
+    tag: str = "UploadFilesProvider"
 
 
 class Upload(Component):
     """A file upload component."""
 
-    library = "react-dropzone@14.2.3"
+    library: str = "react-dropzone@14.2.3"
 
-    tag = "ReactDropzone"
+    tag: str = "ReactDropzone"
 
-    is_default = True
+    is_default: bool = True
 
     # The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as
     # values.

@@ -13,7 +13,7 @@ from ..base import (
 class ScrollArea(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ScrollArea"
+    tag: str = "ScrollArea"
 
     # The size of the radio group: "1" | "2" | "3"
     size: Var[Literal[1, 2, 3]]

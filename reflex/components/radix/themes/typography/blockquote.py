@@ -21,7 +21,7 @@ from .base import (
 class Blockquote(el.Blockquote, CommonMarginProps, RadixThemesComponent):
     """A block level extended quotation."""
 
-    tag = "Blockquote"
+    tag: str = "Blockquote"
 
     # Text size: "1" - "9"
     size: Var[LiteralTextSize]

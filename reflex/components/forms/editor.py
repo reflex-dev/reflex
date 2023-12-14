@@ -73,11 +73,11 @@ class Editor(NoSSRComponent):
     refer to the library docs for a complete list.
     """
 
-    library = "suneditor-react"
+    library: str = "suneditor-react"
 
-    tag = "SunEditor"
+    tag: str = "SunEditor"
 
-    is_default = True
+    is_default: bool = True
 
     lib_dependencies: List[str] = ["suneditor"]
 

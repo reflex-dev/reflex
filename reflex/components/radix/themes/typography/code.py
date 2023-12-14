@@ -22,7 +22,7 @@ from .base import (
 class Code(el.Code, CommonMarginProps, RadixThemesComponent):
     """A block level extended quotation."""
 
-    tag = "Code"
+    tag: str = "Code"
 
     # The visual variant to apply: "solid" | "soft" | "outline" | "ghost"
     variant: Var[LiteralVariant]

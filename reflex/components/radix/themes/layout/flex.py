@@ -21,7 +21,7 @@ LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 class Flex(el.Div, LayoutComponent):
     """Component for creating flex layouts."""
 
-    tag = "Flex"
+    tag: str = "Flex"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]

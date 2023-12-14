@@ -13,7 +13,7 @@ from ..base import (
 class HoverCardRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "HoverCard.Root"
+    tag: str = "HoverCard.Root"
 
     # The open state of the hover card when it is initially rendered. Use when you do not need to control its open state.
     default_open: Var[bool]
@@ -42,13 +42,13 @@ class HoverCardRoot(CommonMarginProps, RadixThemesComponent):
 class HoverCardTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "HoverCard.Trigger"
+    tag: str = "HoverCard.Trigger"
 
 
 class HoverCardContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "HoverCard.Content"
+    tag: str = "HoverCard.Content"
 
     # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
     side: Var[Literal["top", "right", "bottom", "left"]]

@@ -106,8 +106,8 @@ class DataEditorTheme(Base):
 class DataEditor(NoSSRComponent):
     """The DataEditor Component."""
 
-    tag = "DataEditor"
-    is_default = True
+    tag: str = "DataEditor"
+    is_default: bool = True
     library: str = "@glideapps/glide-data-grid@^5.3.0"
     lib_dependencies: List[str] = ["lodash", "marked", "react-responsive-carousel"]
 

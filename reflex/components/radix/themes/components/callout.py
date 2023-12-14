@@ -16,7 +16,7 @@ from ..base import (
 class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Callout.Root"
+    tag: str = "Callout.Root"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
@@ -40,10 +40,10 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
 class CalloutIcon(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Callout.Icon"
+    tag: str = "Callout.Icon"
 
 
 class CalloutText(el.P, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Callout.Text"
+    tag: str = "Callout.Text"

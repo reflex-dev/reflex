@@ -13,7 +13,7 @@ from ..base import (
 class DialogRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dialog.Root"
+    tag: str = "Dialog.Root"
 
     # The controlled open state of the dialog.
     open: Var[bool]
@@ -36,19 +36,19 @@ class DialogRoot(CommonMarginProps, RadixThemesComponent):
 class DialogTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dialog.Trigger"
+    tag: str = "Dialog.Trigger"
 
 
 class DialogTitle(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dialog.Title"
+    tag: str = "Dialog.Title"
 
 
 class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dialog.Content"
+    tag: str = "Dialog.Content"
 
     # Button size "1" - "4"
     size: Var[Literal[1, 2, 3, 4]]
@@ -72,4 +72,4 @@ class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
 class DialogDescription(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Dialog.Description"
+    tag: str = "Dialog.Description"

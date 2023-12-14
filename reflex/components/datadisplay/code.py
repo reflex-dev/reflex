@@ -350,11 +350,11 @@ LiteralCodeLanguage = Literal[
 class CodeBlock(Component):
     """A code block."""
 
-    library = "react-syntax-highlighter@15.5.0"
+    library: str = "react-syntax-highlighter@15.5.0"
 
-    tag = "PrismAsyncLight"
+    tag: str = "PrismAsyncLight"
 
-    alias = "SyntaxHighlighter"
+    alias: str = "SyntaxHighlighter"
 
     # The theme to use ("light" or "dark").
     theme: Var[LiteralCodeBlockTheme] = "one-light"  # type: ignore
@@ -518,4 +518,4 @@ class CodeBlock(Component):
 class Code(ChakraComponent):
     """Used to display inline code."""
 
-    tag = "Code"
+    tag: str = "Code"

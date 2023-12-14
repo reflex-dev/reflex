@@ -10,7 +10,7 @@ from reflex.vars import Var
 class Avatar(ChakraComponent):
     """The image that represents the user."""
 
-    tag = "Avatar"
+    tag: str = "Avatar"
 
     # The default avatar used as fallback when name, and src is not specified.
     icon: Var[str]
@@ -51,13 +51,13 @@ class Avatar(ChakraComponent):
 class AvatarBadge(ChakraComponent):
     """A wrapper that displays its content on the right corner of the avatar."""
 
-    tag = "AvatarBadge"
+    tag: str = "AvatarBadge"
 
 
 class AvatarGroup(ChakraComponent):
     """A wrapper to stack multiple Avatars together."""
 
-    tag = "AvatarGroup"
+    tag: str = "AvatarGroup"
 
     # The maximum number of visible avatars.
     max_: Var[int]

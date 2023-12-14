@@ -18,13 +18,13 @@ class Transition(ChakraComponent):
 class Fade(Transition):
     """Fade component cab be used show and hide content of your app."""
 
-    tag = "Fade"
+    tag: str = "Fade"
 
 
 class ScaleFade(Transition):
     """Fade component can be scaled and reverse your app."""
 
-    tag = "ScaleFade"
+    tag: str = "ScaleFade"
 
     # The initial scale of the element
     initial_scale: Var[float]
@@ -36,7 +36,7 @@ class ScaleFade(Transition):
 class Slide(Transition):
     """Side can be used show content below your app."""
 
-    tag = "Slide"
+    tag: str = "Slide"
 
     # The direction to slide from
     direction: Var[str]
@@ -45,7 +45,7 @@ class Slide(Transition):
 class SlideFade(Transition):
     """SlideFade component."""
 
-    tag = "SlideFade"
+    tag: str = "SlideFade"
 
     # The offset on the horizontal or x axis
     offsetX: Var[Union[str, int]]
@@ -60,7 +60,7 @@ class SlideFade(Transition):
 class Collapse(Transition):
     """Collapse component can collapse some content."""
 
-    tag = "Collapse"
+    tag: str = "Collapse"
 
     # If true, the opacity of the content will be animated
     animateOpacity: Var[bool]

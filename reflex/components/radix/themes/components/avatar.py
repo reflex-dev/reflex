@@ -17,7 +17,7 @@ LiteralSwitchSize = Literal["1", "2", "3", "4"]
 class Avatar(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "Avatar"
+    tag: str = "Avatar"
 
     # The ratio of the width to the height of the element
     ration: Var[float]

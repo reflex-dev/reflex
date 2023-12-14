@@ -12,7 +12,7 @@ from reflex.vars import Var
 class ChakraComponent(Component):
     """A component that wraps a Chakra component."""
 
-    library = "@chakra-ui/react@2.6.1"
+    library: str = "@chakra-ui/react@2.6.1"
     lib_dependencies: List[str] = [
         "@chakra-ui/system@2.5.7",
         "focus-visible@5.2.0",
@@ -74,12 +74,12 @@ class ChakraComponent(Component):
 class Global(Component):
     """The emotion/react Global styling component."""
 
-    library = "@emotion/react@^11.11.0"
+    library: str = "@emotion/react@^11.11.0"
     lib_dependencies: List[str] = [
         "@emotion/styled@^11.11.0",
     ]
 
-    tag = "Global"
+    tag: str = "Global"
 
     styles: Var[str]
 
@@ -87,7 +87,7 @@ class Global(Component):
 class ChakraProvider(ChakraComponent):
     """Top level Chakra provider must be included in any app using chakra components."""
 
-    tag = "ChakraProvider"
+    tag: str = "ChakraProvider"
 
     theme: Var[str]
 
@@ -141,9 +141,9 @@ chakra_provider = ChakraProvider.create()
 class ChakraColorModeProvider(Component):
     """Next-themes integration for chakra colorModeProvider."""
 
-    library = "/components/reflex/chakra_color_mode_provider.js"
-    tag = "ChakraColorModeProvider"
-    is_default = True
+    library: str = "/components/reflex/chakra_color_mode_provider.js"
+    tag: str = "ChakraColorModeProvider"
+    is_default: bool = True
 
 
 chakra_color_mode_provider = ChakraColorModeProvider.create()

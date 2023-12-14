@@ -13,7 +13,7 @@ from reflex.vars import Var
 class Slider(ChakraComponent):
     """The wrapper that provides context and functionality for all children."""
 
-    tag = "Slider"
+    tag: str = "Slider"
 
     # State var to bind the input.
     value: Var[int]
@@ -108,19 +108,19 @@ class Slider(ChakraComponent):
 class SliderTrack(ChakraComponent):
     """The empty part of the slider that shows the track."""
 
-    tag = "SliderTrack"
+    tag: str = "SliderTrack"
 
 
 class SliderFilledTrack(ChakraComponent):
     """The filled part of the slider."""
 
-    tag = "SliderFilledTrack"
+    tag: str = "SliderFilledTrack"
 
 
 class SliderThumb(ChakraComponent):
     """The handle that's used to change the slider value."""
 
-    tag = "SliderThumb"
+    tag: str = "SliderThumb"
 
     # The size of the thumb.
     box_size: Var[str]
@@ -129,4 +129,4 @@ class SliderThumb(ChakraComponent):
 class SliderMark(ChakraComponent):
     """The label or mark that shows names for specific slider values."""
 
-    tag = "SliderMark"
+    tag: str = "SliderMark"

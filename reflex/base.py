@@ -6,7 +6,8 @@ from typing import Any, List, Type
 
 import pydantic
 from pydantic import BaseModel
-from pydantic.fields import ModelField
+
+# from pydantic.fields import ModelField
 
 from reflex import constants
 
@@ -61,9 +62,9 @@ class Base(pydantic.BaseModel):
         Returns:
             The object as a json string.
         """
-        from reflex.utils.serializers import serialize
+        from reflex.utils.format import json_dumps
 
-        return self.__config__.json_dumps(self.dict(), default=serialize)
+        return json_dumps(self.model_dump())
 
     def set(self, **kwargs):
         """Set multiple fields and return the object.
@@ -97,6 +98,7 @@ class Base(pydantic.BaseModel):
             var: The variable to add a pydantic field for.
             default_value: The default value of the field
         """
+        raise RuntimeError("Pydantic V2 does not support adding fields dynamically.")
         new_field = ModelField.infer(
             name=var._var_name,
             value=default_value,

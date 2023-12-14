@@ -15,7 +15,7 @@ LiteralSeperatorSize = Literal["1", "2", "3", "4"]
 class Separator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Separator"
+    tag: str = "Separator"
 
     # The size of the select: "1" | "2" | "3"
     size: Var[LiteralSeperatorSize]

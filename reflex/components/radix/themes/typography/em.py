@@ -15,4 +15,4 @@ from ..base import (
 class Em(el.Em, CommonMarginProps, RadixThemesComponent):
     """Marks text to stress emphasis."""
 
-    tag = "Em"
+    tag: str = "Em"

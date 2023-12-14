@@ -18,7 +18,7 @@ LiteralSwitchSize = Literal["1", "2", "3", "4"]
 class Switch(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "Switch"
+    tag: str = "Switch"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]

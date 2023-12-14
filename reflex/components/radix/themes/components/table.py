@@ -13,7 +13,7 @@ from ..base import (
 class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Table.Root"
+    tag: str = "Table.Root"
 
     # The size of the table: "1" | "2" | "3"
     size: Var[Literal[1, 2, 3]]
@@ -25,13 +25,13 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
 class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Table.Header"
+    tag: str = "Table.Header"
 
 
 class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Table.Row"
+    tag: str = "Table.Row"
 
     # The alignment of the row
     align: Var[Literal["start", "center", "end", "baseline"]]
@@ -40,7 +40,7 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
 class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Table.ColumnHeaderCell"
+    tag: str = "Table.ColumnHeaderCell"
 
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
@@ -52,13 +52,13 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Table.Body"
+    tag: str = "Table.Body"
 
 
 class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Table.Cell"
+    tag: str = "Table.Cell"
 
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]
@@ -70,7 +70,7 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
 class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Table.RowHeaderCell"
+    tag: str = "Table.RowHeaderCell"
 
     # The justification of the column
     justify: Var[Literal["start", "center", "end"]]

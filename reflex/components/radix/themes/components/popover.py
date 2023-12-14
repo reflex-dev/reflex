@@ -13,7 +13,7 @@ from ..base import (
 class PopoverRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Popover.Root"
+    tag: str = "Popover.Root"
 
     # The controlled open state of the popover.
     open: Var[bool]
@@ -36,13 +36,13 @@ class PopoverRoot(CommonMarginProps, RadixThemesComponent):
 class PopoverTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Popover.Trigger"
+    tag: str = "Popover.Trigger"
 
 
 class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Popover.Content"
+    tag: str = "Popover.Content"
 
     # Size of the button: "1" | "2" | "3" | "4"
     size: Var[Literal[1, 2, 3, 4]]
@@ -82,4 +82,4 @@ class PopoverContent(el.Div, CommonMarginProps, RadixThemesComponent):
 class PopoverClose(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Popover.Close"
+    tag: str = "Popover.Close"

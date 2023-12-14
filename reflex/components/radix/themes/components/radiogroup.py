@@ -13,7 +13,7 @@ from ..base import (
 class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "RadioGroup.Root"
+    tag: str = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
     size: Var[Literal[1, 2, 3]]
@@ -60,7 +60,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
 class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "RadioGroup.Item"
+    tag: str = "RadioGroup.Item"
 
     # The value of the radio item to check. Should be used in conjunction with onCheckedChange.
     value: Var[str]

@@ -22,7 +22,7 @@ LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
-    tag = "TextField.Root"
+    tag: str = "TextField.Root"
 
     # Text field size "1" - "3"
     size: Var[LiteralTextFieldSize]
@@ -40,7 +40,7 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
 class TextFieldInput(el.Input, TextFieldRoot):
     """The input part of a TextField, may be used by itself."""
 
-    tag = "TextField.Input"
+    tag: str = "TextField.Input"
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -83,7 +83,7 @@ class TextFieldInput(el.Input, TextFieldRoot):
 class TextFieldSlot(RadixThemesComponent):
     """Contains icons or buttons associated with an Input."""
 
-    tag = "TextField.Slot"
+    tag: str = "TextField.Slot"
 
     # Override theme color for text field slot
     color: Var[LiteralAccentColor]

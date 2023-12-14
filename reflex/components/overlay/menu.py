@@ -17,7 +17,7 @@ from reflex.vars import Var
 class Menu(ChakraComponent):
     """The wrapper component provides context, state, and focus management."""
 
-    tag = "Menu"
+    tag: str = "Menu"
 
     # The padding required to prevent the arrow from reaching the very edge of the popper.
     arrow_padding: Var[int]
@@ -115,7 +115,7 @@ class Menu(ChakraComponent):
 class MenuButton(ChakraComponent):
     """The trigger for the menu list. Must be a direct child of Menu."""
 
-    tag = "MenuButton"
+    tag: str = "MenuButton"
 
     # The variant of the menu button.
     variant: Var[str]
@@ -130,7 +130,7 @@ class MenuButton(ChakraComponent):
 class MenuList(ChakraComponent):
     """The wrapper for the menu items. Must be a direct child of Menu."""
 
-    tag = "MenuList"
+    tag: str = "MenuList"
 
     @classmethod
     def create(
@@ -159,7 +159,7 @@ class MenuList(ChakraComponent):
 class MenuItem(ChakraComponent):
     """The trigger that handles menu selection. Must be a direct child of a MenuList."""
 
-    tag = "MenuItem"
+    tag: str = "MenuItem"
 
     # Overrides the parent menu's closeOnSelect prop.
     close_on_select: Var[bool]
@@ -180,7 +180,7 @@ class MenuItem(ChakraComponent):
 class MenuItemOption(ChakraComponent):
     """The checkable menu item, to be used with MenuOptionGroup."""
 
-    tag = "MenuItemOption"
+    tag: str = "MenuItemOption"
 
     # Overrides the parent menu's closeOnSelect prop.
     close_on_select: Var[bool]
@@ -210,13 +210,13 @@ class MenuItemOption(ChakraComponent):
 class MenuGroup(ChakraComponent):
     """A wrapper to group related menu items."""
 
-    tag = "MenuGroup"
+    tag: str = "MenuGroup"
 
 
 class MenuOptionGroup(ChakraComponent):
     """A wrapper for checkable menu items (radio and checkbox)."""
 
-    tag = "MenuOptionGroup"
+    tag: str = "MenuOptionGroup"
 
     # "checkbox" | "radio"
     type_: Var[LiteralMenuOption]
@@ -228,4 +228,4 @@ class MenuOptionGroup(ChakraComponent):
 class MenuDivider(ChakraComponent):
     """A visual separator for menu items and groups."""
 
-    tag = "MenuDivider"
+    tag: str = "MenuDivider"

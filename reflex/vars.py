@@ -167,7 +167,7 @@ class VarData(Base):
             == imports.collapse_imports(other.imports)
         )
 
-    def dict(self) -> dict:
+    def __dict(self) -> dict:
         """Convert the var data to a dictionary.
 
         Returns:
@@ -458,6 +458,9 @@ class Var:
         Raises:
             TypeError: when attempting to bool-ify the Var.
         """
+        # pydantic v2 hacks
+        if inspect.stack()[1].function in ("smart_deepcopy"):
+            return bool(self._decode())
         raise TypeError(
             f"Cannot convert Var {self._var_full_name!r} to bool for use with `if`, `and`, `or`, and `not`. "
             "Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert)."
@@ -1533,6 +1536,10 @@ class Var:
 
 # Allow automatic serialization of Var within JSON structures
 serializers.serializer(_encode_var)
+
+
+# Marker for a Var that was not passed
+UnspecifiedVar = Var()
 
 
 @dataclasses.dataclass(

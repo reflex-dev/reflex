@@ -11,7 +11,7 @@ from reflex.vars import Var
 class Switch(ChakraComponent):
     """Toggleable switch component."""
 
-    tag = "Switch"
+    tag: str = "Switch"
 
     # If true, the switch will be checked. You'll need to set an on_change event handler to update its value (since it is now controlled)
     is_checked: Var[bool]

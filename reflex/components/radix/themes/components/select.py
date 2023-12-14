@@ -16,7 +16,7 @@ LiteralButtonSize = Literal[1, 2, 3, 4]
 class SelectRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Select.Root"
+    tag: str = "Select.Root"
 
     # The size of the select: "1" | "2" | "3"
     size: Var[Literal[1, 2, 3]]
@@ -52,7 +52,7 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
 class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Select.Trigger"
+    tag: str = "Select.Trigger"
 
     # Variant of the select trigger
     variant: Var[Literal["classic", "surface", "soft", "ghost"]]
@@ -70,7 +70,7 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
 class SelectContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Select.Content"
+    tag: str = "Select.Content"
 
     # The variant of the select content
     variant: Var[Literal["solid", "soft"]]
@@ -113,13 +113,13 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
 class SelectGroup(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Select.Group"
+    tag: str = "Select.Group"
 
 
 class SelectItem(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Select.Item"
+    tag: str = "Select.Item"
 
     # The value of the select item when submitting the form.
     value: Var[str]
@@ -128,10 +128,10 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
 class SelectLabel(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Select.Label"
+    tag: str = "Select.Label"
 
 
 class SelectSeparator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Select.Separator"
+    tag: str = "Select.Separator"

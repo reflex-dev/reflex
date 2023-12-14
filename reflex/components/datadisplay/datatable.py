@@ -14,7 +14,7 @@ from reflex.vars import BaseVar, ComputedVar, Var
 class Gridjs(Component):
     """A component that wraps a nivo bar component."""
 
-    library = "gridjs-react@6.0.1"
+    library: str = "gridjs-react@6.0.1"
 
     lib_dependencies: List[str] = ["gridjs@6.0.6"]
 
@@ -22,9 +22,9 @@ class Gridjs(Component):
 class DataTable(Gridjs):
     """A data table component."""
 
-    tag = "Grid"
+    tag: str = "Grid"
 
-    alias = "DataTableGrid"
+    alias: str = "DataTableGrid"
 
     # The data to display. Either a list of lists or a pandas dataframe.
     data: Any

@@ -18,9 +18,9 @@ from .recharts import (
 class Pie(Recharts):
     """A Pie chart component in Recharts."""
 
-    tag = "Pie"
+    tag: str = "Pie"
 
-    alias = "RechartsPie"
+    alias: str = "RechartsPie"
 
     # data
     data: Var[List[Dict[str, Any]]]
@@ -92,9 +92,9 @@ class Pie(Recharts):
 class Radar(Recharts):
     """A Radar chart component in Recharts."""
 
-    tag = "Radar"
+    tag: str = "Radar"
 
-    alias = "RechartsRadar"
+    alias: str = "RechartsRadar"
 
     # The key of a group of data which should be unique in a radar chart.
     data_key: Var[Union[str, int]]
@@ -136,9 +136,9 @@ class Radar(Recharts):
 class RadialBar(Recharts):
     """A RadialBar chart component in Recharts."""
 
-    tag = "RadialBar"
+    tag: str = "RadialBar"
 
-    alias = "RechartsRadialBar"
+    alias: str = "RechartsRadialBar"
 
     # The source data which each element is an object.
     data: Var[List[Dict[str, Any]]]
@@ -177,9 +177,9 @@ class RadialBar(Recharts):
 class PolarAngleAxis(Recharts):
     """A PolarAngleAxis component in Recharts."""
 
-    tag = "PolarAngleAxis"
+    tag: str = "PolarAngleAxis"
 
-    alias = "RechartsPolarAngleAxis"
+    alias: str = "RechartsPolarAngleAxis"
 
     # The key of a group of data which should be unique to show the meaning of angle axis.
     data_key: Var[Union[str, int]]
@@ -236,9 +236,9 @@ class PolarAngleAxis(Recharts):
 class PolarGrid(Recharts):
     """A PolarGrid component in Recharts."""
 
-    tag = "PolarGrid"
+    tag: str = "PolarGrid"
 
-    alias = "RechartsPolarGrid"
+    alias: str = "RechartsPolarGrid"
 
     # The x-coordinate of center. If set a percentage, the final value is obtained by multiplying the percentage of container width.
     cx: Var[Union[int, str]]
@@ -268,9 +268,9 @@ class PolarGrid(Recharts):
 class PolarRadiusAxis(Recharts):
     """A PolarRadiusAxis component in Recharts."""
 
-    tag = "PolarRadiusAxis"
+    tag: str = "PolarRadiusAxis"
 
-    alias = "RechartsPolarRadiusAxis"
+    alias: str = "RechartsPolarRadiusAxis"
 
     # The angle of radial direction line to display axis text.
     angle: Var[int]

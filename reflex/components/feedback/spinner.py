@@ -7,7 +7,7 @@ from reflex.vars import Var
 class Spinner(ChakraComponent):
     """The component that spins."""
 
-    tag = "Spinner"
+    tag: str = "Spinner"
 
     # The color of the empty area in the spinner
     empty_color: Var[str]

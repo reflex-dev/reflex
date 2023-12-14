@@ -19,7 +19,7 @@ DEFAULT_ANIMATION_DURATION = 250
 class AccordionComponent(Component):
     """Base class for all @radix-ui/accordion components."""
 
-    library = "@radix-ui/react-accordion@^1.1.2"
+    library: str = "@radix-ui/react-accordion@^1.1.2"
 
     # Change the default rendered element for the one passed as a child.
     as_child: Var[bool]
@@ -39,9 +39,9 @@ class AccordionComponent(Component):
 class AccordionRoot(AccordionComponent):
     """An accordion component."""
 
-    tag = "Root"
+    tag: str = "Root"
 
-    alias = "RadixAccordionRoot"
+    alias: str = "RadixAccordionRoot"
 
     # The type of accordion (single or multiple).
     type_: Var[LiteralAccordionType]
@@ -78,9 +78,9 @@ class AccordionRoot(AccordionComponent):
 class AccordionItem(AccordionComponent):
     """An accordion component."""
 
-    tag = "Item"
+    tag: str = "Item"
 
-    alias = "RadixAccordionItem"
+    alias: str = "RadixAccordionItem"
 
     # A unique identifier for the item.
     value: Var[str]
@@ -115,9 +115,9 @@ class AccordionItem(AccordionComponent):
 class AccordionHeader(AccordionComponent):
     """An accordion component."""
 
-    tag = "Header"
+    tag: str = "Header"
 
-    alias = "RadixAccordionHeader"
+    alias: str = "RadixAccordionHeader"
 
     def _apply_theme(self, theme: Component):
         self.style = Style(
@@ -131,9 +131,9 @@ class AccordionHeader(AccordionComponent):
 class AccordionTrigger(AccordionComponent):
     """An accordion component."""
 
-    tag = "Trigger"
+    tag: str = "Trigger"
 
-    alias = "RadixAccordionTrigger"
+    alias: str = "RadixAccordionTrigger"
 
     def _apply_theme(self, theme: Component):
         self.style = Style(
@@ -163,9 +163,9 @@ class AccordionTrigger(AccordionComponent):
 class AccordionContent(AccordionComponent):
     """An accordion component."""
 
-    tag = "Content"
+    tag: str = "Content"
 
-    alias = "RadixAccordionContent"
+    alias: str = "RadixAccordionContent"
 
     def _apply_theme(self, theme: Component):
         self.style = Style(
@@ -222,9 +222,9 @@ to {
 class ChevronDownIcon(Component):
     """A chevron down icon."""
 
-    library = "@radix-ui/react-icons"
+    library: str = "@radix-ui/react-icons"
 
-    tag = "ChevronDownIcon"
+    tag: str = "ChevronDownIcon"
 
     def _apply_theme(self, theme: Component):
         self.style = Style(

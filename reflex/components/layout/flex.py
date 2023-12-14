@@ -9,7 +9,7 @@ from reflex.vars import Var
 class Flex(ChakraComponent):
     """A reflexive container component."""
 
-    tag = "Flex"
+    tag: str = "Flex"
 
     # How to align items in the flex.
     align: Var[str]

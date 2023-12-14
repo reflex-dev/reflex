@@ -9,7 +9,7 @@ from .base import BaseHTML
 class Caption(BaseHTML):
     """Display the caption element."""
 
-    tag = "caption"
+    tag: str = "caption"
 
     # Alignment of the caption
     align: Var[Union[str, int, bool]]
@@ -18,7 +18,7 @@ class Caption(BaseHTML):
 class Col(BaseHTML):
     """Display the col element."""
 
-    tag = "col"
+    tag: str = "col"
 
     # Alignment of the content within the column
     align: Var[Union[str, int, bool]]
@@ -33,7 +33,7 @@ class Col(BaseHTML):
 class Colgroup(BaseHTML):
     """Display the colgroup element."""
 
-    tag = "colgroup"
+    tag: str = "colgroup"
 
     # Alignment of the content within the column group
     align: Var[Union[str, int, bool]]
@@ -48,7 +48,7 @@ class Colgroup(BaseHTML):
 class Table(BaseHTML):
     """Display the table element."""
 
-    tag = "table"
+    tag: str = "table"
 
     # Alignment of the table
     align: Var[Union[str, int, bool]]
@@ -69,7 +69,7 @@ class Table(BaseHTML):
 class Tbody(BaseHTML):
     """Display the tbody element."""
 
-    tag = "tbody"
+    tag: str = "tbody"
 
     # Alignment of the content within the table body
     align: Var[Union[str, int, bool]]
@@ -81,7 +81,7 @@ class Tbody(BaseHTML):
 class Td(BaseHTML):
     """Display the td element."""
 
-    tag = "td"
+    tag: str = "td"
 
     # Alignment of the content within the table cell
     align: Var[Union[str, int, bool]]
@@ -105,7 +105,7 @@ class Td(BaseHTML):
 class Tfoot(BaseHTML):
     """Display the tfoot element."""
 
-    tag = "tfoot"
+    tag: str = "tfoot"
 
     # Alignment of the content within the table footer
     align: Var[Union[str, int, bool]]
@@ -117,7 +117,7 @@ class Tfoot(BaseHTML):
 class Th(BaseHTML):
     """Display the th element."""
 
-    tag = "th"
+    tag: str = "th"
 
     # Alignment of the content within the table header cell
     align: Var[Union[str, int, bool]]
@@ -144,7 +144,7 @@ class Th(BaseHTML):
 class Thead(BaseHTML):
     """Display the thead element."""
 
-    tag = "thead"
+    tag: str = "thead"
 
     # Alignment of the content within the table header
     align: Var[Union[str, int, bool]]
@@ -153,7 +153,7 @@ class Thead(BaseHTML):
 class Tr(BaseHTML):
     """Display the tr element."""
 
-    tag = "tr"
+    tag: str = "tr"
 
     # Alignment of the content within the table row
     align: Var[Union[str, int, bool]]

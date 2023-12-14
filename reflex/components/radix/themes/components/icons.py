@@ -10,13 +10,13 @@ from reflex.utils import format
 class RadixIconComponent(Component):
     """A component used as basis for Radix icons."""
 
-    library = "@radix-ui/react-icons"
+    library: str = "@radix-ui/react-icons"
 
 
 class Icon(RadixIconComponent):
     """An image Icon."""
 
-    tag = "None"
+    tag: str = "None"
 
     @classmethod
     def create(cls, *children, **props) -> Component:

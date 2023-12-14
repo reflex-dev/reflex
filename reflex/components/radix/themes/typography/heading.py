@@ -23,7 +23,7 @@ from .base import (
 class Heading(el.H1, CommonMarginProps, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
-    tag = "Heading"
+    tag: str = "Heading"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]

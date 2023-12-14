@@ -7,11 +7,11 @@ from reflex.vars import Var
 class NextLink(Component):
     """Links are accessible elements used primarily for navigation. This component is styled to resemble a hyperlink and semantically renders an <a>."""
 
-    library = "next/link"
+    library: str = "next/link"
 
-    tag = "NextLink"
+    tag: str = "NextLink"
 
-    is_default = True
+    is_default: bool = True
 
     # The page to link to.
     href: Var[str]

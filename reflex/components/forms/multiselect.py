@@ -46,9 +46,9 @@ class Select(Component):
     Props added by chakra-react-select are marked with "[chakra]".
     """
 
-    library = "chakra-react-select@4.7.5"
-    tag = "Select"
-    alias = "MultiSelect"
+    library: str = "chakra-react-select@4.7.5"
+    tag: str = "Select"
+    alias: str = "MultiSelect"
 
     # Focus the control when it is mounted
     auto_focus: Var[bool]

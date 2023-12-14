@@ -9,7 +9,7 @@ from .base import BaseHTML
 class Body(BaseHTML):  # noqa: E742
     """Display the body element."""
 
-    tag = "body"
+    tag: str = "body"
 
     bgcolor: Var[Union[str, int, bool]]
     background: Var[Union[str, int, bool]]
@@ -18,82 +18,82 @@ class Body(BaseHTML):  # noqa: E742
 class Address(BaseHTML):  # noqa: E742
     """Display the address element."""
 
-    tag = "address"
+    tag: str = "address"
 
 
 class Article(BaseHTML):  # noqa: E742
     """Display the article element."""
 
-    tag = "article"
+    tag: str = "article"
 
 
 class Aside(BaseHTML):  # noqa: E742
     """Display the aside element."""
 
-    tag = "aside"
+    tag: str = "aside"
 
 
 class Footer(BaseHTML):  # noqa: E742
     """Display the footer element."""
 
-    tag = "footer"
+    tag: str = "footer"
 
 
 class Header(BaseHTML):  # noqa: E742
     """Display the header element."""
 
-    tag = "header"
+    tag: str = "header"
 
 
 class H1(BaseHTML):  # noqa: E742
     """Display the h1 element."""
 
-    tag = "h1"
+    tag: str = "h1"
 
 
 class H2(BaseHTML):  # noqa: E742
     """Display the h1 element."""
 
-    tag = "h2"
+    tag: str = "h2"
 
 
 class H3(BaseHTML):  # noqa: E742
     """Display the h1 element."""
 
-    tag = "h3"
+    tag: str = "h3"
 
 
 class H4(BaseHTML):  # noqa: E742
     """Display the h1 element."""
 
-    tag = "h4"
+    tag: str = "h4"
 
 
 class H5(BaseHTML):  # noqa: E742
     """Display the h1 element."""
 
-    tag = "h5"
+    tag: str = "h5"
 
 
 class H6(BaseHTML):  # noqa: E742
     """Display the h1 element."""
 
-    tag = "h6"
+    tag: str = "h6"
 
 
 class Main(BaseHTML):  # noqa: E742
     """Display the main element."""
 
-    tag = "main"
+    tag: str = "main"
 
 
 class Nav(BaseHTML):  # noqa: E742
     """Display the nav element."""
 
-    tag = "nav"
+    tag: str = "nav"
 
 
 class Section(BaseHTML):  # noqa: E742
     """Display the section element."""
 
-    tag = "section"
+    tag: str = "section"

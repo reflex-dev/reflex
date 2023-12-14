@@ -19,7 +19,7 @@ from .base import (
 class Kbd(el.Kbd, CommonMarginProps, RadixThemesComponent):
     """Represents keyboard input or a hotkey."""
 
-    tag = "Kbd"
+    tag: str = "Kbd"
 
     # Text size: "1" - "9"
     size: Var[LiteralTextSize]

@@ -24,7 +24,7 @@ LiteralTextTrim = Literal["normal", "start", "end", "both"]
 class Text(CommonMarginProps, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
-    tag = "Text"
+    tag: str = "Text"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
@@ -54,13 +54,13 @@ class Text(CommonMarginProps, RadixThemesComponent):
 class Heading(Text):
     """A semantic heading element."""
 
-    tag = "Heading"
+    tag: str = "Heading"
 
 
 class Blockquote(CommonMarginProps, RadixThemesComponent):
     """A block level extended quotation."""
 
-    tag = "Blockquote"
+    tag: str = "Blockquote"
 
     # Text size: "1" - "9"
     size: Var[LiteralTextSize]
@@ -78,7 +78,7 @@ class Blockquote(CommonMarginProps, RadixThemesComponent):
 class Code(Blockquote):
     """Marks text to signify a short fragment of computer code."""
 
-    tag = "Code"
+    tag: str = "Code"
 
     # The visual variant to apply: "solid" | "soft" | "outline" | "ghost"
     variant: Var[LiteralVariant]
@@ -87,13 +87,13 @@ class Code(Blockquote):
 class Em(CommonMarginProps, RadixThemesComponent):
     """Marks text to stress emphasis."""
 
-    tag = "Em"
+    tag: str = "Em"
 
 
 class Kbd(CommonMarginProps, RadixThemesComponent):
     """Represents keyboard input or a hotkey."""
 
-    tag = "Kbd"
+    tag: str = "Kbd"
 
     # Text size: "1" - "9"
     size: Var[LiteralTextSize]
@@ -105,7 +105,7 @@ LiteralLinkUnderline = Literal["auto", "hover", "always"]
 class Link(CommonMarginProps, RadixThemesComponent):
     """A semantic element for navigation between pages."""
 
-    tag = "Link"
+    tag: str = "Link"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
@@ -132,10 +132,10 @@ class Link(CommonMarginProps, RadixThemesComponent):
 class Quote(CommonMarginProps, RadixThemesComponent):
     """A short inline quotation."""
 
-    tag = "Quote"
+    tag: str = "Quote"
 
 
 class Strong(CommonMarginProps, RadixThemesComponent):
     """Marks text to signify strong importance."""
 
-    tag = "Strong"
+    tag: str = "Strong"

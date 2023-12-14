@@ -20,9 +20,9 @@ from .recharts import (
 class ResponsiveContainer(Recharts, MemoizationLeaf):
     """A base class for responsive containers in Recharts."""
 
-    tag = "ResponsiveContainer"
+    tag: str = "ResponsiveContainer"
 
-    alias = "RechartsResponsiveContainer"
+    alias: str = "RechartsResponsiveContainer"
 
     # The aspect ratio of the container. The final aspect ratio of the SVG element will be (width / height) * aspect. Number
     aspect: Var[int]
@@ -59,9 +59,9 @@ class ResponsiveContainer(Recharts, MemoizationLeaf):
 class Legend(Recharts):
     """A Legend component in Recharts."""
 
-    tag = "Legend"
+    tag: str = "Legend"
 
-    alias = "RechartsLegend"
+    alias: str = "RechartsLegend"
 
     # The width of legend container. Number
     width: Var[int]
@@ -112,9 +112,9 @@ class Legend(Recharts):
 class GraphingTooltip(Recharts):
     """A Tooltip component in Recharts."""
 
-    tag = "Tooltip"
+    tag: str = "Tooltip"
 
-    alias = "RechartsTooltip"
+    alias: str = "RechartsTooltip"
 
     # The separator between name and value.
     separator: Var[str]
@@ -144,9 +144,9 @@ class GraphingTooltip(Recharts):
 class Label(Recharts):
     """A Label component in Recharts."""
 
-    tag = "Label"
+    tag: str = "Label"
 
-    alias = "RechartsLabel"
+    alias: str = "RechartsLabel"
 
     # The box of viewing area, which has the shape of {x: someVal, y: someVal, width: someVal, height: someVal}, usually calculated internally.
     view_box: Var[Dict[str, Any]]
@@ -164,9 +164,9 @@ class Label(Recharts):
 class LabelList(Recharts):
     """A LabelList component in Recharts."""
 
-    tag = "LabelList"
+    tag: str = "LabelList"
 
-    alias = "RechartsLabelList"
+    alias: str = "RechartsLabelList"
 
     # The key of a group of label values in data.
     data_key: Var[Union[str, int]]

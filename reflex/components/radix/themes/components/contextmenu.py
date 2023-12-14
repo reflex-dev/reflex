@@ -13,7 +13,7 @@ from ..base import (
 class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.Root"
+    tag: str = "ContextMenu.Root"
 
     # The modality of the context menu. When set to true, interaction with outside elements will be disabled and only menu content will be visible to screen readers.
     modal: Var[bool]
@@ -33,7 +33,7 @@ class ContextMenuRoot(CommonMarginProps, RadixThemesComponent):
 class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.Trigger"
+    tag: str = "ContextMenu.Trigger"
 
     # Whether the trigger is disabled
     disabled: Var[bool]
@@ -42,7 +42,7 @@ class ContextMenuTrigger(CommonMarginProps, RadixThemesComponent):
 class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.Content"
+    tag: str = "ContextMenu.Content"
 
     # Button size "1" - "4"
     size: Var[Literal["1", "2"]]
@@ -81,13 +81,13 @@ class ContextMenuContent(CommonMarginProps, RadixThemesComponent):
 class ContextMenuSub(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.Sub"
+    tag: str = "ContextMenu.Sub"
 
 
 class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.SubTrigger"
+    tag: str = "ContextMenu.SubTrigger"
 
     # Whether the trigger is disabled
     disabled: Var[bool]
@@ -96,7 +96,7 @@ class ContextMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
 class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.SubContent"
+    tag: str = "ContextMenu.SubContent"
 
     # When true, keyboard navigation will loop from last item to first, and vice versa.
     loop: Var[bool]
@@ -119,7 +119,7 @@ class ContextMenuSubContent(CommonMarginProps, RadixThemesComponent):
 class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.Item"
+    tag: str = "ContextMenu.Item"
 
     # Override theme color for button
     color: Var[LiteralAccentColor]
@@ -131,4 +131,4 @@ class ContextMenuItem(CommonMarginProps, RadixThemesComponent):
 class ContextMenuSeparator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "ContextMenu.Separator"
+    tag: str = "ContextMenu.Separator"

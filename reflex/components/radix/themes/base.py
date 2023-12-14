@@ -47,7 +47,7 @@ class CommonMarginProps(Component):
 class RadixThemesComponent(Component):
     """Base class for all @radix-ui/themes components."""
 
-    library = "@radix-ui/themes@^2.0.0"
+    library: str = "@radix-ui/themes@^2.0.0"
 
     @classmethod
     def create(cls, *children, **props) -> Component:
@@ -118,7 +118,7 @@ class Theme(RadixThemesComponent):
     child elements as an override of the main theme.
     """
 
-    tag = "Theme"
+    tag: str = "Theme"
 
     # Whether to apply the themes background color to the theme node.
     has_background: Var[bool]
@@ -154,7 +154,7 @@ class ThemePanel(RadixThemesComponent):
     Include as a child component of Theme to use in your app.
     """
 
-    tag = "ThemePanel"
+    tag: str = "ThemePanel"
 
     default_open: Var[bool]
 
@@ -162,6 +162,6 @@ class ThemePanel(RadixThemesComponent):
 class RadixThemesColorModeProvider(Component):
     """Next-themes integration for radix themes components."""
 
-    library = "/components/reflex/radix_themes_color_mode_provider.js"
-    tag = "RadixThemesColorModeProvider"
-    is_default = True
+    library: str = "/components/reflex/radix_themes_color_mode_provider.js"
+    tag: str = "RadixThemesColorModeProvider"
+    is_default: bool = True

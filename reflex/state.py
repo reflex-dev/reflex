@@ -269,7 +269,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         return f"{self.__class__.__name__}({self.dict()})"
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __pydantic_init_subclass__(cls, **kwargs):
         """Do some magic for the subclass initialization.
 
         Args:
@@ -279,7 +279,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             ValueError: If a substate class shadows another.
         """
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
-        super().__init_subclass__(**kwargs)
+        #super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
 
@@ -324,11 +324,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         # Set the base and computed vars.
         cls.base_vars = {
-            f.name: BaseVar(_var_name=f.name, _var_type=f.outer_type_)._var_set_state(
+            field_name: BaseVar(_var_name=field_name, _var_type=field.annotation)._var_set_state(
                 cls
             )
-            for f in cls.get_fields().values()
-            if f.name not in cls.get_skip_vars()
+            for field_name, field in cls.get_fields().items()
+            if field_name not in cls.get_skip_vars()
         }
         cls.computed_vars = {
             v._var_name: v._var_set_state(cls)
@@ -640,13 +640,12 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         """
         # Get the pydantic field for the var.
         field = cls.get_fields()[prop._var_name]
-        if field.required:
+        if field.is_required():
             default_value = prop.get_default_value()
             if default_value is not None:
-                field.required = False
                 field.default = default_value
         if (
-            not field.required
+            not field.is_required()
             and field.default is None
             and not types.is_optional(prop._var_type)
         ):

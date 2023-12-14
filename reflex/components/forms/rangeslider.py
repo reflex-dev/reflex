@@ -13,7 +13,7 @@ from reflex.vars import Var
 class RangeSlider(ChakraComponent):
     """The RangeSlider is a multi thumb slider used to select a range of related values. A common use-case of this component is a price range picker that allows a user to set the minimum and maximum price."""
 
-    tag = "RangeSlider"
+    tag: str = "RangeSlider"
 
     # State var to bind the the input.
     value: Var[List[int]]
@@ -121,19 +121,19 @@ class RangeSlider(ChakraComponent):
 class RangeSliderTrack(ChakraComponent):
     """A range slider track."""
 
-    tag = "RangeSliderTrack"
+    tag: str = "RangeSliderTrack"
 
 
 class RangeSliderFilledTrack(ChakraComponent):
     """A filled range slider track."""
 
-    tag = "RangeSliderFilledTrack"
+    tag: str = "RangeSliderFilledTrack"
 
 
 class RangeSliderThumb(ChakraComponent):
     """A range slider thumb."""
 
-    tag = "RangeSliderThumb"
+    tag: str = "RangeSliderThumb"
 
     # The position of the thumb.
     index: Var[int]

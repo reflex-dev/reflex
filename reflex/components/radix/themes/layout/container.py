@@ -17,7 +17,7 @@ class Container(el.Div, LayoutComponent):
     See https://www.radix-ui.com/themes/docs/components/container
     """
 
-    tag = "Container"
+    tag: str = "Container"
 
     # The size of the container: "1" - "4" (default "4")
     size: Var[LiteralContainerSize]

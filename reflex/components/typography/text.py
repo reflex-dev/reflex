@@ -8,7 +8,7 @@ from reflex.vars import Var
 class Text(ChakraComponent):
     """Render a paragraph of text."""
 
-    tag = "Text"
+    tag: str = "Text"
 
     # Override the tag. The default tag is `<p>`.
     as_: Var[str]

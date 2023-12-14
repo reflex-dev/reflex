@@ -14,7 +14,7 @@ LiteralSwitchSize = Literal["1", "2", "3", "4"]
 class AspectRatio(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "AspectRatio"
+    tag: str = "AspectRatio"
 
     # The ratio of the width to the height of the element
     ration: Var[Union[float, int]]

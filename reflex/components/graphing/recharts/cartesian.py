@@ -87,17 +87,17 @@ class Axis(Recharts):
 class XAxis(Axis):
     """An XAxis component in Recharts."""
 
-    tag = "XAxis"
+    tag: str = "XAxis"
 
-    alias = "RechartsXAxis"
+    alias: str = "RechartsXAxis"
 
 
 class YAxis(Axis):
     """A YAxis component in Recharts."""
 
-    tag = "YAxis"
+    tag: str = "YAxis"
 
-    alias = "RechartsYAxis"
+    alias: str = "RechartsYAxis"
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -106,9 +106,9 @@ class YAxis(Axis):
 class ZAxis(Recharts):
     """A ZAxis component in Recharts."""
 
-    tag = "ZAxis"
+    tag: str = "ZAxis"
 
-    alias = "RechartszAxis"
+    alias: str = "RechartszAxis"
 
     # The key of data displayed in the axis.
     data_key: Var[Union[str, int]]
@@ -129,9 +129,9 @@ class ZAxis(Recharts):
 class Brush(Recharts):
     """A Brush component in Recharts."""
 
-    tag = "Brush"
+    tag: str = "Brush"
 
-    alias = "RechartsBrush"
+    alias: str = "RechartsBrush"
 
     # Stroke color
     stroke: Var[str]
@@ -214,9 +214,9 @@ class Cartesian(Recharts):
 class Area(Cartesian):
     """An Area component in Recharts."""
 
-    tag = "Area"
+    tag: str = "Area"
 
-    alias = "RechartsArea"
+    alias: str = "RechartsArea"
 
     # The color of the line stroke.
     stroke: Var[str]
@@ -249,9 +249,9 @@ class Area(Cartesian):
 class Bar(Cartesian):
     """A Bar component in Recharts."""
 
-    tag = "Bar"
+    tag: str = "Bar"
 
-    alias = "RechartsBar"
+    alias: str = "RechartsBar"
 
     # The color of the line stroke.
     stroke: Var[str]
@@ -284,9 +284,9 @@ class Bar(Cartesian):
 class Line(Cartesian):
     """A Line component in Recharts."""
 
-    tag = "Line"
+    tag: str = "Line"
 
-    alias = "RechartsLine"
+    alias: str = "RechartsLine"
 
     # The interpolation type of line. And customized interpolation function can be set to type. It's the same as type in Area.
     type_: Var[LiteralAreaType]
@@ -319,9 +319,9 @@ class Line(Cartesian):
 class Scatter(Cartesian):
     """A Scatter component in Recharts."""
 
-    tag = "Scatter"
+    tag: str = "Scatter"
 
-    alias = "RechartsScatter"
+    alias: str = "RechartsScatter"
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
@@ -351,9 +351,9 @@ class Scatter(Cartesian):
 class Funnel(Cartesian):
     """A Funnel component in Recharts."""
 
-    tag = "Funnel"
+    tag: str = "Funnel"
 
-    alias = "RechartsFunnel"
+    alias: str = "RechartsFunnel"
 
     # The source data, in which each element is an object.
     data: Var[List[Dict[str, Any]]]
@@ -374,9 +374,9 @@ class Funnel(Cartesian):
 class ErrorBar(Recharts):
     """An ErrorBar component in Recharts."""
 
-    tag = "ErrorBar"
+    tag: str = "ErrorBar"
 
-    alias = "RechartsErrorBar"
+    alias: str = "RechartsErrorBar"
 
     # The direction of error bar. 'x' | 'y' | 'both'
     direction: Var[LiteralDirection]
@@ -419,9 +419,9 @@ class Reference(Recharts):
 class ReferenceLine(Reference):
     """A ReferenceLine component in Recharts."""
 
-    tag = "ReferenceLine"
+    tag: str = "ReferenceLine"
 
-    alias = "RechartsReferenceLine"
+    alias: str = "RechartsReferenceLine"
 
     # The width of the stroke.
     stroke_width: Var[int]
@@ -433,9 +433,9 @@ class ReferenceLine(Reference):
 class ReferenceDot(Reference):
     """A ReferenceDot component in Recharts."""
 
-    tag = "ReferenceDot"
+    tag: str = "ReferenceDot"
 
-    alias = "RechartsReferenceDot"
+    alias: str = "RechartsReferenceDot"
 
     # Valid children components
     _valid_children: List[str] = ["Label"]
@@ -459,9 +459,9 @@ class ReferenceDot(Reference):
 class ReferenceArea(Recharts):
     """A ReferenceArea component in Recharts."""
 
-    tag = "ReferenceArea"
+    tag: str = "ReferenceArea"
 
-    alias = "RechartsReferenceArea"
+    alias: str = "RechartsReferenceArea"
 
     # Stroke color
     stroke: Var[str]
@@ -519,9 +519,9 @@ class Grid(Recharts):
 class CartesianGrid(Grid):
     """A CartesianGrid component in Recharts."""
 
-    tag = "CartesianGrid"
+    tag: str = "CartesianGrid"
 
-    alias = "RechartsCartesianGrid"
+    alias: str = "RechartsCartesianGrid"
 
     # The horizontal line configuration.
     horizontal: Var[Dict[str, Any]]
@@ -542,9 +542,9 @@ class CartesianGrid(Grid):
 class CartesianAxis(Grid):
     """A CartesianAxis component in Recharts."""
 
-    tag = "CartesianAxis"
+    tag: str = "CartesianAxis"
 
-    alias = "RechartsCartesianAxis"
+    alias: str = "RechartsCartesianAxis"
 
     # The orientation of axis 'top' | 'bottom' | 'left' | 'right'
     orientation: Var[LiteralOrientationTopBottomLeftRight]

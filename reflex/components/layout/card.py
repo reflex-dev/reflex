@@ -15,25 +15,25 @@ from reflex.vars import Var
 class CardHeader(ChakraComponent):
     """The wrapper that contains a card's header."""
 
-    tag = "CardHeader"
+    tag: str = "CardHeader"
 
 
 class CardBody(ChakraComponent):
     """The wrapper that houses the card's main content."""
 
-    tag = "CardBody"
+    tag: str = "CardBody"
 
 
 class CardFooter(ChakraComponent):
     """The footer that houses the card actions."""
 
-    tag = "CardFooter"
+    tag: str = "CardFooter"
 
 
 class Card(ChakraComponent):
     """The parent wrapper that provides context for its children."""
 
-    tag = "Card"
+    tag: str = "Card"
 
     # [required] The flex alignment of the card
     align: Var[str]

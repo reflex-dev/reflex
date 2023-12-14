@@ -25,7 +25,7 @@ LiteralLinkUnderline = Literal["auto", "hover", "always"]
 class Link(CommonMarginProps, RadixThemesComponent):
     """A semantic element for navigation between pages."""
 
-    tag = "Link"
+    tag: str = "Link"
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]

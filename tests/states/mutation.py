@@ -1,6 +1,6 @@
 """Test states for mutable vars."""
 
-from typing import Dict, List, Set, Union
+from typing import Any, Dict, List, Set, Union
 
 import reflex as rx
 from reflex.state import BaseState
@@ -10,7 +10,7 @@ class DictMutationTestState(BaseState):
     """A state for testing ReflexDict mutation."""
 
     # plain dict
-    details = {"name": "Tommy"}
+    details: dict[str, str] = {"name": "Tommy"}
 
     def add_age(self):
         """Add an age to the dict."""
@@ -37,7 +37,7 @@ class DictMutationTestState(BaseState):
         self.details.pop("age")
 
     # dict in list
-    address = [{"home": "home address"}, {"work": "work address"}]
+    address: list[dict[str, str]] = [{"home": "home address"}, {"work": "work address"}]
 
     def remove_home_address(self):
         """Remove the home address from dict in the list."""
@@ -48,7 +48,10 @@ class DictMutationTestState(BaseState):
         self.address[0]["street"] = "street address"
 
     # nested dict
-    friend_in_nested_dict = {"name": "Nikhil", "friend": {"name": "Alek"}}
+    friend_in_nested_dict: dict[str, Any] = {
+        "name": "Nikhil",
+        "friend": {"name": "Alek"},
+    }
 
     def change_friend_name(self):
         """Change the friend's name in the nested dict."""
@@ -67,7 +70,7 @@ class ListMutationTestState(BaseState):
     """A state for testing ReflexList mutation."""
 
     # plain list
-    plain_friends = ["Tommy"]
+    plain_friends: list[str] = ["Tommy"]
 
     def make_friend(self):
         """Add a friend to the list."""
@@ -99,7 +102,7 @@ class ListMutationTestState(BaseState):
         self.plain_friends.remove("Tommy")
 
     # list in dict
-    friends_in_dict = {"Tommy": ["Jenny"]}
+    friends_in_dict: dict[str, list[str]] = {"Tommy": ["Jenny"]}
 
     def remove_jenny_from_tommy(self):
         """Remove Jenny from Tommy's friends list."""
@@ -114,7 +117,7 @@ class ListMutationTestState(BaseState):
         self.friends_in_dict["Tommy"].clear()
 
     # nested list
-    friends_in_nested_list = [["Tommy"], ["Jenny"]]
+    friends_in_nested_list: list[list[str]] = [["Tommy"], ["Jenny"]]
 
     def remove_first_group(self):
         """Remove the first group of friends from the nested list."""

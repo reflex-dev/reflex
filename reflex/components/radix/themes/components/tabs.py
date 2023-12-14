@@ -12,7 +12,7 @@ from ..base import (
 class TabsRoot(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Tabs.Root"
+    tag: str = "Tabs.Root"
 
     # The size of the table: "1" | "2" | "3"
     size: Var[Literal[1, 2, 3]]
@@ -44,13 +44,13 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
 class TabsList(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Tabs.List"
+    tag: str = "Tabs.List"
 
 
 class TabsTrigger(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Tabs.Trigger"
+    tag: str = "Tabs.Trigger"
 
     # The value of the tab. Must be unique for each tab.
     value: Var[str]
@@ -62,4 +62,4 @@ class TabsTrigger(CommonMarginProps, RadixThemesComponent):
 class TabsContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
-    tag = "Tabs.Content"
+    tag: str = "Tabs.Content"

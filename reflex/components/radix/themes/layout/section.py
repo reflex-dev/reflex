@@ -14,7 +14,7 @@ LiteralSectionSize = Literal["1", "2", "3"]
 class Section(el.Section, LayoutComponent):
     """Denotes a section of page content."""
 
-    tag = "Section"
+    tag: str = "Section"
 
     # The size of the section: "1" - "3" (default "3")
     size: Var[LiteralSectionSize]

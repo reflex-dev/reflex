@@ -15,4 +15,4 @@ from ..base import (
 class Strong(el.Strong, CommonMarginProps, RadixThemesComponent):
     """Marks text to signify strong importance."""
 
-    tag = "Strong"
+    tag: str = "Strong"

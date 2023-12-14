@@ -6,4 +6,4 @@ from reflex.components.libs.chakra import ChakraComponent
 class Spacer(ChakraComponent):
     """A flexible space component."""
 
-    tag = "Spacer"
+    tag: str = "Spacer"

@@ -12,7 +12,7 @@ from reflex.vars import Var
 class AlertDialog(ChakraComponent):
     """Provides context and state for the dialog."""
 
-    tag = "AlertDialog"
+    tag: str = "AlertDialog"
 
     # If true, the modal will be open.
     is_open: Var[bool]
@@ -122,34 +122,34 @@ class AlertDialog(ChakraComponent):
 class AlertDialogBody(ChakraComponent):
     """Should contain the description announced by screen readers."""
 
-    tag = "AlertDialogBody"
+    tag: str = "AlertDialogBody"
 
 
 class AlertDialogHeader(ChakraComponent):
     """Should contain the title announced by screen readers."""
 
-    tag = "AlertDialogHeader"
+    tag: str = "AlertDialogHeader"
 
 
 class AlertDialogFooter(ChakraComponent):
     """Should contain the events of the dialog."""
 
-    tag = "AlertDialogFooter"
+    tag: str = "AlertDialogFooter"
 
 
 class AlertDialogContent(ChakraComponent):
     """The wrapper for the alert dialog's content."""
 
-    tag = "AlertDialogContent"
+    tag: str = "AlertDialogContent"
 
 
 class AlertDialogOverlay(ChakraComponent):
     """The dimmed overlay behind the dialog."""
 
-    tag = "AlertDialogOverlay"
+    tag: str = "AlertDialogOverlay"
 
 
 class AlertDialogCloseButton(ChakraComponent):
     """The button that closes the dialog."""
 
-    tag = "AlertDialogCloseButton"
+    tag: str = "AlertDialogCloseButton"

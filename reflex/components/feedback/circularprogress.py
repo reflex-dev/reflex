@@ -9,7 +9,7 @@ from reflex.vars import Var
 class CircularProgress(ChakraComponent):
     """The CircularProgress component is used to indicate the progress for determinate and indeterminate processes."""
 
-    tag = "CircularProgress"
+    tag: str = "CircularProgress"
 
     # If true, the cap of the progress indicator will be rounded.
     cap_is_round: Var[bool]
@@ -64,4 +64,4 @@ class CircularProgress(ChakraComponent):
 class CircularProgressLabel(ChakraComponent):
     """Label of CircularProcess."""
 
-    tag = "CircularProgressLabel"
+    tag: str = "CircularProgressLabel"

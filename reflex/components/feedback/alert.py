@@ -12,7 +12,7 @@ from reflex.vars import Var
 class Alert(ChakraComponent):
     """An alert feedback box."""
 
-    tag = "Alert"
+    tag: str = "Alert"
 
     # The status of the alert ("success" | "info" | "warning" | "error")
     status: Var[LiteralStatus]
@@ -53,16 +53,16 @@ class Alert(ChakraComponent):
 class AlertIcon(ChakraComponent):
     """An icon displayed in the alert."""
 
-    tag = "AlertIcon"
+    tag: str = "AlertIcon"
 
 
 class AlertTitle(ChakraComponent):
     """The title of the alert."""
 
-    tag = "AlertTitle"
+    tag: str = "AlertTitle"
 
 
 class AlertDescription(ChakraComponent):
     """AlertDescription composes the Box component."""
 
-    tag = "AlertDescription"
+    tag: str = "AlertDescription"

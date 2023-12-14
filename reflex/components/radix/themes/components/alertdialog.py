@@ -15,7 +15,7 @@ LiteralSwitchSize = Literal["1", "2", "3", "4"]
 class AlertDialog(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "AlertDialog.Root"
+    tag: str = "AlertDialog.Root"
 
     # The controlled open state of the dialog.
     open: Var[bool]
@@ -35,13 +35,13 @@ class AlertDialog(CommonMarginProps, RadixThemesComponent):
 class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "AlertDialog.Trigger"
+    tag: str = "AlertDialog.Trigger"
 
 
 class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "AlertDialog.Content"
+    tag: str = "AlertDialog.Content"
 
     # Whether to force mount the content on open.
     force_mount: Var[bool]
@@ -63,10 +63,10 @@ class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
 class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "AlertDialog.Title"
+    tag: str = "AlertDialog.Title"
 
 
 class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
-    tag = "AlertDialog.Description"
+    tag: str = "AlertDialog.Description"

@@ -44,7 +44,7 @@ from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
-from reflex.vars import BaseVar, Var, VarData
+from reflex.vars import BaseVar, UnspecifiedVar, Var, VarData
 
 
 class BaseComponent(Base, ABC):
@@ -162,25 +162,23 @@ class Component(BaseComponent, ABC):
     _memoization_mode: MemoizationMode = MemoizationMode()
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def ____pydantic_init_subclass__(cls, **kwargs: Any) -> None:
         """Set default properties.
 
         Args:
             **kwargs: The kwargs to pass to the superclass.
         """
-        super().__init_subclass__(**kwargs)
-
         # Get all the props for the component.
         props = cls.get_props()
 
         # Convert fields to props, setting default values.
-        for field in cls.get_fields().values():
+        for field_name, field in cls.get_fields().items():
             # If the field is not a component prop, skip it.
-            if field.name not in props:
+            if field_name not in props:
                 continue
 
             # Set default values for any props.
-            if types._issubclass(field.type_, Var):
+            if types._issubclass(field.annotation, Var):
                 field.required = False
                 field.default = Var.create(field.default)
 
@@ -197,18 +195,15 @@ class Component(BaseComponent, ABC):
         """
         # Set the id and children initially.
         children = kwargs.get("children", [])
-        initial_kwargs = {
-            "id": kwargs.get("id"),
-            "children": children,
-            **{
-                prop: Var.create(kwargs[prop])
-                for prop in self.get_initial_props()
-                if prop in kwargs
-            },
-        }
-        super().__init__(**initial_kwargs)
-
-        self._validate_component_children(children)
+        # kwargs = {
+        #     **{
+        #        prop: Var.create(None) if field.is_required() and types._issubclass(field.annotation, Var) else field.default
+        #        for prop, field in self.get_fields().items()
+        #     },
+        #     "id": kwargs.get("id"),
+        #     "children": children,
+        # }
+        # super().__init__(**initial_kwargs)
 
         # Get the component fields, triggers, and props.
         fields = self.get_fields()
@@ -227,7 +222,7 @@ class Component(BaseComponent, ABC):
                 field_type = EventChain
             elif key in props:
                 # Set the field type.
-                field_type = fields[key].type_
+                field_type = fields[key].annotation
 
             else:
                 continue
@@ -236,13 +231,13 @@ class Component(BaseComponent, ABC):
             if types._issubclass(field_type, Var):
                 try:
                     # Try to create a var from the value.
-                    kwargs[key] = Var.create(value)
+                    field_var = kwargs[key] = Var.create(value)
 
                     # Check that the var type is not None.
-                    if kwargs[key] is None:
+                    if field_var is None:
                         raise TypeError
 
-                    expected_type = fields[key].outer_type_.__args__[0]
+                    expected_type = fields[key].annotation.__args__[0]
 
                     if (
                         types.is_literal(expected_type)
@@ -255,7 +250,7 @@ class Component(BaseComponent, ABC):
                             )
 
                     # Get the passed type and the var type.
-                    passed_type = kwargs[key]._var_type
+                    passed_type = field_var._var_type
                     expected_type = (
                         type(expected_type.__args__[0])
                         if types.is_literal(expected_type)
@@ -264,7 +259,7 @@ class Component(BaseComponent, ABC):
                 except TypeError:
                     # If it is not a valid var, check the base types.
                     passed_type = type(value)
-                    expected_type = fields[key].outer_type_
+                    expected_type = fields[key].annotation
                 if not types._issubclass(passed_type, expected_type):
                     value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
@@ -301,8 +296,21 @@ class Component(BaseComponent, ABC):
         if isinstance(class_name, (List, tuple)):
             kwargs["class_name"] = " ".join(class_name)
 
+        for field_name, field in self.get_fields().items():
+            if (
+                field_name not in kwargs
+                and field.is_required()
+                and types._issubclass(field.annotation, Var)
+            ):
+                kwargs[field_name] = UnspecifiedVar
+
         # Construct the component.
         super().__init__(*args, **kwargs)
+
+    def __pydantic_post_init__(self):
+        self._validate_component_children(
+            [child for child in self.children if isinstance(child, Component)]
+        )
 
     def _create_event_chain(
         self,
@@ -486,6 +494,7 @@ class Component(BaseComponent, ABC):
             props = {
                 attr[:-1] if attr.endswith("_") else attr: getattr(self, attr)
                 for attr in self.get_props()
+                if getattr(self, attr) is not UnspecifiedVar
             }
 
             # Add ref to element if `id` is not None.
@@ -1121,7 +1130,7 @@ class CustomComponent(Component):
     """A custom user-defined component."""
 
     # Use the components library.
-    library = f"/{Dirs.COMPONENTS_PATH}"
+    library: str = f"/{Dirs.COMPONENTS_PATH}"
 
     # The function that creates the component.
     component_fn: Callable[..., Component] = Component.create

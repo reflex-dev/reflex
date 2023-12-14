@@ -8,10 +8,10 @@ from reflex.components.libs.chakra import ChakraComponent
 from reflex.vars import Var
 
 
-class List(ChakraComponent):
+class ChakraList(ChakraComponent):
     """Display a list of items."""
 
-    tag = "List"
+    tag: str = "List"
 
     # The space between each list item
     spacing: Var[str]
@@ -47,16 +47,16 @@ class List(ChakraComponent):
 class ListItem(ChakraComponent):
     """A single list item."""
 
-    tag = "ListItem"
+    tag: str = "ListItem"
 
 
-class OrderedList(List):
+class OrderedList(ChakraList):
     """An ordered list component with numbers."""
 
-    tag = "OrderedList"
+    tag: str = "OrderedList"
 
 
-class UnorderedList(List):
+class UnorderedList(ChakraList):
     """An unordered list component with bullets."""
 
-    tag = "UnorderedList"
+    tag: str = "UnorderedList"

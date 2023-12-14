@@ -14,7 +14,7 @@ except ImportError:
 class PlotlyLib(NoSSRComponent):
     """A component that wraps a plotly lib."""
 
-    library = "react-plotly.js@2.6.0"
+    library: str = "react-plotly.js@2.6.0"
 
     lib_dependencies: List[str] = ["plotly.js@2.22.0"]
 
@@ -22,9 +22,9 @@ class PlotlyLib(NoSSRComponent):
 class Plotly(PlotlyLib):
     """Display a plotly graph."""
 
-    tag = "Plot"
+    tag: str = "Plot"
 
-    is_default = True
+    is_default: bool = True
 
     # The figure to display. This can be a plotly figure or a plotly data json.
     data: Var[Figure]

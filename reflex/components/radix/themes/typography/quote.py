@@ -15,4 +15,4 @@ from ..base import (
 class Quote(el.Q, CommonMarginProps, RadixThemesComponent):
     """A short inline quotation."""
 
-    tag = "Quote"
+    tag: str = "Quote"

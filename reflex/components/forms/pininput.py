@@ -15,7 +15,7 @@ from reflex.vars import Var
 class PinInput(ChakraComponent):
     """The component that provides context to all the pin-input fields."""
 
-    tag = "PinInput"
+    tag: str = "PinInput"
 
     # State var to bind the the input.
     value: Var[str]
@@ -164,7 +164,7 @@ class PinInput(ChakraComponent):
 class PinInputField(ChakraComponent):
     """The text field that user types in - must be a direct child of PinInput."""
 
-    tag = "PinInputField"
+    tag: str = "PinInputField"
 
     # the position of the PinInputField inside the PinInput.
     # Default to None because it is assigned by PinInput when created.
