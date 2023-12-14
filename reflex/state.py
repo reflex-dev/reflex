@@ -1316,7 +1316,10 @@ class State(BaseState):
         Returns:
             The list of events to queue for on load handling.
         """
-        app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        # Do not app.compile_()!  It should be already compiled by now.
+        app = getattr(
+            prerequisites.get_app(do_compile=False), constants.CompileVars.APP
+        )
         load_events = app.get_load_events(self.router.page.path)
         if not load_events and self.is_hydrated:
             return  # Fast path for page-to-page navigation

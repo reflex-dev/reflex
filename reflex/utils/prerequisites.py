@@ -136,11 +136,12 @@ def get_package_manager() -> str | None:
     return npm_path
 
 
-def get_app(reload: bool = False) -> ModuleType:
+def get_app(reload: bool = False, do_compile: bool = True) -> ModuleType:
     """Get the app module based on the default config.
 
     Args:
         reload: Re-import the app module from disk
+        do_compile: Whether to compile the app.
 
     Returns:
         The app based on the default config.
@@ -163,7 +164,8 @@ def get_app(reload: bool = False) -> ModuleType:
     # app.app is wack... but:
     # - 'app' is the module.
     # - 'app.app' is the App object.
-    app.app.compile_()
+    if do_compile:
+        app.app.compile_()
     return app
 
 
