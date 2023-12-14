@@ -619,6 +619,24 @@ class App(Base):
         return True
 
     def compile(self):
+        """App modules no longer need to call this.
+
+        Reflex framework will perform compile_() as needed.
+
+        Existing call sites will get a deprecation message.
+
+        We will eventually remove app.compile() method entirely.
+        """
+        console.deprecate(
+            feature_name="app.compile()",
+            reason="Explicit calls to app.compile() are not needed."
+            " Method will be removed in 0.3.9",
+            deprecation_version="0.3.7",
+            removal_version="0.3.9",
+        )
+        return
+
+    def compile_(self):
         """Compile the app and output it to the pages folder."""
         # add the pages before the compile check so App know onload methods
         for render, kwargs in DECORATED_PAGES:

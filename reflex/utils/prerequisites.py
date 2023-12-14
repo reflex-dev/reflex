@@ -159,8 +159,8 @@ def get_app(reload: bool = False) -> ModuleType:
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
-
         importlib.reload(app)
+    app.compile_()
     return app
 
 

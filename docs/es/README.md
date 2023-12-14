@@ -121,7 +121,6 @@ def index():
 # Add state and page to the app.
 app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
-app.compile()
 ```
 
 ## Vamos a desglosarlo.
@@ -191,7 +190,6 @@ Añadimos una página desde la raíz (root) de la aplicación al componente de �
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 Puedes crear una aplicación multipágina añadiendo más páginas.

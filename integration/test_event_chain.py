@@ -242,8 +242,6 @@ def EventChain():
     app.add_page(on_mount_return_chain)
     app.add_page(on_mount_yield_chain)
 
-    app.compile()
-
 
 @pytest.fixture(scope="session")
 def event_chain(tmp_path_factory) -> Generator[AppHarness, None, None]:

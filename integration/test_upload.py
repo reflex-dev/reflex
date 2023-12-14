@@ -115,7 +115,6 @@ def UploadFile():
 
     app = rx.App(state=rx.State)
     app.add_page(index)
-    app.compile()
 
 
 @pytest.fixture(scope="session")

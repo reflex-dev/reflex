@@ -121,7 +121,6 @@ def index():
 # 把狀態跟頁面添加到應用程式。
 app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
-app.compile()
 ```
 
 ## 讓我們來拆解一下。
@@ -192,7 +191,6 @@ app = rx.App()
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 你可以添加更多頁面至路由藉此來建立多頁面應用程式(multi-page app)
