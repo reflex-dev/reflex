@@ -312,7 +312,7 @@ def prepare_y_and_color(y, color):
     
 
 
-def bar_chart(
+def bar_chart_high_api(
         data: pd.DataFrame | np.ndarray | Dict[str, List[str | int]] | List[Dict[str, Any]], 
         x: str | None, 
         y: str | List[str], 

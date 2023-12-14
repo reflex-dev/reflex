@@ -66,6 +66,8 @@ from .recharts import (
     LiteralVerticalAlign,
 )
 
+from .utils import bar_chart_high_api
+
 area_chart = AreaChart.create
 bar_chart = BarChart.create
 line_chart = LineChart.create
