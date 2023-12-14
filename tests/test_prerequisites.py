@@ -1,4 +1,4 @@
-from unittest.mock import mock_open
+from unittest.mock import Mock, mock_open
 
 import pytest
 
@@ -56,24 +56,37 @@ def test_update_next_config(config, export, expected_output):
     assert output == expected_output
 
 
-def test_initialize_requirements_txt(mocker):
+def test_initialize_requirements_txt_no_op(mocker):
     # File exists, reflex is included, do nothing
-    mocker.patch("os.path.exists", return_value=True)
+    mocker.patch("pathlib.Path.exists", return_value=True)
+    mocker.patch(
+        "charset_normalizer.from_path",
+        return_value=Mock(best=lambda: Mock(encoding="utf-8")),
+    )
+    mock_fp_touch = mocker.patch("pathlib.Path.touch")
     open_mock = mock_open(read_data="reflex==0.2.9")
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
     assert open_mock.call_count == 1
+    assert open_mock.call_args.kwargs["encoding"] == "utf-8"
     assert open_mock().write.call_count == 0
+    mock_fp_touch.assert_not_called()
 
 
 def test_initialize_requirements_txt_missing_reflex(mocker):
     # File exists, reflex is not included, add reflex
+    mocker.patch("pathlib.Path.exists", return_value=True)
+    mocker.patch(
+        "charset_normalizer.from_path",
+        return_value=Mock(best=lambda: Mock(encoding="utf-8")),
+    )
     open_mock = mock_open(read_data="random-package=1.2.3")
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
     # Currently open for read, then open for append
     assert open_mock.call_count == 2
-    assert open_mock().write.call_count == 1
+    for call_args in open_mock.call_args_list:
+        assert call_args.kwargs["encoding"] == "utf-8"
     assert (
         open_mock().write.call_args[0][0]
         == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
@@ -82,12 +95,46 @@ def test_initialize_requirements_txt_missing_reflex(mocker):
 
 def test_initialize_requirements_txt_not_exist(mocker):
     # File does not exist, create file with reflex
-    mocker.patch("os.path.exists", return_value=False)
+    mocker.patch("pathlib.Path.exists", return_value=False)
     open_mock = mock_open()
     mocker.patch("builtins.open", open_mock)
     initialize_requirements_txt()
     assert open_mock.call_count == 2
+    # By default, use utf-8 encoding
+    for call_args in open_mock.call_args_list:
+        assert call_args.kwargs["encoding"] == "utf-8"
     assert open_mock().write.call_count == 1
+    assert (
+        open_mock().write.call_args[0][0]
+        == f"{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+    )
+
+
+def test_requirements_txt_cannot_detect_encoding(mocker):
+    mocker.patch("pathlib.Path.exists", return_value=True)
+    mock_open = mocker.patch("builtins.open")
+    mocker.patch(
+        "charset_normalizer.from_path",
+        return_value=Mock(best=lambda: None),
+    )
+    initialize_requirements_txt()
+    mock_open.assert_not_called()
+
+
+def test_requirements_txt_other_encoding(mocker):
+    mocker.patch("pathlib.Path.exists", return_value=True)
+    mocker.patch(
+        "charset_normalizer.from_path",
+        return_value=Mock(best=lambda: Mock(encoding="utf-16")),
+    )
+    initialize_requirements_txt()
+    open_mock = mock_open(read_data="random-package=1.2.3")
+    mocker.patch("builtins.open", open_mock)
+    initialize_requirements_txt()
+    # Currently open for read, then open for append
+    assert open_mock.call_count == 2
+    for call_args in open_mock.call_args_list:
+        assert call_args.kwargs["encoding"] == "utf-16"
     assert (
         open_mock().write.call_args[0][0]
         == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
