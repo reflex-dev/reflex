@@ -171,7 +171,9 @@ def run_concurrently_context(
     fns = [fn if isinstance(fn, tuple) else (fn,) for fn in fns]  # type: ignore
 
     # Run the functions concurrently.
-    with futures.ThreadPoolExecutor(max_workers=len(fns)) as executor:
+    executor = None
+    try:
+        executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
         tasks = [executor.submit(*fn) for fn in fns]  # type: ignore
 
@@ -180,7 +182,12 @@ def run_concurrently_context(
 
         # Get the results in the order completed to check any exceptions.
         for task in futures.as_completed(tasks):
+            # if task throws something, we let it bubble up immediately
             task.result()
+    finally:
+        # Shutdown the executor
+        if executor:
+            executor.shutdown(wait=False)
 
 
 def run_concurrently(*fns: Union[Callable, Tuple]) -> None:
