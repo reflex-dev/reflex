@@ -136,12 +136,11 @@ def get_package_manager() -> str | None:
     return npm_path
 
 
-def get_app(reload: bool = False, do_compile: bool = True) -> ModuleType:
+def get_app(reload: bool = False) -> ModuleType:
     """Get the app module based on the default config.
 
     Args:
         reload: Re-import the app module from disk
-        do_compile: Whether to compile the app.
 
     Returns:
         The app based on the default config.
@@ -161,12 +160,22 @@ def get_app(reload: bool = False, do_compile: bool = True) -> ModuleType:
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
         importlib.reload(app)
-    # app.app is wack... but:
-    # - 'app' is the module.
-    # - 'app.app' is the App object.
-    if do_compile:
-        app.app.compile_()
+
     return app
+
+
+def get_compiled_app(reload: bool = False) -> ModuleType:
+    """Get the app module based on the default config after first compiling it.
+
+    Args:
+        reload: Re-import the app module from disk
+
+    Returns:
+        The compiled app based on the default config.
+    """
+    app_module = get_app(reload=reload)
+    getattr(app_module, constants.CompileVars.APP).compile_()
+    return app_module
 
 
 def get_redis() -> Redis | None:
