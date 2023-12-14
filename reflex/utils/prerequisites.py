@@ -160,7 +160,10 @@ def get_app(reload: bool = False) -> ModuleType:
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
         importlib.reload(app)
-    app.compile_()
+    # app.app is wack... but:
+    # - 'app' is the module.
+    # - 'app.app' is the App object.
+    app.app.compile_()
     return app
 
 
