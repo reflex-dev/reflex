@@ -1367,7 +1367,10 @@ class StateProxy(wrapt.ObjectProxy):
             state_instance: The state instance to proxy.
         """
         super().__init__(state_instance)
-        self._self_app = getattr(prerequisites.get_app(), constants.CompileVars.APP)
+        # compile is not relevant to backend logic
+        self._self_app = getattr(
+            prerequisites.get_app(do_compile=False), constants.CompileVars.APP
+        )
         self._self_substate_path = state_instance.get_full_name().split(".")
         self._self_actx = None
         self._self_mutable = False
