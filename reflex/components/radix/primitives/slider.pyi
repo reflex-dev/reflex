@@ -105,7 +105,7 @@ class SliderRoot(SliderComponent):
         cls,
         *children,
         default_value: Optional[Union[Var[list[int]], list[int]]] = None,
-        value: Optional[Union[Var[int], int]] = None,
+        value: Optional[Union[Var[list[int]], list[int]]] = None,
         name: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
