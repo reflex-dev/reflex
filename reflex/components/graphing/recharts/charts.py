@@ -181,6 +181,7 @@ class BarChart(ChartBase):
         "Legend",
         "GraphingTooltip",
         "Bar",
+        "Fragment",
     ]
 
 
