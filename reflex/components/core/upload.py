@@ -94,11 +94,8 @@ def cancel_upload(upload_id: str) -> EventSpec:
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 
-def get_uploaded_files_dir(mkdir: bool = False) -> Path:
+def get_uploaded_files_dir() -> Path:
     """Get the directory where uploaded files are stored.
-
-    Args:
-        mkdir: Whether to create the directory if it doesn't exist.
 
     Returns:
         The directory where uploaded files are stored.
@@ -106,8 +103,7 @@ def get_uploaded_files_dir(mkdir: bool = False) -> Path:
     uploaded_files_dir = Path(
         os.environ.get("REFLEX_UPLOADED_FILES_DIR", "./uploaded_files")
     )
-    if mkdir:
-        uploaded_files_dir.mkdir(parents=True, exist_ok=True)
+    uploaded_files_dir.mkdir(parents=True, exist_ok=True)
     return uploaded_files_dir
 
 
