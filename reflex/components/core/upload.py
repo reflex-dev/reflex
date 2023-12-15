@@ -126,7 +126,7 @@ def get_uploaded_file_url(file_path: str) -> str:
     Returns:
         The URL of the uploaded file to be rendered from the frontend (as a str-encoded Var).
     """
-    return f"{uploaded_files_url_prefix}/files/{file_path}"
+    return f"{uploaded_files_url_prefix}/{file_path}"
 
 
 class UploadFilesProvider(Component):
