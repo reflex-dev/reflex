@@ -47,13 +47,20 @@ class ProgressIndicator(ProgressComponent):
 
     alias = "RadixProgressIndicator"
 
+    # The current progress value.
+    value: Var[Optional[int]]
+
     def _apply_theme(self, theme: Component | None):
         self.style = Style(
             {
                 "background-color": "white",
-                "width": "var(--data-max - --data-value)%",
+                "width": "100%",
                 "height": "100%",
-                "transition": f"transform 660ms cubic-bezier(0.65, 0, 0.35, 1)",
+                "transition": f"transform 660ms linear",
+                "&[data_state='loading']": {
+                    "transition": f"transform 660ms linear",
+                },
+                "transform": f"translateX(-{100 - self.value}%)",  # type: ignore
             }
         )
 
@@ -63,13 +70,15 @@ progress_indicator = ProgressIndicator.create
 
 
 def progress(**props):
+    """High level API for progress bar.
+
+    Args:
+        **props: The props of the progress bar
+
+    Returns:
+        The progress bar.
+    """
     return progress_root(
-        progress_indicator(
-            style=Style(
-                # {
-                #     "transform": f"`translateX(50))`",
-                # }
-            )
-        ),
+        progress_indicator(value=props.get("value")),
         **props,
     )

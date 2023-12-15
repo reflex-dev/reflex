@@ -68,7 +68,7 @@ class SliderRoot(SliderComponent):
                 "width": "200px",
                 "height": "20px",
                 "&[data-orientation='vertical']": {
-                    "flex-direction": "column",
+                    "flex_direction": "column",
                     "width": "20px",
                     "height": "100px",
                 },
