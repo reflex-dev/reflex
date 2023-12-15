@@ -1,6 +1,8 @@
 """A file upload component."""
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
@@ -90,6 +92,45 @@ def cancel_upload(upload_id: str) -> EventSpec:
         An event spec that cancels the upload when triggered.
     """
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
+
+
+def get_uploaded_files_dir(mkdir: bool = False) -> Path:
+    """Get the directory where uploaded files are stored.
+
+    Args:
+        mkdir: Whether to create the directory if it doesn't exist.
+
+    Returns:
+        The directory where uploaded files are stored.
+    """
+    uploaded_files_dir = Path(
+        os.environ.get("REFLEX_UPLOADED_FILES_DIR", "./uploaded_files")
+    )
+    if mkdir:
+        uploaded_files_dir.mkdir(parents=True, exist_ok=True)
+    return uploaded_files_dir
+
+
+uploaded_files_url_prefix = Var.create_safe("${getBackendURL(env.UPLOAD)}")._replace(
+    merge_var_data=VarData(
+        imports={
+            f"/{Dirs.STATE_PATH}": {imports.ImportVar(tag="getBackendURL")},
+            "/env.json": {imports.ImportVar(tag="env", is_default=True)},
+        }
+    )
+)
+
+
+def get_uploaded_file_url(file_path: str) -> str:
+    """Get the URL of an uploaded file.
+
+    Args:
+        file_path: The path of the uploaded file.
+
+    Returns:
+        The URL of the uploaded file to be rendered from the frontend (as a str-encoded Var).
+    """
+    return f"{uploaded_files_url_prefix}/files/{file_path}"
 
 
 class UploadFilesProvider(Component):

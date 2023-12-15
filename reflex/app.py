@@ -27,6 +27,7 @@ from typing import (
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
 from starlette_admin.contrib.sqla.admin import Admin
@@ -46,7 +47,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
-from reflex.components.core.upload import Upload
+from reflex.components.core.upload import Upload, get_uploaded_files_dir
 from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
@@ -251,6 +252,14 @@ class App(Base):
         # To upload files.
         if Upload.is_used:
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+
+        # To access uploaded files.
+        if get_uploaded_files_dir().exists():
+            self.api.mount(
+                f"{constants.Endpoint.UPLOAD}/files",
+                StaticFiles(directory=get_uploaded_files_dir()),
+                name="uploaded_files",
+            )
 
     def add_cors(self):
         """Add CORS middleware to the app."""
