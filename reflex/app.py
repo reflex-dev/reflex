@@ -619,13 +619,8 @@ class App(Base):
         return True
 
     def compile(self):
-        """App modules no longer need to call this.
-
-        Reflex framework will perform compile_() as needed.
-
-        Existing call sites will get a deprecation message.
-
-        We will eventually remove app.compile() method entirely.
+        """compile_() is the new function for performing compilation.
+        Reflex framework will call it automatically as needed.
         """
         console.deprecate(
             feature_name="app.compile()",
