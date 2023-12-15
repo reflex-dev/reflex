@@ -253,28 +253,3 @@ LiteralMenuOption = Literal["checkbox", "radio"]
 LiteralPopOverTrigger = Literal["click", "hover"]
 
 LiteralHeadingSize = Literal["lg", "md", "sm", "xs", "xl", "2xl", "3xl", "4xl"]
-
-LiteralChakraInputType = Literal[
-    "button",
-    "checkbox",
-    "color",
-    "date",
-    "datetime-local",
-    "email",
-    "file",
-    "hidden",
-    "image",
-    "month",
-    "number",
-    "password",
-    "radio",
-    "range",
-    "reset",
-    "search",
-    "submit",
-    "tel",
-    "text",
-    "time",
-    "url",
-    "week",
-]

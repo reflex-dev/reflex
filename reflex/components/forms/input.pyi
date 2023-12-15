@@ -13,9 +13,9 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import (
     ChakraComponent,
     LiteralButtonSize,
-    LiteralChakraInputType,
     LiteralInputVariant,
 )
+from reflex.components.literals import LiteralInputType
 from reflex.constants import EventTriggers, MemoizationMode
 from reflex.utils import imports
 from reflex.vars import Var

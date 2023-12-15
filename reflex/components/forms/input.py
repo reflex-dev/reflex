@@ -7,9 +7,9 @@ from reflex.components.forms.debounce import DebounceInput
 from reflex.components.libs.chakra import (
     ChakraComponent,
     LiteralButtonSize,
-    LiteralChakraInputType,
     LiteralInputVariant,
 )
+from reflex.components.literals import LiteralInputType
 from reflex.constants import EventTriggers, MemoizationMode
 from reflex.utils import imports
 from reflex.vars import Var
@@ -30,7 +30,7 @@ class Input(ChakraComponent):
     placeholder: Var[str]
 
     # The type of input.
-    type_: Var[LiteralChakraInputType] = "text"  # type: ignore
+    type_: Var[LiteralInputType] = "text"  # type: ignore
 
     # The border color when the input is invalid.
     error_border_color: Var[str]
