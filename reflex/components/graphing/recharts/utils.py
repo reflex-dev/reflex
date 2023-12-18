@@ -354,6 +354,11 @@ def bar_chart_high_api(
     # must write a test here to make sure that list_of_dicts is of type List[Dict[str, Any]]
 
     return rx.recharts.bar_chart(
+        rx.cond(
+            tooltip,
+            rx.recharts.graphing_tooltip(),
+        ),
+        
         *[rx.recharts.bar(data_key=key[0], stroke=key[1], fill=key[1])
         for key in y_and_color
         ],
@@ -365,10 +370,7 @@ def bar_chart_high_api(
             rx.recharts.legend(),
         ),
 
-        rx.cond(
-            tooltip,
-            rx.recharts.graphing_tooltip(),
-        ),
+        
 
         rx.cond(
             cartesian_axis,
