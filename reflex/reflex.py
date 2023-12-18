@@ -80,12 +80,6 @@ def _init(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    # Set up the web project.
-    prerequisites.initialize_frontend_dependencies()
-
-    # Migrate Pynecone projects to Reflex.
-    prerequisites.migrate_to_reflex()
-
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
         if template is None:
@@ -95,6 +89,12 @@ def _init(
         telemetry.send("init")
     else:
         telemetry.send("reinit")
+
+    # Set up the web project.
+    prerequisites.initialize_frontend_dependencies()
+
+    # Migrate Pynecone projects to Reflex.
+    prerequisites.migrate_to_reflex()
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
