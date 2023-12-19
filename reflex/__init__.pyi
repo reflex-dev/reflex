@@ -451,6 +451,7 @@ from reflex.config import DBConfig as DBConfig
 from reflex import constants as constants
 from reflex.constants import Env as Env
 from reflex.components import el as el
+from reflex.custom_components import custom_components as custom_components
 from reflex import event as event
 from reflex.event import EventChain as EventChain
 from reflex.event import background as background

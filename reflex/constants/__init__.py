@@ -38,6 +38,9 @@ from .config import (
     GitIgnore,
     RequirementsTxt,
 )
+from .custom_components import (
+    CustomComponents,
+)
 from .event import Endpoint, EventTriggers, SocketEvent
 from .installer import (
     Bun,
@@ -65,6 +68,7 @@ __ALL__ = [
     Config,
     COOKIES,
     ComponentName,
+    CustomComponents,
     DefaultPage,
     Dirs,
     Endpoint,

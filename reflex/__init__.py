@@ -231,6 +231,7 @@ _ALL_COMPONENTS += [
     "cancel_upload",
     "components",
     "color_mode_cond",
+    "custom_components",
     "desktop_only",
     "mobile_only",
     "tablet_only",

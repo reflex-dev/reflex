@@ -97,3 +97,17 @@ STYLE = get_template("web/styles/styles.css.jinja2")
 
 # Code that generate the package json file
 PACKAGE_JSON = get_template("web/package.json.jinja2")
+
+# Code that generate the pyproject.toml file for custom components
+CUSTOM_COMPONENTS_PYPROJECT_TOML = get_template(
+    "custom_components/pyproject.toml.jinja2"
+)
+
+# Code that generate the README file for custom components
+CUSTOM_COMPONENTS_README = get_template("custom_components/README.md.jinja2")
+
+# Code that generate the source file for custom components
+CUSTOM_COMPONENTS_SOURCE = get_template("custom_components/src.py.jinja2")
+
+# Code that generate the demo app main py file for testing custom components
+CUSTOM_COMPONENTS_DEMO_APP = get_template("custom_components/demo_app.py.jinja2")
