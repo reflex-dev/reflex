@@ -8,7 +8,6 @@ import pydantic
 from pydantic import BaseModel
 
 # from pydantic.fields import ModelField
-
 from reflex import constants
 
 
@@ -62,9 +61,7 @@ class Base(pydantic.BaseModel):
         Returns:
             The object as a json string.
         """
-        from reflex.utils.format import json_dumps
-
-        return json_dumps(self.model_dump())
+        return self.model_dump_json()
 
     def set(self, **kwargs):
         """Set multiple fields and return the object.

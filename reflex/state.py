@@ -150,6 +150,7 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_substate_var_dependencies",
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
+    "_abc_impl",  # pydantic v2 adds this
 }
 
 
@@ -223,6 +224,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
 
         """
         kwargs["parent_state"] = parent_state
+
+        for prop_name, prop in self.base_vars.items():
+            if prop_name not in kwargs and self.model_fields[prop_name].is_required():
+                kwargs[prop_name] = prop.get_default_value()
+
         super().__init__(*args, **kwargs)
 
         # Setup the substates.
@@ -266,7 +272,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         Returns:
             The string representation of the state.
         """
-        return f"{self.__class__.__name__}({self.dict()})"
+        return f"{type(self).__name__}({self.dict()})"
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs):
@@ -279,7 +285,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             ValueError: If a substate class shadows another.
         """
         is_testing_env = constants.PYTEST_CURRENT_TEST in os.environ
-        #super().__init_subclass__(**kwargs)
+        # super().__init_subclass__(**kwargs)
         # Event handlers should not shadow builtin state methods.
         cls._check_overridden_methods()
 
@@ -312,21 +318,22 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             # Track this new subclass in the parent state's subclasses set.
             parent_state.class_subclasses.add(cls)
 
-        cls.new_backend_vars = {
-            name: value
-            for name, value in cls.__dict__.items()
+        new_backend_vars = {
+            name: value.default
+            for name, value in cls.__private_attributes__.items()
             if types.is_backend_variable(name)
             and name not in cls.inherited_backend_vars
+            and name not in RESERVED_BACKEND_VAR_NAMES
             and not isinstance(value, FunctionType)
         }
 
-        cls.backend_vars = {**cls.inherited_backend_vars, **cls.new_backend_vars}
+        cls.backend_vars = {**cls.inherited_backend_vars, **new_backend_vars}
 
         # Set the base and computed vars.
         cls.base_vars = {
-            field_name: BaseVar(_var_name=field_name, _var_type=field.annotation)._var_set_state(
-                cls
-            )
+            field_name: BaseVar(
+                _var_name=field_name, _var_type=field.annotation
+            )._var_set_state(cls)
             for field_name, field in cls.get_fields().items()
             if field_name not in cls.get_skip_vars()
         }
@@ -358,6 +365,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             handler = EventHandler(fn=fn)
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
+
+        # Inherited vars are handled in __getattribute__, not by pydantic
+        for prop in cls.model_fields.copy():
+            if prop in cls.inherited_vars or prop in cls.inherited_backend_vars:
+                del cls.model_fields[prop]
 
         cls._init_var_dependency_dicts()
 
@@ -567,7 +579,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             )
         cls._set_var(prop)
         cls._create_setter(prop)
-        cls._set_default_value(prop)
 
     @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
@@ -630,27 +641,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             event_handler = EventHandler(fn=prop.get_setter())
             cls.event_handlers[setter_name] = event_handler
             setattr(cls, setter_name, event_handler)
-
-    @classmethod
-    def _set_default_value(cls, prop: BaseVar):
-        """Set the default value for the var.
-
-        Args:
-            prop: The var to set the default value for.
-        """
-        # Get the pydantic field for the var.
-        field = cls.get_fields()[prop._var_name]
-        if field.is_required():
-            default_value = prop.get_default_value()
-            if default_value is not None:
-                field.default = default_value
-        if (
-            not field.is_required()
-            and field.default is None
-            and not types.is_optional(prop._var_type)
-        ):
-            # Ensure frontend uses null coalescing when accessing.
-            prop._var_type = Optional[prop._var_type]
 
     @staticmethod
     def _get_base_functions() -> dict[str, FunctionType]:
@@ -834,6 +824,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         # If the state hasn't been initialized yet, return the default value.
         if not super().__getattribute__("__dict__"):
             return super().__getattribute__(name)
+        private_attrs = super().__getattribute__("__pydantic_private__")
+        if private_attrs is None:
+            return super().__getattribute__(name)
 
         inherited_vars = {
             **super().__getattribute__("inherited_vars"),
@@ -842,7 +835,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         if name in inherited_vars:
             return getattr(super().__getattribute__("parent_state"), name)
 
-        backend_vars = super().__getattribute__("_backend_vars")
+        backend_vars = private_attrs["_backend_vars"]
         if name in backend_vars:
             value = backend_vars[name]
         else:
