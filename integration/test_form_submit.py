@@ -62,8 +62,6 @@ def FormSubmit():
             height="100vh",
         )
 
-    app.compile()
-
 
 def FormSubmitName():
     """App with a form using on_submit."""
@@ -123,8 +121,6 @@ def FormSubmitName():
             rx.spacer(),
             height="100vh",
         )
-
-    app.compile()
 
 
 @pytest.fixture(
