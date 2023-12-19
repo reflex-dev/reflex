@@ -7,6 +7,7 @@ from reflex.components.component import Component
 from reflex.components.libs.chakra import (
     ChakraComponent,
     LiteralInputVariant,
+    LiteralButtonSize,
 )
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -67,6 +68,9 @@ class NumberInput(ChakraComponent):
 
     # "outline" | "filled" | "flushed" | "unstyled"
     variant: Var[LiteralInputVariant]
+
+    # "lg" | "md" | "sm" | "xs"
+    size: Var[LiteralButtonSize]
 
     # The name of the form field
     name: Var[str]
