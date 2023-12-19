@@ -6,14 +6,14 @@ import importlib
 import os
 import sys
 import urllib.parse
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, get_args
 
 import pydantic
 from reflex_cli.constants.hosting import Hosting
 
 from reflex import constants
 from reflex.base import Base
-from reflex.utils import console
+from reflex.utils import console, types
 
 
 class DBConfig(Base):
@@ -264,14 +264,16 @@ class Config(Base):
 
                 # Convert the env var to the expected type.
                 try:
-                    if issubclass(field.type_, bool):
+                    if types._issubclass(field.annotation, bool):
                         # special handling for bool values
                         env_var = env_var.lower() in ["true", "1", "yes"]
+                    elif types.is_generic_alias(field.annotation):
+                        env_var = get_args(field.annotation)[0](env_var)
                     else:
-                        env_var = field.type_(env_var)
+                        env_var = field.annotation(env_var)
                 except ValueError:
                     console.error(
-                        f"Could not convert {key.upper()}={env_var} to type {field.type_}"
+                        f"Could not convert {key.upper()}={env_var} to type {field.annotation}"
                     )
                     raise
 

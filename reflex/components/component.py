@@ -194,7 +194,7 @@ class Component(BaseComponent, ABC):
             ValueError: If a prop value is invalid.
         """
         # Set the id and children initially.
-        children = kwargs.get("children", [])
+        kwargs.get("children", [])
         # kwargs = {
         #     **{
         #        prop: Var.create(None) if field.is_required() and types._issubclass(field.annotation, Var) else field.default
@@ -551,7 +551,7 @@ class Component(BaseComponent, ABC):
             name
             for name, field in cls.get_fields().items()
             if name in cls.get_props()
-            and types._issubclass(field.outer_type_, Component)
+            and types._issubclass(field.annotation, Component)
         }
 
     @classmethod
