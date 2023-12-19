@@ -153,6 +153,10 @@ RESERVED_BACKEND_VAR_NAMES = {
     "_abc_impl",  # pydantic v2 adds this
 }
 
+SPECIAL_METHODS = {
+    "model_post_init",  # never treat this as an event handler
+}
+
 
 class BaseState(Base, ABC, extra=pydantic.Extra.allow):
     """The state of the app."""
@@ -358,6 +362,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             name: fn
             for name, fn in cls.__dict__.items()
             if not name.startswith("_")
+            and name not in SPECIAL_METHODS
             and isinstance(fn, Callable)
             and not isinstance(fn, EventHandler)
         }
