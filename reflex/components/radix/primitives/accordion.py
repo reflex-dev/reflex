@@ -12,12 +12,315 @@ from reflex.vars import Var
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
-
+from ..themes.base import (
+    CommonMarginProps,
+    LiteralAccentColor,
+    LiteralRadius,
+    LiteralVariant,
+    RadixThemesComponent,
+)
 
 DEFAULT_ANIMATION_DURATION = 250
 
 
-class AccordionComponent(RadixPrimitiveComponent):
+# Helper methods
+
+
+def get_theme_accordion_root(variant: str, color: str):
+
+    match variant:
+        case "classic":
+            return {
+                "border_radius": "6px",
+                "background_color": "var(--accent-9)" if color == "primary" else "var(--sand-9)",
+                "box_shadow": "0 2px 10px var(--black-a4)",
+            }
+        case "soft":
+            return {
+                "border_radius": "6px",
+                "background_color": "var(--accent-3)" if color == "primary" else "var(--sand-3)",
+                "box_shadow": "0 2px 10px var(--black-a1)",
+            }
+        case "outline":
+            return {
+                "border_radius": "6px",
+                "border": "1px solid var(--accent-6)" if color == "primary" else "1px solid var(--sand-6)",
+                "box_shadow": "0 2px 10px var(--black-a1)",
+            }
+        case "surface":
+            return {
+                "border_radius": "6px",
+                "background_color": "var(--accent-3)" if color == "primary" else "var(--sand-3)",
+                "border": "1px solid var(--accent-6)" if color == "primary" else "1px solid var(--sand-6)",
+                "box_shadow": "0 2px 10px var(--black-a1)",
+            }
+        case "ghost":
+            return {
+                "border_radius": "6px",
+                "background_color": "none",
+                "box_shadow": "None" 
+            }
+        
+
+def get_theme_accordion_item(variant: str):
+    return {
+        "overflow": "hidden",
+        "width": "100%",
+        "margin_top": "1px",
+        "&:first-child": {
+            "margin_top": 0,
+            "border_top_left_radius": "4px",
+            "border_top_right_radius": "4px",
+        },
+        "&:last-child": {
+            "border_bottom_left_radius": "4px",
+            "border_bottom_right_radius": "4px",
+        },
+        "&:focus-within": {
+            "position": "relative",
+            "z_index": 1,
+        },
+    }
+
+
+def get_theme_accordion_header(variant: str):
+    return {
+        "display": "flex",
+    }
+
+
+def get_theme_accordion_trigger(variant: str, color: str):
+    match variant:
+        case "classic":
+            return {
+                "font_family": "inherit",
+                "width": "100%",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "line_height": 1,
+                "color": "var(--accent-9-contrast)" if color == "primary" else "var(--sand-9-contrast)",
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "&:hover": {
+                    "background_color": "var(--accent-10)" if color == "primary" else "var(--sand-10)",
+                },
+                "& > .AccordionChevron": {
+                    "color": "var(--accent-9-contrast)" if color == "primary" else "var(--sand-9-contrast)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+            }
+        case "soft":
+            return {
+                "font_family": "inherit",
+                "width": "100%",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "line_height": 1,
+                "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "&:hover": {
+                    "background_color": "var(--accent-4)" if color == "primary" else "var(--sand-4)",
+                },
+                "& > .AccordionChevron": {
+                    "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+            }
+        case "outline":
+            return {
+                "font_family": "inherit",
+                "width": "100%",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "line_height": 1,
+                "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "&:hover": {
+                    "background_color": "var(--accent-4)" if color == "primary" else "var(--sand-4)",
+                },
+                "& > .AccordionChevron": {
+                    "color":  "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+            }
+        case "surface":
+            return {
+                "font_family": "inherit",
+                "width": "100%",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "line_height": 1,
+                "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "&:hover": {
+                    "background_color": "var(--accent-4)" if color == "primary" else "var(--sand-4)",
+                },
+                "& > .AccordionChevron": {
+                    "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+            }
+        case "ghost":
+            return {
+                "font_family": "inherit",
+                "width": "100%",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "line_height": 1,
+                "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "&:hover": {
+                    "background_color": "var(--accent-4)" if color == "primary" else "var(--sand-4)",
+                },
+                "& > .AccordionChevron": {
+                    "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+            }
+        
+    
+def get_theme_accordion_content(variant: str, color: str):
+    match variant:
+        case "classic":
+            return {
+            "overflow": "hidden",
+            "font_size": "10px",
+            "color": "var(--accent-9-contrast)" if color == "primary" else "var(--sand-9-contrast)",
+            "background_color": "var(--accent-9)" if color == "primary" else "var(--sand-9)",
+            "padding": "15px, 20px",
+            "&[data-state='open']": {
+                "animation": Var.create(
+                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+            "&[data-state='closed']": {
+                "animation": Var.create(
+                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+        }
+        case "soft":
+            return {
+            "overflow": "hidden",
+            "font_size": "10px",
+            "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+            "background_color": "var(--accent-3)" if color == "primary" else "var(--sand-3)",
+            "padding": "15px, 20px",
+            "&[data-state='open']": {
+                "animation": Var.create(
+                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+            "&[data-state='closed']": {
+                "animation": Var.create(
+                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+        }
+        case "outline":
+            return {
+            "overflow": "hidden",
+            "font_size": "10px",
+            "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+            "padding": "15px, 20px",
+            "&[data-state='open']": {
+                "animation": Var.create(
+                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+            "&[data-state='closed']": {
+                "animation": Var.create(
+                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+        }
+        case "surface":
+            return {
+            "overflow": "hidden",
+            "font_size": "10px",
+            "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+            "background_color": "var(--accent-3)" if color == "primary" else "var(--sand-3)",
+            "padding": "15px, 20px",
+            "&[data-state='open']": {
+                "animation": Var.create(
+                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+            "&[data-state='closed']": {
+                "animation": Var.create(
+                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+        }
+        case "ghost":
+            return {
+            "overflow": "hidden",
+            "font_size": "10px",
+            "color": "var(--accent-11)" if color == "primary" else "var(--sand-11)",
+            "padding": "15px, 20px",
+            "&[data-state='open']": {
+                "animation": Var.create(
+                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+            "&[data-state='closed']": {
+                "animation": Var.create(
+                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+        }
+
+
+class AccordionComponent(Component):
     """Base class for all @radix-ui/accordion components."""
 
     library = "@radix-ui/react-accordion@^1.1.2"
@@ -51,16 +354,22 @@ class AccordionRoot(AccordionComponent):
     # The orientation of the accordion.
     orientation: Var[LiteralAccordionOrientation]
 
+    variant: Literal["classic", "soft", "surface", "outline", "ghost"] = "classic"
+
+    color: Literal["primary", "accent"] = "primary"
+
     def _apply_theme(self, theme: Component):
+        
         self.style = Style(
-            {
-                "border_radius": "6px",
-                "background_color": "var(--accent-6)",
-                "box_shadow": "0 2px 10px var(--black-a4)",
+            {   
+                **get_theme_accordion_root(variant=self.variant, color=self.color),
+                "& .AccordionItem": get_theme_accordion_item(variant=self.variant), 
+                "& .AccordionHeader": get_theme_accordion_header(variant=self.variant),
+                "& .AccordionTrigger": get_theme_accordion_trigger(variant=self.variant, color=self.color),
+                "& .AccordionContent": get_theme_accordion_content(variant=self.variant, color=self.color),
                 **self.style,
             }
         )
-
 
 class AccordionItem(AccordionComponent):
     """An accordion component."""
@@ -78,22 +387,6 @@ class AccordionItem(AccordionComponent):
     def _apply_theme(self, theme: Component):
         self.style = Style(
             {
-                "overflow": "hidden",
-                "margin_top": "1px",
-                "&:first-child": {
-                    "margin_top": 0,
-                    "border_top_left_radius": "4px",
-                    "border_top_right_radius": "4px",
-                },
-                "&:last-child": {
-                    "border_bottom_left_radius": "4px",
-                    "border_bottom_right_radius": "4px",
-                },
-                "&:focus-within": {
-                    "position": "relative",
-                    "z_index": 1,
-                    "box_shadow": "0 0 0 2px var(--accent-7)",
-                },
                 **self.style,
             }
         )
@@ -109,7 +402,6 @@ class AccordionHeader(AccordionComponent):
     def _apply_theme(self, theme: Component):
         self.style = Style(
             {
-                "display": "flex",
                 **self.style,
             }
         )
@@ -125,27 +417,6 @@ class AccordionTrigger(AccordionComponent):
     def _apply_theme(self, theme: Component):
         self.style = Style(
             {
-                "font_family": "inherit",
-                "padding": "0 20px",
-                "height": "45px",
-                "flex": 1,
-                "display": "flex",
-                "align_items": "center",
-                "justify_content": "space-between",
-                "font_size": "15px",
-                "line_height": 1,
-                "color": "var(--accent-11)",
-                "box_shadow": "0 1px 0 var(--accent-6)",
-                "&:hover": {
-                    "background_color": "var(--gray-2)",
-                },
-                "& > .AccordionChevron": {
-                    "color": "var(--accent-10)",
-                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                },
-                "&[data-state='open'] > .AccordionChevron": {
-                    "transform": "rotate(180deg)",
-                },
                 **self.style,
             }
         )
@@ -161,27 +432,10 @@ class AccordionContent(AccordionComponent):
     def _apply_theme(self, theme: Component):
         self.style = Style(
             {
-                "overflow": "hidden",
-                "fontSize": "15px",
-                "color": "var(--accent-11)",
-                "backgroundColor": "var(--accent-2)",
-                "padding": "15px, 20px",
-                "&[data-state='open']": {
-                    "animation": Var.create(
-                        f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        _var_is_string=True,
-                    ),
-                },
-                "&[data-state='closed']": {
-                    "animation": Var.create(
-                        f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        _var_is_string=True,
-                    ),
-                },
                 **self.style,
             }
         )
-
+        
     def _get_imports(self):
         return {
             **super()._get_imports(),
@@ -231,14 +485,21 @@ def accordion_item(header: Component, content: Component, **props) -> Component:
                     tag="chevron_down",
                     class_name="AccordionChevron",
                 ),
+                class_name="AccordionTrigger",
             ),
         ),
         AccordionContent.create(
             content,
+            class_name="AccordionContent",
         ),
         value=value,
         **props,
+        class_name="AccordionItem",
     )
 
 
 accordion = AccordionRoot.create
+accordion_root = AccordionRoot.create
+accordion_header = AccordionHeader.create
+accordion_trigger = AccordionTrigger.create
+accordion_content = AccordionContent.create
