@@ -727,7 +727,7 @@ class Component(BaseComponent, ABC):
         # Get Vars associated with component props.
         for prop in self.get_props():
             prop_var = getattr(self, prop)
-            if isinstance(prop_var, Var):
+            if isinstance(prop_var, Var) and prop_var is not UnspecifiedVar:
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.

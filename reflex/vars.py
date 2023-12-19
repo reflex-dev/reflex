@@ -632,6 +632,8 @@ class Var:
                 f"wrongly."
             )
 
+        if name.startswith("_var"):
+            print(name)
         raise AttributeError(
             f"The State var has no attribute '{name}' or may have been annotated wrongly.",
         )
@@ -1538,10 +1540,6 @@ class Var:
 serializers.serializer(_encode_var)
 
 
-# Marker for a Var that was not passed
-UnspecifiedVar = Var()
-
-
 @dataclasses.dataclass(
     eq=False,
     **{"slots": True} if sys.version_info >= (3, 10) else {},
@@ -1662,6 +1660,10 @@ class BaseVar(Var):
         setter.__qualname__ = self.get_setter_name()
 
         return setter
+
+
+# Marker for a Var that was not passed
+UnspecifiedVar = BaseVar(_var_name="<UNSPECIFIED>")
 
 
 @dataclasses.dataclass(init=False, eq=False)

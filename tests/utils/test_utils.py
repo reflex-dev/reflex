@@ -339,8 +339,8 @@ def test_node_install_windows(tmp_path, mocker):
     mocker.patch("reflex.utils.processes.stream_logs")
 
     class Resp(Base):
-        status_code = 200
-        text = "test"
+        status_code: int = 200
+        text: str = "test"
 
     mocker.patch("httpx.stream", return_value=Resp())
     download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")
@@ -381,8 +381,8 @@ def test_node_install_unix(tmp_path, mocker, machine, system):
     mocker.patch("reflex.utils.prerequisites.platform.system", return_value=system)
 
     class Resp(Base):
-        status_code = 200
-        text = "test"
+        status_code: int = 200
+        text: str = "test"
 
     mocker.patch("httpx.stream", return_value=Resp())
     download = mocker.patch("reflex.utils.prerequisites.download_and_extract_fnm_zip")

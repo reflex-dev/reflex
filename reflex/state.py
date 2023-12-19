@@ -902,7 +902,11 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for prop_name in self.base_vars:
             if prop_name == constants.ROUTER:
                 continue  # never reset the router data
-            setattr(self, prop_name, copy.deepcopy(fields[prop_name].default))
+            if fields[prop_name].is_required():
+                value = self.base_vars[prop_name].get_default_value()
+            else:
+                value = copy.deepcopy(fields[prop_name].default)
+            setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -916,8 +920,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for prop_name in self.base_vars:
             field = fields[prop_name]
             if isinstance(field.default, ClientStorageBase) or (
-                isinstance(field.type_, type)
-                and issubclass(field.type_, ClientStorageBase)
+                isinstance(field.annotation, type)
+                and issubclass(field.annotation, ClientStorageBase)
             ):
                 setattr(self, prop_name, copy.deepcopy(field.default))
 
