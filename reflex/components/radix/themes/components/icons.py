@@ -10,7 +10,7 @@ from reflex.utils import format
 class RadixIconComponent(Component):
     """A component used as basis for Radix icons."""
 
-    library = "@radix-ui/react-icons"
+    library = "@radix-ui/react-icons@^1.3.0"
 
 
 class Icon(RadixIconComponent):
@@ -43,7 +43,7 @@ class Icon(RadixIconComponent):
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
         if type(props["tag"]) != str or props["tag"].lower() not in ICON_LIST:
             raise ValueError(
-                f"Invalid icon tag: {props['tag']}. Please use one of the following: {ICON_LIST}"
+                f"Invalid icon tag: {props['tag']}. Please use one of the following: {sorted(ICON_LIST)}"
             )
         props["tag"] = format.to_title_case(props["tag"]) + "Icon"
         return super().create(*children, **props)
