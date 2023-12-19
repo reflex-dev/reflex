@@ -19,9 +19,6 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
 
     tag = "Avatar"
 
-    # The ratio of the width to the height of the element
-    ration: Var[float]
-
     # The variant of the avatar
     variant: Var[Literal["solid", "soft"]]
 
