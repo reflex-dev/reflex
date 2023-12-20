@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, List
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -270,6 +270,24 @@ def format_cond(
 
     # Format component conds.
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
+
+
+def format_match(cond: Var, match_cases: List[Var], default: Var):
+    switch_code = f"(() => {{ let codeToRender; switch ({cond}) {{"
+
+    for case in match_cases:
+        conditions = case[:-1]
+        return_value = case[-1]
+
+        case_conditions = " ".join([f"case {condition}:" for condition in conditions])
+        case_code = f"{case_conditions}  codeToRender = (`{return_value}`);  break;"
+        switch_code += case_code
+
+    switch_code += f"default:  codeToRender = (`{default}`);  break;"
+    switch_code += "}; return codeToRender;})()"
+
+    return switch_code
+
 
 
 def format_prop(

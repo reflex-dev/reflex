@@ -8,6 +8,8 @@
     {{- component }}
   {%- elif "iterable" in component %}
     {{- render_iterable_tag(component) }}
+  {%- elif component.name == "match"%}
+    {{- render_match_tag(component) }}
   {%- elif "cond" in component %}
     {{- render_condition_tag(component) }}
   {%- elif component.children|length %}
@@ -76,6 +78,30 @@
 {% macro render_props(props) %}
 {% if props|length %} {{ props|join(" ") }}{% endif %}
 {% endmacro %}
+
+{# Rendering Match component. #}
+{# Args: #}
+{#     component: component dictionary #}
+{% macro render_match_tag(component) %}
+{
+    (() => {
+        let codeToRender;
+        switch ({{ component.cond._var_full_name }}) {
+        {% for case in component.match_cases %}
+            {% for condition in case[:-1] %}
+                case {{ condition._var_full_name }}:
+            {% endfor %}
+                codeToRender = {{ case[-1] }};
+                break;
+        {% endfor %}
+            default:
+                codeToRender = {{ component.default }};
+                break;
+        }
+        return codeToRender;
+    })()
+  }
+{%- endmacro %}
 
 
 {# Rendering content with args. #}
