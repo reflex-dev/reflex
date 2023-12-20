@@ -12,6 +12,9 @@ module.exports = {
 	{% for preset in presets %}
 		require({{preset|json_dumps}})
 	{% endfor %}
-	]
+	],
+	{% endif %}
+	{% if darkMode is defined %}
+	darkMode: {{darkMode|json_dumps}},
 	{% endif %}
 };
