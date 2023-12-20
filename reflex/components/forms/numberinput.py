@@ -6,8 +6,8 @@ from typing import Any, Dict
 from reflex.components.component import Component
 from reflex.components.libs.chakra import (
     ChakraComponent,
-    LiteralInputVariant,
     LiteralButtonSize,
+    LiteralInputVariant,
 )
 from reflex.constants import EventTriggers
 from reflex.vars import Var
