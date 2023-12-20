@@ -7,9 +7,11 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
+from typing import Literal
 from reflex.components.chakra import ChakraComponent, LiteralDividerVariant
-from reflex.components.core.graphing.recharts.recharts import LiteralLayout
 from reflex.vars import Var
+
+LiteralLayout = Literal["horizontal", "vertical"]
 
 class Divider(ChakraComponent):
     @overload

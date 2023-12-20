@@ -1,13 +1,14 @@
 """A slider component."""
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from reflex.components.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.components.component import Component
-from reflex.components.core.graphing.recharts.recharts import LiteralLayout
 from reflex.constants import EventTriggers
 from reflex.vars import Var
+
+LiteralLayout = Literal["horizontal", "vertical"]
 
 
 class Slider(ChakraComponent):

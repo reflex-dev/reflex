@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Union
 
 from reflex.components.component import Component
-from reflex.components.core.graphing.recharts.general import ResponsiveContainer
+from reflex.components.recharts.general import ResponsiveContainer
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

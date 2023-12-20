@@ -7,6 +7,7 @@ from .chakra import *
 from .component import Component
 from .component import NoSSRComponent as NoSSRComponent
 from .core.graphing import *
+from .plotly.plotly import Plotly
 
 # Add the convenience methods for all the components.
 # locals().update(
