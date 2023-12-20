@@ -15,6 +15,7 @@ from reflex.components.libs.chakra import (
     LiteralButtonSize,
     LiteralInputVariant,
 )
+from reflex.components.literals import LiteralInputType
 from reflex.constants import EventTriggers, MemoizationMode
 from reflex.utils import imports
 from reflex.vars import Var
@@ -29,7 +30,60 @@ class Input(ChakraComponent):
         value: Optional[Union[Var[str], str]] = None,
         default_value: Optional[Union[Var[str], str]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
-        type_: Optional[Union[Var[str], str]] = None,
+        type_: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "button",
+                        "checkbox",
+                        "color",
+                        "date",
+                        "datetime-local",
+                        "email",
+                        "file",
+                        "hidden",
+                        "image",
+                        "month",
+                        "number",
+                        "password",
+                        "radio",
+                        "range",
+                        "reset",
+                        "search",
+                        "submit",
+                        "tel",
+                        "text",
+                        "time",
+                        "url",
+                        "week",
+                    ]
+                ],
+                Literal[
+                    "button",
+                    "checkbox",
+                    "color",
+                    "date",
+                    "datetime-local",
+                    "email",
+                    "file",
+                    "hidden",
+                    "image",
+                    "month",
+                    "number",
+                    "password",
+                    "radio",
+                    "range",
+                    "reset",
+                    "search",
+                    "submit",
+                    "tel",
+                    "text",
+                    "time",
+                    "url",
+                    "week",
+                ],
+            ]
+        ] = None,
         error_border_color: Optional[Union[Var[str], str]] = None,
         focus_border_color: Optional[Union[Var[str], str]] = None,
         is_disabled: Optional[Union[Var[bool], bool]] = None,

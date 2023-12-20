@@ -565,8 +565,6 @@ def VarOperations():
             ),
         )
 
-    app.compile()
-
 
 @pytest.fixture(scope="session")
 def var_operations(tmp_path_factory) -> Generator[AppHarness, None, None]:

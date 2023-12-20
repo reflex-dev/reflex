@@ -1590,7 +1590,11 @@ def mock_app(monkeypatch, state_manager: StateManager) -> rx.App:
     app.state = TestState
     app._state_manager = state_manager
     app.event_namespace.emit = AsyncMock()  # type: ignore
-    monkeypatch.setattr(prerequisites, "get_app", lambda: app_module)
+
+    def _mock_get_app(*args, **kwargs):
+        return app_module
+
+    monkeypatch.setattr(prerequisites, "get_app", _mock_get_app)
     return app
 
 

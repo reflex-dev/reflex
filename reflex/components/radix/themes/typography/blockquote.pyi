@@ -18,19 +18,8 @@ class Blockquote(el.Blockquote, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        weight: Optional[
-            Union[
-                Var[Literal["light", "regular", "medium", "bold"]],
-                Literal["light", "regular", "medium", "bold"],
-            ]
-        ] = None,
-        color: Optional[
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -90,6 +79,18 @@ class Blockquote(el.Blockquote, CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
+        weight: Optional[
+            Union[
+                Var[Literal["light", "regular", "medium", "bold"]],
+                Literal["light", "regular", "medium", "bold"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -239,9 +240,10 @@ class Blockquote(el.Blockquote, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             size: Text size: "1" - "9"
             weight: Thickness of text: "light" | "regular" | "medium" | "bold"
-            color: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
             cite: Define the title of a work.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.

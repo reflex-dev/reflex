@@ -160,7 +160,22 @@ def get_app(reload: bool = False) -> ModuleType:
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
         importlib.reload(app)
+
     return app
+
+
+def get_compiled_app(reload: bool = False) -> ModuleType:
+    """Get the app module based on the default config after first compiling it.
+
+    Args:
+        reload: Re-import the app module from disk
+
+    Returns:
+        The compiled app based on the default config.
+    """
+    app_module = get_app(reload=reload)
+    getattr(app_module, constants.CompileVars.APP).compile_()
+    return app_module
 
 
 def get_redis() -> Redis | None:
