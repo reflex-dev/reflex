@@ -17,6 +17,11 @@ from reflex.components.chakra import (
 )
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.chakra import ChakraComponent, LiteralInputVariant
+from reflex.components.chakra import (
+    ChakraComponent,
+    LiteralInputVariant,
+    LiteralButtonSize,
+)
 from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.vars import Var
