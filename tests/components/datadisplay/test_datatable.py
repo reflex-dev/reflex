@@ -2,9 +2,7 @@ import pandas as pd
 import pytest
 
 import reflex as rx
-from reflex.components.datadisplay.datatable import (
-    DataTable,
-)
+from reflex.components.chakra.datadisplay.datatable import DataTable
 from reflex.utils import types
 from reflex.utils.serializers import serialize, serialize_dataframe
 

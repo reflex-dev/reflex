@@ -6,16 +6,7 @@ from .base import Script
 from .chakra import *
 from .component import Component
 from .component import NoSSRComponent as NoSSRComponent
-from .datadisplay import *
-from .disclosure import *
-from .feedback import *
-from .forms import *
 from .graphing import *
-from .layout import *
-from .media import *
-from .navigation import *
-from .overlay import *
-from .typography import *
 
 # Add the convenience methods for all the components.
 # locals().update(
