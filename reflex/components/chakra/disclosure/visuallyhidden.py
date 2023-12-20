@@ -1,6 +1,6 @@
 """A component to display visually hidden text."""
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 
 
 class VisuallyHidden(ChakraComponent):

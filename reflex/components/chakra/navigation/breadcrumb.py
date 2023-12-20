@@ -3,7 +3,7 @@
 from reflex.components.chakra.layout.foreach import Foreach
 from reflex.components.chakra.navigation.link import Link
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 

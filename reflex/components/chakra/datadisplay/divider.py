@@ -1,7 +1,7 @@
 """A line to divide parts of the layout."""
 
 from reflex.components.graphing.recharts.recharts import LiteralLayout
-from reflex.components.libs.chakra import ChakraComponent, LiteralDividerVariant
+from reflex.components.chakra import ChakraComponent, LiteralDividerVariant
 from reflex.vars import Var
 
 

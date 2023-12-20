@@ -4,6 +4,7 @@
 import importlib
 from typing import Type
 
+from .chakra import *
 from .datadisplay import *
 from .disclosure import *
 from .feedback import *

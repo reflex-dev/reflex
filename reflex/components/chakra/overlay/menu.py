@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Union
 
 from reflex.components.chakra.forms.button import Button
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
+from reflex.components.chakra import (
     ChakraComponent,
     LiteralChakraDirection,
     LiteralMenuOption,

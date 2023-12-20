@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Union
 
-from reflex.components.libs.chakra import ChakraComponent, LiteralAvatarSize
+from reflex.components.chakra import ChakraComponent, LiteralAvatarSize
 from reflex.vars import Var
 
 

@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterator
 from jinja2 import Environment
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.components.tags import Tag
 from reflex.constants import Dirs, EventTriggers
 from reflex.event import EventChain

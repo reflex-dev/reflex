@@ -1,6 +1,6 @@
 """A Keyboard Key Component."""
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 
 
 class KeyboardKey(ChakraComponent):

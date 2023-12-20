@@ -1,6 +1,6 @@
 """Container to stack elements with spacing."""
 
-from reflex.components.libs.chakra import ChakraComponent, LiteralSpinnerSize
+from reflex.components.chakra import ChakraComponent, LiteralSpinnerSize
 from reflex.vars import Var
 
 

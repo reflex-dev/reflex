@@ -4,7 +4,7 @@ from numbers import Number
 from typing import Any, Dict
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
+from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
     LiteralInputVariant,

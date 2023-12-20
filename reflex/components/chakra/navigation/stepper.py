@@ -3,7 +3,7 @@
 from typing import List, Literal, Optional, Tuple
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralColorScheme
+from reflex.components.chakra import ChakraComponent, LiteralColorScheme
 from reflex.vars import Var
 
 

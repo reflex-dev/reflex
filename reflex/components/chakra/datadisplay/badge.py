@@ -1,6 +1,6 @@
 """Badge component."""
 
-from reflex.components.libs.chakra import ChakraComponent, LiteralVariant
+from reflex.components.chakra import ChakraComponent, LiteralVariant
 from reflex.vars import Var
 
 

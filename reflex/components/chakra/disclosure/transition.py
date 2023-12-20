@@ -1,7 +1,7 @@
 """A transition Component."""
 from typing import Union
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 

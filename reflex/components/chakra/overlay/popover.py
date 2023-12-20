@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
+from reflex.components.chakra import (
     ChakraComponent,
     LiteralChakraDirection,
     LiteralMenuStrategy,

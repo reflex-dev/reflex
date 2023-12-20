@@ -1,6 +1,6 @@
 """A flexbox container."""
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 

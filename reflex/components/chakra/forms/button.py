@@ -1,7 +1,7 @@
 """A button component."""
 from typing import List
 
-from reflex.components.libs.chakra import (
+from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
     LiteralButtonVariant,
@@ -36,6 +36,7 @@ class Button(ChakraComponent):
 
     # "lg" | "md" | "sm" | "xs"
     size: Var[LiteralButtonSize]
+
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
     variant: Var[LiteralButtonVariant]
 
@@ -76,5 +77,6 @@ class ButtonGroup(ChakraComponent):
 
     # "lg" | "md" | "sm" | "xs"
     size: Var[LiteralButtonSize]
+
     # "ghost" | "outline" | "solid" | "link" | "unstyled"
     variant: Var[LiteralButtonVariant]

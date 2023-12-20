@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Optional, Union
 
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralInputVariant
+from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.components.tags.tag import Tag
 from reflex.constants import EventTriggers
 from reflex.utils import format

@@ -1,6 +1,6 @@
 """A flexible space component."""
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 
 
 class Spacer(ChakraComponent):

@@ -2,7 +2,7 @@
 
 from typing import List, Union
 
-from reflex.components.libs.chakra import ChakraComponent, LiteralStackDirection
+from reflex.components.chakra import ChakraComponent, LiteralStackDirection
 from reflex.vars import Var
 
 

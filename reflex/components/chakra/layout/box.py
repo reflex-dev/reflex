@@ -1,6 +1,6 @@
 """A box component that can contain other components."""
 
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.components.tags import Tag
 from reflex.vars import Var
 
