@@ -3,14 +3,14 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Union
 
-from reflex.components.chakra.forms.button import Button
-from reflex.components.component import Component
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralChakraDirection,
     LiteralMenuOption,
     LiteralMenuStrategy,
 )
+from reflex.components.chakra.forms.button import Button
+from reflex.components.component import Component
 from reflex.vars import Var
 
 
@@ -133,9 +133,7 @@ class MenuList(ChakraComponent):
     tag = "MenuList"
 
     @classmethod
-    def create(
-        cls, *children, items: Optional[list] = None, **props
-    ) -> ChakraComponent:
+    def create(cls, *children, items: Optional[list] = None, **props) -> Component:
         """Create a MenuList component, and automatically wrap in MenuItem if not already one.
 
         Args:

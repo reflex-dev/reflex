@@ -1,10 +1,6 @@
 """Chakra components."""
 
-
-import importlib
-from typing import Type
-
-from .chakra import *
+from .base import *
 from .datadisplay import *
 from .disclosure import *
 from .feedback import *

@@ -12,7 +12,7 @@ from reflex.components.component import (
     Component as Component,
     ComponentStyle as ComponentStyle,
 )
-from reflex.components.chakra.layout.fragment import Fragment as Fragment
+from reflex.components.base.fragment import Fragment as Fragment
 from reflex.config import get_config as get_config
 from reflex.event import (
     Event as Event,

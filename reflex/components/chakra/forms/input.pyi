@@ -8,13 +8,13 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict
-from reflex.components.chakra.forms.debounce import DebounceInput
-from reflex.components.component import Component
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
     LiteralInputVariant,
 )
+from reflex.components.component import Component
+from reflex.components.core.debounce import DebounceInput
 from reflex.components.literals import LiteralInputType
 from reflex.constants import EventTriggers, MemoizationMode
 from reflex.utils import imports
