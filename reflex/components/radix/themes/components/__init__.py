@@ -11,7 +11,7 @@ from .aspectratio import AspectRatio
 from .avatar import Avatar
 from .badge import Badge
 from .button import Button
-from .callout import CalloutIcon, CalloutRoot, CalloutText, callout_api
+from .callout import CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
 from .checkbox import Checkbox
 from .contextmenu import (
