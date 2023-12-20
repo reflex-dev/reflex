@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Union
 
-from reflex.components.component import Component
-from reflex.components.graphing.recharts.recharts import LiteralLayout
 from reflex.components.chakra import ChakraComponent, LiteralChakraDirection
+from reflex.components.component import Component
+from reflex.components.core.graphing.recharts.recharts import LiteralLayout
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict
 from reflex.components.chakra.forms.debounce import DebounceInput
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
+from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
     LiteralInputVariant,

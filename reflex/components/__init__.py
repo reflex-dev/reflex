@@ -6,7 +6,7 @@ from .base import Script
 from .chakra import *
 from .component import Component
 from .component import NoSSRComponent as NoSSRComponent
-from .graphing import *
+from .core.graphing import *
 
 # Add the convenience methods for all the components.
 # locals().update(

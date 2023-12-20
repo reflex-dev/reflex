@@ -9,7 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, List, Optional, Union
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralChakraDirection
+from reflex.components.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.constants import EventTriggers
 from reflex.utils import format
 from reflex.vars import Var

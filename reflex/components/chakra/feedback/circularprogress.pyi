@@ -9,7 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Union
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 class CircularProgress(ChakraComponent):

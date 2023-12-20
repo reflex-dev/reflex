@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Union
 from reflex.components.chakra.forms.debounce import DebounceInput
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralInputVariant
+from reflex.components.chakra import ChakraComponent, LiteralInputVariant
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import List, Union
-from reflex.components.libs.chakra import ChakraComponent, LiteralStackDirection
+from reflex.components.chakra import ChakraComponent, LiteralStackDirection
 from reflex.vars import Var
 
 class Stack(ChakraComponent):

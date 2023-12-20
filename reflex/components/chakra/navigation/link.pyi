@@ -9,7 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.components.chakra.navigation.nextlink import NextLink
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.utils import imports
 from reflex.vars import BaseVar, Var
 

@@ -5,6 +5,7 @@ from .checkbox import Checkbox, CheckboxGroup
 from .colormodeswitch import (
     ColorModeButton,
     ColorModeIcon,
+    ColorModeScript,
     ColorModeSwitch,
     color_mode_cond,
 )

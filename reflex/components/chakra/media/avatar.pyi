@@ -8,7 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Union
-from reflex.components.libs.chakra import ChakraComponent, LiteralAvatarSize
+from reflex.components.chakra import ChakraComponent, LiteralAvatarSize
 from reflex.vars import Var
 
 class Avatar(ChakraComponent):

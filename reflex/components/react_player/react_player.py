@@ -6,7 +6,7 @@ from reflex.components.component import NoSSRComponent
 from reflex.vars import Var
 
 
-class ReactPlayerComponent(NoSSRComponent):
+class ReactPlayer(NoSSRComponent):
     """Using react-player and not implement all props and callback yet.
     reference: https://github.com/cookpete/react-player.
     """

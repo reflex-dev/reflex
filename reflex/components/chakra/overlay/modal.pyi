@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Literal, Optional, Union
 from reflex.components.chakra.media import Icon
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 ModalSizes = Literal["xs", "sm", "md", "lg", "xl", "full"]

@@ -1,8 +1,8 @@
 """A video component."""
-from reflex.components.libs.react_player import ReactPlayerComponent
+from reflex.components.react_player import ReactPlayer
 
 
-class Video(ReactPlayerComponent):
+class Video(ReactPlayer):
     """Video component share with audio component."""
 
     pass

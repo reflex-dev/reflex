@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Union
 from reflex.components.chakra.media.icon import Icon
 from reflex.components.component import Component
-from reflex.components.libs.chakra import (
+from reflex.components.chakra import (
     ChakraComponent,
     LiteralColorScheme,
     LiteralDrawerSize,

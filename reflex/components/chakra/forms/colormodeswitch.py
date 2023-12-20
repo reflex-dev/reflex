@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.layout.cond import Cond, cond
 from reflex.components.chakra.media.icon import Icon
 from reflex.components.component import BaseComponent, Component
@@ -114,3 +115,10 @@ class ColorModeButton(Button):
             on_click=toggle_color_mode,
             **props,
         )
+
+
+class ColorModeScript(ChakraComponent):
+    """Chakra color mode script."""
+
+    tag = "ColorModeScript"
+    initialColorMode = "light"

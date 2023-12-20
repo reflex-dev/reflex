@@ -8,9 +8,9 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Union
+from reflex.components.chakra import ChakraComponent, LiteralChakraDirection
 from reflex.components.component import Component
-from reflex.components.graphing.recharts.recharts import LiteralLayout
-from reflex.components.libs.chakra import ChakraComponent, LiteralChakraDirection
+from reflex.components.core.graphing.recharts.recharts import LiteralLayout
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 

@@ -10,11 +10,15 @@ from reflex.style import Style
 from numbers import Number
 from typing import Any, Dict
 from reflex.components.component import Component
+<<<<<<< HEAD
 from reflex.components.libs.chakra import (
     ChakraComponent,
     LiteralButtonSize,
     LiteralInputVariant,
 )
+=======
+from reflex.components.chakra import ChakraComponent, LiteralInputVariant
+>>>>>>> a163ea78 (Make core folder)
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
