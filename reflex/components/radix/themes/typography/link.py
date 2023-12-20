@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex.components.el.elements.inline import A
 from reflex.vars import Var
 
 from ..base import (
@@ -20,8 +21,6 @@ from .base import (
 )
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
-
-from reflex.components.el.elements.inline import A
 
 
 class Link(CommonMarginProps, RadixThemesComponent, A):

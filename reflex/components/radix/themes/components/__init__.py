@@ -25,12 +25,12 @@ from .contextmenu import (
     ContextMenuTrigger,
 )
 from .dialog import (
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogRoot,
     DialogTitle,
     DialogTrigger,
-    DialogClose,
 )
 from .dropdownmenu import (
     DropdownMenuContent,
@@ -69,7 +69,7 @@ from .table import (
     TableRow,
     TableRowHeaderCell,
 )
-from .tabs import TabsList, TabsRoot, TabsTrigger, TabsContent
+from .tabs import TabsContent, TabsList, TabsRoot, TabsTrigger
 from .textarea import TextArea
 from .textfield import TextFieldInput, TextFieldRoot, TextFieldSlot
 from .tooltip import Tooltip

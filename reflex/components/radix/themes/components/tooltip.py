@@ -8,7 +8,8 @@ from ..base import (
 
 
 class Tooltip(CommonMarginProps, RadixThemesComponent):
-    
+    """Floating element that provides a control with contextual information via pointer or focus."""
+
     tag = "Tooltip"
 
     content: Var[str]
