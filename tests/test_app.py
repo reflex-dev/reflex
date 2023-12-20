@@ -1199,7 +1199,7 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
     web_dir = app_path / ".web"
     web_dir.mkdir(parents=True)
     (web_dir / "package.json").touch()
-    app = App()
+    app = App(theme=None)
     app.get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
