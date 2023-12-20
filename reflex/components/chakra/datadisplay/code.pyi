@@ -9,11 +9,11 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 import re
 from typing import Dict, Literal, Optional, Union
+from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.forms import Button, color_mode_cond
 from reflex.components.chakra.layout import Box
 from reflex.components.chakra.media import Icon
 from reflex.components.component import Component
-from reflex.components.chakra import ChakraComponent
 from reflex.event import set_clipboard
 from reflex.style import Style
 from reflex.utils import format, imports

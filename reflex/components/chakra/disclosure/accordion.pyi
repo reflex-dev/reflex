@@ -8,8 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import List, Optional, Union
-from reflex.components.component import Component
 from reflex.components.chakra import ChakraComponent
+from reflex.components.component import Component
 from reflex.vars import Var
 
 class Accordion(ChakraComponent):
