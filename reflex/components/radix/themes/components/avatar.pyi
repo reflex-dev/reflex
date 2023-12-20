@@ -88,7 +88,6 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        ration: Optional[Union[Var[float], float]] = None,
         variant: Optional[
             Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
@@ -209,7 +208,6 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            ration: The ratio of the width to the height of the element
             variant: The variant of the avatar
             size: The size of the avatar
             high_contrast: Whether to render the avatar with higher contrast color against background

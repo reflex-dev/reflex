@@ -19,14 +19,11 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
 
     tag = "Badge"
 
-    # The ratio of the width to the height of the element
-    ration: Var[float]
-
     # The variant of the avatar
     variant: Var[Literal["solid", "soft", "surface", "outline"]]
 
     # The size of the avatar
-    size: Var[Literal[1, 2]]
+    size: Var[Literal["1", "2"]]
 
     # Color theme of the avatar
     color: Var[LiteralAccentColor]

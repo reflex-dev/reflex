@@ -14,10 +14,7 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
 
     tag = "Tabs.Root"
 
-    # The size of the table: "1" | "2" | "3"
-    size: Var[Literal[1, 2, 3]]
-
-    # The variant of the table
+    # The variant of the tab
     variant: Var[Literal["surface", "ghost"]]
 
     # The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
@@ -63,3 +60,6 @@ class TabsContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Tabs.Content"
+
+    # The value of the tab. Must be unique for each tab.
+    value: Var[str]

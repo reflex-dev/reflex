@@ -16,7 +16,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Literal[1, 2, 3]]
+    size: Var[Literal["1", "2", "3"]]
 
     # The variant of the radio group
     variant: Var[Literal["classic", "surface", "soft"]]

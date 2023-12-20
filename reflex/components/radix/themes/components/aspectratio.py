@@ -17,4 +17,4 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
     tag = "AspectRatio"
 
     # The ratio of the width to the height of the element
-    ration: Var[Union[float, int]]
+    ratio: Var[Union[float, int]]

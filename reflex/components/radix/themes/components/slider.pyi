@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
@@ -87,7 +87,9 @@ class Slider(CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "surface", "soft"]],
@@ -101,7 +103,7 @@ class Slider(CommonMarginProps, RadixThemesComponent):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        default_value: Optional[Union[Var[float], float]] = None,
+        default_value: Optional[Union[Var[List[float]], List[float]]] = None,
         value: Optional[Union[Var[float], float]] = None,
         min: Optional[Union[Var[float], float]] = None,
         max: Optional[Union[Var[float], float]] = None,
@@ -224,7 +226,7 @@ class Slider(CommonMarginProps, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            size: Button size "1" - "4"
+            size: Button size "1" - "3"
             variant: Variant of button
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
