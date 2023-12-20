@@ -7,7 +7,15 @@ from .chakra import *
 from .component import Component
 from .component import NoSSRComponent as NoSSRComponent
 from .core.graphing import *
+from .glide_data_grid.dataeditor import DataEditor, DataEditorTheme
+from .gridjs.datatable import DataTable
+from .markdown.markdown import Markdown
+from .moment.moment import Moment
+from .next.link import NextLink
 from .plotly.plotly import Plotly
+from .react_player.audio import Audio
+from .react_player.video import Video
+from .suneditor.editor import Editor, EditorButtonList, EditorOptions
 
 # Add the convenience methods for all the components.
 # locals().update(

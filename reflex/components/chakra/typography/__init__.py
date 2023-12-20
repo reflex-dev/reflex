@@ -4,7 +4,6 @@ from reflex.components.component import Component
 
 from .heading import Heading
 from .highlight import Highlight
-from .markdown import Markdown
 from .span import Span
 from .text import Text
 

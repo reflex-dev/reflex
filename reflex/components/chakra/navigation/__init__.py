@@ -3,7 +3,6 @@
 from .breadcrumb import Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator
 from .link import Link
 from .linkoverlay import LinkBox, LinkOverlay
-from .nextlink import NextLink
 from .stepper import (
     Step,
     StepDescription,
