@@ -1,8 +1,8 @@
 """Container to stack elements with spacing."""
 from typing import Union
 
-from reflex.components.component import Component
 from reflex.components.chakra import ChakraComponent
+from reflex.components.component import Component
 from reflex.vars import Var
 
 

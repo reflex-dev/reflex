@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from typing import Any, Union
 
-from reflex.components.chakra.media.icon import Icon
-from reflex.components.component import Component
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralColorScheme,
     LiteralDrawerSize,
 )
+from reflex.components.chakra.media.icon import Icon
+from reflex.components.component import Component
 from reflex.vars import Var
 
 

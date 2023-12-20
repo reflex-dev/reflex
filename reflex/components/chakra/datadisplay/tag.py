@@ -1,13 +1,13 @@
 """Chakra Tag Component."""
 from typing import Optional
 
-from reflex.components.component import Component
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralTagColorScheme,
     LiteralTagSize,
     LiteralVariant,
 )
+from reflex.components.component import Component
 from reflex.vars import Var
 
 

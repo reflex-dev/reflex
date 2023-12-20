@@ -2,13 +2,13 @@
 
 from typing import Optional
 
-from reflex.components.component import Component
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralCardVariant,
     LiteralColorScheme,
     LiteralTagSize,
 )
+from reflex.components.component import Component
 from reflex.vars import Var
 
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Union
 
-from reflex.components.component import Component
 from reflex.components.chakra import ChakraComponent, LiteralChakraDirection
+from reflex.components.component import Component
 from reflex.constants import EventTriggers
 from reflex.utils import format
 from reflex.vars import Var

@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Union
 
+from reflex.components.chakra import ChakraComponent, LiteralAlertDialogSize
 from reflex.components.chakra.media.icon import Icon
 from reflex.components.component import Component
-from reflex.components.chakra import ChakraComponent, LiteralAlertDialogSize
 from reflex.vars import Var
 
 
