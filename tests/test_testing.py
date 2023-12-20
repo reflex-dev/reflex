@@ -21,7 +21,7 @@ def test_app_harness(tmp_path):
 
         app = rx.App(state=State)
         app.add_page(lambda: rx.text("Basic App"), route="/", title="index")
-        app.compile()
+        app.compile_()
 
     with AppHarness.create(
         root=tmp_path,

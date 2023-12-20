@@ -88,8 +88,6 @@ def Table():
             )
         )
 
-    app.compile()
-
 
 @pytest.fixture()
 def table(tmp_path_factory) -> Generator[AppHarness, None, None]:

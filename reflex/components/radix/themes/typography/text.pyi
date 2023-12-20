@@ -18,33 +18,8 @@ class Text(el.Span, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        as_: Optional[Union[Var[str], str]] = None,
-        size: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        weight: Optional[
-            Union[
-                Var[Literal["light", "regular", "medium", "bold"]],
-                Literal["light", "regular", "medium", "bold"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["left", "center", "right"]],
-                Literal["left", "center", "right"],
-            ]
-        ] = None,
-        trim: Optional[
-            Union[
-                Var[Literal["normal", "start", "end", "both"]],
-                Literal["normal", "start", "end", "both"],
-            ]
-        ] = None,
-        color: Optional[
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -104,6 +79,32 @@ class Text(el.Span, CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        as_: Optional[Union[Var[str], str]] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
+        weight: Optional[
+            Union[
+                Var[Literal["light", "regular", "medium", "bold"]],
+                Literal["light", "regular", "medium", "bold"],
+            ]
+        ] = None,
+        align: Optional[
+            Union[
+                Var[Literal["left", "center", "right"]],
+                Literal["left", "center", "right"],
+            ]
+        ] = None,
+        trim: Optional[
+            Union[
+                Var[Literal["normal", "start", "end", "both"]],
+                Literal["normal", "start", "end", "both"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -252,13 +253,14 @@ class Text(el.Span, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             as_: Change the default rendered element into a semantically appropriate alternative (cannot be used with asChild)
             size: Text size: "1" - "9"
             weight: Thickness of text: "light" | "regular" | "medium" | "bold"
             align: Alignment of text in element: "left" | "center" | "right"
             trim: Removes the leading trim space: "normal" | "start" | "end" | "both"
-            color: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.

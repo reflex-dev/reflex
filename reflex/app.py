@@ -619,6 +619,19 @@ class App(Base):
         return True
 
     def compile(self):
+        """compile_() is the new function for performing compilation.
+        Reflex framework will call it automatically as needed.
+        """
+        console.deprecate(
+            feature_name="app.compile()",
+            reason="Explicit calls to app.compile() are not needed."
+            " Method will be removed in 0.4.0",
+            deprecation_version="0.3.8",
+            removal_version="0.4.0",
+        )
+        return
+
+    def compile_(self):
         """Compile the app and output it to the pages folder."""
         # add the pages before the compile check so App know onload methods
         for render, kwargs in DECORATED_PAGES:

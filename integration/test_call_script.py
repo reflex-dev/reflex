@@ -227,8 +227,6 @@ def CallScript():
             rx.button("Reset", id="reset", on_click=CallScriptState.reset_),
         )
 
-    app.compile()
-
 
 @pytest.fixture(scope="session")
 def call_script(tmp_path_factory) -> Generator[AppHarness, None, None]:
