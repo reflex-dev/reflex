@@ -43,6 +43,7 @@ from reflex.components.navigation.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -131,7 +132,7 @@ class App(Base):
     background_tasks: Set[asyncio.Task] = set()
 
     # The radix theme for the entire app
-    theme: Optional[Component] = None
+    theme: Optional[Component] = themes.theme(accent_color="blue")
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
