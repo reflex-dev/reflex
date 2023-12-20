@@ -87,7 +87,9 @@ class Slider(CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "surface", "soft"]],

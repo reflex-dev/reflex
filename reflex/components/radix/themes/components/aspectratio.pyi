@@ -82,7 +82,7 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        ration: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        ratio: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -185,13 +185,9 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
-<<<<<<< HEAD
-            ratio: The ratio of the width to the height of the element
-=======
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            ration: The ratio of the width to the height of the element
->>>>>>> main
+            ratio: The ratio of the width to the height of the element
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

@@ -13,9 +13,9 @@ from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
-from reflex.components.el.elements.metadata import Link as BaseLink
+from reflex.components.el.elements.inline import A
 
-class Link(CommonMarginProps, RadixThemesComponent, BaseLink):
+class Link(CommonMarginProps, RadixThemesComponent, A):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -152,27 +152,27 @@ class Link(CommonMarginProps, RadixThemesComponent, BaseLink):
                 Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
-        cross_origin: Optional[
+        download: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         href: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         href_lang: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        integrity: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
-        ] = None,
         media: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
+        ping: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         referrer_policy: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         rel: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
-        sizes: Optional[
+        shape: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        type: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        target: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -291,6 +291,15 @@ class Link(CommonMarginProps, RadixThemesComponent, BaseLink):
             mr: Margin right: "0" - "9"
             mb: Margin bottom: "0" - "9"
             ml: Margin left: "0" - "9"
+            download: Specifies that the target (the file specified in the href attribute) will be downloaded when a user clicks on the hyperlink.
+            href: Specifies the URL of the page the link goes to
+            href_lang: Specifies the language of the linked document
+            media: Specifies what media/device the linked document is optimized for
+            ping: Specifies which referrer is sent when fetching the resource
+            referrer_policy: Specifies the relationship between the current document and the linked document
+            rel: Specifies the relationship between the linked document and the current document
+            shape: Specifies the shape of the area
+            target: Specifies where to open the linked document
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

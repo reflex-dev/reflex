@@ -90,7 +90,9 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3, 4]], Literal[1, 2, 3, 4]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+        ] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
