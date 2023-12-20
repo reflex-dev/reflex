@@ -7,7 +7,7 @@ from .chakra import *
 from .component import Component
 from .component import NoSSRComponent as NoSSRComponent
 from .core import *
-from .glide_data_grid.dataeditor import DataEditor, DataEditorTheme
+from .datadisplay.dataeditor import DataEditor, DataEditorTheme
 from .gridjs.datatable import DataTable
 from .markdown.markdown import Markdown
 from .moment.moment import Moment

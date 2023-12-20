@@ -2,7 +2,7 @@
 from typing import Any
 
 import reflex as rx
-from reflex.components.glide_data_grid.dataeditor import DataEditorTheme
+from reflex.components.datadisplay.dataeditor import DataEditorTheme
 
 from ..styles import *
 from ..webui.state import State
