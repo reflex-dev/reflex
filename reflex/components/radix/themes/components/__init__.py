@@ -30,6 +30,7 @@ from .dialog import (
     DialogRoot,
     DialogTitle,
     DialogTrigger,
+    DialogClose,
 )
 from .dropdownmenu import (
     DropdownMenuContent,
@@ -120,6 +121,7 @@ dialog_trigger = DialogTrigger.create
 dialog_content = DialogContent.create
 dialog_title = DialogTitle.create
 dialog_description = DialogDescription.create
+dialog_close = DialogClose.create
 
 # Dropdown Menu
 dropdownmenu_root = DropdownMenuRoot.create
