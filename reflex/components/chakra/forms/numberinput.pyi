@@ -9,16 +9,9 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from numbers import Number
 from typing import Any, Dict
-from reflex.components.component import Component
 from reflex.components.chakra import (
     ChakraComponent,
     LiteralButtonSize,
-    LiteralInputVariant,
-)
-from reflex.components.chakra import ChakraComponent, LiteralInputVariant
-from reflex.components.chakra import ChakraComponent, LiteralInputVariant
-from reflex.components.chakra import (
-    ChakraComponent,
     LiteralInputVariant,
     LiteralButtonSize,
 )
