@@ -80,12 +80,6 @@ def _init(
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    # Set up the web project.
-    prerequisites.initialize_frontend_dependencies()
-
-    # Migrate Pynecone projects to Reflex.
-    prerequisites.migrate_to_reflex()
-
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
         if template is None:
@@ -95,6 +89,12 @@ def _init(
         telemetry.send("init")
     else:
         telemetry.send("reinit")
+
+    # Set up the web project.
+    prerequisites.initialize_frontend_dependencies()
+
+    # Migrate Pynecone projects to Reflex.
+    prerequisites.migrate_to_reflex()
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -178,7 +178,7 @@ def _run(
     if frontend:
         prerequisites.update_next_config()
         # Get the app module.
-        prerequisites.get_app()
+        prerequisites.get_compiled_app()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -362,7 +362,7 @@ def db_init():
 
     # Initialize the database.
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     model.Model.alembic_init()
     model.Model.migrate(autogenerate=True)
 
@@ -373,8 +373,9 @@ def migrate():
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     model.Model.migrate()
@@ -393,8 +394,9 @@ def makemigrations(
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     with model.Model.get_db_engine().connect() as connection:

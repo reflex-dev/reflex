@@ -165,7 +165,7 @@ class AppHarness:
             # reset rx.State subclasses
             State.class_subclasses.clear()
             # self.app_module.app.
-            self.app_module = reflex.utils.prerequisites.get_app(reload=True)
+            self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance.state_manager, StateManagerRedis):
             # Create our own redis connection for testing.
@@ -184,7 +184,7 @@ class AppHarness:
             if self.app_instance is not None and isinstance(
                 self.app_instance.state_manager, StateManagerRedis
             ):
-                await self.app_instance.state_manager.redis.close()
+                await self.app_instance.state_manager.close()
             await original_shutdown(*args, **kwargs)
 
         return _shutdown_redis
@@ -455,7 +455,7 @@ class AppHarness:
             return await self.state_manager.get_state(token)
         finally:
             if isinstance(self.state_manager, StateManagerRedis):
-                await self.state_manager.redis.close()
+                await self.state_manager.close()
 
     async def set_state(self, token: str, **kwargs) -> None:
         """Set the state associated with the given token.
@@ -476,7 +476,7 @@ class AppHarness:
             await self.state_manager.set_state(token, state)
         finally:
             if isinstance(self.state_manager, StateManagerRedis):
-                await self.state_manager.redis.close()
+                await self.state_manager.close()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[State]:
@@ -506,7 +506,7 @@ class AppHarness:
         finally:
             if isinstance(self.state_manager, StateManagerRedis):
                 self.app_instance._state_manager = app_state_manager
-                await self.state_manager.redis.close()
+                await self.state_manager.close()
 
     def poll_for_content(
         self,

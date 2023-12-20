@@ -19,6 +19,7 @@ from typing import (
 )
 
 from pydantic.fields import ModelField
+from sqlalchemy.orm import Mapped
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -132,8 +133,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         hints = get_type_hints(cls)
         if name in hints:
             type_ = hints[name]
+            type_origin = get_origin(type_)
+            if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
+                return get_args(type_)[0]  # SQLAlchemy v2
             if isinstance(type_, ModelField):
-                return type_.type_
+                return type_.type_  # SQLAlchemy v1.4
             return type_
     elif is_union(cls):
         # Check in each arg of the annotation.

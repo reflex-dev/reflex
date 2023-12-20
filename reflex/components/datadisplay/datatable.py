@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Union
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.utils import imports, types
-from reflex.utils.serializers import serialize, serializer
+from reflex.utils.serializers import serialize
 from reflex.vars import BaseVar, ComputedVar, Var
 
 
@@ -129,39 +129,3 @@ class DataTable(Gridjs):
 
         # Render the table.
         return super()._render()
-
-
-try:
-    from pandas import DataFrame
-
-    def format_dataframe_values(df: DataFrame) -> List[List[Any]]:
-        """Format dataframe values to a list of lists.
-
-        Args:
-            df: The dataframe to format.
-
-        Returns:
-            The dataframe as a list of lists.
-        """
-        return [
-            [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-            for data in list(df.values.tolist())
-        ]
-
-    @serializer
-    def serialize_dataframe(df: DataFrame) -> dict:
-        """Serialize a pandas dataframe.
-
-        Args:
-            df: The dataframe to serialize.
-
-        Returns:
-            The serialized dataframe.
-        """
-        return {
-            "columns": df.columns.tolist(),
-            "data": format_dataframe_values(df),
-        }
-
-except ImportError:
-    pass

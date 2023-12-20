@@ -121,7 +121,6 @@ def index():
 # Add state and page to the app.
 app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
-app.compile()
 ```
 
 ## 하나씩 살펴보겠습니다.
@@ -194,7 +193,6 @@ app = rx.App()
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 여러 페이지를 추가하여 멀티 페이지 앱을 만들 수 있습니다.

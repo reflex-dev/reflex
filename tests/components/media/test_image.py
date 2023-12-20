@@ -5,8 +5,8 @@ import pytest
 from PIL.Image import Image as Img
 
 import reflex as rx
-from reflex.components.next.image import Image, serialize_image  # type: ignore
-from reflex.utils.serializers import serialize
+from reflex.components.next.image import Image  # type: ignore
+from reflex.utils.serializers import serialize, serialize_image
 
 
 @pytest.fixture
