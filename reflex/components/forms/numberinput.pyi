@@ -10,7 +10,11 @@ from reflex.style import Style
 from numbers import Number
 from typing import Any, Dict
 from reflex.components.component import Component
-from reflex.components.libs.chakra import ChakraComponent, LiteralInputVariant
+from reflex.components.libs.chakra import (
+    ChakraComponent,
+    LiteralInputVariant,
+    LiteralButtonSize,
+)
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -41,6 +45,9 @@ class NumberInput(ChakraComponent):
                 Var[Literal["outline", "filled", "flushed", "unstyled"]],
                 Literal["outline", "filled", "flushed", "unstyled"],
             ]
+        ] = None,
+        size: Optional[
+            Union[Var[Literal["sm", "md", "lg", "xs"]], Literal["sm", "md", "lg", "xs"]]
         ] = None,
         name: Optional[Union[Var[str], str]] = None,
         style: Optional[Style] = None,
@@ -121,6 +128,7 @@ class NumberInput(ChakraComponent):
             max_: The maximum value of the counter
             min_: The minimum value of the counter
             variant: "outline" | "filled" | "flushed" | "unstyled"
+            size: "lg" | "md" | "sm" | "xs"
             name: The name of the form field
             style: The style of the component.
             key: A unique key for the component.
