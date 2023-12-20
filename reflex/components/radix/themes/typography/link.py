@@ -21,7 +21,7 @@ from .base import (
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 
-from reflex.components.el.elements.metadata import Link as BaseLink
+from reflex.components.el.elements.inline import A
 
 
 class Link(CommonMarginProps, RadixThemesComponent, BaseLink):
