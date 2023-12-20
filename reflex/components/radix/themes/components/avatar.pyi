@@ -25,7 +25,6 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        ration: Optional[Union[Var[float], float]] = None,
         variant: Optional[
             Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
@@ -206,7 +205,6 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            ration: The ratio of the width to the height of the element
             variant: The variant of the avatar
             size: The size of the avatar
             color: Color theme of the avatar

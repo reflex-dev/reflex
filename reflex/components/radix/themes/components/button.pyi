@@ -18,7 +18,7 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralButtonSize = Literal[1, 2, 3, 4]
+LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 class Button(el.Button, CommonMarginProps, RadixThemesComponent):
     @overload
@@ -27,7 +27,9 @@ class Button(el.Button, CommonMarginProps, RadixThemesComponent):
         cls,
         *children,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3, 4]], Literal[1, 2, 3, 4]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3", "4"]], Literal["1", "2", "3", "4"]]
+        ] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],

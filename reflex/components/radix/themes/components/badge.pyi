@@ -25,14 +25,13 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        ration: Optional[Union[Var[float], float]] = None,
         variant: Optional[
             Union[
                 Var[Literal["solid", "soft", "surface", "outline"]],
                 Literal["solid", "soft", "surface", "outline"],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal[1, 2]], Literal[1, 2]]] = None,
+        size: Optional[Union[Var[Literal["1", "2"]], Literal["1", "2"]]] = None,
         color: Optional[
             Union[
                 Var[
@@ -247,7 +246,6 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            ration: The ratio of the width to the height of the element
             variant: The variant of the avatar
             size: The size of the avatar
             color: Color theme of the avatar

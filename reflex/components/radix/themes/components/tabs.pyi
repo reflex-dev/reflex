@@ -18,7 +18,6 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
         variant: Optional[
             Union[Var[Literal["surface", "ghost"]], Literal["surface", "ghost"]]
         ] = None,
@@ -135,8 +134,7 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
-            size: The size of the table: "1" | "2" | "3"
-            variant: The variant of the table
+            variant: The variant of the tab
             default_value: The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
             value: The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
             orientation: The orientation of the tabs.
@@ -426,6 +424,7 @@ class TabsContent(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        value: Optional[Union[Var[str], str]] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -528,6 +527,7 @@ class TabsContent(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            value: The value of the tab. Must be unique for each tab.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

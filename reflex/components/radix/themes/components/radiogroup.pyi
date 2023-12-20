@@ -18,7 +18,9 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "surface", "soft"]],
