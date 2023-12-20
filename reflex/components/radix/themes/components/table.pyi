@@ -18,9 +18,70 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
         ] = None,
+        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
         variant: Optional[
             Union[Var[Literal["surface", "ghost"]], Literal["surface", "ghost"]]
         ] = None,
@@ -184,6 +245,8 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             size: The size of the table: "1" | "2" | "3"
             variant: The variant of the table
             align: Alignment of the table
@@ -234,6 +297,69 @@ class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         align: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -382,6 +508,8 @@ class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             align: Alignment of the content within the table header
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -426,6 +554,69 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         align: Optional[
             Union[
                 Var[Literal["start", "center", "end", "baseline"]],
@@ -580,6 +771,8 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             align: Alignment of the content within the table row
             bgcolor: Background color of the table row
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
@@ -625,6 +818,69 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         justify: Optional[
             Union[
                 Var[Literal["start", "center", "end"]],
@@ -798,6 +1054,8 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             justify: The justification of the column
             width: width of the column
             align: Alignment of the content within the table header cell
@@ -850,6 +1108,69 @@ class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         align: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -1001,6 +1322,8 @@ class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             align: Alignment of the content within the table body
             bgcolor: Background color of the table body
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
@@ -1046,6 +1369,69 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         justify: Optional[
             Union[
                 Var[Literal["start", "center", "end"]],
@@ -1216,6 +1602,8 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             justify: The justification of the column
             width: width of the column
             align: Alignment of the content within the table cell
@@ -1267,6 +1655,69 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         justify: Optional[
             Union[
                 Var[Literal["start", "center", "end"]],
@@ -1440,6 +1891,8 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             justify: The justification of the column
             width: width of the column
             align: Alignment of the content within the table header cell

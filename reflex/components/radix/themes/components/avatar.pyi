@@ -25,16 +25,8 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
-        ] = None,
-        size: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        color: Optional[
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -94,6 +86,16 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        ration: Optional[Union[Var[float], float]] = None,
+        variant: Optional[
+            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
+        ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -205,9 +207,14 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+<<<<<<< HEAD
+=======
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
+            ration: The ratio of the width to the height of the element
+>>>>>>> main
             variant: The variant of the avatar
             size: The size of the avatar
-            color: Color theme of the avatar
             high_contrast: Whether to render the avatar with higher contrast color against background
             radius: Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
             m: Margin: "0" - "9"

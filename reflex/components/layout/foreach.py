@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import inspect
 from hashlib import md5
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Optional
 
 from reflex.components.component import Component
 from reflex.components.layout.fragment import Fragment
@@ -22,6 +22,17 @@ class Foreach(Component):
 
     # A function from the render args to the component.
     render_fn: Callable = Fragment.create
+
+    # The theme if set.
+    theme: Optional[Component] = None
+
+    def _apply_theme(self, theme: Component):
+        """Apply the theme to this component.
+
+        Args:
+            theme: The theme to apply.
+        """
+        self.theme = theme
 
     @classmethod
     def create(cls, iterable: Var[Iterable], render_fn: Callable, **props) -> Foreach:
@@ -85,6 +96,11 @@ class Foreach(Component):
         """
         tag = self._render()
         component = tag.render_component()
+
+        # Apply the theme to the children.
+        if self.theme is not None:
+            component.apply_theme(self.theme)
+
         return dict(
             tag.add_props(
                 **self.event_triggers,

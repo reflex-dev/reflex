@@ -18,6 +18,70 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
+        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
         variant: Optional[
             Union[Var[Literal["surface", "ghost"]], Literal["surface", "ghost"]]
         ] = None,
@@ -134,7 +198,14 @@ class TabsRoot(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+<<<<<<< HEAD
             variant: The variant of the tab
+=======
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
+            size: The size of the table: "1" | "2" | "3"
+            variant: The variant of the table
+>>>>>>> main
             default_value: The value of the tab that should be active when initially rendered. Use when you do not need to control the state of the tabs.
             value: The controlled value of the tab that should be active. Use when you need to control the state of the tabs.
             orientation: The orientation of the tabs.
@@ -164,6 +235,69 @@ class TabsList(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -266,6 +400,8 @@ class TabsList(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -292,6 +428,69 @@ class TabsTrigger(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
@@ -396,6 +595,8 @@ class TabsTrigger(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             value: The value of the tab. Must be unique for each tab.
             disabled: Whether the tab is disabled
             m: Margin: "0" - "9"
@@ -424,7 +625,73 @@ class TabsContent(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+<<<<<<< HEAD
         value: Optional[Union[Var[str], str]] = None,
+=======
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
+>>>>>>> main
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -527,7 +794,12 @@ class TabsContent(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+<<<<<<< HEAD
             value: The value of the tab. Must be unique for each tab.
+=======
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
+>>>>>>> main
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

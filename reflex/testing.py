@@ -165,7 +165,7 @@ class AppHarness:
             # reset rx.State subclasses
             State.class_subclasses.clear()
             # self.app_module.app.
-            self.app_module = reflex.utils.prerequisites.get_app(reload=True)
+            self.app_module = reflex.utils.prerequisites.get_compiled_app(reload=True)
         self.app_instance = self.app_module.app
         if isinstance(self.app_instance.state_manager, StateManagerRedis):
             # Create our own redis connection for testing.

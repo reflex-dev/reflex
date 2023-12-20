@@ -100,7 +100,6 @@ def ClientSide():
     app = rx.App(state=rx.State)
     app.add_page(index)
     app.add_page(index, route="/foo")
-    app.compile()
 
 
 @pytest.fixture(scope="session")

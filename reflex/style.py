@@ -108,7 +108,7 @@ def convert(style_dict):
     var_data = None  # Track import/hook data from any Vars in the style dict.
     out = {}
     for key, value in style_dict.items():
-        key = format.to_camel_case(key)
+        key = format.to_camel_case(key, allow_hyphens=True)
         if isinstance(value, dict):
             # Recursively format nested style dictionaries.
             out[key], new_var_data = convert(value)

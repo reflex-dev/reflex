@@ -17,7 +17,7 @@ test_style = [
     ({"::test_case": {"a": 1}}, {"::testCase": {"a": 1}}),
     (
         {"::-webkit-scrollbar": {"display": "none"}},
-        {"::WebkitScrollbar": {"display": "none"}},
+        {"::-webkit-scrollbar": {"display": "none"}},
     ),
 ]
 

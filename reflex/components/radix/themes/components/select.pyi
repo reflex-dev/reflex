@@ -25,6 +25,69 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
         default_value: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
@@ -139,6 +202,8 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             size: The size of the select: "1" | "2" | "3"
             default_value: The value of the select when initially rendered. Use when you do not need to control the state of the select.
             value: The controlled value of the select. Use when you need to control the state of the select.
@@ -171,13 +236,8 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        variant: Optional[
-            Union[
-                Var[Literal["classic", "surface", "soft", "ghost"]],
-                Literal["classic", "surface", "soft", "ghost"],
-            ]
-        ] = None,
-        color: Optional[
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -237,6 +297,12 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "surface", "soft", "ghost"]],
+                Literal["classic", "surface", "soft", "ghost"],
             ]
         ] = None,
         radius: Optional[
@@ -348,8 +414,9 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             variant: Variant of the select trigger
-            color: The color of the select trigger
             radius: The radius of the select trigger
             placeholder: The placeholder of the select trigger
             m: Margin: "0" - "9"
@@ -379,10 +446,8 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        variant: Optional[
-            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
-        ] = None,
-        color: Optional[
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -443,6 +508,9 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
                     "gray",
                 ],
             ]
+        ] = None,
+        variant: Optional[
+            Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         position: Optional[
@@ -576,8 +644,9 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             variant: The variant of the select content
-            color: The color of the select content
             high_contrast: Whether to render the select content with higher contrast color against background
             position: The positioning mode to use, item-aligned is the default and behaves similarly to a native MacOS menu by positioning content relative to the active item. popper positions content in the same way as our other primitives, for example Popover or DropdownMenu.
             side: The preferred side of the anchor to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled. Only available when position is set to popper.
@@ -610,6 +679,69 @@ class SelectGroup(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -712,6 +844,8 @@ class SelectGroup(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -738,6 +872,69 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         value: Optional[Union[Var[str], str]] = None,
         m: Optional[
             Union[
@@ -841,6 +1038,8 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             value: The value of the select item when submitting the form.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
@@ -868,6 +1067,69 @@ class SelectLabel(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -970,6 +1232,8 @@ class SelectLabel(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -996,6 +1260,69 @@ class SelectSeparator(CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
+            Union[
+                Var[
+                    Literal[
+                        "tomato",
+                        "red",
+                        "ruby",
+                        "crimson",
+                        "pink",
+                        "plum",
+                        "purple",
+                        "violet",
+                        "iris",
+                        "indigo",
+                        "blue",
+                        "cyan",
+                        "teal",
+                        "jade",
+                        "green",
+                        "grass",
+                        "brown",
+                        "orange",
+                        "sky",
+                        "mint",
+                        "lime",
+                        "yellow",
+                        "amber",
+                        "gold",
+                        "bronze",
+                        "gray",
+                    ]
+                ],
+                Literal[
+                    "tomato",
+                    "red",
+                    "ruby",
+                    "crimson",
+                    "pink",
+                    "plum",
+                    "purple",
+                    "violet",
+                    "iris",
+                    "indigo",
+                    "blue",
+                    "cyan",
+                    "teal",
+                    "jade",
+                    "green",
+                    "grass",
+                    "brown",
+                    "orange",
+                    "sky",
+                    "mint",
+                    "lime",
+                    "yellow",
+                    "amber",
+                    "gold",
+                    "bronze",
+                    "gray",
+                ],
+            ]
+        ] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -1098,6 +1425,8 @@ class SelectSeparator(CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
