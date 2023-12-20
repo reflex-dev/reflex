@@ -77,9 +77,11 @@ def send(event: str, telemetry_enabled: bool | None = None) -> bool:
 
     # Return if telemetry is disabled.
     if not telemetry_enabled:
+        print("Telemetry is disabled.")
         return False
 
     try:
+        print("Sending telemetry...")
         with open(constants.Dirs.REFLEX_JSON) as f:
             reflex_json = json.load(f)
             distinct_id = reflex_json["project_hash"]

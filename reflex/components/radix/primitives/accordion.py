@@ -5,6 +5,9 @@ from typing import Literal
 from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.components.icons import Icon
+from reflex.components.radix.themes.layout import Box
+from reflex.components.core import match, cond
+from reflex.components.base import Fragment
 from reflex.style import Style
 from reflex.utils import imports
 from reflex.vars import Var
@@ -19,7 +22,7 @@ DEFAULT_ANIMATION_DURATION = 250
 # Helper methods
 
 
-def get_theme_accordion_root(variant: str, color: str):
+def get_theme_accordion_root(variant: Var[str], color: Var[str]):
     """Get the theme for the accordion root component.
 
     Args:
@@ -29,47 +32,29 @@ def get_theme_accordion_root(variant: str, color: str):
     Returns:
         The theme for the accordion root component.
     """
-    if variant == "classic":
-        return {
-            "border_radius": "6px",
-            "background_color": "var(--accent-9)"
-            if color == "primary"
-            else "var(--slate-9)",
-            "box_shadow": "0 2px 10px var(--black-a4)",
-        }
-    elif variant == "soft":
-        return {
-            "border_radius": "6px",
-            "background_color": "var(--accent-3)"
-            if color == "primary"
-            else "var(--slate-3)",
-            "box_shadow": "0 2px 10px var(--black-a1)",
-        }
-    elif variant == "outline":
-        return {
-            "border_radius": "6px",
-            "border": "1px solid var(--accent-6)"
-            if color == "primary"
-            else "1px solid var(--slate-6)",
-            "box_shadow": "0 2px 10px var(--black-a1)",
-        }
-    elif variant == "surface":
-        return {
-            "border_radius": "6px",
-            "background_color": "var(--accent-3)"
-            if color == "primary"
-            else "var(--slate-3)",
-            "border": "1px solid var(--accent-6)"
-            if color == "primary"
-            else "1px solid var(--slate-6)",
-            "box_shadow": "0 2px 10px var(--black-a1)",
-        }
-    elif variant == "ghost":
-        return {
-            "border_radius": "6px",
-            "background_color": "none",
-            "box_shadow": "None",
-        }
+    return match(
+        (
+            "classic",
+            {
+                "border_radius": "6px",
+                "background_color": cond(
+                    color == "primary", "var(--accent-9)", "var(--slate-9)"
+                ),
+                "box_shadow": "0 2px 10px var(--black-a4)",
+            },
+        ),
+        (
+            "soft",
+            {
+                "border_radius": "6px",
+                "background_color": cond(
+                    color == "primary", "var(--accent-3)", "var(--slate-3)"
+                ),
+                "box_shadow": "0 2px 10px var(--black-a1)",
+            },
+        ),
+        {},
+    )
 
 
 def get_theme_accordion_item(variant: str):
@@ -432,7 +417,7 @@ class AccordionRoot(AccordionComponent):
 
     def _apply_theme(self, theme: Component):
 
-        self.style = Style(
+        self.style = Var.create(Style(
             {
                 "& .AccordionItem": get_theme_accordion_item(variant=self.variant),
                 "& .AccordionHeader": get_theme_accordion_header(variant=self.variant),
@@ -442,10 +427,15 @@ class AccordionRoot(AccordionComponent):
                 "& .AccordionContent": get_theme_accordion_content(
                     variant=self.variant, color=self.color
                 ),
-                **get_theme_accordion_root(variant=self.variant, color=self.color),  # type: ignore
                 **self.style,
             }
-        )
+        ))
+
+        self.style= Var.create(self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color))) # type: ignore 
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        return super().create(*children, **props)
 
 
 class AccordionItem(AccordionComponent):
