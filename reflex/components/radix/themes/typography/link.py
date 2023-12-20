@@ -21,8 +21,10 @@ from .base import (
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 
+from reflex.components.el.elements.metadata import Link as BaseLink
 
-class Link(CommonMarginProps, RadixThemesComponent):
+
+class Link(CommonMarginProps, RadixThemesComponent, BaseLink):
     """A semantic element for navigation between pages."""
 
     tag = "Link"
