@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, overload
 
-from reflex.components.chakra.layout.fragment import Fragment
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import CondTag, Tag
 from reflex.constants import Dirs

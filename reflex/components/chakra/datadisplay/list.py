@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from reflex.components.chakra.layout.foreach import Foreach
-from reflex.components.component import Component
 from reflex.components.chakra import ChakraComponent
+from reflex.components.component import Component
+from reflex.components.core.foreach import Foreach
 from reflex.vars import Var
 
 

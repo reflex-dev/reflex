@@ -37,8 +37,9 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
 from reflex.components.base.app_wrap import AppWrap
-from reflex.components.chakra.layout.fragment import Fragment
-from reflex.components.chakra.navigation.client_side_routing import (
+from reflex.components.base.fragment import Fragment
+from reflex.components.component import Component, ComponentStyle
+from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )

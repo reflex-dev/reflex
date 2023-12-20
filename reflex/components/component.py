@@ -1388,7 +1388,7 @@ class StatefulComponent(BaseComponent):
         Returns:
             The stateful component or None if the component should not be memoized.
         """
-        from reflex.components.chakra.layout.foreach import Foreach
+        from reflex.components.core.foreach import Foreach
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
@@ -1471,8 +1471,8 @@ class StatefulComponent(BaseComponent):
             The Var from the child component or the child itself (for regular cases).
         """
         from reflex.components.base.bare import Bare
-        from reflex.components.chakra.layout.cond import Cond
-        from reflex.components.chakra.layout.foreach import Foreach
+        from reflex.components.core.cond import Cond
+        from reflex.components.core.foreach import Foreach
 
         if isinstance(child, Bare):
             return child.contents

@@ -1,9 +1,9 @@
 """Table components."""
 from typing import List, Tuple
 
-from reflex.components.chakra.layout.foreach import Foreach
-from reflex.components.component import Component
 from reflex.components.chakra import ChakraComponent
+from reflex.components.component import Component
+from reflex.components.core.foreach import Foreach
 from reflex.utils import types
 from reflex.vars import Var
 

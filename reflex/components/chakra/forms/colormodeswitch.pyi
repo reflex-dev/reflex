@@ -9,9 +9,9 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any
 from reflex.components.chakra import ChakraComponent
-from reflex.components.chakra.layout.cond import Cond, cond
 from reflex.components.chakra.media.icon import Icon
 from reflex.components.component import BaseComponent, Component
+from reflex.components.core.cond import Cond, cond
 from reflex.style import color_mode, toggle_color_mode
 from reflex.vars import Var
 from .button import Button

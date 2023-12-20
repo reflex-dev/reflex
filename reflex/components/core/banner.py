@@ -4,10 +4,11 @@ from __future__ import annotations
 from typing import Optional
 
 from reflex.components.base.bare import Bare
-from reflex.components.chakra.layout import Box, cond
+from reflex.components.chakra.layout import Box
 from reflex.components.chakra.overlay.modal import Modal
 from reflex.components.chakra.typography import Text
 from reflex.components.component import Component
+from reflex.components.core.cond import cond
 from reflex.constants import Hooks, Imports
 from reflex.utils import imports
 from reflex.vars import Var, VarData

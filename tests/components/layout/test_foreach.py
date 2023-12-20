@@ -3,7 +3,7 @@ from typing import Dict, List, Set, Tuple
 import pytest
 
 from reflex.components import box, foreach, text
-from reflex.components.chakra.layout import Foreach
+from reflex.components.core import Foreach
 from reflex.state import BaseState
 
 

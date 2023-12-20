@@ -5,7 +5,7 @@ import inspect
 from hashlib import md5
 from typing import Any, Callable, Iterable, Optional
 
-from reflex.components.chakra.layout.fragment import Fragment
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.tags import IterTag
 from reflex.constants import MemoizationMode

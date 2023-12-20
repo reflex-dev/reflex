@@ -8,10 +8,10 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Union
-from reflex.components.chakra.layout.foreach import Foreach
+from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.typography.text import Text
 from reflex.components.component import Component
-from reflex.components.chakra import ChakraComponent
+from reflex.components.core.foreach import Foreach
 from reflex.constants import EventTriggers
 from reflex.utils.types import _issubclass
 from reflex.vars import Var

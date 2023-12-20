@@ -8,7 +8,6 @@ from .alertdialog import (
     AlertDialogHeader,
     AlertDialogOverlay,
 )
-from .banner import ConnectionBanner, ConnectionModal
 from .drawer import (
     Drawer,
     DrawerBody,

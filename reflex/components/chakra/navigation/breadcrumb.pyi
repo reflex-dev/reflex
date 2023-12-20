@@ -7,10 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.chakra.layout.foreach import Foreach
+from reflex.components.chakra import ChakraComponent
 from reflex.components.chakra.navigation.link import Link
 from reflex.components.component import Component
-from reflex.components.chakra import ChakraComponent
+from reflex.components.core.foreach import Foreach
 from reflex.vars import Var
 
 class Breadcrumb(ChakraComponent):
