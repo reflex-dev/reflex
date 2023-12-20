@@ -20,7 +20,17 @@ LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 DEFAULT_ANIMATION_DURATION = 250
 
+<<<<<<< HEAD
 class AccordionComponent(RadixPrimitiveComponent):
+=======
+def get_theme_accordion_root(variant: str, color: str): ...
+def get_theme_accordion_item(variant: str): ...
+def get_theme_accordion_header(variant: str): ...
+def get_theme_accordion_trigger(variant: str, color: str): ...
+def get_theme_accordion_content(variant: str, color: str): ...
+
+class AccordionComponent(Component):
+>>>>>>> 93edcf27 (PYI)
     @overload
     @classmethod
     def create(  # type: ignore
@@ -121,6 +131,10 @@ class AccordionRoot(AccordionComponent):
                 Literal["vertical", "horizontal"],
             ]
         ] = None,
+        variant: Optional[
+            Literal["classic", "soft", "surface", "outline", "ghost"]
+        ] = None,
+        color: Optional[Literal["primary", "accent"]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -534,3 +548,7 @@ class AccordionContent(AccordionComponent):
 def accordion_item(header: Component, content: Component, **props) -> Component: ...
 
 accordion = AccordionRoot.create
+accordion_root = AccordionRoot.create
+accordion_header = AccordionHeader.create
+accordion_trigger = AccordionTrigger.create
+accordion_content = AccordionContent.create
