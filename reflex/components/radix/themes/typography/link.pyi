@@ -8,12 +8,12 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.el.elements.inline import A
 from reflex.vars import Var
 from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
-from reflex.components.el.elements.inline import A
 
 class Link(CommonMarginProps, RadixThemesComponent, A):
     @overload
