@@ -1,103 +1,240 @@
-"""rx.match"""
-from typing import Any, List, Dict, Optional, overload, Set
+"""rx.match."""
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.base import Fragment
-from reflex.vars import BaseVar, Var
-from reflex.components.tags import CondTag, Tag, MatchTag
+from reflex.components.component import BaseComponent, Component, MemoizationLeaf
+from reflex.components.tags import MatchTag, Tag
 from reflex.utils import format, imports, types
+from reflex.vars import BaseVar, Var
+
 
 class Match(MemoizationLeaf):
+    """Match cases based on a condition."""
+
+    # The condition to determine which case to match.
     cond: Var[Any]
 
+    # The list of match cases to be matched.
     match_cases: List[Any] = []
 
+    # The catchall case to match.
     default: Any
 
     @classmethod
-    def create(cls, cond: Var, *cases):
-        # Convert the condition to a Var.
-        cond_var = Var.create(cond)
-        assert cond_var is not None, "The condition must be set."
+    def create(cls, cond: Any, *cases) -> Union[Component, BaseVar]:
+        """Create a Match Component.
 
-        cases = list(cases)
+        Args:
+            cond: The condition to determine which case to match.
+            cases: This list of cases to match.
+
+        Returns:
+            The match component.
+
+        Raises:
+            ValueError: When a default case is not provided for cases with Var return types.
+        """
+        match_cond_var = cls._create_condition_var(cond)
+        cases, default = cls._process_cases(list(cases))
+        match_cases = cls._process_match_cases(cases)
+
+        cls._validate_return_types(match_cases)
+
+        if default is None and types._issubclass(type(match_cases[0][-1]), BaseVar):
+            raise ValueError(
+                "For cases with return types as Vars, a default case must be provided"
+            )
+
+        return cls._create_match_cond_var_or_component(
+            match_cond_var, match_cases, default
+        )
+
+    @classmethod
+    def _create_condition_var(cls, cond: Any) -> BaseVar:
+        """Convert the condition to a Var.
+
+        Args:
+            cond: The condition.
+
+        Returns:
+            The condition as a base var
+
+        Raises:
+            ValueError: If the condition is not provided.
+        """
+        match_cond_var = Var.create(cond)
+        if match_cond_var is None:
+            raise ValueError("The condition must be set")
+        return match_cond_var  # type: ignore
+
+    @classmethod
+    def _process_cases(
+        cls, cases: List
+    ) -> Tuple[List, Optional[Union[BaseVar, BaseComponent]]]:
+        """Process the list of match cases and the catchall default case.
+
+        Args:
+            cases: The list of match cases.
+
+        Returns:
+            The default case and the list of match case tuples.
+
+        Raises:
+            ValueError: If there are multiple default cases.
+        """
         default = None
 
-        # Can only have one default
         if len([case for case in cases if not isinstance(case, tuple)]) > 1:
             raise ValueError("rx.match can only have one default case.")
 
         if not isinstance(cases[-1], tuple):
             default = cases.pop()
-            default = Var.create(default) if not isinstance(default, BaseComponent) else default
+            default = (
+                Var.create(default)
+                if not isinstance(default, BaseComponent)
+                else default
+            )
 
+        return cases, default  # type: ignore
+
+    @classmethod
+    def _process_match_cases(cls, cases: List) -> List[List[BaseVar]]:
+        """Process the individual match cases.
+
+        Args:
+            cases: The match cases.
+
+        Returns:
+            The processed match cases.
+
+        Raises:
+            ValueError: If the default case is not the last case or the tuple elements are less than 2.
+        """
         match_cases = []
         for case in cases:
             if not isinstance(case, tuple):
-                # The default must be the last arg.
-                raise ValueError("rx.match should have tuples of cases and default case as the last argument ")
+                raise ValueError(
+                    "rx.match should have tuples of cases and a default case as the last argument."
+                )
             if len(case) < 2:
-                raise ValueError("a case tuple should have at least a match case element and a return value ")
+                raise ValueError(
+                    "A case tuple should have at least a match case element and a return value."
+                )
 
             case_list = []
             for element in case:
-                el = Var.create(element) if not isinstance(element, BaseComponent) else element
-                assert isinstance(el, (BaseVar, BaseComponent)), "case element must be a var or component"
+                el = (
+                    Var.create(element)
+                    if not isinstance(element, BaseComponent)
+                    else element
+                )
+                if not isinstance(el, (BaseVar, BaseComponent)):
+                    raise ValueError("Case element must be a var or component")
                 case_list.append(el)
 
             match_cases.append(case_list)
 
-        return_type = BaseComponent if types._isinstance(match_cases[0][-1], BaseComponent) else BaseVar if types._isinstance(match_cases[0][-1], BaseVar) else type(match_cases[0][-1])
+        return match_cases
 
-        # types.get_base_class()
+    @classmethod
+    def _validate_return_types(cls, match_cases: List[List[BaseVar]]) -> None:
+        """Validate that match cases have the same return types.
+
+        Args:
+            match_cases: The match cases.
+
+        Raises:
+            TypeError: If the return types of cases are different.
+        """
+        first_case_return = match_cases[0][-1]
+        return_type = type(first_case_return)
+
+        if types._isinstance(first_case_return, BaseComponent):
+            return_type = BaseComponent
+        elif types._isinstance(first_case_return, BaseVar):
+            return_type = BaseVar
+
         for case in match_cases:
             if not types._issubclass(type(case[-1]), return_type):
                 raise TypeError("match cases should have the same return types")
 
-        if default is None and types._issubclass(return_type, BaseVar):
-            raise ValueError("For cases with return types as Vars, a default case must be provided")
+    @classmethod
+    def _create_match_cond_var_or_component(
+        cls,
+        match_cond_var: Var,
+        match_cases: List[List[BaseVar]],
+        default: Optional[Union[BaseVar, BaseComponent]],
+    ) -> Union[Component, BaseVar]:
+        """Create and return the match condition var or component.
 
-        if default is None and types._issubclass(return_type, BaseComponent):
+        Args:
+            match_cond_var: The match condition.
+            match_cases: The list of match cases.
+            default: The default case.
+
+        Returns:
+            The match component wrapped in a fragment or the match var.
+
+        Raises:
+            ValueError: If the return types are not vars when creating a match var for Var types.
+        """
+        if default is None and types._issubclass(
+            type(match_cases[0][-1]), BaseComponent
+        ):
             default = Fragment.create()
 
-        if types._issubclass(return_type, BaseComponent) :
-            comp =  cls(
-                cond=cond_var,
-                match_cases=match_cases,
-                default=default,
+        if types._issubclass(type(match_cases[0][-1]), BaseComponent):
+            return Fragment.create(
+                cls(
+                    cond=match_cond_var,
+                    match_cases=match_cases,
+                    default=default,
+                )
             )
-            return Fragment.create(comp)
 
-        return cond_var._replace(
+            # Validate the match cases (as well as the default case) to have Var return types.
+        if any(
+            case for case in match_cases if not types._isinstance(case[-1], BaseVar)
+        ) or not types._isinstance(default, BaseVar):
+            raise ValueError("Return types of match cases should be Vars.")
+
+        return match_cond_var._replace(
             _var_name=format.format_match(
-                cond = cond_var._var_full_name,
-                match_cases=match_cases,
-                default=default,
-
+                cond=match_cond_var._var_full_name,
+                match_cases=match_cases,  # type: ignore
+                default=default,  # type: ignore
             ),
-            _var_type=default._var_type,
+            _var_type=default._var_type,  # type: ignore
             _var_is_local=False,
             _var_full_name_needs_state_prefix=False,
         )
+
     def _render(self) -> Tag:
         return MatchTag(
-            cond = self.cond,
-            match_cases=self.match_cases,
-            default=self.default
+            cond=self.cond, match_cases=self.match_cases, default=self.default
         )
+
     def render(self) -> Dict:
+        """Render the component.
+
+        Returns:
+            The dictionary for template of component.
+        """
         tag = self._render()
         tag.name = "match"
-        tag.set(props=tag.format_props())
-        a = dict(tag)
-        return a
-
+        return dict(tag)
 
     def _get_imports(self):
         merged_imports = super()._get_imports()
+        # Obtain the imports of all components the in match case.
         for case in self.match_cases:
             if isinstance(case[-1], BaseComponent):
-                merged_imports = imports.merge_imports(merged_imports, case[-1].get_imports())
+                merged_imports = imports.merge_imports(
+                    merged_imports, case[-1].get_imports()
+                )
+        # Get the import of the default case component.
         if isinstance(self.default, BaseComponent):
-            merged_imports = imports.merge_imports(merged_imports, self.default.get_imports())
+            merged_imports = imports.merge_imports(
+                merged_imports, self.default.get_imports()
+            )
         return merged_imports
