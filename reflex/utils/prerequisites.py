@@ -942,6 +942,12 @@ def prompt_for_template() -> constants.Templates.Kind:
 def migrate_to_rx_chakra():
     """Migrate rx.button => r.chakra.button, etc."""
     # Check to see if this migration question has been answered by user before
+    if (
+        os.getenv("REFLEX_ALLOW_MIGRATE_TO_RX_CHAKRA") != "yes"
+        and constants.Reflex.VERSION < "0.4"
+    ):
+        return
+
     with open(constants.Config.FILE, "r") as f:
         for line in f.readlines():
             m = re.search("^# reflex (\\S+)", line)
