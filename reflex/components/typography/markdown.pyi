@@ -32,6 +32,7 @@ _REMARK_PLUGINS = Var.create_safe([_REMARK_MATH, _REMARK_GFM])
 _REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
 _REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
+NO_PROPS_TAGS = ("ul", "ol", "li")
 
 @lru_cache
 def get_base_component_map() -> dict[str, Callable]: ...
