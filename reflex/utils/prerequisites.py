@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import glob
 import importlib
+import inspect
 import json
 import os
 import platform
@@ -26,9 +27,11 @@ from alembic.util.exc import CommandError
 from packaging import version
 from redis.asyncio import Redis
 
+import reflex
 from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import Config, get_config
+from reflex.components import ChakraComponent
 from reflex.utils import console, path_ops, processes
 
 
@@ -994,21 +997,66 @@ def migrate_to_rx_chakra():
     file_list = glob.glob(file_pattern, recursive=True)
 
     # Populate with all rx.<x> components that have been moved to rx.chakra.<x>
-    updates = {
-        "rx.button": "rx.chakra.button",
-        "rx.checkbox": "rx.chakra.checkbox",
+    patterns = {
+        rf"\brx\.{name}\b": f"rx.chakra.{name}"
+        for name in _get_rx_chakra_component_to_migrate()
     }
 
     for file_path in file_list:
         with FileInput(file_path, inplace=True) as file:
             for _line_num, line in enumerate(file):
-                for old, new in updates.items():
-                    line = line.replace(old, new)
+                for old, new in patterns.items():
+                    line = re.sub(old, new, line)
                 print(line, end="")
 
     # FOR RXCONFIG BREADCRUMB BASED STATE TRACKING
     # If everything worked OK, mark this project "processed" so we don't ask again
     # _add_processed_marker_to_config()
+
+
+def _get_rx_chakra_component_to_migrate() -> set[str]:
+    rx_chakra_names = set(dir(reflex.chakra))
+
+    names_to_migrate = set()
+    whitelist = {
+        "CodeBlock",
+        "ColorModeIcon",
+        "MultiSelect",
+        "MultiSelectOption",
+        "base",
+        "code_block",
+        "color_mode_cond",
+        "color_mode_icon",
+        "multi_select",
+        "multi_select_option",
+    }
+    for rx_chakra_name in sorted(rx_chakra_names):
+        if rx_chakra_name.startswith("_"):
+            continue
+
+        rx_chakra_object = getattr(reflex.chakra, rx_chakra_name)
+        try:
+            if (
+                inspect.ismethod(rx_chakra_object)
+                and inspect.isclass(rx_chakra_object.__self__)
+                and issubclass(rx_chakra_object.__self__, ChakraComponent)
+            ):
+                names_to_migrate.add(rx_chakra_name)
+
+            elif inspect.isclass(rx_chakra_object) and issubclass(
+                rx_chakra_object, ChakraComponent
+            ):
+                names_to_migrate.add(rx_chakra_name)
+                pass
+            else:
+                # For the given rx.chakra.<x>, does rx.<x> exist?
+                # And of these, should we include in migration?
+                if hasattr(reflex, rx_chakra_name) and rx_chakra_name in whitelist:
+                    names_to_migrate.add(rx_chakra_name)
+
+        except Exception:
+            raise
+    return names_to_migrate
 
 
 def migrate_to_reflex():
