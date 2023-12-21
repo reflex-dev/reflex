@@ -295,6 +295,26 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
 
 
 @pytest.mark.parametrize(
+    "condition, match_cases, default,expected",
+    [
+        (
+            "state__state.value",
+            [
+                [Var.create(1), Var.create("red")],
+                [Var.create(2), Var.create(3), Var.create("blue")],
+            ],
+            Var.create("yellow"),
+            "(() => { switch (state__state.value) {case 1:  return (`red`);  break;case 2: case 3:  "
+            "return (`blue`);  break;default:  return (`yellow`);  break;};})()",
+        )
+    ],
+)
+def test_format_match(condition, match_cases, default, expected):
+
+    assert format.format_match(condition, match_cases, default) == expected
+
+
+@pytest.mark.parametrize(
     "prop,formatted",
     [
         ("string", '"string"'),

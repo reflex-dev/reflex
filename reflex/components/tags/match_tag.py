@@ -1,9 +1,8 @@
 """Tag to conditionally render components."""
 
-from typing import Any, Dict, Optional, List
+from typing import Any, List
 
 from reflex.components.tags.tag import Tag
-from reflex.vars import Var
 
 
 class MatchTag(Tag):

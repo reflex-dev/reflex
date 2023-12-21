@@ -107,6 +107,7 @@ from reflex.components import LinkOverlay as LinkOverlay
 from reflex.components import List as List
 from reflex.components import ListItem as ListItem
 from reflex.components import Markdown as Markdown
+from reflex.components import Match as Match
 from reflex.components import Menu as Menu
 from reflex.components import MenuButton as MenuButton
 from reflex.components import MenuDivider as MenuDivider
@@ -317,6 +318,7 @@ from reflex.components import link_overlay as link_overlay
 from reflex.components import list as list
 from reflex.components import list_item as list_item
 from reflex.components import markdown as markdown
+from reflex.components import match as match
 from reflex.components import menu as menu
 from reflex.components import menu_button as menu_button
 from reflex.components import menu_divider as menu_divider
