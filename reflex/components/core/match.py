@@ -87,6 +87,7 @@ class Match(MemoizationLeaf):
         if len([case for case in cases if not isinstance(case, tuple)]) > 1:
             raise ValueError("rx.match can only have one default case.")
 
+        # Get the default case which should be the last non-tuple arg
         if not isinstance(cases[-1], tuple):
             default = cases.pop()
             default = (
@@ -116,6 +117,7 @@ class Match(MemoizationLeaf):
                 raise ValueError(
                     "rx.match should have tuples of cases and a default case as the last argument."
                 )
+            # There should be at least two elements in a case tuple(a condition and return value)
             if len(case) < 2:
                 raise ValueError(
                     "A case tuple should have at least a match case element and a return value."
@@ -123,6 +125,7 @@ class Match(MemoizationLeaf):
 
             case_list = []
             for element in case:
+                # convert all non component element to vars.
                 el = (
                     Var.create(element)
                     if not isinstance(element, BaseComponent)
@@ -192,7 +195,7 @@ class Match(MemoizationLeaf):
                 )
             )
 
-            # Validate the match cases (as well as the default case) to have Var return types.
+        # Validate the match cases (as well as the default case) to have Var return types.
         if any(
             case for case in match_cases if not types._isinstance(case[-1], BaseVar)
         ) or not types._isinstance(default, BaseVar):
