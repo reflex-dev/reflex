@@ -100,6 +100,9 @@ def _init(
     # Migrate Pynecone projects to Reflex.
     prerequisites.migrate_to_reflex()
 
+    # Migrate from rx to rx.chakra if not done before
+    prerequisites.migrate_to_rx_chakra()
+
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
 

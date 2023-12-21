@@ -9,6 +9,7 @@ import os
 import platform
 import random
 import re
+import shutil
 import stat
 import sys
 import tempfile
@@ -936,6 +937,63 @@ def prompt_for_template() -> constants.Templates.Kind:
 
     # Return the template.
     return constants.Templates.Kind(template)
+
+
+def migrate_to_rx_chakra():
+    """Migrate rx.button => r.chakra.button, etc."""
+    # Check to see if this migration question has been answered by user before
+    with open(constants.Config.FILE, "r") as f:
+        for line in f.readlines():
+            m = re.search("^# reflex (\\S+)", line)
+            if m:
+                directive = m.group(1)
+                if directive == "rx_chakra_migration_processed":
+                    return
+
+    def _add_processed_marker_to_config():
+        new_line = "\n"
+        with open(constants.Config.FILE, "r") as f:
+            data = f.read()
+            if isinstance(f.newlines, str):
+                new_line = f.newlines
+            elif isinstance(f.newlines, tuple) and len(f.newlines) > 0:
+                new_line = f.newlines[0]
+
+        shutil.copy(constants.Config.FILE, constants.Config.FILE + ".bak")
+        data = f"# reflex rx_chakra_migration_processed{new_line}" + data
+        with open(constants.Config.FILE, "w") as f:
+            f.write(data)
+
+    # Ask the user if they want to migrate.
+    action = console.ask(
+        "Reflex components of the form 'rx.<x>' are now based on Radix UI, rather than Chakra UI. Would you like to automatically update your code to keep using Chakra based components? (y/n)",
+        choices=["y", "n"],
+    )
+
+    # No, and we will mark this project "processed" so we don't ask again
+    if action == "n":
+        _add_processed_marker_to_config()
+        return
+
+    # Yes, proceed to migration
+    file_pattern = os.path.join(get_config().app_name, "**/*.py")
+    file_list = glob.glob(file_pattern, recursive=True)
+
+    # Populate with all rx.<x> components that have been moved to rx.chakra.<x>
+    updates = {
+        "rx.button": "rx.chakra.button",
+        "rx.checkbox": "rx.chakra.checkbox",
+    }
+
+    for file_path in file_list:
+        with FileInput(file_path, inplace=True) as file:
+            for _line_num, line in enumerate(file):
+                for old, new in updates.items():
+                    line = line.replace(old, new)
+                print(line, end="")
+
+    # If everything worked OK, mark this project "processed" so we don't ask again
+    _add_processed_marker_to_config()
 
 
 def migrate_to_reflex():
