@@ -12,3 +12,9 @@ from .responsive import (
     tablet_only,
 )
 from .upload import Upload, cancel_upload, clear_selected_files, selected_files
+
+connection_banner = ConnectionBanner.create
+connection_modal = ConnectionModal.create
+debounce_input = DebounceInput.create
+foreach = Foreach.create
+upload = Upload.create
