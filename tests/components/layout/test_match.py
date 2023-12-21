@@ -1,7 +1,7 @@
 import pytest
 
 import reflex as rx
-from reflex.components.layout.match import Match
+from reflex.components.core.match import Match
 from reflex.state import BaseState
 from reflex.vars import BaseVar
 
