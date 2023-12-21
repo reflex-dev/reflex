@@ -272,7 +272,7 @@ def format_cond(
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
 
 
-def format_match(cond: str | Var, match_cases: List[Var], default: Var) -> str:
+def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
     """Format a match expression whose return type is a Var.
 
     Args:

@@ -1,4 +1,4 @@
-"""Tag to conditionally render components."""
+"""Tag to conditionally match cases."""
 
 from typing import Any, List
 
@@ -6,13 +6,13 @@ from reflex.components.tags.tag import Tag
 
 
 class MatchTag(Tag):
-    """A conditional tag."""
+    """A match tag."""
 
-    # The condition to determine which component to render.
+    # The condition to determine which case to match.
     cond: Any
 
-    # The code to render if the condition is true.
+    # The list of match cases to be matched.
     match_cases: List[Any]
 
-    # The code to render if the condition is false.
+    # The catchall case to match.
     default: Any

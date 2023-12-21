@@ -1,5 +1,5 @@
 import datetime
-from typing import Any
+from typing import Any, List
 
 import pytest
 
@@ -309,8 +309,17 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         )
     ],
 )
-def test_format_match(condition, match_cases, default, expected):
+def test_format_match(
+    condition: str, match_cases: List[BaseVar], default: BaseVar, expected: str
+):
+    """Test formatting a match statement.
 
+    Args:
+        condition: The condition to match.
+        match_cases: List of match cases to be matched.
+        default: Catchall case for the match statement.
+        expected: The expected string output.
+    """
     assert format.format_match(condition, match_cases, default) == expected
 
 

@@ -14,6 +14,7 @@ class MatchState(BaseState):
 
 
 def test_match_components():
+    """Test matching cases with return values as components."""
     match_case_tuples = (
         (1, rx.text("first value")),
         (2, 3, rx.text("second value")),
@@ -80,6 +81,7 @@ def test_match_components():
 
 
 def test_match_vars():
+    """Test matching cases with return values as Vars."""
     match_case_tuples = (
         (1, "first"),
         (2, 3, "second value"),
@@ -103,6 +105,9 @@ def test_match_vars():
 
 
 def test_match_on_component_without_default():
+    """Test that matching cases with return values as components returns a Fragment
+    as the default case if not provided.
+    """
     match_case_tuples = (
         (1, rx.text("first value")),
         (2, 3, rx.text("second value")),
@@ -115,7 +120,7 @@ def test_match_on_component_without_default():
 
 
 def test_match_on_var_no_default():
-    # should throw error
+    """Test that an error is thrown when cases with return Values as Var do not have a default case."""
     match_case_tuples = (
         (1, "red"),
         (2, 3, "blue"),
@@ -150,7 +155,11 @@ def test_match_on_var_no_default():
     ],
 )
 def test_match_default_not_last_arg(match_case):
+    """Test that an error is thrown when the default case is not the last arg.
 
+    Args:
+        match_case: The cases to match.
+    """
     with pytest.raises(
         ValueError,
         match="rx.match should have tuples of cases and default case as the last argument ",
@@ -176,6 +185,11 @@ def test_match_default_not_last_arg(match_case):
     ],
 )
 def test_match_case_tuple_elements(match_case):
+    """Test that a match has at least 2 elements(a condition and a return value).
+
+    Args:
+        match_case: The cases to match.
+    """
     with pytest.raises(
         ValueError,
         match="a case tuple should have at least a match case element and a return value ",
@@ -184,6 +198,7 @@ def test_match_case_tuple_elements(match_case):
 
 
 def test_match_different_return_types():
+    """Test that an error is thrown when the return values are of different types."""
     match_case_tuples = (
         (1, rx.text("first value")),
         (2, 3, rx.text("second value")),
@@ -222,5 +237,10 @@ def test_match_different_return_types():
     ],
 )
 def test_match_multiple_default_cases(match_case):
+    """Test that there is only one default case.
+
+    Args:
+        match_case: the cases to match.
+    """
     with pytest.raises(ValueError, match="rx.match can only have one default case."):
         Match.create(MatchState.value, *match_case)
