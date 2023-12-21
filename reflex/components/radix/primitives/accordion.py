@@ -3,6 +3,7 @@
 from typing import Literal
 
 from reflex.components.component import Component
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import Style
 from reflex.utils import imports
@@ -16,13 +17,10 @@ LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 DEFAULT_ANIMATION_DURATION = 250
 
 
-class AccordionComponent(Component):
+class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
     library = "@radix-ui/react-accordion@^1.1.2"
-
-    # Change the default rendered element for the one passed as a child.
-    as_child: Var[bool]
 
 
 class AccordionRoot(AccordionComponent):

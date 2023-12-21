@@ -37,9 +37,9 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
 from reflex.components.base.app_wrap import AppWrap
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentStyle
-from reflex.components.layout.fragment import Fragment
-from reflex.components.navigation.client_side_routing import (
+from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
@@ -681,8 +681,7 @@ class App(Base):
                 # Merge the component style with the app style.
                 component.add_style(self.style)
 
-                if self.theme is not None:
-                    component.apply_theme(self.theme)
+                component.apply_theme(self.theme)
 
                 # Add component.get_imports() to all_imports.
                 all_imports.update(component.get_imports())

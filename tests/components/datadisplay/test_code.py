@@ -1,6 +1,6 @@
 import pytest
 
-from reflex.components.datadisplay.code import CodeBlock
+from reflex.components.chakra.datadisplay.code import CodeBlock
 
 
 @pytest.mark.parametrize(

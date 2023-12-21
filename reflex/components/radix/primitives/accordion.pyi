@@ -9,6 +9,7 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.components.component import Component
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import Style
 from reflex.utils import imports
@@ -19,7 +20,7 @@ LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 DEFAULT_ANIMATION_DURATION = 250
 
-class AccordionComponent(Component):
+class AccordionComponent(RadixPrimitiveComponent):
     @overload
     @classmethod
     def create(  # type: ignore
