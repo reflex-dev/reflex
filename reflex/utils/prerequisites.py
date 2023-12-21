@@ -949,13 +949,19 @@ def migrate_to_rx_chakra():
         return
 
     # Check to see if this migration question has been answered by user before
-    with open(constants.Config.FILE, "r") as f:
-        for line in f.readlines():
-            m = re.search("^# reflex (\\S+)", line)
-            if m:
-                directive = m.group(1)
-                if directive == "rx_chakra_migration_processed":
-                    return
+    def _already_processed() -> bool:
+        with open(constants.Config.FILE, "r") as f:
+            for line in f.readlines():
+                m = re.search("^# reflex (\\S+)", line)
+                if m:
+                    directive = m.group(1)
+                    if directive == "rx_chakra_migration_processed":
+                        return True
+        return False
+
+    # FOR RXCONFIG BREADCRUMB BASED STATE TRACKING
+    # if _already_processed():
+    #    return
 
     def _add_processed_marker_to_config():
         new_line = "\n"
@@ -979,7 +985,8 @@ def migrate_to_rx_chakra():
 
     # No, and we will mark this project "processed" so we don't ask again
     if action == "n":
-        _add_processed_marker_to_config()
+        # FOR RXCONFIG BREADCRUMB BASED STATE TRACKING
+        # _add_processed_marker_to_config()
         return
 
     # Yes, proceed to migration
@@ -999,8 +1006,9 @@ def migrate_to_rx_chakra():
                     line = line.replace(old, new)
                 print(line, end="")
 
+    # FOR RXCONFIG BREADCRUMB BASED STATE TRACKING
     # If everything worked OK, mark this project "processed" so we don't ask again
-    _add_processed_marker_to_config()
+    # _add_processed_marker_to_config()
 
 
 def migrate_to_reflex():
