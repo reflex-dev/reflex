@@ -85,20 +85,18 @@
 {% macro render_match_tag(component) %}
 {
     (() => {
-        let codeToRender;
         switch ({{ component.cond._var_full_name }}) {
         {% for case in component.match_cases %}
             {% for condition in case[:-1] %}
                 case {{ condition._var_full_name }}:
             {% endfor %}
-                codeToRender = {{ case[-1] }};
+                return {{ case[-1] }};
                 break;
         {% endfor %}
             default:
-                codeToRender = {{ component.default }};
+                return {{ component.default }};
                 break;
         }
-        return codeToRender;
     })()
   }
 {%- endmacro %}
