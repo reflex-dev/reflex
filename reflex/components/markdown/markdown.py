@@ -38,6 +38,8 @@ _REHYPE_KATEX = Var.create_safe("rehypeKatex", _var_is_local=False)
 _REHYPE_RAW = Var.create_safe("rehypeRaw", _var_is_local=False)
 _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 
+# These tags do NOT get props passed to them
+NO_PROPS_TAGS = ("ul", "ol", "li")
 
 # Component Mapping
 @lru_cache
@@ -214,6 +216,10 @@ class Markdown(Component):
 
         special_props = {_PROPS}
         children = [_CHILDREN]
+
+        # For certain tags, the props from the markdown renderer are not actually valid for the component.
+        if tag in NO_PROPS_TAGS:
+            special_props = set()
 
         # If the children are set as a prop, don't pass them as children.
         children_prop = props.pop("children", None)

@@ -883,3 +883,32 @@ def test_get_vars(component, exp_vars):
         sorted(exp_vars, key=lambda v: v._var_name),
     ):
         assert comp_var.equals(exp_var)
+
+
+def test_instantiate_all_components():
+    """Test that all components can be instantiated."""
+    # These components all have required arguments and cannot be trivially instantiated.
+    untested_components = {
+        "Card",
+        "Cond",
+        "DebounceInput",
+        "Foreach",
+        "FormControl",
+        "Html",
+        "Icon",
+        "Markdown",
+        "MultiSelect",
+        "Option",
+        "Popover",
+        "Radio",
+        "Script",
+        "Tag",
+        "Tfoot",
+        "Thead",
+    }
+    for component_name in rx._ALL_COMPONENTS:  # type: ignore
+        if component_name in untested_components:
+            continue
+        component = getattr(rx, component_name)
+        if isinstance(component, type) and issubclass(component, Component):
+            component.create()
