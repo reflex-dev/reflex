@@ -101,7 +101,6 @@ def test_match_vars():
         "break;case (match_state.num + 1):  return (`sixth value`);  break;default:  "
         "return (`default value`);  break;};})()"
     )
-    pass
 
 
 def test_match_on_component_without_default():
@@ -162,7 +161,7 @@ def test_match_default_not_last_arg(match_case):
     """
     with pytest.raises(
         ValueError,
-        match="rx.match should have tuples of cases and default case as the last argument ",
+        match="rx.match should have tuples of cases and a default case as the last argument.",
     ):
         Match.create(MatchState.value, *match_case)
 
@@ -192,7 +191,7 @@ def test_match_case_tuple_elements(match_case):
     """
     with pytest.raises(
         ValueError,
-        match="a case tuple should have at least a match case element and a return value ",
+        match="A case tuple should have at least a match case element and a return value.",
     ):
         Match.create(MatchState.value, *match_case)
 
