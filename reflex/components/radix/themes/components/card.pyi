@@ -83,7 +83,9 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
-            Union[Var[Literal[1, 2, 3, 4, 5]], Literal[1, 2, 3, 4, 5]]
+            Union[
+                Var[Literal["1", "2", "3", "4", "5"]], Literal["1", "2", "3", "4", "5"]
+            ]
         ] = None,
         variant: Optional[
             Union[
