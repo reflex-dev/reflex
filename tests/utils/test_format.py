@@ -309,9 +309,9 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
                 ],
             ],
             Var.create("yellow", _var_is_string=True),
-            "(() => { switch (state__state.value) {case 1:  return (`red`);  break;case 2: case 3:  "
-            "return (`blue`);  break;case test_state.mapping:  return "
-            "(test_state.num1);  break;case `${test_state.map_key}-key`:  return (`return-key`);"
+            "(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return (`red`);  break;case JSON.stringify(2): case JSON.stringify(3):  "
+            "return (`blue`);  break;case JSON.stringify(test_state.mapping):  return "
+            "(test_state.num1);  break;case JSON.stringify(`${test_state.map_key}-key`):  return (`return-key`);"
             "  break;default:  return (`yellow`);  break;};})()",
         )
     ],

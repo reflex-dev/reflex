@@ -99,11 +99,11 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 "default value",
             ),
-            "(() => { switch (match_state.value) {case 1:  return (`first`);  break;case 2: case 3:  return "
-            "(`second value`);  break;case [1, 2]:  return (`third-value`);  break;case `random`:  "
-            'return (`fourth_value`);  break;case {"foo": "bar"}:  return (`fifth value`);  '
-            "break;case (match_state.num + 1):  return (`sixth value`);  break;case `${match_state.value} - string`:  "
-            "return (match_state.string);  break;case match_state.string:  return (`${match_state.value} - string`);  break;default:  "
+            "(() => { switch (JSON.stringify(match_state.value)) {case JSON.stringify(1):  return (`first`);  break;case JSON.stringify(2): case JSON.stringify(3):  return "
+            "(`second value`);  break;case JSON.stringify([1, 2]):  return (`third-value`);  break;case JSON.stringify(`random`):  "
+            'return (`fourth_value`);  break;case JSON.stringify({"foo": "bar"}):  return (`fifth value`);  '
+            "break;case JSON.stringify((match_state.num + 1)):  return (`sixth value`);  break;case JSON.stringify(`${match_state.value} - string`):  "
+            "return (match_state.string);  break;case JSON.stringify(match_state.string):  return (`${match_state.value} - string`);  break;default:  "
             "return (`default value`);  break;};})()",
         ),
         (
@@ -118,11 +118,11 @@ def test_match_components():
                 (MatchState.string, f"{MatchState.value} - string"),
                 MatchState.string,
             ),
-            "(() => { switch (match_state.value) {case 1:  return (`first`);  break;case 2: case 3:  return "
-            "(`second value`);  break;case [1, 2]:  return (`third-value`);  break;case `random`:  "
-            'return (`fourth_value`);  break;case {"foo": "bar"}:  return (`fifth value`);  '
-            "break;case (match_state.num + 1):  return (`sixth value`);  break;case `${match_state.value} - string`:  "
-            "return (match_state.string);  break;case match_state.string:  return (`${match_state.value} - string`);  break;default:  "
+            "(() => { switch (JSON.stringify(match_state.value)) {case JSON.stringify(1):  return (`first`);  break;case JSON.stringify(2): case JSON.stringify(3):  return "
+            "(`second value`);  break;case JSON.stringify([1, 2]):  return (`third-value`);  break;case JSON.stringify(`random`):  "
+            'return (`fourth_value`);  break;case JSON.stringify({"foo": "bar"}):  return (`fifth value`);  '
+            "break;case JSON.stringify((match_state.num + 1)):  return (`sixth value`);  break;case JSON.stringify(`${match_state.value} - string`):  "
+            "return (match_state.string);  break;case JSON.stringify(match_state.string):  return (`${match_state.value} - string`);  break;default:  "
             "return (match_state.string);  break;};})()",
         ),
     ],

@@ -284,7 +284,7 @@ def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> s
         The formatted match expression
 
     """
-    switch_code = f"(() => {{ switch ({cond}) {{"
+    switch_code = f"(() => {{ switch (JSON.stringify({cond})) {{"
 
     for case in match_cases:
         conditions = case[:-1]
@@ -292,7 +292,7 @@ def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> s
 
         case_conditions = " ".join(
             [
-                f"case {condition._var_string_without_curly_braces}:"
+                f"case JSON.stringify({condition._var_string_without_curly_braces}):"
                 for condition in conditions
             ]
         )
