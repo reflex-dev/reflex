@@ -969,12 +969,14 @@ def should_show_rx_chakra_migration_instructions() -> bool:
 def show_rx_chakra_migration_instructions():
     """Show the migration instructions for rx.chakra.* => rx.*."""
     console.log(
-        "Prior to reflex 0.4.0, rx.<component> are based on Chakra UI. rx.<component> are now based on Radix UI. To stick to Chakra UI, use rx.chakra.<component> ."
+        "Prior to reflex 0.4.0, rx.* components are based on Chakra UI. They are now based on Radix UI. To stick to Chakra UI, use rx.chakra.*."
     )
+    console.log("")
     console.log(
-        "[bold] Run `reflex migrate keep-chakra` to automatically update your app"
+        "[bold]Run `reflex migrate keep-chakra` to automatically update your app."
     )
-    console.log("For more details, please see TODO")  # TODO add link to docs
+    console.log("")
+    console.log("For more details, please see https://TODO")  # TODO add link to docs
 
 
 def migrate_to_rx_chakra():
