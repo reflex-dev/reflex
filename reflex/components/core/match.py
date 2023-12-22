@@ -162,7 +162,9 @@ class Match(MemoizationLeaf):
         for index, case in enumerate(match_cases):
             if not types._issubclass(type(case[-1]), return_type):
                 raise MatchTypeError(
-                    f"Match cases should have the same return types. Case {index} with return value `{case[-1]._var_name if isinstance(case[-1], BaseVar) else textwrap.shorten(str(case[-1]), width=250)}` of type {type(case[-1])!r} is not {return_type}"
+                    f"Match cases should have the same return types. Case {index} with return "
+                    f"value `{case[-1]._var_name if isinstance(case[-1], BaseVar) else textwrap.shorten(str(case[-1]), width=250)}`"
+                    f" of type {type(case[-1])!r} is not {return_type}"
                 )
 
     @classmethod
