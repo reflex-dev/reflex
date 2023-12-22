@@ -344,7 +344,7 @@ class App(Base):
 
         Raises:
             TypeError: When an invalid component function is passed.
-            MatchTypeError: If the return types of match cases in rx.match are different.
+            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
         try:
             return component if isinstance(component, Component) else component()
