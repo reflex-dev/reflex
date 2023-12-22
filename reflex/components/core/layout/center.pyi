@@ -9,7 +9,6 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.components.component import Component
 from reflex.components.el.elements.typography import Div
-from reflex.style import Style
 
 class Center(Div):
     @overload
