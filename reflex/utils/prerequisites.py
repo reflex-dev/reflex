@@ -10,7 +10,6 @@ import os
 import platform
 import random
 import re
-import shutil
 import stat
 import sys
 import tempfile
@@ -942,57 +941,44 @@ def prompt_for_template() -> constants.Templates.Kind:
     return constants.Templates.Kind(template)
 
 
+def should_show_rx_chakra_migration_instructions() -> bool:
+    """Should we show the migration instructions for rx.chakra.* => rx.*?.
+
+    Returns:
+        bool: True if we should show the migration instructions.
+    """
+    if os.getenv("REFLEX_PROMPT_MIGRATE_TO_RX_CHAKRA") == "yes":
+        return True
+
+    with open(constants.Dirs.REFLEX_JSON, "r") as f:
+        data = json.load(f)
+        existing_init_reflex_version = data.get("version", None)
+
+    if existing_init_reflex_version is None:
+        # They clone a reflex app from git for the first time.
+        # If we don't ask... the reflex app would simply not work (if needed migration)
+        # If we ask... danger is only that they need to say "no". If they say "yes" by mistake, they can recover from git
+        return True
+
+    if constants.Reflex.VERSION < "0.4":
+        return False
+    else:
+        return existing_init_reflex_version < "0.4"
+
+
+def show_rx_chakra_migration_instructions():
+    """Show the migration instructions for rx.chakra.* => rx.*."""
+    console.log(
+        "Prior to reflex 0.4.0, rx.<component> are based on Chakra UI. rx.<component> are now based on Radix UI. To stick to Chakra UI, use rx.chakra.<component> ."
+    )
+    console.log(
+        "[bold] Run `reflex migrate keep-chakra` to automatically update your app"
+    )
+    console.log("For more details, please see TODO")  # TODO add link to docs
+
+
 def migrate_to_rx_chakra():
     """Migrate rx.button => r.chakra.button, etc."""
-    # Only ask if: we are 0.4 or newer, or REFLEX_ALLOW_MIGRATE_TO_RX_CHAKRA=yes
-    if (
-        os.getenv("REFLEX_ALLOW_MIGRATE_TO_RX_CHAKRA") != "yes"
-        and constants.Reflex.VERSION < "0.4"
-    ):
-        return
-
-    # Check to see if this migration question has been answered by user before
-    def _already_processed() -> bool:
-        with open(constants.Config.FILE, "r") as f:
-            for line in f.readlines():
-                m = re.search("^# reflex (\\S+)", line)
-                if m:
-                    directive = m.group(1)
-                    if directive == "rx_chakra_migration_processed":
-                        return True
-        return False
-
-    # FOR RXCONFIG BREADCRUMB BASED STATE TRACKING
-    # if _already_processed():
-    #    return
-
-    def _add_processed_marker_to_config():
-        new_line = "\n"
-        with open(constants.Config.FILE, "r") as f:
-            data = f.read()
-            if isinstance(f.newlines, str):
-                new_line = f.newlines
-            elif isinstance(f.newlines, tuple) and len(f.newlines) > 0:
-                new_line = f.newlines[0]
-
-        shutil.copy(constants.Config.FILE, constants.Config.FILE + ".bak")
-        data = f"# reflex rx_chakra_migration_processed{new_line}" + data
-        with open(constants.Config.FILE, "w") as f:
-            f.write(data)
-
-    # Ask the user if they want to migrate.
-    action = console.ask(
-        "Reflex components of the form 'rx.<x>' are now based on Radix UI, rather than Chakra UI. Would you like to automatically update your code to keep using Chakra based components? (y/n)",
-        choices=["y", "n"],
-    )
-
-    # No, and we will mark this project "processed" so we don't ask again
-    if action == "n":
-        # FOR RXCONFIG BREADCRUMB BASED STATE TRACKING
-        # _add_processed_marker_to_config()
-        return
-
-    # Yes, proceed to migration
     file_pattern = os.path.join(get_config().app_name, "**/*.py")
     file_list = glob.glob(file_pattern, recursive=True)
 
@@ -1008,10 +994,6 @@ def migrate_to_rx_chakra():
                 for old, new in patterns.items():
                     line = re.sub(old, new, line)
                 print(line, end="")
-
-    # FOR RXCONFIG BREADCRUMB BASED STATE TRACKING
-    # If everything worked OK, mark this project "processed" so we don't ask again
-    # _add_processed_marker_to_config()
 
 
 def _get_rx_chakra_component_to_migrate() -> set[str]:
