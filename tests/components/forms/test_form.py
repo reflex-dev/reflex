@@ -1,4 +1,4 @@
-from reflex.components.forms.form import Form
+from reflex.components.chakra.forms.form import Form
 from reflex.event import EventChain
 from reflex.vars import BaseVar
 
