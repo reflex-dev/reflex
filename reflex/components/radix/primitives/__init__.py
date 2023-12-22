@@ -1,7 +1,6 @@
 """Radix primitive components (https://www.radix-ui.com/primitives)."""
 
 from .accordion import accordion, accordion_item
-from .center import center
 from .form import (
     form_control,
     form_field,
