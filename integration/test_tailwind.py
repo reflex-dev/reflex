@@ -35,6 +35,7 @@ def TailwindApp(
             rx.text(paragraph_text, class_name=paragraph_class_name),
             rx.el.p(paragraph_text, class_name=paragraph_class_name),
             rdxt.text(paragraph_text, as_="p", class_name=paragraph_class_name),
+            id="p-content",
         )
 
     app = rx.App(style={"p": {"color": global_paragraph_color}})
@@ -94,7 +95,8 @@ def test_tailwind_app(tailwind_app: AppHarness, tailwind_disabled: bool):
     errctx.match("The state manager has not been initialized.")
 
     # Assert content is visible (and not some error)
-    paragraphs = driver.find_elements(By.TAG_NAME, "p")
+    content = driver.find_element(By.ID, "p-content")
+    paragraphs = content.find_elements(By.TAG_NAME, "p")
     assert len(paragraphs) == 3
     for p in paragraphs:
         assert tailwind_app.poll_for_content(p, exp_not_equal="") == PARAGRAPH_TEXT
