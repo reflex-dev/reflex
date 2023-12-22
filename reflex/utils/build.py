@@ -67,6 +67,7 @@ def _zip(
     upload_db_file: bool = False,
     dirs_to_exclude: set[str] | None = None,
     files_to_exclude: set[str] | None = None,
+    top_level_dirs_to_exclude: set[str] | None = None,
 ) -> None:
     """Zip utility function.
 
@@ -78,6 +79,7 @@ def _zip(
         upload_db_file: Whether to include local sqlite db files.
         dirs_to_exclude: The directories to exclude.
         files_to_exclude: The files to exclude.
+        top_level_dirs_to_exclude: The top level directory names immediately under root_dir to exclude. Do not exclude folders by these names further in the sub-directories.
 
     """
     dirs_to_exclude = dirs_to_exclude or set()
@@ -97,6 +99,9 @@ def _zip(
                 not exclude_venv_dirs or not _looks_like_venv_dir(os.path.join(root, d))
             )
         ]
+        # If we are at the top level with root_dir, exclude the top level dirs.
+        if top_level_dirs_to_exclude and root == root_dir:
+            dirs[:] = [d for d in dirs if d not in top_level_dirs_to_exclude]
         # Modify the files in-place so the hidden files and db files are excluded.
         files[:] = [
             f
@@ -197,8 +202,9 @@ def export(
                     zip_dest_dir, constants.ComponentName.BACKEND.zip()
                 ),
                 root_dir=".",
-                dirs_to_exclude={"assets", "__pycache__"},
+                dirs_to_exclude={"__pycache__"},
                 files_to_exclude=files_to_exclude,
+                top_level_dirs_to_exclude={"assets"},
                 exclude_venv_dirs=True,
                 upload_db_file=upload_db_file,
             )

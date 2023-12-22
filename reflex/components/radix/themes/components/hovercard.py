@@ -1,0 +1,63 @@
+"""Interactive components provided by @radix-ui/themes."""
+from typing import Any, Dict, Literal
+
+from reflex import el
+from reflex.vars import Var
+
+from ..base import (
+    CommonMarginProps,
+    RadixThemesComponent,
+)
+
+
+class HoverCardRoot(CommonMarginProps, RadixThemesComponent):
+    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+
+    tag = "HoverCard.Root"
+
+    # The open state of the hover card when it is initially rendered. Use when you do not need to control its open state.
+    default_open: Var[bool]
+
+    # The controlled open state of the hover card. Must be used in conjunction with onOpenChange.
+    open: Var[bool]
+
+    # The duration from when the mouse enters the trigger until the hover card opens.
+    open_delay: Var[int]
+
+    # The duration from when the mouse leaves the trigger until the hover card closes.
+    close_delay: Var[int]
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            "on_open_change": lambda e0: [e0],
+        }
+
+
+class HoverCardTrigger(CommonMarginProps, RadixThemesComponent):
+    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+
+    tag = "HoverCard.Trigger"
+
+
+class HoverCardContent(el.Div, CommonMarginProps, RadixThemesComponent):
+    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+
+    tag = "HoverCard.Content"
+
+    # The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
+    side: Var[Literal["top", "right", "bottom", "left"]]
+
+    # The distance in pixels from the trigger.
+    side_offset: Var[int]
+
+    # The preferred alignment against the trigger. May change when collisions occur.
+    align: Var[Literal["start", "center", "end"]]
+
+    # Whether or not the hover card should avoid collisions with its trigger.
+    avoid_collisions: Var[bool]

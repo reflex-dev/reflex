@@ -78,11 +78,7 @@ def _init(
     app_name = prerequisites.get_default_app_name() if name is None else name
     console.rule(f"[bold]Initializing {app_name}")
 
-    # Set up the web project.
-    prerequisites.initialize_frontend_dependencies()
-
-    # Migrate Pynecone projects to Reflex.
-    prerequisites.migrate_to_reflex()
+    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     # Set up the app directory, only if the config doesn't exist.
     if not os.path.exists(constants.Config.FILE):
@@ -93,6 +89,12 @@ def _init(
         telemetry.send("init")
     else:
         telemetry.send("reinit")
+
+    # Set up the web project.
+    prerequisites.initialize_frontend_dependencies()
+
+    # Migrate Pynecone projects to Reflex.
+    prerequisites.migrate_to_reflex()
 
     # Initialize the .gitignore.
     prerequisites.initialize_gitignore()
@@ -171,10 +173,12 @@ def _run(
 
     console.rule("[bold]Starting Reflex App")
 
+    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
+
     if frontend:
         prerequisites.update_next_config()
         # Get the app module.
-        prerequisites.get_app()
+        prerequisites.get_compiled_app()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -358,7 +362,7 @@ def db_init():
 
     # Initialize the database.
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     model.Model.alembic_init()
     model.Model.migrate(autogenerate=True)
 
@@ -369,8 +373,9 @@ def migrate():
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     model.Model.migrate()
@@ -389,8 +394,9 @@ def makemigrations(
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     with model.Model.get_db_engine().connect() as connection:
@@ -451,7 +457,7 @@ def deploy(
         help="The hostname of the frontend.",
         hidden=True,
     ),
-    interactive: Optional[bool] = typer.Option(
+    interactive: bool = typer.Option(
         True,
         help="Whether to list configuration options and ask for confirmation.",
     ),
@@ -483,20 +489,23 @@ def deploy(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    dependency.check_requirements()
+    # Only check requirements if interactive. There is user interaction for requirements update.
+    if interactive:
+        dependency.check_requirements()
 
     # Check if we are set up.
     prerequisites.check_initialized(frontend=True)
+    prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
 
     hosting_cli.deploy(
         app_name=app_name,
-        export_fn=lambda zip_dest_dir, api_url, deploy_url: export_utils.export(
+        export_fn=lambda zip_dest_dir, api_url, deploy_url, frontend, backend, zipping: export_utils.export(
             zip_dest_dir=zip_dest_dir,
             api_url=api_url,
             deploy_url=deploy_url,
-            frontend=True,
-            backend=True,
-            zipping=True,
+            frontend=frontend,
+            backend=backend,
+            zipping=zipping,
             loglevel=loglevel,
             upload_db_file=upload_db_file,
         ),

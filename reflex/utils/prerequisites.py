@@ -18,6 +18,7 @@ from pathlib import Path
 from types import ModuleType
 
 import httpx
+import pkg_resources
 import typer
 from alembic.util.exc import CommandError
 from packaging import version
@@ -27,6 +28,26 @@ from reflex import constants, model
 from reflex.compiler import templates
 from reflex.config import get_config
 from reflex.utils import console, path_ops, processes
+
+
+def check_latest_package_version(package_name: str):
+    """Check if the latest version of the package is installed.
+
+    Args:
+        package_name: The name of the package.
+    """
+    try:
+        # Get the latest version from PyPI
+        current_version = pkg_resources.get_distribution(package_name).version
+        url = f"https://pypi.org/pypi/{package_name}/json"
+        response = httpx.get(url)
+        latest_version = response.json()["info"]["version"]
+        if version.parse(current_version) < version.parse(latest_version):
+            console.warn(
+                f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
+            )
+    except Exception:
+        pass
 
 
 def check_node_version() -> bool:
@@ -138,9 +159,23 @@ def get_app(reload: bool = False) -> ModuleType:
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
-
         importlib.reload(app)
+
     return app
+
+
+def get_compiled_app(reload: bool = False) -> ModuleType:
+    """Get the app module based on the default config after first compiling it.
+
+    Args:
+        reload: Re-import the app module from disk
+
+    Returns:
+        The compiled app based on the default config.
+    """
+    app_module = get_app(reload=reload)
+    getattr(app_module, constants.CompileVars.APP).compile_()
+    return app_module
 
 
 def get_redis() -> Redis | None:
@@ -152,6 +187,14 @@ def get_redis() -> Redis | None:
     config = get_config()
     if not config.redis_url:
         return None
+    if config.redis_url.startswith(("redis://", "rediss://", "unix://")):
+        return Redis.from_url(config.redis_url)
+    console.deprecate(
+        feature_name="host[:port] style redis urls",
+        reason="redis-py url syntax is now being used",
+        deprecation_version="0.3.6",
+        removal_version="0.4.0",
+    )
     redis_url, has_port, redis_port = config.redis_url.partition(":")
     if not has_port:
         redis_port = 6379
@@ -234,18 +277,33 @@ def initialize_requirements_txt():
     the requirements.txt file.
     """
     fp = Path(constants.RequirementsTxt.FILE)
-    fp.touch(exist_ok=True)
+    encoding = "utf-8"
+    if not fp.exists():
+        fp.touch()
+    else:
+        # Detect the encoding of the original file
+        import charset_normalizer
 
+        charset_matches = charset_normalizer.from_path(fp)
+        maybe_charset_match = charset_matches.best()
+        if maybe_charset_match is None:
+            console.debug(f"Unable to detect encoding for {fp}, exiting.")
+            return
+        encoding = maybe_charset_match.encoding
+        console.debug(f"Detected encoding for {fp} as {encoding}.")
     try:
-        with open(fp, "r") as f:
+        other_requirements_exist = False
+        with open(fp, "r", encoding=encoding) as f:
             for req in f.readlines():
                 # Check if we have a package name that is reflex
                 if re.match(r"^reflex[^a-zA-Z0-9]", req):
                     console.debug(f"{fp} already has reflex as dependency.")
                     return
-        with open(fp, "a") as f:
+                other_requirements_exist = True
+        with open(fp, "a", encoding=encoding) as f:
+            preceding_newline = "\n" if other_requirements_exist else ""
             f.write(
-                f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
+                f"{preceding_newline}{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
             )
     except Exception:
         console.info(f"Unable to check {fp} for reflex dependency.")

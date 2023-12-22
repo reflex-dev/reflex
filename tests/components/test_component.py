@@ -5,13 +5,13 @@ import pytest
 import reflex as rx
 from reflex.base import Base
 from reflex.components.base.bare import Bare
+from reflex.components.chakra.layout.box import Box
 from reflex.components.component import (
     Component,
     CustomComponent,
     StatefulComponent,
     custom_component,
 )
-from reflex.components.layout.box import Box
 from reflex.constants import EventTriggers
 from reflex.event import EventChain, EventHandler
 from reflex.state import BaseState
@@ -883,3 +883,32 @@ def test_get_vars(component, exp_vars):
         sorted(exp_vars, key=lambda v: v._var_name),
     ):
         assert comp_var.equals(exp_var)
+
+
+def test_instantiate_all_components():
+    """Test that all components can be instantiated."""
+    # These components all have required arguments and cannot be trivially instantiated.
+    untested_components = {
+        "Card",
+        "Cond",
+        "DebounceInput",
+        "Foreach",
+        "FormControl",
+        "Html",
+        "Icon",
+        "Markdown",
+        "MultiSelect",
+        "Option",
+        "Popover",
+        "Radio",
+        "Script",
+        "Tag",
+        "Tfoot",
+        "Thead",
+    }
+    for component_name in rx._ALL_COMPONENTS:  # type: ignore
+        if component_name in untested_components:
+            continue
+        component = getattr(rx, component_name)
+        if isinstance(component, type) and issubclass(component, Component):
+            component.create()

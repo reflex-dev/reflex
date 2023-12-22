@@ -40,7 +40,7 @@ from reflex.event import (
     call_event_handler,
     get_handler_args,
 )
-from reflex.style import Style
+from reflex.style import Style, format_as_emotion
 from reflex.utils import console, format, imports, types
 from reflex.utils.imports import ImportVar
 from reflex.utils.serializers import serializer
@@ -266,8 +266,9 @@ class Component(BaseComponent, ABC):
                     passed_type = type(value)
                     expected_type = fields[key].outer_type_
                 if not types._issubclass(passed_type, expected_type):
+                    value_name = value._var_name if isinstance(value, Var) else value
                     raise TypeError(
-                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value} of type {passed_type}."
+                        f"Invalid var passed for prop {key}, expected type {expected_type}, got value {value_name} of type {passed_type}."
                     )
 
             # Check if the key is an event trigger.
@@ -287,6 +288,7 @@ class Component(BaseComponent, ABC):
 
         kwargs["style"] = Style(
             {
+                **self.get_fields()["style"].default,
                 **style,
                 **{attr: value for attr, value in kwargs.items() if attr not in fields},
             }
@@ -443,6 +445,25 @@ class Component(BaseComponent, ABC):
         from reflex.compiler.compiler import _compile_component
 
         return _compile_component(self)
+
+    def _apply_theme(self, theme: Optional[Component]):
+        """Apply the theme to this component.
+
+        Args:
+            theme: The theme to apply.
+        """
+        pass
+
+    def apply_theme(self, theme: Optional[Component]):
+        """Apply a theme to the component and its children.
+
+        Args:
+            theme: The theme to apply.
+        """
+        self._apply_theme(theme)
+        for child in self.children:
+            if isinstance(child, Component):
+                child.apply_theme(theme)
 
     def _render(self, props: dict[str, Any] | None = None) -> Tag:
         """Define how to render the component in React.
@@ -602,7 +623,7 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
-        return {"style": self.style}
+        return {"css": Var.create(format_as_emotion(self.style))}
 
     def render(self) -> Dict:
         """Render the component.
@@ -783,6 +804,10 @@ class Component(BaseComponent, ABC):
         # Get the dynamic imports from children
         for child in self.children:
             dynamic_imports |= child.get_dynamic_imports()
+
+        for prop in self.get_component_props():
+            if getattr(self, prop) is not None:
+                dynamic_imports |= getattr(self, prop).get_dynamic_imports()
 
         # Return the dynamic imports
         return dynamic_imports
@@ -1362,7 +1387,7 @@ class StatefulComponent(BaseComponent):
         Returns:
             The stateful component or None if the component should not be memoized.
         """
-        from reflex.components.layout.foreach import Foreach
+        from reflex.components.core.foreach import Foreach
 
         if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
             # Never memoize this component.
@@ -1445,8 +1470,8 @@ class StatefulComponent(BaseComponent):
             The Var from the child component or the child itself (for regular cases).
         """
         from reflex.components.base.bare import Bare
-        from reflex.components.layout.cond import Cond
-        from reflex.components.layout.foreach import Foreach
+        from reflex.components.core.cond import Cond
+        from reflex.components.core.foreach import Foreach
 
         if isinstance(child, Bare):
             return child.contents
@@ -1476,7 +1501,9 @@ class StatefulComponent(BaseComponent):
         code_hash = md5(str(rendered_code).encode("utf-8")).hexdigest()
 
         # Format the tag name including the hash.
-        return format.format_state_name(f"{component.tag or 'Comp'}_{code_hash}")
+        return format.format_state_name(
+            f"{component.tag or 'Comp'}_{code_hash}"
+        ).capitalize()
 
     @classmethod
     def _render_stateful_code(

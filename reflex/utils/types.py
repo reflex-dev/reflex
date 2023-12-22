@@ -19,6 +19,7 @@ from typing import (
 )
 
 from pydantic.fields import ModelField
+from sqlalchemy.orm import Mapped
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -132,8 +133,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         hints = get_type_hints(cls)
         if name in hints:
             type_ = hints[name]
+            type_origin = get_origin(type_)
+            if isinstance(type_origin, type) and issubclass(type_origin, Mapped):
+                return get_args(type_)[0]  # SQLAlchemy v2
             if isinstance(type_, ModelField):
-                return type_.type_
+                return type_.type_  # SQLAlchemy v1.4
             return type_
     elif is_union(cls):
         # Check in each arg of the annotation.
@@ -270,6 +274,23 @@ def check_type_in_allowed_types(value_type: Type, allowed_types: Iterable) -> bo
         If the type is found in the allowed types.
     """
     return get_base_class(value_type) in allowed_types
+
+
+def check_prop_in_allowed_types(prop: Any, allowed_types: Iterable) -> bool:
+    """Check that a prop value is in a list of allowed types.
+    Does the check in a way that works regardless if it's a raw value or a state Var.
+
+    Args:
+        prop: The prop to check.
+        allowed_types: The list of allowed types.
+
+    Returns:
+        If the prop type match one of the allowed_types.
+    """
+    from reflex.vars import Var
+
+    type_ = prop._var_type if _isinstance(prop, Var) else type(prop)
+    return type_ in allowed_types
 
 
 # Store this here for performance.
