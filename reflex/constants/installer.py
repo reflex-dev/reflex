@@ -102,6 +102,7 @@ class PackageJson(SimpleNamespace):
     PATH = os.path.join(Dirs.WEB, "package.json")
 
     DEPENDENCIES = {
+        "@emotion/react": "11.11.1",
         "axios": "1.4.0",
         "json5": "2.2.3",
         "next": "14.0.1",
