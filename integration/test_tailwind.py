@@ -42,7 +42,6 @@ def TailwindApp(
     if tailwind_disabled:
         config = rx.config.get_config()
         config.tailwind = None
-    app.compile()
 
 
 @pytest.fixture(params=[False, True], ids=["tailwind_enabled", "tailwind_disabled"])
