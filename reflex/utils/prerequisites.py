@@ -973,7 +973,7 @@ def show_rx_chakra_migration_instructions():
     )
     console.log("")
     console.log(
-        "[bold]Run `reflex migrate keep-chakra` to automatically update your app."
+        "[bold]Run `reflex script keep-chakra` to automatically update your app."
     )
     console.log("")
     console.log("For more details, please see https://TODO")  # TODO add link to docs
