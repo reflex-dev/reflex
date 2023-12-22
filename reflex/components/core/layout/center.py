@@ -1,4 +1,5 @@
 """A center component."""
+from __future__ import annotations
 
 from reflex.components.component import Component
 from reflex.components.el.elements.typography import Div

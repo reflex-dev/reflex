@@ -7,10 +7,12 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal
+from typing import Literal, Optional
 from reflex.components.component import Component
 from reflex.components.el.elements.typography import Div
-from reflex.vars import Var
+
+LiteralJustify = Literal["start", "center", "end"]
+LiteralAlign = Literal["start", "center", "end", "stretch"]
 
 class Stack(Div):
     @overload
@@ -18,19 +20,9 @@ class Stack(Div):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[
-            Union[
-                Var[Literal["start", "center", "end"]],
-                Literal["start", "center", "end"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "stretch"]],
-                Literal["start", "center", "end", "stretch"],
-            ]
-        ] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
+        justify: Optional[LiteralJustify] = "flex-start",
+        align: Optional[LiteralAlign] = "center",
+        spacing: Optional[str] = "0.5rem",
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -131,8 +123,8 @@ class Stack(Div):
 
         Args:
             *children: The children of the stack.
-            justify: The direction of the stack.
-            align: The alignment of the stack.
+            justify: The justify of the stack elements.
+            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -170,19 +162,9 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[
-            Union[
-                Var[Literal["start", "center", "end"]],
-                Literal["start", "center", "end"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "stretch"]],
-                Literal["start", "center", "end", "stretch"],
-            ]
-        ] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
+        justify: Optional[LiteralJustify] = "flex-start",
+        align: Optional[LiteralAlign] = "center",
+        spacing: Optional[str] = "0.5rem",
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -283,8 +265,8 @@ class VStack(Stack):
 
         Args:
             *children: The children of the stack.
-            justify: The direction of the stack.
-            align: The alignment of the stack.
+            justify: The justify of the stack elements.
+            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -322,19 +304,9 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[
-            Union[
-                Var[Literal["start", "center", "end"]],
-                Literal["start", "center", "end"],
-            ]
-        ] = None,
-        align: Optional[
-            Union[
-                Var[Literal["start", "center", "end", "stretch"]],
-                Literal["start", "center", "end", "stretch"],
-            ]
-        ] = None,
-        spacing: Optional[Union[Var[str], str]] = None,
+        justify: Optional[LiteralJustify] = "flex-start",
+        align: Optional[LiteralAlign] = "center",
+        spacing: Optional[str] = "0.5rem",
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -435,8 +407,8 @@ class HStack(Stack):
 
         Args:
             *children: The children of the stack.
-            justify: The direction of the stack.
-            align: The alignment of the stack.
+            justify: The justify of the stack elements.
+            align: The alignment of the stack elements.
             spacing: The spacing between each stack item.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
