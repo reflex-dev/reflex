@@ -11,6 +11,7 @@ class MatchState(BaseState):
 
     value: int = 0
     num: int = 5
+    string: str = "random string"
 
 
 def test_match_components():
@@ -89,6 +90,8 @@ def test_match_vars():
         ("random", "fourth_value"),
         ({"foo": "bar"}, "fifth value"),
         (MatchState.num + 1, "sixth value"),
+        (f"{MatchState.value} - string", MatchState.string),
+        (MatchState.string, f"{MatchState.value} - string"),
         "default value",
     )
     match_comp = Match.create(MatchState.value, *match_case_tuples)
@@ -96,9 +99,10 @@ def test_match_vars():
     assert (
         match_comp._var_full_name
         == "(() => { switch (match_state.value) {case 1:  return (`first`);  break;case 2: case 3:  return "
-        "(`second value`);  break;case [1, 2]:  return (`third-value`);  break;case random:  "
+        "(`second value`);  break;case [1, 2]:  return (`third-value`);  break;case `random`:  "
         'return (`fourth_value`);  break;case {"foo": "bar"}:  return (`fifth value`);  '
-        "break;case (match_state.num + 1):  return (`sixth value`);  break;default:  "
+        "break;case (match_state.num + 1):  return (`sixth value`);  break;case `${match_state.value} - string`:  "
+        "return (match_state.string);  break;case match_state.string:  return (`${match_state.value} - string`);  break;default:  "
         "return (`default value`);  break;};})()"
     )
 
