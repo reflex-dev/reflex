@@ -9,8 +9,6 @@ from reflex.style import Style
 class Center(Div):
     """A center component."""
 
-    tag = "div"
-
     def _apply_theme(self, theme: Component | None):
         self.style = Style(
             {

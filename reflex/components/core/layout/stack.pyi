@@ -20,7 +20,7 @@ class Stack(Div):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[LiteralJustify] = "flex-start",
+        justify: Optional[LiteralJustify] = "start",
         align: Optional[LiteralAlign] = "center",
         spacing: Optional[str] = "0.5rem",
         access_key: Optional[
@@ -162,7 +162,7 @@ class VStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[LiteralJustify] = "flex-start",
+        justify: Optional[LiteralJustify] = "start",
         align: Optional[LiteralAlign] = "center",
         spacing: Optional[str] = "0.5rem",
         access_key: Optional[
@@ -304,7 +304,7 @@ class HStack(Stack):
     def create(  # type: ignore
         cls,
         *children,
-        justify: Optional[LiteralJustify] = "flex-start",
+        justify: Optional[LiteralJustify] = "start",
         align: Optional[LiteralAlign] = "center",
         spacing: Optional[str] = "0.5rem",
         access_key: Optional[

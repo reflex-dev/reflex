@@ -17,7 +17,7 @@ class Stack(Div):
     def create(
         cls,
         *children,
-        justify: Optional[LiteralJustify] = "flex-start",
+        justify: Optional[LiteralJustify] = "start",
         align: Optional[LiteralAlign] = "center",
         spacing: Optional[str] = "0.5rem",
         **props,
