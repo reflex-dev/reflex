@@ -300,12 +300,19 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         (
             "state__state.value",
             [
-                [Var.create(1), Var.create("red")],
-                [Var.create(2), Var.create(3), Var.create("blue")],
+                [Var.create(1), Var.create("red", _var_is_string=True)],
+                [Var.create(2), Var.create(3), Var.create("blue", _var_is_string=True)],
+                [TestState.mapping, TestState.num1],
+                [
+                    Var.create(f"{TestState.map_key}-key", _var_is_string=True),
+                    Var.create("return-key", _var_is_string=True),
+                ],
             ],
-            Var.create("yellow"),
+            Var.create("yellow", _var_is_string=True),
             "(() => { switch (state__state.value) {case 1:  return (`red`);  break;case 2: case 3:  "
-            "return (`blue`);  break;default:  return (`yellow`);  break;};})()",
+            "return (`blue`);  break;case test_state.mapping:  return "
+            "(test_state.num1);  break;case `${test_state.map_key}-key`:  return (`return-key`);"
+            "  break;default:  return (`yellow`);  break;};})()",
         )
     ],
 )

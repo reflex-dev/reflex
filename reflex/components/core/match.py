@@ -91,7 +91,7 @@ class Match(MemoizationLeaf):
         if not isinstance(cases[-1], tuple):
             default = cases.pop()
             default = (
-                Var.create(default)
+                Var.create(default, _var_is_string=type(default) is str)
                 if not isinstance(default, BaseComponent)
                 else default
             )
@@ -127,7 +127,7 @@ class Match(MemoizationLeaf):
             for element in case:
                 # convert all non component element to vars.
                 el = (
-                    Var.create(element)
+                    Var.create(element, _var_is_string=type(element) is str)
                     if not isinstance(element, BaseComponent)
                     else element
                 )
