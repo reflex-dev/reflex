@@ -1,8 +1,11 @@
+from typing import Tuple
+
 import pytest
 
 import reflex as rx
 from reflex.components.core.match import Match
 from reflex.state import BaseState
+from reflex.utils.exceptions import MatchTypeError
 from reflex.vars import BaseVar
 
 
@@ -200,21 +203,46 @@ def test_match_case_tuple_elements(match_case):
         Match.create(MatchState.value, *match_case)
 
 
-def test_match_different_return_types():
-    """Test that an error is thrown when the return values are of different types."""
-    match_case_tuples = (
-        (1, rx.text("first value")),
-        (2, 3, rx.text("second value")),
-        ([1, 2], rx.text("third value")),
-        ("random", "red"),
-        ({"foo": "bar"}, "green"),
-        (MatchState.num + 1, "black"),
-        rx.text("default value"),
-    )
-    with pytest.raises(
-        TypeError, match="match cases should have the same return types"
-    ):
-        Match.create(MatchState.value, *match_case_tuples)
+@pytest.mark.parametrize(
+    "cases, error_msg",
+    [
+        (
+            (
+                (1, rx.text("first value")),
+                (2, 3, rx.text("second value")),
+                ([1, 2], rx.text("third value")),
+                ("random", "red"),
+                ({"foo": "bar"}, "green"),
+                (MatchState.num + 1, "black"),
+                rx.text("default value"),
+            ),
+            "Match cases should have the same return types. Case 3 with return value `red` of type "
+            "<class 'reflex.vars.BaseVar'> is not <class 'reflex.components.component.BaseComponent'>",
+        ),
+        (
+            (
+                ("random", "red"),
+                ({"foo": "bar"}, "green"),
+                (MatchState.num + 1, "black"),
+                (1, rx.text("first value")),
+                (2, 3, rx.text("second value")),
+                ([1, 2], rx.text("third value")),
+                rx.text("default value"),
+            ),
+            "Match cases should have the same return types. Case 3 with return value `<Text> {`first value`} </Text>` "
+            "of type <class 'reflex.components.chakra.typography.text.Text'> is not <class 'reflex.vars.BaseVar'>",
+        ),
+    ],
+)
+def test_match_different_return_types(cases: Tuple, error_msg: str):
+    """Test that an error is thrown when the return values are of different types.
+
+    Args:
+        cases: The match cases.
+        error_msg: Expected error message.
+    """
+    with pytest.raises(MatchTypeError, match=error_msg):
+        Match.create(MatchState.value, *cases)
 
 
 @pytest.mark.parametrize(

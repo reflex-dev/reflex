@@ -64,7 +64,7 @@ from reflex.state import (
     StateManager,
     StateUpdate,
 )
-from reflex.utils import console, format, prerequisites, types
+from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -344,9 +344,12 @@ class App(Base):
 
         Raises:
             TypeError: When an invalid component function is passed.
+            MatchTypeError: If the return types of match cases in rx.match are different.
         """
         try:
             return component if isinstance(component, Component) else component()
+        except exceptions.MatchTypeError:
+            raise
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:

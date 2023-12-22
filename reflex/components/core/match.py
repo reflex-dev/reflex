@@ -1,10 +1,12 @@
 """rx.match."""
+import textwrap
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
 from reflex.utils import format, imports, types
+from reflex.utils.exceptions import MatchTypeError
 from reflex.vars import BaseVar, Var, VarData
 
 
@@ -147,7 +149,7 @@ class Match(MemoizationLeaf):
             match_cases: The match cases.
 
         Raises:
-            TypeError: If the return types of cases are different.
+            MatchTypeError: If the return types of cases are different.
         """
         first_case_return = match_cases[0][-1]
         return_type = type(first_case_return)
@@ -157,9 +159,11 @@ class Match(MemoizationLeaf):
         elif types._isinstance(first_case_return, BaseVar):
             return_type = BaseVar
 
-        for case in match_cases:
+        for index, case in enumerate(match_cases):
             if not types._issubclass(type(case[-1]), return_type):
-                raise TypeError("match cases should have the same return types")
+                raise MatchTypeError(
+                    f"Match cases should have the same return types. Case {index} with return value `{case[-1]._var_name if isinstance(case[-1], BaseVar) else textwrap.shorten(str(case[-1]), width=250)}` of type {type(case[-1])!r} is not {return_type}"
+                )
 
     @classmethod
     def _create_match_cond_var_or_component(
