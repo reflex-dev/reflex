@@ -5,7 +5,7 @@ from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
 from reflex.utils import format, imports, types
-from reflex.vars import BaseVar, Var
+from reflex.vars import BaseVar, Var, VarData
 
 
 class Match(MemoizationLeaf):
@@ -201,6 +201,13 @@ class Match(MemoizationLeaf):
         ) or not types._isinstance(default, BaseVar):
             raise ValueError("Return types of match cases should be Vars.")
 
+        # match cases and default should all be Vars at this point.
+        # Retrieve var data of every var in the match cases and default.
+        var_data = [
+            *[el._var_data for case in match_cases for el in case],
+            default._var_data,  # type: ignore
+        ]
+
         return match_cond_var._replace(
             _var_name=format.format_match(
                 cond=match_cond_var._var_full_name,
@@ -210,6 +217,7 @@ class Match(MemoizationLeaf):
             _var_type=default._var_type,  # type: ignore
             _var_is_local=False,
             _var_full_name_needs_state_prefix=False,
+            merge_var_data=VarData.merge(*var_data),
         )
 
     def _render(self) -> Tag:
