@@ -84,30 +84,59 @@ def test_match_components():
     assert default["children"][0]["contents"] == "{`default value`}"
 
 
-def test_match_vars():
-    """Test matching cases with return values as Vars."""
-    match_case_tuples = (
-        (1, "first"),
-        (2, 3, "second value"),
-        ([1, 2], "third-value"),
-        ("random", "fourth_value"),
-        ({"foo": "bar"}, "fifth value"),
-        (MatchState.num + 1, "sixth value"),
-        (f"{MatchState.value} - string", MatchState.string),
-        (MatchState.string, f"{MatchState.value} - string"),
-        "default value",
-    )
-    match_comp = Match.create(MatchState.value, *match_case_tuples)
+@pytest.mark.parametrize(
+    "cases, expected",
+    [
+        (
+            (
+                (1, "first"),
+                (2, 3, "second value"),
+                ([1, 2], "third-value"),
+                ("random", "fourth_value"),
+                ({"foo": "bar"}, "fifth value"),
+                (MatchState.num + 1, "sixth value"),
+                (f"{MatchState.value} - string", MatchState.string),
+                (MatchState.string, f"{MatchState.value} - string"),
+                "default value",
+            ),
+            "(() => { switch (match_state.value) {case 1:  return (`first`);  break;case 2: case 3:  return "
+            "(`second value`);  break;case [1, 2]:  return (`third-value`);  break;case `random`:  "
+            'return (`fourth_value`);  break;case {"foo": "bar"}:  return (`fifth value`);  '
+            "break;case (match_state.num + 1):  return (`sixth value`);  break;case `${match_state.value} - string`:  "
+            "return (match_state.string);  break;case match_state.string:  return (`${match_state.value} - string`);  break;default:  "
+            "return (`default value`);  break;};})()",
+        ),
+        (
+            (
+                (1, "first"),
+                (2, 3, "second value"),
+                ([1, 2], "third-value"),
+                ("random", "fourth_value"),
+                ({"foo": "bar"}, "fifth value"),
+                (MatchState.num + 1, "sixth value"),
+                (f"{MatchState.value} - string", MatchState.string),
+                (MatchState.string, f"{MatchState.value} - string"),
+                MatchState.string,
+            ),
+            "(() => { switch (match_state.value) {case 1:  return (`first`);  break;case 2: case 3:  return "
+            "(`second value`);  break;case [1, 2]:  return (`third-value`);  break;case `random`:  "
+            'return (`fourth_value`);  break;case {"foo": "bar"}:  return (`fifth value`);  '
+            "break;case (match_state.num + 1):  return (`sixth value`);  break;case `${match_state.value} - string`:  "
+            "return (match_state.string);  break;case match_state.string:  return (`${match_state.value} - string`);  break;default:  "
+            "return (match_state.string);  break;};})()",
+        ),
+    ],
+)
+def test_match_vars(cases, expected):
+    """Test matching cases with return values as Vars.
+
+    Args:
+        cases: The match cases.
+        expected: The expected var full name.
+    """
+    match_comp = Match.create(MatchState.value, *cases)
     assert isinstance(match_comp, BaseVar)
-    assert (
-        match_comp._var_full_name
-        == "(() => { switch (match_state.value) {case 1:  return (`first`);  break;case 2: case 3:  return "
-        "(`second value`);  break;case [1, 2]:  return (`third-value`);  break;case `random`:  "
-        'return (`fourth_value`);  break;case {"foo": "bar"}:  return (`fifth value`);  '
-        "break;case (match_state.num + 1):  return (`sixth value`);  break;case `${match_state.value} - string`:  "
-        "return (match_state.string);  break;case match_state.string:  return (`${match_state.value} - string`);  break;default:  "
-        "return (`default value`);  break;};})()"
-    )
+    assert match_comp._var_full_name == expected
 
 
 def test_match_on_component_without_default():
