@@ -306,8 +306,8 @@ def test_initialize_non_existent_gitignore(tmp_path, mocker, gitignore_exists):
     assert set(file_content) - expected == set()
 
 
-def test_app_default_name(tmp_path, mocker):
-    """Test that an error is raised if the app name is reflex.
+def test_validate_app_name(tmp_path, mocker):
+    """Test that an error is raised if the app name is reflex or if the name is not according to python package naming conventions.
 
     Args:
         tmp_path: Test working dir.
@@ -319,7 +319,10 @@ def test_app_default_name(tmp_path, mocker):
     mocker.patch("reflex.utils.prerequisites.os.getcwd", return_value=str(reflex))
 
     with pytest.raises(typer.Exit):
-        prerequisites.get_default_app_name()
+        prerequisites.validate_app_name()
+
+    with pytest.raises(typer.Exit):
+        prerequisites.validate_app_name(app_name="1_test")
 
 
 def test_node_install_windows(tmp_path, mocker):
