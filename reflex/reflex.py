@@ -74,8 +74,8 @@ def _init(
     # Show system info
     exec.output_system_info()
 
-    # Get the app name.
-    app_name = prerequisites.get_default_app_name() if name is None else name
+    # Validate the app name.
+    app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
