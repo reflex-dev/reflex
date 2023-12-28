@@ -749,7 +749,9 @@ class App(Base):
                 config.tailwind["content"] = config.tailwind.get(
                     "content", constants.Tailwind.CONTENT
                 )
-            submit_work(compiler.compile_tailwind, config.tailwind)
+                submit_work(compiler.compile_tailwind, config.tailwind)
+            else:
+                submit_work(compiler.remove_tailwind_from_postcss)
 
             # Get imports from AppWrap components.
             all_imports.update(app_root.get_imports())
