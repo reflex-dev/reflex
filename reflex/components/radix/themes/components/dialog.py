@@ -73,3 +73,9 @@ class DialogDescription(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Description"
+
+
+class DialogClose(CommonMarginProps, RadixThemesComponent):
+    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+
+    tag = "Dialog.Close"

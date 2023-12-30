@@ -1199,7 +1199,7 @@ def compilable_app(tmp_path) -> Generator[tuple[App, Path], None, None]:
     web_dir = app_path / ".web"
     web_dir.mkdir(parents=True)
     (web_dir / "package.json").touch()
-    app = App()
+    app = App(theme=None)
     app.get_frontend_packages = unittest.mock.Mock()
     with chdir(app_path):
         yield app, web_dir
@@ -1213,7 +1213,7 @@ def test_app_wrap_compile_theme(compilable_app):
     """
     app, web_dir = compilable_app
     app.theme = rdxt.theme(accent_color="plum")
-    app.compile()
+    app.compile_()
     app_js_contents = (web_dir / "pages" / "_app.js").read_text()
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
@@ -1263,7 +1263,7 @@ def test_app_wrap_priority(compilable_app):
         return Fragment1.create(Fragment3.create())
 
     app.add_page(page)
-    app.compile()
+    app.compile_()
     app_js_contents = (web_dir / "pages" / "_app.js").read_text()
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()

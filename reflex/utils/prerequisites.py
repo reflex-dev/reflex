@@ -160,7 +160,22 @@ def get_app(reload: bool = False) -> ModuleType:
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
         importlib.reload(app)
+
     return app
+
+
+def get_compiled_app(reload: bool = False) -> ModuleType:
+    """Get the app module based on the default config after first compiling it.
+
+    Args:
+        reload: Re-import the app module from disk
+
+    Returns:
+        The compiled app based on the default config.
+    """
+    app_module = get_app(reload=reload)
+    getattr(app_module, constants.CompileVars.APP).compile_()
+    return app_module
 
 
 def get_redis() -> Redis | None:
@@ -200,23 +215,34 @@ def get_production_backend_url() -> str:
     )
 
 
-def get_default_app_name() -> str:
-    """Get the default app name.
+def validate_app_name(app_name: str | None = None) -> str:
+    """Validate the app name.
 
     The default app name is the name of the current directory.
 
+    Args:
+        app_name: the name passed by user during reflex init
+
     Returns:
-        The default app name.
+        The app name after validation.
 
     Raises:
-        Exit: if the app directory name is reflex.
+        Exit: if the app directory name is reflex or if the name is not standard for a python package name.
     """
-    app_name = os.getcwd().split(os.path.sep)[-1].replace("-", "_")
-
+    app_name = (
+        app_name if app_name else os.getcwd().split(os.path.sep)[-1].replace("-", "_")
+    )
     # Make sure the app is not named "reflex".
     if app_name == constants.Reflex.MODULE_NAME:
         console.error(
             f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
+        )
+        raise typer.Exit(1)
+
+    # Make sure the app name is standard for a python package name.
+    if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
+        console.error(
+            "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
         raise typer.Exit(1)
 

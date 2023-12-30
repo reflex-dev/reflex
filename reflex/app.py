@@ -37,12 +37,13 @@ from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
 from reflex.components import connection_modal
 from reflex.components.base.app_wrap import AppWrap
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component, ComponentStyle
-from reflex.components.layout.fragment import Fragment
-from reflex.components.navigation.client_side_routing import (
+from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.radix import themes
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -131,7 +132,7 @@ class App(Base):
     background_tasks: Set[asyncio.Task] = set()
 
     # The radix theme for the entire app
-    theme: Optional[Component] = None
+    theme: Optional[Component] = themes.theme(accent_color="blue")
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
@@ -619,6 +620,19 @@ class App(Base):
         return True
 
     def compile(self):
+        """compile_() is the new function for performing compilation.
+        Reflex framework will call it automatically as needed.
+        """
+        console.deprecate(
+            feature_name="app.compile()",
+            reason="Explicit calls to app.compile() are not needed."
+            " Method will be removed in 0.4.0",
+            deprecation_version="0.3.8",
+            removal_version="0.4.0",
+        )
+        return
+
+    def compile_(self):
         """Compile the app and output it to the pages folder."""
         # add the pages before the compile check so App know onload methods
         for render, kwargs in DECORATED_PAGES:
@@ -667,8 +681,7 @@ class App(Base):
                 # Merge the component style with the app style.
                 component.add_style(self.style)
 
-                if self.theme is not None:
-                    component.apply_theme(self.theme)
+                component.apply_theme(self.theme)
 
                 # Add component.get_imports() to all_imports.
                 all_imports.update(component.get_imports())
@@ -736,7 +749,9 @@ class App(Base):
                 config.tailwind["content"] = config.tailwind.get(
                     "content", constants.Tailwind.CONTENT
                 )
-            submit_work(compiler.compile_tailwind, config.tailwind)
+                submit_work(compiler.compile_tailwind, config.tailwind)
+            else:
+                submit_work(compiler.remove_tailwind_from_postcss)
 
             # Get imports from AppWrap components.
             all_imports.update(app_root.get_imports())

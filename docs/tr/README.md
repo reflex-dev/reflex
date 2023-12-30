@@ -124,7 +124,6 @@ def index():
 # Sayfa ve durumu uygulamaya ekleyin.
 app = rx.App()
 app.add_page(index, title="reflex:DALL·E")
-app.compile()
 ```
 
 ## Daha Detaylı İceleyelim
@@ -194,7 +193,6 @@ Uygulamamızın kök dizinine index bileşeninden bir sayfa ekliyoruz. Ayrıca s
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 Daha fazla sayfa ekleyerek çok sayfalı bir uygulama oluşturabilirsiniz.

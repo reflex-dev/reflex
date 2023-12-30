@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.components import el
 from reflex.components.component import Component
-from reflex.components.forms.debounce import DebounceInput
+from reflex.components.core.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 from ..base import (
@@ -30,16 +30,8 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        size: Optional[
-            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
-        ] = None,
-        variant: Optional[
-            Union[
-                Var[Literal["classic", "surface", "soft"]],
-                Literal["classic", "surface", "soft"],
-            ]
-        ] = None,
-        color: Optional[
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -99,6 +91,15 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
                     "bronze",
                     "gray",
                 ],
+            ]
+        ] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
+        variant: Optional[
+            Union[
+                Var[Literal["classic", "surface", "soft"]],
+                Literal["classic", "surface", "soft"],
             ]
         ] = None,
         radius: Optional[
@@ -252,9 +253,10 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
 
         Args:
             *children: Child components.
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             size: Text field size "1" - "3"
             variant: Variant of text field: "classic" | "surface" | "soft"
-            color: Override theme color for text field
             radius: Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -683,7 +685,8 @@ class TextFieldSlot(RadixThemesComponent):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[
+        color: Optional[Union[Var[str], str]] = None,
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -811,7 +814,8 @@ class TextFieldSlot(RadixThemesComponent):
 
         Args:
             *children: Child components.
-            color: Override theme color for text field slot
+            color: map to CSS default color property.
+            color_scheme: map to radix color property.
             gap: Override the gap spacing between slot and input: "1" - "9"
             style: The style of the component.
             key: A unique key for the component.

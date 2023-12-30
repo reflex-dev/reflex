@@ -74,8 +74,8 @@ def _init(
     # Show system info
     exec.output_system_info()
 
-    # Get the app name.
-    app_name = prerequisites.get_default_app_name() if name is None else name
+    # Validate the app name.
+    app_name = prerequisites.validate_app_name(name)
     console.rule(f"[bold]Initializing {app_name}")
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
@@ -178,7 +178,7 @@ def _run(
     if frontend:
         prerequisites.update_next_config()
         # Get the app module.
-        prerequisites.get_app()
+        prerequisites.get_compiled_app()
 
     # Warn if schema is not up to date.
     prerequisites.check_schema_up_to_date()
@@ -362,7 +362,7 @@ def db_init():
 
     # Initialize the database.
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     model.Model.alembic_init()
     model.Model.migrate(autogenerate=True)
 
@@ -373,8 +373,9 @@ def migrate():
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     model.Model.migrate()
@@ -393,8 +394,9 @@ def makemigrations(
     from reflex import model
     from reflex.utils import prerequisites
 
+    # TODO see if we can use `get_app()` instead (no compile).  Would _skip_compile still be needed then?
     _skip_compile()
-    prerequisites.get_app()
+    prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
     with model.Model.get_db_engine().connect() as connection:

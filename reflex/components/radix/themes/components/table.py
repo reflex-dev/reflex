@@ -16,7 +16,7 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
     tag = "Table.Root"
 
     # The size of the table: "1" | "2" | "3"
-    size: Var[Literal[1, 2, 3]]
+    size: Var[Literal["1", "2", "3"]]
 
     # The variant of the table
     variant: Var[Literal["surface", "ghost"]]

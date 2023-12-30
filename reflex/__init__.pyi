@@ -443,8 +443,8 @@ from reflex.components import NoSSRComponent as NoSSRComponent
 from reflex.components import chakra as chakra
 from reflex.components import next as next
 from reflex.components.component import memo as memo
-from reflex.components.graphing import recharts as recharts
-from reflex.components.datadisplay.moment import MomentDelta as MomentDelta
+from reflex.components import recharts as recharts
+from reflex.components.moment.moment import MomentDelta as MomentDelta
 from reflex import config as config
 from reflex.config import Config as Config
 from reflex.config import DBConfig as DBConfig

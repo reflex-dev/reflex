@@ -19,7 +19,7 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
     as_child: Var[bool]
 
     # Button size "1" - "5"
-    size: Var[Literal[1, 2, 3, 4, 5]]
+    size: Var[Literal["1", "2", "3", "4", "5"]]
 
     # Variant of button: "solid" | "soft" | "outline" | "ghost"
     variant: Var[Literal["surface", "classic", "ghost"]]

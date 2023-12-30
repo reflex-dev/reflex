@@ -3,9 +3,10 @@
 from typing import Literal
 
 from reflex.components.component import Component
-from reflex.components.tags import Tag
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import Style
-from reflex.utils import format, imports
+from reflex.utils import imports
 from reflex.vars import Var
 
 LiteralAccordionType = Literal["single", "multiple"]
@@ -16,24 +17,10 @@ LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 DEFAULT_ANIMATION_DURATION = 250
 
 
-class AccordionComponent(Component):
+class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
     library = "@radix-ui/react-accordion@^1.1.2"
-
-    # Change the default rendered element for the one passed as a child.
-    as_child: Var[bool]
-
-    def _render(self) -> Tag:
-        return (
-            super()
-            ._render()
-            .add_props(
-                **{
-                    "class_name": format.to_title_case(self.tag or ""),
-                }
-            )
-        )
 
 
 class AccordionRoot(AccordionComponent):
@@ -152,6 +139,10 @@ class AccordionTrigger(AccordionComponent):
                 "&:hover": {
                     "background_color": "var(--gray-2)",
                 },
+                "& > .AccordionChevron": {
+                    "color": "var(--accent-10)",
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
                 "&[data-state='open'] > .AccordionChevron": {
                     "transform": "rotate(180deg)",
                 },
@@ -218,62 +209,36 @@ to {
 """
 
 
-# TODO: Remove this once the radix-icons PR is merged in.
-class ChevronDownIcon(Component):
-    """A chevron down icon."""
-
-    library = "@radix-ui/react-icons"
-
-    tag = "ChevronDownIcon"
-
-    def _apply_theme(self, theme: Component):
-        self.style = Style(
-            {
-                "color": "var(--accent-10)",
-                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                **self.style,
-            }
-        )
-
-
-accordion_root = AccordionRoot.create
-accordion_item = AccordionItem.create
-accordion_trigger = AccordionTrigger.create
-accordion_content = AccordionContent.create
-accordion_header = AccordionHeader.create
-chevron_down_icon = ChevronDownIcon.create
-
-
-def accordion(items: list[tuple[str, str]], **props) -> Component:
-    """High level API for the Radix accordion.
-
-    #TODO: We need to handle taking in state here. This is just for a POC.
-
+def accordion_item(header: Component, content: Component, **props) -> Component:
+    """Create an accordion item.
 
     Args:
-        items: The items of the accordion component: list of tuples (label,panel)
-        **props: The properties of the component.
+        header: The header of the accordion item.
+        content: The content of the accordion item.
+        **props: Additional properties to apply to the accordion item.
 
     Returns:
-        The accordion component.
+        The accordion item.
     """
-    return accordion_root(
-        *[
-            accordion_item(
-                accordion_header(
-                    accordion_trigger(
-                        label,
-                        chevron_down_icon(
-                            class_name="AccordionChevron",
-                        ),
-                    ),
+    # The item requires a value to toggle (use the header as the default value).
+    value = props.pop("value", str(header))
+
+    return AccordionItem.create(
+        AccordionHeader.create(
+            AccordionTrigger.create(
+                header,
+                Icon.create(
+                    tag="chevron_down",
+                    class_name="AccordionChevron",
                 ),
-                accordion_content(
-                    panel,
-                ),
-                value=f"item-{i}",
-            )
-            for i, (label, panel) in enumerate(items)
-        ],
+            ),
+        ),
+        AccordionContent.create(
+            content,
+        ),
+        value=value,
         **props,
     )
+
+
+accordion = AccordionRoot.create

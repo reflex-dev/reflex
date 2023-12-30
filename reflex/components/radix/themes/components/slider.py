@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
 from reflex.vars import Var
 
@@ -19,8 +19,8 @@ class Slider(CommonMarginProps, RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
 
-    # Button size "1" - "4"
-    size: Var[Literal[1, 2, 3]]
+    # Button size "1" - "3"
+    size: Var[Literal["1", "2", "3"]]
 
     # Variant of button
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -35,7 +35,7 @@ class Slider(CommonMarginProps, RadixThemesComponent):
     radius: Var[LiteralRadius]
 
     # The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
-    default_value: Var[float]
+    default_value: Var[List[float]]
 
     # The controlled value of the slider. Must be used in conjunction with onValueChange.
     value: Var[float]

@@ -43,6 +43,8 @@ class Dirs(SimpleNamespace):
     ENV_JSON = os.path.join(WEB, "env.json")
     # The reflex json file.
     REFLEX_JSON = os.path.join(WEB, "reflex.json")
+    # The path to postcss.config.js
+    POSTCSS_JS = os.path.join(WEB, "postcss.config.js")
 
 
 class Reflex(SimpleNamespace):
