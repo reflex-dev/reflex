@@ -19,7 +19,7 @@ from typing import (
 )
 
 from pydantic.fields import ModelField
-from sqlalchemy.orm import Mapped, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapped
 
 from reflex.base import Base
 from reflex.utils import serializers
