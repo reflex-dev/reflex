@@ -638,9 +638,20 @@ def test_extract_state_from_container(value, expect_state):
     assert Var.create_safe(value)._var_state == expect_state
 
 
-def test_fstring_roundtrip():
-    """Test that f-string roundtrip carries state."""
-    var = BaseVar.create_safe("var")._var_set_state("state")
+@pytest.mark.parametrize(
+    "value",
+    [
+        "var",
+        "\nvar",
+    ],
+)
+def test_fstring_roundtrip(value):
+    """Test that f-string roundtrip carries state.
+
+    Args:
+        value: The value to create a Var from.
+    """
+    var = BaseVar.create_safe(value)._var_set_state("state")
     rt_var = Var.create_safe(f"{var}")
     assert var._var_state == rt_var._var_state
     assert var._var_full_name_needs_state_prefix
