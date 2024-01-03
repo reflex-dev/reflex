@@ -1531,7 +1531,7 @@ class Var:
         return self._var_data.state if self._var_data else ""
 
     @property
-    def _var_string_without_curly_braces(self) -> str:
+    def _var_name_unwrapped(self) -> str:
         """Get the var str without wrapping in curly braces.
 
         Returns:
