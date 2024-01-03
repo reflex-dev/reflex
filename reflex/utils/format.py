@@ -296,12 +296,12 @@ def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> s
                 for condition in conditions
             ]
         )
-        case_code = f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
+        case_code = (
+            f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
+        )
         switch_code += case_code
 
-    switch_code += (
-        f"default:  return ({default._var_name_unwrapped});  break;"
-    )
+    switch_code += f"default:  return ({default._var_name_unwrapped});  break;"
     switch_code += "};})()"
 
     return switch_code
