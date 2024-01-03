@@ -332,7 +332,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
         cls.computed_vars = {
             v._var_name: v._var_set_state(cls)
-            for v in cls.__dict__.values()
+            for mixin in cls.__bases__ + (cls,)
+            if mixin is cls or not issubclass(mixin, (BaseState,))
+            for v in mixin.__dict__.values()
             if isinstance(v, ComputedVar)
         }
         cls.vars = {
