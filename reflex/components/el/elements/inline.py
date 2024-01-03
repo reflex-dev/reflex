@@ -86,6 +86,7 @@ class Data(BaseHTML):
 
     tag = "data"
 
+    # Specifies the machine-readable translation of the data element.
     value: Var[Union[str, int, bool]]
 
 
@@ -124,6 +125,7 @@ class Q(BaseHTML):
 
     tag = "q"
 
+    # Specifies the source URL of the quote.
     cite: Var[Union[str, int, bool]]
 
 
@@ -191,6 +193,8 @@ class Time(BaseHTML):
     """Display the time element."""
 
     tag = "time"
+
+    # Specifies the date and/or time of the element.
     date_time: Var[Union[str, int, bool]]
 
 
