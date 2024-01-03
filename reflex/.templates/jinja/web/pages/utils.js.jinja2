@@ -88,7 +88,7 @@
         switch (JSON.stringify({{ component.cond._var_full_name }})) {
         {% for case in component.match_cases %}
             {% for condition in case[:-1] %}
-                case JSON.stringify({{ condition._var_string_without_curly_braces }}):
+                case JSON.stringify({{ condition._var_name_unwrapped }}):
             {% endfor %}
                 return {{ case[-1] }};
                 break;

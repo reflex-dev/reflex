@@ -1150,5 +1150,5 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
         (Var.create(ATestState.dict_val), "a_test_state.dict_val"),
     ],
 )
-def test_var_string_without_curly_braces(var, expected):
-    assert var._var_string_without_curly_braces == expected
+def test_var_name_unwrapped(var, expected):
+    assert var._var_name_unwrapped == expected

@@ -292,15 +292,15 @@ def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> s
 
         case_conditions = " ".join(
             [
-                f"case JSON.stringify({condition._var_string_without_curly_braces}):"
+                f"case JSON.stringify({condition._var_name_unwrapped}):"
                 for condition in conditions
             ]
         )
-        case_code = f"{case_conditions}  return ({return_value._var_string_without_curly_braces});  break;"
+        case_code = f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
         switch_code += case_code
 
     switch_code += (
-        f"default:  return ({default._var_string_without_curly_braces});  break;"
+        f"default:  return ({default._var_name_unwrapped});  break;"
     )
     switch_code += "};})()"
 
