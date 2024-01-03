@@ -1,7 +1,7 @@
 """Radix themes components."""
 
 from .alertdialog import (
-    AlertDialog,
+    AlertDialogRoot,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogTitle,
@@ -75,7 +75,7 @@ from .textfield import TextFieldInput, TextFieldRoot, TextFieldSlot
 from .tooltip import Tooltip
 
 # Alert Dialog
-alertdialog = AlertDialog.create
+alertdialog_root = AlertDialogRoot.create
 alertdialog_trigger = AlertDialogTrigger.create
 alertdialog_content = AlertDialogContent.create
 alertdialog_title = AlertDialogTitle.create
