@@ -1,5 +1,5 @@
 import datetime
-from typing import Any
+from typing import Any, List
 
 import pytest
 
@@ -292,6 +292,42 @@ def test_format_cond(condition: str, true_value: str, false_value: str, expected
         expected: The expected output string.
     """
     assert format.format_cond(condition, true_value, false_value) == expected
+
+
+@pytest.mark.parametrize(
+    "condition, match_cases, default,expected",
+    [
+        (
+            "state__state.value",
+            [
+                [Var.create(1), Var.create("red", _var_is_string=True)],
+                [Var.create(2), Var.create(3), Var.create("blue", _var_is_string=True)],
+                [TestState.mapping, TestState.num1],
+                [
+                    Var.create(f"{TestState.map_key}-key", _var_is_string=True),
+                    Var.create("return-key", _var_is_string=True),
+                ],
+            ],
+            Var.create("yellow", _var_is_string=True),
+            "(() => { switch (JSON.stringify(state__state.value)) {case JSON.stringify(1):  return (`red`);  break;case JSON.stringify(2): case JSON.stringify(3):  "
+            "return (`blue`);  break;case JSON.stringify(test_state.mapping):  return "
+            "(test_state.num1);  break;case JSON.stringify(`${test_state.map_key}-key`):  return (`return-key`);"
+            "  break;default:  return (`yellow`);  break;};})()",
+        )
+    ],
+)
+def test_format_match(
+    condition: str, match_cases: List[BaseVar], default: BaseVar, expected: str
+):
+    """Test formatting a match statement.
+
+    Args:
+        condition: The condition to match.
+        match_cases: List of match cases to be matched.
+        default: Catchall case for the match statement.
+        expected: The expected string output.
+    """
+    assert format.format_match(condition, match_cases, default) == expected
 
 
 @pytest.mark.parametrize(

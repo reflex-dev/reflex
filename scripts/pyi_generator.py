@@ -30,6 +30,7 @@ EXCLUDED_FILES = [
     "bare.py",
     "foreach.py",
     "cond.py",
+    "match.py",
     "multiselect.py",
     "literals.py",
 ]

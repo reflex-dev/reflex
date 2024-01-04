@@ -13,3 +13,9 @@ class ImmutableStateError(AttributeError):
 
 class LockExpiredError(Exception):
     """Raised when the state lock expires while an event is being processed."""
+
+
+class MatchTypeError(TypeError):
+    """Raised when the return types of match cases are different."""
+
+    pass
