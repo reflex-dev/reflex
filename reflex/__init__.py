@@ -215,6 +215,7 @@ _ALL_COMPONENTS = [
     "Tfoot",
     "Th",
     "Thead",
+    "TimePicker",
     "Tooltip",
     "Tr",
     "UnorderedList",
