@@ -1262,6 +1262,7 @@ class Data(BaseHTML):
 
         Args:
             *children: The children of the component.
+            value: Specifies the machine-readable translation of the data element.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -2097,6 +2098,7 @@ class Q(BaseHTML):
 
         Args:
             *children: The children of the component.
+            cite: Specifies the source URL of the quote.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -3629,6 +3631,7 @@ class Time(BaseHTML):
 
         Args:
             *children: The children of the component.
+            date_time: Specifies the date and/or time of the element.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
