@@ -155,16 +155,13 @@ def get_bun_version() -> version.Version | None:
 
 def get_install_package_manager() -> str | None:
     """Get the package manager executable for installation.
-      Currently on unix systems, bun is used for installation only.
+      Currently, bun is used for installation only.
 
     Returns:
         The path to the package manager.
     """
-    # On Windows, we use npm instead of bun.
     if constants.IS_WINDOWS:
-        return get_package_manager()
-
-    # On other platforms, we use bun.
+        return get_config().bun_path + constants.Ext.EXE
     return get_config().bun_path
 
 
@@ -682,11 +679,6 @@ def install_bun():
     Raises:
         FileNotFoundError: If required packages are not found.
     """
-    # Bun is not supported on Windows.
-    if constants.IS_WINDOWS:
-        console.debug("Skipping bun installation on Windows.")
-        return
-
     # Skip if bun is already installed.
     if os.path.exists(get_config().bun_path) and get_bun_version() == version.parse(
         constants.Bun.VERSION
@@ -695,16 +687,25 @@ def install_bun():
         return
 
     #  if unzip is installed
-    unzip_path = path_ops.which("unzip")
-    if unzip_path is None:
-        raise FileNotFoundError("Reflex requires unzip to be installed.")
+    if constants.IS_WINDOWS:
+        processes.new_process(
+            ["powershell", "-c", f"irm {constants.Bun.INSTALL_URL}.ps1|iex"],
+            env={"BUN_INSTALL": constants.Bun.ROOT_PATH},
+            shell=True,
+            run=True,
+            show_logs=console.is_debug(),
+        )
+    else:
+        unzip_path = path_ops.which("unzip")
+        if unzip_path is None:
+            raise FileNotFoundError("Reflex requires unzip to be installed.")
 
-    # Run the bun install script.
-    download_and_run(
-        constants.Bun.INSTALL_URL,
-        f"bun-v{constants.Bun.VERSION}",
-        BUN_INSTALL=constants.Bun.ROOT_PATH,
-    )
+        # Run the bun install script.
+        download_and_run(
+            constants.Bun.INSTALL_URL,
+            f"bun-v{constants.Bun.VERSION}",
+            BUN_INSTALL=constants.Bun.ROOT_PATH,
+        )
 
 
 def _write_cached_procedure_file(payload: str, cache_file: str):
@@ -906,9 +907,6 @@ def validate_frontend_dependencies(init=True):
                 f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
             )
             raise typer.Exit(1)
-
-    if constants.IS_WINDOWS:
-        return
 
     if init:
         # we only need bun for package install on `reflex init`.
