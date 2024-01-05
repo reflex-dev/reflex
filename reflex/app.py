@@ -637,7 +637,11 @@ class App(Base):
         return
 
     def compile_(self):
-        """Compile the app and output it to the pages folder."""
+        """Compile the app and output it to the pages folder.
+
+        Raises:
+            RuntimeError: When any page uses state, but no rx.State subclass is defined.
+        """
         # add the pages before the compile check so App know onload methods
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
@@ -702,6 +706,16 @@ class App(Base):
                 stateful_components_code,
                 page_components,
             ) = compiler.compile_stateful_components(self.pages.values())
+
+            # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
+            if (
+                "useContext(StateContexts" in stateful_components_code
+                and self.state is None
+            ):
+                raise RuntimeError(
+                    "To access rx.State in frontend components, at least one "
+                    "subclass of rx.State must be defined in the app."
+                )
             compile_results.append((stateful_components_path, stateful_components_code))
 
             result_futures = []
