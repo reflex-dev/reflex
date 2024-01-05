@@ -169,7 +169,8 @@ class App(Base):
                     deprecation_version="0.3.5",
                     removal_version="0.4.0",
                 )
-            self.state = State
+            if len(State.class_subclasses) > 0:
+                self.state = State
         # Get the config
         config = get_config()
 
