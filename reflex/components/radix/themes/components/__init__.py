@@ -1,9 +1,11 @@
 """Radix themes components."""
 
 from .alertdialog import (
-    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
+    AlertDialogRoot,
     AlertDialogTitle,
     AlertDialogTrigger,
 )
@@ -75,11 +77,13 @@ from .textfield import TextFieldInput, TextFieldRoot, TextFieldSlot
 from .tooltip import Tooltip
 
 # Alert Dialog
-alertdialog = AlertDialog.create
+alertdialog_root = AlertDialogRoot.create
 alertdialog_trigger = AlertDialogTrigger.create
 alertdialog_content = AlertDialogContent.create
 alertdialog_title = AlertDialogTitle.create
 alertdialog_description = AlertDialogDescription.create
+alertdialog_action = AlertDialogAction.create
+alertdialog_cancel = AlertDialogCancel.create
 
 # Aspect Ratio
 aspect_ratio = AspectRatio.create

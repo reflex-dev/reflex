@@ -12,8 +12,8 @@ from ..base import (
 LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 
-class AlertDialog(CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+class AlertDialogRoot(CommonMarginProps, RadixThemesComponent):
+    """Contains all the parts of the dialog."""
 
     tag = "AlertDialog.Root"
 
@@ -33,13 +33,13 @@ class AlertDialog(CommonMarginProps, RadixThemesComponent):
 
 
 class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+    """Wraps the control that will open the dialog."""
 
     tag = "AlertDialog.Trigger"
 
 
 class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+    """Contains the content of the dialog. This component is based on the div element."""
 
     tag = "AlertDialog.Content"
 
@@ -61,12 +61,33 @@ class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
 
 
 class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+    """An accessible title that is announced when the dialog is opened.
+    This part is based on the Heading component with a pre-defined font size and
+    leading trim on top.
+    """
 
     tag = "AlertDialog.Title"
 
 
 class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+    """An optional accessible description that is announced when the dialog is opened.
+    This part is based on the Text component with a pre-defined font size.
+    """
 
     tag = "AlertDialog.Description"
+
+
+class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
+    """Wraps the control that will close the dialog. This should be distinguished
+    visually from the Cancel control.
+    """
+
+    tag = "AlertDialog.Action"
+
+
+class AlertDialogCancel(CommonMarginProps, RadixThemesComponent):
+    """Wraps the control that will close the dialog. This should be distinguished
+    visually from the Action control.
+    """
+
+    tag = "AlertDialog.Cancel"
