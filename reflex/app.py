@@ -64,7 +64,7 @@ from reflex.state import (
     StateManager,
     StateUpdate,
 )
-from reflex.utils import console, format, prerequisites, types
+from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -344,9 +344,12 @@ class App(Base):
 
         Raises:
             TypeError: When an invalid component function is passed.
+            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
         try:
             return component if isinstance(component, Component) else component()
+        except exceptions.MatchTypeError:
+            raise
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:
@@ -749,7 +752,9 @@ class App(Base):
                 config.tailwind["content"] = config.tailwind.get(
                     "content", constants.Tailwind.CONTENT
                 )
-            submit_work(compiler.compile_tailwind, config.tailwind)
+                submit_work(compiler.compile_tailwind, config.tailwind)
+            else:
+                submit_work(compiler.remove_tailwind_from_postcss)
 
             # Get imports from AppWrap components.
             all_imports.update(app_root.get_imports())

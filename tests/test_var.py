@@ -24,6 +24,13 @@ test_vars = [
 ]
 
 
+class ATestState(BaseState):
+    """Test state."""
+
+    value: str
+    dict_val: Dict[str, List] = {}
+
+
 @pytest.fixture
 def TestObj():
     class TestObj(Base):
@@ -638,9 +645,20 @@ def test_extract_state_from_container(value, expect_state):
     assert Var.create_safe(value)._var_state == expect_state
 
 
-def test_fstring_roundtrip():
-    """Test that f-string roundtrip carries state."""
-    var = BaseVar.create_safe("var")._var_set_state("state")
+@pytest.mark.parametrize(
+    "value",
+    [
+        "var",
+        "\nvar",
+    ],
+)
+def test_fstring_roundtrip(value):
+    """Test that f-string roundtrip carries state.
+
+    Args:
+        value: The value to create a Var from.
+    """
+    var = BaseVar.create_safe(value)._var_set_state("state")
     rt_var = Var.create_safe(f"{var}")
     assert var._var_state == rt_var._var_state
     assert var._var_full_name_needs_state_prefix
@@ -1126,3 +1144,22 @@ def test_invalid_var_operations(operand1_var: Var, operand2_var, operators: List
 
         with pytest.raises(TypeError):
             operand1_var.operation(op=operator, other=operand2_var, flip=True)
+
+
+@pytest.mark.parametrize(
+    "var, expected",
+    [
+        (Var.create("string_value", _var_is_string=True), "`string_value`"),
+        (Var.create(1), "1"),
+        (Var.create([1, 2, 3]), "[1, 2, 3]"),
+        (Var.create({"foo": "bar"}), '{"foo": "bar"}'),
+        (Var.create(ATestState.value, _var_is_string=True), "a_test_state.value"),
+        (
+            Var.create(f"{ATestState.value} string", _var_is_string=True),
+            "`${a_test_state.value} string`",
+        ),
+        (Var.create(ATestState.dict_val), "a_test_state.dict_val"),
+    ],
+)
+def test_var_name_unwrapped(var, expected):
+    assert var._var_name_unwrapped == expected

@@ -432,6 +432,25 @@ def compile_tailwind(
     return output_path, code
 
 
+def remove_tailwind_from_postcss() -> tuple[str, str]:
+    """If tailwind is not to be used, remove it from postcss.config.js.
+
+    Returns:
+        The path and code of the compiled postcss.config.js.
+    """
+    # Get the path for the output file.
+    output_path = constants.Dirs.POSTCSS_JS
+
+    code = [
+        line
+        for line in Path(output_path).read_text().splitlines(keepends=True)
+        if "tailwindcss: " not in line
+    ]
+
+    # Compile the config.
+    return output_path, "".join(code)
+
+
 def purge_web_pages_dir():
     """Empty out .web directory."""
     utils.empty_dir(constants.Dirs.WEB_PAGES, keep_files=["_app.js"])

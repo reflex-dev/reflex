@@ -114,6 +114,7 @@ _ALL_COMPONENTS = [
     "List",
     "ListItem",
     "Markdown",
+    "Match",
     "Menu",
     "MenuButton",
     "MenuDivider",

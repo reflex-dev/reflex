@@ -209,7 +209,11 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     var_datas = []
     if isinstance(value, str):
         # Extract the state name from a formatted var
-        while m := re.match(r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)", value):
+        while m := re.match(
+            pattern=r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)",
+            string=value,
+            flags=re.DOTALL,  # Ensure . matches newline characters.
+        ):
             value = m.group(1) + m.group(3)
             try:
                 var_datas.append(VarData.parse_raw(m.group(2)))
@@ -1529,6 +1533,26 @@ class Var:
             The state name associated with the var.
         """
         return self._var_data.state if self._var_data else ""
+
+    @property
+    def _var_name_unwrapped(self) -> str:
+        """Get the var str without wrapping in curly braces.
+
+        Returns:
+            The str var without the wrapped curly braces
+        """
+        type_ = (
+            get_origin(self._var_type)
+            if types.is_generic_alias(self._var_type)
+            else self._var_type
+        )
+
+        wrapped_var = str(self)
+        return (
+            wrapped_var
+            if not self._var_state and issubclass(type_, dict)
+            else wrapped_var.strip("{}")
+        )
 
 
 # Allow automatic serialization of Var within JSON structures

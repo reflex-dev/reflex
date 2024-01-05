@@ -19,7 +19,7 @@ from typing import (
 )
 
 from pydantic.fields import ModelField
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import DeclarativeBase, Mapped
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -128,7 +128,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
-    elif isinstance(cls, type) and issubclass(cls, Model):
+    elif isinstance(cls, type) and issubclass(cls, (Model, DeclarativeBase)):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:
