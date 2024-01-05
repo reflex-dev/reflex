@@ -33,6 +33,7 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
         The theme for the accordion root component.
     """
     return match(
+        variant,
         (
             "classic",
             {
@@ -411,7 +412,7 @@ class AccordionRoot(AccordionComponent):
     # The orientation of the accordion.
     orientation: Var[LiteralAccordionOrientation]
 
-    variant: Literal["classic", "soft", "surface", "outline", "ghost"] = "classic"
+    variant: Var[Literal["classic", "soft", "surface", "outline", "ghost"]] 
 
     color: Literal["primary", "accent"] = "primary"
 
@@ -419,19 +420,11 @@ class AccordionRoot(AccordionComponent):
 
         self.style = Var.create(Style(
             {
-                "& .AccordionItem": get_theme_accordion_item(variant=self.variant),
-                "& .AccordionHeader": get_theme_accordion_header(variant=self.variant),
-                "& .AccordionTrigger": get_theme_accordion_trigger(
-                    variant=self.variant, color=self.color
-                ),
-                "& .AccordionContent": get_theme_accordion_content(
-                    variant=self.variant, color=self.color
-                ),
                 **self.style,
             }
         ))
 
-        self.style= Var.create(self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color))) # type: ignore 
+        self.style= self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color)) # type: ignore 
 
     @classmethod
     def create(cls, *children, **props) -> Component:

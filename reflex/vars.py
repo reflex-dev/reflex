@@ -422,7 +422,7 @@ class Var:
         )
     
 
-    def _merge(self, *others) -> str:
+    def _merge(self, others) -> Var:
         """Merge two or more dicts.
         
         Args:
@@ -431,7 +431,9 @@ class Var:
         Returns:
             The merged var.
         """
-        return f'merge({self._var_name}, {", ".join([f"{other._var_name}" for other in others])})'
+        return self._replace(
+            _var_name=f'{{...{self._var_name}, ...{others._var_name}}}'
+        )
     
     def to_string(self, json: bool = True) -> Var:
         """Convert a var to a string.
