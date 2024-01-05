@@ -1,6 +1,8 @@
 """Radix themes components."""
 
 from .alertdialog import (
+    AlertDialogAction,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogRoot,
@@ -80,6 +82,8 @@ alertdialog_trigger = AlertDialogTrigger.create
 alertdialog_content = AlertDialogContent.create
 alertdialog_title = AlertDialogTitle.create
 alertdialog_description = AlertDialogDescription.create
+alertdialog_action = AlertDialogAction.create
+alertdialog_cancel = AlertDialogCancel.create
 
 # Aspect Ratio
 aspect_ratio = AspectRatio.create
