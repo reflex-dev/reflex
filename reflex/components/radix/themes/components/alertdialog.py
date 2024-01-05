@@ -61,30 +61,33 @@ class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
 
 
 class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
-    """An accessible title that is announced when the dialog is opened. 
-    This part is based on the Heading component with a pre-defined font size and 
-    leading trim on top."""
+    """An accessible title that is announced when the dialog is opened.
+    This part is based on the Heading component with a pre-defined font size and
+    leading trim on top.
+    """
 
     tag = "AlertDialog.Title"
 
 
 class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
-    """An optional accessible description that is announced when the dialog is opened. 
-    This part is based on the Text component with a pre-defined font size."""
+    """An optional accessible description that is announced when the dialog is opened.
+    This part is based on the Text component with a pre-defined font size.
+    """
 
     tag = "AlertDialog.Description"
 
 
 class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
-    """Wraps the control that will close the dialog. This should be distinguished 
-    visually from the Cancel control."""
+    """Wraps the control that will close the dialog. This should be distinguished
+    visually from the Cancel control.
+    """
 
     tag = "AlertDialog.Action"
 
 
 class AlertDialogCancel(CommonMarginProps, RadixThemesComponent):
-    """Wraps the control that will close the dialog. This should be distinguished 
-    visually from the Action control."""
+    """Wraps the control that will close the dialog. This should be distinguished
+    visually from the Action control.
+    """
 
     tag = "AlertDialog.Cancel"
-

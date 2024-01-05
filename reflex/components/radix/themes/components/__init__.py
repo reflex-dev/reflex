@@ -1,9 +1,9 @@
 """Radix themes components."""
 
 from .alertdialog import (
-    AlertDialogRoot,
     AlertDialogContent,
     AlertDialogDescription,
+    AlertDialogRoot,
     AlertDialogTitle,
     AlertDialogTrigger,
 )
