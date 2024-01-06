@@ -3,12 +3,9 @@
 from typing import Literal
 
 from reflex.components.component import Component
-from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.core import cond, match
 from reflex.components.radix.themes.components.icons import Icon
-from reflex.components.radix.themes.layout import Box
-from reflex.components.core import match, cond
-from reflex.components.base import Fragment
-from reflex.style import Style
+from reflex.style import Style, format_as_emotion
 from reflex.utils import imports
 from reflex.vars import Var
 
@@ -36,21 +33,29 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
         variant,
         (
             "soft",
-            {
-                "border_radius": "6px",
-                "background_color": cond(
-                    color == "primary", "var(--accent-3)", "var(--slate-3)"
-                ),
-                "box_shadow": "0 2px 10px var(--black-a1)",
-            },
-        ),
-        {
-            "border_radius": "6px",
-            "background_color": cond(
-                color == "primary", "var(--accent-9)", "var(--slate-9)"
+            format_as_emotion(
+                Style(
+                    {
+                        "border_radius": "6px",
+                        "background_color": cond(
+                            color == "primary", "var(--accent-3)", "var(--slate-3)"
+                        ),
+                        "box_shadow": "0 2px 10px var(--black-a1)",
+                    }
+                )
             ),
-            "box_shadow": "0 2px 10px var(--black-a4)",
-        },  # defaults to classic
+        ),
+        format_as_emotion(
+            Style(
+                {
+                    "border_radius": "6px",
+                    "background_color": cond(
+                        color == "primary", "var(--accent-9)", "var(--slate-9)"
+                    ),
+                    "box_shadow": "0 2px 10px var(--black-a4)",
+                }
+            )
+        ),  # defaults to classic
     )
 
 
@@ -107,77 +112,87 @@ def get_theme_accordion_trigger(variant: str, color: str):
     Returns:
         The theme for the accordion trigger component.
     """
-
     return match(
         variant,
         (
             "soft",
-            {
-                "color": cond(
-                    color == "primary",
-                    "var(--accent-9-contrast)",
-                    "var(--slate-9-contrast)",
-                ),
-                "&:hover": {
-                    "background_color": cond(
-                        color == "primary", "var(--accent-4)", "var(--slate-4)"
-                    ),
-                },
-                "& > .AccordionChevron": {
-                    "color": cond(
-                        color == "primary", "var(--accent-11)", "var(--slate-11)"
-                    ),
-                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                },
-                "&[data-state='open'] > .AccordionChevron": {
-                    "transform": "rotate(180deg)",
-                },
-                "font_family": "inherit",
-                "width": "100%",
-                "padding": "0 20px",
-                "height": "45px",
-                "flex": 1,
-                "display": "flex",
-                "align_items": "center",
-                "justify_content": "space-between",
-                "font_size": "15px",
-                "box_shadow": "0 1px 0 var(--accent-6)",
-                "line_height": 1,
-            },
-        ),
-        {
-            "color": cond(
-                color == "primary",
-                "var(--accent-9-contrast)",
-                "var(--slate-9-contrast)",
+            format_as_emotion(
+                Style(
+                    {
+                        "color": cond(
+                            color == "primary",
+                            "var(--accent-9-contrast)",
+                            "var(--slate-9-contrast)",
+                        ),
+                        "&:hover": {
+                            "background_color": cond(
+                                color == "primary", "var(--accent-4)", "var(--slate-4)"
+                            ),
+                        },
+                        "& > .AccordionChevron": {
+                            "color": cond(
+                                color == "primary",
+                                "var(--accent-11)",
+                                "var(--slate-11)",
+                            ),
+                            "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        },
+                        "&[data-state='open'] > .AccordionChevron": {
+                            "transform": "rotate(180deg)",
+                        },
+                        "font_family": "inherit",
+                        "width": "100%",
+                        "padding": "0 20px",
+                        "height": "45px",
+                        "flex": 1,
+                        "display": "flex",
+                        "align_items": "center",
+                        "justify_content": "space-between",
+                        "font_size": "15px",
+                        "box_shadow": "0 1px 0 var(--accent-6)",
+                        "line_height": 1,
+                    }
+                )
             ),
-            "box_shadow": "0 1px 0 var(--accent-6)",
-            "&:hover": {
-                "background_color": cond(
-                    color == "primary", "var(--accent-10)", "var(--slate-10)"
-                ),
-            },
-            "& > .AccordionChevron": {
-                "color": cond(
-                    color == "primary", "var(--accent-9-contrast)", "var(--slate-9-contrast)"
-                ),
-                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-            },
-            "&[data-state='open'] > .AccordionChevron": {
-                "transform": "rotate(180deg)",
-            },
-            "font_family": "inherit",
-            "width": "100%",
-            "padding": "0 20px",
-            "height": "45px",
-            "flex": 1,
-            "display": "flex",
-            "align_items": "center",
-            "justify_content": "space-between",
-            "font_size": "15px",
-            "box_shadow": "0 1px 0 var(--accent-6)",
-            "line_height": 1,
-        },
+        ),
+        format_as_emotion(
+            Style(
+                {
+                    "color": cond(
+                        color == "primary",
+                        "var(--accent-9-contrast)",
+                        "var(--slate-9-contrast)",
+                    ),
+                    "box_shadow": "0 1px 0 var(--accent-6)",
+                    "&:hover": {
+                        "background_color": cond(
+                            color == "primary", "var(--accent-10)", "var(--slate-10)"
+                        ),
+                    },
+                    "& > .AccordionChevron": {
+                        "color": cond(
+                            color == "primary",
+                            "var(--accent-9-contrast)",
+                            "var(--slate-9-contrast)",
+                        ),
+                        "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    },
+                    "&[data-state='open'] > .AccordionChevron": {
+                        "transform": "rotate(180deg)",
+                    },
+                    "font_family": "inherit",
+                    "width": "100%",
+                    "padding": "0 20px",
+                    "height": "45px",
+                    "flex": 1,
+                    "display": "flex",
+                    "align_items": "center",
+                    "justify_content": "space-between",
+                    "font_size": "15px",
+                    "line_height": 1,
+                }
+            )
+        ),
     )
 
 
@@ -195,51 +210,61 @@ def get_theme_accordion_content(variant: str, color: str):
         variant,
         (
             "soft",
-            {
-                "overflow": "hidden",
-                "font_size": "10px",
-                "color": cond(
-                    color == "primary", "var(--accent-11)", "var(--slate-11)"
-                ),
-                "background_color": cond(
-                    color == "primary", "var(--accent-3)", "var(--slate-3)"
-                ),
-                "padding": "15px, 20px",
-                "&[data-state='open']": {
-                    "animation": Var.create(
-                        f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        _var_is_string=True,
-                    ),
-                },
-                "&[data-state='closed']": {
-                    "animation": Var.create(
-                        f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        _var_is_string=True,
-                    ),
-                },
-            },
-        ),
-        {
-            "overflow": "hidden",
-            "font_size": "10px",
-            "color": cond(color == "primary", "var(--accent-11)", "var(--slate-11)"),
-            "background_color": cond(
-                color == "primary", "var(--accent-3)", "var(--slate-3)"
+            format_as_emotion(
+                Style(
+                    {
+                        "overflow": "hidden",
+                        "font_size": "10px",
+                        "color": cond(
+                            color == "primary", "var(--accent-11)", "var(--slate-11)"
+                        ),
+                        "background_color": cond(
+                            color == "primary", "var(--accent-3)", "var(--slate-3)"
+                        ),
+                        "padding": "15px, 20px",
+                        "&[data-state='open']": {
+                            "animation": Var.create(
+                                f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                                _var_is_string=True,
+                            ),
+                        },
+                        "&[data-state='closed']": {
+                            "animation": Var.create(
+                                f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                                _var_is_string=True,
+                            ),
+                        },
+                    }
+                )
             ),
-            "padding": "15px, 20px",
-            "&[data-state='open']": {
-                "animation": Var.create(
-                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-            "&[data-state='closed']": {
-                "animation": Var.create(
-                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-        },
+        ),
+        format_as_emotion(
+            Style(
+                {
+                    "overflow": "hidden",
+                    "font_size": "10px",
+                    "color": cond(
+                        color == "primary", "var(--accent-11)", "var(--slate-11)"
+                    ),
+                    "background_color": cond(
+                        color == "primary", "var(--accent-3)", "var(--slate-3)"
+                    ),
+                    "padding": "15px, 20px",
+                    "&[data-state='open']": {
+                        "animation": Var.create(
+                            f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                            _var_is_string=True,
+                        ),
+                    },
+                    "&[data-state='closed']": {
+                        "animation": Var.create(
+                            f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                            _var_is_string=True,
+                        ),
+                    },
+                }
+            )
+        ),
     )
 
 
@@ -284,18 +309,20 @@ class AccordionRoot(AccordionComponent):
     def _apply_theme(self, theme: Component):
 
         self.style = Var.create(
-            Style(
-                {
-                    "& .AccordionItem": get_theme_accordion_item(),
-                    "& .AccordionHeader": get_theme_accordion_header(),
-                    "& .AccordionTrigger": get_theme_accordion_trigger(
-                        variant=self.variant, color=self.color
-                    ),
-                    "& .AccordionContent": get_theme_accordion_content(
-                        variant=self.variant, color=self.color
-                    ),
-                    **self.style,
-                }
+            format_as_emotion(
+                Style(
+                    {
+                        "& .AccordionItem": get_theme_accordion_item(),
+                        "& .AccordionHeader": get_theme_accordion_header(),
+                        "& .AccordionTrigger": get_theme_accordion_trigger(
+                            variant=self.variant, color=self.color
+                        ),
+                        "& .AccordionContent": get_theme_accordion_content(
+                            variant=self.variant, color=self.color
+                        ),
+                        **self.style,
+                    }
+                )
             )
         )
 
