@@ -420,11 +420,10 @@ class Var:
             == other._var_full_name_needs_state_prefix
             and self._var_data == other._var_data
         )
-    
 
     def _merge(self, others) -> Var:
         """Merge two or more dicts.
-        
+
         Args:
             other: The other var to merge.
 
@@ -432,9 +431,9 @@ class Var:
             The merged var.
         """
         return self._replace(
-            _var_name=f'{{...{self._var_name}, ...{others._var_name}}}'
+            _var_name=f"{{...{self._var_name}, ...{others._var_name}}}"
         )
-    
+
     def to_string(self, json: bool = True) -> Var:
         """Convert a var to a string.
 
