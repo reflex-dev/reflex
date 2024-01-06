@@ -63,6 +63,7 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    code_uses_state_contexts,
 )
 from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.imports import ImportVar
@@ -709,7 +710,7 @@ class App(Base):
 
             # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
             if (
-                "useContext(StateContexts" in stateful_components_code
+                code_uses_state_contexts(stateful_components_code)
                 and self.state is None
             ):
                 raise RuntimeError(
