@@ -2181,3 +2181,15 @@ class ImmutableMutableProxy(MutableProxy):
         return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )
+
+
+def code_uses_state_contexts(javascript_code: str) -> bool:
+    """Check if the rendered Javascript uses state contexts.
+
+    Args:
+        javascript_code: The Javascript code to check.
+
+    Returns:
+        True if the code attempts to access a member of StateContexts.
+    """
+    return bool("useContext(StateContexts" in javascript_code)
