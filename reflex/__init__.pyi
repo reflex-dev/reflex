@@ -208,6 +208,7 @@ from reflex.components import TextArea as TextArea
 from reflex.components import Tfoot as Tfoot
 from reflex.components import Th as Th
 from reflex.components import Thead as Thead
+from reflex.components import TimePicker as TimePicker
 from reflex.components import Tooltip as Tooltip
 from reflex.components import Tr as Tr
 from reflex.components import UnorderedList as UnorderedList
@@ -418,6 +419,7 @@ from reflex.components import text_area as text_area
 from reflex.components import tfoot as tfoot
 from reflex.components import th as th
 from reflex.components import thead as thead
+from reflex.components import time_picker as time_picker
 from reflex.components import tooltip as tooltip
 from reflex.components import tr as tr
 from reflex.components import unordered_list as unordered_list
