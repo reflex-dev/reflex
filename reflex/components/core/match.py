@@ -248,13 +248,13 @@ class Match(MemoizationLeaf):
         for case in self.match_cases:
             if isinstance(case[-1], BaseComponent):
                 merged_imports = imports.merge_imports(
-                    merged_imports, 
-                    case[-1].get_imports(), 
+                    merged_imports,
+                    case[-1].get_imports(),
                 )
         # Get the import of the default case component.
         if isinstance(self.default, BaseComponent):
             merged_imports = imports.merge_imports(
-                merged_imports, 
-                self.default.get_imports(), 
+                merged_imports,
+                self.default.get_imports(),
             )
         return merged_imports

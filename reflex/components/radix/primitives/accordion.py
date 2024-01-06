@@ -35,16 +35,6 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
     return match(
         variant,
         (
-            "classic",
-            {
-                "border_radius": "6px",
-                "background_color": cond(
-                    color == "primary", "var(--accent-9)", "var(--slate-9)"
-                ),
-                "box_shadow": "0 2px 10px var(--black-a4)",
-            },
-        ),
-        (
             "soft",
             {
                 "border_radius": "6px",
@@ -54,11 +44,17 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
                 "box_shadow": "0 2px 10px var(--black-a1)",
             },
         ),
-        {},
+        {
+            "border_radius": "6px",
+            "background_color": cond(
+                color == "primary", "var(--accent-9)", "var(--slate-9)"
+            ),
+            "box_shadow": "0 2px 10px var(--black-a4)",
+        },  # defaults to classic
     )
 
 
-def get_theme_accordion_item(variant: str):
+def get_theme_accordion_item():
     """Get the theme for the accordion item component.
 
     Args:
@@ -87,7 +83,7 @@ def get_theme_accordion_item(variant: str):
     }
 
 
-def get_theme_accordion_header(variant: str):
+def get_theme_accordion_header():
     """Get the theme for the accordion header component.
 
     Args:
@@ -111,8 +107,65 @@ def get_theme_accordion_trigger(variant: str, color: str):
     Returns:
         The theme for the accordion trigger component.
     """
-    if variant == "classic":
-        return {
+
+    return match(
+        variant,
+        (
+            "soft",
+            {
+                "color": cond(
+                    color == "primary",
+                    "var(--accent-9-contrast)",
+                    "var(--slate-9-contrast)",
+                ),
+                "&:hover": {
+                    "background_color": cond(
+                        color == "primary", "var(--accent-4)", "var(--slate-4)"
+                    ),
+                },
+                "& > .AccordionChevron": {
+                    "color": cond(
+                        color == "primary", "var(--accent-11)", "var(--slate-11)"
+                    ),
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+                "font_family": "inherit",
+                "width": "100%",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "line_height": 1,
+            },
+        ),
+        {
+            "color": cond(
+                color == "primary",
+                "var(--accent-9-contrast)",
+                "var(--slate-9-contrast)",
+            ),
+            "box_shadow": "0 1px 0 var(--accent-6)",
+            "&:hover": {
+                "background_color": cond(
+                    color == "primary", "var(--accent-10)", "var(--slate-10)"
+                ),
+            },
+            "& > .AccordionChevron": {
+                "color": cond(
+                    color == "primary", "var(--accent-9-contrast)", "var(--slate-9-contrast)"
+                ),
+                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+            },
+            "&[data-state='open'] > .AccordionChevron": {
+                "transform": "rotate(180deg)",
+            },
             "font_family": "inherit",
             "width": "100%",
             "padding": "0 20px",
@@ -122,142 +175,10 @@ def get_theme_accordion_trigger(variant: str, color: str):
             "align_items": "center",
             "justify_content": "space-between",
             "font_size": "15px",
-            "line_height": 1,
-            "color": "var(--accent-9-contrast)"
-            if color == "primary"
-            else "var(--slate-9-contrast)",
             "box_shadow": "0 1px 0 var(--accent-6)",
-            "&:hover": {
-                "background_color": "var(--accent-10)"
-                if color == "primary"
-                else "var(--slate-10)",
-            },
-            "& > .AccordionChevron": {
-                "color": "var(--accent-9-contrast)"
-                if color == "primary"
-                else "var(--slate-9-contrast)",
-                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-            },
-            "&[data-state='open'] > .AccordionChevron": {
-                "transform": "rotate(180deg)",
-            },
-        }
-    if variant == "soft":
-        return {
-            "font_family": "inherit",
-            "width": "100%",
-            "padding": "0 20px",
-            "height": "45px",
-            "flex": 1,
-            "display": "flex",
-            "align_items": "center",
-            "justify_content": "space-between",
-            "font_size": "15px",
             "line_height": 1,
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "box_shadow": "0 1px 0 var(--accent-6)",
-            "&:hover": {
-                "background_color": "var(--accent-4)"
-                if color == "primary"
-                else "var(--slate-4)",
-            },
-            "& > .AccordionChevron": {
-                "color": "var(--accent-11)"
-                if color == "primary"
-                else "var(--slate-11)",
-                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-            },
-            "&[data-state='open'] > .AccordionChevron": {
-                "transform": "rotate(180deg)",
-            },
-        }
-    if variant == "outline":
-        return {
-            "font_family": "inherit",
-            "width": "100%",
-            "padding": "0 20px",
-            "height": "45px",
-            "flex": 1,
-            "display": "flex",
-            "align_items": "center",
-            "justify_content": "space-between",
-            "font_size": "15px",
-            "line_height": 1,
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "box_shadow": "0 1px 0 var(--accent-6)",
-            "&:hover": {
-                "background_color": "var(--accent-4)"
-                if color == "primary"
-                else "var(--slate-4)",
-            },
-            "& > .AccordionChevron": {
-                "color": "var(--accent-11)"
-                if color == "primary"
-                else "var(--slate-11)",
-                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-            },
-            "&[data-state='open'] > .AccordionChevron": {
-                "transform": "rotate(180deg)",
-            },
-        }
-    if variant == "surface":
-        return {
-            "font_family": "inherit",
-            "width": "100%",
-            "padding": "0 20px",
-            "height": "45px",
-            "flex": 1,
-            "display": "flex",
-            "align_items": "center",
-            "justify_content": "space-between",
-            "font_size": "15px",
-            "line_height": 1,
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "box_shadow": "0 1px 0 var(--accent-6)",
-            "&:hover": {
-                "background_color": "var(--accent-4)"
-                if color == "primary"
-                else "var(--slate-4)",
-            },
-            "& > .AccordionChevron": {
-                "color": "var(--accent-11)"
-                if color == "primary"
-                else "var(--slate-11)",
-                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-            },
-            "&[data-state='open'] > .AccordionChevron": {
-                "transform": "rotate(180deg)",
-            },
-        }
-    if variant == "ghost":
-        return {
-            "font_family": "inherit",
-            "width": "100%",
-            "padding": "0 20px",
-            "height": "45px",
-            "flex": 1,
-            "display": "flex",
-            "align_items": "center",
-            "justify_content": "space-between",
-            "font_size": "15px",
-            "line_height": 1,
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "box_shadow": "0 1px 0 var(--accent-6)",
-            "&:hover": {
-                "background_color": "var(--accent-4)"
-                if color == "primary"
-                else "var(--slate-4)",
-            },
-            "& > .AccordionChevron": {
-                "color": "var(--accent-11)"
-                if color == "primary"
-                else "var(--slate-11)",
-                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-            },
-            "&[data-state='open'] > .AccordionChevron": {
-                "transform": "rotate(180deg)",
-            },
-        }
+        },
+    )
 
 
 def get_theme_accordion_content(variant: str, color: str):
@@ -270,16 +191,41 @@ def get_theme_accordion_content(variant: str, color: str):
     Returns:
         The theme for the accordion content component.
     """
-    if variant == "classic":
-        return {
+    return match(
+        variant,
+        (
+            "soft",
+            {
+                "overflow": "hidden",
+                "font_size": "10px",
+                "color": cond(
+                    color == "primary", "var(--accent-11)", "var(--slate-11)"
+                ),
+                "background_color": cond(
+                    color == "primary", "var(--accent-3)", "var(--slate-3)"
+                ),
+                "padding": "15px, 20px",
+                "&[data-state='open']": {
+                    "animation": Var.create(
+                        f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        _var_is_string=True,
+                    ),
+                },
+                "&[data-state='closed']": {
+                    "animation": Var.create(
+                        f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        _var_is_string=True,
+                    ),
+                },
+            },
+        ),
+        {
             "overflow": "hidden",
             "font_size": "10px",
-            "color": "var(--accent-9-contrast)"
-            if color == "primary"
-            else "var(--slate-9-contrast)",
-            "background_color": "var(--accent-9)"
-            if color == "primary"
-            else "var(--slate-9)",
+            "color": cond(color == "primary", "var(--accent-11)", "var(--slate-11)"),
+            "background_color": cond(
+                color == "primary", "var(--accent-3)", "var(--slate-3)"
+            ),
             "padding": "15px, 20px",
             "&[data-state='open']": {
                 "animation": Var.create(
@@ -293,89 +239,8 @@ def get_theme_accordion_content(variant: str, color: str):
                     _var_is_string=True,
                 ),
             },
-        }
-    elif variant == "soft":
-        return {
-            "overflow": "hidden",
-            "font_size": "10px",
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "background_color": "var(--accent-3)"
-            if color == "primary"
-            else "var(--slate-3)",
-            "padding": "15px, 20px",
-            "&[data-state='open']": {
-                "animation": Var.create(
-                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-            "&[data-state='closed']": {
-                "animation": Var.create(
-                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-        }
-    elif variant == "outline":
-        return {
-            "overflow": "hidden",
-            "font_size": "10px",
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "padding": "15px, 20px",
-            "&[data-state='open']": {
-                "animation": Var.create(
-                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-            "&[data-state='closed']": {
-                "animation": Var.create(
-                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-        }
-    elif variant == "surface":
-        return {
-            "overflow": "hidden",
-            "font_size": "10px",
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "background_color": "var(--accent-3)"
-            if color == "primary"
-            else "var(--slate-3)",
-            "padding": "15px, 20px",
-            "&[data-state='open']": {
-                "animation": Var.create(
-                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-            "&[data-state='closed']": {
-                "animation": Var.create(
-                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-        }
-    elif variant == "ghost":
-        return {
-            "overflow": "hidden",
-            "font_size": "10px",
-            "color": "var(--accent-11)" if color == "primary" else "var(--slate-11)",
-            "padding": "15px, 20px",
-            "&[data-state='open']": {
-                "animation": Var.create(
-                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-            "&[data-state='closed']": {
-                "animation": Var.create(
-                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    _var_is_string=True,
-                ),
-            },
-        }
+        },
+    )
 
 
 class AccordionComponent(Component):
@@ -412,19 +277,29 @@ class AccordionRoot(AccordionComponent):
     # The orientation of the accordion.
     orientation: Var[LiteralAccordionOrientation]
 
-    variant: Var[Literal["classic", "soft", "surface", "outline", "ghost"]] 
+    variant: Var[Literal["classic", "soft", "surface", "outline", "ghost"]]
 
     color: Literal["primary", "accent"] = "primary"
 
     def _apply_theme(self, theme: Component):
 
-        self.style = Var.create(Style(
-            {
-                **self.style,
-            }
-        ))
+        self.style = Var.create(
+            Style(
+                {
+                    "& .AccordionItem": get_theme_accordion_item(),
+                    "& .AccordionHeader": get_theme_accordion_header(),
+                    "& .AccordionTrigger": get_theme_accordion_trigger(
+                        variant=self.variant, color=self.color
+                    ),
+                    "& .AccordionContent": get_theme_accordion_content(
+                        variant=self.variant, color=self.color
+                    ),
+                    **self.style,
+                }
+            )
+        )
 
-        self.style= self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color)) # type: ignore 
+        self.style = self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color))  # type: ignore
 
     @classmethod
     def create(cls, *children, **props) -> Component:
