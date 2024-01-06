@@ -196,6 +196,7 @@ text_area = TextArea.create
 tfoot = Tfoot.create
 th = Th.create
 thead = Thead.create
+time_picker = TimePicker.create
 tooltip = Tooltip.create
 tr = Tr.create
 unordered_list = UnorderedList.create
