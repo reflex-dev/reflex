@@ -39,7 +39,11 @@ class ReactPlayer(NoSSRComponent):
     muted: Var[bool]
 
     # Set the width of the player: ex:640px
-    width: Var[str]
+    mobile_width: Var[str]
 
     # Set the height of the player: ex:640px
-    height: Var[str]
+    mobile_height: Var[str]
+
+    computer_width: Var[str]
+
+    computer_height: Var[str]
