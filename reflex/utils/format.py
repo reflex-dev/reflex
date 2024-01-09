@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -744,3 +744,24 @@ def format_data_editor_cell(cell: Any):
         The formatted cell.
     """
     return {"kind": Var.create(value="GridCellKind.Text"), "data": cell}
+
+
+def convert_dict_to_camel_case(dict_value: Dict, allow_hyphens=False):
+    """Convert the keys of a given dictionary to camel case.
+
+    Args:
+        dict_value: The dictionary to be converted.
+        allow_hyphens: Whether to convert hyphens as well.
+
+    Returns:
+        The converted dict
+
+    """
+    out = {}
+    for key, value in dict_value.items():
+        key = to_camel_case(key, allow_hyphens=allow_hyphens)
+        if isinstance(value, dict):
+            out[key] = convert_dict_to_camel_case(value)
+        else:
+            out[key] = value
+    return out
