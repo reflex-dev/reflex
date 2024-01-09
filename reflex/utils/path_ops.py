@@ -121,8 +121,8 @@ def get_node_bin_path() -> str | None:
     """
     if not os.path.exists(constants.Node.BIN_PATH):
         str_path = which("node")
-        return str(Path(str_path).parent) if str_path else str_path
-    return constants.Node.BIN_PATH
+        return str(Path(str_path).parent.resolve()) if str_path else str_path
+    return str(Path(constants.Node.BIN_PATH).resolve())
 
 
 def get_node_path() -> str | None:
