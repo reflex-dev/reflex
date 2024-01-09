@@ -193,7 +193,6 @@ We add a page from the root of the app to the index component. We also add a tit
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 You can create a multi-page app by adding more pages.
