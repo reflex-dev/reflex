@@ -253,6 +253,7 @@ _MAPPING = {
     "reflex.compiler.utils": ["get_asset_path"],
     "reflex.components": _ALL_COMPONENTS + ["chakra", "next"],
     "reflex.components.component": ["memo"],
+    "reflex.components.radix": ["radix"],
     "reflex.components.recharts": ["recharts"],
     "reflex.components.moment.moment": ["MomentDelta"],
     "reflex.config": ["config", "Config", "DBConfig"],
