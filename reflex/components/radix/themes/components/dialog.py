@@ -50,7 +50,7 @@ class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
 
     tag = "Dialog.Content"
 
-    # Button size "1" - "4"
+    # DialogContent size "1" - "4"
     size: Var[Literal[1, 2, 3, 4]]
 
     def get_event_triggers(self) -> Dict[str, Any]:
