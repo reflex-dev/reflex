@@ -425,7 +425,7 @@ class Var:
         """Merge two or more dicts.
 
         Args:
-            other: The other var to merge.
+            others: The other var to merge.
 
         Returns:
             The merged var.

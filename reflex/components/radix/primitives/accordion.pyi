@@ -9,34 +9,31 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.components.component import Component
-from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.core import cond, match
 from reflex.components.radix.themes.components.icons import Icon
-from reflex.style import Style
+from reflex.style import Style, convert_dict_to_style_and_format_emotion
 from reflex.utils import imports
 from reflex.vars import Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
+LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
+LiteralAccordionRootColorScheme = Literal["primary", "accent"]
 DEFAULT_ANIMATION_DURATION = 250
 
-<<<<<<< HEAD
-class AccordionComponent(RadixPrimitiveComponent):
-=======
-def get_theme_accordion_root(variant: str, color: str): ...
-def get_theme_accordion_item(variant: str): ...
-def get_theme_accordion_header(variant: str): ...
-def get_theme_accordion_trigger(variant: str, color: str): ...
-def get_theme_accordion_content(variant: str, color: str): ...
+def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]): ...
+def get_theme_accordion_item(): ...
+def get_theme_accordion_header(): ...
+def get_theme_accordion_trigger(variant: str, color_scheme: str): ...
+def get_theme_accordion_content(variant: str, color_scheme: str): ...
 
 class AccordionComponent(Component):
->>>>>>> 93edcf27 (PYI)
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -94,7 +91,6 @@ class AccordionComponent(Component):
 
         Args:
             *children: The children of the component.
-            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -132,10 +128,12 @@ class AccordionRoot(AccordionComponent):
             ]
         ] = None,
         variant: Optional[
-            Literal["classic", "soft", "surface", "outline", "ghost"]
+            Union[
+                Var[Literal["classic", "soft", "surface", "outline", "ghost"]],
+                Literal["classic", "soft", "surface", "outline", "ghost"],
+            ]
         ] = None,
-        color: Optional[Literal["primary", "accent"]] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        color_scheme: Optional[Literal["primary", "accent"]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -200,7 +198,6 @@ class AccordionRoot(AccordionComponent):
             disabled: Whether or not the accordion is disabled.
             dir: The reading direction of the accordion when applicable.
             orientation: The orientation of the accordion.
-            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -225,7 +222,6 @@ class AccordionItem(AccordionComponent):
         *children,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -285,7 +281,6 @@ class AccordionItem(AccordionComponent):
             *children: The children of the component.
             value: A unique identifier for the item.
             disabled: When true, prevents the user from interacting with the item.
-            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -308,7 +303,6 @@ class AccordionHeader(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -366,7 +360,6 @@ class AccordionHeader(AccordionComponent):
 
         Args:
             *children: The children of the component.
-            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -389,7 +382,6 @@ class AccordionTrigger(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -447,7 +439,6 @@ class AccordionTrigger(AccordionComponent):
 
         Args:
             *children: The children of the component.
-            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -470,7 +461,6 @@ class AccordionContent(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -528,7 +518,6 @@ class AccordionContent(AccordionComponent):
 
         Args:
             *children: The children of the component.
-            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

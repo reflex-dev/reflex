@@ -397,7 +397,6 @@ class AccordionRoot(AccordionComponent):
         self.style = self.style._merge(get_theme_accordion_root(variant=self.variant, color_scheme=self.color_scheme))  # type: ignore
 
 
-
 class AccordionItem(AccordionComponent):
     """An accordion component."""
 
