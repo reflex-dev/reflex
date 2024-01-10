@@ -37,10 +37,11 @@ from reflex.admin import AdminDash
 from reflex.base import Base
 from reflex.compiler import compiler
 from reflex.compiler import utils as compiler_utils
+from reflex.compiler.compiler import ExecutorSafeFunctions
 from reflex.components import connection_modal
 from reflex.components.base.app_wrap import AppWrap
 from reflex.components.base.fragment import Fragment
-from reflex.components.component import Component, ComponentStyle, CustomComponent
+from reflex.components.component import Component, ComponentStyle
 from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
@@ -82,118 +83,6 @@ def default_overlay_component() -> Component:
         The default overlay_component, which is a connection_modal.
     """
     return connection_modal()
-
-
-class ExecutorSafeFunctions:
-    """Helper class to allow parallelisation of parts of the compilation process.
-
-    This class (and its class attributes) are available at global scope.
-
-    In a multiprocessing context (like when using a ProcessPoolExecutor), the content of this
-    global class is logically replicated to any FORKED process.
-
-    How it works:
-    * Before the child process is forked, ensure that we stash any input data required by any future
-      function call in the child process.
-    * After the child process is forked, the child process will have a copy of the global class, which
-      includes the previously stashed input data.
-    * Any task submitted to the child process simply needs a way to communicate which input data the
-      requested function call requires.
-
-    Why do we need this? Passing input data directly to child process often not possible because the input data is not picklable.
-    The mechanic described here removes the need to pickle the input data at all.
-
-    Limitations:
-    * This can never support returning unpicklable OUTPUT data (that is not picklable).
-    * Any object mutations done by the child process will not propagate back to the parent process (fork goes one way!).
-
-    """
-
-    COMPILE_PAGE_ARGS_BY_ROUTE = {}
-    COMPILE_APP_APP_ROOT: Component | None = None
-    CUSTOM_COMPONENTS: set[CustomComponent] | None = None
-    HEAD_COMPONENTS: list[Component] | None = None
-    STYLE: ComponentStyle | None = None
-    STATE: type[BaseState] | None = None
-
-    @staticmethod
-    def compile_page(route: str):
-        """Compile a page.
-
-        Args:
-            route: The route of the page to compile.
-
-        Returns:
-            The path and code of the compiled page.
-        """
-        return compiler.compile_page(
-            *ExecutorSafeFunctions.COMPILE_PAGE_ARGS_BY_ROUTE[route]
-        )
-
-    @staticmethod
-    def compile_app():
-        """Compile the app.
-
-        Returns:
-            The path and code of the compiled app.
-
-        Raises:
-            ValueError: If the app root is not set.
-        """
-        if ExecutorSafeFunctions.COMPILE_APP_APP_ROOT is None:
-            raise ValueError("COMPILE_APP_APP_ROOT should be set")
-        return compiler.compile_app(ExecutorSafeFunctions.COMPILE_APP_APP_ROOT)
-
-    @staticmethod
-    def compile_custom_components():
-        """Compile the custom components.
-
-        Returns:
-            The path and code of the compiled custom components.
-
-        Raises:
-            ValueError: If the custom components are not set.
-        """
-        if ExecutorSafeFunctions.CUSTOM_COMPONENTS is None:
-            raise ValueError("CUSTOM_COMPONENTS should be set")
-        return compiler.compile_components(ExecutorSafeFunctions.CUSTOM_COMPONENTS)
-
-    @staticmethod
-    def compile_document_root():
-        """Compile the document root.
-
-        Returns:
-            The path and code of the compiled document root.
-
-        Raises:
-            ValueError: If the head components are not set.
-        """
-        if ExecutorSafeFunctions.HEAD_COMPONENTS is None:
-            raise ValueError("HEAD_COMPONENTS should be set")
-        return compiler.compile_document_root(ExecutorSafeFunctions.HEAD_COMPONENTS)
-
-    @staticmethod
-    def compile_theme():
-        """Compile the theme.
-
-        Returns:
-            The path and code of the compiled theme.
-
-        Raises:
-            ValueError: If the style is not set.
-        """
-        if ExecutorSafeFunctions.STYLE is None:
-            raise ValueError("STYLE should be set")
-        return compiler.compile_theme(ExecutorSafeFunctions.STYLE)
-
-    @staticmethod
-    def compile_contexts():
-        """Compile the contexts.
-
-        Returns:
-            The path and code of the compiled contexts.
-        """
-        return compiler.compile_contexts(ExecutorSafeFunctions.STATE)
 
 
 class App(Base):
