@@ -774,8 +774,17 @@ class App(Base):
             *Progress.get_default_columns()[:-1],
             MofNCompleteColumn(),
             TimeElapsedColumn(),
-            redirect_stdout=False,
-            redirect_stderr=False,
+        )
+
+        # try to be somewhat accurate - but still not 100%
+        adhoc_steps_without_executor = 7
+        fixed_pages_within_executor = 7
+        progress.start()
+        task = progress.add_task(
+            "Compiling:",
+            total=len(self.pages)
+            + fixed_pages_within_executor
+            + adhoc_steps_without_executor,
         )
 
         # Get the env mode.
@@ -794,6 +803,8 @@ class App(Base):
             # If a theme component was provided, wrap the app with it
             app_wrappers[(20, "Theme")] = self.theme
 
+        progress.advance(task)
+
         for _route, component in self.pages.items():
             # Merge the component style with the app style.
             component.add_style(self.style)
@@ -809,12 +820,16 @@ class App(Base):
             # Add the custom components from the page to the set.
             custom_components |= component.get_custom_components()
 
+        progress.advance(task)
+
         # Perform auto-memoization of stateful components.
         (
             stateful_components_path,
             stateful_components_code,
             page_components,
         ) = compiler.compile_stateful_components(self.pages.values())
+
+        progress.advance(task)
 
         # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
         if code_uses_state_contexts(stateful_components_code) and self.state is None:
@@ -824,9 +839,9 @@ class App(Base):
             )
         compile_results.append((stateful_components_path, stateful_components_code))
 
-        fixed_pages = 7
-
         app_root = self._app_root(app_wrappers=app_wrappers)
+
+        progress.advance(task)
 
         # Prepopulate the global ExecutorSafeFunctions class with input data required by the compile functions.
         # This is required for multiprocessing to work, in presence of non-picklable inputs.
@@ -853,8 +868,7 @@ class App(Base):
         else:
             executor = concurrent.futures.ThreadPoolExecutor()
 
-        with progress, executor:
-            task = progress.add_task("Compiling:", total=len(self.pages) + fixed_pages)
+        with executor:
             result_futures = []
 
             def _mark_complete(_=None):
@@ -907,8 +921,13 @@ class App(Base):
         for component in custom_components:
             all_imports.update(component.get_imports())
 
+        progress.advance(task)
+
         # Empty the .web pages directory.
         compiler.purge_web_pages_dir()
+
+        progress.advance(task)
+        progress.stop()
 
         # Install frontend packages.
         self.get_frontend_packages(all_imports)
