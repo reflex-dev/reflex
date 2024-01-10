@@ -52,7 +52,9 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
                     {
                         "border_radius": "6px",
                         "border": cond(
-                            color == "primary","1px solid var(--accent-6)", "1px solid var(--slate-6)"
+                            color == "primary",
+                            "1px solid var(--accent-6)",
+                            "1px solid var(--slate-6)",
                         ),
                         "box_shadow": "0 2px 10px var(--black-a1)",
                     }
@@ -66,7 +68,9 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
                     {
                         "border_radius": "6px",
                         "border": cond(
-                            color == "primary", "1px solid var(--accent-6)", "1px solid var(--slate-6)"
+                            color == "primary",
+                            "1px solid var(--accent-6)",
+                            "1px solid var(--slate-6)",
                         ),
                         "background_color": cond(
                             color == "primary", "var(--accent-3)", "var(--slate-3)"
@@ -200,87 +204,7 @@ def get_theme_accordion_trigger(variant: str, color: str):
         ),
         (
             "outline",
-            format_as_emotion(
-                Style(
-                    {
-                        "color": cond(
-                            color == "primary",
-                            "var(--accent-11)",
-                            "var(--slate-11)",
-                        ),
-                        "&:hover": {
-                            "background_color": cond(
-                                color == "primary", "var(--accent-4)", "var(--slate-4)"
-                            ),
-                        },
-                        "& > .AccordionChevron": {
-                            "color": cond(
-                                color == "primary",
-                                "var(--accent-11)",
-                                "var(--slate-11)",
-                            ),
-                            "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        },
-                        "&[data-state='open'] > .AccordionChevron": {
-                            "transform": "rotate(180deg)",
-                        },
-                        "font_family": "inherit",
-                        "width": "100%",
-                        "padding": "0 20px",
-                        "height": "45px",
-                        "flex": 1,
-                        "display": "flex",
-                        "align_items": "center",
-                        "justify_content": "space-between",
-                        "font_size": "15px",
-                        "box_shadow": "0 1px 0 var(--accent-6)",
-                        "line_height": 1,
-                    }
-                )
-            ),
-        ),
-        (
             "surface",
-            format_as_emotion(
-                Style(
-                    {
-                        "color": cond(
-                            color == "primary",
-                            "var(--accent-11)",
-                            "var(--slate-11)",
-                        ),
-                        "&:hover": {
-                            "background_color": cond(
-                                color == "primary", "var(--accent-4)", "var(--slate-4)"
-                            ),
-                        },
-                        "& > .AccordionChevron": {
-                            "color": cond(
-                                color == "primary",
-                                "var(--accent-11)",
-                                "var(--slate-11)",
-                            ),
-                            "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        },
-                        "&[data-state='open'] > .AccordionChevron": {
-                            "transform": "rotate(180deg)",
-                        },
-                        "font_family": "inherit",
-                        "width": "100%",
-                        "padding": "0 20px",
-                        "height": "45px",
-                        "flex": 1,
-                        "display": "flex",
-                        "align_items": "center",
-                        "justify_content": "space-between",
-                        "font_size": "15px",
-                        "box_shadow": "0 1px 0 var(--accent-6)",
-                        "line_height": 1,
-                    }
-                )
-            ),
-        ),
-        (
             "ghost",
             format_as_emotion(
                 Style(
@@ -376,93 +300,7 @@ def get_theme_accordion_content(variant: str, color: str):
     return match(
         variant,
         (
-            "soft",
-            format_as_emotion(
-                Style(
-                    {
-                        "overflow": "hidden",
-                        "font_size": "10px",
-                        "color": cond(
-                            color == "primary", "var(--accent-11)", "var(--slate-11)"
-                        ),
-                        "background_color": cond(
-                            color == "primary", "var(--accent-3)", "var(--slate-3)"
-                        ),
-                        "padding": "15px, 20px",
-                        "&[data-state='open']": {
-                            "animation": Var.create(
-                                f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                        "&[data-state='closed']": {
-                            "animation": Var.create(
-                                f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                    }
-                )
-            ),
-        ),
-        (
             "outline",
-            format_as_emotion(
-                Style(
-                    {
-                        "overflow": "hidden",
-                        "font_size": "10px",
-                        "color": cond(
-                            color == "primary", "var(--accent-11)", "var(--slate-11)"
-                        ),
-                        "padding": "15px, 20px",
-                        "&[data-state='open']": {
-                            "animation": Var.create(
-                                f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                        "&[data-state='closed']": {
-                            "animation": Var.create(
-                                f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                    }
-                )
-            ),
-        ),
-        (
-            "surface",
-            format_as_emotion(
-                Style(
-                    {
-                        "overflow": "hidden",
-                        "font_size": "10px",
-                        "color": cond(
-                            color == "primary", "var(--accent-11)", "var(--slate-11)"
-                        ),
-                        "background_color": cond(
-                            color == "primary", "var(--accent-3)", "var(--slate-3)"
-                        ),
-                        "padding": "15px, 20px",
-                        "&[data-state='open']": {
-                            "animation": Var.create(
-                                f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                        "&[data-state='closed']": {
-                            "animation": Var.create(
-                                f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                    }
-                )
-            ),
-        ),
-        (
             "ghost",
             format_as_emotion(
                 Style(
@@ -489,7 +327,6 @@ def get_theme_accordion_content(variant: str, color: str):
                 )
             ),
         ),
-        # default as classic
         format_as_emotion(
             Style(
                 {
