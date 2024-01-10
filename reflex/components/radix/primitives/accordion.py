@@ -105,24 +105,26 @@ def get_theme_accordion_item():
     Returns:
         The theme for the accordion item component.
     """
-    return {
-        "overflow": "hidden",
-        "width": "100%",
-        "margin_top": "1px",
-        "&:first-child": {
-            "margin_top": 0,
-            "border_top_left_radius": "4px",
-            "border_top_right_radius": "4px",
-        },
-        "&:last-child": {
-            "border_bottom_left_radius": "4px",
-            "border_bottom_right_radius": "4px",
-        },
-        "&:focus-within": {
-            "position": "relative",
-            "z_index": 1,
-        },
-    }
+    return convert_dict_to_style_and_format_emotion(
+        {
+            "overflow": "hidden",
+            "width": "100%",
+            "margin_top": "1px",
+            "&:first-child": {
+                "margin_top": 0,
+                "border_top_left_radius": "4px",
+                "border_top_right_radius": "4px",
+            },
+            "&:last-child": {
+                "border_bottom_left_radius": "4px",
+                "border_bottom_right_radius": "4px",
+            },
+            "&:focus-within": {
+                "position": "relative",
+                "z_index": 1,
+            },
+        }
+    )
 
 
 def get_theme_accordion_header():
@@ -136,7 +138,7 @@ def get_theme_accordion_header():
     }
 
 
-def get_theme_accordion_trigger(variant: str, color_scheme: str):
+def get_theme_accordion_trigger(variant: str | Var, color_scheme: str):
     """Get the theme for the accordion trigger component.
 
     Args:
@@ -272,7 +274,7 @@ def get_theme_accordion_trigger(variant: str, color_scheme: str):
     )
 
 
-def get_theme_accordion_content(variant: str, color_scheme: str):
+def get_theme_accordion_content(variant: str | Var, color_scheme: str):
     """Get the theme for the accordion content component.
 
     Args:

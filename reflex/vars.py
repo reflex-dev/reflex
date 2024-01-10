@@ -430,6 +430,8 @@ class Var:
         Returns:
             The merged var.
         """
+        if not isinstance(others, Var):
+            others = Var.create(others)
         return self._replace(
             _var_name=f"{{...{self._var_name}, ...{others._var_name}}}"
         )
