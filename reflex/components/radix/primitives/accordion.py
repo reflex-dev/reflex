@@ -5,13 +5,15 @@ from typing import Literal
 from reflex.components.component import Component
 from reflex.components.core import cond, match
 from reflex.components.radix.themes.components.icons import Icon
-from reflex.style import Style, format_as_emotion
+from reflex.style import Style, convert_dict_to_style_and_format_emotion
 from reflex.utils import imports
 from reflex.vars import Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
+LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
+LiteralAccordionRootColorScheme = Literal["primary", "accent"]
 
 DEFAULT_ANIMATION_DURATION = 250
 
@@ -19,12 +21,12 @@ DEFAULT_ANIMATION_DURATION = 250
 # Helper methods
 
 
-def get_theme_accordion_root(variant: Var[str], color: Var[str]):
+def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]):
     """Get the theme for the accordion root component.
 
     Args:
         variant: The variant of the accordion.
-        color: The color of the accordion.
+        color_scheme: The color of the accordion.
 
     Returns:
         The theme for the accordion root component.
@@ -33,84 +35,72 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
         variant,
         (
             "soft",
-            format_as_emotion(
-                Style(
-                    {
-                        "border_radius": "6px",
-                        "background_color": cond(
-                            color == "primary", "var(--accent-3)", "var(--slate-3)"
-                        ),
-                        "box_shadow": "0 2px 10px var(--black-a1)",
-                    }
-                )
+            convert_dict_to_style_and_format_emotion(
+                {
+                    "border_radius": "6px",
+                    "background_color": cond(
+                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                    ),
+                    "box_shadow": "0 2px 10px var(--black-a1)",
+                }
             ),
         ),
         (
             "outline",
-            format_as_emotion(
-                Style(
-                    {
-                        "border_radius": "6px",
-                        "border": cond(
-                            color == "primary",
-                            "1px solid var(--accent-6)",
-                            "1px solid var(--slate-6)",
-                        ),
-                        "box_shadow": "0 2px 10px var(--black-a1)",
-                    }
-                )
+            convert_dict_to_style_and_format_emotion(
+                {
+                    "border_radius": "6px",
+                    "border": cond(
+                        color_scheme == "primary",
+                        "1px solid var(--accent-6)",
+                        "1px solid var(--slate-6)",
+                    ),
+                    "box_shadow": "0 2px 10px var(--black-a1)",
+                }
             ),
         ),
         (
             "surface",
-            format_as_emotion(
-                Style(
-                    {
-                        "border_radius": "6px",
-                        "border": cond(
-                            color == "primary",
-                            "1px solid var(--accent-6)",
-                            "1px solid var(--slate-6)",
-                        ),
-                        "background_color": cond(
-                            color == "primary", "var(--accent-3)", "var(--slate-3)"
-                        ),
-                        "box_shadow": "0 2px 10px var(--black-a1)",
-                    }
-                )
+            convert_dict_to_style_and_format_emotion(
+                {
+                    "border_radius": "6px",
+                    "border": cond(
+                        color_scheme == "primary",
+                        "1px solid var(--accent-6)",
+                        "1px solid var(--slate-6)",
+                    ),
+                    "background_color": cond(
+                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                    ),
+                    "box_shadow": "0 2px 10px var(--black-a1)",
+                }
             ),
         ),
         (
             "ghost",
-            format_as_emotion(
-                Style(
-                    {
-                        "border_radius": "6px",
-                        "background_color": "none",
-                        "box_shadow": "None",
-                    }
-                )
-            ),
-        ),
-        format_as_emotion(
-            Style(
+            convert_dict_to_style_and_format_emotion(
                 {
                     "border_radius": "6px",
-                    "background_color": cond(
-                        color == "primary", "var(--accent-9)", "var(--slate-9)"
-                    ),
-                    "box_shadow": "0 2px 10px var(--black-a4)",
+                    "background_color": "none",
+                    "box_shadow": "None",
                 }
-            )
-        ),  # defaults to classic
+            ),
+        ),
+        convert_dict_to_style_and_format_emotion(
+            {
+                "border_radius": "6px",
+                "background_color": cond(
+                    color_scheme == "primary", "var(--accent-9)", "var(--slate-9)"
+                ),
+                "box_shadow": "0 2px 10px var(--black-a4)",
+            }
+        )
+        # defaults to classic
     )
 
 
 def get_theme_accordion_item():
     """Get the theme for the accordion item component.
-
-    Args:
-        variant: The variant of the accordion.
 
     Returns:
         The theme for the accordion item component.
@@ -138,9 +128,6 @@ def get_theme_accordion_item():
 def get_theme_accordion_header():
     """Get the theme for the accordion header component.
 
-    Args:
-        variant: The variant of the accordion.
-
     Returns:
         The theme for the accordion header component.
     """
@@ -149,12 +136,12 @@ def get_theme_accordion_header():
     }
 
 
-def get_theme_accordion_trigger(variant: str, color: str):
+def get_theme_accordion_trigger(variant: str, color_scheme: str):
     """Get the theme for the accordion trigger component.
 
     Args:
         variant: The variant of the accordion.
-        color: The color of the accordion.
+        color_scheme: The color of the accordion.
 
     Returns:
         The theme for the accordion trigger component.
@@ -163,108 +150,25 @@ def get_theme_accordion_trigger(variant: str, color: str):
         variant,
         (
             "soft",
-            format_as_emotion(
-                Style(
-                    {
-                        "color": cond(
-                            color == "primary",
-                            "var(--accent-9-contrast)",
-                            "var(--slate-9-contrast)",
-                        ),
-                        "&:hover": {
-                            "background_color": cond(
-                                color == "primary", "var(--accent-4)", "var(--slate-4)"
-                            ),
-                        },
-                        "& > .AccordionChevron": {
-                            "color": cond(
-                                color == "primary",
-                                "var(--accent-11)",
-                                "var(--slate-11)",
-                            ),
-                            "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        },
-                        "&[data-state='open'] > .AccordionChevron": {
-                            "transform": "rotate(180deg)",
-                        },
-                        "font_family": "inherit",
-                        "width": "100%",
-                        "padding": "0 20px",
-                        "height": "45px",
-                        "flex": 1,
-                        "display": "flex",
-                        "align_items": "center",
-                        "justify_content": "space-between",
-                        "font_size": "15px",
-                        "box_shadow": "0 1px 0 var(--accent-6)",
-                        "line_height": 1,
-                    }
-                )
-            ),
-        ),
-        (
-            "outline",
-            "surface",
-            "ghost",
-            format_as_emotion(
-                Style(
-                    {
-                        "color": cond(
-                            color == "primary",
-                            "var(--accent-11)",
-                            "var(--slate-11)",
-                        ),
-                        "&:hover": {
-                            "background_color": cond(
-                                color == "primary", "var(--accent-4)", "var(--slate-4)"
-                            ),
-                        },
-                        "& > .AccordionChevron": {
-                            "color": cond(
-                                color == "primary",
-                                "var(--accent-11)",
-                                "var(--slate-11)",
-                            ),
-                            "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                        },
-                        "&[data-state='open'] > .AccordionChevron": {
-                            "transform": "rotate(180deg)",
-                        },
-                        "font_family": "inherit",
-                        "width": "100%",
-                        "padding": "0 20px",
-                        "height": "45px",
-                        "flex": 1,
-                        "display": "flex",
-                        "align_items": "center",
-                        "justify_content": "space-between",
-                        "font_size": "15px",
-                        "box_shadow": "0 1px 0 var(--accent-6)",
-                        "line_height": 1,
-                    }
-                )
-            ),
-        ),
-        # defaults to classic
-        format_as_emotion(
-            Style(
+            convert_dict_to_style_and_format_emotion(
                 {
                     "color": cond(
-                        color == "primary",
+                        color_scheme == "primary",
                         "var(--accent-9-contrast)",
                         "var(--slate-9-contrast)",
                     ),
-                    "box_shadow": "0 1px 0 var(--accent-6)",
                     "&:hover": {
                         "background_color": cond(
-                            color == "primary", "var(--accent-10)", "var(--slate-10)"
+                            color_scheme == "primary",
+                            "var(--accent-4)",
+                            "var(--slate-4)",
                         ),
                     },
                     "& > .AccordionChevron": {
                         "color": cond(
-                            color == "primary",
-                            "var(--accent-9-contrast)",
-                            "var(--slate-9-contrast)",
+                            color_scheme == "primary",
+                            "var(--accent-11)",
+                            "var(--slate-11)",
                         ),
                         "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
                     },
@@ -280,19 +184,100 @@ def get_theme_accordion_trigger(variant: str, color: str):
                     "align_items": "center",
                     "justify_content": "space-between",
                     "font_size": "15px",
+                    "box_shadow": "0 1px 0 var(--accent-6)",
                     "line_height": 1,
                 }
-            )
+            ),
+        ),
+        (
+            "outline",
+            "surface",
+            "ghost",
+            convert_dict_to_style_and_format_emotion(
+                {
+                    "color": cond(
+                        color_scheme == "primary",
+                        "var(--accent-11)",
+                        "var(--slate-11)",
+                    ),
+                    "&:hover": {
+                        "background_color": cond(
+                            color_scheme == "primary",
+                            "var(--accent-4)",
+                            "var(--slate-4)",
+                        ),
+                    },
+                    "& > .AccordionChevron": {
+                        "color": cond(
+                            color_scheme == "primary",
+                            "var(--accent-11)",
+                            "var(--slate-11)",
+                        ),
+                        "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    },
+                    "&[data-state='open'] > .AccordionChevron": {
+                        "transform": "rotate(180deg)",
+                    },
+                    "font_family": "inherit",
+                    "width": "100%",
+                    "padding": "0 20px",
+                    "height": "45px",
+                    "flex": 1,
+                    "display": "flex",
+                    "align_items": "center",
+                    "justify_content": "space-between",
+                    "font_size": "15px",
+                    "box_shadow": "0 1px 0 var(--accent-6)",
+                    "line_height": 1,
+                }
+            ),
+        ),
+        # defaults to classic
+        convert_dict_to_style_and_format_emotion(
+            {
+                "color": cond(
+                    color_scheme == "primary",
+                    "var(--accent-9-contrast)",
+                    "var(--slate-9-contrast)",
+                ),
+                "box_shadow": "0 1px 0 var(--accent-6)",
+                "&:hover": {
+                    "background_color": cond(
+                        color_scheme == "primary", "var(--accent-10)", "var(--slate-10)"
+                    ),
+                },
+                "& > .AccordionChevron": {
+                    "color": cond(
+                        color_scheme == "primary",
+                        "var(--accent-9-contrast)",
+                        "var(--slate-9-contrast)",
+                    ),
+                    "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                },
+                "&[data-state='open'] > .AccordionChevron": {
+                    "transform": "rotate(180deg)",
+                },
+                "font_family": "inherit",
+                "width": "100%",
+                "padding": "0 20px",
+                "height": "45px",
+                "flex": 1,
+                "display": "flex",
+                "align_items": "center",
+                "justify_content": "space-between",
+                "font_size": "15px",
+                "line_height": 1,
+            }
         ),
     )
 
 
-def get_theme_accordion_content(variant: str, color: str):
+def get_theme_accordion_content(variant: str, color_scheme: str):
     """Get the theme for the accordion content component.
 
     Args:
         variant: The variant of the accordion.
-        color: The color of the accordion.
+        color_scheme: The color of the accordion.
 
     Returns:
         The theme for the accordion content component.
@@ -302,41 +287,12 @@ def get_theme_accordion_content(variant: str, color: str):
         (
             "outline",
             "ghost",
-            format_as_emotion(
-                Style(
-                    {
-                        "overflow": "hidden",
-                        "font_size": "10px",
-                        "color": cond(
-                            color == "primary", "var(--accent-11)", "var(--slate-11)"
-                        ),
-                        "padding": "15px, 20px",
-                        "&[data-state='open']": {
-                            "animation": Var.create(
-                                f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                        "&[data-state='closed']": {
-                            "animation": Var.create(
-                                f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                                _var_is_string=True,
-                            ),
-                        },
-                    }
-                )
-            ),
-        ),
-        format_as_emotion(
-            Style(
+            convert_dict_to_style_and_format_emotion(
                 {
                     "overflow": "hidden",
                     "font_size": "10px",
                     "color": cond(
-                        color == "primary", "var(--accent-11)", "var(--slate-11)"
-                    ),
-                    "background_color": cond(
-                        color == "primary", "var(--accent-3)", "var(--slate-3)"
+                        color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
                     ),
                     "padding": "15px, 20px",
                     "&[data-state='open']": {
@@ -352,7 +308,32 @@ def get_theme_accordion_content(variant: str, color: str):
                         ),
                     },
                 }
-            )
+            ),
+        ),
+        convert_dict_to_style_and_format_emotion(
+            {
+                "overflow": "hidden",
+                "font_size": "10px",
+                "color": cond(
+                    color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
+                ),
+                "background_color": cond(
+                    color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                ),
+                "padding": "15px, 20px",
+                "&[data-state='open']": {
+                    "animation": Var.create(
+                        f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        _var_is_string=True,
+                    ),
+                },
+                "&[data-state='closed']": {
+                    "animation": Var.create(
+                        f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                        _var_is_string=True,
+                    ),
+                },
+            }
         ),
     )
 
@@ -391,35 +372,30 @@ class AccordionRoot(AccordionComponent):
     # The orientation of the accordion.
     orientation: Var[LiteralAccordionOrientation]
 
-    variant: Var[Literal["classic", "soft", "surface", "outline", "ghost"]]
+    variant: Var[LiteralAccordionRootVariant]
 
-    color: Literal["primary", "accent"] = "primary"
+    color_scheme: Literal["primary", "accent"] = "primary"
 
     def _apply_theme(self, theme: Component):
 
         self.style = Var.create(
-            format_as_emotion(
-                Style(
-                    {
-                        "& .AccordionItem": get_theme_accordion_item(),
-                        "& .AccordionHeader": get_theme_accordion_header(),
-                        "& .AccordionTrigger": get_theme_accordion_trigger(
-                            variant=self.variant, color=self.color
-                        ),
-                        "& .AccordionContent": get_theme_accordion_content(
-                            variant=self.variant, color=self.color
-                        ),
-                        **self.style,
-                    }
-                )
+            convert_dict_to_style_and_format_emotion(
+                {
+                    "& .AccordionItem": get_theme_accordion_item(),
+                    "& .AccordionHeader": get_theme_accordion_header(),
+                    "& .AccordionTrigger": get_theme_accordion_trigger(
+                        variant=self.variant, color_scheme=self.color_scheme
+                    ),
+                    "& .AccordionContent": get_theme_accordion_content(
+                        variant=self.variant, color_scheme=self.color_scheme
+                    ),
+                    **self.style,
+                }
             )
         )
 
-        self.style = self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color))  # type: ignore
+        self.style = self.style._merge(get_theme_accordion_root(variant=self.variant, color_scheme=self.color_scheme))  # type: ignore
 
-    @classmethod
-    def create(cls, *children, **props) -> Component:
-        return super().create(*children, **props)
 
 
 class AccordionItem(AccordionComponent):
