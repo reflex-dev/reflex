@@ -752,7 +752,6 @@ class App(Base):
         return
 
     def compile_(self):
-        # TODO - "Compiling: " progress sometimes doesn't show!
         """Compile the app and output it to the pages folder.
 
         Raises:
@@ -777,7 +776,7 @@ class App(Base):
         )
 
         # try to be somewhat accurate - but still not 100%
-        adhoc_steps_without_executor = 7
+        adhoc_steps_without_executor = 6
         fixed_pages_within_executor = 7
         progress.start()
         task = progress.add_task(
