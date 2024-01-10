@@ -8,6 +8,7 @@ from reflex.components.tags import MatchTag, Tag
 from reflex.utils import format, imports, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.vars import BaseVar, Var, VarData
+from reflex.constants import Dirs
 
 
 class Match(MemoizationLeaf):

@@ -3,10 +3,13 @@
 from typing import Literal
 
 from reflex.components.component import Component
-from reflex.components.core import cond, match
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.components.icons import Icon
+from reflex.components.radix.themes.layout import Box
+from reflex.components.core import match, cond
+from reflex.components.base import Fragment
 from reflex.style import Style
-from reflex.utils import format, imports
+from reflex.utils import imports
 from reflex.vars import Var
 
 LiteralAccordionType = Literal["single", "multiple"]
@@ -33,25 +36,21 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
         variant,
         (
             "soft",
-            format.convert_dict_to_camel_case(
-                {
-                    "border_radius": "6px",
-                    "background_color": cond(
-                        color == "primary", "var(--accent-3)", "var(--slate-3)"
-                    ),
-                    "box_shadow": "0 2px 10px var(--black-a1)",
-                },
-            ),
-        ),
-        format.convert_dict_to_camel_case(
             {
                 "border_radius": "6px",
                 "background_color": cond(
-                    color == "primary", "var(--accent-9)", "var(--slate-9)"
+                    color == "primary", "var(--accent-3)", "var(--slate-3)"
                 ),
-                "box_shadow": "0 2px 10px var(--black-a4)",
-            }
-        ),  # defaults to classic
+                "box_shadow": "0 2px 10px var(--black-a1)",
+            },
+        ),
+        {
+            "border_radius": "6px",
+            "background_color": cond(
+                color == "primary", "var(--accent-9)", "var(--slate-9)"
+            ),
+            "box_shadow": "0 2px 10px var(--black-a4)",
+        },  # defaults to classic
     )
 
 
@@ -64,26 +63,24 @@ def get_theme_accordion_item():
     Returns:
         The theme for the accordion item component.
     """
-    return format.convert_dict_to_camel_case(
-        {
-            "overflow": "hidden",
-            "width": "100%",
-            "margin_top": "1px",
-            "&:first-child": {
-                "margin_top": 0,
-                "border_top_left_radius": "4px",
-                "border_top_right_radius": "4px",
-            },
-            "&:last-child": {
-                "border_bottom_left_radius": "4px",
-                "border_bottom_right_radius": "4px",
-            },
-            "&:focus-within": {
-                "position": "relative",
-                "z_index": 1,
-            },
-        }
-    )
+    return {
+        "overflow": "hidden",
+        "width": "100%",
+        "margin_top": "1px",
+        "&:first-child": {
+            "margin_top": 0,
+            "border_top_left_radius": "4px",
+            "border_top_right_radius": "4px",
+        },
+        "&:last-child": {
+            "border_bottom_left_radius": "4px",
+            "border_bottom_right_radius": "4px",
+        },
+        "&:focus-within": {
+            "position": "relative",
+            "z_index": 1,
+        },
+    }
 
 
 def get_theme_accordion_header():
@@ -110,63 +107,25 @@ def get_theme_accordion_trigger(variant: str, color: str):
     Returns:
         The theme for the accordion trigger component.
     """
+
     return match(
         variant,
         (
             "soft",
-            format.convert_dict_to_camel_case(
-                {
-                    "color": cond(
-                        color == "primary",
-                        "var(--accent-9-contrast)",
-                        "var(--slate-9-contrast)",
-                    ),
-                    "&:hover": {
-                        "background_color": cond(
-                            color == "primary", "var(--accent-4)", "var(--slate-4)"
-                        ),
-                    },
-                    "& > .AccordionChevron": {
-                        "color": cond(
-                            color == "primary", "var(--accent-11)", "var(--slate-11)"
-                        ),
-                        "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                    },
-                    "&[data-state='open'] > .AccordionChevron": {
-                        "transform": "rotate(180deg)",
-                    },
-                    "font_family": "inherit",
-                    "width": "100%",
-                    "padding": "0 20px",
-                    "height": "45px",
-                    "flex": 1,
-                    "display": "flex",
-                    "align_items": "center",
-                    "justify_content": "space-between",
-                    "font_size": "15px",
-                    "box_shadow": "0 1px 0 var(--accent-6)",
-                    "line_height": 1,
-                }
-            ),
-        ),
-        format.convert_dict_to_camel_case(
             {
                 "color": cond(
                     color == "primary",
                     "var(--accent-9-contrast)",
                     "var(--slate-9-contrast)",
                 ),
-                "box_shadow": "0 1px 0 var(--accent-6)",
                 "&:hover": {
                     "background_color": cond(
-                        color == "primary", "var(--accent-10)", "var(--slate-10)"
+                        color == "primary", "var(--accent-4)", "var(--slate-4)"
                     ),
                 },
                 "& > .AccordionChevron": {
                     "color": cond(
-                        color == "primary",
-                        "var(--accent-9-contrast)",
-                        "var(--slate-9-contrast)",
+                        color == "primary", "var(--accent-11)", "var(--slate-11)"
                     ),
                     "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
                 },
@@ -182,9 +141,43 @@ def get_theme_accordion_trigger(variant: str, color: str):
                 "align_items": "center",
                 "justify_content": "space-between",
                 "font_size": "15px",
+                "box_shadow": "0 1px 0 var(--accent-6)",
                 "line_height": 1,
-            }
+            },
         ),
+        {
+            "color": cond(
+                color == "primary",
+                "var(--accent-9-contrast)",
+                "var(--slate-9-contrast)",
+            ),
+            "box_shadow": "0 1px 0 var(--accent-6)",
+            "&:hover": {
+                "background_color": cond(
+                    color == "primary", "var(--accent-10)", "var(--slate-10)"
+                ),
+            },
+            "& > .AccordionChevron": {
+                "color": cond(
+                    color == "primary", "var(--accent-9-contrast)", "var(--slate-9-contrast)"
+                ),
+                "transition": f"transform {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+            },
+            "&[data-state='open'] > .AccordionChevron": {
+                "transform": "rotate(180deg)",
+            },
+            "font_family": "inherit",
+            "width": "100%",
+            "padding": "0 20px",
+            "height": "45px",
+            "flex": 1,
+            "display": "flex",
+            "align_items": "center",
+            "justify_content": "space-between",
+            "font_size": "15px",
+            "box_shadow": "0 1px 0 var(--accent-6)",
+            "line_height": 1,
+        },
     )
 
 
@@ -202,33 +195,6 @@ def get_theme_accordion_content(variant: str, color: str):
         variant,
         (
             "soft",
-            format.convert_dict_to_camel_case(
-                {
-                    "overflow": "hidden",
-                    "font_size": "10px",
-                    "color": cond(
-                        color == "primary", "var(--accent-11)", "var(--slate-11)"
-                    ),
-                    "background_color": cond(
-                        color == "primary", "var(--accent-3)", "var(--slate-3)"
-                    ),
-                    "padding": "15px, 20px",
-                    "&[data-state='open']": {
-                        "animation": Var.create(
-                            f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                            _var_is_string=True,
-                        ),
-                    },
-                    "&[data-state='closed']": {
-                        "animation": Var.create(
-                            f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
-                            _var_is_string=True,
-                        ),
-                    },
-                }
-            ),
-        ),
-        format.convert_dict_to_camel_case(
             {
                 "overflow": "hidden",
                 "font_size": "10px",
@@ -251,8 +217,29 @@ def get_theme_accordion_content(variant: str, color: str):
                         _var_is_string=True,
                     ),
                 },
-            }
+            },
         ),
+        {
+            "overflow": "hidden",
+            "font_size": "10px",
+            "color": cond(color == "primary", "var(--accent-11)", "var(--slate-11)"),
+            "background_color": cond(
+                color == "primary", "var(--accent-3)", "var(--slate-3)"
+            ),
+            "padding": "15px, 20px",
+            "&[data-state='open']": {
+                "animation": Var.create(
+                    f"${{slideDown}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+            "&[data-state='closed']": {
+                "animation": Var.create(
+                    f"${{slideUp}} {DEFAULT_ANIMATION_DURATION}ms cubic-bezier(0.87, 0, 0.13, 1)",
+                    _var_is_string=True,
+                ),
+            },
+        },
     )
 
 
