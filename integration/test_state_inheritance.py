@@ -1,4 +1,4 @@
-"""Test state inheritance"""
+"""Test state inheritance."""
 
 from typing import Generator
 
@@ -10,7 +10,6 @@ from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
 
 def StateInheritance():
     """Test that state inheritance works as expected."""
-
     import reflex as rx
 
     class ChildMixin:
