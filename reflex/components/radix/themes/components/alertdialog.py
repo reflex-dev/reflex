@@ -4,11 +4,7 @@ from typing import Any, Dict, Literal
 from reflex import el
 from reflex.vars import Var
 
-from ..base import (
-    CommonMarginProps,
-    RadixThemesComponent,
-    LiteralSize
-)
+from ..base import CommonMarginProps, LiteralSize, RadixThemesComponent
 
 LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
