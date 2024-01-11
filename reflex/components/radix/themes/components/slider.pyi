@@ -105,9 +105,10 @@ class Slider(CommonMarginProps, RadixThemesComponent):
         ] = None,
         default_value: Optional[Union[Var[List[float]], List[float]]] = None,
         value: Optional[Union[Var[float], float]] = None,
-        min: Optional[Union[Var[float], float]] = None,
-        max: Optional[Union[Var[float], float]] = None,
-        step: Optional[Union[Var[float], float]] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        min: Optional[Union[Var[float, int], float, int]] = None,
+        max: Optional[Union[Var[float, int], float, int]] = None,
+        step: Optional[Union[Var[float, int], float, int]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
@@ -232,6 +233,7 @@ class Slider(CommonMarginProps, RadixThemesComponent):
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
             default_value: The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
             value: The controlled value of the slider. Must be used in conjunction with onValueChange.
+            name: The name of the slider. Submitted with its owning form as part of a name/value pair.
             min: The minimum value of the slider.
             max: The maximum value of the slider.
             step: The step value of the slider.

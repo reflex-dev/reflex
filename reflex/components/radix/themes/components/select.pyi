@@ -94,6 +94,8 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
         default_open: Optional[Union[Var[bool], bool]] = None,
         open: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
+        required: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -206,10 +208,12 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
             color_scheme: map to radix color property.
             size: The size of the select: "1" | "2" | "3"
             default_value: The value of the select when initially rendered. Use when you do not need to control the state of the select.
-            value: The controlled value of the select. Use when you need to control the state of the select.
+            value: The controlled value of the select. Should be used in conjunction with on_value_change.
             default_open: The open state of the select when it is initially rendered. Use when you do not need to control its open state.
-            open: The controlled open state of the select. Must be used in conjunction with onOpenChange.
+            open: The controlled open state of the select. Must be used in conjunction with on_open_change.
             name: The name of the select control when submitting the form.
+            disabled: When True, prevents the user from interacting with select.
+            required: When True, indicates that the user must select a value before the owning form can be submitted.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
@@ -936,6 +940,7 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         value: Optional[Union[Var[str], str]] = None,
+        disabled: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -1040,7 +1045,8 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            value: The value of the select item when submitting the form.
+            value: The value given as data when submitting a form with a name.
+            disabled: Whether the select item is disabled
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

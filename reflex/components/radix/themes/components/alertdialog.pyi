@@ -10,7 +10,7 @@ from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex import el
 from reflex.vars import Var
-from ..base import CommonMarginProps, RadixThemesComponent
+from ..base import CommonMarginProps, LiteralSize, RadixThemesComponent
 
 LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
@@ -476,6 +476,12 @@ class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
         force_mount: Optional[Union[Var[bool], bool]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -633,6 +639,7 @@ class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
+            size: The size of the content.
             force_mount: Whether to force mount the content on open.
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.

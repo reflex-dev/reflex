@@ -94,6 +94,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
         value: Optional[Union[Var[str], str]] = None,
         default_value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
+        name: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
@@ -215,6 +216,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
             value: The controlled value of the radio item to check. Should be used in conjunction with onValueChange.
             default_value: The initial value of checked radio item. Should be used in conjunction with onValueChange.
             disabled: Whether the radio group is disabled
+            name: The name of the group. Submitted with its owning form as part of a name/value pair.
             required: Whether the radio group is required
             orientation: The orientation of the component.
             loop: When true, keyboard navigation will loop from last item to first, and vice versa.
