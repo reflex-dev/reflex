@@ -7,6 +7,7 @@ from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
     RadixThemesComponent,
+    LiteralSize
 )
 
 LiteralSwitchSize = Literal["1", "2", "3", "4"]
@@ -42,6 +43,9 @@ class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
     """Contains the content of the dialog. This component is based on the div element."""
 
     tag = "AlertDialog.Content"
+
+    # The size of the content.
+    size: Var[LiteralSize]
 
     # Whether to force mount the content on open.
     force_mount: Var[bool]
