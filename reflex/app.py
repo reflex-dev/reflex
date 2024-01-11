@@ -63,8 +63,9 @@ from reflex.state import (
     State,
     StateManager,
     StateUpdate,
+    code_uses_state_contexts,
 )
-from reflex.utils import console, format, prerequisites, types
+from reflex.utils import console, exceptions, format, prerequisites, types
 from reflex.utils.imports import ImportVar
 
 # Define custom types.
@@ -169,7 +170,8 @@ class App(Base):
                     deprecation_version="0.3.5",
                     removal_version="0.4.0",
                 )
-            self.state = State
+            if len(State.class_subclasses) > 0:
+                self.state = State
         # Get the config
         config = get_config()
 
@@ -344,9 +346,12 @@ class App(Base):
 
         Raises:
             TypeError: When an invalid component function is passed.
+            exceptions.MatchTypeError: If the return types of match cases in rx.match are different.
         """
         try:
             return component if isinstance(component, Component) else component()
+        except exceptions.MatchTypeError:
+            raise
         except TypeError as e:
             message = str(e)
             if "BaseVar" in message or "ComputedVar" in message:
@@ -633,7 +638,11 @@ class App(Base):
         return
 
     def compile_(self):
-        """Compile the app and output it to the pages folder."""
+        """Compile the app and output it to the pages folder.
+
+        Raises:
+            RuntimeError: When any page uses state, but no rx.State subclass is defined.
+        """
         # add the pages before the compile check so App know onload methods
         for render, kwargs in DECORATED_PAGES:
             self.add_page(render, **kwargs)
@@ -698,6 +707,16 @@ class App(Base):
                 stateful_components_code,
                 page_components,
             ) = compiler.compile_stateful_components(self.pages.values())
+
+            # Catch "static" apps (that do not define a rx.State subclass) which are trying to access rx.State.
+            if (
+                code_uses_state_contexts(stateful_components_code)
+                and self.state is None
+            ):
+                raise RuntimeError(
+                    "To access rx.State in frontend components, at least one "
+                    "subclass of rx.State must be defined in the app."
+                )
             compile_results.append((stateful_components_path, stateful_components_code))
 
             result_futures = []

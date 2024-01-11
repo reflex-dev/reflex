@@ -118,5 +118,5 @@ def chatapp() -> rx.Component:
     return chatapp_page()
 
 
-# Add state and page to the app.
+# Create the app.
 app = rx.App(style=base_style)

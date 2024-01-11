@@ -1534,6 +1534,26 @@ class Var:
         """
         return self._var_data.state if self._var_data else ""
 
+    @property
+    def _var_name_unwrapped(self) -> str:
+        """Get the var str without wrapping in curly braces.
+
+        Returns:
+            The str var without the wrapped curly braces
+        """
+        type_ = (
+            get_origin(self._var_type)
+            if types.is_generic_alias(self._var_type)
+            else self._var_type
+        )
+
+        wrapped_var = str(self)
+        return (
+            wrapped_var
+            if not self._var_state and issubclass(type_, dict)
+            else wrapped_var.strip("{}")
+        )
+
 
 # Allow automatic serialization of Var within JSON structures
 serializers.serializer(_encode_var)

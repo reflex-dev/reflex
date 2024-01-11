@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, List, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -270,6 +270,41 @@ def format_cond(
 
     # Format component conds.
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
+
+
+def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
+    """Format a match expression whose return type is a Var.
+
+    Args:
+        cond: The condition.
+        match_cases: The list of cases to match.
+        default: The default case.
+
+    Returns:
+        The formatted match expression
+
+    """
+    switch_code = f"(() => {{ switch (JSON.stringify({cond})) {{"
+
+    for case in match_cases:
+        conditions = case[:-1]
+        return_value = case[-1]
+
+        case_conditions = " ".join(
+            [
+                f"case JSON.stringify({condition._var_name_unwrapped}):"
+                for condition in conditions
+            ]
+        )
+        case_code = (
+            f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
+        )
+        switch_code += case_code
+
+    switch_code += f"default:  return ({default._var_name_unwrapped});  break;"
+    switch_code += "};})()"
+
+    return switch_code
 
 
 def format_prop(

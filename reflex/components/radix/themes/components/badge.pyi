@@ -17,8 +17,6 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
-
 class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
     @overload
     @classmethod
@@ -249,10 +247,10 @@ class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            variant: The variant of the avatar
-            size: The size of the avatar
-            high_contrast: Whether to render the avatar with higher contrast color against background
-            radius: Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
+            variant: The variant of the badge
+            size: The size of the badge
+            high_contrast: Whether to render the badge with higher contrast color against background
+            radius: Override theme radius for badge: "none" | "small" | "medium" | "large" | "full"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

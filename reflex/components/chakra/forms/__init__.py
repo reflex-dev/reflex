@@ -45,6 +45,7 @@ from .select import Option, Select
 from .slider import Slider, SliderFilledTrack, SliderMark, SliderThumb, SliderTrack
 from .switch import Switch
 from .textarea import TextArea
+from .time_picker import TimePicker
 
 helpers = [
     "color_mode_cond",

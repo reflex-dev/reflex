@@ -24,17 +24,23 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
     default_value: Var[str]
 
-    # The controlled value of the select. Use when you need to control the state of the select.
+    # The controlled value of the select. Should be used in conjunction with on_value_change.
     value: Var[str]
 
     # The open state of the select when it is initially rendered. Use when you do not need to control its open state.
     default_open: Var[bool]
 
-    # The controlled open state of the select. Must be used in conjunction with onOpenChange.
+    # The controlled open state of the select. Must be used in conjunction with on_open_change.
     open: Var[bool]
 
     # The name of the select control when submitting the form.
     name: Var[str]
+
+    # When True, prevents the user from interacting with select.
+    disabled: Var[bool]
+
+    # When True, indicates that the user must select a value before the owning form can be submitted.
+    required: Var[bool]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -121,8 +127,11 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
 
     tag = "Select.Item"
 
-    # The value of the select item when submitting the form.
+    # The value given as data when submitting a form with a name.
     value: Var[str]
+
+    # Whether the select item is disabled
+    disabled: Var[bool]
 
 
 class SelectLabel(CommonMarginProps, RadixThemesComponent):
