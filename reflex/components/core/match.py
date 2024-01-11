@@ -64,7 +64,8 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the condition is not provided.
         """
-        match_cond_var = Var.create(cond)
+        # wrap the condition in backticks if it is a string literal.
+        match_cond_var = Var.create(format.wrap(cond, "`") if type(cond) is str else cond)
         if match_cond_var is None:
             raise ValueError("The condition must be set")
         return match_cond_var  # type: ignore

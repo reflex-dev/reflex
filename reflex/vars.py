@@ -421,19 +421,24 @@ class Var:
             and self._var_data == other._var_data
         )
 
-    def _merge(self, others) -> Var:
+    def _merge(self, other) -> Var:
         """Merge two or more dicts.
 
         Args:
-            others: The other var to merge.
+            other: The other var to merge.
 
         Returns:
             The merged var.
+
+        Raises:
+            ValueError: If the other value to be merged is None.
         """
-        if not isinstance(others, Var):
-            others = Var.create(others)
+        if other is None:
+            raise ValueError("The value to be merged cannot be None.")
+        if not isinstance(other, Var):
+            other = Var.create(other)
         return self._replace(
-            _var_name=f"{{...{self._var_name}, ...{others._var_name}}}"
+            _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
         )
 
     def to_string(self, json: bool = True) -> Var:

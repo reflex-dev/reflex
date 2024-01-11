@@ -13,33 +13,30 @@ LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
-LiteralAccordionRootColorScheme = Literal["primary", "accent"]
+LiteralAccordionRootColor = Literal["primary", "accent"]
 
 DEFAULT_ANIMATION_DURATION = 250
 
 
-# Helper methods
-
-
-def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]):
+def get_theme_accordion_root(variant: Var[str], color: Var[str]):
     """Get the theme for the accordion root component.
 
     Args:
         variant: The variant of the accordion.
-        color_scheme: The color of the accordion.
+        color: The color of the accordion.
 
     Returns:
         The theme for the accordion root component.
     """
     return match(
-        variant,
+        variant._var_name,
         (
             "soft",
             convert_dict_to_style_and_format_emotion(
                 {
                     "border_radius": "6px",
                     "background_color": cond(
-                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                        color == "primary", "var(--accent-3)", "var(--slate-3)"
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
                 }
@@ -51,7 +48,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]):
                 {
                     "border_radius": "6px",
                     "border": cond(
-                        color_scheme == "primary",
+                        color == "primary",
                         "1px solid var(--accent-6)",
                         "1px solid var(--slate-6)",
                     ),
@@ -65,12 +62,12 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]):
                 {
                     "border_radius": "6px",
                     "border": cond(
-                        color_scheme == "primary",
+                        color == "primary",
                         "1px solid var(--accent-6)",
                         "1px solid var(--slate-6)",
                     ),
                     "background_color": cond(
-                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                        color == "primary", "var(--accent-3)", "var(--slate-3)"
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
                 }
@@ -90,7 +87,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]):
             {
                 "border_radius": "6px",
                 "background_color": cond(
-                    color_scheme == "primary", "var(--accent-9)", "var(--slate-9)"
+                    color == "primary", "var(--accent-9)", "var(--slate-9)"
                 ),
                 "box_shadow": "0 2px 10px var(--black-a4)",
             }
@@ -138,37 +135,37 @@ def get_theme_accordion_header():
     }
 
 
-def get_theme_accordion_trigger(variant: str | Var, color_scheme: str):
+def get_theme_accordion_trigger(variant: str | Var, color: str):
     """Get the theme for the accordion trigger component.
 
     Args:
         variant: The variant of the accordion.
-        color_scheme: The color of the accordion.
+        color: The color of the accordion.
 
     Returns:
         The theme for the accordion trigger component.
     """
     return match(
-        variant,
+        variant._var_name,
         (
             "soft",
             convert_dict_to_style_and_format_emotion(
                 {
                     "color": cond(
-                        color_scheme == "primary",
+                        color == "primary",
                         "var(--accent-9-contrast)",
                         "var(--slate-9-contrast)",
                     ),
                     "&:hover": {
                         "background_color": cond(
-                            color_scheme == "primary",
+                            color == "primary",
                             "var(--accent-4)",
                             "var(--slate-4)",
                         ),
                     },
                     "& > .AccordionChevron": {
                         "color": cond(
-                            color_scheme == "primary",
+                            color == "primary",
                             "var(--accent-11)",
                             "var(--slate-11)",
                         ),
@@ -198,20 +195,20 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str):
             convert_dict_to_style_and_format_emotion(
                 {
                     "color": cond(
-                        color_scheme == "primary",
+                        color == "primary",
                         "var(--accent-11)",
                         "var(--slate-11)",
                     ),
                     "&:hover": {
                         "background_color": cond(
-                            color_scheme == "primary",
+                            color == "primary",
                             "var(--accent-4)",
                             "var(--slate-4)",
                         ),
                     },
                     "& > .AccordionChevron": {
                         "color": cond(
-                            color_scheme == "primary",
+                            color == "primary",
                             "var(--accent-11)",
                             "var(--slate-11)",
                         ),
@@ -238,19 +235,19 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str):
         convert_dict_to_style_and_format_emotion(
             {
                 "color": cond(
-                    color_scheme == "primary",
+                    color == "primary",
                     "var(--accent-9-contrast)",
                     "var(--slate-9-contrast)",
                 ),
                 "box_shadow": "0 1px 0 var(--accent-6)",
                 "&:hover": {
                     "background_color": cond(
-                        color_scheme == "primary", "var(--accent-10)", "var(--slate-10)"
+                        color == "primary", "var(--accent-10)", "var(--slate-10)"
                     ),
                 },
                 "& > .AccordionChevron": {
                     "color": cond(
-                        color_scheme == "primary",
+                        color == "primary",
                         "var(--accent-9-contrast)",
                         "var(--slate-9-contrast)",
                     ),
@@ -274,18 +271,18 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str):
     )
 
 
-def get_theme_accordion_content(variant: str | Var, color_scheme: str):
+def get_theme_accordion_content(variant: str | Var, color: str):
     """Get the theme for the accordion content component.
 
     Args:
         variant: The variant of the accordion.
-        color_scheme: The color of the accordion.
+        color: The color of the accordion.
 
     Returns:
         The theme for the accordion content component.
     """
     return match(
-        variant,
+        variant._var_name,
         (
             "outline",
             "ghost",
@@ -294,7 +291,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str):
                     "overflow": "hidden",
                     "font_size": "10px",
                     "color": cond(
-                        color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
+                        color == "primary", "var(--accent-11)", "var(--slate-11)"
                     ),
                     "padding": "15px, 20px",
                     "&[data-state='open']": {
@@ -317,10 +314,10 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str):
                 "overflow": "hidden",
                 "font_size": "10px",
                 "color": cond(
-                    color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
+                    color == "primary", "var(--accent-11)", "var(--slate-11)"
                 ),
                 "background_color": cond(
-                    color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                    color == "primary", "var(--accent-3)", "var(--slate-3)"
                 ),
                 "padding": "15px, 20px",
                 "&[data-state='open']": {
@@ -376,7 +373,7 @@ class AccordionRoot(AccordionComponent):
 
     variant: Var[LiteralAccordionRootVariant]
 
-    color_scheme: Literal["primary", "accent"] = "primary"
+    color: Literal["primary", "accent"] = "primary"
 
     def _apply_theme(self, theme: Component):
 
@@ -386,17 +383,17 @@ class AccordionRoot(AccordionComponent):
                     "& .AccordionItem": get_theme_accordion_item(),
                     "& .AccordionHeader": get_theme_accordion_header(),
                     "& .AccordionTrigger": get_theme_accordion_trigger(
-                        variant=self.variant, color_scheme=self.color_scheme
+                        variant=self.variant, color=self.color
                     ),
                     "& .AccordionContent": get_theme_accordion_content(
-                        variant=self.variant, color_scheme=self.color_scheme
+                        variant=self.variant, color=self.color
                     ),
                     **self.style,
                 }
             )
         )
 
-        self.style = self.style._merge(get_theme_accordion_root(variant=self.variant, color_scheme=self.color_scheme))  # type: ignore
+        self.style = self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color))  # type: ignore
 
 
 class AccordionItem(AccordionComponent):
