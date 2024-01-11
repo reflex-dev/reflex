@@ -19,14 +19,14 @@ LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
-LiteralAccordionRootColorScheme = Literal["primary", "accent"]
+LiteralAccordionRootColor = Literal["primary", "accent"]
 DEFAULT_ANIMATION_DURATION = 250
 
-def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]): ...
+def get_theme_accordion_root(variant: Var[str], color: Var[str]): ...
 def get_theme_accordion_item(): ...
 def get_theme_accordion_header(): ...
-def get_theme_accordion_trigger(variant: str, color_scheme: str): ...
-def get_theme_accordion_content(variant: str, color_scheme: str): ...
+def get_theme_accordion_trigger(variant: str | Var, color: str): ...
+def get_theme_accordion_content(variant: str | Var, color: str): ...
 
 class AccordionComponent(Component):
     @overload
@@ -133,7 +133,7 @@ class AccordionRoot(AccordionComponent):
                 Literal["classic", "soft", "surface", "outline", "ghost"],
             ]
         ] = None,
-        color_scheme: Optional[Literal["primary", "accent"]] = None,
+        color: Optional[Literal["primary", "accent"]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
