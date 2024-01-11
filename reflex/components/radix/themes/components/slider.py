@@ -44,13 +44,13 @@ class Slider(CommonMarginProps, RadixThemesComponent):
     name: Var[str]
 
     # The minimum value of the slider.
-    min: Var[float | int]
+    min: Var[float, int]
 
     # The maximum value of the slider.
-    max: Var[float | int]
+    max: Var[float, int]
 
     # The step value of the slider.
-    step: Var[float | int]
+    step: Var[float, int]
 
     # Whether the slider is disabled
     disabled: Var[bool]
