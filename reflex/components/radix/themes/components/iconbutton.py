@@ -26,7 +26,7 @@ class IconButton(el.Button, CommonMarginProps, RadixThemesComponent):
     # Button size "1" - "4"
     size: Var[LiteralButtonSize]
 
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
+    # Variant of button: "classic" | "solid" | "soft" | "surface" | "outline" | "ghost"
     variant: Var[LiteralVariant]
 
     # Override theme color for button
