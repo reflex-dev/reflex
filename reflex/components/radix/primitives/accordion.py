@@ -29,7 +29,7 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
         The theme for the accordion root component.
     """
     return match(
-        variant._var_name,
+        variant._var_name if isinstance(variant, Var) else variant,
         (
             "soft",
             convert_dict_to_style_and_format_emotion(
@@ -146,7 +146,7 @@ def get_theme_accordion_trigger(variant: str | Var, color: str):
         The theme for the accordion trigger component.
     """
     return match(
-        variant._var_name,
+        variant._var_name if isinstance(variant, Var) else variant,
         (
             "soft",
             convert_dict_to_style_and_format_emotion(
@@ -282,7 +282,7 @@ def get_theme_accordion_content(variant: str | Var, color: str):
         The theme for the accordion content component.
     """
     return match(
-        variant._var_name,
+        variant._var_name if isinstance(variant, Var) else variant,
         (
             "outline",
             "ghost",
@@ -377,7 +377,7 @@ class AccordionRoot(AccordionComponent):
 
     def _apply_theme(self, theme: Component):
 
-        self.style = Var.create(
+        self.style = Var.create(  # type: ignore
             convert_dict_to_style_and_format_emotion(
                 {
                     "& .AccordionItem": get_theme_accordion_item(),
