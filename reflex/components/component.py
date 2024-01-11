@@ -723,7 +723,7 @@ class Component(BaseComponent, ABC):
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
-        if self.style:
+        if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
             vars.append(
                 BaseVar(
                     _var_name="style",

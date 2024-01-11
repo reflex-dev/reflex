@@ -7,7 +7,7 @@ from reflex.components.core import cond, match
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import Style, convert_dict_to_style_and_format_emotion
 from reflex.utils import imports
-from reflex.vars import Var
+from reflex.vars import BaseVar, Var
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -18,7 +18,7 @@ LiteralAccordionRootColor = Literal["primary", "accent"]
 DEFAULT_ANIMATION_DURATION = 250
 
 
-def get_theme_accordion_root(variant: Var[str], color: Var[str]):
+def get_theme_accordion_root(variant: Var[str], color: Var[str]) -> BaseVar:
     """Get the theme for the accordion root component.
 
     Args:
@@ -28,7 +28,7 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]):
     Returns:
         The theme for the accordion root component.
     """
-    return match(
+    return match(  # type: ignore
         variant._var_name if isinstance(variant, Var) else variant,
         (
             "soft",
@@ -124,7 +124,7 @@ def get_theme_accordion_item():
     )
 
 
-def get_theme_accordion_header():
+def get_theme_accordion_header() -> dict[str, str]:
     """Get the theme for the accordion header component.
 
     Returns:
@@ -135,7 +135,7 @@ def get_theme_accordion_header():
     }
 
 
-def get_theme_accordion_trigger(variant: str | Var, color: str):
+def get_theme_accordion_trigger(variant: str | Var, color: str) -> BaseVar:
     """Get the theme for the accordion trigger component.
 
     Args:
@@ -145,7 +145,7 @@ def get_theme_accordion_trigger(variant: str | Var, color: str):
     Returns:
         The theme for the accordion trigger component.
     """
-    return match(
+    return match(  # type: ignore
         variant._var_name if isinstance(variant, Var) else variant,
         (
             "soft",
@@ -271,7 +271,7 @@ def get_theme_accordion_trigger(variant: str | Var, color: str):
     )
 
 
-def get_theme_accordion_content(variant: str | Var, color: str):
+def get_theme_accordion_content(variant: str | Var, color: str) -> BaseVar:
     """Get the theme for the accordion content component.
 
     Args:
@@ -281,7 +281,7 @@ def get_theme_accordion_content(variant: str | Var, color: str):
     Returns:
         The theme for the accordion content component.
     """
-    return match(
+    return match(  # type: ignore
         variant._var_name if isinstance(variant, Var) else variant,
         (
             "outline",
