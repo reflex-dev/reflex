@@ -36,6 +36,9 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     # Whether the radio group is disabled
     disabled: Var[bool]
 
+    # The name of the group. Submitted with its owning form as part of a name/value pair.
+    name: Var[str]
+
     # Whether the radio group is required
     required: Var[bool]
 
