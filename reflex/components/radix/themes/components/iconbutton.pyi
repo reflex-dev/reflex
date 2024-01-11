@@ -282,7 +282,7 @@ class IconButton(el.Button, CommonMarginProps, RadixThemesComponent):
             color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Button size "1" - "4"
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
+            variant: Variant of button: "classic" | "solid" | "soft" | "surface" | "outline" | "ghost"
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
             auto_focus: Automatically focuses the button when the page loads
