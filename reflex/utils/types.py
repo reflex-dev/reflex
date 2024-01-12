@@ -251,15 +251,18 @@ def is_valid_var_type(type_: Type) -> bool:
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
 
 
-def is_backend_variable(name: str) -> bool:
+def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:
         name: The name of the variable to check
+        cls: The class of the variable to check
 
     Returns:
         bool: The result of the check
     """
+    if cls is not None and name.startswith(f"_{cls.__name__}__"):
+        return False
     return name.startswith("_") and not name.startswith("__")
 
 
