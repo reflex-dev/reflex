@@ -250,6 +250,7 @@ class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             side: The side
+            clip: How to clip the element's content: "border-box" | "padding-box"
             p: Padding
             px: Padding on the x axis
             py: Padding on the y axis
