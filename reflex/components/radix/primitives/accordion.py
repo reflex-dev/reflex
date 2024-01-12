@@ -5,7 +5,11 @@ from typing import Literal
 from reflex.components.component import Component
 from reflex.components.core import cond, match
 from reflex.components.radix.themes.components.icons import Icon
-from reflex.style import Style, convert_dict_to_style_and_format_emotion
+from reflex.style import (
+    Style,
+    convert_dict_to_style_and_format_emotion,
+    format_as_emotion,
+)
 from reflex.utils import imports
 from reflex.vars import BaseVar, Var
 
@@ -13,30 +17,30 @@ LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
 LiteralAccordionOrientation = Literal["vertical", "horizontal"]
 LiteralAccordionRootVariant = Literal["classic", "soft", "surface", "outline", "ghost"]
-LiteralAccordionRootColor = Literal["primary", "accent"]
+LiteralAccordionRootColorScheme = Literal["primary", "accent"]
 
 DEFAULT_ANIMATION_DURATION = 250
 
 
-def get_theme_accordion_root(variant: Var[str], color: Var[str]) -> BaseVar:
+def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseVar:
     """Get the theme for the accordion root component.
 
     Args:
         variant: The variant of the accordion.
-        color: The color of the accordion.
+        color_scheme: The color of the accordion.
 
     Returns:
         The theme for the accordion root component.
     """
     return match(  # type: ignore
-        variant._var_name if isinstance(variant, Var) else variant,
+        variant,
         (
             "soft",
             convert_dict_to_style_and_format_emotion(
                 {
                     "border_radius": "6px",
                     "background_color": cond(
-                        color == "primary", "var(--accent-3)", "var(--slate-3)"
+                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
                 }
@@ -48,7 +52,7 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]) -> BaseVar:
                 {
                     "border_radius": "6px",
                     "border": cond(
-                        color == "primary",
+                        color_scheme == "primary",
                         "1px solid var(--accent-6)",
                         "1px solid var(--slate-6)",
                     ),
@@ -62,12 +66,12 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]) -> BaseVar:
                 {
                     "border_radius": "6px",
                     "border": cond(
-                        color == "primary",
+                        color_scheme == "primary",
                         "1px solid var(--accent-6)",
                         "1px solid var(--slate-6)",
                     ),
                     "background_color": cond(
-                        color == "primary", "var(--accent-3)", "var(--slate-3)"
+                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
                 }
@@ -87,7 +91,7 @@ def get_theme_accordion_root(variant: Var[str], color: Var[str]) -> BaseVar:
             {
                 "border_radius": "6px",
                 "background_color": cond(
-                    color == "primary", "var(--accent-9)", "var(--slate-9)"
+                    color_scheme == "primary", "var(--accent-9)", "var(--slate-9)"
                 ),
                 "box_shadow": "0 2px 10px var(--black-a4)",
             }
@@ -135,37 +139,37 @@ def get_theme_accordion_header() -> dict[str, str]:
     }
 
 
-def get_theme_accordion_trigger(variant: str | Var, color: str) -> BaseVar:
+def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> BaseVar:
     """Get the theme for the accordion trigger component.
 
     Args:
         variant: The variant of the accordion.
-        color: The color of the accordion.
+        color_scheme: The color of the accordion.
 
     Returns:
         The theme for the accordion trigger component.
     """
     return match(  # type: ignore
-        variant._var_name if isinstance(variant, Var) else variant,
+        variant,
         (
             "soft",
             convert_dict_to_style_and_format_emotion(
                 {
                     "color": cond(
-                        color == "primary",
+                        color_scheme == "primary",
                         "var(--accent-9-contrast)",
                         "var(--slate-9-contrast)",
                     ),
                     "&:hover": {
                         "background_color": cond(
-                            color == "primary",
+                            color_scheme == "primary",
                             "var(--accent-4)",
                             "var(--slate-4)",
                         ),
                     },
                     "& > .AccordionChevron": {
                         "color": cond(
-                            color == "primary",
+                            color_scheme == "primary",
                             "var(--accent-11)",
                             "var(--slate-11)",
                         ),
@@ -195,20 +199,20 @@ def get_theme_accordion_trigger(variant: str | Var, color: str) -> BaseVar:
             convert_dict_to_style_and_format_emotion(
                 {
                     "color": cond(
-                        color == "primary",
+                        color_scheme == "primary",
                         "var(--accent-11)",
                         "var(--slate-11)",
                     ),
                     "&:hover": {
                         "background_color": cond(
-                            color == "primary",
+                            color_scheme == "primary",
                             "var(--accent-4)",
                             "var(--slate-4)",
                         ),
                     },
                     "& > .AccordionChevron": {
                         "color": cond(
-                            color == "primary",
+                            color_scheme == "primary",
                             "var(--accent-11)",
                             "var(--slate-11)",
                         ),
@@ -235,19 +239,19 @@ def get_theme_accordion_trigger(variant: str | Var, color: str) -> BaseVar:
         convert_dict_to_style_and_format_emotion(
             {
                 "color": cond(
-                    color == "primary",
+                    color_scheme == "primary",
                     "var(--accent-9-contrast)",
                     "var(--slate-9-contrast)",
                 ),
                 "box_shadow": "0 1px 0 var(--accent-6)",
                 "&:hover": {
                     "background_color": cond(
-                        color == "primary", "var(--accent-10)", "var(--slate-10)"
+                        color_scheme == "primary", "var(--accent-10)", "var(--slate-10)"
                     ),
                 },
                 "& > .AccordionChevron": {
                     "color": cond(
-                        color == "primary",
+                        color_scheme == "primary",
                         "var(--accent-9-contrast)",
                         "var(--slate-9-contrast)",
                     ),
@@ -271,18 +275,18 @@ def get_theme_accordion_trigger(variant: str | Var, color: str) -> BaseVar:
     )
 
 
-def get_theme_accordion_content(variant: str | Var, color: str) -> BaseVar:
+def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> BaseVar:
     """Get the theme for the accordion content component.
 
     Args:
         variant: The variant of the accordion.
-        color: The color of the accordion.
+        color_scheme: The color of the accordion.
 
     Returns:
         The theme for the accordion content component.
     """
     return match(  # type: ignore
-        variant._var_name if isinstance(variant, Var) else variant,
+        variant,
         (
             "outline",
             "ghost",
@@ -291,7 +295,7 @@ def get_theme_accordion_content(variant: str | Var, color: str) -> BaseVar:
                     "overflow": "hidden",
                     "font_size": "10px",
                     "color": cond(
-                        color == "primary", "var(--accent-11)", "var(--slate-11)"
+                        color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
                     ),
                     "padding": "15px, 20px",
                     "&[data-state='open']": {
@@ -314,10 +318,10 @@ def get_theme_accordion_content(variant: str | Var, color: str) -> BaseVar:
                 "overflow": "hidden",
                 "font_size": "10px",
                 "color": cond(
-                    color == "primary", "var(--accent-11)", "var(--slate-11)"
+                    color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
                 ),
                 "background_color": cond(
-                    color == "primary", "var(--accent-3)", "var(--slate-3)"
+                    color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
                 ),
                 "padding": "15px, 20px",
                 "&[data-state='open']": {
@@ -371,29 +375,66 @@ class AccordionRoot(AccordionComponent):
     # The orientation of the accordion.
     orientation: Var[LiteralAccordionOrientation]
 
-    variant: Var[LiteralAccordionRootVariant]
+    # The variant of the accordion.
+    variant: Var[LiteralAccordionRootVariant] = "classic"  # type: ignore
 
-    color: Literal["primary", "accent"] = "primary"
+    # The color scheme of the accordion.
+    color_scheme: Var[LiteralAccordionRootColorScheme] = "primary"  # type: ignore
+
+    # dynamic themes of the accordion generated at compile time.
+    _dynamic_themes: Var[dict]
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create the Accordion root component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The Accordion root Component.
+        """
+        comp = super().create(*children, **props)
+
+        if not comp.color_scheme._var_state:  # type: ignore
+            # mark the vars of color string literals as strings so they can be formatted properly when performing a var operation.
+            comp.color_scheme._var_is_string = True  # type: ignore
+
+        if not comp.variant._var_state:  # type: ignore
+            # mark the vars of variant string literals as strings so they are formatted properly in the match condition.
+            comp.variant._var_is_string = True  # type: ignore
+
+        return comp
+
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        return {"css": self._dynamic_themes._merge(format_as_emotion(self.style))}  # type: ignore
 
     def _apply_theme(self, theme: Component):
 
-        self.style = Var.create(  # type: ignore
+        self._dynamic_themes = Var.create(  # type: ignore
             convert_dict_to_style_and_format_emotion(
                 {
                     "& .AccordionItem": get_theme_accordion_item(),
                     "& .AccordionHeader": get_theme_accordion_header(),
                     "& .AccordionTrigger": get_theme_accordion_trigger(
-                        variant=self.variant, color=self.color
+                        variant=self.variant, color_scheme=self.color_scheme
                     ),
                     "& .AccordionContent": get_theme_accordion_content(
-                        variant=self.variant, color=self.color
+                        variant=self.variant, color_scheme=self.color_scheme
                     ),
-                    **self.style,
                 }
             )
+        )._merge(  # type: ignore
+            get_theme_accordion_root(
+                variant=self.variant, color_scheme=self.color_scheme
+            )
         )
-
-        self.style = self.style._merge(get_theme_accordion_root(variant=self.variant, color=self.color))  # type: ignore
 
 
 class AccordionItem(AccordionComponent):

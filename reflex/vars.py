@@ -697,6 +697,14 @@ class Var:
 
         left_operand, right_operand = (other, self) if flip else (self, other)
 
+        def get_operand_full_name(operand):
+            # operand vars that are string literals need to be wrapped in back ticks.
+            return (
+                operand._var_name_unwrapped
+                if operand._var_is_string and not operand._var_state
+                else operand._var_full_name
+            )
+
         if other is not None:
             # check if the operation between operands is valid.
             if op and not self.is_valid_operation(
@@ -708,18 +716,22 @@ class Var:
                     f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type.__name__} and `{right_operand._var_full_name}` of type {right_operand._var_type.__name__}"  # type: ignore
                 )
 
+            left_operand_full_name = get_operand_full_name(left_operand)
+            right_operand_full_name = get_operand_full_name(right_operand)
+
             # apply function to operands
             if fn is not None:
+
                 if invoke_fn:
                     # invoke the function on left operand.
-                    operation_name = f"{left_operand._var_full_name}.{fn}({right_operand._var_full_name})"  # type: ignore
+                    operation_name = f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
-                    operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                    operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
-                operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
