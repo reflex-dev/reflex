@@ -7,6 +7,6 @@ from .base import LayoutComponent
 
 
 class Box(el.Div, LayoutComponent):
-    """A fundamental layout building block, based on <div>."""
+    """A fundamental layout building block, based on `div` element."""
 
     tag = "Box"
