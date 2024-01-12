@@ -701,7 +701,9 @@ class Var:
             # operand vars that are string literals need to be wrapped in back ticks.
             return (
                 operand._var_name_unwrapped
-                if operand._var_is_string and not operand._var_state
+                if operand._var_is_string
+                and not operand._var_state
+                and operand._var_is_local
                 else operand._var_full_name
             )
 
