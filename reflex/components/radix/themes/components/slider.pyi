@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Union
 from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
@@ -103,12 +103,16 @@ class Slider(CommonMarginProps, RadixThemesComponent):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        default_value: Optional[Union[Var[List[float]], List[float]]] = None,
-        value: Optional[Union[Var[float], float]] = None,
+        default_value: Optional[
+            Union[Var[List[Union[float, int]]], List[Union[float, int]]]
+        ] = None,
+        value: Optional[
+            Union[Var[List[Union[float, int]]], List[Union[float, int]]]
+        ] = None,
         name: Optional[Union[Var[str], str]] = None,
-        min: Optional[Union[Var[float, int], float, int]] = None,
-        max: Optional[Union[Var[float, int], float, int]] = None,
-        step: Optional[Union[Var[float, int], float, int]] = None,
+        min: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        max: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        step: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
