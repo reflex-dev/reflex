@@ -39,7 +39,7 @@ from .dropdownmenu import (
     DropdownMenuItem,
     DropdownMenuRoot,
     DropdownMenuSeparator,
-    DropdownMenuSub, 
+    DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
