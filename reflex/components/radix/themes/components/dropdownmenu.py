@@ -65,6 +65,12 @@ class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
     tag = "DropdownMenu.SubTrigger"
 
 
+class DropdownMenuSub(CommonMarginProps, RadixThemesComponent):
+    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+
+    tag = "DropdownMenu.Sub"
+
+
 class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 

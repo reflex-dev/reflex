@@ -12,4 +12,5 @@ class Tooltip(CommonMarginProps, RadixThemesComponent):
 
     tag = "Tooltip"
 
+    # The content of the tooltip.
     content: Var[str]
