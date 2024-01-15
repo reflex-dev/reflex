@@ -38,6 +38,7 @@ from .dropdownmenu import (
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuRoot,
+    DropdownMenuSub, 
     DropdownMenuSeparator,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
@@ -131,6 +132,7 @@ dialog_close = DialogClose.create
 dropdownmenu_root = DropdownMenuRoot.create
 dropdownmenu_trigger = DropdownMenuTrigger.create
 dropdownmenu_content = DropdownMenuContent.create
+dropdownmenu_sub = DropdownMenuSub.create
 dropdownmenu_sub_content = DropdownMenuSubContent.create
 dropdownmenu_sub_trigger = DropdownMenuSubTrigger.create
 dropdownmenu_item = DropdownMenuItem.create
