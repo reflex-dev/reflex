@@ -136,7 +136,7 @@ class App(Base):
     background_tasks: Set[asyncio.Task] = set()
 
     # The radix theme for the entire app
-    theme: Optional[Component] = themes.theme(accent_color="blue")
+    theme: Optional[Component]
 
     def __init__(self, *args, **kwargs):
         """Initialize the app.
