@@ -8,8 +8,19 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
+import reflex as rx
+from reflex.components.component import Component
+from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
-from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
+from ..base import (
+    CommonMarginProps,
+    LiteralAccentColor,
+    LiteralSize,
+    RadixThemesComponent,
+)
+
+LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -438,3 +449,10 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+def radio_group(
+    items: Var[list[str]],
+    direction: Var[LiteralFlexDirection] = "column",
+    gap: Var[LiteralSize] = "2",
+    **props
+) -> Component: ...
