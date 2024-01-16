@@ -1,13 +1,19 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+from reflex.components.component import Component
+from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
+    LiteralSize,
     RadixThemesComponent,
 )
+
+LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 
 class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
@@ -73,3 +79,42 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
 
     # When true, indicates that the user must check the radio item before the owning form can be submitted.
     required: Var[bool]
+
+
+def radio_group(
+    items: list[str],
+    direction: Var[LiteralFlexDirection] = "column",
+    gap: Var[LiteralSize] = "2",
+    **props
+) -> Component:
+    """Create a radio group component.
+
+    Args:
+        items: The items of the radio group.
+        direction: The direction of the radio group.
+        gap: The gap between the items of the radio group.
+        **props: Additional properties to apply to the accordion item.
+
+    Returns:
+        The created radio group component.
+    """
+
+    def radio_group_item(value: str) -> Component:
+        return Text.create(
+            Flex.create(
+                RadioGroupItem.create(value=value),
+                value,
+                gap="2",
+            ),
+            size="2",
+            as_="label",
+        )
+
+    return RadioGroupRoot.create(
+        Flex.create(
+            *[radio_group_item(value) for value in items],
+            direction=direction,
+            gap=gap,
+        ),
+        **props,
+    )

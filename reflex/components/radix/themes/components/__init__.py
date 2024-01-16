@@ -49,7 +49,7 @@ from .iconbutton import IconButton
 from .icons import Icon
 from .inset import Inset
 from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
-from .radiogroup import RadioGroupItem, RadioGroupRoot
+from .radiogroup import RadioGroupItem, RadioGroupRoot, radio_group
 from .scrollarea import ScrollArea
 from .select import (
     SelectContent,
