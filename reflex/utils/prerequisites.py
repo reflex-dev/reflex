@@ -637,7 +637,7 @@ def _clear_cached_procedure_file(cache_file: str):
         os.remove(cache_file)
 
 
-def cached_procedure(cache_file, payload_fn: Callable[..., str]):
+def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
     """Decorator to cache the runs of a procedure on disk. Procedures should not have
        a return value.
 
