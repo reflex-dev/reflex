@@ -147,7 +147,7 @@ def test_requirements_txt_other_encoding(mocker):
 
 
 def test_cached_procedure():
-    call_count = 1
+    call_count = 0
 
     @cached_procedure(tempfile.mktemp(), payload_fn=lambda: "constant")
     def _function_with_no_args():
