@@ -643,7 +643,7 @@ def cached_procedure(cache_file: str, payload_fn: Callable[..., str]):
 
     Args:
         cache_file: The file to store the cache payload in.
-        payload_fn: The function to cache.
+        payload_fn: Function that computes cache payload from function args
 
     Returns:
         The decorated function.
