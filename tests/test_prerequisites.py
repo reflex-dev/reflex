@@ -1,10 +1,15 @@
+import tempfile
 from unittest.mock import Mock, mock_open
 
 import pytest
 
 from reflex import constants
 from reflex.config import Config
-from reflex.utils.prerequisites import _update_next_config, initialize_requirements_txt
+from reflex.utils.prerequisites import (
+    _update_next_config,
+    cached_procedure,
+    initialize_requirements_txt,
+)
 
 
 @pytest.mark.parametrize(
@@ -139,3 +144,36 @@ def test_requirements_txt_other_encoding(mocker):
         open_mock().write.call_args[0][0]
         == f"\n{constants.RequirementsTxt.DEFAULTS_STUB}{constants.Reflex.VERSION}\n"
     )
+
+
+def test_cached_procedure():
+    call_count = 1
+
+    @cached_procedure(tempfile.mktemp(), payload_fn=lambda: "constant")
+    def _function_with_no_args():
+        nonlocal call_count
+        call_count += 1
+
+    _function_with_no_args()
+    assert call_count == 1
+    _function_with_no_args()
+    assert call_count == 1
+
+    call_count = 0
+
+    @cached_procedure(
+        tempfile.mktemp(),
+        payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
+    )
+    def _function_with_some_args(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+
+    _function_with_some_args(1, y=2)
+    assert call_count == 1
+    _function_with_some_args(1, y=2)
+    assert call_count == 1
+    _function_with_some_args(100, y=300)
+    assert call_count == 2
+    _function_with_some_args(100, y=300)
+    assert call_count == 2
