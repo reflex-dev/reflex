@@ -95,6 +95,7 @@ def radio_group(
         items: The items of the radio group.
         direction: The direction of the radio group.
         gap: The gap between the items of the radio group.
+        size: The size of the radio group.
         **props: Additional properties to apply to the accordion item.
 
     Returns:

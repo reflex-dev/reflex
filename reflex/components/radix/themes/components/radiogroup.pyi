@@ -454,5 +454,6 @@ def radio_group(
     items: Var[List[str]],
     direction: Var[LiteralFlexDirection] = Var.create_safe("column"),
     gap: Var[LiteralSize] = Var.create_safe("2"),
+    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2"),
     **props
 ) -> Component: ...
