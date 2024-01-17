@@ -224,6 +224,7 @@ class Match(MemoizationLeaf):
             _var_type=default._var_type,  # type: ignore
             _var_is_local=False,
             _var_full_name_needs_state_prefix=False,
+            _var_is_string=False,
             merge_var_data=VarData.merge(*var_data),
         )
 
