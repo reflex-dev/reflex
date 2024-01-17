@@ -2,8 +2,10 @@
 
 from typing import Literal
 
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core import cond, match
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import (
     Style,
@@ -363,7 +365,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
     )
 
 
-class AccordionComponent(Component):
+class AccordionComponent(RadixPrimitiveComponent):
     """Base class for all @radix-ui/accordion components."""
 
     library = "@radix-ui/react-accordion@^1.1.2"
@@ -427,7 +429,8 @@ class AccordionRoot(AccordionComponent):
             # mark the vars of variant string literals as strings so they are formatted properly in the match condition.
             comp.variant._var_is_string = True  # type: ignore
 
-        return comp
+        # remove Fragment and cond wrap workaround when https://github.com/reflex-dev/reflex/issues/2393 is resolved.
+        return Fragment.create(comp, cond(True, Fragment.create()))
 
     def _get_style(self) -> dict:
         """Get the style for the component.
@@ -584,10 +587,3 @@ def accordion_item(header: Component, content: Component, **props) -> Component:
         **props,
         class_name="AccordionItem",
     )
-
-
-accordion = AccordionRoot.create
-accordion_root = AccordionRoot.create
-accordion_header = AccordionHeader.create
-accordion_trigger = AccordionTrigger.create
-accordion_content = AccordionContent.create
