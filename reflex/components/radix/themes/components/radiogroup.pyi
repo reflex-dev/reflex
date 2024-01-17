@@ -451,8 +451,8 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
         ...
 
 def radio_group(
-    items: Var[list[str]],
-    direction: Var[LiteralFlexDirection] = "column",
-    gap: Var[LiteralSize] = "2",
+    items: [list[str] | Var[list[str]]],
+    direction: [str | Var[LiteralFlexDirection]] = "column",
+    gap: [str | Var[LiteralSize]] = "2",
     **props
 ) -> Component: ...
