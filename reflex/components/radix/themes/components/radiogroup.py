@@ -84,8 +84,8 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
 
 def radio_group(
     items: Var[list[str]],
-    direction: Var[LiteralFlexDirection] = Var.create_safe("column"),  #  type: ignore
-    gap: Var[LiteralSize] = Var.create_safe("2"),  #  type: ignore
+    direction: Var[LiteralFlexDirection] = Var.create_safe("column"),
+    gap: Var[LiteralSize] = Var.create_safe("2"),
     **props
 ) -> Component:
     """Create a radio group component.
@@ -114,12 +114,12 @@ def radio_group(
     if isinstance(items, Var):
         child = [rx.foreach(items, radio_group_item)]
     else:
-        child = [radio_group_item(value) for value in items]
+        child = [radio_group_item(value) for value in items]  #  type: ignore
 
     return RadioGroupRoot.create(
         Flex.create(
             *child,
-            direction=direction,  #  type: ignore
+            direction=direction,
             gap=gap,
         ),
         **props,
