@@ -2,12 +2,11 @@
 
 from typing import List
 
-
-from reflex.components.chakra.layout import ChakraLayoutComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.vars import Var
 
 
-class Grid(ChakrLayoutComponent):
+class Grid(ChakraLayoutComponent):
     """A grid component."""
 
     tag = "Grid"

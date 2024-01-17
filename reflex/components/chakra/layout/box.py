@@ -1,7 +1,7 @@
 """A box component that can contain other components."""
 
 
-from reflex.components.chakra.layout import ChakraLayoutComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.components.tags import Tag
 from reflex.vars import Var
 

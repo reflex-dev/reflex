@@ -1,6 +1,6 @@
 """A box that centers its contents."""
 
-from reflex.components.chakra.layout import ChakraLayoutComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 
 
 class Center(ChakraLayoutComponent):

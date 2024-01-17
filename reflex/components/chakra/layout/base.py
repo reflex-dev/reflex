@@ -1,3 +1,5 @@
+"""The base class for all Chakra layout components."""
+
 from reflex.components.component import Component
 
 
