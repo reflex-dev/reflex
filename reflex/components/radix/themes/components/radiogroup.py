@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, Union
 
 import reflex as rx
 from reflex.components.component import Component
@@ -83,9 +83,9 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
 
 
 def radio_group(
-    items: [list[str] | Var[list[str]]],
-    direction: [str | Var[LiteralFlexDirection]] = "column",
-    gap: [str | Var[LiteralSize]] = "2",
+    items: Union[list[str], Var[list[str]]],
+    direction: Union[str, Var[LiteralFlexDirection]] = "column",
+    gap: Union[str, Var[LiteralSize]] = "2",
     **props
 ) -> Component:
     """Create a radio group component.
