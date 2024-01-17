@@ -38,9 +38,6 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
 
-    # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
-
     # Whether the checkbox is checked by default
     default_checked: Var[bool]
 
