@@ -2,8 +2,9 @@
 
 from typing import Optional
 
+from reflex.components.chakra.layout import ChakraLayoutComponent
+
 from reflex.components.chakra import (
-    ChakraComponent,
     LiteralCardVariant,
     LiteralColorScheme,
     LiteralTagSize,
@@ -12,25 +13,25 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class CardHeader(ChakraComponent):
+class CardHeader(ChakraLayoutComponent):
     """The wrapper that contains a card's header."""
 
     tag = "CardHeader"
 
 
-class CardBody(ChakraComponent):
+class CardBody(ChakraLayoutComponent):
     """The wrapper that houses the card's main content."""
 
     tag = "CardBody"
 
 
-class CardFooter(ChakraComponent):
+class CardFooter(ChakraLayoutComponent):
     """The footer that houses the card actions."""
 
     tag = "CardFooter"
 
 
-class Card(ChakraComponent):
+class Card(ChakraLayoutComponent):
     """The parent wrapper that provides context for its children."""
 
     tag = "Card"

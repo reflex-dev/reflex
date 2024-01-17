@@ -1,11 +1,12 @@
 """A box component that can contain other components."""
 
-from reflex.components.chakra import ChakraComponent
+
+from reflex.components.chakra.layout import ChakraLayoutComponent
 from reflex.components.tags import Tag
 from reflex.vars import Var
 
 
-class Box(ChakraComponent):
+class Box(ChakraLayoutComponent):
     """A generic container component that can contain other components."""
 
     tag = "Box"
