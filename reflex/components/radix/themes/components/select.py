@@ -1,6 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+import reflex as rx
+from reflex.components.component import Component
 from reflex.vars import Var
 
 from ..base import (
@@ -9,9 +11,6 @@ from ..base import (
     LiteralRadius,
     RadixThemesComponent,
 )
-
-import reflex as rx
-from reflex.components.component import Component
 
 LiteralButtonSize = Literal[1, 2, 3, 4]
 
@@ -149,25 +148,38 @@ class SelectSeparator(CommonMarginProps, RadixThemesComponent):
     tag = "Select.Separator"
 
 
-
 def select(
-        items: Var[list[str]], 
-        placeholder: [Var[str] | None] = None, 
-        label: [Var[str] | None] = None, 
-        color: Var[LiteralAccentColor] = None,
-        high_contrast: Var[bool] = None,
-        variant: Var[Literal["classic", "surface", "soft", "ghost"]] = None,
-        radius: Var[LiteralRadius] = None,
-        width: Var[str] = None,
-        **props,
-        ) -> Component:
+    items: Var[list[str]],
+    placeholder: [Var[str] | None] = None,
+    label: [Var[str] | None] = None,
+    color: Var[LiteralAccentColor] = None,
+    high_contrast: Var[bool] = None,
+    variant: Var[Literal["classic", "surface", "soft", "ghost"]] = None,
+    radius: Var[LiteralRadius] = None,
+    width: Var[str] = None,
+    **props,
+) -> Component:
+    """Create a select component.
 
+    Args:
+        items: The items of the select.
+        placeholder: The placeholder of the select.
+        label: The label of the select.
+        color: The color of the select.
+        high_contrast: Whether to render the select with higher contrast color against background.
+        variant: The variant of the select.
+        radius: The radius of the select.
+        width: The width of the select.
+        **props: Additional properties to apply to the select component.
+
+    Returns:
+        The select component.
+    """
     content_props = {}
     if color is not None:
         content_props["color_scheme"] = color
     if high_contrast is not None:
         content_props["high_contrast"] = high_contrast
-
 
     trigger_props = {}
     if placeholder is not None:
@@ -181,12 +193,10 @@ def select(
     if width is not None:
         trigger_props["width"] = width
 
-
     if isinstance(items, Var):
         child = [rx.foreach(items, lambda item: SelectItem.create(item, value=item))]
     else:
         child = [SelectItem.create(item, value=item) for item in items]
-
 
     return SelectRoot.create(
         SelectTrigger.create(

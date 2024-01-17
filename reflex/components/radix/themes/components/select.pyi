@@ -8,6 +8,8 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
+import reflex as rx
+from reflex.components.component import Component
 from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
@@ -1452,3 +1454,15 @@ class SelectSeparator(CommonMarginProps, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+def select(
+    items: Var[list[str]],
+    placeholder: [Var[str] | None] = None,
+    label: [Var[str] | None] = None,
+    color: Var[LiteralAccentColor] = None,
+    high_contrast: Var[bool] = None,
+    variant: Var[Literal["classic", "surface", "soft", "ghost"]] = None,
+    radius: Var[LiteralRadius] = None,
+    width: Var[str] = None,
+    **props
+) -> Component: ...
