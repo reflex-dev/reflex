@@ -59,6 +59,7 @@ from .select import (
     SelectRoot,
     SelectSeparator,
     SelectTrigger,
+    select,
 )
 from .separator import Separator
 from .slider import Slider

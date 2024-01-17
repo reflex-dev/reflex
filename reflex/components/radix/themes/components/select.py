@@ -10,6 +10,9 @@ from ..base import (
     RadixThemesComponent,
 )
 
+import reflex as rx
+from reflex.components.component import Component
+
 LiteralButtonSize = Literal[1, 2, 3, 4]
 
 
@@ -144,3 +147,57 @@ class SelectSeparator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Separator"
+
+
+
+def select(
+        items: Var[list[str]], 
+        placeholder: [Var[str] | None] = None, 
+        label: [Var[str] | None] = None, 
+        color: Var[LiteralAccentColor] = None,
+        high_contrast: Var[bool] = None,
+        variant: Var[Literal["classic", "surface", "soft", "ghost"]] = None,
+        radius: Var[LiteralRadius] = None,
+        width: Var[str] = None,
+        **props,
+        ) -> Component:
+
+    content_props = {}
+    if color is not None:
+        content_props["color_scheme"] = color
+    if high_contrast is not None:
+        content_props["high_contrast"] = high_contrast
+
+
+    trigger_props = {}
+    if placeholder is not None:
+        trigger_props["placeholder"] = placeholder
+    if variant is not None:
+        trigger_props["variant"] = variant
+    if color is not None:
+        trigger_props["color_scheme"] = color
+    if radius is not None:
+        trigger_props["radius"] = radius
+    if width is not None:
+        trigger_props["width"] = width
+
+
+    if isinstance(items, Var):
+        child = [rx.foreach(items, lambda item: SelectItem.create(item, value=item))]
+    else:
+        child = [SelectItem.create(item, value=item) for item in items]
+
+
+    return SelectRoot.create(
+        SelectTrigger.create(
+            **trigger_props,
+        ),
+        SelectContent.create(
+            SelectGroup.create(
+                SelectLabel.create(label) if label is not None else "",
+                *child,
+            ),
+            **content_props,
+        ),
+        **props,
+    )
