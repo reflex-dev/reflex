@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, List
 import reflex as rx
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
@@ -451,7 +451,7 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
         ...
 
 def radio_group(
-    items: Var[list[str]],
+    items: Var[List[str]],
     direction: Var[LiteralFlexDirection] = Var.create_safe("column"),
     gap: Var[LiteralSize] = Var.create_safe("2"),
     **props
