@@ -595,7 +595,7 @@ class App(Base):
                 continue
             _frontend_packages.append(package)
         page_imports.update(_frontend_packages)
-        prerequisites.install_frontend_packages(page_imports)
+        prerequisites.install_frontend_packages(page_imports, get_config())
 
     def _app_root(self, app_wrappers: dict[tuple[int, str], Component]) -> Component:
         for component in tuple(app_wrappers.values()):
