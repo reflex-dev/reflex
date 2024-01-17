@@ -15,7 +15,11 @@ from ..base import (
     LiteralRadius,
     LiteralVariant,
     RadixThemesComponent,
+    LiteralSize,
 )
+from reflex.components.component import Component
+from reflex.components.radix.themes.typography.text import Text
+from reflex.components.radix.themes.layout.flex import Flex
 
 LiteralCheckboxSize = Literal["1", "2", "3"]
 
@@ -249,3 +253,10 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
             A new component instance.
         """
         ...
+
+def checkbox_hl(
+    text: str,
+    gap: Var[LiteralSize] = Var.create_safe("2"),
+    size: Var[LiteralCheckboxSize] = Var.create_safe("2"),
+    **props
+) -> Component: ...

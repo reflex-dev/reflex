@@ -15,7 +15,7 @@ from .badge import Badge
 from .button import Button
 from .callout import CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
-from .checkbox import Checkbox
+from .checkbox import Checkbox, checkbox_hl
 from .contextmenu import (
     ContextMenuContent,
     ContextMenuItem,

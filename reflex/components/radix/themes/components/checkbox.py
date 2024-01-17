@@ -1,12 +1,16 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+from reflex.components.component import Component
+from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
+    LiteralSize,
     LiteralVariant,
     RadixThemesComponent,
 )
@@ -65,3 +69,31 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
             **super().get_event_triggers(),
             "on_checked_change": lambda e0: [e0],
         }
+
+
+def checkbox_hl(
+    text: str,
+    gap: Var[LiteralSize] = Var.create_safe("2"),
+    size: Var[LiteralCheckboxSize] = Var.create_safe("2"),
+    **props
+) -> Component:
+    """Create a checkbox with a label.
+
+    Args:
+        text: The text of the label.
+        gap: The gap between the checkbox and the label.
+        size: The size of the checkbox.
+        **props: Additional properties to apply to the checkbox item.
+
+    Returns:
+        The checkbox component with a label.
+    """
+    return Text.create(
+        Flex.create(
+            Checkbox.create(size=size, **props),
+            text,
+            gap=gap,
+        ),
+        as_="label",
+        size=size,
+    )
