@@ -9,7 +9,6 @@ from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
     LiteralSize,
     LiteralVariant,
     RadixThemesComponent,
@@ -68,29 +67,33 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
         }
 
 
-def checkbox_hl(
-    text: str,
-    gap: Var[LiteralSize] = Var.create_safe("2"),
-    size: Var[LiteralCheckboxSize] = Var.create_safe("2"),
-    **props
-) -> Component:
-    """Create a checkbox with a label.
+class HighLevelCheckbox(Checkbox):
+    """A checkbox component with a label."""
 
-    Args:
-        text: The text of the label.
-        gap: The gap between the checkbox and the label.
-        size: The size of the checkbox.
-        **props: Additional properties to apply to the checkbox item.
+    @classmethod
+    def create(
+        cls,
+        text: str = "",
+        gap: Var[LiteralSize] = Var.create_safe("2"),
+        size: Var[LiteralCheckboxSize] = Var.create_safe("2"),
+        **props
+    ) -> Component:
+        """Create a checkbox with a label.
+        Args:
+            text: The text of the label.
+            gap: The gap between the checkbox and the label.
+            size: The size of the checkbox.
+            **props: Additional properties to apply to the checkbox item.
 
-    Returns:
-        The checkbox component with a label.
-    """
-    return Text.create(
-        Flex.create(
-            Checkbox.create(size=size, **props),
-            text,
-            gap=gap,
-        ),
-        as_="label",
-        size=size,
-    )
+        Returns:
+            The checkbox component with a label.
+        """
+        return Text.create(
+            Flex.create(
+                Checkbox.create(size=size, **props),
+                text,
+                gap=gap,
+            ),
+            as_="label",
+            size=size,
+        )

@@ -15,7 +15,7 @@ from .badge import Badge
 from .button import Button
 from .callout import CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
-from .checkbox import Checkbox, checkbox_hl
+from .checkbox import Checkbox, HighLevelCheckbox
 from .contextmenu import (
     ContextMenuContent,
     ContextMenuItem,
@@ -108,6 +108,7 @@ card = Card.create
 
 # Checkbox
 checkbox = Checkbox.create
+checkbox_hl = HighLevelCheckbox.create
 
 # Context Menu
 contextmenu_root = ContextMenuRoot.create
