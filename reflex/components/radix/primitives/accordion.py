@@ -111,6 +111,10 @@ def get_theme_accordion_item():
             "overflow": "hidden",
             "width": "100%",
             "margin_top": "1px",
+            # "background_color": "var(--accent-3)",
+            # "background_color": cond(
+            #     color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+            # ),
             "&:first-child": {
                 "margin_top": 0,
                 "border_top_left_radius": "4px",
@@ -295,7 +299,12 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                     "overflow": "hidden",
                     "font_size": "10px",
                     "color": cond(
-                        color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
+                        color_scheme == "primary",
+                        "var(--accent-9-contrast)",
+                        "var(--slate-9-contrast)",
+                    ),
+                    "background_color": cond(
+                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
                     ),
                     "padding": "15px, 20px",
                     "&[data-state='open']": {
@@ -318,10 +327,23 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                 "overflow": "hidden",
                 "font_size": "10px",
                 "color": cond(
-                    color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
+                    color_scheme == "primary",
+                    "var(--accent-9-contrast)",
+                    "var(--slate-9-contrast)",
                 ),
-                "background_color": cond(
-                    color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                "background_color": match(
+                    variant,
+                    (
+                        "classic",
+                        cond(
+                            color_scheme == "primary",
+                            "var(--accent-9)",
+                            "var(--slate-9)",
+                        ),
+                    ),
+                    cond(
+                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                    ),
                 ),
                 "padding": "15px, 20px",
                 "&[data-state='open']": {
