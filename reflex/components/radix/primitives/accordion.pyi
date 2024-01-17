@@ -8,8 +8,10 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core import cond, match
+from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.style import (
     Style,
@@ -36,12 +38,13 @@ def get_theme_accordion_content(
     variant: str | Var, color_scheme: str | Var
 ) -> BaseVar: ...
 
-class AccordionComponent(Component):
+class AccordionComponent(RadixPrimitiveComponent):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -99,6 +102,7 @@ class AccordionComponent(Component):
 
         Args:
             *children: The children of the component.
+            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -145,6 +149,7 @@ class AccordionRoot(AccordionComponent):
             Union[Var[Literal["primary", "accent"]], Literal["primary", "accent"]]
         ] = None,
         _dynamic_themes: Optional[Union[Var[dict], dict]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -212,6 +217,7 @@ class AccordionRoot(AccordionComponent):
             variant: The variant of the accordion.
             color_scheme: The color scheme of the accordion.
             _dynamic_themes: dynamic themes of the accordion generated at compile time.
+            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -233,6 +239,7 @@ class AccordionItem(AccordionComponent):
         *children,
         value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -292,6 +299,7 @@ class AccordionItem(AccordionComponent):
             *children: The children of the component.
             value: A unique identifier for the item.
             disabled: When true, prevents the user from interacting with the item.
+            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -314,6 +322,7 @@ class AccordionHeader(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -371,6 +380,7 @@ class AccordionHeader(AccordionComponent):
 
         Args:
             *children: The children of the component.
+            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -393,6 +403,7 @@ class AccordionTrigger(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -450,6 +461,7 @@ class AccordionTrigger(AccordionComponent):
 
         Args:
             *children: The children of the component.
+            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -472,6 +484,7 @@ class AccordionContent(AccordionComponent):
     def create(  # type: ignore
         cls,
         *children,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -529,6 +542,7 @@ class AccordionContent(AccordionComponent):
 
         Args:
             *children: The children of the component.
+            as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -546,9 +560,3 @@ class AccordionContent(AccordionComponent):
         ...
 
 def accordion_item(header: Component, content: Component, **props) -> Component: ...
-
-accordion = AccordionRoot.create
-accordion_root = AccordionRoot.create
-accordion_header = AccordionHeader.create
-accordion_trigger = AccordionTrigger.create
-accordion_content = AccordionContent.create
