@@ -163,7 +163,9 @@ def get_app(reload: bool = False) -> ModuleType:
         from reflex.state import State
 
         # Reset rx.State subclasses to avoid conflict when reloading.
-        State.class_subclasses.clear()
+        for subclass in tuple(State.class_subclasses):
+            if subclass.__module__ == module:
+                State.class_subclasses.remove(subclass)
         # Reload the app module.
         importlib.reload(app)
 
