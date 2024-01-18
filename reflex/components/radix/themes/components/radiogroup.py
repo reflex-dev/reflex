@@ -89,13 +89,13 @@ class HighLevelRadioGroup(RadioGroupRoot):
     items: Var[List[str]]
 
     # The direction of the radio group.
-    direction: Var[LiteralFlexDirection] = "column"
+    direction: Var[LiteralFlexDirection] = Var.create_safe("column")
 
     # The gap between the items of the radio group.
-    gap: Var[LiteralSize] = "2"
+    gap: Var[LiteralSize] = Var.create_safe("2")
 
     # The size of the radio group.
-    size: Var[Literal["1", "2", "3"]] = "2"
+    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
 
     @classmethod
     def create(cls, items: Var[List[str]], **props) -> Component:
