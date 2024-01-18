@@ -18,7 +18,6 @@ class Icon(RadixIconComponent):
 
     tag = "None"
 
-
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Initialize the Icon component.
