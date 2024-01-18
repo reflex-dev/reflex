@@ -82,48 +82,58 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
     required: Var[bool]
 
 
-def radio_group(
-    items: Var[List[str]],
-    direction: Var[LiteralFlexDirection] = Var.create_safe("column"),
-    gap: Var[LiteralSize] = Var.create_safe("2"),
-    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2"),
-    **props
-) -> Component:
-    """Create a radio group component.
+class HighLevelRadioGroup(RadioGroupRoot):
+    """High level wrapper for the RadioGroup component."""
 
-    Args:
-        items: The items of the radio group.
-        direction: The direction of the radio group.
-        gap: The gap between the items of the radio group.
-        size: The size of the radio group.
-        **props: Additional properties to apply to the accordion item.
+    # The items of the radio group.
+    items: Var[List[str]]
 
-    Returns:
-        The created radio group component.
-    """
+    # The direction of the radio group.
+    direction: Var[LiteralFlexDirection] = "column"
 
-    def radio_group_item(value: str) -> Component:
-        return Text.create(
+    # The gap between the items of the radio group.
+    gap: Var[LiteralSize] = "2"
+
+    # The size of the radio group.
+    size: Var[Literal["1", "2", "3"]] = "2"
+
+    @classmethod
+    def create(cls, items: Var[List[str]], **props) -> Component:
+        """Create a radio group component.
+
+        Args:
+            items: The items of the radio group.
+            **props: Additional properties to apply to the accordion item.
+
+        Returns:
+            The created radio group component.
+        """
+        direction = props.pop("direction", "column")
+        gap = props.pop("gap", "2")
+        size = props.pop("size", "2")
+
+        def radio_group_item(value: str) -> Component:
+            return Text.create(
+                Flex.create(
+                    RadioGroupItem.create(value=value),
+                    value,
+                    gap="2",
+                ),
+                size=size,
+                as_="label",
+            )
+
+        if isinstance(items, Var):
+            child = [rx.foreach(items, radio_group_item)]
+        else:
+            child = [radio_group_item(value) for value in items]  #  type: ignore
+
+        return RadioGroupRoot.create(
             Flex.create(
-                RadioGroupItem.create(value=value),
-                value,
-                gap="2",
+                *child,
+                direction=direction,
+                gap=gap,
             ),
             size=size,
-            as_="label",
+            **props,
         )
-
-    if isinstance(items, Var):
-        child = [rx.foreach(items, radio_group_item)]
-    else:
-        child = [radio_group_item(value) for value in items]  #  type: ignore
-
-    return RadioGroupRoot.create(
-        Flex.create(
-            *child,
-            direction=direction,
-            gap=gap,
-        ),
-        size=size,
-        **props,
-    )

@@ -49,7 +49,7 @@ from .iconbutton import IconButton
 from .icons import Icon
 from .inset import Inset
 from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
-from .radiogroup import RadioGroupItem, RadioGroupRoot, radio_group
+from .radiogroup import HighLevelRadioGroup, RadioGroupItem, RadioGroupRoot
 from .scrollarea import ScrollArea
 from .select import (
     SelectContent,
@@ -161,6 +161,7 @@ popover_close = PopoverClose.create
 # Radio Group
 radio_group_root = RadioGroupRoot.create
 radio_group_item = RadioGroupItem.create
+radio_group = HighLevelRadioGroup.create
 
 # Scroll Area
 scroll_area = ScrollArea.create
