@@ -1,9 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+import reflex as rx
 from reflex.components import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
+from reflex.components.radix.themes.components.icons import Icon
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -90,3 +92,32 @@ class TextFieldSlot(RadixThemesComponent):
 
     # Override the gap spacing between slot and input: "1" - "9"
     gap: Var[LiteralSize]
+
+
+class Input(TextFieldInput):
+    """High level wrapper for the Input component."""
+
+    # The icon to render before the input.
+    icon: Var[str]
+
+    # The gap spacing between slot and input: "1" - "9"
+    gap: Var[LiteralSize]
+
+    @classmethod
+    def create(cls, **props):
+        """Create an Input component.
+
+        Args:
+            **props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        icon = props.pop("icon", None)
+        return TextFieldRoot.create(
+            TextFieldSlot.create(Icon.create(tag=icon)) if icon else rx.fragment(),
+            super().create(**props),
+        )
+
+
+input = Input.create
