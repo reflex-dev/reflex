@@ -17,7 +17,86 @@ from reflex.components.chakra import (
 from reflex.components.component import Component
 from reflex.vars import Var
 
-class Popover(ChakraComponent):
+class BasePopover(ChakraComponent):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "BasePopover":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
+        """
+        ...
+
+class Popover(BasePopover):
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
@@ -154,7 +233,7 @@ class Popover(ChakraComponent):
         """
         ...
 
-class PopoverContent(ChakraComponent):
+class PopoverContent(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -233,7 +312,7 @@ class PopoverContent(ChakraComponent):
         """
         ...
 
-class PopoverHeader(ChakraComponent):
+class PopoverHeader(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -312,7 +391,7 @@ class PopoverHeader(ChakraComponent):
         """
         ...
 
-class PopoverFooter(ChakraComponent):
+class PopoverFooter(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -391,7 +470,7 @@ class PopoverFooter(ChakraComponent):
         """
         ...
 
-class PopoverBody(ChakraComponent):
+class PopoverBody(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -470,7 +549,7 @@ class PopoverBody(ChakraComponent):
         """
         ...
 
-class PopoverArrow(ChakraComponent):
+class PopoverArrow(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -549,7 +628,7 @@ class PopoverArrow(ChakraComponent):
         """
         ...
 
-class PopoverCloseButton(ChakraComponent):
+class PopoverCloseButton(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -628,7 +707,7 @@ class PopoverCloseButton(ChakraComponent):
         """
         ...
 
-class PopoverAnchor(ChakraComponent):
+class PopoverAnchor(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -707,7 +786,7 @@ class PopoverAnchor(ChakraComponent):
         """
         ...
 
-class PopoverTrigger(ChakraComponent):
+class PopoverTrigger(BasePopover):
     @overload
     @classmethod
     def create(  # type: ignore

@@ -9,15 +9,15 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Optional
 from reflex.components.chakra import (
-    ChakraComponent,
     LiteralCardVariant,
     LiteralColorScheme,
     LiteralTagSize,
 )
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.components.component import Component
 from reflex.vars import Var
 
-class CardHeader(ChakraComponent):
+class CardHeader(ChakraLayoutComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -96,7 +96,7 @@ class CardHeader(ChakraComponent):
         """
         ...
 
-class CardBody(ChakraComponent):
+class CardBody(ChakraLayoutComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -175,7 +175,7 @@ class CardBody(ChakraComponent):
         """
         ...
 
-class CardFooter(ChakraComponent):
+class CardFooter(ChakraLayoutComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -254,7 +254,7 @@ class CardFooter(ChakraComponent):
         """
         ...
 
-class Card(ChakraComponent):
+class Card(ChakraLayoutComponent):
     @overload
     @classmethod
     def create(  # type: ignore
