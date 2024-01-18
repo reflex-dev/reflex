@@ -9,14 +9,14 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
 from reflex.components.component import Component
-from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
 
 LiteralSliderOrientation = Literal["horizontal", "vertical"]
 LiteralSliderDir = Literal["ltr", "rtl"]
 
-class SliderComponent(RadixPrimitiveComponent):
+class SliderComponent(RadixPrimitiveComponentWithClassName):
     @overload
     @classmethod
     def create(  # type: ignore

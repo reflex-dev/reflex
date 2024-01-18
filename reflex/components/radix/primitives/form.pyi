@@ -18,14 +18,14 @@ from reflex.event import EventChain
 from reflex.utils import imports
 from reflex.utils.format import format_event_chain, to_camel_case
 from reflex.vars import BaseVar, Var
-from .base import RadixPrimitiveComponent
+from .base import RadixPrimitiveComponentWithClassName
 
 FORM_DATA = Var.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     "\n    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {\n        const $form = ev.target\n        ev.preventDefault()\n        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}\n\n        {{ on_submit_event_chain }}\n\n        if ({{ reset_on_submit }}) {\n            $form.reset()\n        }\n    })\n    "
 )
 
-class FormComponent(RadixPrimitiveComponent):
+class FormComponent(RadixPrimitiveComponentWithClassName):
     @overload
     @classmethod
     def create(  # type: ignore
