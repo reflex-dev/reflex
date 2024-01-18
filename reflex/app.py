@@ -131,10 +131,10 @@ class App(Base):
         Union[Component, ComponentCallable]
     ] = default_overlay_component
 
-    # Background tasks that are currently running
+    # Background tasks that are currently running.
     background_tasks: Set[asyncio.Task] = set()
 
-    # The radix theme for the entire app
+    # The radix theme for the entire app.
     theme: Optional[Component]
 
     def __init__(self, *args, **kwargs):
