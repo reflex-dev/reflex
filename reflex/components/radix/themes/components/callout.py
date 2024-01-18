@@ -50,25 +50,24 @@ class CalloutText(el.P, CommonMarginProps, RadixThemesComponent):
 class Callout(CalloutRoot):
     """High level wrapper for the Callout component."""
 
-    status: Var[Literal["solid", "subtle", "outline"]]
+    # The text of the callout.
+    text: Var[str]
+
+    # The status of the callout.
+    status: Var[Literal["solid", "subtle", "outline"]] = "info"  # type: ignore
 
     @classmethod
-    def create(
-        cls,
-        text: Union[str, rx.Var[str]],
-        status: Union[str, rx.Var[str]] = "info",
-        **props
-    ) -> rx.Component:
+    def create(cls, text: Union[str, rx.Var[str]], **props) -> rx.Component:
         """Create a callout component.
 
         Args:
             text: The text of the callout.
-            status: The status of the callout.
             **props: The properties of the component.
 
         Returns:
             The callout component.
         """
+        status = props.get("status", "info")
         return super().create(
             CalloutIcon.create(
                 rx.match(
