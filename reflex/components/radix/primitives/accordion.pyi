@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal
+from typing import Literal, Dict, Any
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core import cond, match
@@ -201,6 +201,9 @@ class AccordionRoot(AccordionComponent):
         on_unmount: Optional[
             Union[EventHandler, EventSpec, list, function, BaseVar]
         ] = None,
+        on_value_change: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
         **props
     ) -> "AccordionRoot":
         """Create the Accordion root component.
@@ -230,6 +233,7 @@ class AccordionRoot(AccordionComponent):
             The Accordion root Component.
         """
         ...
+    def get_event_triggers(self) -> Dict[str, Any]: ...
 
 class AccordionItem(AccordionComponent):
     @overload

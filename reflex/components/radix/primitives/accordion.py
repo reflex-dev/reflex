@@ -1,6 +1,6 @@
 """Radix accordion components."""
 
-from typing import Literal
+from typing import Any, Dict, Literal
 
 from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
@@ -460,6 +460,17 @@ class AccordionRoot(AccordionComponent):
                 variant=self.variant, color_scheme=self.color_scheme
             )
         )
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the events triggers signatures for the component.
+
+        Returns:
+            The signatures of the event triggers.
+        """
+        return {
+            **super().get_event_triggers(),
+            "on_value_change": lambda e0: [e0],
+        }
 
 
 class AccordionItem(AccordionComponent):
