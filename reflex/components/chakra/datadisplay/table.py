@@ -11,6 +11,8 @@ from reflex.vars import Var
 class Table(ChakraComponent):
     """A table component."""
 
+    library = "@chakra-ui/table@2.1.0"
+
     tag = "Table"
 
     # The color scheme of the table

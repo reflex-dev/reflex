@@ -1268,21 +1268,23 @@ def test_app_wrap_priority(compilable_app):
     app_js_lines = [
         line.strip() for line in app_js_contents.splitlines() if line.strip()
     ]
+    print("here")
+    print("".join(app_js_lines))
     assert (
         "function AppWrap({children}) {"
         "return ("
         "<Box>"
         "<ChakraProvider theme={extendTheme(theme)}>"
         "<Global styles={GlobalStyles}/>"
-        "<ChakraColorModeProvider>"
         "<Text>"
+        "<ChakraColorModeProvider>"
         "<Fragment2>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</Fragment2>"
-        "</Text>"
         "</ChakraColorModeProvider>"
+        "</Text>"
         "</ChakraProvider>"
         "</Box>"
         ")"

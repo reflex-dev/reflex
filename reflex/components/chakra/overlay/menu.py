@@ -14,7 +14,13 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class Menu(ChakraComponent):
+class BaseMenu(ChakraComponent):
+    """The base class for all Chakra menu components."""
+
+    library = "@chakra-ui/menu@2.2.1"
+
+
+class Menu(BaseMenu):
     """The wrapper component provides context, state, and focus management."""
 
     tag = "Menu"
@@ -112,7 +118,7 @@ class Menu(ChakraComponent):
         return super().create(*children, **props)
 
 
-class MenuButton(ChakraComponent):
+class MenuButton(BaseMenu):
     """The trigger for the menu list. Must be a direct child of Menu."""
 
     tag = "MenuButton"
@@ -127,7 +133,7 @@ class MenuButton(ChakraComponent):
     as_: Var[str]
 
 
-class MenuList(ChakraComponent):
+class MenuList(BaseMenu):
     """The wrapper for the menu items. Must be a direct child of Menu."""
 
     tag = "MenuList"
@@ -154,7 +160,7 @@ class MenuList(ChakraComponent):
         return super().create(*children, **props)
 
 
-class MenuItem(ChakraComponent):
+class MenuItem(BaseMenu):
     """The trigger that handles menu selection. Must be a direct child of a MenuList."""
 
     tag = "MenuItem"
@@ -175,7 +181,7 @@ class MenuItem(ChakraComponent):
     is_focusable: Var[bool]
 
 
-class MenuItemOption(ChakraComponent):
+class MenuItemOption(BaseMenu):
     """The checkable menu item, to be used with MenuOptionGroup."""
 
     tag = "MenuItemOption"
@@ -205,13 +211,13 @@ class MenuItemOption(ChakraComponent):
     value: Var[str]
 
 
-class MenuGroup(ChakraComponent):
+class MenuGroup(BaseMenu):
     """A wrapper to group related menu items."""
 
     tag = "MenuGroup"
 
 
-class MenuOptionGroup(ChakraComponent):
+class MenuOptionGroup(BaseMenu):
     """A wrapper for checkable menu items (radio and checkbox)."""
 
     tag = "MenuOptionGroup"
@@ -223,7 +229,7 @@ class MenuOptionGroup(ChakraComponent):
     value: Var[str]
 
 
-class MenuDivider(ChakraComponent):
+class MenuDivider(BaseMenu):
     """A visual separator for menu items and groups."""
 
     tag = "MenuDivider"

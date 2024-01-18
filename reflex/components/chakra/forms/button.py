@@ -11,7 +11,13 @@ from reflex.components.chakra import (
 from reflex.vars import Var
 
 
-class Button(ChakraComponent):
+class BaseButton(ChakraComponent):
+    """Base class for all button components."""
+
+    library = "@chakra-ui/button@2.1.0"
+
+
+class Button(BaseButton):
     """The Button component is used to trigger an event or event, such as submitting a form, opening a dialog, canceling an event, or performing a delete operation."""
 
     tag = "Button"
@@ -61,7 +67,7 @@ class Button(ChakraComponent):
     name: Var[str]
 
 
-class ButtonGroup(ChakraComponent):
+class ButtonGroup(BaseButton):
     """A group of buttons."""
 
     tag = "ButtonGroup"

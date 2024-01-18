@@ -1,17 +1,9 @@
 """The base class for all Chakra layout components."""
 
-from reflex.components.component import Component
+from reflex.components.chakra import ChakraComponent
 
 
-class ChakraLayoutComponent(Component):
+class ChakraLayoutComponent(ChakraComponent):
     """A component that wraps a Chakra component."""
 
     library = "@chakra-ui/layout@2.3.1"
-
-    def _get_style(self) -> dict:
-        """Get the style for the component.
-
-        Returns:
-            The dictionary of the component style as value and the style notation as key.
-        """
-        return {"sx": self.style}
