@@ -47,7 +47,7 @@ class Icon(RadixIconComponent):
                 f"Invalid icon tag: {props['tag']}. Please use one of the following: {sorted(ICON_LIST)}"
             )
         props["tag"] = format.to_title_case(props["tag"]) + "Icon"
-        props["alias"] = f"RadixThemes {props['tag']}"
+        props["alias"] = f"RadixThemes{props['tag']}"
         return super().create(*children, **props)
 
 
