@@ -430,6 +430,7 @@ class HighLevelCheckbox(Checkbox):
         **props
     ) -> "HighLevelCheckbox":
         """Create a checkbox with a label.
+
         Args:
             text: The text of the label.
             gap: The gap between the checkbox and the label.
