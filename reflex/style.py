@@ -220,3 +220,18 @@ def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
             emotion_style[key] = value
     if emotion_style:
         return emotion_style
+
+
+def convert_dict_to_style_and_format_emotion(
+    raw_dict: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Convert a dict to a style dict and then format as emotion.
+
+    Args:
+        raw_dict: The dict to convert.
+
+    Returns:
+        The emotion dict.
+
+    """
+    return format_as_emotion(Style(raw_dict))

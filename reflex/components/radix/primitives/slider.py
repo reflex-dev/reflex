@@ -3,7 +3,7 @@
 from typing import Any, Dict, Literal
 
 from reflex.components.component import Component
-from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
 
@@ -11,7 +11,7 @@ LiteralSliderOrientation = Literal["horizontal", "vertical"]
 LiteralSliderDir = Literal["ltr", "rtl"]
 
 
-class SliderComponent(RadixPrimitiveComponent):
+class SliderComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-slider components."""
 
     library = "@radix-ui/react-slider@^1.1.2"

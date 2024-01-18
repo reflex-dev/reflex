@@ -15,6 +15,10 @@ class RadixPrimitiveComponent(Component):
 
     lib_dependencies: List[str] = ["@emotion/react@^11.11.1"]
 
+
+class RadixPrimitiveComponentWithClassName(RadixPrimitiveComponent):
+    """Basic component for radix Primitives with a class name prop."""
+
     def _render(self) -> Tag:
         return (
             super()
