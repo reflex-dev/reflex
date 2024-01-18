@@ -82,49 +82,32 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 
 
 
-
-
-
-def table(headers: Var[Iterable] = None, rows: Var[Iterable] = None, **props) -> Component:
+def table(
+        headers: Var[Iterable] = None, 
+        rows: Var[Iterable] = None, 
+        justify: Var[Literal["start", "center", "end"]] =  Var.create_safe("start"), 
+        **props
+    ) -> Component:
 
     children = []
 
+    headers = Var.create(headers)
+    rows = Var.create(rows).to(list[list[str]])
 
     if headers is not None:
-        if isinstance(headers, Var):
-            children.append(
-                TableHeader.create(
-                    TableRow.create(
-                        *[rx.foreach(headers, TableColumnHeaderCell.create)]
-                    )
+        children.append(
+            TableHeader.create(
+                TableRow.create(
+                    *[rx.foreach(headers, lambda header: TableColumnHeaderCell.create(header, justify=justify))]
                 )
             )
-
-        else:
-            children.append(
-                TableHeader.create(
-                    TableRow.create(
-                        *[TableColumnHeaderCell.create(header) for header in headers]
-                    )
-                )
-            )
+        )
 
     if rows is not None:
-        if isinstance(rows, Var):
-            children.append(
-                TableBody.create(
-                    *[rx.foreach(rows, lambda row: TableRow.create(*[rx.foreach(row, TableCell.create)]))]
-                )
+        children.append(
+            TableBody.create(
+                *[rx.foreach(rows, lambda row: TableRow.create(*[rx.foreach(row, lambda cell: TableCell.create(cell, justify=justify))]))]
             )
-
-        else:
-            children.append(
-                TableBody.create(
-                    *[TableRow.create(
-                        *[TableCell.create(cell) for cell in row]
-                    ) for row in rows]
-                )
-            )
-
+        )
 
     return TableRoot.create(*children, **props)
