@@ -71,6 +71,7 @@ from .table import (
     TableRoot,
     TableRow,
     TableRowHeaderCell,
+    table,
 )
 from .tabs import TabsContent, TabsList, TabsRoot, TabsTrigger
 from .textarea import TextArea

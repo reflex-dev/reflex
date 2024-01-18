@@ -1,6 +1,7 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Literal, Union
+from typing import Literal, Union, Iterable
 
+import reflex as rx
 from reflex import el
 from reflex.vars import Var
 
@@ -9,6 +10,7 @@ from ..base import (
     RadixThemesComponent,
 )
 
+from reflex.components.component import Component
 
 class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
@@ -77,3 +79,52 @@ class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 
     # width of the column
     width: Var[Union[str, int]]
+
+
+
+
+
+
+def table(headers: Var[Iterable] = None, rows: Var[Iterable] = None, **props) -> Component:
+
+    children = []
+
+
+    if headers is not None:
+        if isinstance(headers, Var):
+            children.append(
+                TableHeader.create(
+                    TableRow.create(
+                        *[rx.foreach(headers, TableColumnHeaderCell.create)]
+                    )
+                )
+            )
+
+        else:
+            children.append(
+                TableHeader.create(
+                    TableRow.create(
+                        *[TableColumnHeaderCell.create(header) for header in headers]
+                    )
+                )
+            )
+
+    if rows is not None:
+        if isinstance(rows, Var):
+            children.append(
+                TableBody.create(
+                    *[rx.foreach(rows, lambda row: TableRow.create(*[rx.foreach(row, TableCell.create)]))]
+                )
+            )
+
+        else:
+            children.append(
+                TableBody.create(
+                    *[TableRow.create(
+                        *[TableCell.create(cell) for cell in row]
+                    ) for row in rows]
+                )
+            )
+
+
+    return TableRoot.create(*children, **props)
