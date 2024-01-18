@@ -91,23 +91,42 @@ def table(
 
     children = []
 
-    headers = Var.create(headers)
-    rows = Var.create(rows).to(list[list[str]])
-
     if headers is not None:
-        children.append(
-            TableHeader.create(
-                TableRow.create(
-                    *[rx.foreach(headers, lambda header: TableColumnHeaderCell.create(header, justify=justify))]
+        if isinstance(headers, Var):
+            children.append(
+                TableHeader.create(
+                    TableRow.create(
+                        *[rx.foreach(headers, lambda header: TableColumnHeaderCell.create(header, justify=justify))]
+                    )
                 )
             )
-        )
+
+        else:
+            children.append(
+                TableHeader.create(
+                    TableRow.create(
+                        *[TableColumnHeaderCell.create(header, justify=justify) for header in headers]
+                    )
+                )
+            )
 
     if rows is not None:
-        children.append(
-            TableBody.create(
-                *[rx.foreach(rows, lambda row: TableRow.create(*[rx.foreach(row, lambda cell: TableCell.create(cell, justify=justify))]))]
+        if isinstance(rows, Var):
+            children.append(
+                TableBody.create(
+                    *[rx.foreach(rows, lambda row: TableRow.create(*[rx.foreach(row, lambda cell: TableCell.create(cell, justify=justify))]))]
+                )
             )
-        )
+
+        else:
+            children.append(
+                TableBody.create(
+                    *[TableRow.create(
+                        *[TableCell.create(cell, justify=justify) for cell in row]
+                    ) for row in rows]
+                )
+            )
+
 
     return TableRoot.create(*children, **props)
+
