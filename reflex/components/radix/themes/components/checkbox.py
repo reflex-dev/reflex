@@ -1,12 +1,15 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+from reflex.components.component import Component
+from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
+    LiteralSize,
     LiteralVariant,
     RadixThemesComponent,
 )
@@ -33,9 +36,6 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
 
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]
-
-    # Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
-    radius: Var[LiteralRadius]
 
     # Whether the checkbox is checked by default
     default_checked: Var[bool]
@@ -65,3 +65,36 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
             **super().get_event_triggers(),
             "on_checked_change": lambda e0: [e0],
         }
+
+
+class HighLevelCheckbox(Checkbox):
+    """A checkbox component with a label."""
+
+    @classmethod
+    def create(
+        cls,
+        text: str = "",
+        gap: Var[LiteralSize] = Var.create_safe("2"),
+        size: Var[LiteralCheckboxSize] = Var.create_safe("2"),
+        **props
+    ) -> Component:
+        """Create a checkbox with a label.
+
+        Args:
+            text: The text of the label.
+            gap: The gap between the checkbox and the label.
+            size: The size of the checkbox.
+            **props: Additional properties to apply to the checkbox item.
+
+        Returns:
+            The checkbox component with a label.
+        """
+        return Text.create(
+            Flex.create(
+                Checkbox.create(size=size, **props),
+                text,
+                gap=gap,
+            ),
+            as_="label",
+            size=size,
+        )
