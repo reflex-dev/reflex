@@ -1251,7 +1251,7 @@ def test_app_wrap_priority(compilable_app):
         tag = "Fragment2"
 
         def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
-            return {(50, "Text"): Text.create()}
+            return {(45, "Text"): Text.create()}
 
     class Fragment3(Component):
         tag = "Fragment3"
@@ -1276,15 +1276,15 @@ def test_app_wrap_priority(compilable_app):
         "<Box>"
         "<ChakraProvider theme={extendTheme(theme)}>"
         "<Global styles={GlobalStyles}/>"
-        "<Text>"
         "<ChakraColorModeProvider>"
+        "<Text>"
         "<Fragment2>"
         "<Fragment>"
         "{children}"
         "</Fragment>"
         "</Fragment2>"
-        "</ChakraColorModeProvider>"
         "</Text>"
+        "</ChakraColorModeProvider>"
         "</ChakraProvider>"
         "</Box>"
         ")"
