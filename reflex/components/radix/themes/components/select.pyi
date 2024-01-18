@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, List, Literal, Union
 import reflex as rx
 from reflex.components.component import Component
 from reflex.vars import Var
@@ -1461,7 +1461,7 @@ class HighLevelSelect(SelectRoot):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[list[str]], list[str]]] = None,
+        items: Optional[Union[Var[List[str]], List[str]]] = None,
         placeholder: Optional[Union[Var[str], str]] = None,
         label: Optional[Union[Var[str], str]] = None,
         color: Optional[
