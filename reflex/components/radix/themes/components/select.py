@@ -176,7 +176,7 @@ class HighLevelSelect(SelectRoot):
     width: Var[str]
 
     @classmethod
-    def create(cls, items: Union[list[str], Var[list[str]]], **props) -> Component:
+    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
         """Create a select component.
 
         Args:
