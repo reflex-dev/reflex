@@ -143,7 +143,8 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         if name in cls.__dict__:
             value = cls.__dict__[name]
             if isinstance(value, hybrid_property):
-                return value.fget.__annotations__.get("return", None)
+                hints = get_type_hints(value.fget)
+                return hints.get("return", None)
     elif is_union(cls):
         # Check in each arg of the annotation.
         for arg in get_args(cls):
