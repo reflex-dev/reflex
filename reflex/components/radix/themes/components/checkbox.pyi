@@ -440,8 +440,6 @@ class HighLevelCheckbox(Checkbox):
 
         Args:
             text: The text of the label.
-            gap: The gap between the checkbox and the label.
-            size: The size of the checkbox.
             text: The text label for the checkbox.
             gap: The gap between the checkbox and the label.
             size: Button size "1" - "3"

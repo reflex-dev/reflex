@@ -85,8 +85,6 @@ class HighLevelCheckbox(Checkbox):
 
         Args:
             text: The text of the label.
-            gap: The gap between the checkbox and the label.
-            size: The size of the checkbox.
             **props: Additional properties to apply to the checkbox item.
 
         Returns:
