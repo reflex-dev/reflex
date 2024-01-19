@@ -416,7 +416,7 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            value: The value of the radio item to check. Should be used in conjunction with onCheckedChange.
+            value: The value of the radio item to check. Should be used in conjunction with on_value_change.
             disabled: When true, prevents the user from interacting with the radio item.
             required: When true, indicates that the user must check the radio item before the owning form can be submitted.
             m: Margin: "0" - "9"
