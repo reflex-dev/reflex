@@ -3,34 +3,40 @@
 from typing import Optional
 
 from reflex.components.chakra import (
+    ChakraComponent,
     LiteralCardVariant,
     LiteralColorScheme,
     LiteralTagSize,
 )
-from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class CardHeader(ChakraLayoutComponent):
+class BaseCard(ChakraComponent):
+    """The base class for all Chakra Card components."""
+
+    library = "@chakra-ui/card@2.2.0"
+
+
+class CardHeader(BaseCard):
     """The wrapper that contains a card's header."""
 
     tag = "CardHeader"
 
 
-class CardBody(ChakraLayoutComponent):
+class CardBody(BaseCard):
     """The wrapper that houses the card's main content."""
 
     tag = "CardBody"
 
 
-class CardFooter(ChakraLayoutComponent):
+class CardFooter(BaseCard):
     """The footer that houses the card actions."""
 
     tag = "CardFooter"
 
 
-class Card(ChakraLayoutComponent):
+class Card(BaseCard):
     """The parent wrapper that provides context for its children."""
 
     tag = "Card"

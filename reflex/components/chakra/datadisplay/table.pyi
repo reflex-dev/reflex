@@ -14,7 +14,86 @@ from reflex.components.core.foreach import Foreach
 from reflex.utils import types
 from reflex.vars import Var
 
-class Table(ChakraComponent):
+class BaseTable(ChakraComponent):
+    @overload
+    @classmethod
+    def create(  # type: ignore
+        cls,
+        *children,
+        style: Optional[Style] = None,
+        key: Optional[Any] = None,
+        id: Optional[Any] = None,
+        class_name: Optional[Any] = None,
+        autofocus: Optional[bool] = None,
+        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
+        on_blur: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_context_menu: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_double_click: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_focus: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_down: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_enter: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_leave: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_move: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_out: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_over: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_mouse_up: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_scroll: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        on_unmount: Optional[
+            Union[EventHandler, EventSpec, list, function, BaseVar]
+        ] = None,
+        **props
+    ) -> "BaseTable":
+        """Create the component.
+
+        Args:
+            *children: The children of the component.
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The props of the component.
+
+        Returns:
+            The component.
+
+        Raises:
+            TypeError: If an invalid child is passed.
+        """
+        ...
+
+class Table(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -106,7 +185,7 @@ class Table(ChakraComponent):
         """
         ...
 
-class Thead(ChakraComponent):
+class Thead(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -187,7 +266,7 @@ class Thead(ChakraComponent):
     @staticmethod
     def validate_headers(headers): ...
 
-class Tbody(ChakraComponent):
+class Tbody(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -267,7 +346,7 @@ class Tbody(ChakraComponent):
     @staticmethod
     def validate_rows(rows): ...
 
-class Tfoot(ChakraComponent):
+class Tfoot(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -347,7 +426,7 @@ class Tfoot(ChakraComponent):
     @staticmethod
     def validate_footers(footers): ...
 
-class Tr(ChakraComponent):
+class Tr(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -427,7 +506,7 @@ class Tr(ChakraComponent):
         """
         ...
 
-class Th(ChakraComponent):
+class Th(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -508,7 +587,7 @@ class Th(ChakraComponent):
         """
         ...
 
-class Td(ChakraComponent):
+class Td(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -589,7 +668,7 @@ class Td(ChakraComponent):
         """
         ...
 
-class TableCaption(ChakraComponent):
+class TableCaption(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -670,7 +749,7 @@ class TableCaption(ChakraComponent):
         """
         ...
 
-class TableContainer(ChakraComponent):
+class TableContainer(BaseTable):
     @overload
     @classmethod
     def create(  # type: ignore
