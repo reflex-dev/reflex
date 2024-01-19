@@ -3,6 +3,7 @@ from typing import Literal, Union
 
 import reflex as rx
 from reflex import el
+from reflex.components.component import Component
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.vars import Var
 
@@ -57,7 +58,7 @@ class Callout(CalloutRoot):
     icon: Var[str]
 
     @classmethod
-    def create(cls, text: Union[str, rx.Var[str]], **props) -> rx.Component:
+    def create(cls, text: Union[str, Var[str]], **props) -> Component:
         """Create a callout component.
 
         Args:
@@ -67,7 +68,7 @@ class Callout(CalloutRoot):
         Returns:
             The callout component.
         """
-        return super().create(
+        return CalloutRoot.create(
             CalloutIcon.create(Icon.create(tag=props["icon"]))
             if "icon" in props
             else rx.fragment(),
