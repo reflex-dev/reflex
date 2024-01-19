@@ -219,7 +219,7 @@ class FormControl(FormComponent):
 
         Raises:
             ValueError: If the number of children is greater than 1.
-            TypeError: If the child, if exists, is not a TextFieldInput.
+            TypeError: If a child exists but it is not a TextFieldInput.
 
         Returns:
             The form control component.
