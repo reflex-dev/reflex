@@ -10,12 +10,12 @@ from reflex.style import Style
 from typing import Literal, Union
 import reflex as rx
 from reflex import el
-from reflex.vars import Var
+from reflex.components.component import Component
 from reflex.components.radix.themes.components.icons import Icon
+from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralRadius,
     LiteralVariant,
     RadixThemesComponent,
 )
@@ -100,12 +100,6 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
-        radius: Optional[
-            Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
-            ]
-        ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -257,7 +251,6 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
             size: Button size "1" - "4"
             variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
             high_contrast: Whether to render the button with higher contrast color against background
-            radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.
@@ -807,6 +800,8 @@ class Callout(CalloutRoot):
     def create(  # type: ignore
         cls,
         *children,
+        text: Optional[Union[Var[str], str]] = None,
+        icon: Optional[Union[Var[str], str]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
@@ -880,12 +875,6 @@ class Callout(CalloutRoot):
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
-        radius: Optional[
-            Union[
-                Var[Literal["none", "small", "medium", "large", "full"]],
-                Literal["none", "small", "medium", "large", "full"],
-            ]
-        ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
@@ -1024,7 +1013,52 @@ class Callout(CalloutRoot):
         ] = None,
         **props
     ) -> "Callout":
-        """"""
+        """Create a callout component.
+
+        Args:
+            text: The text of the callout.
+            text: The text of the callout.
+            icon: The icon of the callout.
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
+            size: Button size "1" - "4"
+            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
+            color: Override theme color for button
+            high_contrast: Whether to render the button with higher contrast color against background
+            access_key:  Provides a hint for generating a keyboard shortcut for the current element.
+            auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
+            content_editable: Indicates whether the element's content is editable.
+            context_menu: Defines the ID of a <menu> element which will serve as the element's context menu.
+            dir: Defines the text direction. Allowed values are ltr (Left-To-Right) or rtl (Right-To-Left)
+            draggable: Defines whether the element can be dragged.
+            enter_key_hint: Hints what media types the media element is able to play.
+            hidden: Defines whether the element is hidden.
+            input_mode: Defines the type of the element.
+            item_prop: Defines the name of the element for metadata purposes.
+            lang: Defines the language used in the element.
+            role: Defines the role of the element.
+            slot: Assigns a slot in a shadow DOM shadow tree to an element.
+            spell_check: Defines whether the element may be checked for spelling errors.
+            tab_index: Defines the position of the current element in the tabbing order.
+            title: Defines a tooltip for the element.
+            translate: Specifies whether the content of an element should be translated or not.
+            m: Margin: "0" - "9"
+            mx: Margin horizontal: "0" - "9"
+            my: Margin vertical: "0" - "9"
+            mt: Margin top: "0" - "9"
+            mr: Margin right: "0" - "9"
+            mb: Margin bottom: "0" - "9"
+            ml: Margin left: "0" - "9"
+            style: The style of the component.
+            key: A unique key for the component.
+            id: The id for the component.
+            class_name: The class name for the component.
+            autofocus: Whether the component should take the focus once the page is loaded
+            custom_attrs: custom attribute
+            **props: The properties of the component.
+
+        Returns:
+            The callout component.
+        """
         ...
 
 callout = Callout.create

@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
@@ -104,8 +104,8 @@ class SliderRoot(SliderComponent):
     def create(  # type: ignore
         cls,
         *children,
-        default_value: Optional[Union[Var[list[int]], list[int]]] = None,
-        value: Optional[Union[Var[list[int]], list[int]]] = None,
+        default_value: Optional[Union[Var[List[int]], List[int]]] = None,
+        value: Optional[Union[Var[List[int]], List[int]]] = None,
         name: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
