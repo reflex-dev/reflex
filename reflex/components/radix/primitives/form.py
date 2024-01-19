@@ -1,5 +1,7 @@
 """Radix form component."""
 
+from __future__ import annotations
+
 from hashlib import md5
 from typing import Any, Dict, Iterator, Literal
 
