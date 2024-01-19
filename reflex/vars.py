@@ -723,7 +723,6 @@ class Var:
 
             # apply function to operands
             if fn is not None:
-
                 if invoke_fn:
                     # invoke the function on left operand.
                     operation_name = f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
