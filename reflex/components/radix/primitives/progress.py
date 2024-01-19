@@ -1,14 +1,16 @@
 """Progress."""
 
+from __future__ import annotations
+
 from typing import Optional
 
 from reflex.components.component import Component
-from reflex.components.radix.primitives.base import RadixPrimitiveComponent
+from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.style import Style
 from reflex.vars import Var
 
 
-class ProgressComponent(RadixPrimitiveComponent):
+class ProgressComponent(RadixPrimitiveComponentWithClassName):
     """A Progress component."""
 
     library = "@radix-ui/react-progress@^1.0.3"

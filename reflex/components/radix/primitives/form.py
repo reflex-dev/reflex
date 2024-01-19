@@ -1,5 +1,7 @@
 """Radix form component."""
 
+from __future__ import annotations
+
 from hashlib import md5
 from typing import Any, Dict, Iterator, Literal
 
@@ -14,7 +16,7 @@ from reflex.utils import imports
 from reflex.utils.format import format_event_chain, to_camel_case
 from reflex.vars import BaseVar, Var
 
-from .base import RadixPrimitiveComponent
+from .base import RadixPrimitiveComponentWithClassName
 
 FORM_DATA = Var.create("form_data")
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
@@ -34,7 +36,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
 )
 
 
-class FormComponent(RadixPrimitiveComponent):
+class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
     library = "@radix-ui/react-form@^0.0.3"

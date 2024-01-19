@@ -41,6 +41,7 @@ _REHYPE_PLUGINS = Var.create_safe([_REHYPE_KATEX, _REHYPE_RAW])
 # These tags do NOT get props passed to them
 NO_PROPS_TAGS = ("ul", "ol", "li")
 
+
 # Component Mapping
 @lru_cache
 def get_base_component_map() -> dict[str, Callable]:

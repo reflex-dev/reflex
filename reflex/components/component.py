@@ -623,6 +623,8 @@ class Component(BaseComponent, ABC):
         Returns:
             The dictionary of the component style as value and the style notation as key.
         """
+        if isinstance(self.style, Var):
+            return {"css": self.style}
         return {"css": Var.create(format_as_emotion(self.style))}
 
     def render(self) -> Dict:
@@ -721,7 +723,7 @@ class Component(BaseComponent, ABC):
                 vars.append(prop_var)
 
         # Style keeps track of its own VarData instance, so embed in a temp Var that is yielded.
-        if self.style:
+        if isinstance(self.style, dict) and self.style or isinstance(self.style, Var):
             vars.append(
                 BaseVar(
                     _var_name="style",

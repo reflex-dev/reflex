@@ -15,7 +15,7 @@ from .badge import Badge
 from .button import Button
 from .callout import CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
-from .checkbox import Checkbox
+from .checkbox import Checkbox, HighLevelCheckbox
 from .contextmenu import (
     ContextMenuContent,
     ContextMenuItem,
@@ -49,9 +49,10 @@ from .iconbutton import IconButton
 from .icons import Icon
 from .inset import Inset
 from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
-from .radiogroup import RadioGroupItem, RadioGroupRoot
+from .radiogroup import HighLevelRadioGroup, RadioGroupItem, RadioGroupRoot
 from .scrollarea import ScrollArea
 from .select import (
+    HighLevelSelect,
     SelectContent,
     SelectGroup,
     SelectItem,
@@ -108,6 +109,7 @@ card = Card.create
 
 # Checkbox
 checkbox = Checkbox.create
+checkbox_hl = HighLevelCheckbox.create
 
 # Context Menu
 contextmenu_root = ContextMenuRoot.create
@@ -161,6 +163,7 @@ popover_close = PopoverClose.create
 # Radio Group
 radio_group_root = RadioGroupRoot.create
 radio_group_item = RadioGroupItem.create
+radio_group = HighLevelRadioGroup.create
 
 # Scroll Area
 scroll_area = ScrollArea.create
@@ -173,6 +176,7 @@ select_item = SelectItem.create
 select_separator = SelectSeparator.create
 select_group = SelectGroup.create
 select_label = SelectLabel.create
+select = HighLevelSelect.create
 
 # Separator
 separator = Separator.create

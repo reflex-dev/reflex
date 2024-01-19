@@ -64,7 +64,8 @@ class Match(MemoizationLeaf):
         Raises:
             ValueError: If the condition is not provided.
         """
-        match_cond_var = Var.create(cond)
+        match_cond_var = Var.create(cond, _var_is_string=type(cond) is str)
+
         if match_cond_var is None:
             raise ValueError("The condition must be set")
         return match_cond_var  # type: ignore
@@ -216,13 +217,14 @@ class Match(MemoizationLeaf):
 
         return match_cond_var._replace(
             _var_name=format.format_match(
-                cond=match_cond_var._var_full_name,
+                cond=match_cond_var._var_name_unwrapped,
                 match_cases=match_cases,  # type: ignore
                 default=default,  # type: ignore
             ),
             _var_type=default._var_type,  # type: ignore
             _var_is_local=False,
             _var_full_name_needs_state_prefix=False,
+            _var_is_string=False,
             merge_var_data=VarData.merge(*var_data),
         )
 
@@ -247,11 +249,13 @@ class Match(MemoizationLeaf):
         for case in self.match_cases:
             if isinstance(case[-1], BaseComponent):
                 merged_imports = imports.merge_imports(
-                    merged_imports, case[-1].get_imports()
+                    merged_imports,
+                    case[-1].get_imports(),
                 )
         # Get the import of the default case component.
         if isinstance(self.default, BaseComponent):
             merged_imports = imports.merge_imports(
-                merged_imports, self.default.get_imports()
+                merged_imports,
+                self.default.get_imports(),
             )
         return merged_imports
