@@ -191,11 +191,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "align_items": "center",
                     "justify_content": "space-between",
                     "font_size": "15px",
-                    "box_shadow": cond(
-                        color_scheme == "primary",
-                        "0 1px 0 var(--accent-6)",
-                        "0 1px 0 var(--slate-11)",
-                    ),
                     "line_height": 1,
                 }
             ),
@@ -238,11 +233,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "align_items": "center",
                     "justify_content": "space-between",
                     "font_size": "15px",
-                    "box_shadow": cond(
-                        color_scheme == "primary",
-                        "0 1px 0 var(--accent-6)",
-                        "0 1px 0 var(--slate-11)",
-                    ),
                     "line_height": 1,
                 }
             ),
