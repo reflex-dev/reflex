@@ -1,5 +1,7 @@
 """Radix accordion components."""
 
+from __future__ import annotations
+
 from typing import Any, Dict, Literal
 
 from reflex.components.base.fragment import Fragment
