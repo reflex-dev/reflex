@@ -70,25 +70,29 @@ class Checkbox(CommonMarginProps, RadixThemesComponent):
 class HighLevelCheckbox(Checkbox):
     """A checkbox component with a label."""
 
+    # The text label for the checkbox.
+    text: Var[str]
+
+    # The gap between the checkbox and the label.
+    gap: Var[LiteralSize]
+
+    # The size of the checkbox.
+    size: Var[LiteralCheckboxSize]
+
     @classmethod
-    def create(
-        cls,
-        text: str = "",
-        gap: Var[LiteralSize] = Var.create_safe("2"),
-        size: Var[LiteralCheckboxSize] = Var.create_safe("2"),
-        **props
-    ) -> Component:
+    def create(cls, text: Var[str] = Var.create_safe(""), **props) -> Component:
         """Create a checkbox with a label.
 
         Args:
             text: The text of the label.
-            gap: The gap between the checkbox and the label.
-            size: The size of the checkbox.
             **props: Additional properties to apply to the checkbox item.
 
         Returns:
             The checkbox component with a label.
         """
+        gap = props.pop("gap", "2")
+        size = props.pop("size", "2")
+
         return Text.create(
             Flex.create(
                 Checkbox.create(size=size, **props),

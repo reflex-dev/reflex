@@ -441,7 +441,6 @@ class AccordionRoot(AccordionComponent):
         return {"css": self._dynamic_themes._merge(format_as_emotion(self.style))}  # type: ignore
 
     def _apply_theme(self, theme: Component):
-
         self._dynamic_themes = Var.create(  # type: ignore
             convert_dict_to_style_and_format_emotion(
                 {
