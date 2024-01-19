@@ -8,10 +8,14 @@ from reflex.utils import types
 from reflex.vars import Var
 
 
-class Table(ChakraComponent):
-    """A table component."""
+class BaseTable(ChakraComponent):
+    """The base class for all Chakra table components."""
 
     library = "@chakra-ui/table@2.1.0"
+
+
+class Table(BaseTable):
+    """A table component."""
 
     tag = "Table"
 
@@ -61,7 +65,7 @@ class Table(ChakraComponent):
         return super().create(*children, **props)
 
 
-class Thead(ChakraComponent):
+class Thead(BaseTable):
     """A table header component."""
 
     tag = "Thead"
@@ -113,7 +117,7 @@ class Thead(ChakraComponent):
             raise TypeError("table headers should be a list or tuple")
 
 
-class Tbody(ChakraComponent):
+class Tbody(BaseTable):
     """A table body component."""
 
     tag = "Tbody"
@@ -187,7 +191,7 @@ class Tbody(ChakraComponent):
             )
 
 
-class Tfoot(ChakraComponent):
+class Tfoot(BaseTable):
     """A table footer component."""
 
     tag = "Tfoot"
@@ -236,7 +240,7 @@ class Tfoot(ChakraComponent):
             raise TypeError("table headers should be a list or tuple")
 
 
-class Tr(ChakraComponent):
+class Tr(BaseTable):
     """A table row component."""
 
     tag = "Tr"
@@ -267,7 +271,7 @@ class Tr(ChakraComponent):
         return super().create(*children, **props)
 
 
-class Th(ChakraComponent):
+class Th(BaseTable):
     """A table header cell component."""
 
     tag = "Th"
@@ -279,7 +283,7 @@ class Th(ChakraComponent):
     is_numeric: Var[bool]
 
 
-class Td(ChakraComponent):
+class Td(BaseTable):
     """A table data cell component."""
 
     tag = "Td"
@@ -291,7 +295,7 @@ class Td(ChakraComponent):
     is_numeric: Var[bool]
 
 
-class TableCaption(ChakraComponent):
+class TableCaption(BaseTable):
     """A table caption component."""
 
     tag = "TableCaption"
@@ -300,7 +304,7 @@ class TableCaption(ChakraComponent):
     placement: Var[str]
 
 
-class TableContainer(ChakraComponent):
+class TableContainer(BaseTable):
     """The table container component renders a div that wraps the table component."""
 
     tag = "TableContainer"
