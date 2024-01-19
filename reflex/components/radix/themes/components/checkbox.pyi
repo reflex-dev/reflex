@@ -252,10 +252,17 @@ class HighLevelCheckbox(Checkbox):
     def create(  # type: ignore
         cls,
         *children,
-        as_child: Optional[Union[Var[bool], bool]] = None,
+        text: Optional[Union[Var[str], str]] = None,
+        gap: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
         size: Optional[
             Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
         ] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
@@ -435,8 +442,10 @@ class HighLevelCheckbox(Checkbox):
             text: The text of the label.
             gap: The gap between the checkbox and the label.
             size: The size of the checkbox.
-            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
+            text: The text label for the checkbox.
+            gap: The gap between the checkbox and the label.
             size: Button size "1" - "3"
+            as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
             color: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
