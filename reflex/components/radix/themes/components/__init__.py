@@ -52,6 +52,7 @@ from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
 from .radiogroup import RadioGroupItem, RadioGroupRoot
 from .scrollarea import ScrollArea
 from .select import (
+    HighLevelSelect,
     SelectContent,
     SelectGroup,
     SelectItem,
@@ -174,6 +175,7 @@ select_item = SelectItem.create
 select_separator = SelectSeparator.create
 select_group = SelectGroup.create
 select_label = SelectLabel.create
+select = HighLevelSelect.create
 
 # Separator
 separator = Separator.create
