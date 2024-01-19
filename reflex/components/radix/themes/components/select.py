@@ -1,6 +1,8 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal, Union
 
+import reflex as rx
+from reflex.components.component import Component
 from reflex.vars import Var
 
 from ..base import (
@@ -144,3 +146,81 @@ class SelectSeparator(CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Separator"
+
+
+class HighLevelSelect(SelectRoot):
+    """High level wrapper for the Select component."""
+
+    # The items of the select.
+    items: Var[List[str]]
+
+    # The placeholder of the select.
+    placeholder: Var[str]
+
+    # The label of the select.
+    label: Var[str]
+
+    # The color of the select.
+    color: Var[LiteralAccentColor]
+
+    # Whether to render the select with higher contrast color against background.
+    high_contrast: Var[bool]
+
+    # The variant of the select.
+    variant: Var[Literal["classic", "surface", "soft", "ghost"]]
+
+    # The radius of the select.
+    radius: Var[LiteralRadius]
+
+    # The width of the select.
+    width: Var[str]
+
+    @classmethod
+    def create(cls, items: Union[List[str], Var[List[str]]], **props) -> Component:
+        """Create a select component.
+
+        Args:
+            items: The items of the select.
+            **props: Additional properties to apply to the select component.
+
+        Returns:
+            The select component.
+        """
+        content_props = {
+            prop: props.pop(prop) for prop in ["high_contrast"] if prop in props
+        }
+
+        trigger_props = {
+            prop: props.pop(prop)
+            for prop in ["placeholder", "variant", "radius", "width"]
+            if prop in props
+        }
+
+        color = props.pop("color", None)
+
+        if color is not None:
+            content_props["color_scheme"] = color
+            trigger_props["color_scheme"] = color
+
+        label = props.pop("label", None)
+
+        if isinstance(items, Var):
+            child = [
+                rx.foreach(items, lambda item: SelectItem.create(item, value=item))
+            ]
+        else:
+            child = [SelectItem.create(item, value=item) for item in items]
+
+        return SelectRoot.create(
+            SelectTrigger.create(
+                **trigger_props,
+            ),
+            SelectContent.create(
+                SelectGroup.create(
+                    SelectLabel.create(label) if label is not None else "",
+                    *child,
+                ),
+                **content_props,
+            ),
+            **props,
+        )
