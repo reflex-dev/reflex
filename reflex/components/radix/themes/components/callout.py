@@ -53,8 +53,8 @@ class Callout(CalloutRoot):
     # The text of the callout.
     text: Var[str]
 
-    # The status of the callout.
-    status: Var[Literal["solid", "subtle", "outline"]] = "info"  # type: ignore
+    # The icon of the callout.
+    icon: Var[str]
 
     @classmethod
     def create(cls, text: Union[str, rx.Var[str]], **props) -> rx.Component:
@@ -67,27 +67,11 @@ class Callout(CalloutRoot):
         Returns:
             The callout component.
         """
-        status = props.get("status", "info")
         return super().create(
-            CalloutIcon.create(
-                rx.match(
-                    status,
-                    ("info", Icon.create(tag="info_circled")),
-                    ("success", Icon.create(tag="check_circled")),
-                    ("warning", Icon.create(tag="exclamation_triangle")),
-                    ("error", Icon.create(tag="minus_circled")),
-                    Icon.create(tag="info_circled"),
-                )
-            ),
+            CalloutIcon.create(Icon.create(tag=props["icon"]))
+            if "icon" in props
+            else rx.fragment(),
             CalloutText.create(text),
-            color_scheme=rx.match(
-                status,
-                ("info", "blue"),
-                ("success", "green"),
-                ("warning", "yellow"),
-                ("error", "red"),
-                "blue",
-            ),
             **props,
         )
 
