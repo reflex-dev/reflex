@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
@@ -107,14 +107,13 @@ class UploadFilesProvider(Component):
         """
         ...
 
-upload_component_used: bool
-
 class Upload(Component):
     @overload
     @classmethod
     def create(  # type: ignore
         cls,
         *children,
+        _used: Optional[ClassVar[bool]] = None,
         accept: Optional[
             Union[Var[Optional[Dict[str, List]]], Optional[Dict[str, List]]]
         ] = None,
@@ -186,6 +185,7 @@ class Upload(Component):
 
         Args:
             *children: The children of the component.
+            _used: Indicate at least one Upload component is used, to enable the /_upload endpoint.
             accept: The list of accepted file types. This should be a dictionary of MIME types as keys and array of file formats as  values.  supported MIME types: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
             disabled: Whether the dropzone is disabled.
             max_files: The maximum number of files that can be uploaded.
