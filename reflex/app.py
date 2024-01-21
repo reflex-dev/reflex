@@ -46,7 +46,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
-from reflex.components.core.upload import Upload
+from reflex.components.core.upload import upload_component_used
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -245,7 +245,7 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To upload files.
-        if Upload._used:
+        if upload_component_used:
             self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
