@@ -2198,3 +2198,17 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
         True if the code attempts to access a member of StateContexts.
     """
     return bool("useContext(StateContexts" in javascript_code)
+
+
+def reload_state(module: str, state: Type[BaseState] = State) -> None:
+    """Reset rx.State subclasses to avoid conflict when reloading.
+
+    Args:
+        module: The module to reload.
+        state: Recursive argument for the state class to reload.
+    """
+    for subclass in tuple(state.class_subclasses):
+        if subclass.__module__ == module:
+            state.class_subclasses.remove(subclass)
+        else:
+            reload_state(module, subclass)

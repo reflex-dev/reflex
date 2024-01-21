@@ -160,12 +160,11 @@ def get_app(reload: bool = False) -> ModuleType:
     sys.path.insert(0, os.getcwd())
     app = __import__(module, fromlist=(constants.CompileVars.APP,))
     if reload:
-        from reflex.state import State
+        from reflex.state import reload_state
 
         # Reset rx.State subclasses to avoid conflict when reloading.
-        for subclass in tuple(State.class_subclasses):
-            if subclass.__module__ == module:
-                State.class_subclasses.remove(subclass)
+        reload_state(module)
+
         # Reload the app module.
         importlib.reload(app)
 
