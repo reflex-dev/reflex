@@ -48,7 +48,6 @@ EXCLUDED_PROPS = [
     "_invalid_children",
     "_memoization_mode",
     "_valid_children",
-    "_used",
 ]
 
 DEFAULT_TYPING_IMPORTS = {

@@ -28,6 +28,9 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
 
+class UploadComponentUsed:
+    is_used: ClassVar[bool]
+
 class UploadFilesProvider(Component):
     @overload
     @classmethod
@@ -87,7 +90,7 @@ class UploadFilesProvider(Component):
         ] = None,
         **props
     ) -> "UploadFilesProvider":
-        """Create the component.
+        """Create an UploadFilesProvider component.
 
         Args:
             *children: The children of the component.
@@ -97,18 +100,12 @@ class UploadFilesProvider(Component):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The UploadFilesProvider component.
         """
         ...
-
-class UploadComponentUsed:
-    is_used: ClassVar[bool]
 
 class Upload(Component):
     @overload
