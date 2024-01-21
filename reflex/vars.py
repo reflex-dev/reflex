@@ -99,6 +99,16 @@ PYTHON_JS_TYPE_MAP = {
 }
 
 
+def mark_used(*vars) -> None:
+    """Mark vars as used.
+
+    Args:
+        *vars: The vars to mark as used.
+    """
+    for var in vars:
+        var._var_is_used = True
+
+
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
 

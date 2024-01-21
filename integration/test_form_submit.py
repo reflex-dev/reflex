@@ -9,6 +9,7 @@ from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
 from reflex.utils import format
+from reflex.vars import mark_used
 
 
 def FormSubmit(form_component):
@@ -29,7 +30,7 @@ def FormSubmit(form_component):
         def form_submit(self, form_data: Dict):
             self.form_data = form_data
 
-    rx.fragment(
+    mark_used(
         FormState.form_data,
         FormState.var_options,
     )
