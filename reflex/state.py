@@ -2200,7 +2200,7 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
     return bool("useContext(StateContexts" in javascript_code)
 
 
-def reload_state(module: str, state: Type[BaseState] = State) -> None:
+def reload_state_module(module: str, state: Type[BaseState] = State) -> None:
     """Reset rx.State subclasses to avoid conflict when reloading.
 
     Args:
@@ -2211,4 +2211,4 @@ def reload_state(module: str, state: Type[BaseState] = State) -> None:
         if subclass.__module__ == module:
             state.class_subclasses.remove(subclass)
         else:
-            reload_state(module, subclass)
+            reload_state_module(module, subclass)
