@@ -1734,8 +1734,6 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
                 )  # type: ignore[call-arg]
                 for prop_name in self.computed_vars
             }
-        else:
-            computed_vars = {}
         variables = {**base_vars, **computed_vars}
 
         d = {
