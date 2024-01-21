@@ -92,18 +92,36 @@ def cancel_upload(upload_id: str) -> EventSpec:
     return call_script(f"upload_controllers[{upload_id!r}]?.abort()")
 
 
+class UploadComponentUsed:
+    """A class to indicate whether an Upload component is used."""
+
+    is_used: ClassVar[bool] = False
+
+
 class UploadFilesProvider(Component):
     """AppWrap component that provides a dict of selected files by ID via useContext."""
 
     library = f"/{Dirs.CONTEXTS_PATH}"
     tag = "UploadFilesProvider"
 
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create an UploadFilesProvider component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The UploadFilesProvider component.
+        """
+        UploadComponentUsed.is_used = True
+
+        return super().create(*children, **props)
+
 
 class Upload(Component):
     """A file upload component."""
-
-    # Indicate at least one Upload component is used, to enable the /_upload endpoint.
-    _used: ClassVar[bool] = False
 
     library = "react-dropzone@14.2.3"
 
@@ -151,7 +169,7 @@ class Upload(Component):
         Returns:
             The upload component.
         """
-        cls._used = True
+        UploadComponentUsed.is_used = True
 
         # get only upload component props
         supported_props = cls.get_props()
