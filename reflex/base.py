@@ -119,11 +119,12 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
         )
         cls.__fields__.update({var._var_name: new_field})
 
-    def get_value(self, key: str) -> Any:
+    def get_value(self, key: str, include: set[str] | None = None) -> Any:
         """Get the value of a field.
 
         Args:
             key: The key of the field.
+            include: Optional set of fields to include.
 
         Returns:
             The value of the field.
@@ -136,7 +137,7 @@ class Base(pydantic.BaseModel):  # pyright: ignore [reportUnboundVariable]
             key,
             to_dict=True,
             by_alias=False,
-            include=None,
+            include=include,
             exclude=None,
             exclude_unset=False,
             exclude_defaults=False,

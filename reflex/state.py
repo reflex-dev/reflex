@@ -1671,20 +1671,21 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         self.dirty_vars = set()
         self.dirty_substates = set()
 
-    def get_value(self, key: str) -> Any:
+    def get_value(self, key: str, include: set[str] | None = None) -> Any:
         """Get the value of a field (without proxying).
 
         The returned value will NOT track dirty state updates.
 
         Args:
             key: The key of the field.
+            include: Optional set of fields to include.
 
         Returns:
             The value of the field.
         """
         if isinstance(key, MutableProxy):
-            return super().get_value(key.__wrapped__)
-        return super().get_value(key)
+            return super().get_value(key.__wrapped__, include=include)
+        return super().get_value(key, include=include)
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
@@ -1706,29 +1707,37 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             self._mark_dirty()
 
         base_vars = {
-            prop_name: self.get_value(getattr(self, prop_name))
+            prop_name: self.get_value(
+                getattr(self, prop_name),
+                include=self.base_vars[prop_name]._var_used_attributes,
+            )  # type: ignore[call-arg]
             for prop_name in self.base_vars
         }
         if initial:
             computed_vars = {
                 # Include initial computed vars.
-                prop_name: (
-                    cv._initial_value
-                    if isinstance(cv, ComputedVar)
-                    and not isinstance(cv._initial_value, types.Unset)
-                    else self.get_value(getattr(self, prop_name))
-                )
+                prop_name: cv._initial_value
+                if isinstance(cv, ComputedVar)
+                and not isinstance(cv._initial_value, types.Unset)
+                else self.get_value(
+                    getattr(self, prop_name),
+                    include=self.computed_vars[prop_name]._var_used_attributes,
+                )  # type: ignore[call-arg]
                 for prop_name, cv in self.computed_vars.items()
             }
         elif include_computed:
             computed_vars = {
                 # Include the computed vars.
-                prop_name: self.get_value(getattr(self, prop_name))
+                prop_name: self.get_value(
+                    getattr(self, prop_name),
+                    include=self.computed_vars[prop_name]._var_used_attributes,
+                )  # type: ignore[call-arg]
                 for prop_name in self.computed_vars
             }
         else:
             computed_vars = {}
         variables = {**base_vars, **computed_vars}
+
         d = {
             self.get_full_name(): {k: variables[k] for k in sorted(variables)},
         }

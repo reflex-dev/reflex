@@ -80,6 +80,9 @@ class FileUploadState(State):
         pass
 
 
+rx.fragment(FileUploadState.img_list)
+
+
 class FileStateBase1(State):
     """The base state for a child FileUploadState."""
 
@@ -128,6 +131,9 @@ class ChildFileUploadState(FileStateBase1):
         pass
 
 
+rx.fragment(ChildFileUploadState.img_list)
+
+
 class FileStateBase2(FileStateBase1):
     """The parent state for a grandchild FileUploadState."""
 
@@ -174,3 +180,6 @@ class GrandChildFileUploadState(FileStateBase2):
             files: The uploaded files.
         """
         pass
+
+
+rx.fragment(GrandChildFileUploadState.img_list)
