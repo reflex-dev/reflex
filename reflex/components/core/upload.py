@@ -1,7 +1,7 @@
 """A file upload component."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
@@ -102,6 +102,9 @@ class UploadFilesProvider(Component):
 class Upload(Component):
     """A file upload component."""
 
+    # Indicate at least one Upload component is used, to enable the /_upload endpoint.
+    _used: ClassVar[bool] = False
+
     library = "react-dropzone@14.2.3"
 
     tag = "ReactDropzone"
@@ -148,6 +151,8 @@ class Upload(Component):
         Returns:
             The upload component.
         """
+        cls._used = True
+
         # get only upload component props
         supported_props = cls.get_props()
         upload_props = {

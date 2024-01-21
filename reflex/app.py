@@ -46,6 +46,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.core.upload import Upload
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -183,7 +184,6 @@ class App(Base):
         # Set up the API.
         self.api = FastAPI()
         self.add_cors()
-        self.add_default_endpoints()
 
         if self.state:
             # Set up the state manager.
@@ -245,7 +245,8 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To upload files.
-        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+        if Upload._used:
+            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -652,6 +653,8 @@ class App(Base):
         # Render a default 404 page if the user didn't supply one
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
+
+        self.add_default_endpoints()
 
         if not self._should_compile():
             return
