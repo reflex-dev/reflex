@@ -165,7 +165,6 @@ class Upload(Component):
         Returns:
             The upload component.
         """
-        UploadFilesProvider.is_used = True
         # get only upload component props
         supported_props = cls.get_props()
         upload_props = {
@@ -210,5 +209,5 @@ class Upload(Component):
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            (5, "UploadFilesProvider"): UploadFilesProvider(),
+            (5, "UploadFilesProvider"): UploadFilesProvider.create(),
         }

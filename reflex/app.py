@@ -654,8 +654,6 @@ class App(Base):
         if constants.Page404.SLUG not in self.pages:
             self.add_custom_404_page()
 
-        self.add_default_endpoints()
-
         if not self._should_compile():
             return
 
@@ -824,6 +822,8 @@ class App(Base):
 
         for output_path, code in compile_results:
             compiler_utils.write_page(output_path, code)
+
+        self.add_default_endpoints()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:
