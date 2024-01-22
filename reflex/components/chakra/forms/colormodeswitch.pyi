@@ -32,6 +32,7 @@ class ColorModeIcon(Cond):
         cond: Optional[Union[Var[Any], Any]] = None,
         comp1: Optional[BaseComponent] = None,
         comp2: Optional[BaseComponent] = None,
+        theme: Optional[Component] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
