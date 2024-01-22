@@ -28,10 +28,9 @@ def selected_files(id_: str = DEFAULT_UPLOAD_ID) -> BaseVar: ...
 def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
 
-class UploadComponentUsed:
-    is_used: ClassVar[bool]
-
 class UploadFilesProvider(Component):
+    is_used: ClassVar[bool] = False
+
     @overload
     @classmethod
     def create(  # type: ignore
