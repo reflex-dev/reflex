@@ -2,7 +2,8 @@ from reflex.utils import telemetry
 
 
 def versiontuple(v):
-    return tuple(map(int, (v.split("."))))
+    whatTosplit = (v.split("."))[:-1]
+    return tuple(map(int, whatTosplit))
 
 
 def test_telemetry():
