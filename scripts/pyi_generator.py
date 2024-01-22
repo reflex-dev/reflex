@@ -249,7 +249,7 @@ def _extract_class_props_as_ast_nodes(
                 name in spec.kwonlyargs
                 or name in EXCLUDED_PROPS
                 or name in all_props
-                or "ClassVar" in value
+                or (isinstance(value, str) and "ClassVar" in value)
             ):
                 continue
             all_props.append(name)
