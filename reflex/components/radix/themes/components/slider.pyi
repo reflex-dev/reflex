@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal, Union
 from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
@@ -87,7 +87,9 @@ class Slider(CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         variant: Optional[
             Union[
                 Var[Literal["classic", "surface", "soft"]],
@@ -101,11 +103,16 @@ class Slider(CommonMarginProps, RadixThemesComponent):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
-        default_value: Optional[Union[Var[float], float]] = None,
-        value: Optional[Union[Var[float], float]] = None,
-        min: Optional[Union[Var[float], float]] = None,
-        max: Optional[Union[Var[float], float]] = None,
-        step: Optional[Union[Var[float], float]] = None,
+        default_value: Optional[
+            Union[Var[List[Union[float, int]]], List[Union[float, int]]]
+        ] = None,
+        value: Optional[
+            Union[Var[List[Union[float, int]]], List[Union[float, int]]]
+        ] = None,
+        name: Optional[Union[Var[str], str]] = None,
+        min: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        max: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        step: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         orientation: Optional[
             Union[
@@ -224,12 +231,13 @@ class Slider(CommonMarginProps, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            size: Button size "1" - "4"
+            size: Button size "1" - "3"
             variant: Variant of button
             high_contrast: Whether to render the button with higher contrast color against background
             radius: Override theme radius for button: "none" | "small" | "medium" | "large" | "full"
             default_value: The value of the slider when initially rendered. Use when you do not need to control the state of the slider.
             value: The controlled value of the slider. Must be used in conjunction with onValueChange.
+            name: The name of the slider. Submitted with its owning form as part of a name/value pair.
             min: The minimum value of the slider.
             max: The maximum value of the slider.
             step: The step value of the slider.

@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, List, Union
 
 from reflex import constants
 from reflex.utils import exceptions, serializers, types
@@ -255,21 +255,60 @@ def format_cond(
 
     # Format prop conds.
     if is_prop:
-        prop1 = Var.create_safe(
-            true_value,
-            _var_is_string=type(true_value) is str,
+        if not isinstance(true_value, Var):
+            true_value = Var.create_safe(
+                true_value,
+                _var_is_string=type(true_value) is str,
+            )
+        prop1 = true_value._replace(
+            _var_is_local=True,
         )
-        prop1._var_is_local = True
-        prop2 = Var.create_safe(
-            false_value,
-            _var_is_string=type(false_value) is str,
-        )
-        prop2._var_is_local = True
+        if not isinstance(false_value, Var):
+            false_value = Var.create_safe(
+                false_value,
+                _var_is_string=type(false_value) is str,
+            )
+        prop2 = false_value._replace(_var_is_local=True)
         prop1, prop2 = str(prop1), str(prop2)  # avoid f-string semantics for Var
         return f"{cond} ? {prop1} : {prop2}".replace("{", "").replace("}", "")
 
     # Format component conds.
     return wrap(f"{cond} ? {true_value} : {false_value}", "{")
+
+
+def format_match(cond: str | Var, match_cases: List[BaseVar], default: Var) -> str:
+    """Format a match expression whose return type is a Var.
+
+    Args:
+        cond: The condition.
+        match_cases: The list of cases to match.
+        default: The default case.
+
+    Returns:
+        The formatted match expression
+
+    """
+    switch_code = f"(() => {{ switch (JSON.stringify({cond})) {{"
+
+    for case in match_cases:
+        conditions = case[:-1]
+        return_value = case[-1]
+
+        case_conditions = " ".join(
+            [
+                f"case JSON.stringify({condition._var_name_unwrapped}):"
+                for condition in conditions
+            ]
+        )
+        case_code = (
+            f"{case_conditions}  return ({return_value._var_name_unwrapped});  break;"
+        )
+        switch_code += case_code
+
+    switch_code += f"default:  return ({default._var_name_unwrapped});  break;"
+    switch_code += "};})()"
+
+    return switch_code
 
 
 def format_prop(

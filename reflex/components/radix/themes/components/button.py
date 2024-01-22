@@ -12,7 +12,7 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralButtonSize = Literal[1, 2, 3, 4]
+LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
 class Button(el.Button, CommonMarginProps, RadixThemesComponent):

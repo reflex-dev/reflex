@@ -19,7 +19,7 @@ from typing import (
 )
 
 from pydantic.fields import ModelField
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import DeclarativeBase, Mapped
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -128,7 +128,7 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
-    elif isinstance(cls, type) and issubclass(cls, Model):
+    elif isinstance(cls, type) and issubclass(cls, (Model, DeclarativeBase)):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:
@@ -251,15 +251,18 @@ def is_valid_var_type(type_: Type) -> bool:
     return _issubclass(type_, StateVar) or serializers.has_serializer(type_)
 
 
-def is_backend_variable(name: str) -> bool:
+def is_backend_variable(name: str, cls: Type | None = None) -> bool:
     """Check if this variable name correspond to a backend variable.
 
     Args:
         name: The name of the variable to check
+        cls: The class of the variable to check
 
     Returns:
         bool: The result of the check
     """
+    if cls is not None and name.startswith(f"_{cls.__name__}__"):
+        return False
     return name.startswith("_") and not name.startswith("__")
 
 

@@ -81,7 +81,9 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         variant: Optional[
             Union[Var[Literal["surface", "ghost"]], Literal["surface", "ghost"]]
         ] = None,

@@ -1,13 +1,20 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, Literal
+from typing import Any, Dict, List, Literal
 
+import reflex as rx
+from reflex.components.component import Component
+from reflex.components.radix.themes.layout.flex import Flex
+from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
+    LiteralSize,
     RadixThemesComponent,
 )
+
+LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 
 class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
@@ -16,7 +23,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     tag = "RadioGroup.Root"
 
     # The size of the radio group: "1" | "2" | "3"
-    size: Var[Literal[1, 2, 3]]
+    size: Var[Literal["1", "2", "3"]]
 
     # The variant of the radio group
     variant: Var[Literal["classic", "surface", "soft"]]
@@ -35,6 +42,9 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
 
     # Whether the radio group is disabled
     disabled: Var[bool]
+
+    # The name of the group. Submitted with its owning form as part of a name/value pair.
+    name: Var[str]
 
     # Whether the radio group is required
     required: Var[bool]
@@ -70,3 +80,60 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
 
     # When true, indicates that the user must check the radio item before the owning form can be submitted.
     required: Var[bool]
+
+
+class HighLevelRadioGroup(RadioGroupRoot):
+    """High level wrapper for the RadioGroup component."""
+
+    # The items of the radio group.
+    items: Var[List[str]]
+
+    # The direction of the radio group.
+    direction: Var[LiteralFlexDirection] = Var.create_safe("column")
+
+    # The gap between the items of the radio group.
+    gap: Var[LiteralSize] = Var.create_safe("2")
+
+    # The size of the radio group.
+    size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
+
+    @classmethod
+    def create(cls, items: Var[List[str]], **props) -> Component:
+        """Create a radio group component.
+
+        Args:
+            items: The items of the radio group.
+            **props: Additional properties to apply to the accordion item.
+
+        Returns:
+            The created radio group component.
+        """
+        direction = props.pop("direction", "column")
+        gap = props.pop("gap", "2")
+        size = props.pop("size", "2")
+
+        def radio_group_item(value: str) -> Component:
+            return Text.create(
+                Flex.create(
+                    RadioGroupItem.create(value=value),
+                    value,
+                    gap="2",
+                ),
+                size=size,
+                as_="label",
+            )
+
+        if isinstance(items, Var):
+            child = [rx.foreach(items, radio_group_item)]
+        else:
+            child = [radio_group_item(value) for value in items]  #  type: ignore
+
+        return RadioGroupRoot.create(
+            Flex.create(
+                *child,
+                direction=direction,
+                gap=gap,
+            ),
+            size=size,
+            **props,
+        )

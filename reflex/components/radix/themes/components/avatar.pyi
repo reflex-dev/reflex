@@ -17,8 +17,6 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
-
 class Avatar(CommonMarginProps, RadixThemesComponent):
     @overload
     @classmethod
@@ -88,7 +86,6 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        ration: Optional[Union[Var[float], float]] = None,
         variant: Optional[
             Union[Var[Literal["solid", "soft"]], Literal["solid", "soft"]]
         ] = None,
@@ -105,6 +102,8 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
                 Literal["none", "small", "medium", "large", "full"],
             ]
         ] = None,
+        src: Optional[Union[Var[str], str]] = None,
+        fallback: Optional[Union[Var[str], str]] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -209,11 +208,12 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            ration: The ratio of the width to the height of the element
             variant: The variant of the avatar
-            size: The size of the avatar
+            size: The size of the avatar: "1" - "9"
             high_contrast: Whether to render the avatar with higher contrast color against background
             radius: Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
+            src: The src of the avatar image
+            fallback: The rendered fallback text
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

@@ -39,7 +39,6 @@ def index() -> rx.Component:
     )
 
 
-# Add state and page to the app.
+# Create app instance and add index page.
 app = rx.App()
 app.add_page(index)
-app.compile()

@@ -8,3 +8,4 @@ examples/
 .coverage.*
 .venv
 venv
+requirements.txt

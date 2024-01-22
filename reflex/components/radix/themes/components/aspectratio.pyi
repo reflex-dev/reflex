@@ -7,11 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Literal, Union
+from typing import Union
 from reflex.vars import Var
 from ..base import CommonMarginProps, RadixThemesComponent
-
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 class AspectRatio(CommonMarginProps, RadixThemesComponent):
     @overload
@@ -82,7 +80,7 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        ration: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
+        ratio: Optional[Union[Var[Union[float, int]], Union[float, int]]] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -187,7 +185,7 @@ class AspectRatio(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            ration: The ratio of the width to the height of the element
+            ratio: The ratio of the width to the height of the element
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"

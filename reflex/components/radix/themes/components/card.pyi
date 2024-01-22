@@ -83,7 +83,9 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
         ] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
-            Union[Var[Literal[1, 2, 3, 4, 5]], Literal[1, 2, 3, 4, 5]]
+            Union[
+                Var[Literal["1", "2", "3", "4", "5"]], Literal["1", "2", "3", "4", "5"]
+            ]
         ] = None,
         variant: Optional[
             Union[
@@ -239,8 +241,8 @@ class Card(el.Div, CommonMarginProps, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            size: Button size "1" - "5"
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
+            size: Card size: "1" - "5"
+            variant: Variant of Card: "solid" | "soft" | "outline" | "ghost"
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
             content_editable: Indicates whether the element's content is editable.

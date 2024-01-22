@@ -11,21 +11,16 @@ from ..base import (
     RadixThemesComponent,
 )
 
-LiteralSwitchSize = Literal["1", "2", "3", "4"]
-
 
 class Avatar(CommonMarginProps, RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
     tag = "Avatar"
 
-    # The ratio of the width to the height of the element
-    ration: Var[float]
-
     # The variant of the avatar
     variant: Var[Literal["solid", "soft"]]
 
-    # The size of the avatar
+    # The size of the avatar: "1" - "9"
     size: Var[LiteralSize]
 
     # Color theme of the avatar
@@ -36,3 +31,9 @@ class Avatar(CommonMarginProps, RadixThemesComponent):
 
     # Override theme radius for avatar: "none" | "small" | "medium" | "large" | "full"
     radius: Var[LiteralRadius]
+
+    # The src of the avatar image
+    src: Var[str]
+
+    # The rendered fallback text
+    fallback: Var[str]

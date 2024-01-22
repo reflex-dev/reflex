@@ -315,7 +315,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         cls.new_backend_vars = {
             name: value
             for name, value in cls.__dict__.items()
-            if types.is_backend_variable(name)
+            if types.is_backend_variable(name, cls)
             and name not in cls.inherited_backend_vars
             and not isinstance(value, FunctionType)
         }
@@ -332,7 +332,9 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
         cls.computed_vars = {
             v._var_name: v._var_set_state(cls)
-            for v in cls.__dict__.values()
+            for mixin in cls.__mro__
+            if mixin is cls or not issubclass(mixin, (BaseState, ABC))
+            for v in mixin.__dict__.values()
             if isinstance(v, ComputedVar)
         }
         cls.vars = {
@@ -876,7 +878,10 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
             setattr(self.parent_state, name, value)
             return
 
-        if types.is_backend_variable(name) and name not in RESERVED_BACKEND_VAR_NAMES:
+        if (
+            types.is_backend_variable(name, self.__class__)
+            and name not in RESERVED_BACKEND_VAR_NAMES
+        ):
             self._backend_vars.__setitem__(name, value)
             self.dirty_vars.add(name)
             self._mark_dirty()
@@ -1175,7 +1180,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         subdelta = {
             prop: getattr(self, prop)
             for prop in delta_vars
-            if not types.is_backend_variable(prop)
+            if not types.is_backend_variable(prop, self.__class__)
         }
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
@@ -2181,3 +2186,15 @@ class ImmutableMutableProxy(MutableProxy):
         return super()._mark_dirty(
             wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
         )
+
+
+def code_uses_state_contexts(javascript_code: str) -> bool:
+    """Check if the rendered Javascript uses state contexts.
+
+    Args:
+        javascript_code: The Javascript code to check.
+
+    Returns:
+        True if the code attempts to access a member of StateContexts.
+    """
+    return bool("useContext(StateContexts" in javascript_code)

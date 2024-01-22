@@ -193,7 +193,6 @@ We add a page from the root of the app to the index component. We also add a tit
 
 ```python
 app.add_page(index, title="DALL-E")
-app.compile()
 ```
 
 You can create a multi-page app by adding more pages.
@@ -232,6 +231,12 @@ We welcome contributions of any size! Below are some good ways to get started in
 -   **GitHub Issues**: [Issues](https://github.com/reflex-dev/reflex/issues) are an excellent way to report bugs. Additionally, you can try and solve an existing issue and submit a PR.
 
 We are actively looking for contributors, no matter your skill level or experience. To contribute check out [CONTIBUTING.md](https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md)
+
+
+## All Thanks To Our Contributors:
+<a href="https://github.com/reflex-dev/reflex/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=reflex-dev/reflex" />
+</a>
 
 ## License
 

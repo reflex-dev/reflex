@@ -1,9 +1,11 @@
 """Radix themes components."""
 
 from .alertdialog import (
-    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
+    AlertDialogRoot,
     AlertDialogTitle,
     AlertDialogTrigger,
 )
@@ -13,7 +15,7 @@ from .badge import Badge
 from .button import Button
 from .callout import CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
-from .checkbox import Checkbox
+from .checkbox import Checkbox, HighLevelCheckbox
 from .contextmenu import (
     ContextMenuContent,
     ContextMenuItem,
@@ -25,6 +27,7 @@ from .contextmenu import (
     ContextMenuTrigger,
 )
 from .dialog import (
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogRoot,
@@ -36,6 +39,7 @@ from .dropdownmenu import (
     DropdownMenuItem,
     DropdownMenuRoot,
     DropdownMenuSeparator,
+    DropdownMenuSub,
     DropdownMenuSubContent,
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
@@ -45,9 +49,10 @@ from .iconbutton import IconButton
 from .icons import Icon
 from .inset import Inset
 from .popover import PopoverClose, PopoverContent, PopoverRoot, PopoverTrigger
-from .radiogroup import RadioGroupItem, RadioGroupRoot
+from .radiogroup import HighLevelRadioGroup, RadioGroupItem, RadioGroupRoot
 from .scrollarea import ScrollArea
 from .select import (
+    HighLevelSelect,
     SelectContent,
     SelectGroup,
     SelectItem,
@@ -57,6 +62,7 @@ from .select import (
     SelectTrigger,
 )
 from .separator import Separator
+from .slider import Slider
 from .switch import Switch
 from .table import (
     TableBody,
@@ -67,16 +73,19 @@ from .table import (
     TableRow,
     TableRowHeaderCell,
 )
-from .tabs import TabsList, TabsRoot, TabsTrigger
+from .tabs import TabsContent, TabsList, TabsRoot, TabsTrigger
 from .textarea import TextArea
 from .textfield import TextFieldInput, TextFieldRoot, TextFieldSlot
+from .tooltip import Tooltip
 
 # Alert Dialog
-alertdialog = AlertDialog.create
+alertdialog_root = AlertDialogRoot.create
 alertdialog_trigger = AlertDialogTrigger.create
 alertdialog_content = AlertDialogContent.create
 alertdialog_title = AlertDialogTitle.create
 alertdialog_description = AlertDialogDescription.create
+alertdialog_action = AlertDialogAction.create
+alertdialog_cancel = AlertDialogCancel.create
 
 # Aspect Ratio
 aspect_ratio = AspectRatio.create
@@ -100,6 +109,7 @@ card = Card.create
 
 # Checkbox
 checkbox = Checkbox.create
+checkbox_hl = HighLevelCheckbox.create
 
 # Context Menu
 contextmenu_root = ContextMenuRoot.create
@@ -118,11 +128,13 @@ dialog_trigger = DialogTrigger.create
 dialog_content = DialogContent.create
 dialog_title = DialogTitle.create
 dialog_description = DialogDescription.create
+dialog_close = DialogClose.create
 
 # Dropdown Menu
 dropdownmenu_root = DropdownMenuRoot.create
 dropdownmenu_trigger = DropdownMenuTrigger.create
 dropdownmenu_content = DropdownMenuContent.create
+dropdownmenu_sub = DropdownMenuSub.create
 dropdownmenu_sub_content = DropdownMenuSubContent.create
 dropdownmenu_sub_trigger = DropdownMenuSubTrigger.create
 dropdownmenu_item = DropdownMenuItem.create
@@ -151,6 +163,7 @@ popover_close = PopoverClose.create
 # Radio Group
 radio_group_root = RadioGroupRoot.create
 radio_group_item = RadioGroupItem.create
+radio_group = HighLevelRadioGroup.create
 
 # Scroll Area
 scroll_area = ScrollArea.create
@@ -163,9 +176,13 @@ select_item = SelectItem.create
 select_separator = SelectSeparator.create
 select_group = SelectGroup.create
 select_label = SelectLabel.create
+select = HighLevelSelect.create
 
 # Separator
 separator = Separator.create
+
+# Slider
+slider = Slider.create
 
 # Switch
 switch = Switch.create
@@ -183,6 +200,7 @@ table_row_header_cell = TableRowHeaderCell.create
 tabs_root = TabsRoot.create
 tabs_list = TabsList.create
 tabs_trigger = TabsTrigger.create
+tabs_content = TabsContent.create
 
 # Text Area
 textarea = TextArea.create
@@ -191,3 +209,6 @@ textarea = TextArea.create
 textfield_root = TextFieldRoot.create
 textfield_input = TextFieldInput.create
 textfield_slot = TextFieldSlot.create
+
+# Tooltip
+tooltip = Tooltip.create

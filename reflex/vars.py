@@ -209,7 +209,11 @@ def _decode_var(value: str) -> tuple[VarData | None, str]:
     var_datas = []
     if isinstance(value, str):
         # Extract the state name from a formatted var
-        while m := re.match(r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)", value):
+        while m := re.match(
+            pattern=r"(.*)<reflex.Var>(.*)</reflex.Var>(.*)",
+            string=value,
+            flags=re.DOTALL,  # Ensure . matches newline characters.
+        ):
             value = m.group(1) + m.group(3)
             try:
                 var_datas.append(VarData.parse_raw(m.group(2)))
@@ -415,6 +419,26 @@ class Var:
             and self._var_full_name_needs_state_prefix
             == other._var_full_name_needs_state_prefix
             and self._var_data == other._var_data
+        )
+
+    def _merge(self, other) -> Var:
+        """Merge two or more dicts.
+
+        Args:
+            other: The other var to merge.
+
+        Returns:
+            The merged var.
+
+        Raises:
+            ValueError: If the other value to be merged is None.
+        """
+        if other is None:
+            raise ValueError("The value to be merged cannot be None.")
+        if not isinstance(other, Var):
+            other = Var.create(other)
+        return self._replace(
+            _var_name=f"{{...{self._var_name}, ...{other._var_name}}}"  # type: ignore
         )
 
     def to_string(self, json: bool = True) -> Var:
@@ -673,6 +697,16 @@ class Var:
 
         left_operand, right_operand = (other, self) if flip else (self, other)
 
+        def get_operand_full_name(operand):
+            # operand vars that are string literals need to be wrapped in back ticks.
+            return (
+                operand._var_name_unwrapped
+                if operand._var_is_string
+                and not operand._var_state
+                and operand._var_is_local
+                else operand._var_full_name
+            )
+
         if other is not None:
             # check if the operation between operands is valid.
             if op and not self.is_valid_operation(
@@ -684,18 +718,21 @@ class Var:
                     f"Unsupported Operand type(s) for {op}: `{left_operand._var_full_name}` of type {left_operand._var_type.__name__} and `{right_operand._var_full_name}` of type {right_operand._var_type.__name__}"  # type: ignore
                 )
 
+            left_operand_full_name = get_operand_full_name(left_operand)
+            right_operand_full_name = get_operand_full_name(right_operand)
+
             # apply function to operands
             if fn is not None:
                 if invoke_fn:
                     # invoke the function on left operand.
-                    operation_name = f"{left_operand._var_full_name}.{fn}({right_operand._var_full_name})"  # type: ignore
+                    operation_name = f"{left_operand_full_name}.{fn}({right_operand_full_name})"  # type: ignore
                 else:
                     # pass the operands as arguments to the function.
-                    operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                    operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                     operation_name = f"{fn}({operation_name})"
             else:
                 # apply operator to operands (left operand <operator> right_operand)
-                operation_name = f"{left_operand._var_full_name} {op} {right_operand._var_full_name}"  # type: ignore
+                operation_name = f"{left_operand_full_name} {op} {right_operand_full_name}"  # type: ignore
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
@@ -1529,6 +1566,26 @@ class Var:
             The state name associated with the var.
         """
         return self._var_data.state if self._var_data else ""
+
+    @property
+    def _var_name_unwrapped(self) -> str:
+        """Get the var str without wrapping in curly braces.
+
+        Returns:
+            The str var without the wrapped curly braces
+        """
+        type_ = (
+            get_origin(self._var_type)
+            if types.is_generic_alias(self._var_type)
+            else self._var_type
+        )
+
+        wrapped_var = str(self)
+        return (
+            wrapped_var
+            if not self._var_state and issubclass(type_, dict)
+            else wrapped_var.strip("{}")
+        )
 
 
 # Allow automatic serialization of Var within JSON structures
