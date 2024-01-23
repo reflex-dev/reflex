@@ -100,8 +100,41 @@ class Input(TextFieldInput):
     # The icon to render before the input.
     icon: Var[str]
 
-    # The gap spacing between slot and input: "1" - "9"
-    gap: Var[LiteralSize]
+    # Text field size "1" - "3"
+    size: Var[LiteralTextFieldSize]
+
+    # Variant of text field: "classic" | "surface" | "soft"
+    variant: Var[LiteralTextFieldVariant]
+
+    # Override theme color for text field
+    color: Var[LiteralAccentColor]
+
+    # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
+    radius: Var[LiteralRadius]
+
+    # Whether the input should have autocomplete enabled
+    auto_complete: Var[bool]
+
+    # Disables the input
+    disabled: Var[bool]
+
+    # Specifies the maximum number of characters allowed in the input
+    max_length: Var[str]
+
+    # Specifies the minimum number of characters required in the input
+    min_length: Var[str]
+
+    # Name of the input, used when sending form data
+    name: Var[str]
+
+    # Placeholder text in the input
+    placeholder: Var[str]
+
+    # Indicates that the input is required
+    required: Var[bool]
+
+    # Value of the input
+    value: Var[str]
 
     @classmethod
     def create(cls, **props):
@@ -113,11 +146,16 @@ class Input(TextFieldInput):
         Returns:
             The component.
         """
+        root_props = {
+            prop: props.pop(prop)
+            for prop in ["size", "variant", "color", "radius"]
+            if prop in props
+        }
+
         icon = props.pop("icon", None)
+
         return TextFieldRoot.create(
             TextFieldSlot.create(Icon.create(tag=icon)) if icon else rx.fragment(),
-            super().create(**props),
+            TextFieldInput.create(**props),
+            **root_props,
         )
-
-
-input = Input.create
