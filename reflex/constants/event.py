@@ -84,3 +84,4 @@ class EventTriggers(SimpleNamespace):
     ON_SUBMIT = "on_submit"
     ON_MOUNT = "on_mount"
     ON_UNMOUNT = "on_unmount"
+    ON_CLEAR_SERVER_ERRORS = "on_clear_server_errors"
