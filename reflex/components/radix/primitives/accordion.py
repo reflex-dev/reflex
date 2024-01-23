@@ -340,10 +340,19 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
             {
                 "overflow": "hidden",
                 "font_size": "10px",
-                "color": cond(
-                    color_scheme == "primary",
-                    "var(--accent-9-contrast)",
-                    "var(--slate-9-contrast)",
+                "color": match(
+                    variant,
+                    (
+                        "classic",
+                        cond(
+                            color_scheme == "primary",
+                            "var(--accent-9-contrast)",
+                            "var(--slate-9-contrast)",
+                        ),
+                    ),
+                    cond(
+                        color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
+                    ),
                 ),
                 "background_color": match(
                     variant,
