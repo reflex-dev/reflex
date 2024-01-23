@@ -245,7 +245,12 @@ def _extract_class_props_as_ast_nodes(
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
-            if name in spec.kwonlyargs or name in EXCLUDED_PROPS or name in all_props:
+            if (
+                name in spec.kwonlyargs
+                or name in EXCLUDED_PROPS
+                or name in all_props
+                or (isinstance(value, str) and "ClassVar" in value)
+            ):
                 continue
             all_props.append(name)
 
@@ -559,6 +564,13 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified AnnAssign node (or None).
         """
+        # skip ClassVars
+        if (
+            isinstance(node.annotation, ast.Subscript)
+            and isinstance(node.annotation.value, ast.Name)
+            and node.annotation.value.id == "ClassVar"
+        ):
+            return node
         if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
             return None
         if self.current_class in self.classes:

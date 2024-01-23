@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
 from reflex.components.chakra.layout.box import Box
@@ -29,6 +29,8 @@ def clear_selected_files(id_: str = DEFAULT_UPLOAD_ID) -> EventSpec: ...
 def cancel_upload(upload_id: str) -> EventSpec: ...
 
 class UploadFilesProvider(Component):
+    is_used: ClassVar[bool] = False
+
     @overload
     @classmethod
     def create(  # type: ignore
@@ -87,7 +89,7 @@ class UploadFilesProvider(Component):
         ] = None,
         **props
     ) -> "UploadFilesProvider":
-        """Create the component.
+        """Create an UploadFilesProvider component.
 
         Args:
             *children: The children of the component.
@@ -97,13 +99,10 @@ class UploadFilesProvider(Component):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: The props of the component.
+            **props: The properties of the component.
 
         Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
+            The UploadFilesProvider component.
         """
         ...
 
