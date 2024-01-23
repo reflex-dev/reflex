@@ -50,7 +50,7 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
                 Literal["auto", "hover", "always"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -281,7 +281,7 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
             weight: Thickness of text: "light" | "regular" | "medium" | "bold"
             trim: Removes the leading trim space: "normal" | "start" | "end" | "both"
             underline: Sets the visibility of the underline affordance: "auto" | "hover" | "always"
-            color: Overrides the accent color inherited from the Theme.
+            color_scheme: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
