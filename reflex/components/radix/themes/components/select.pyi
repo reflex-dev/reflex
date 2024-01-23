@@ -90,7 +90,9 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
                 ],
             ]
         ] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         default_value: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
         default_open: Optional[Union[Var[bool], bool]] = None,
@@ -1540,7 +1542,9 @@ class HighLevelSelect(SelectRoot):
             ]
         ] = None,
         width: Optional[Union[Var[str], str]] = None,
-        size: Optional[Union[Var[Literal[1, 2, 3]], Literal[1, 2, 3]]] = None,
+        size: Optional[
+            Union[Var[Literal["1", "2", "3"]], Literal["1", "2", "3"]]
+        ] = None,
         default_value: Optional[Union[Var[str], str]] = None,
         value: Optional[Union[Var[str], str]] = None,
         default_open: Optional[Union[Var[bool], bool]] = None,
