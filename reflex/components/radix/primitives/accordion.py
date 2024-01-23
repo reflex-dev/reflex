@@ -169,8 +169,8 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                 {
                     "color": cond(
                         color_scheme == "primary",
-                        "var(--accent-9-contrast)",
-                        "var(--slate-9-contrast)",
+                        "var(--accent-11)",
+                        "var(--slate-11)",
                     ),
                     "&:hover": {
                         "background_color": cond(
@@ -199,7 +199,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "align_items": "center",
                     "justify_content": "space-between",
                     "font_size": "15px",
-                    "box_shadow": "0 1px 0 var(--accent-6)",
                     "line_height": 1,
                 },
                 _var_datas,
@@ -243,7 +242,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "align_items": "center",
                     "justify_content": "space-between",
                     "font_size": "15px",
-                    "box_shadow": "0 1px 0 var(--accent-6)",
                     "line_height": 1,
                 },
                 _var_datas,
@@ -257,7 +255,11 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "var(--accent-9-contrast)",
                     "var(--slate-9-contrast)",
                 ),
-                "box_shadow": "0 1px 0 var(--accent-6)",
+                "box_shadow": cond(
+                    color_scheme == "primary",
+                    "0 1px 0 var(--accent-6)",
+                    "0 1px 0 var(--slate-11)",
+                ),
                 "&:hover": {
                     "background_color": cond(
                         color_scheme == "primary", "var(--accent-10)", "var(--slate-10)"
@@ -314,11 +316,8 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                     "font_size": "10px",
                     "color": cond(
                         color_scheme == "primary",
-                        "var(--accent-9-contrast)",
-                        "var(--slate-9-contrast)",
-                    ),
-                    "background_color": cond(
-                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                        "var(--accent-11)",
+                        "var(--slate-11)",
                     ),
                     "padding": "15px, 20px",
                     "&[data-state='open']": {
