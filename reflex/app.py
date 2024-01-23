@@ -43,6 +43,7 @@ from reflex.components.core.client_side_routing import (
     Default404Page,
     wait_for_client_redirect,
 )
+from reflex.components.core.upload import UploadFilesProvider
 from reflex.config import get_config
 from reflex.event import Event, EventHandler, EventSpec
 from reflex.middleware import HydrateMiddleware, Middleware
@@ -180,7 +181,6 @@ class App(Base):
         # Set up the API.
         self.api = FastAPI()
         self.add_cors()
-        self.add_default_endpoints()
 
         if self.state:
             # Set up the state manager.
@@ -242,7 +242,8 @@ class App(Base):
         self.api.get(str(constants.Endpoint.PING))(ping)
 
         # To upload files.
-        self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
+        if UploadFilesProvider.is_used:
+            self.api.post(str(constants.Endpoint.UPLOAD))(upload(self))
 
     def add_cors(self):
         """Add CORS middleware to the app."""
@@ -799,6 +800,8 @@ class App(Base):
                 )
             for future in concurrent.futures.as_completed(write_page_futures):
                 future.result()
+
+        self.add_default_endpoints()
 
     @contextlib.asynccontextmanager
     async def modify_state(self, token: str) -> AsyncIterator[BaseState]:

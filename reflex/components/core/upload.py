@@ -1,7 +1,7 @@
 """A file upload component."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 from reflex import constants
 from reflex.components.chakra.forms.input import Input
@@ -98,6 +98,23 @@ class UploadFilesProvider(Component):
     library = f"/{Dirs.CONTEXTS_PATH}"
     tag = "UploadFilesProvider"
 
+    is_used: ClassVar[bool] = False
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create an UploadFilesProvider component.
+
+        Args:
+            *children: The children of the component.
+            **props: The properties of the component.
+
+        Returns:
+            The UploadFilesProvider component.
+        """
+        cls.is_used = True
+
+        return super().create(*children, **props)
+
 
 class Upload(Component):
     """A file upload component."""
@@ -192,5 +209,5 @@ class Upload(Component):
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
         return {
-            (5, "UploadFilesProvider"): UploadFilesProvider(),
+            (5, "UploadFilesProvider"): UploadFilesProvider.create(),
         }
