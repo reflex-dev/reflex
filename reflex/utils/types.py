@@ -19,6 +19,7 @@ from typing import (
 )
 
 from pydantic.fields import ModelField
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped
 
 from reflex.base import Base
@@ -139,6 +140,11 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             if isinstance(type_, ModelField):
                 return type_.type_  # SQLAlchemy v1.4
             return type_
+        if name in cls.__dict__:
+            value = cls.__dict__[name]
+            if isinstance(value, hybrid_property):
+                hints = get_type_hints(value.fget)
+                return hints.get("return", None)
     elif is_union(cls):
         # Check in each arg of the annotation.
         for arg in get_args(cls):
