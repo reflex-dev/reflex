@@ -6,8 +6,11 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex.components.component import Component
 from reflex.components.el.elements.inline import A
-from reflex.vars import Var
+from reflex.components.next.link import NextLink
+from reflex.utils import imports
+from reflex.vars import BaseVar, Var
 
 from ..base import (
     CommonMarginProps,
@@ -22,11 +25,16 @@ from .base import (
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 
+next_link = NextLink.create()
+
 
 class Link(CommonMarginProps, RadixThemesComponent, A):
     """A semantic element for navigation between pages."""
 
     tag = "Link"
+
+    # What the link renders to.
+    as_: Var[str] = BaseVar.create(value="{NextLink}", _var_is_local=False)  # type: ignore
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
@@ -48,3 +56,28 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
+
+    def _get_imports(self) -> imports.ImportDict:
+        return {**super()._get_imports(), **next_link._get_imports()}
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a Link component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Raises:
+            ValueError: in case of missing children
+
+        Returns:
+            Component: The link component
+        """
+        if props.get("href") is not None:
+            if not len(children):
+                raise ValueError("Link without a child will not display")
+        else:
+            # Don't use a NextLink if there is no href.
+            props["as_"] = ""
+        return super().create(*children, **props)
