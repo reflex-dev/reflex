@@ -21,7 +21,7 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
     tag = "Select.Root"
 
     # The size of the select: "1" | "2" | "3"
-    size: Var[Literal[1, 2, 3]]
+    size: Var[Literal["1", "2", "3"]]
 
     # The value of the select when initially rendered. Use when you do not need to control the state of the select.
     default_value: Var[str]
