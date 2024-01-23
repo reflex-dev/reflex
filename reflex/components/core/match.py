@@ -199,7 +199,7 @@ class Match(MemoizationLeaf):
                     cond=match_cond_var,
                     match_cases=match_cases,
                     default=default,
-                    children=[case[-1] for case in match_cases],  # type: ignore
+                    children=[case[-1] for case in match_cases] + [default],  # type: ignore
                 )
             )
 
@@ -244,19 +244,8 @@ class Match(MemoizationLeaf):
         tag.name = "match"
         return dict(tag)
 
-    def _get_imports(self):
-        merged_imports = super()._get_imports()
-        # Obtain the imports of all components the in match case.
-        for case in self.match_cases:
-            if isinstance(case[-1], BaseComponent):
-                merged_imports = imports.merge_imports(
-                    merged_imports,
-                    case[-1].get_imports(),
-                )
-        # Get the import of the default case component.
-        if isinstance(self.default, BaseComponent):
-            merged_imports = imports.merge_imports(
-                merged_imports,
-                self.default.get_imports(),
-            )
-        return merged_imports
+    def _get_imports(self) -> imports.ImportDict:
+        return imports.merge_imports(
+            super()._get_imports(),
+            getattr(self.cond._var_data, "imports", {}),
+        )
