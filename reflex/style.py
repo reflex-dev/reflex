@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from reflex import constants
 from reflex.event import EventChain
@@ -223,15 +223,19 @@ def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def convert_dict_to_style_and_format_emotion(
-    raw_dict: dict[str, Any]
+    raw_dict: dict[str, Any], var_datas: Optional[list[VarData]] = None
 ) -> dict[str, Any] | None:
     """Convert a dict to a style dict and then format as emotion.
 
     Args:
         raw_dict: The dict to convert.
+        var_datas: the var_data list to update if there are var_datas from the style dict.
 
     Returns:
         The emotion dict.
 
     """
-    return format_as_emotion(Style(raw_dict))
+    style_dict = Style(raw_dict)
+    if var_datas is not None and style_dict._var_data:
+        var_datas.append(style_dict._var_data)
+    return format_as_emotion(style_dict)
