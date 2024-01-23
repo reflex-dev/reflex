@@ -12,7 +12,7 @@ from reflex.components.component import Component
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
