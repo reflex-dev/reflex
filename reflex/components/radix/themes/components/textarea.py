@@ -8,7 +8,6 @@ from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
@@ -16,7 +15,7 @@ from ..base import (
 LiteralTextAreaSize = Literal["1", "2", "3"]
 
 
-class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
+class TextArea(RadixThemesComponent, el.Textarea):
     """The input part of a TextArea, may be used by itself."""
 
     tag = "TextArea"

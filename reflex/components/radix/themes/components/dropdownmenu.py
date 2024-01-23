@@ -4,13 +4,12 @@ from typing import Any, Dict, Literal
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
 
 
-class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Root"
@@ -33,13 +32,13 @@ class DropdownMenuRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class DropdownMenuTrigger(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Trigger"
 
 
-class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Content"
@@ -59,19 +58,19 @@ class DropdownMenuContent(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class DropdownMenuSubTrigger(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuSubTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.SubTrigger"
 
 
-class DropdownMenuSub(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuSub(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Sub"
 
 
-class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuSubContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.SubContent"
@@ -89,7 +88,7 @@ class DropdownMenuSubContent(CommonMarginProps, RadixThemesComponent):
     high_contrast: Var[bool]
 
 
-class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuItem(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Item"
@@ -101,7 +100,7 @@ class DropdownMenuItem(CommonMarginProps, RadixThemesComponent):
     shortcut: Var[str]
 
 
-class DropdownMenuSeparator(CommonMarginProps, RadixThemesComponent):
+class DropdownMenuSeparator(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "DropdownMenu.Separator"

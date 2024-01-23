@@ -8,7 +8,6 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralSize,
     RadixThemesComponent,
@@ -17,7 +16,7 @@ from ..base import (
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 
-class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
+class RadioGroupRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "RadioGroup.Root"
@@ -67,7 +66,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
+class RadioGroupItem(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "RadioGroup.Item"

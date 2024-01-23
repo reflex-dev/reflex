@@ -5,12 +5,11 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class DialogRoot(CommonMarginProps, RadixThemesComponent):
+class DialogRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Root"
@@ -33,19 +32,19 @@ class DialogRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class DialogTrigger(CommonMarginProps, RadixThemesComponent):
+class DialogTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Trigger"
 
 
-class DialogTitle(CommonMarginProps, RadixThemesComponent):
+class DialogTitle(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Title"
 
 
-class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
+class DialogContent(el.Div, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Content"
@@ -69,13 +68,13 @@ class DialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
         }
 
 
-class DialogDescription(CommonMarginProps, RadixThemesComponent):
+class DialogDescription(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Description"
 
 
-class DialogClose(CommonMarginProps, RadixThemesComponent):
+class DialogClose(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Dialog.Close"

@@ -5,7 +5,6 @@ from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     LiteralVariant,
@@ -15,7 +14,7 @@ from ..base import (
 LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 
-class Switch(CommonMarginProps, RadixThemesComponent):
+class Switch(RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
     tag = "Switch"

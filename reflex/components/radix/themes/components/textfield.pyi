@@ -13,18 +13,12 @@ from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
 from reflex.constants import EventTriggers
 from reflex.vars import Var
-from ..base import (
-    CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    LiteralSize,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralRadius, LiteralSize, RadixThemesComponent
 
 LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
-class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
+class TextFieldRoot(el.Div, RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -151,48 +145,6 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
         translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -275,13 +227,6 @@ class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
             translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.
@@ -497,48 +442,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
         translate: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -658,13 +561,6 @@ class TextFieldInput(el.Input, TextFieldRoot):
             tab_index: Defines the position of the current element in the tabbing order.
             title: Defines a tooltip for the element.
             translate: Specifies whether the content of an element should be translated or not.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

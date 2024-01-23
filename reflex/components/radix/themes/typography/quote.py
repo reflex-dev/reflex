@@ -7,12 +7,11 @@ from __future__ import annotations
 from reflex import el
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 
-class Quote(el.Q, CommonMarginProps, RadixThemesComponent):
+class Quote(el.Q, RadixThemesComponent):
     """A short inline quotation."""
 
     tag = "Quote"

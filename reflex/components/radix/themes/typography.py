@@ -9,7 +9,6 @@ from typing import Literal
 from reflex.vars import Var
 
 from .base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralVariant,
     RadixThemesComponent,
@@ -21,7 +20,7 @@ LiteralTextSize = Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 LiteralTextTrim = Literal["normal", "start", "end", "both"]
 
 
-class Text(CommonMarginProps, RadixThemesComponent):
+class Text(RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Text"
@@ -57,7 +56,7 @@ class Heading(Text):
     tag = "Heading"
 
 
-class Blockquote(CommonMarginProps, RadixThemesComponent):
+class Blockquote(RadixThemesComponent):
     """A block level extended quotation."""
 
     tag = "Blockquote"
@@ -84,13 +83,13 @@ class Code(Blockquote):
     variant: Var[LiteralVariant]
 
 
-class Em(CommonMarginProps, RadixThemesComponent):
+class Em(RadixThemesComponent):
     """Marks text to stress emphasis."""
 
     tag = "Em"
 
 
-class Kbd(CommonMarginProps, RadixThemesComponent):
+class Kbd(RadixThemesComponent):
     """Represents keyboard input or a hotkey."""
 
     tag = "Kbd"
@@ -102,7 +101,7 @@ class Kbd(CommonMarginProps, RadixThemesComponent):
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 
 
-class Link(CommonMarginProps, RadixThemesComponent):
+class Link(RadixThemesComponent):
     """A semantic element for navigation between pages."""
 
     tag = "Link"
@@ -129,13 +128,13 @@ class Link(CommonMarginProps, RadixThemesComponent):
     high_contrast: Var[bool]
 
 
-class Quote(CommonMarginProps, RadixThemesComponent):
+class Quote(RadixThemesComponent):
     """A short inline quotation."""
 
     tag = "Quote"
 
 
-class Strong(CommonMarginProps, RadixThemesComponent):
+class Strong(RadixThemesComponent):
     """Marks text to signify strong importance."""
 
     tag = "Strong"

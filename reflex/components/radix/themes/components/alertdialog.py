@@ -4,12 +4,12 @@ from typing import Any, Dict, Literal
 from reflex import el
 from reflex.vars import Var
 
-from ..base import CommonMarginProps, LiteralSize, RadixThemesComponent
+from ..base import LiteralSize, RadixThemesComponent
 
 LiteralSwitchSize = Literal["1", "2", "3", "4"]
 
 
-class AlertDialogRoot(CommonMarginProps, RadixThemesComponent):
+class AlertDialogRoot(RadixThemesComponent):
     """Contains all the parts of the dialog."""
 
     tag = "AlertDialog.Root"
@@ -29,13 +29,13 @@ class AlertDialogRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class AlertDialogTrigger(CommonMarginProps, RadixThemesComponent):
+class AlertDialogTrigger(RadixThemesComponent):
     """Wraps the control that will open the dialog."""
 
     tag = "AlertDialog.Trigger"
 
 
-class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
+class AlertDialogContent(el.Div, RadixThemesComponent):
     """Contains the content of the dialog. This component is based on the div element."""
 
     tag = "AlertDialog.Content"
@@ -60,7 +60,7 @@ class AlertDialogContent(el.Div, CommonMarginProps, RadixThemesComponent):
         }
 
 
-class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
+class AlertDialogTitle(RadixThemesComponent):
     """An accessible title that is announced when the dialog is opened.
     This part is based on the Heading component with a pre-defined font size and
     leading trim on top.
@@ -69,7 +69,7 @@ class AlertDialogTitle(CommonMarginProps, RadixThemesComponent):
     tag = "AlertDialog.Title"
 
 
-class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
+class AlertDialogDescription(RadixThemesComponent):
     """An optional accessible description that is announced when the dialog is opened.
     This part is based on the Text component with a pre-defined font size.
     """
@@ -77,7 +77,7 @@ class AlertDialogDescription(CommonMarginProps, RadixThemesComponent):
     tag = "AlertDialog.Description"
 
 
-class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
+class AlertDialogAction(RadixThemesComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Cancel control.
     """
@@ -85,7 +85,7 @@ class AlertDialogAction(CommonMarginProps, RadixThemesComponent):
     tag = "AlertDialog.Action"
 
 
-class AlertDialogCancel(CommonMarginProps, RadixThemesComponent):
+class AlertDialogCancel(RadixThemesComponent):
     """Wraps the control that will close the dialog. This should be distinguished
     visually from the Action control.
     """

@@ -9,11 +9,11 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
 from reflex.vars import Var
-from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
+from ..base import LiteralAccentColor, RadixThemesComponent
 
 LiteralSeperatorSize = Literal["1", "2", "3", "4"]
 
-class Separator(CommonMarginProps, RadixThemesComponent):
+class Separator(RadixThemesComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -92,48 +92,6 @@ class Separator(CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         decorative: Optional[Union[Var[bool], bool]] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -199,13 +157,6 @@ class Separator(CommonMarginProps, RadixThemesComponent):
             size: The size of the select: "1" | "2" | "3"
             orientation: The orientation of the separator.
             decorative: When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

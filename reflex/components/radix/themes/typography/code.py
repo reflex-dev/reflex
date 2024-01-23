@@ -8,7 +8,6 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralVariant,
     RadixThemesComponent,
@@ -19,7 +18,7 @@ from .base import (
 )
 
 
-class Code(el.Code, CommonMarginProps, RadixThemesComponent):
+class Code(el.Code, RadixThemesComponent):
     """A block level extended quotation."""
 
     tag = "Code"

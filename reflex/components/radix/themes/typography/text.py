@@ -8,7 +8,6 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
@@ -20,7 +19,7 @@ from .base import (
 )
 
 
-class Text(el.Span, CommonMarginProps, RadixThemesComponent):
+class Text(el.Span, RadixThemesComponent):
     """A foundational text primitive based on the <span> element."""
 
     tag = "Text"

@@ -8,7 +8,6 @@ from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     LiteralSize,
@@ -19,7 +18,7 @@ LiteralTextFieldSize = Literal["1", "2", "3"]
 LiteralTextFieldVariant = Literal["classic", "surface", "soft"]
 
 
-class TextFieldRoot(el.Div, CommonMarginProps, RadixThemesComponent):
+class TextFieldRoot(el.Div, RadixThemesComponent):
     """Captures user input with an optional slot for buttons and icons."""
 
     tag = "TextField.Root"

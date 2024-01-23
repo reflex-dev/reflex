@@ -10,7 +10,6 @@ from reflex.components.el.elements.inline import A
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     RadixThemesComponent,
 )
@@ -23,7 +22,7 @@ from .base import (
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
 
 
-class Link(CommonMarginProps, RadixThemesComponent, A):
+class Link(RadixThemesComponent, A):
     """A semantic element for navigation between pages."""
 
     tag = "Link"

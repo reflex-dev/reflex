@@ -5,14 +5,13 @@ from reflex import el
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     RadixThemesComponent,
 )
 
 LiteralButtonSize = Literal["1", "2", "3", "4"]
 
 
-class Inset(el.Div, CommonMarginProps, RadixThemesComponent):
+class Inset(el.Div, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Inset"

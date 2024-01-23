@@ -6,7 +6,6 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     RadixThemesComponent,
@@ -15,7 +14,7 @@ from ..base import (
 LiteralButtonSize = Literal[1, 2, 3, 4]
 
 
-class SelectRoot(CommonMarginProps, RadixThemesComponent):
+class SelectRoot(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Root"
@@ -57,7 +56,7 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class SelectTrigger(CommonMarginProps, RadixThemesComponent):
+class SelectTrigger(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Trigger"
@@ -75,7 +74,7 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
     placeholder: Var[str]
 
 
-class SelectContent(CommonMarginProps, RadixThemesComponent):
+class SelectContent(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Content"
@@ -118,13 +117,13 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
         }
 
 
-class SelectGroup(CommonMarginProps, RadixThemesComponent):
+class SelectGroup(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Group"
 
 
-class SelectItem(CommonMarginProps, RadixThemesComponent):
+class SelectItem(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Item"
@@ -136,13 +135,13 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
     disabled: Var[bool]
 
 
-class SelectLabel(CommonMarginProps, RadixThemesComponent):
+class SelectLabel(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Label"
 
 
-class SelectSeparator(CommonMarginProps, RadixThemesComponent):
+class SelectSeparator(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Select.Separator"

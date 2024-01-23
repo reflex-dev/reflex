@@ -7,7 +7,6 @@ from reflex.components.radix.themes.typography.text import Text
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralSize,
     LiteralVariant,
@@ -17,7 +16,7 @@ from ..base import (
 LiteralCheckboxSize = Literal["1", "2", "3"]
 
 
-class Checkbox(CommonMarginProps, RadixThemesComponent):
+class Checkbox(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Checkbox"

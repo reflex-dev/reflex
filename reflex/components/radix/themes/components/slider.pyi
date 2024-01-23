@@ -9,14 +9,9 @@ from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, List, Literal, Union
 from reflex.vars import Var
-from ..base import (
-    CommonMarginProps,
-    LiteralAccentColor,
-    LiteralRadius,
-    RadixThemesComponent,
-)
+from ..base import LiteralAccentColor, LiteralRadius, RadixThemesComponent
 
-class Slider(CommonMarginProps, RadixThemesComponent):
+class Slider(RadixThemesComponent):
     def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
@@ -120,48 +115,6 @@ class Slider(CommonMarginProps, RadixThemesComponent):
                 Literal["horizontal", "vertical"],
             ]
         ] = None,
-        m: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mx: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        my: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mt: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mr: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        mb: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        ml: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
         id: Optional[Any] = None,
@@ -243,13 +196,6 @@ class Slider(CommonMarginProps, RadixThemesComponent):
             step: The step value of the slider.
             disabled: Whether the slider is disabled
             orientation: The orientation of the slider.
-            m: Margin: "0" - "9"
-            mx: Margin horizontal: "0" - "9"
-            my: Margin vertical: "0" - "9"
-            mt: Margin top: "0" - "9"
-            mr: Margin right: "0" - "9"
-            mb: Margin bottom: "0" - "9"
-            ml: Margin left: "0" - "9"
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

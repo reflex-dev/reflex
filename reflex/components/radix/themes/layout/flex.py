@@ -10,15 +10,15 @@ from ..base import (
     LiteralAlign,
     LiteralJustify,
     LiteralSize,
+    RadixThemesComponent,
 )
-from .base import LayoutComponent
 
 LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 LiteralFlexDisplay = Literal["none", "inline-flex", "flex"]
 LiteralFlexWrap = Literal["nowrap", "wrap", "wrap-reverse"]
 
 
-class Flex(el.Div, LayoutComponent):
+class Flex(el.Div, RadixThemesComponent):
     """Component for creating flex layouts."""
 
     tag = "Flex"

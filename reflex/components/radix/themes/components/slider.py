@@ -4,14 +4,13 @@ from typing import Any, Dict, List, Literal, Union
 from reflex.vars import Var
 
 from ..base import (
-    CommonMarginProps,
     LiteralAccentColor,
     LiteralRadius,
     RadixThemesComponent,
 )
 
 
-class Slider(CommonMarginProps, RadixThemesComponent):
+class Slider(RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
     tag = "Slider"
