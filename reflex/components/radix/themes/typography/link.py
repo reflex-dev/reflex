@@ -10,7 +10,7 @@ from reflex.components.component import Component
 from reflex.components.el.elements.inline import A
 from reflex.components.next.link import NextLink
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var
+from reflex.vars import Var
 
 from ..base import (
     CommonMarginProps,
@@ -32,9 +32,6 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
     """A semantic element for navigation between pages."""
 
     tag = "Link"
-
-    # What the link renders to.
-    as_: Var[str] = BaseVar.create(value="{NextLink}", _var_is_local=False)  # type: ignore
 
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
@@ -77,7 +74,9 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
         if props.get("href") is not None:
             if not len(children):
                 raise ValueError("Link without a child will not display")
-        else:
-            # Don't use a NextLink if there is no href.
-            props["as_"] = ""
+            if "as_child" not in props:
+                # If user does not use `as_child`, by default we render using next_link to avoid page refresh during internal navigation
+                return super().create(
+                    NextLink.create(*children, **props), as_child=True
+                )
         return super().create(*children, **props)

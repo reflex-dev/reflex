@@ -25,7 +25,6 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
     def create(  # type: ignore
         cls,
         *children,
-        as_: Optional[Union[Var[str], str]] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         size: Optional[
             Union[
@@ -277,7 +276,6 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
 
         Args:
             *children: The children of the component.
-            as_: What the link renders to.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Text size: "1" - "9"
             weight: Thickness of text: "light" | "regular" | "medium" | "bold"
