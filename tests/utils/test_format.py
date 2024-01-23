@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 from typing import Any, List
 
@@ -276,22 +278,107 @@ def test_format_route(route: str, format_case: bool, expected: bool):
 
 
 @pytest.mark.parametrize(
-    "condition,true_value,false_value,expected",
+    "condition,true_value,false_value,is_prop,expected",
     [
-        ("cond", "<C1>", '""', '{isTrue(cond) ? <C1> : ""}'),
-        ("cond", "<C1>", "<C2>", "{isTrue(cond) ? <C1> : <C2>}"),
+        ("cond", "<C1>", '""', False, '{isTrue(cond) ? <C1> : ""}'),
+        ("cond", "<C1>", "<C2>", False, "{isTrue(cond) ? <C1> : <C2>}"),
+        (
+            "cond",
+            Var.create_safe("<C1>"),
+            "<C2>",
+            False,
+            "{isTrue(cond) ? <C1> : <C2>}",
+        ),
+        (
+            "cond",
+            Var.create_safe("<C1>"),
+            Var.create_safe("<C2>"),
+            False,
+            "{isTrue(cond) ? <C1> : <C2>}",
+        ),
+        (
+            "cond",
+            Var.create_safe("<C1>", _var_is_local=False),
+            Var.create_safe("<C2>"),
+            False,
+            "{isTrue(cond) ? ${<C1>} : <C2>}",
+        ),
+        (
+            "cond",
+            Var.create_safe("<C1>", _var_is_string=True),
+            Var.create_safe("<C2>"),
+            False,
+            "{isTrue(cond) ? {`<C1>`} : <C2>}",
+        ),
+        ("cond", "<C1>", '""', True, 'isTrue(cond) ? `<C1>` : `""`'),
+        ("cond", "<C1>", "<C2>", True, "isTrue(cond) ? `<C1>` : `<C2>`"),
+        (
+            "cond",
+            Var.create_safe("<C1>"),
+            "<C2>",
+            True,
+            "isTrue(cond) ? <C1> : `<C2>`",
+        ),
+        (
+            "cond",
+            Var.create_safe("<C1>"),
+            Var.create_safe("<C2>"),
+            True,
+            "isTrue(cond) ? <C1> : <C2>",
+        ),
+        (
+            "cond",
+            Var.create_safe("<C1>", _var_is_local=False),
+            Var.create_safe("<C2>"),
+            True,
+            "isTrue(cond) ? <C1> : <C2>",
+        ),
+        (
+            "cond",
+            Var.create_safe("<C1>"),
+            Var.create_safe("<C2>", _var_is_local=False),
+            True,
+            "isTrue(cond) ? <C1> : <C2>",
+        ),
+        (
+            "cond",
+            Var.create_safe("<C1>", _var_is_string=True),
+            Var.create_safe("<C2>"),
+            True,
+            "isTrue(cond) ? `<C1>` : <C2>",
+        ),
     ],
 )
-def test_format_cond(condition: str, true_value: str, false_value: str, expected: str):
+def test_format_cond(
+    condition: str,
+    true_value: str | Var,
+    false_value: str | Var,
+    is_prop: bool,
+    expected: str,
+):
     """Test formatting a cond.
 
     Args:
         condition: The condition to check.
         true_value: The value to return if the condition is true.
         false_value: The value to return if the condition is false.
+        is_prop: Whether the values are rendered as props or not.
         expected: The expected output string.
     """
-    assert format.format_cond(condition, true_value, false_value) == expected
+    orig_true_value = (
+        true_value._replace() if isinstance(true_value, Var) else Var.create_safe("")
+    )
+    orig_false_value = (
+        false_value._replace() if isinstance(false_value, Var) else Var.create_safe("")
+    )
+
+    assert format.format_cond(condition, true_value, false_value, is_prop) == expected
+
+    # Ensure the formatting operation didn't change the original Var
+    if isinstance(true_value, Var):
+        assert true_value.equals(orig_true_value)
+    if isinstance(false_value, Var):
+        assert false_value.equals(orig_false_value)
 
 
 @pytest.mark.parametrize(
