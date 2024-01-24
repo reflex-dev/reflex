@@ -8,7 +8,6 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Dict, Literal
-from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core import cond, match
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -19,7 +18,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var
+from reflex.vars import BaseVar, Var, VarData
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -149,6 +148,7 @@ class AccordionRoot(AccordionComponent):
             Union[Var[Literal["primary", "accent"]], Literal["primary", "accent"]]
         ] = None,
         _dynamic_themes: Optional[Union[Var[dict], dict]] = None,
+        _var_data: Optional[VarData] = None,
         as_child: Optional[Union[Var[bool], bool]] = None,
         style: Optional[Style] = None,
         key: Optional[Any] = None,
@@ -220,6 +220,7 @@ class AccordionRoot(AccordionComponent):
             variant: The variant of the accordion.
             color_scheme: The color scheme of the accordion.
             _dynamic_themes: dynamic themes of the accordion generated at compile time.
+            _var_data: The var_data associated with the component.
             as_child: Change the default rendered element for the one passed as a child.
             style: The style of the component.
             key: A unique key for the component.
