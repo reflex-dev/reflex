@@ -46,7 +46,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                         color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
-                },
+                }
             ),
         ),
         (
@@ -60,7 +60,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                         "1px solid var(--slate-6)",
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
-                },
+                }
             ),
         ),
         (
@@ -77,7 +77,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                         color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
-                },
+                }
             ),
         ),
         (
@@ -87,7 +87,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                     "border_radius": "6px",
                     "background_color": "none",
                     "box_shadow": "None",
-                },
+                }
             ),
         ),
         convert_dict_to_style_and_format_emotion(
@@ -97,7 +97,7 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                     color_scheme == "primary", "var(--accent-9)", "var(--slate-9)"
                 ),
                 "box_shadow": "0 2px 10px var(--black-a4)",
-            },
+            }
         )
         # defaults to classic
     )
@@ -191,7 +191,7 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "justify_content": "space-between",
                     "font_size": "15px",
                     "line_height": 1,
-                },
+                }
             ),
         ),
         (
@@ -233,7 +233,7 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "justify_content": "space-between",
                     "font_size": "15px",
                     "line_height": 1,
-                },
+                }
             ),
         ),
         # defaults to classic
@@ -275,7 +275,7 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                 "justify_content": "space-between",
                 "font_size": "15px",
                 "line_height": 1,
-            },
+            }
         ),
     )
 
@@ -317,7 +317,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                             _var_is_string=True,
                         ),
                     },
-                },
+                }
             ),
         ),
         convert_dict_to_style_and_format_emotion(
@@ -365,7 +365,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                         _var_is_string=True,
                     ),
                 },
-            },
+            }
         ),
     )
 
