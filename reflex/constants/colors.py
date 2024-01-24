@@ -67,7 +67,7 @@ def serialize_color(color: Colors) -> SerializedType:
     """
     print(f"--var({color.color}-{color.shade})")
     if color.alpha:
-        return f"var(--{color.color}-{color.shade}-alpha)"
+        return f"var(--{color.color}-a{color.shade})"
     else:
         return f"var(--{color.color}-{color.shade})"
 
