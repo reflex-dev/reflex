@@ -3,7 +3,7 @@
 # Style based on https://ui.shadcn.com/docs/components/drawer
 from __future__ import annotations
 
-from typing import Any, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.constants import EventTriggers
@@ -15,7 +15,7 @@ class DrawerComponent(RadixPrimitiveComponentWithClassName):
 
     library = "vaul"
 
-    lib_dependencies: list[str] = ["@radix-ui/react-dialog@^1.0.5"]
+    lib_dependencies: List[str] = ["@radix-ui/react-dialog@^1.0.5"]
 
 
 LiteralDirectionType = Literal[
@@ -43,7 +43,7 @@ class DrawerRoot(DrawerComponent):
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible.
     # Also Accept px values, which doesn't take screen height into account.
-    snap_points: Optional[list[float]]
+    snap_points: Optional[List[float]]
 
     # Index of a snapPoint from which the overlay fade should be applied.
     # Defaults to the last snap point.
@@ -65,7 +65,7 @@ class DrawerRoot(DrawerComponent):
     # Defaults to `True`.
     preventScrollRestoration: Var[bool] = True  # type: ignore
 
-    def get_event_triggers(self) -> dict[str, Any]:
+    def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
 
         Returns:
@@ -122,7 +122,7 @@ class DrawerContent(DrawerComponent):
         )
         return self.style
 
-    def get_event_triggers(self) -> dict[str, Any]:
+    def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
 
         Returns:
