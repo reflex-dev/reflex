@@ -11,7 +11,7 @@ from ..base import (
 
 
 class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A semantic table for presenting tabular data."""
 
     tag = "Table.Root"
 
@@ -23,13 +23,13 @@ class TableRoot(el.Table, CommonMarginProps, RadixThemesComponent):
 
 
 class TableHeader(el.Thead, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The header of the table defines column names and other non-data elements."""
 
     tag = "Table.Header"
 
 
 class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A row containing table cells."""
 
     tag = "Table.Row"
 
@@ -38,7 +38,7 @@ class TableRow(el.Tr, CommonMarginProps, RadixThemesComponent):
 
 
 class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A table cell that is semantically treated as a column header."""
 
     tag = "Table.ColumnHeaderCell"
 
@@ -50,13 +50,13 @@ class TableColumnHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
 
 
 class TableBody(el.Tbody, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The body of the table contains the data rows."""
 
     tag = "Table.Body"
 
 
 class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A cell containing data."""
 
     tag = "Table.Cell"
 
@@ -68,7 +68,7 @@ class TableCell(el.Td, CommonMarginProps, RadixThemesComponent):
 
 
 class TableRowHeaderCell(el.Th, CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A table cell that is semantically treated as a row header."""
 
     tag = "Table.RowHeaderCell"
 

@@ -11,7 +11,7 @@ from ..base import (
 
 
 class ScrollArea(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Custom styled, cross-browser scrollable area using native functionality."""
 
     tag = "ScrollArea"
 
