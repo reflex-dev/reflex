@@ -8,12 +8,16 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Literal
+from reflex.components.component import Component
 from reflex.components.el.elements.inline import A
+from reflex.components.next.link import NextLink
+from reflex.utils import imports
 from reflex.vars import Var
 from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
 from .base import LiteralTextSize, LiteralTextTrim, LiteralTextWeight
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
+next_link = NextLink.create()
 
 class Link(CommonMarginProps, RadixThemesComponent, A):
     @overload
@@ -21,7 +25,31 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
     def create(  # type: ignore
         cls,
         *children,
-        color: Optional[Union[Var[str], str]] = None,
+        as_child: Optional[Union[Var[bool], bool]] = None,
+        size: Optional[
+            Union[
+                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
+                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            ]
+        ] = None,
+        weight: Optional[
+            Union[
+                Var[Literal["light", "regular", "medium", "bold"]],
+                Literal["light", "regular", "medium", "bold"],
+            ]
+        ] = None,
+        trim: Optional[
+            Union[
+                Var[Literal["normal", "start", "end", "both"]],
+                Literal["normal", "start", "end", "both"],
+            ]
+        ] = None,
+        underline: Optional[
+            Union[
+                Var[Literal["auto", "hover", "always"]],
+                Literal["auto", "hover", "always"],
+            ]
+        ] = None,
         color_scheme: Optional[
             Union[
                 Var[
@@ -82,31 +110,6 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
                     "bronze",
                     "gray",
                 ],
-            ]
-        ] = None,
-        as_child: Optional[Union[Var[bool], bool]] = None,
-        size: Optional[
-            Union[
-                Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
-                Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-            ]
-        ] = None,
-        weight: Optional[
-            Union[
-                Var[Literal["light", "regular", "medium", "bold"]],
-                Literal["light", "regular", "medium", "bold"],
-            ]
-        ] = None,
-        trim: Optional[
-            Union[
-                Var[Literal["normal", "start", "end", "both"]],
-                Literal["normal", "start", "end", "both"],
-            ]
-        ] = None,
-        underline: Optional[
-            Union[
-                Var[Literal["auto", "hover", "always"]],
-                Literal["auto", "hover", "always"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -269,20 +272,16 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
         ] = None,
         **props
     ) -> "Link":
-        """Create a new component instance.
-
-        Will prepend "RadixThemes" to the component tag to avoid conflicts with
-        other UI libraries for common names, like Text and Button.
+        """Create a Link component.
 
         Args:
-            *children: Child components.
-            color: map to CSS default color property.
-            color_scheme: map to radix color property.
+            *children: The children of the component.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
             size: Text size: "1" - "9"
             weight: Thickness of text: "light" | "regular" | "medium" | "bold"
             trim: Removes the leading trim space: "normal" | "start" | "end" | "both"
             underline: Sets the visibility of the underline affordance: "auto" | "hover" | "always"
+            color_scheme: Overrides the accent color inherited from the Theme.
             high_contrast: Whether to render the text with higher contrast color
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
@@ -323,9 +322,12 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
             class_name: The class name for the component.
             autofocus: Whether the component should take the focus once the page is loaded
             custom_attrs: custom attribute
-            **props: Component properties.
+            **props: The props of the component.
+
+        Raises:
+            ValueError: in case of missing children
 
         Returns:
-            A new component instance.
+            Component: The link component
         """
         ...
