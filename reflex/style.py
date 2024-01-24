@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from reflex import constants
 from reflex.event import EventChain
@@ -188,16 +188,19 @@ def _format_emotion_style_pseudo_selector(key: str) -> str:
     return key
 
 
-def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
+def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
     """Convert the style to an emotion-compatible CSS-in-JS dict.
 
     Args:
         style_dict: The style dict to convert.
 
     Returns:
-        The emotion dict.
+        The emotion style dict.
     """
-    emotion_style = {}
+    _var_data = style_dict._var_data if isinstance(style_dict, Style) else None
+
+    emotion_style = Style()
+
     for orig_key, value in style_dict.items():
         key = _format_emotion_style_pseudo_selector(orig_key)
         if isinstance(value, list):
@@ -219,23 +222,21 @@ def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
         else:
             emotion_style[key] = value
     if emotion_style:
+        if _var_data is not None:
+            emotion_style._var_data = VarData.merge(emotion_style._var_data, _var_data)
         return emotion_style
 
 
 def convert_dict_to_style_and_format_emotion(
-    raw_dict: dict[str, Any], var_datas: Optional[list[VarData]] = None
+    raw_dict: dict[str, Any]
 ) -> dict[str, Any] | None:
     """Convert a dict to a style dict and then format as emotion.
 
     Args:
         raw_dict: The dict to convert.
-        var_datas: the var_data list to update if there are var_datas from the style dict.
 
     Returns:
         The emotion dict.
 
     """
-    style_dict = Style(raw_dict)
-    if var_datas is not None and style_dict._var_data:
-        var_datas.append(style_dict._var_data)
-    return format_as_emotion(style_dict)
+    return format_as_emotion(Style(raw_dict))

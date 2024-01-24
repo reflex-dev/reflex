@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from reflex.components.base import Fragment
 from reflex.components.component import BaseComponent, Component, MemoizationLeaf
 from reflex.components.tags import MatchTag, Tag
+from reflex.style import Style
 from reflex.utils import format, imports, types
 from reflex.utils.exceptions import MatchTypeError
 from reflex.vars import BaseVar, Var, VarData
@@ -94,12 +95,32 @@ class Match(MemoizationLeaf):
         if not isinstance(cases[-1], tuple):
             default = cases.pop()
             default = (
-                Var.create(default, _var_is_string=type(default) is str)
+                cls._create_case_var_with_var_data(default)
                 if not isinstance(default, BaseComponent)
                 else default
             )
 
         return cases, default  # type: ignore
+
+    @classmethod
+    def _create_case_var_with_var_data(cls, case_element):
+        """Convert a case element into a Var.If the case
+        is a Style type, we extract the var data and merge it with the
+        newly created Var.
+
+        Args:
+            case_element: The case element.
+
+        Returns:
+            The case element Var.
+        """
+        _var_data = case_element._var_data if isinstance(case_element, Style) else None  # type: ignore
+        case_element = Var.create(
+            case_element, _var_is_string=type(case_element) is str
+        )
+        if _var_data is not None:
+            case_element._var_data = VarData.merge(case_element._var_data, _var_data)  # type: ignore
+        return case_element
 
     @classmethod
     def _process_match_cases(cls, cases: List) -> List[List[BaseVar]]:
@@ -130,7 +151,7 @@ class Match(MemoizationLeaf):
             for element in case:
                 # convert all non component element to vars.
                 el = (
-                    Var.create(element, _var_is_string=type(element) is str)
+                    cls._create_case_var_with_var_data(element)
                     if not isinstance(element, BaseComponent)
                     else element
                 )

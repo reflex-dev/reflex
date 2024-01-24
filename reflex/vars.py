@@ -1574,6 +1574,8 @@ class Var:
         Returns:
             The str var without the wrapped curly braces
         """
+        from reflex.style import Style
+
         type_ = (
             get_origin(self._var_type)
             if types.is_generic_alias(self._var_type)
@@ -1583,7 +1585,9 @@ class Var:
         wrapped_var = str(self)
         return (
             wrapped_var
-            if not self._var_state and issubclass(type_, dict)
+            if not self._var_state
+            and issubclass(type_, dict)
+            or issubclass(type_, Style)
             else wrapped_var.strip("{}")
         )
 

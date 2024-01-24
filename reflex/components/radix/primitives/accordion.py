@@ -35,7 +35,6 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
     Returns:
         The theme for the accordion root component.
     """
-    _var_datas: list[VarData] = []
     return match(  # type: ignore
         variant,
         (
@@ -48,7 +47,6 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
                 },
-                _var_datas,
             ),
         ),
         (
@@ -63,7 +61,6 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
                 },
-                _var_datas,
             ),
         ),
         (
@@ -81,7 +78,6 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                     ),
                     "box_shadow": "0 2px 10px var(--black-a1)",
                 },
-                _var_datas,
             ),
         ),
         (
@@ -102,11 +98,8 @@ def get_theme_accordion_root(variant: Var[str], color_scheme: Var[str]) -> BaseV
                 ),
                 "box_shadow": "0 2px 10px var(--black-a4)",
             },
-            _var_datas,
         )
         # defaults to classic
-    )._replace(  # type: ignore
-        merge_var_data=VarData.merge(*_var_datas)
     )
 
 
@@ -159,8 +152,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
     Returns:
         The theme for the accordion trigger component.
     """
-    _var_datas: list[VarData] = []
-
     return match(  # type: ignore
         variant,
         (
@@ -201,7 +192,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "font_size": "15px",
                     "line_height": 1,
                 },
-                _var_datas,
             ),
         ),
         (
@@ -244,7 +234,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "font_size": "15px",
                     "line_height": 1,
                 },
-                _var_datas,
             ),
         ),
         # defaults to classic
@@ -287,10 +276,7 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                 "font_size": "15px",
                 "line_height": 1,
             },
-            _var_datas,
         ),
-    )._replace(  # type: ignore
-        merge_var_data=VarData.merge(*_var_datas)
     )
 
 
@@ -304,7 +290,6 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
     Returns:
         The theme for the accordion content component.
     """
-    _var_datas: list[VarData] = []
     return match(  # type: ignore
         variant,
         (
@@ -333,7 +318,6 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                         ),
                     },
                 },
-                _var_datas,
             ),
         ),
         convert_dict_to_style_and_format_emotion(
@@ -382,10 +366,7 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                     ),
                 },
             },
-            _var_datas,
         ),
-    )._replace(  # type: ignore
-        merge_var_data=VarData.merge(*_var_datas)
     )
 
 
