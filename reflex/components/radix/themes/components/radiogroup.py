@@ -38,7 +38,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     value: Var[str]
 
     # The initial value of checked radio item. Should be used in conjunction with onValueChange.
-    default_value: Var[str]
+    default_value: Var[Any]
 
     # Whether the radio group is disabled
     disabled: Var[bool]
@@ -86,7 +86,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
     """High level wrapper for the RadioGroup component."""
 
     # The items of the radio group.
-    items: Var[List[str]]
+    items: Var[List[Any]]
 
     # The direction of the radio group.
     direction: Var[LiteralFlexDirection] = Var.create_safe("column")
