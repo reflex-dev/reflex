@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -96,7 +96,7 @@ class DrawerComponent(RadixPrimitiveComponentWithClassName):
 LiteralDirectionType = Literal["top", "bottom", "left", "right"]
 
 class DrawerRoot(DrawerComponent):
-    def get_event_triggers(self) -> dict[str, Any]: ...
+    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
@@ -105,7 +105,7 @@ class DrawerRoot(DrawerComponent):
         open: Optional[Union[Var[bool], bool]] = None,
         should_scale_background: Optional[Union[Var[bool], bool]] = None,
         close_threshold: Optional[Union[Var[float], float]] = None,
-        snap_points: Optional[list[float]] = None,
+        snap_points: Optional[List[float]] = None,
         fade_from_index: Optional[Union[Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
@@ -366,7 +366,7 @@ class DrawerPortal(DrawerComponent):
         ...
 
 class DrawerContent(DrawerComponent):
-    def get_event_triggers(self) -> dict[str, Any]: ...
+    def get_event_triggers(self) -> Dict[str, Any]: ...
     @overload
     @classmethod
     def create(  # type: ignore
