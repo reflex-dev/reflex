@@ -8,7 +8,6 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from typing import Any, Literal, Optional
-from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.constants import EventTriggers
 from reflex.vars import Var
