@@ -1,9 +1,11 @@
 """Interactive components provided by @radix-ui/themes."""
 from typing import Any, Dict, Literal
 
+import reflex as rx
 from reflex.components import el
 from reflex.components.component import Component
 from reflex.components.core.debounce import DebounceInput
+from reflex.components.radix.themes.components.icons import Icon
 from reflex.constants import EventTriggers
 from reflex.vars import Var
 
@@ -90,3 +92,79 @@ class TextFieldSlot(RadixThemesComponent):
 
     # Override the gap spacing between slot and input: "1" - "9"
     gap: Var[LiteralSize]
+
+
+class Input(TextFieldInput):
+    """High level wrapper for the Input component."""
+
+    # The icon to render before the input.
+    icon: Var[str]
+
+    # Text field size "1" - "3"
+    size: Var[LiteralTextFieldSize]
+
+    # Variant of text field: "classic" | "surface" | "soft"
+    variant: Var[LiteralTextFieldVariant]
+
+    # Override theme color for text field
+    color: Var[LiteralAccentColor]
+
+    # Override theme radius for text field: "none" | "small" | "medium" | "large" | "full"
+    radius: Var[LiteralRadius]
+
+    # Whether the input should have autocomplete enabled
+    auto_complete: Var[bool]
+
+    # Disables the input
+    disabled: Var[bool]
+
+    # Specifies the maximum number of characters allowed in the input
+    max_length: Var[str]
+
+    # Specifies the minimum number of characters required in the input
+    min_length: Var[str]
+
+    # Name of the input, used when sending form data
+    name: Var[str]
+
+    # Placeholder text in the input
+    placeholder: Var[str]
+
+    # Indicates that the input is required
+    required: Var[bool]
+
+    # Value of the input
+    value: Var[str]
+
+    @classmethod
+    def create(cls, **props):
+        """Create an Input component.
+
+        Args:
+            **props: The properties of the component.
+
+        Returns:
+            The component.
+        """
+        input_props = {
+            prop: props.pop(prop)
+            for prop in [
+                "auto_complete",
+                "disabled",
+                "max_length",
+                "min_length",
+                "name",
+                "placeholder",
+                "required",
+                "value",
+            ]
+            if prop in props
+        }
+
+        icon = props.pop("icon", None)
+
+        return TextFieldRoot.create(
+            TextFieldSlot.create(Icon.create(tag=icon)) if icon else rx.fragment(),
+            TextFieldInput.create(**input_props),
+            **props,
+        )
