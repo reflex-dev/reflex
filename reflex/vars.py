@@ -429,12 +429,9 @@ class Var:
 
         Returns:
             The merged var.
-
-        Raises:
-            ValueError: If the other value to be merged is None.
         """
         if other is None:
-            raise ValueError("The value to be merged cannot be None.")
+            return self
         if not isinstance(other, Var):
             other = Var.create(other)
         return self._replace(

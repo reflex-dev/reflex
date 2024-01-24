@@ -218,7 +218,9 @@ def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
             emotion_style[key] = format_as_emotion(value)
         else:
             emotion_style[key] = value
-    return emotion_style
+
+    if emotion_style:
+        return emotion_style
 
 
 def convert_dict_to_style_and_format_emotion(
