@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional
 
-from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponentWithClassName
 from reflex.constants import EventTriggers
 from reflex.vars import Var
@@ -99,8 +98,13 @@ class DrawerContent(DrawerComponent):
     tag = "Drawer.Content"
 
     # Style set partially based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _apply_theme(self, _theme: Component | None):
-        return {
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        base_style = {
             "left": "0",
             "right": "0",
             "bottom": "0",
@@ -108,9 +112,15 @@ class DrawerContent(DrawerComponent):
             "position": "fixed",
             "z_index": 50,
             "display": "flex",
-            "background_color": "var(--background)",
-            **self.style,
         }
+        style = self.style or {}
+        base_style.update(style)
+        self.style.update(
+            {
+                "css": base_style,
+            }
+        )
+        return self.style
 
     def get_event_triggers(self) -> dict[str, Any]:
         """Get the events triggers signatures for the component.
@@ -136,8 +146,13 @@ class DrawerOverlay(DrawerComponent):
     tag = "Drawer.Overlay"
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _apply_theme(self, _theme: Component | None):
-        return {
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        base_style = {
             "position": "fixed",
             "left": "0",
             "right": "0",
@@ -145,8 +160,15 @@ class DrawerOverlay(DrawerComponent):
             "top": "0",
             "z_index": 50,
             "background": "rgba(0, 0, 0, 0.8)",
-            **self.style,
         }
+        style = self.style or {}
+        base_style.update(style)
+        self.style.update(
+            {
+                "css": base_style,
+            }
+        )
+        return self.style
 
 
 class DrawerClose(DrawerComponent):
@@ -161,14 +183,26 @@ class DrawerTitle(DrawerComponent):
     tag = "Drawer.Title"
 
     # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _apply_theme(self, _theme: Component | None):
-        return {
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        base_style = {
             "font-size": "1.125rem",
             "font-weight": "600",
             "line-weight": "1",
             "letter-spacing": "-0.05em",
-            **self.style,
         }
+        style = self.style or {}
+        base_style.update(style)
+        self.style.update(
+            {
+                "css": base_style,
+            }
+        )
+        return self.style
 
 
 class DrawerDescription(DrawerComponent):
@@ -176,12 +210,24 @@ class DrawerDescription(DrawerComponent):
 
     tag = "Drawer.Description"
 
-    # Style set partially based on the source code at https://ui.shadcn.com/docs/components/drawer
-    def _apply_theme(self, _theme: Component | None):
-        return {
+    # Style set based on the source code at https://ui.shadcn.com/docs/components/drawer
+    def _get_style(self) -> dict:
+        """Get the style for the component.
+
+        Returns:
+            The dictionary of the component style as value and the style notation as key.
+        """
+        base_style = {
             "font-size": "0.875rem",
-            **self.style,
         }
+        style = self.style or {}
+        base_style.update(style)
+        self.style.update(
+            {
+                "css": base_style,
+            }
+        )
+        return self.style
 
 
 drawer_root = DrawerRoot.create
