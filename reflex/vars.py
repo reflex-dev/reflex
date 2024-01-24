@@ -431,7 +431,7 @@ class Var:
             The merged var.
         """
         if other is None:
-            return self
+            return self._replace()
         if not isinstance(other, Var):
             other = Var.create(other)
         return self._replace(
