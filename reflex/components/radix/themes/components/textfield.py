@@ -146,9 +146,18 @@ class Input(TextFieldInput):
         Returns:
             The component.
         """
-        root_props = {
+        input_props = {
             prop: props.pop(prop)
-            for prop in ["size", "variant", "color", "radius"]
+            for prop in [
+                "auto_complete",
+                "disabled",
+                "max_length",
+                "min_length",
+                "name",
+                "placeholder",
+                "required",
+                "value",
+            ]
             if prop in props
         }
 
@@ -156,6 +165,6 @@ class Input(TextFieldInput):
 
         return TextFieldRoot.create(
             TextFieldSlot.create(Icon.create(tag=icon)) if icon else rx.fragment(),
-            TextFieldInput.create(**props),
-            **root_props,
+            TextFieldInput.create(**input_props),
+            **props,
         )
