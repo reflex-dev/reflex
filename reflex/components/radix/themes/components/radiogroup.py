@@ -98,7 +98,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
 
     @classmethod
-    def create(cls, items: Var[List[str]], **props) -> Component:
+    def create(cls, items: Var[List[Any]], **props) -> Component:
         """Create a radio group component.
 
         Args:
@@ -115,7 +115,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
         def radio_group_item(value: str) -> Component:
             return Text.create(
                 Flex.create(
-                    RadioGroupItem.create(value=value),
+                    RadioGroupItem.create(value=str(value)),
                     value,
                     gap="2",
                 ),
