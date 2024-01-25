@@ -103,7 +103,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[Var[Any], Any]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
@@ -456,7 +456,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[List[str]], List[str]]] = None,
+        items: Optional[Union[Var[List[Any]], List[Any]]] = None,
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
@@ -542,7 +542,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[str], str]] = None,
+        default_value: Optional[Union[Var[Any], Any]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
