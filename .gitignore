@@ -9,3 +9,4 @@ examples/
 .venv
 venv
 requirements.txt
+.pyi_checksums.json

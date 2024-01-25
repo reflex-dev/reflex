@@ -2,8 +2,10 @@
 
 import ast
 import contextlib
+import hashlib
 import importlib
 import inspect
+import json
 import logging
 import os
 import re
@@ -24,6 +26,8 @@ from reflex.utils import types as rx_types
 from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
+
+CHECKSUM_FILE = ".pyi_checksums.json"
 
 EXCLUDED_FILES = [
     "__init__.py",
@@ -60,6 +64,61 @@ DEFAULT_TYPING_IMPORTS = {
     "Optional",
     "Union",
 }
+
+
+def _md5_of_file(path: Path) -> str:
+    """Get the md5 hash of a file.
+
+    Args:
+        path: The path to the file to hash.
+
+    Returns:
+        The md5 hash of the file.
+    """
+    hash_md5 = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
+def _get_checksums() -> dict[str, str]:
+    """Get the checksums dict from the checksum file.
+
+    Returns:
+        The checksums dict.
+    """
+    if not Path(CHECKSUM_FILE).exists():
+        return {}
+    with open(CHECKSUM_FILE, "r") as f:
+        return json.load(f)
+
+
+def _write_checksums(checksums: dict[str, str]):
+    """Write the checksums dict to the checksum file.
+
+    Args:
+        checksums: The checksums dict.
+    """
+    with open(CHECKSUM_FILE, "w") as f:
+        json.dump(checksums, f, indent=4)
+
+
+def _has_changed(path: Path, checksums: dict[str, str]) -> bool:
+    """Check if the file has changed since the last run.
+
+    Args:
+        path: The file to check.
+        checksums: The checksums dict.
+
+    Returns:
+        Whether the file has changed.
+    """
+    new_md5 = _md5_of_file(path)
+    key = str(path)
+    changed = new_md5 != checksums.get(key, "")
+    checksums[key] = new_md5
+    return changed
 
 
 def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
@@ -648,6 +707,7 @@ class PyiGenerator:
         Args:
             targets: the list of file/folders to scan.
         """
+        checksums = _get_checksums()
         file_targets = []
         for target in targets:
             path = Path(target)
@@ -658,9 +718,13 @@ class PyiGenerator:
                     for file in files:
                         if file in EXCLUDED_FILES or not file.endswith(".py"):
                             continue
-                        file_targets.append(Path(root) / file)
+                        filepath = Path(root) / file
+                        if not _has_changed(filepath, checksums):
+                            continue
+                        file_targets.append(filepath)
 
         self._scan_files_multiprocess(file_targets)
+        _write_checksums(checksums)
 
 
 def generate_init():
