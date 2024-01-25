@@ -11,31 +11,37 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class TagLabel(ChakraComponent):
+class BaseTag(ChakraComponent):
+    """The base tag component."""
+
+    library = "@chakra-ui/tag@3.1.1"
+
+
+class TagLabel(BaseTag):
     """The label of the tag."""
 
     tag = "TagLabel"
 
 
-class TagLeftIcon(ChakraComponent):
+class TagLeftIcon(BaseTag):
     """The left icon of the tag."""
 
     tag = "TagLeftIcon"
 
 
-class TagRightIcon(ChakraComponent):
+class TagRightIcon(BaseTag):
     """The right icon of the tag."""
 
     tag = "TagRightIcon"
 
 
-class TagCloseButton(ChakraComponent):
+class TagCloseButton(BaseTag):
     """The close button of the tag."""
 
     tag = "TagCloseButton"
 
 
-class Tag(ChakraComponent):
+class Tag(BaseTag):
     """The parent wrapper that provides context for its children."""
 
     tag = "Tag"

@@ -13,7 +13,13 @@ from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
-class NumberInput(ChakraComponent):
+class BaseNumberInput(ChakraComponent):
+    """Base number input component."""
+
+    library = "@chakra-ui/number-input@2.1.2"
+
+
+class NumberInput(BaseNumberInput):
     """The wrapper that provides context and logic to the components."""
 
     tag = "NumberInput"
@@ -113,25 +119,25 @@ class NumberInput(ChakraComponent):
         return super().create(*children, **props)
 
 
-class NumberInputField(ChakraComponent):
+class NumberInputField(BaseNumberInput):
     """The input field itself."""
 
     tag = "NumberInputField"
 
 
-class NumberInputStepper(ChakraComponent):
+class NumberInputStepper(BaseNumberInput):
     """The wrapper for the input's stepper buttons."""
 
     tag = "NumberInputStepper"
 
 
-class NumberIncrementStepper(ChakraComponent):
+class NumberIncrementStepper(BaseNumberInput):
     """The button to increment the value of the input."""
 
     tag = "NumberIncrementStepper"
 
 
-class NumberDecrementStepper(ChakraComponent):
+class NumberDecrementStepper(BaseNumberInput):
     """The button to decrement the value of the input."""
 
     tag = "NumberDecrementStepper"

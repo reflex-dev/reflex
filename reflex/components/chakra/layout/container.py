@@ -1,10 +1,11 @@
 """A flexbox container."""
 
-from reflex.components.chakra import ChakraComponent
+
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.vars import Var
 
 
-class Container(ChakraComponent):
+class Container(ChakraLayoutComponent):
     """A flexbox container that centers its children and sets a max width."""
 
     tag = "Container"

@@ -1,11 +1,11 @@
 """Container to stack elements with spacing."""
 
-from reflex.components.chakra import ChakraComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class Wrap(ChakraComponent):
+class Wrap(ChakraLayoutComponent):
     """Layout component used to add space between elements and wrap automatically if there isn't enough space."""
 
     tag = "Wrap"
@@ -51,7 +51,7 @@ class Wrap(ChakraComponent):
         return super().create(*children, **props)
 
 
-class WrapItem(ChakraComponent):
+class WrapItem(ChakraLayoutComponent):
     """Item of the Wrap component."""
 
     tag = "WrapItem"
