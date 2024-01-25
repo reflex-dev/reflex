@@ -104,7 +104,7 @@ def _write_checksums(checksums: dict[str, str]):
         json.dump(checksums, f, indent=4)
 
 
-def _has_changed(path: Path, checksums: dict[str, str]) -> bool:
+def _has_changed(path: Path, checksums: dict[str, str]) -> str | None:
     """Check if the file has changed since the last run.
 
     Args:
@@ -118,7 +118,8 @@ def _has_changed(path: Path, checksums: dict[str, str]) -> bool:
     key = str(path)
     changed = new_md5 != checksums.get(key, "")
     checksums[key] = new_md5
-    return changed
+    if changed:
+        return new_md5
 
 
 def _get_type_hint(value, type_hint_globals, is_optional=True) -> str:
@@ -708,6 +709,11 @@ class PyiGenerator:
             targets: the list of file/folders to scan.
         """
         checksums = _get_checksums()
+        file = Path(__file__)
+        if checksum := _has_changed(Path(__file__), checksums):
+            logger.info("pyi_generator.py has changed, regenerating all .pyi files")
+            checksums.clear()
+            checksums[str(file)] = checksum
         file_targets = []
         for target in targets:
             path = Path(target)
