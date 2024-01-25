@@ -26,7 +26,7 @@ def xvfb():
         )
 
         global DISPLAY
-        with SmartDisplay(visible=0, size=XVFB_DIMENSIONS) as DISPLAY:
+        with SmartDisplay(visible=False, size=XVFB_DIMENSIONS) as DISPLAY:
             yield DISPLAY
         DISPLAY = None
     else:
