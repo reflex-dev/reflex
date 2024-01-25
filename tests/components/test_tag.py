@@ -10,6 +10,7 @@ from reflex.vars import BaseVar, Var
     "props,test_props",
     [
         ({}, []),
+        ({"key-hypen":1}, ["key-hypen={1}"]),
         ({"key": 1}, ["key={1}"]),
         ({"key": "value"}, ["key={`value`}"]),
         ({"key": True, "key2": "value2"}, ["key={true}", "key2={`value2`}"]),
@@ -51,11 +52,9 @@ def test_is_valid_prop(prop: Var, valid: bool):
 
 def test_add_props():
     """Test that the props are added."""
-    tag = Tag().add_props(key="value", key2=42, **{"test-hype" : 1}, invalid=None, invalid2={})
+    tag = Tag().add_props(key="value", key2=42, invalid=None, invalid2={})
     assert tag.props["key"].equals(Var.create("value"))
     assert tag.props["key2"].equals(Var.create(42))
-    assert "test-hype" in tag.props
-    assert tag.props["test-hype"].equals(Var.create(1))
     assert "invalid" not in tag.props
     assert "invalid2" not in tag.props
 
