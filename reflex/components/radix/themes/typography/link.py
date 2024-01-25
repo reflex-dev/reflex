@@ -6,7 +6,10 @@ from __future__ import annotations
 
 from typing import Literal
 
+from reflex.components.component import Component
 from reflex.components.el.elements.inline import A
+from reflex.components.next.link import NextLink
+from reflex.utils import imports
 from reflex.vars import Var
 
 from ..base import (
@@ -21,6 +24,8 @@ from .base import (
 )
 
 LiteralLinkUnderline = Literal["auto", "hover", "always"]
+
+next_link = NextLink.create()
 
 
 class Link(CommonMarginProps, RadixThemesComponent, A):
@@ -44,7 +49,34 @@ class Link(CommonMarginProps, RadixThemesComponent, A):
     underline: Var[LiteralLinkUnderline]
 
     # Overrides the accent color inherited from the Theme.
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the text with higher contrast color
     high_contrast: Var[bool]
+
+    def _get_imports(self) -> imports.ImportDict:
+        return {**super()._get_imports(), **next_link._get_imports()}
+
+    @classmethod
+    def create(cls, *children, **props) -> Component:
+        """Create a Link component.
+
+        Args:
+            *children: The children of the component.
+            **props: The props of the component.
+
+        Raises:
+            ValueError: in case of missing children
+
+        Returns:
+            Component: The link component
+        """
+        if props.get("href") is not None:
+            if not len(children):
+                raise ValueError("Link without a child will not display")
+            if "as_child" not in props:
+                # If user does not use `as_child`, by default we render using next_link to avoid page refresh during internal navigation
+                return super().create(
+                    NextLink.create(*children, **props), as_child=True
+                )
+        return super().create(*children, **props)

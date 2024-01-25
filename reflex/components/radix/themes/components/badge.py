@@ -13,7 +13,7 @@ from ..base import (
 
 
 class Badge(el.Span, CommonMarginProps, RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+    """A stylized badge element."""
 
     tag = "Badge"
 

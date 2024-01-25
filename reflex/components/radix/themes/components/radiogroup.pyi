@@ -224,7 +224,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
             size: The size of the radio group: "1" | "2" | "3"
             variant: The variant of the radio group
             high_contrast: Whether to render the radio group with higher contrast color against background
-            value: The controlled value of the radio item to check. Should be used in conjunction with onValueChange.
+            value: The controlled value of the radio item to check. Should be used in conjunction with on_value_change.
             default_value: The initial value of checked radio item. Should be used in conjunction with onValueChange.
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.
@@ -427,7 +427,7 @@ class RadioGroupItem(CommonMarginProps, RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            value: The value of the radio item to check. Should be used in conjunction with onCheckedChange.
+            value: The value of the radio item to check. Should be used in conjunction with on_value_change.
             disabled: When true, prevents the user from interacting with the radio item.
             required: When true, indicates that the user must check the radio item before the owning form can be submitted.
             m: Margin: "0" - "9"
@@ -478,7 +478,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -660,9 +660,9 @@ class HighLevelRadioGroup(RadioGroupRoot):
             gap: The gap between the items of the radio group.
             size: The size of the radio group: "1" | "2" | "3"
             variant: The variant of the radio group
-            color: The color of the radio group
+            color_scheme: The color of the radio group
             high_contrast: Whether to render the radio group with higher contrast color against background
-            value: The controlled value of the radio item to check. Should be used in conjunction with onValueChange.
+            value: The controlled value of the radio item to check. Should be used in conjunction with on_value_change.
             default_value: The initial value of checked radio item. Should be used in conjunction with onValueChange.
             disabled: Whether the radio group is disabled
             name: The name of the group. Submitted with its owning form as part of a name/value pair.

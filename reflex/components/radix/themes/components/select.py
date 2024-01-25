@@ -16,7 +16,7 @@ LiteralButtonSize = Literal[1, 2, 3, 4]
 
 
 class SelectRoot(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Displays a list of options for the user to pick from, triggered by a button."""
 
     tag = "Select.Root"
 
@@ -58,7 +58,7 @@ class SelectRoot(CommonMarginProps, RadixThemesComponent):
 
 
 class SelectTrigger(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The button that toggles the select."""
 
     tag = "Select.Trigger"
 
@@ -76,7 +76,7 @@ class SelectTrigger(CommonMarginProps, RadixThemesComponent):
 
 
 class SelectContent(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The component that pops out when the select is open."""
 
     tag = "Select.Content"
 
@@ -119,13 +119,13 @@ class SelectContent(CommonMarginProps, RadixThemesComponent):
 
 
 class SelectGroup(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Used to group multiple items."""
 
     tag = "Select.Group"
 
 
 class SelectItem(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The component that contains the select items."""
 
     tag = "Select.Item"
 
@@ -137,13 +137,13 @@ class SelectItem(CommonMarginProps, RadixThemesComponent):
 
 
 class SelectLabel(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Used to render the label of a group, it isn't focusable using arrow keys."""
 
     tag = "Select.Label"
 
 
 class SelectSeparator(CommonMarginProps, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Used to visually separate items in the Select."""
 
     tag = "Select.Separator"
 
