@@ -100,5 +100,7 @@ class BreadcrumbLink(Link):
 
     tag = "BreadcrumbLink"
 
+    library = "@chakra-ui/breadcrumb@2.2.0"
+
     # Is the current page of the breadcrumb.
     is_current_page: Var[bool]
