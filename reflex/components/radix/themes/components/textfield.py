@@ -94,7 +94,7 @@ class TextFieldSlot(RadixThemesComponent):
     gap: Var[LiteralSize]
 
 
-class Input(TextFieldInput):
+class Input(RadixThemesComponent):
     """High level wrapper for the Input component."""
 
     # The icon to render before the input.
@@ -114,6 +114,9 @@ class Input(TextFieldInput):
 
     # Whether the input should have autocomplete enabled
     auto_complete: Var[bool]
+
+    # The value of the input when initially rendered.
+    default_value: Var[str]
 
     # Disables the input
     disabled: Var[bool]
@@ -150,6 +153,7 @@ class Input(TextFieldInput):
             prop: props.pop(prop)
             for prop in [
                 "auto_complete",
+                "default_value",
                 "disabled",
                 "max_length",
                 "min_length",
@@ -157,6 +161,11 @@ class Input(TextFieldInput):
                 "placeholder",
                 "required",
                 "value",
+                "on_change",
+                "on_focus",
+                "on_blur",
+                "on_key_down",
+                "on_key_up",
             ]
             if prop in props
         }
@@ -168,3 +177,18 @@ class Input(TextFieldInput):
             TextFieldInput.create(**input_props),
             **props,
         )
+
+    def get_event_triggers(self) -> Dict[str, Any]:
+        """Get the event triggers that pass the component's value to the handler.
+
+        Returns:
+            A dict mapping the event trigger to the var that is passed to the handler.
+        """
+        return {
+            **super().get_event_triggers(),
+            EventTriggers.ON_CHANGE: lambda e0: [e0.target.value],
+            EventTriggers.ON_FOCUS: lambda e0: [e0.target.value],
+            EventTriggers.ON_BLUR: lambda e0: [e0.target.value],
+            EventTriggers.ON_KEY_DOWN: lambda e0: [e0.key],
+            EventTriggers.ON_KEY_UP: lambda e0: [e0.key],
+        }
