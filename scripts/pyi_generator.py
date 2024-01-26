@@ -28,6 +28,7 @@ logger = logging.getLogger("pyi_generator")
 LAST_RUN_COMMIT_SHA_FILE = Path(".pyi_generator_last_run").resolve()
 INIT_FILE = Path("reflex/__init__.pyi").resolve()
 PWD = Path(".").resolve()
+GENERATOR_FILE = Path(__file__).resolve()
 
 EXCLUDED_FILES = [
     "__init__.py",
@@ -78,7 +79,7 @@ def _relative_to_pwd(path: Path) -> Path:
     return path.relative_to(PWD)
 
 
-def _get_changed_files() -> list[str] | None:
+def _get_changed_files() -> list[Path] | None:
     """Get the list of changed files since the last run of the generator.
 
     Returns:
@@ -91,8 +92,8 @@ def _get_changed_files() -> list[str] | None:
         ).readlines()
         # get all unstaged changes
         changed_files.extend(os.popen("git diff --name-only").readlines())
-        changed_files = [file.strip() for file in changed_files]
-        if os.path.relpath(__file__, ".") in changed_files:
+        changed_files = [Path(file.strip()) for file in changed_files]
+        if _relative_to_pwd(GENERATOR_FILE) in changed_files:
             logger.info("pyi_generator.py changed, regenerating all .pyi files")
             changed_files = None
     except FileNotFoundError:
@@ -690,7 +691,7 @@ class PyiGenerator:
         with Pool(processes=cpu_count()) as pool:
             pool.map(self._scan_file, files)
 
-    def scan_all(self, targets, changed_files: list[str] | None = None):
+    def scan_all(self, targets, changed_files: list[Path] | None = None):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
         Args:
