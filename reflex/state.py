@@ -332,9 +332,7 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         }
         cls.computed_vars = {
             v._var_name: v._var_set_state(cls)
-            for mixin in cls.__mro__
-            if mixin is cls or not issubclass(mixin, (BaseState, ABC))
-            for v in mixin.__dict__.values()
+            for v in cls.__dict__.values()
             if isinstance(v, ComputedVar)
         }
         cls.vars = {
@@ -352,16 +350,61 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
-            if not name.startswith("_")
-            and isinstance(fn, Callable)
-            and not isinstance(fn, EventHandler)
+            if cls._item_is_event_handler(name, fn)
         }
+
+        for mixin in cls._mixins():
+            for name, value in mixin.__dict__.items():
+                if isinstance(value, ComputedVar):
+                    cls.computed_vars[name] = value
+                    continue
+                if events.get(name) is not None:
+                    continue
+                if not cls._item_is_event_handler(name, value):
+                    continue
+                if parent_state is not None and parent_state.event_handlers.get(name):
+                    continue
+                value.__qualname__ = f"{cls.__name__}.{name}"
+                setattr(cls, name, value)
+                events[name] = value
+
         for name, fn in events.items():
             handler = EventHandler(fn=fn)
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
         cls._init_var_dependency_dicts()
+
+    @staticmethod
+    def _item_is_event_handler(name: str, value: Any) -> bool:
+        """Check if the item is an event handler.
+
+        Args:
+            name: The name of the item.
+            value: The value of the item.
+
+        Returns:
+            Whether the item is an event handler.
+        """
+        return (
+            not name.startswith("_")
+            and isinstance(value, Callable)
+            and not isinstance(value, EventHandler)
+        )
+
+    @classmethod
+    def _mixins(cls) -> List[Type]:
+        """Get the mixin classes of the state.
+
+        Returns:
+            The mixin classes of the state.
+        """
+        return [
+            mixin
+            for mixin in cls.__mro__
+            if not issubclass(mixin, (BaseState, ABC))
+            and mixin is not pydantic.BaseModel
+        ]
 
     @classmethod
     def _init_var_dependency_dicts(cls):
