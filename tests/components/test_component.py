@@ -137,6 +137,8 @@ def component5() -> Type[Component]:
 
         _valid_children: List[str] = ["Text"]
 
+        _valid_parents: List[str] = ["Text"]
+
     return TestComponent5
 
 
@@ -566,6 +568,20 @@ def test_unsupported_child_components(fixture, request):
     assert (
         err.value.args[0]
         == f"The component `{component.__name__}` cannot have `Text` as a child component"
+    )
+
+
+def test_unsupported_child_components(component5):
+    """Test that a value error is raised when an component is not in _valid_parents of one of its children.
+
+    Args:
+        component5: component with valid parent of "Text" only
+    """
+    with pytest.raises(ValueError) as err:
+        rx.Box(children=[component5.create()])
+    assert (
+        err.value.args[0]
+        == f"The component `{component5.__name__}` can only be a child of the components: `{component5._valid_parents[0]}`. Got `Box` instead."
     )
 
 
