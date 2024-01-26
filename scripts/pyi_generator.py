@@ -707,12 +707,19 @@ class PyiGenerator:
                 for root, _, files in os.walk(target_path):
                     for file in files:
                         file_path = (Path(root) / file).resolve()
-                        if file in EXCLUDED_FILES or not file.endswith(".py"):
+                        pyi_file_path = file_path.with_suffix(".pyi")
+                        if file in EXCLUDED_FILES or not file_path.suffix == ".py":
                             continue
                         if (
                             changed_files is not None
                             and _relative_to_pwd(file_path) not in changed_files
                         ):
+                            # git reset pyi file if changed
+                            if (
+                                pyi_file_path.exists()
+                                and _relative_to_pwd(pyi_file_path) in changed_files
+                            ):
+                                pyi_file_path.unlink()
                             continue
                         file_targets.append(file_path)
 
