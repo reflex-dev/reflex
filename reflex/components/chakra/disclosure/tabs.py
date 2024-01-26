@@ -96,11 +96,15 @@ class Tab(BaseTabs):
     # The id of the panel.
     panel_id: Var[str]
 
+    _valid_parents: List[str] = ["TabList"]
+
 
 class TabList(BaseTabs):
     """Wrapper for the Tab components."""
 
     tag = "TabList"
+
+    _valid_parents: List[str] = ["Tabs"]
 
 
 class TabPanels(BaseTabs):
@@ -108,8 +112,12 @@ class TabPanels(BaseTabs):
 
     tag = "TabPanels"
 
+    _valid_parents: List[str] = ["Tabs"]
+
 
 class TabPanel(BaseTabs):
     """An element that contains the content associated with a tab."""
 
     tag = "TabPanel"
+
+    _valid_parents: List[str] = ["TabPanels"]
