@@ -43,7 +43,7 @@ class DrawerRoot(DrawerComponent):
 
     # Array of numbers from 0 to 100 that corresponds to % of the screen a given snap point should take up. Should go from least visible.
     # Also Accept px values, which doesn't take screen height into account.
-    snap_points: Optional[List[float]]
+    snap_points: Optional[List[str | float]]
 
     # Index of a snapPoint from which the overlay fade should be applied.
     # Defaults to the last snap point.
@@ -51,19 +51,19 @@ class DrawerRoot(DrawerComponent):
     fade_from_index: Var[int]
 
     # Duration for which the drawer is not draggable after scrolling content inside of the drawer. Defaults to 500ms
-    scroll_lock_timeout: Var[int] = 500  # type: ignore
+    scroll_lock_timeout: Var[int]
 
     # When `False`, it allows to interact with elements outside of the drawer without closing it.
     # Defaults to `True`.
-    modal: Var[bool] = True  # type: ignore
+    modal: Var[bool]
 
     # Direction of the drawer. Defaults to `"bottom"`
-    direction: Var[LiteralDirectionType] = "bottom"  # type: ignore
+    direction: Var[LiteralDirectionType]
 
     # When `True`, it prevents scroll restoration
     # when the drawer is closed after a navigation happens inside of it.
     # Defaults to `True`.
-    preventScrollRestoration: Var[bool] = True  # type: ignore
+    preventScrollRestoration: Var[bool]
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the event triggers that pass the component's value to the handler.
@@ -82,7 +82,7 @@ class DrawerTrigger(DrawerComponent):
 
     tag = "Drawer.Trigger"
 
-    as_child: Var[bool] = False  # type: ignore
+    as_child: Var[bool]
 
 
 class DrawerPortal(DrawerComponent):
