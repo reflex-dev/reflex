@@ -809,7 +809,7 @@ class Callout(CalloutRoot):
                 Literal["soft", "surface", "outline"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[

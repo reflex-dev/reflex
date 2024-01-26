@@ -32,7 +32,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
                 Literal["classic", "surface", "soft"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -282,7 +282,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             *children: The children of the component.
             size: The size of the text area: "1" | "2" | "3"
             variant: The variant of the text area
-            color: The color of the text area
+            color_scheme: The color of the text area
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
