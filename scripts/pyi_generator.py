@@ -25,6 +25,8 @@ from reflex.vars import Var
 
 logger = logging.getLogger("pyi_generator")
 
+LAST_RUN_COMMIT_SHA_FILE = ".pyi_generator_last_run"
+
 EXCLUDED_FILES = [
     "__init__.py",
     "component.py",
@@ -642,7 +644,7 @@ class PyiGenerator:
         with Pool(processes=cpu_count()) as pool:
             pool.map(self._scan_file, files)
 
-    def scan_all(self, targets):
+    def scan_all(self, targets, changed_files: list[str] | None = None):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
         Args:
@@ -657,6 +659,12 @@ class PyiGenerator:
                 for root, _, files in os.walk(path):
                     for file in files:
                         if file in EXCLUDED_FILES or not file.endswith(".py"):
+                            continue
+                        if (
+                            changed_files
+                            and os.path.relpath(os.path.join(root, file), ".")
+                            not in changed_files
+                        ):
                             continue
                         file_targets.append(Path(root) / file)
 
@@ -681,8 +689,32 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger("blib2to3.pgen2.driver").setLevel(logging.INFO)
 
+    try:
+        with open(LAST_RUN_COMMIT_SHA_FILE, "r") as f:
+            last_run_commit_sha = f.read().strip()
+        changed_files = os.popen(
+            f"git diff --name-only {last_run_commit_sha}..HEAD"
+        ).readlines()
+        # get all unstaged changes
+        changed_files.extend(os.popen("git diff --name-only").readlines())
+        changed_files = [file.strip() for file in changed_files]
+        if os.path.relpath(__file__, ".") in changed_files:
+            logger.info("pyi_generator.py changed, regenerating all .pyi files")
+            changed_files = None
+    except FileNotFoundError:
+        changed_files = None
+
+    if changed_files:
+        logger.info(f"Detected changed files: {changed_files}")
+    else:
+        logger.info("Changed files could not be detected, regenerating all .pyi files")
+
     targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
     logger.info(f"Running .pyi generator for {targets}")
     gen = PyiGenerator()
-    gen.scan_all(targets)
+    gen.scan_all(targets, changed_files)
     generate_init()
+
+    current_commit_sha = os.popen("git rev-parse HEAD").read().strip()
+    with open(LAST_RUN_COMMIT_SHA_FILE, "w") as f:
+        f.write(current_commit_sha)
