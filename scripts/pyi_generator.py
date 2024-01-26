@@ -704,10 +704,10 @@ if __name__ == "__main__":
     except FileNotFoundError:
         changed_files = None
 
-    if changed_files:
-        logger.info(f"Detected changed files: {changed_files}")
-    else:
+    if changed_files is None:
         logger.info("Changed files could not be detected, regenerating all .pyi files")
+    else:
+        logger.info(f"Detected changed files: {changed_files}")
 
     targets = sys.argv[1:] if len(sys.argv) > 1 else ["reflex/components"]
     logger.info(f"Running .pyi generator for {targets}")
