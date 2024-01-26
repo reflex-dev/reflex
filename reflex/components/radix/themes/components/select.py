@@ -15,7 +15,7 @@ LiteralButtonSize = Literal[1, 2, 3, 4]
 
 
 class SelectRoot(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Displays a list of options for the user to pick from, triggered by a button."""
 
     tag = "Select.Root"
 
@@ -57,7 +57,7 @@ class SelectRoot(RadixThemesComponent):
 
 
 class SelectTrigger(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The button that toggles the select."""
 
     tag = "Select.Trigger"
 
@@ -75,7 +75,7 @@ class SelectTrigger(RadixThemesComponent):
 
 
 class SelectContent(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The component that pops out when the select is open."""
 
     tag = "Select.Content"
 
@@ -118,13 +118,13 @@ class SelectContent(RadixThemesComponent):
 
 
 class SelectGroup(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Used to group multiple items."""
 
     tag = "Select.Group"
 
 
 class SelectItem(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The component that contains the select items."""
 
     tag = "Select.Item"
 
@@ -136,13 +136,13 @@ class SelectItem(RadixThemesComponent):
 
 
 class SelectLabel(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Used to render the label of a group, it isn't focusable using arrow keys."""
 
     tag = "Select.Label"
 
 
 class SelectSeparator(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """Used to visually separate items in the Select."""
 
     tag = "Select.Separator"
 

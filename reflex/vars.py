@@ -234,6 +234,8 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
     Returns:
         The extracted VarDatas.
     """
+    from reflex.style import Style
+
     var_datas = []
     with contextlib.suppress(TypeError):
         for sub in value:
@@ -245,10 +247,15 @@ def _extract_var_data(value: Iterable) -> list[VarData | None]:
                     var_datas.extend(_extract_var_data(sub.values()))
                 # Recurse into iterable values (or dict keys).
                 var_datas.extend(_extract_var_data(sub))
-    # Recurse when value is a dict itself.
-    values = getattr(value, "values", None)
-    if callable(values):
-        var_datas.extend(_extract_var_data(values()))
+
+    # Style objects should already have _var_data.
+    if isinstance(value, Style):
+        var_datas.append(value._var_data)
+    else:
+        # Recurse when value is a dict itself.
+        values = getattr(value, "values", None)
+        if callable(values):
+            var_datas.extend(_extract_var_data(values()))
     return var_datas
 
 
@@ -429,12 +436,9 @@ class Var:
 
         Returns:
             The merged var.
-
-        Raises:
-            ValueError: If the other value to be merged is None.
         """
         if other is None:
-            raise ValueError("The value to be merged cannot be None.")
+            return self._replace()
         if not isinstance(other, Var):
             other = Var.create(other)
         return self._replace(
@@ -1574,6 +1578,8 @@ class Var:
         Returns:
             The str var without the wrapped curly braces
         """
+        from reflex.style import Style
+
         type_ = (
             get_origin(self._var_type)
             if types.is_generic_alias(self._var_type)
@@ -1583,7 +1589,9 @@ class Var:
         wrapped_var = str(self)
         return (
             wrapped_var
-            if not self._var_state and issubclass(type_, dict)
+            if not self._var_state
+            and issubclass(type_, dict)
+            or issubclass(type_, Style)
             else wrapped_var.strip("{}")
         )
 

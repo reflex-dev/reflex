@@ -5,7 +5,13 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class Stat(ChakraComponent):
+class BaseStat(ChakraComponent):
+    """The base class for all stat components."""
+
+    library = "@chakra-ui/stat@2.1.0"
+
+
+class Stat(BaseStat):
     """The Stat component is used to display some statistics. It can take in a label, a number and a help text."""
 
     tag = "Stat"
@@ -47,25 +53,25 @@ class Stat(ChakraComponent):
         return super().create(*children, **props)
 
 
-class StatLabel(ChakraComponent):
+class StatLabel(BaseStat):
     """A stat label component."""
 
     tag = "StatLabel"
 
 
-class StatNumber(ChakraComponent):
+class StatNumber(BaseStat):
     """The stat to display."""
 
     tag = "StatNumber"
 
 
-class StatHelpText(ChakraComponent):
+class StatHelpText(BaseStat):
     """A helper text to display under the stat."""
 
     tag = "StatHelpText"
 
 
-class StatArrow(ChakraComponent):
+class StatArrow(BaseStat):
     """A stat arrow component indicating the direction of change."""
 
     tag = "StatArrow"
@@ -74,7 +80,7 @@ class StatArrow(ChakraComponent):
     type_: Var[str]
 
 
-class StatGroup(ChakraComponent):
+class StatGroup(BaseStat):
     """A stat group component to evenly space out the stats."""
 
     tag = "StatGroup"

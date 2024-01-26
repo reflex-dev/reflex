@@ -10,7 +10,7 @@ from ..base import (
 
 
 class TableRoot(el.Table, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A semantic table for presenting tabular data."""
 
     tag = "Table.Root"
 
@@ -22,13 +22,13 @@ class TableRoot(el.Table, RadixThemesComponent):
 
 
 class TableHeader(el.Thead, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The header of the table defines column names and other non-data elements."""
 
     tag = "Table.Header"
 
 
 class TableRow(el.Tr, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A row containing table cells."""
 
     tag = "Table.Row"
 
@@ -37,7 +37,7 @@ class TableRow(el.Tr, RadixThemesComponent):
 
 
 class TableColumnHeaderCell(el.Th, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A table cell that is semantically treated as a column header."""
 
     tag = "Table.ColumnHeaderCell"
 
@@ -49,13 +49,13 @@ class TableColumnHeaderCell(el.Th, RadixThemesComponent):
 
 
 class TableBody(el.Tbody, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """The body of the table contains the data rows."""
 
     tag = "Table.Body"
 
 
 class TableCell(el.Td, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A cell containing data."""
 
     tag = "Table.Cell"
 
@@ -67,7 +67,7 @@ class TableCell(el.Td, RadixThemesComponent):
 
 
 class TableRowHeaderCell(el.Th, RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A table cell that is semantically treated as a row header."""
 
     tag = "Table.RowHeaderCell"
 

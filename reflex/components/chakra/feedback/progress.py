@@ -9,6 +9,8 @@ from reflex.vars import Var
 class Progress(ChakraComponent):
     """A bar to display progress."""
 
+    library = "@chakra-ui/progress@2.2.0"
+
     tag = "Progress"
 
     # If true, the progress bar will show stripe

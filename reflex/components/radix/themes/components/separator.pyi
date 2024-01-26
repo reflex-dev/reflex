@@ -154,7 +154,7 @@ class Separator(RadixThemesComponent):
             *children: Child components.
             color: map to CSS default color property.
             color_scheme: map to radix color property.
-            size: The size of the select: "1" | "2" | "3"
+            size: The size of the select: "1" | "2" | "3" | "4"
             orientation: The orientation of the separator.
             decorative: When true, signifies that it is purely visual, carries no semantic meaning, and ensures it is not present in the accessibility tree.
             style: The style of the component.

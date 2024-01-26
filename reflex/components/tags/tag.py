@@ -64,7 +64,7 @@ class Tag(Base):
         """
         self.props.update(
             {
-                format.to_camel_case(name): prop
+                format.to_camel_case(name, allow_hyphens=True): prop
                 if types._isinstance(prop, Union[EventChain, dict])
                 else Var.create(prop)
                 for name, prop in kwargs.items()

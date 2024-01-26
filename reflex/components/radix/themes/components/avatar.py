@@ -12,7 +12,7 @@ from ..base import (
 
 
 class Avatar(RadixThemesComponent):
-    """A toggle switch alternative to the checkbox."""
+    """An image element with a fallback for representing the user."""
 
     tag = "Avatar"
 

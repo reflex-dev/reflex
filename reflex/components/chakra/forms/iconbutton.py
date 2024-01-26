@@ -11,6 +11,7 @@ class IconButton(Text):
     """A button with an icon."""
 
     tag = "IconButton"
+    library = "@chakra-ui/button@2.1.0"
 
     # The type of button.
     type: Var[str]

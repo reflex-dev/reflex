@@ -2,11 +2,11 @@
 
 from typing import List
 
-from reflex.components.chakra import ChakraComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.vars import Var
 
 
-class Grid(ChakraComponent):
+class Grid(ChakraLayoutComponent):
     """A grid component."""
 
     tag = "Grid"
@@ -41,7 +41,7 @@ class Grid(ChakraComponent):
     template_rows: Var[str]
 
 
-class GridItem(ChakraComponent):
+class GridItem(ChakraLayoutComponent):
     """Used as a child of Grid to control the span, and start positions within the grid."""
 
     tag = "GridItem"
@@ -71,7 +71,7 @@ class GridItem(ChakraComponent):
     row_span: Var[int]
 
 
-class ResponsiveGrid(ChakraComponent):
+class ResponsiveGrid(ChakraLayoutComponent):
     """A responsive grid component."""
 
     tag = "SimpleGrid"

@@ -8,6 +8,8 @@ from reflex.vars import Var
 class Heading(ChakraComponent):
     """A page heading."""
 
+    library = "@chakra-ui/layout@2.3.1"
+
     tag = "Heading"
 
     # Override the tag. The default tag is `<h2>`.

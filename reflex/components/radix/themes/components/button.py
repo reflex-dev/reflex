@@ -29,7 +29,7 @@ class Button(el.Button, RadixThemesComponent):
     variant: Var[LiteralVariant]
 
     # Override theme color for button
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the button with higher contrast color against background
     high_contrast: Var[bool]

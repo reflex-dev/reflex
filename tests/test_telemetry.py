@@ -1,8 +1,6 @@
+from packaging.version import parse as parse_python_version
+
 from reflex.utils import telemetry
-
-
-def versiontuple(v):
-    return tuple(map(int, (v.split("."))))
 
 
 def test_telemetry():
@@ -24,7 +22,7 @@ def test_telemetry():
     # Check that the Python version is greater than 3.7.
     python_version = telemetry.get_python_version()
     assert python_version is not None
-    assert versiontuple(python_version) >= versiontuple("3.7")
+    assert parse_python_version(python_version) >= parse_python_version("3.7")
 
 
 def test_disable():

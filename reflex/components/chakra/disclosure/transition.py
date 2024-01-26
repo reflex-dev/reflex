@@ -5,7 +5,13 @@ from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 
-class Transition(ChakraComponent):
+class BaseTransition(ChakraComponent):
+    """Base componemt of all chakra transitions."""
+
+    library = "@chakra-ui/transition@2.1.0"
+
+
+class Transition(BaseTransition):
     """Base componemt of all transitions."""
 
     # Show the component; triggers when enter or exit states
@@ -15,13 +21,13 @@ class Transition(ChakraComponent):
     unmount_on_exit: Var[bool]
 
 
-class Fade(Transition):
+class Fade(BaseTransition):
     """Fade component cab be used show and hide content of your app."""
 
     tag = "Fade"
 
 
-class ScaleFade(Transition):
+class ScaleFade(BaseTransition):
     """Fade component can be scaled and reverse your app."""
 
     tag = "ScaleFade"
@@ -33,7 +39,7 @@ class ScaleFade(Transition):
     reverse: Var[bool]
 
 
-class Slide(Transition):
+class Slide(BaseTransition):
     """Side can be used show content below your app."""
 
     tag = "Slide"
@@ -42,7 +48,7 @@ class Slide(Transition):
     direction: Var[str]
 
 
-class SlideFade(Transition):
+class SlideFade(BaseTransition):
     """SlideFade component."""
 
     tag = "SlideFade"
@@ -57,7 +63,7 @@ class SlideFade(Transition):
     reverse: Var[bool]
 
 
-class Collapse(Transition):
+class Collapse(BaseTransition):
     """Collapse component can collapse some content."""
 
     tag = "Collapse"

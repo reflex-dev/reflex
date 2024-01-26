@@ -15,7 +15,13 @@ from reflex.utils import imports
 from reflex.vars import Var
 
 
-class Input(ChakraComponent):
+class BaseInput(ChakraComponent):
+    """The base class for all Chakra input components."""
+
+    library = "@chakra-ui/input@2.1.2"
+
+
+class Input(BaseInput):
     """The Input component is a component that is used to get user input in a text field."""
 
     tag = "Input"
@@ -103,7 +109,7 @@ class Input(ChakraComponent):
         return super().create(*children, **props)
 
 
-class InputGroup(ChakraComponent):
+class InputGroup(BaseInput):
     """The InputGroup component is a component that is used to group a set of inputs."""
 
     tag = "InputGroup"
@@ -111,25 +117,25 @@ class InputGroup(ChakraComponent):
     _memoization_mode = MemoizationMode(recursive=False)
 
 
-class InputLeftAddon(ChakraComponent):
+class InputLeftAddon(BaseInput):
     """The InputLeftAddon component is a component that is used to add an addon to the left of an input."""
 
     tag = "InputLeftAddon"
 
 
-class InputRightAddon(ChakraComponent):
+class InputRightAddon(BaseInput):
     """The InputRightAddon component is a component that is used to add an addon to the right of an input."""
 
     tag = "InputRightAddon"
 
 
-class InputLeftElement(ChakraComponent):
+class InputLeftElement(BaseInput):
     """The InputLeftElement component is a component that is used to add an element to the left of an input."""
 
     tag = "InputLeftElement"
 
 
-class InputRightElement(ChakraComponent):
+class InputRightElement(BaseInput):
     """The InputRightElement component is a component that is used to add an element to the right of an input."""
 
     tag = "InputRightElement"

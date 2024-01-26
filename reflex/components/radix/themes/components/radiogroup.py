@@ -17,7 +17,7 @@ LiteralFlexDirection = Literal["row", "column", "row-reverse", "column-reverse"]
 
 
 class RadioGroupRoot(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """A set of interactive radio buttons where only one can be selected at a time."""
 
     tag = "RadioGroup.Root"
 
@@ -28,12 +28,12 @@ class RadioGroupRoot(RadixThemesComponent):
     variant: Var[Literal["classic", "surface", "soft"]]
 
     # The color of the radio group
-    color: Var[LiteralAccentColor]
+    color_scheme: Var[LiteralAccentColor]
 
     # Whether to render the radio group with higher contrast color against background
     high_contrast: Var[bool]
 
-    # The controlled value of the radio item to check. Should be used in conjunction with onValueChange.
+    # The controlled value of the radio item to check. Should be used in conjunction with on_value_change.
     value: Var[str]
 
     # The initial value of checked radio item. Should be used in conjunction with onValueChange.
@@ -67,11 +67,11 @@ class RadioGroupRoot(RadixThemesComponent):
 
 
 class RadioGroupItem(RadixThemesComponent):
-    """Trigger an action or event, such as submitting a form or displaying a dialog."""
+    """An item in the group that can be checked."""
 
     tag = "RadioGroup.Item"
 
-    # The value of the radio item to check. Should be used in conjunction with onCheckedChange.
+    # The value of the radio item to check. Should be used in conjunction with on_value_change.
     value: Var[str]
 
     # When true, prevents the user from interacting with the radio item.
