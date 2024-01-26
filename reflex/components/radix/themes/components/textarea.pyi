@@ -167,6 +167,9 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         rows: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
+        value: Optional[
+            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+        ] = None,
         wrap: Optional[Union[Var[Union[str, int, bool]], Union[str, int, bool]]] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -300,6 +303,7 @@ class TextArea(CommonMarginProps, RadixThemesComponent, el.Textarea):
             read_only: Indicates whether the textarea is read-only
             required: Indicates that the textarea is required
             rows: Visible number of lines in the text control
+            value: The controlled value of the textarea, read only unless used with on_change
             wrap: How the text in the textarea is to be wrapped when submitting the form
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
