@@ -670,7 +670,6 @@ class Var:
                 return self._replace(
                     _var_name=f"{self._var_name}.slice({start}, {stop})",
                     _var_is_string=False,
-                    _var_is_used=True,
                 )
 
             # Get the type of the indexed var.
@@ -2013,6 +2012,8 @@ class ComputedVar(Var, property):
         Returns:
             The value of the var for the given instance.
         """
+        self._var_is_used = True
+
         if instance is None or not self._cache:
             return super().__get__(instance, owner)
 
