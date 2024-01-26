@@ -2,8 +2,6 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from reflex.utils.serializers import SerializedType, serializer
-
 ColorType = Literal[
     "gray",
     "mauve",
@@ -54,20 +52,3 @@ class Color:
 
     # Whether to use the alpha variant of the color
     alpha: bool = False
-
-
-@serializer
-def serialize_color(color: Color) -> SerializedType:
-    """Serialize a color.
-
-    Args:
-        color: The color to serialize.
-
-    Returns:
-        The serialized color.
-    """
-    print(f"--var({color.color}-{color.shade})")
-    if color.alpha:
-        return f"var(--{color.color}-a{color.shade})"
-    else:
-        return f"var(--{color.color}-{color.shade})"
