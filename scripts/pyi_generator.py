@@ -701,7 +701,7 @@ class PyiGenerator:
         file_targets = []
         for target in targets:
             target_path = Path(target)
-            if target.endswith(".py") and target_path.is_file():
+            if target_path.is_file() and target_path.suffix == ".py":
                 file_targets.append(target_path)
             elif target_path.is_dir():
                 for root, _, files in os.walk(target_path):
@@ -714,14 +714,17 @@ class PyiGenerator:
                             changed_files is not None
                             and _relative_to_pwd(file_path) not in changed_files
                         ):
-                            # git reset pyi file if changed
-                            if (
-                                pyi_file_path.exists()
-                                and _relative_to_pwd(pyi_file_path) in changed_files
-                            ):
-                                os.popen(f"git checkout {pyi_file_path}")
                             continue
                         file_targets.append(file_path)
+
+        # check if pyi changed but not the source
+        if changed_files is not None:
+            for changed_file in changed_files:
+                if changed_file.suffix != ".pyi":
+                    continue
+                py_file_path = changed_file.with_suffix(".py")
+                if py_file_path.exists() and py_file_path not in file_targets:
+                    os.popen(f"git checkout {changed_file}")
 
         self._scan_files_multiprocess(file_targets)
 
