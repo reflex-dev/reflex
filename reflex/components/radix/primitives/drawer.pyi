@@ -105,7 +105,7 @@ class DrawerRoot(DrawerComponent):
         open: Optional[Union[Var[bool], bool]] = None,
         should_scale_background: Optional[Union[Var[bool], bool]] = None,
         close_threshold: Optional[Union[Var[float], float]] = None,
-        snap_points: Optional[List[float]] = None,
+        snap_points: Optional[List[str | float]] = None,
         fade_from_index: Optional[Union[Var[int], int]] = None,
         scroll_lock_timeout: Optional[Union[Var[int], int]] = None,
         modal: Optional[Union[Var[bool], bool]] = None,
