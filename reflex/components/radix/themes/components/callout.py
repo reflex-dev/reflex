@@ -15,6 +15,7 @@ from ..base import (
 
 CalloutVariant = Literal["soft", "surface", "outline"]
 
+
 class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     """Trigger an action or event, such as submitting a form or displaying a dialog."""
 
@@ -75,4 +76,3 @@ class Callout(CalloutRoot):
             CalloutText.create(text),
             **props,
         )
-

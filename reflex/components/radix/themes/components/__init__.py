@@ -13,7 +13,7 @@ from .aspectratio import AspectRatio
 from .avatar import Avatar
 from .badge import Badge
 from .button import Button
-from .callout import CalloutIcon, CalloutRoot, CalloutText, Callout
+from .callout import Callout, CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
 from .checkbox import Checkbox, HighLevelCheckbox
 from .contextmenu import (
