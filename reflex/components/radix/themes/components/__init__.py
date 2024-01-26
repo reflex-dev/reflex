@@ -75,7 +75,7 @@ from .table import (
 )
 from .tabs import TabsContent, TabsList, TabsRoot, TabsTrigger
 from .textarea import TextArea
-from .textfield import TextFieldInput, TextFieldRoot, TextFieldSlot
+from .textfield import Input, TextFieldInput, TextFieldRoot, TextFieldSlot
 from .tooltip import Tooltip
 
 # Alert Dialog
@@ -209,6 +209,7 @@ textarea = TextArea.create
 textfield_root = TextFieldRoot.create
 textfield_input = TextFieldInput.create
 textfield_slot = TextFieldSlot.create
+input = Input.create
 
 # Tooltip
 tooltip = Tooltip.create

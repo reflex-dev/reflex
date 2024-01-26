@@ -8,6 +8,8 @@ from reflex.vars import Var
 class Span(ChakraComponent):
     """Render an inline span of text."""
 
+    library = "@chakra-ui/layout@2.3.1"
+
     tag = "Text"
 
     # Override the tag. The default tag is `<span>`.

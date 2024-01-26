@@ -518,4 +518,6 @@ class CodeBlock(Component):
 class Code(ChakraComponent):
     """Used to display inline code."""
 
+    library = "@chakra-ui/layout@2.3.1"
+
     tag = "Code"

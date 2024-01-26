@@ -8,6 +8,8 @@ from reflex.vars import Var
 class Text(ChakraComponent):
     """Render a paragraph of text."""
 
+    library = "@chakra-ui/layout@2.3.1"
+
     tag = "Text"
 
     # Override the tag. The default tag is `<p>`.

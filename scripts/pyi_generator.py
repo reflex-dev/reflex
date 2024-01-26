@@ -11,6 +11,7 @@ import sys
 import textwrap
 import typing
 from inspect import getfullargspec
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Iterable, Type, get_args
@@ -245,7 +246,12 @@ def _extract_class_props_as_ast_nodes(
         # Import from the target class to ensure type hints are resolvable.
         exec(f"from {target_class.__module__} import *", type_hint_globals)
         for name, value in target_class.__annotations__.items():
-            if name in spec.kwonlyargs or name in EXCLUDED_PROPS or name in all_props:
+            if (
+                name in spec.kwonlyargs
+                or name in EXCLUDED_PROPS
+                or name in all_props
+                or (isinstance(value, str) and "ClassVar" in value)
+            ):
                 continue
             all_props.append(name)
 
@@ -559,6 +565,13 @@ class StubGenerator(ast.NodeTransformer):
         Returns:
             The modified AnnAssign node (or None).
         """
+        # skip ClassVars
+        if (
+            isinstance(node.annotation, ast.Subscript)
+            and isinstance(node.annotation.value, ast.Name)
+            and node.annotation.value.id == "ClassVar"
+        ):
+            return node
         if isinstance(node.target, ast.Name) and node.target.id.startswith("_"):
             return None
         if self.current_class in self.classes:
@@ -625,13 +638,9 @@ class PyiGenerator:
         )
         self._write_pyi_file(module_path, ast.unparse(new_tree))
 
-    def _scan_folder(self, folder):
-        for root, _, files in os.walk(folder):
-            for file in files:
-                if file in EXCLUDED_FILES:
-                    continue
-                if file.endswith(".py"):
-                    self._scan_file(Path(root) / file)
+    def _scan_files_multiprocess(self, files):
+        with Pool(processes=cpu_count()) as pool:
+            pool.map(self._scan_file, files)
 
     def scan_all(self, targets):
         """Scan all targets for class inheriting Component and generate the .pyi files.
@@ -639,11 +648,19 @@ class PyiGenerator:
         Args:
             targets: the list of file/folders to scan.
         """
+        file_targets = []
         for target in targets:
-            if target.endswith(".py"):
-                self._scan_file(Path(target))
-            else:
-                self._scan_folder(target)
+            path = Path(target)
+            if target.endswith(".py") and path.is_file():
+                file_targets.append(path)
+            elif path.is_dir():
+                for root, _, files in os.walk(path):
+                    for file in files:
+                        if file in EXCLUDED_FILES or not file.endswith(".py"):
+                            continue
+                        file_targets.append(Path(root) / file)
+
+        self._scan_files_multiprocess(file_targets)
 
 
 def generate_init():

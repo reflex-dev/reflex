@@ -7,7 +7,13 @@ from reflex.components.core.foreach import Foreach
 from reflex.vars import Var
 
 
-class Breadcrumb(ChakraComponent):
+class BaseBreadcrumb(ChakraComponent):
+    """The base class for all Chakra breadcrumb components."""
+
+    library = "@chakra-ui/breadcrumb@2.2.0"
+
+
+class Breadcrumb(BaseBreadcrumb):
     """The parent container for breadcrumbs."""
 
     tag = "Breadcrumb"
@@ -48,7 +54,7 @@ class Breadcrumb(ChakraComponent):
         return super().create(*children, **props)
 
 
-class BreadcrumbItem(ChakraComponent):
+class BreadcrumbItem(BaseBreadcrumb):
     """Individual breadcrumb element containing a link and a divider."""
 
     tag = "BreadcrumbItem"
@@ -83,7 +89,7 @@ class BreadcrumbItem(ChakraComponent):
         return super().create(*children, **props)
 
 
-class BreadcrumbSeparator(ChakraComponent):
+class BreadcrumbSeparator(BaseBreadcrumb):
     """The visual separator between each breadcrumb."""
 
     tag = "BreadcrumbSeparator"
@@ -93,6 +99,8 @@ class BreadcrumbLink(Link):
     """The breadcrumb link."""
 
     tag = "BreadcrumbLink"
+
+    library = "@chakra-ui/breadcrumb@2.2.0"
 
     # Is the current page of the breadcrumb.
     is_current_page: Var[bool]

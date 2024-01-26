@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Literal
 
-from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.core import cond, match
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
@@ -15,7 +14,7 @@ from reflex.style import (
     format_as_emotion,
 )
 from reflex.utils import imports
-from reflex.vars import BaseVar, Var
+from reflex.vars import BaseVar, Var, VarData
 
 LiteralAccordionType = Literal["single", "multiple"]
 LiteralAccordionDir = Literal["ltr", "rtl"]
@@ -115,10 +114,6 @@ def get_theme_accordion_item():
             "overflow": "hidden",
             "width": "100%",
             "margin_top": "1px",
-            # "background_color": "var(--accent-3)",
-            # "background_color": cond(
-            #     color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
-            # ),
             "&:first-child": {
                 "margin_top": 0,
                 "border_top_left_radius": "4px",
@@ -165,8 +160,8 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                 {
                     "color": cond(
                         color_scheme == "primary",
-                        "var(--accent-9-contrast)",
-                        "var(--slate-9-contrast)",
+                        "var(--accent-11)",
+                        "var(--slate-11)",
                     ),
                     "&:hover": {
                         "background_color": cond(
@@ -195,7 +190,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "align_items": "center",
                     "justify_content": "space-between",
                     "font_size": "15px",
-                    "box_shadow": "0 1px 0 var(--accent-6)",
                     "line_height": 1,
                 }
             ),
@@ -238,7 +232,6 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "align_items": "center",
                     "justify_content": "space-between",
                     "font_size": "15px",
-                    "box_shadow": "0 1px 0 var(--accent-6)",
                     "line_height": 1,
                 }
             ),
@@ -251,7 +244,11 @@ def get_theme_accordion_trigger(variant: str | Var, color_scheme: str | Var) -> 
                     "var(--accent-9-contrast)",
                     "var(--slate-9-contrast)",
                 ),
-                "box_shadow": "0 1px 0 var(--accent-6)",
+                "box_shadow": cond(
+                    color_scheme == "primary",
+                    "0 1px 0 var(--accent-6)",
+                    "0 1px 0 var(--slate-11)",
+                ),
                 "&:hover": {
                     "background_color": cond(
                         color_scheme == "primary", "var(--accent-10)", "var(--slate-10)"
@@ -304,11 +301,8 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
                     "font_size": "10px",
                     "color": cond(
                         color_scheme == "primary",
-                        "var(--accent-9-contrast)",
-                        "var(--slate-9-contrast)",
-                    ),
-                    "background_color": cond(
-                        color_scheme == "primary", "var(--accent-3)", "var(--slate-3)"
+                        "var(--accent-11)",
+                        "var(--slate-11)",
                     ),
                     "padding": "15px, 20px",
                     "&[data-state='open']": {
@@ -330,10 +324,19 @@ def get_theme_accordion_content(variant: str | Var, color_scheme: str | Var) -> 
             {
                 "overflow": "hidden",
                 "font_size": "10px",
-                "color": cond(
-                    color_scheme == "primary",
-                    "var(--accent-9-contrast)",
-                    "var(--slate-9-contrast)",
+                "color": match(
+                    variant,
+                    (
+                        "classic",
+                        cond(
+                            color_scheme == "primary",
+                            "var(--accent-9-contrast)",
+                            "var(--slate-9-contrast)",
+                        ),
+                    ),
+                    cond(
+                        color_scheme == "primary", "var(--accent-11)", "var(--slate-11)"
+                    ),
                 ),
                 "background_color": match(
                     variant,
@@ -410,6 +413,9 @@ class AccordionRoot(AccordionComponent):
     # dynamic themes of the accordion generated at compile time.
     _dynamic_themes: Var[dict]
 
+    # The var_data associated with the component.
+    _var_data: VarData = VarData()  # type: ignore
+
     @classmethod
     def create(cls, *children, **props) -> Component:
         """Create the Accordion root component.
@@ -431,8 +437,7 @@ class AccordionRoot(AccordionComponent):
             # mark the vars of variant string literals as strings so they are formatted properly in the match condition.
             comp.variant._var_is_string = True  # type: ignore
 
-        # remove Fragment and cond wrap workaround when https://github.com/reflex-dev/reflex/issues/2393 is resolved.
-        return Fragment.create(comp, cond(True, Fragment.create()))
+        return comp
 
     def _get_style(self) -> dict:
         """Get the style for the component.
@@ -443,24 +448,38 @@ class AccordionRoot(AccordionComponent):
         return {"css": self._dynamic_themes._merge(format_as_emotion(self.style))}  # type: ignore
 
     def _apply_theme(self, theme: Component):
+        accordion_theme_root = get_theme_accordion_root(
+            variant=self.variant, color_scheme=self.color_scheme
+        )
+        accordion_theme_content = get_theme_accordion_content(
+            variant=self.variant, color_scheme=self.color_scheme
+        )
+        accordion_theme_trigger = get_theme_accordion_trigger(
+            variant=self.variant, color_scheme=self.color_scheme
+        )
+
+        # extract var_data from dynamic themes.
+        self._var_data = self._var_data.merge(  # type: ignore
+            accordion_theme_trigger._var_data,
+            accordion_theme_content._var_data,
+            accordion_theme_root._var_data,
+        )
+
         self._dynamic_themes = Var.create(  # type: ignore
             convert_dict_to_style_and_format_emotion(
                 {
                     "& .AccordionItem": get_theme_accordion_item(),
                     "& .AccordionHeader": get_theme_accordion_header(),
-                    "& .AccordionTrigger": get_theme_accordion_trigger(
-                        variant=self.variant, color_scheme=self.color_scheme
-                    ),
-                    "& .AccordionContent": get_theme_accordion_content(
-                        variant=self.variant, color_scheme=self.color_scheme
-                    ),
+                    "& .AccordionTrigger": accordion_theme_trigger,
+                    "& .AccordionContent": accordion_theme_content,
                 }
             )
         )._merge(  # type: ignore
-            get_theme_accordion_root(
-                variant=self.variant, color_scheme=self.color_scheme
-            )
+            accordion_theme_root
         )
+
+    def _get_imports(self):
+        return imports.merge_imports(super()._get_imports(), self._var_data.imports)
 
     def get_event_triggers(self) -> Dict[str, Any]:
         """Get the events triggers signatures for the component.
