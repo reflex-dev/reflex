@@ -790,6 +790,8 @@ class PyiGenerator:
                 if changed_file.suffix != ".pyi":
                     continue
                 py_file_path = changed_file.with_suffix(".py")
+                if not py_file_path.exists() and changed_file.exists():
+                    changed_file.unlink()
                 if py_file_path in file_targets:
                     continue
                 subprocess.run(["git", "checkout", changed_file])
