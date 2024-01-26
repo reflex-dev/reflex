@@ -5,8 +5,8 @@ import contextlib
 import importlib
 import inspect
 import logging
-import os
 import re
+import subprocess
 import sys
 import textwrap
 import typing
@@ -29,6 +29,7 @@ LAST_RUN_COMMIT_SHA_FILE = Path(".pyi_generator_last_run").resolve()
 INIT_FILE = Path("reflex/__init__.pyi").resolve()
 PWD = Path(".").resolve()
 GENERATOR_FILE = Path(__file__).resolve()
+GENERATOR_DIFF_FILE = Path(".pyi_generator_diff").resolve()
 
 EXCLUDED_FILES = [
     "__init__.py",
@@ -67,6 +68,23 @@ DEFAULT_TYPING_IMPORTS = {
 }
 
 
+def _walk_files(path):
+    """Walk all files in a path.
+    This can be replaced with Path.walk() in python3.12.
+
+    Args:
+        path: The path to walk.
+
+    Yields:
+        The next file in the path.
+    """
+    for p in Path(path).iterdir():
+        if p.is_dir():
+            yield from _walk_files(p)
+            continue
+        yield p.resolve()
+
+
 def _relative_to_pwd(path: Path) -> Path:
     """Get the relative path of a path to the current working directory.
 
@@ -79,6 +97,38 @@ def _relative_to_pwd(path: Path) -> Path:
     return path.relative_to(PWD)
 
 
+def _git_diff(args: list[str]) -> str:
+    """Run a git diff command.
+
+    Args:
+        args: The args to pass to git diff.
+
+    Returns:
+        The output of the git diff command.
+    """
+    cmd = ["git", "diff", "--no-color", *args]
+    return subprocess.run(cmd, capture_output=True, encoding="utf-8").stdout
+
+
+def _git_changed_files(args: list[str] | None = None) -> list[Path]:
+    """Get the list of changed files for a git diff command.
+
+    Args:
+        args: The args to pass to git diff.
+
+    Returns:
+        The list of changed files.
+    """
+    if not args:
+        args = []
+
+    if "--name-only" not in args:
+        args.insert(0, "--name-only")
+
+    diff = _git_diff(args).splitlines()
+    return [Path(file.strip()) for file in diff]
+
+
 def _get_changed_files() -> list[Path] | None:
     """Get the list of changed files since the last run of the generator.
 
@@ -87,22 +137,35 @@ def _get_changed_files() -> list[Path] | None:
     """
     try:
         last_run_commit_sha = LAST_RUN_COMMIT_SHA_FILE.read_text().strip()
-        changed_files = os.popen(
-            f"git diff --name-only {last_run_commit_sha}..HEAD"
-        ).readlines()
-        # get all unstaged changes
-        changed_files.extend(os.popen("git diff --name-only").readlines())
-        changed_files = [Path(file.strip()) for file in changed_files]
-        if _relative_to_pwd(GENERATOR_FILE) in changed_files:
-            logger.info("pyi_generator.py changed, regenerating all .pyi files")
-            changed_files = None
     except FileNotFoundError:
+        logger.info(
+            "pyi_generator.py last run could not be determined, regenerating all .pyi files"
+        )
+        return None
+    changed_files = _git_changed_files([f"{last_run_commit_sha}..HEAD"])
+    # get all unstaged changes
+    changed_files.extend(_git_changed_files())
+    if _relative_to_pwd(GENERATOR_FILE) not in changed_files:
+        return changed_files
+    logger.info("pyi_generator.py has changed, checking diff now")
+    diff = "".join(_git_diff([GENERATOR_FILE.as_posix()]).splitlines()[2:])
+
+    try:
+        last_diff = GENERATOR_DIFF_FILE.read_text()
+        if diff != last_diff:
+            logger.info("pyi_generator.py has changed, regenerating all .pyi files")
+            changed_files = None
+        else:
+            logger.info(
+                "pyi_generator.py has not changed, only regenerating changed files"
+            )
+    except FileNotFoundError:
+        logger.info(
+            "pyi_generator.py diff could not be determined, regenerating all .pyi files"
+        )
         changed_files = None
 
-    if changed_files is None:
-        logger.info("Changed files could not be detected, regenerating all .pyi files")
-    else:
-        logger.info(f"Detected changed files: {changed_files}")
+    GENERATOR_DIFF_FILE.write_text(diff)
 
     return changed_files
 
@@ -662,7 +725,7 @@ class PyiGenerator:
 
         pyi_path = module_path.with_suffix(".pyi")
         pyi_path.write_text("\n".join(pyi_content))
-        logger.info(f"Wrote {pyi_path}")
+        logger.info(f"Wrote {relpath}")
 
     def _scan_file(self, module_path: Path):
         #  module_import = str(module_path.with_suffix("")).replace("/", ".")
@@ -691,6 +754,10 @@ class PyiGenerator:
         with Pool(processes=cpu_count()) as pool:
             pool.map(self._scan_file, files)
 
+    def _scan_files(self, files: list[Path]):
+        for file in files:
+            self._scan_file(file)
+
     def scan_all(self, targets, changed_files: list[Path] | None = None):
         """Scan all targets for class inheriting Component and generate the .pyi files.
 
@@ -703,19 +770,19 @@ class PyiGenerator:
             target_path = Path(target)
             if target_path.is_file() and target_path.suffix == ".py":
                 file_targets.append(target_path)
-            elif target_path.is_dir():
-                for root, _, files in os.walk(target_path):
-                    for file in files:
-                        file_path = (Path(root) / file).resolve()
-                        file_path.with_suffix(".pyi")
-                        if file in EXCLUDED_FILES or file_path.suffix != ".py":
-                            continue
-                        if (
-                            changed_files is not None
-                            and _relative_to_pwd(file_path) not in changed_files
-                        ):
-                            continue
-                        file_targets.append(file_path)
+                continue
+            if not target_path.is_dir():
+                continue
+            for file_path in _walk_files(target_path):
+                relative = _relative_to_pwd(file_path)
+                if relative.name in EXCLUDED_FILES or file_path.suffix != ".py":
+                    continue
+                if (
+                    changed_files is not None
+                    and _relative_to_pwd(file_path) not in changed_files
+                ):
+                    continue
+                file_targets.append(file_path)
 
         # check if pyi changed but not the source
         if changed_files is not None:
@@ -723,10 +790,14 @@ class PyiGenerator:
                 if changed_file.suffix != ".pyi":
                     continue
                 py_file_path = changed_file.with_suffix(".py")
-                if py_file_path.exists() and py_file_path not in file_targets:
-                    os.popen(f"git checkout {changed_file}")
+                if py_file_path in file_targets:
+                    continue
+                subprocess.run(["git", "checkout", changed_file])
 
-        self._scan_files_multiprocess(file_targets)
+        if cpu_count() == 1 or len(file_targets) < 5:
+            self._scan_files(file_targets)
+        else:
+            self._scan_files_multiprocess(file_targets)
 
 
 def generate_init():
@@ -750,10 +821,16 @@ if __name__ == "__main__":
     logger.info(f"Running .pyi generator for {targets}")
 
     changed_files = _get_changed_files()
+    if changed_files is None:
+        logger.info("Changed files could not be detected, regenerating all .pyi files")
+    else:
+        logger.info(f"Detected changed files: {changed_files}")
 
     gen = PyiGenerator()
     gen.scan_all(targets, changed_files)
     generate_init()
 
-    current_commit_sha = os.popen("git rev-parse HEAD").read().strip()
+    current_commit_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"], capture_output=True, encoding="utf-8"
+    ).stdout.strip()
     LAST_RUN_COMMIT_SHA_FILE.write_text(current_commit_sha)
