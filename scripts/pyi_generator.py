@@ -707,8 +707,8 @@ class PyiGenerator:
                 for root, _, files in os.walk(target_path):
                     for file in files:
                         file_path = (Path(root) / file).resolve()
-                        pyi_file_path = file_path.with_suffix(".pyi")
-                        if file in EXCLUDED_FILES or not file_path.suffix == ".py":
+                        file_path.with_suffix(".pyi")
+                        if file in EXCLUDED_FILES or file_path.suffix != ".py":
                             continue
                         if (
                             changed_files is not None
