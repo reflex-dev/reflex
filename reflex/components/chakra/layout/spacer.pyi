@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.chakra import ChakraComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 
-class Spacer(ChakraComponent):
+class Spacer(ChakraLayoutComponent):
     @overload
     @classmethod
     def create(  # type: ignore

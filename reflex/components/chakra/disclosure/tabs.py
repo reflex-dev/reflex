@@ -12,7 +12,13 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class Tabs(ChakraComponent):
+class BaseTabs(ChakraComponent):
+    """The base tabs component."""
+
+    library = "@chakra-ui/tabs@3.0.0"
+
+
+class Tabs(BaseTabs):
     """An accessible tabs component that provides keyboard interactions and ARIA attributes described in the WAI-ARIA Tabs Design Pattern. Tabs, provides context and state for all components."""
 
     tag = "Tabs"
@@ -73,7 +79,7 @@ class Tabs(ChakraComponent):
         return super().create(*children, **props)
 
 
-class Tab(ChakraComponent):
+class Tab(BaseTabs):
     """An element that serves as a label for one of the tab panels and can be activated to display that panel.."""
 
     tag = "Tab"
@@ -91,19 +97,19 @@ class Tab(ChakraComponent):
     panel_id: Var[str]
 
 
-class TabList(ChakraComponent):
+class TabList(BaseTabs):
     """Wrapper for the Tab components."""
 
     tag = "TabList"
 
 
-class TabPanels(ChakraComponent):
+class TabPanels(BaseTabs):
     """Wrapper for the Tab components."""
 
     tag = "TabPanels"
 
 
-class TabPanel(ChakraComponent):
+class TabPanel(BaseTabs):
     """An element that contains the content associated with a tab."""
 
     tag = "TabPanel"

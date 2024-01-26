@@ -11,6 +11,8 @@ from reflex.vars import Var
 class Switch(ChakraComponent):
     """Toggleable switch component."""
 
+    library = "@chakra-ui/switch@2.1.2"
+
     tag = "Switch"
 
     # If true, the switch will be checked. You'll need to set an on_change event handler to update its value (since it is now controlled)

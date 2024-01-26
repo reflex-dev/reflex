@@ -15,6 +15,8 @@ from reflex.vars import Var
 class RadioGroup(ChakraComponent):
     """A grouping of individual radio options."""
 
+    library = "@chakra-ui/radio@2.1.2"
+
     tag = "RadioGroup"
 
     # State var to bind the the input.
@@ -61,6 +63,8 @@ class RadioGroup(ChakraComponent):
 
 class Radio(Text):
     """Radios are used when only one choice may be selected in a series of options."""
+
+    library = "@chakra-ui/radio@2.1.2"
 
     tag = "Radio"
 

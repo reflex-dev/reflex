@@ -2,11 +2,11 @@
 
 from typing import List, Union
 
-from reflex.components.chakra import ChakraComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.vars import Var
 
 
-class Flex(ChakraComponent):
+class Flex(ChakraLayoutComponent):
     """A reflexive container component."""
 
     tag = "Flex"
