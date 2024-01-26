@@ -26,6 +26,9 @@ def StateInheritance():
         def computed_mixin(self) -> str:
             return "computed_mixin"
 
+        def on_click_mixin(self):
+            self.mixin = "clicked"
+
     class OtherMixin(rx.Base):
         other_mixin: str = "other_mixin"
 
@@ -65,14 +68,18 @@ def StateInheritance():
             rx.input(
                 id="token", value=Base1.router.session.client_token, is_read_only=True
             ),
+            # Base 1
             rx.heading(Base1.computed_mixin, id="base1-computed_mixin"),
             rx.heading(Base1.computed_basevar, id="base1-computed_basevar"),
             rx.heading(Base1.computed_child_mixin, id="base1-child-mixin"),
             rx.heading(Base1.base1, id="base1-base1"),
             rx.heading(Base1.mixin, id="base1-mixin"),
             rx.heading(Base1.child_mixin, id="base1-child_mixin"),
+            rx.button(on_click=Base1.on_click_mixin, id="base1-mixin-btn"),
+            # Base 2
             rx.heading(Base2.computed_basevar, id="base2-computed_basevar"),
             rx.heading(Base2.base2, id="base2-base2"),
+            # Child 1
             rx.heading(Child1.computed_basevar, id="child1-computed_basevar"),
             rx.heading(Child1.computed_mixin, id="child1-computed_mixin"),
             rx.heading(Child1.computed_other_mixin, id="child1-other-mixin"),
@@ -81,6 +88,7 @@ def StateInheritance():
             rx.heading(Child1.mixin, id="child1-mixin"),
             rx.heading(Child1.other_mixin, id="child1-other_mixin"),
             rx.heading(Child1.child_mixin, id="child1-child_mixin"),
+            # Child 2
             rx.heading(Child2.computed_basevar, id="child2-computed_basevar"),
             rx.heading(Child2.computed_mixin, id="child2-computed_mixin"),
             rx.heading(Child2.computed_other_mixin, id="child2-other-mixin"),
@@ -89,6 +97,7 @@ def StateInheritance():
             rx.heading(Child2.mixin, id="child2-mixin"),
             rx.heading(Child2.other_mixin, id="child2-other_mixin"),
             rx.heading(Child2.child_mixin, id="child2-child_mixin"),
+            # Child 3
             rx.heading(Child3.computed_basevar, id="child3-computed_basevar"),
             rx.heading(Child3.computed_mixin, id="child3-computed_mixin"),
             rx.heading(Child3.computed_other_mixin, id="child3-other-mixin"),
@@ -178,6 +187,7 @@ def test_state_inheritance(
     """
     assert state_inheritance.app_instance is not None
 
+    # Base 1
     base1_mixin = driver.find_element(By.ID, "base1-computed_mixin")
     assert base1_mixin.text == "computed_mixin"
 
@@ -196,12 +206,18 @@ def test_state_inheritance(
     base1_child_mixin = driver.find_element(By.ID, "base1-child_mixin")
     assert base1_child_mixin.text == "child_mixin"
 
+    base1_mixin_btn = driver.find_element(By.ID, "base1-mixin-btn")
+    base1_mixin_btn.click()
+    assert base1_mixin.text == "clicked"
+
+    # Base 2
     base2_computed_basevar = driver.find_element(By.ID, "base2-computed_basevar")
     assert base2_computed_basevar.text == "computed_basevar2"
 
     base2_base2 = driver.find_element(By.ID, "base2-base2")
     assert base2_base2.text == "base2"
 
+    # Child 1
     child1_computed_basevar = driver.find_element(By.ID, "child1-computed_basevar")
     assert child1_computed_basevar.text == "computed_basevar1"
 
@@ -226,6 +242,7 @@ def test_state_inheritance(
     child1_child_mixin = driver.find_element(By.ID, "child1-child_mixin")
     assert child1_child_mixin.text == "child_mixin"
 
+    # Child 2
     child2_computed_basevar = driver.find_element(By.ID, "child2-computed_basevar")
     assert child2_computed_basevar.text == "computed_basevar2"
 
@@ -250,6 +267,7 @@ def test_state_inheritance(
     child2_child_mixin = driver.find_element(By.ID, "child2-child_mixin")
     assert child2_child_mixin.text == "child_mixin"
 
+    # Child 3
     child3_computed_basevar = driver.find_element(By.ID, "child3-computed_basevar")
     assert child3_computed_basevar.text == "computed_basevar2"
 

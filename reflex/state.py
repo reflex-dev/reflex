@@ -356,7 +356,8 @@ class BaseState(Base, ABC, extra=pydantic.Extra.allow):
         for mixin in cls._mixins():
             for name, value in mixin.__dict__.items():
                 if isinstance(value, ComputedVar):
-                    cls.computed_vars[name] = value
+                    cls.computed_vars[value._var_name] = value._var_set_state(cls)
+                    cls.vars[value._var_name] = value
                     continue
                 if events.get(name) is not None:
                     continue
