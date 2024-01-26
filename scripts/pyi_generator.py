@@ -661,7 +661,7 @@ class PyiGenerator:
                         if file in EXCLUDED_FILES or not file.endswith(".py"):
                             continue
                         if (
-                            changed_files
+                            changed_files is not None
                             and os.path.relpath(os.path.join(root, file), ".")
                             not in changed_files
                         ):
