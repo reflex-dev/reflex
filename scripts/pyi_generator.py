@@ -719,7 +719,7 @@ class PyiGenerator:
                                 pyi_file_path.exists()
                                 and _relative_to_pwd(pyi_file_path) in changed_files
                             ):
-                                pyi_file_path.unlink()
+                                os.popen(f"git checkout {pyi_file_path}")
                             continue
                         file_targets.append(file_path)
 
