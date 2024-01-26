@@ -13,7 +13,7 @@ from .aspectratio import AspectRatio
 from .avatar import Avatar
 from .badge import Badge
 from .button import Button
-from .callout import CalloutIcon, CalloutRoot, CalloutText
+from .callout import Callout, CalloutIcon, CalloutRoot, CalloutText
 from .card import Card
 from .checkbox import Checkbox, HighLevelCheckbox
 from .contextmenu import (
@@ -103,6 +103,7 @@ button = Button.create
 callout_root = CalloutRoot.create
 callout_icon = CalloutIcon.create
 callout_text = CalloutText.create
+callout = Callout.create
 
 # Card
 card = Card.create
