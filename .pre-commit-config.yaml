@@ -28,7 +28,7 @@ repos:
     hooks:
       - id: update-pyi-files
         name: update-pyi-files
-        files: '.*\.py$'
+        always_run: true
         language: system
         description: 'Update pyi files as needed'
         entry: python scripts/pyi_generator.py
