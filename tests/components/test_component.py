@@ -571,7 +571,7 @@ def test_unsupported_child_components(fixture, request):
     )
 
 
-def test_unsupported_child_components(component5):
+def test_unsupported_parent_components(component5):
     """Test that a value error is raised when an component is not in _valid_parents of one of its children.
 
     Args:
