@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterator
 from jinja2 import Environment
 
 from reflex.components.chakra import ChakraComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.components.component import Component
 from reflex.components.tags import Tag
 from reflex.constants import Dirs, EventTriggers
@@ -33,7 +34,7 @@ HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
 )
 
 
-class Form(ChakraComponent):
+class Form(ChakraLayoutComponent):
     """A form component."""
 
     tag = "Box"

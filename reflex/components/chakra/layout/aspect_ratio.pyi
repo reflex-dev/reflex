@@ -7,10 +7,10 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.chakra import ChakraComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 from reflex.vars import Var
 
-class AspectRatio(ChakraComponent):
+class AspectRatio(ChakraLayoutComponent):
     @overload
     @classmethod
     def create(  # type: ignore

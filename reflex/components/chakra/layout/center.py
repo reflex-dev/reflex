@@ -1,21 +1,21 @@
 """A box that centers its contents."""
 
-from reflex.components.chakra import ChakraComponent
+from reflex.components.chakra.layout.base import ChakraLayoutComponent
 
 
-class Center(ChakraComponent):
+class Center(ChakraLayoutComponent):
     """A box that centers its contents."""
 
     tag = "Center"
 
 
-class Square(ChakraComponent):
+class Square(ChakraLayoutComponent):
     """A centered square container."""
 
     tag = "Square"
 
 
-class Circle(ChakraComponent):
+class Circle(ChakraLayoutComponent):
     """A square container with round border-radius."""
 
     tag = "Circle"

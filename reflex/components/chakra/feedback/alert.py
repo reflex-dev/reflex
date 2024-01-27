@@ -9,7 +9,13 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class Alert(ChakraComponent):
+class BaseAlert(ChakraComponent):
+    """The base class for all alert components."""
+
+    library = "@chakra-ui/alert@2.2.2"
+
+
+class Alert(BaseAlert):
     """An alert feedback box."""
 
     tag = "Alert"
@@ -50,19 +56,19 @@ class Alert(ChakraComponent):
         return super().create(*children, **props)
 
 
-class AlertIcon(ChakraComponent):
+class AlertIcon(BaseAlert):
     """An icon displayed in the alert."""
 
     tag = "AlertIcon"
 
 
-class AlertTitle(ChakraComponent):
+class AlertTitle(BaseAlert):
     """The title of the alert."""
 
     tag = "AlertTitle"
 
 
-class AlertDescription(ChakraComponent):
+class AlertDescription(BaseAlert):
     """AlertDescription composes the Box component."""
 
     tag = "AlertDescription"

@@ -188,16 +188,19 @@ def _format_emotion_style_pseudo_selector(key: str) -> str:
     return key
 
 
-def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
+def format_as_emotion(style_dict: dict[str, Any]) -> Style | None:
     """Convert the style to an emotion-compatible CSS-in-JS dict.
 
     Args:
         style_dict: The style dict to convert.
 
     Returns:
-        The emotion dict.
+        The emotion style dict.
     """
-    emotion_style = {}
+    _var_data = style_dict._var_data if isinstance(style_dict, Style) else None
+
+    emotion_style = Style()
+
     for orig_key, value in style_dict.items():
         key = _format_emotion_style_pseudo_selector(orig_key)
         if isinstance(value, list):
@@ -219,6 +222,8 @@ def format_as_emotion(style_dict: dict[str, Any]) -> dict[str, Any] | None:
         else:
             emotion_style[key] = value
     if emotion_style:
+        if _var_data is not None:
+            emotion_style._var_data = VarData.merge(emotion_style._var_data, _var_data)
         return emotion_style
 
 

@@ -11,7 +11,13 @@ from reflex.vars import Var
 ModalSizes = Literal["xs", "sm", "md", "lg", "xl", "full"]
 
 
-class Modal(ChakraComponent):
+class BaseModal(ChakraComponent):
+    """The base class for all Chakra modal components."""
+
+    library = "@chakra-ui/modal@2.3.1"
+
+
+class Modal(BaseModal):
     """The wrapper that provides context for its children."""
 
     tag = "Modal"
@@ -130,37 +136,37 @@ class Modal(ChakraComponent):
         return super().create(*children, **props)
 
 
-class ModalOverlay(ChakraComponent):
+class ModalOverlay(BaseModal):
     """The dimmed overlay behind the modal dialog."""
 
     tag = "ModalOverlay"
 
 
-class ModalHeader(ChakraComponent):
+class ModalHeader(BaseModal):
     """The header that labels the modal dialog."""
 
     tag = "ModalHeader"
 
 
-class ModalFooter(ChakraComponent):
+class ModalFooter(BaseModal):
     """The footer that houses the modal events."""
 
     tag = "ModalFooter"
 
 
-class ModalContent(ChakraComponent):
+class ModalContent(BaseModal):
     """The container for the modal dialog's content."""
 
     tag = "ModalContent"
 
 
-class ModalBody(ChakraComponent):
+class ModalBody(BaseModal):
     """The wrapper that houses the modal's main content."""
 
     tag = "ModalBody"
 
 
-class ModalCloseButton(ChakraComponent):
+class ModalCloseButton(BaseModal):
     """The button that closes the modal."""
 
     tag = "ModalCloseButton"

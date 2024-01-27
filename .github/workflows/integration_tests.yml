@@ -101,7 +101,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Show OS combos first in GUI
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         python-version: [ "3.10.10", "3.11.4" ]
         node-version: [ "16.x" ]

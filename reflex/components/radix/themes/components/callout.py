@@ -10,9 +10,10 @@ from reflex.vars import Var
 from ..base import (
     CommonMarginProps,
     LiteralAccentColor,
-    LiteralVariant,
     RadixThemesComponent,
 )
+
+CalloutVariant = Literal["soft", "surface", "outline"]
 
 
 class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
@@ -23,11 +24,11 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     # Change the default rendered element for the one passed as a child, merging their props and behavior.
     as_child: Var[bool]
 
-    # Button size "1" - "4"
+    # Size "1" - "3"
     size: Var[Literal["1", "2", "3"]]
 
-    # Variant of button: "solid" | "soft" | "outline" | "ghost"
-    variant: Var[LiteralVariant]
+    # Variant of button: "soft" | "surface" | "outline"
+    variant: Var[CalloutVariant]
 
     # Override theme color for button
     color: Var[LiteralAccentColor]
@@ -75,6 +76,3 @@ class Callout(CalloutRoot):
             CalloutText.create(text),
             **props,
         )
-
-
-callout = Callout.create
