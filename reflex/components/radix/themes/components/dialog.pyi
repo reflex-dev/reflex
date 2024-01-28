@@ -83,7 +83,6 @@ class DialogRoot(CommonMarginProps, RadixThemesComponent):
             ]
         ] = None,
         open: Optional[Union[Var[bool], bool]] = None,
-        modal: Optional[Union[Var[bool], bool]] = None,
         m: Optional[
             Union[
                 Var[Literal["1", "2", "3", "4", "5", "6", "7", "8", "9"]],
@@ -192,7 +191,6 @@ class DialogRoot(CommonMarginProps, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             open: The controlled open state of the dialog.
-            modal: The modality of the dialog. When set to true, interaction with outside elements will be disabled and only dialog content will be visible to screen readers.
             m: Margin: "0" - "9"
             mx: Margin horizontal: "0" - "9"
             my: Margin vertical: "0" - "9"
