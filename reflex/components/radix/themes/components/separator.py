@@ -18,7 +18,7 @@ class Separator(CommonMarginProps, RadixThemesComponent):
     tag = "Separator"
 
     # The size of the select: "1" | "2" | "3" | "4"
-    size: Var[LiteralSeperatorSize]
+    size: Var[LiteralSeperatorSize] = Var.create_safe("4")
 
     # The color of the select
     color_scheme: Var[LiteralAccentColor]
