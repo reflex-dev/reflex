@@ -10,8 +10,6 @@ from reflex.vars import Var
 class Tooltip(ChakraComponent):
     """A tooltip message to appear."""
 
-    library = "@chakra-ui/tooltip@2.3.1"
-
     tag = "Tooltip"
 
     # The padding required to prevent the arrow from reaching the very edge of the popper.

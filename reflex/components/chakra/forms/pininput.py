@@ -12,13 +12,7 @@ from reflex.utils.imports import ImportDict, merge_imports
 from reflex.vars import Var
 
 
-class BasePinInput(ChakraComponent):
-    """The base chakra pin input component."""
-
-    library = "@chakra-ui/pin-input@2.1.0"
-
-
-class PinInput(BasePinInput):
+class PinInput(ChakraComponent):
     """The component that provides context to all the pin-input fields."""
 
     tag = "PinInput"
@@ -167,7 +161,7 @@ class PinInput(BasePinInput):
         return super().create(*children, **props)
 
 
-class PinInputField(BasePinInput):
+class PinInputField(ChakraComponent):
     """The text field that user types in - must be a direct child of PinInput."""
 
     tag = "PinInputField"

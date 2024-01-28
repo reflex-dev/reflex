@@ -4,13 +4,7 @@ from reflex.components.chakra import ChakraComponent
 from reflex.vars import Var
 
 
-class BaseSkeleton(ChakraComponent):
-    """The base skeleton component."""
-
-    library = "@chakra-ui/skeleton@2.1.0"
-
-
-class Skeleton(BaseSkeleton):
+class Skeleton(ChakraComponent):
     """Skeleton is used to display the loading state of some components. You can use it as a standalone component. Or to wrap another component to take the same height and width."""
 
     tag = "Skeleton"
@@ -31,7 +25,7 @@ class Skeleton(BaseSkeleton):
     start_color: Var[str]
 
 
-class SkeletonCircle(BaseSkeleton):
+class SkeletonCircle(ChakraComponent):
     """SkeletonCircle is used to display the loading state of some components."""
 
     tag = "SkeletonCircle"
@@ -52,7 +46,7 @@ class SkeletonCircle(BaseSkeleton):
     start_color: Var[str]
 
 
-class SkeletonText(BaseSkeleton):
+class SkeletonText(ChakraComponent):
     """SkeletonText is used to display the loading state of some components."""
 
     tag = "SkeletonText"
