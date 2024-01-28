@@ -12,13 +12,7 @@ from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
-class BaseCheckbox(ChakraComponent):
-    """The base class for all checkbox components."""
-
-    library = "@chakra-ui/checkbox@2.3.2"
-
-
-class Checkbox(BaseCheckbox):
+class Checkbox(ChakraComponent):
     """The Checkbox component is used in forms when a user needs to select multiple values from several options."""
 
     tag = "Checkbox"
@@ -74,7 +68,7 @@ class Checkbox(BaseCheckbox):
         }
 
 
-class CheckboxGroup(BaseCheckbox):
+class CheckboxGroup(ChakraComponent):
     """A group of checkboxes."""
 
     tag = "CheckboxGroup"

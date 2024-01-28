@@ -17,86 +17,7 @@ from reflex.components.chakra import (
 from reflex.components.component import Component
 from reflex.vars import Var
 
-class BaseTabs(ChakraComponent):
-    @overload
-    @classmethod
-    def create(  # type: ignore
-        cls,
-        *children,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        **props
-    ) -> "BaseTabs":
-        """Create the component.
-
-        Args:
-            *children: The children of the component.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: The props of the component.
-
-        Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
-        """
-        ...
-
-class Tabs(BaseTabs):
+class Tabs(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -267,7 +188,7 @@ class Tabs(BaseTabs):
         """
         ...
 
-class Tab(BaseTabs):
+class Tab(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -354,7 +275,7 @@ class Tab(BaseTabs):
         """
         ...
 
-class TabList(BaseTabs):
+class TabList(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -433,7 +354,7 @@ class TabList(BaseTabs):
         """
         ...
 
-class TabPanels(BaseTabs):
+class TabPanels(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -512,7 +433,7 @@ class TabPanels(BaseTabs):
         """
         ...
 
-class TabPanel(BaseTabs):
+class TabPanel(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore

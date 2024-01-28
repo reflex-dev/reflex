@@ -10,8 +10,6 @@ from reflex.vars import Var
 class Highlight(ChakraComponent):
     """Highlights a specific part of a string."""
 
-    library = "@chakra-ui/layout@2.3.1"
-
     tag = "Highlight"
 
     # A query for the text to highlight. Can be a string or a list of strings.

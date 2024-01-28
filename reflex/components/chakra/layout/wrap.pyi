@@ -7,11 +7,11 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.chakra.layout.base import ChakraLayoutComponent
+from reflex.components.chakra import ChakraComponent
 from reflex.components.component import Component
 from reflex.vars import Var
 
-class Wrap(ChakraLayoutComponent):
+class Wrap(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -103,7 +103,7 @@ class Wrap(ChakraLayoutComponent):
         """
         ...
 
-class WrapItem(ChakraLayoutComponent):
+class WrapItem(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore

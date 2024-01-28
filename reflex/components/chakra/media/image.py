@@ -11,10 +11,7 @@ from reflex.vars import Var
 class Image(ChakraComponent):
     """Display an image."""
 
-    library = "@chakra-ui/image@2.1.0"
-
     tag = "Image"
-
     alias = "ChakraImage"
     # How to align the image within its bounds. It maps to css `object-position` property.
     align: Var[str]

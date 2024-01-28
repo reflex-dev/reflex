@@ -6,13 +6,7 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class BaseCircularProgress(ChakraComponent):
-    """The base circular progress component."""
-
-    library = "@chakra-ui/progress@2.2.0"
-
-
-class CircularProgress(BaseCircularProgress):
+class CircularProgress(ChakraComponent):
     """The CircularProgress component is used to indicate the progress for determinate and indeterminate processes."""
 
     tag = "CircularProgress"
@@ -67,7 +61,7 @@ class CircularProgress(BaseCircularProgress):
         return super().create(*children, **props)
 
 
-class CircularProgressLabel(BaseCircularProgress):
+class CircularProgressLabel(ChakraComponent):
     """Label of CircularProcess."""
 
     tag = "CircularProgressLabel"

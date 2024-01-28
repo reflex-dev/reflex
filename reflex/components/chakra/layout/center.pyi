@@ -7,9 +7,9 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from reflex.components.chakra.layout.base import ChakraLayoutComponent
+from reflex.components.chakra import ChakraComponent
 
-class Center(ChakraLayoutComponent):
+class Center(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -88,7 +88,7 @@ class Center(ChakraLayoutComponent):
         """
         ...
 
-class Square(ChakraLayoutComponent):
+class Square(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -167,7 +167,7 @@ class Square(ChakraLayoutComponent):
         """
         ...
 
-class Circle(ChakraLayoutComponent):
+class Circle(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore

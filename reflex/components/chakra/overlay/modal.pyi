@@ -15,86 +15,7 @@ from reflex.vars import Var
 
 ModalSizes = Literal["xs", "sm", "md", "lg", "xl", "full"]
 
-class BaseModal(ChakraComponent):
-    @overload
-    @classmethod
-    def create(  # type: ignore
-        cls,
-        *children,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        **props
-    ) -> "BaseModal":
-        """Create the component.
-
-        Args:
-            *children: The children of the component.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: The props of the component.
-
-        Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
-        """
-        ...
-
-class Modal(BaseModal):
+class Modal(ChakraComponent):
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
@@ -225,7 +146,7 @@ class Modal(BaseModal):
         """
         ...
 
-class ModalOverlay(BaseModal):
+class ModalOverlay(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -304,7 +225,7 @@ class ModalOverlay(BaseModal):
         """
         ...
 
-class ModalHeader(BaseModal):
+class ModalHeader(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -383,7 +304,7 @@ class ModalHeader(BaseModal):
         """
         ...
 
-class ModalFooter(BaseModal):
+class ModalFooter(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -462,7 +383,7 @@ class ModalFooter(BaseModal):
         """
         ...
 
-class ModalContent(BaseModal):
+class ModalContent(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -541,7 +462,7 @@ class ModalContent(BaseModal):
         """
         ...
 
-class ModalBody(BaseModal):
+class ModalBody(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -620,7 +541,7 @@ class ModalBody(BaseModal):
         """
         ...
 
-class ModalCloseButton(BaseModal):
+class ModalCloseButton(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore

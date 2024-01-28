@@ -7,13 +7,7 @@ from reflex.components.chakra import ChakraComponent, LiteralAvatarSize
 from reflex.vars import Var
 
 
-class BaseAvatar(ChakraComponent):
-    """Base avatar component."""
-
-    library = "@chakra-ui/avatar@2.1.0"
-
-
-class Avatar(BaseAvatar):
+class Avatar(ChakraComponent):
     """The image that represents the user."""
 
     tag = "Avatar"
@@ -54,13 +48,13 @@ class Avatar(BaseAvatar):
         }
 
 
-class AvatarBadge(BaseAvatar):
+class AvatarBadge(ChakraComponent):
     """A wrapper that displays its content on the right corner of the avatar."""
 
     tag = "AvatarBadge"
 
 
-class AvatarGroup(BaseAvatar):
+class AvatarGroup(ChakraComponent):
     """A wrapper to stack multiple Avatars together."""
 
     tag = "AvatarGroup"
