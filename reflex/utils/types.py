@@ -19,8 +19,9 @@ from typing import (
 )
 
 from pydantic.fields import ModelField
+from sqlalchemy import inspect
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped
+from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -105,6 +106,21 @@ def is_optional(cls: GenericType) -> bool:
     return is_union(cls) and type(None) in get_args(cls)
 
 
+def get_property_hint(attr: Any | None) -> GenericType | None:
+    """Check if an attribute is a property and return its type hint.
+
+    Args:
+        attr: The descriptor to check.
+
+    Returns:
+        The type hint of the property, if it is a property, else None.
+    """
+    if not isinstance(attr, (property, hybrid_property)):
+        return None
+    hints = get_type_hints(attr.fget)
+    return hints.get("return", None)
+
+
 def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None:
     """Check if an attribute can be accessed on the cls and return its type.
 
@@ -129,7 +145,16 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             # Ensure frontend uses null coalescing when accessing.
             type_ = Optional[type_]
         return type_
-    elif isinstance(cls, type) and issubclass(cls, (Model, DeclarativeBase)):
+    elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+        insp = inspect(cls)
+        if name not in insp.all_orm_descriptors:
+            return None
+        descriptor = insp.all_orm_descriptors[name]
+        if hint := get_property_hint(descriptor):
+            return hint
+        if isinstance(descriptor, QueryableAttribute):
+            return descriptor.type.python_type
+    elif isinstance(cls, type) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
         if name in hints:
@@ -142,9 +167,8 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
             return type_
         if name in cls.__dict__:
             value = cls.__dict__[name]
-            if isinstance(value, hybrid_property):
-                hints = get_type_hints(value.fget)
-                return hints.get("return", None)
+            if hint := get_property_hint(value):
+                return hint
     elif is_union(cls):
         # Check in each arg of the annotation.
         for arg in get_args(cls):
