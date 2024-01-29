@@ -117,16 +117,31 @@ class HighLevelRadioGroup(RadioGroupRoot):
         size = props.pop("size", "2")
         default_value = props.pop("default_value", "")
 
-        def radio_group_item(value: str | Var) -> Component:
-            value = (
-                Var.create(value, _var_is_string=type(value) is str)
-                .to_string()  # type: ignore
-                ._replace(_var_is_local=False)
+        # convert only non-strings to json(JSON.stringify) so quotes are not rendered
+        # for string literal types.
+        if (
+            type(default_value) is str
+            or isinstance(default_value, Var)
+            and default_value._var_type is str
+        ):
+            default_value = Var.create(default_value, _var_is_string=True)  # type: ignore
+        else:
+            default_value = (
+                Var.create(default_value).to_string()._replace(_var_is_local=False)  # type: ignore
             )
+
+        def radio_group_item(value: str | Var) -> Component:
+            item_value = Var.create(value)  # type: ignore
+            item_value = rx.cond(
+                item_value.type() == str,  # type: ignore
+                item_value,
+                item_value.to_string()._replace(_var_is_local=False),  # type: ignore
+            )._replace(_var_type=str)
+
             return Text.create(
                 Flex.create(
-                    RadioGroupItem.create(value=value),
-                    value,
+                    RadioGroupItem.create(value=item_value),
+                    item_value,
                     gap="2",
                 ),
                 size=size,
@@ -143,10 +158,6 @@ class HighLevelRadioGroup(RadioGroupRoot):
                 gap=gap,
             ),
             size=size,
-            default_value=Var.create(
-                default_value, _var_is_string=type(default_value) is str
-            )
-            .to_string()  # type: ignore
-            ._replace(_var_is_local=False),
+            default_value=default_value,
             **props,
         )

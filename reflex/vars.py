@@ -87,6 +87,15 @@ REPLACED_NAMES = {
     "deps": "_deps",
 }
 
+PYTHON_JS_TYPE_MAP = {
+    (int, float): "number",
+    (str,): "string",
+    (bool,): "boolean",
+    (list, tuple): "Array",
+    (dict,): "Object",
+    (None,): "undefined",
+}
+
 
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
@@ -843,7 +852,17 @@ class Var:
             _var_is_string=False,
         )
 
-    def __eq__(self, other: Var) -> Var:
+    def type(self) -> Var:
+        """Get the type of the Var in Javascript.
+
+        Returns:
+            A var representing the type check.
+        """
+        return self._replace(
+            _var_name=f"typeof {self._var_name}", _var_type=str, _var_is_string=False
+        )
+
+    def __eq__(self, other: Union[Var, Type]) -> Var:
         """Perform an equality comparison.
 
         Args:
@@ -852,9 +871,12 @@ class Var:
         Returns:
             A var representing the equality comparison.
         """
+        for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
+            if not isinstance(other, Var) and other in python_types:
+                return self.compare("===", Var.create(js_type))  # type: ignore
         return self.compare("===", other)
 
-    def __ne__(self, other: Var) -> Var:
+    def __ne__(self, other: Union[Var, Type]) -> Var:
         """Perform an inequality comparison.
 
         Args:
@@ -863,6 +885,9 @@ class Var:
         Returns:
             A var representing the inequality comparison.
         """
+        for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
+            if not isinstance(other, Var) and other in python_types:
+                return self.compare("===", Var.create(js_type))  # type: ignore
         return self.compare("!==", other)
 
     def __gt__(self, other: Var) -> Var:
