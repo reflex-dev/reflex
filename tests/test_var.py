@@ -346,10 +346,32 @@ def test_basic_operations(TestObj):
         str(BaseVar(_var_name="foo", _var_type=str).type() == dict)
         == "{(typeof foo === `Object`)}"
     )
+
     assert (
-        str(BaseVar(_var_name="foo", _var_type=str).type() is None)
-        == "{(typeof foo === `undefined`)}"
+            str(BaseVar(_var_name="foo", _var_type=str).type() != str)
+            == "{(typeof foo !== `string`)}"
     )
+    assert (
+            str(BaseVar(_var_name="foo", _var_type=str).type() != int)
+            == "{(typeof foo !== `number`)}"
+    )
+    assert (
+            str(BaseVar(_var_name="foo", _var_type=str).type() != list)
+            == "{(typeof foo !== `Array`)}"
+    )
+    assert (
+            str(BaseVar(_var_name="foo", _var_type=str).type() != float)
+            == "{(typeof foo !== `number`)}"
+    )
+    assert (
+            str(BaseVar(_var_name="foo", _var_type=str).type() != tuple)
+            == "{(typeof foo !== `Array`)}"
+    )
+    assert (
+            str(BaseVar(_var_name="foo", _var_type=str).type() != dict)
+            == "{(typeof foo !== `Object`)}"
+    )
+
 
 
 @pytest.mark.parametrize(

@@ -887,7 +887,7 @@ class Var:
         """
         for python_types, js_type in PYTHON_JS_TYPE_MAP.items():
             if not isinstance(other, Var) and other in python_types:
-                return self.compare("===", Var.create(js_type, _var_is_string=True))  # type: ignore
+                return self.compare("!==", Var.create(js_type, _var_is_string=True))  # type: ignore
         return self.compare("!==", other)
 
     def __gt__(self, other: Var) -> Var:
