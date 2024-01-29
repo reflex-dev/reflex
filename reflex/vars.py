@@ -852,7 +852,7 @@ class Var:
             _var_is_string=False,
         )
 
-    def type(self) -> Var:
+    def _type(self) -> Var:
         """Get the type of the Var in Javascript.
 
         Returns:

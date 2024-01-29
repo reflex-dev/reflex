@@ -133,7 +133,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
         def radio_group_item(value: str | Var) -> Component:
             item_value = Var.create(value)  # type: ignore
             item_value = rx.cond(
-                item_value.type() == str,  # type: ignore
+                item_value._type() == str,  # type: ignore
                 item_value,
                 item_value.to_string()._replace(_var_is_local=False),  # type: ignore
             )._replace(_var_type=str)
