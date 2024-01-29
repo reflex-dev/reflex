@@ -857,7 +857,6 @@ def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
-    ensure_reflex_distinct_id()
 
 
 def initialize_frontend_dependencies():
