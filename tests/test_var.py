@@ -321,7 +321,6 @@ def test_basic_operations(TestObj):
         str(BaseVar(_var_name="foo", _var_type=str).type() == str)
         == "{(typeof foo === `string`)}"
     )
-
     assert (
         str(BaseVar(_var_name="foo", _var_type=str).type() == str)
         == "{(typeof foo === `string`)}"
@@ -346,7 +345,6 @@ def test_basic_operations(TestObj):
         str(BaseVar(_var_name="foo", _var_type=str).type() == dict)
         == "{(typeof foo === `Object`)}"
     )
-
     assert (
             str(BaseVar(_var_name="foo", _var_type=str).type() != str)
             == "{(typeof foo !== `string`)}"
