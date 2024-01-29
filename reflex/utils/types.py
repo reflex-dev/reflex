@@ -21,7 +21,7 @@ from typing import (
 from pydantic.fields import ModelField
 from sqlalchemy import inspect
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute
+from sqlalchemy.orm import DeclarativeBase, Mapped, QueryableAttribute, Relationship
 
 from reflex.base import Base
 from reflex.utils import serializers
@@ -135,6 +135,9 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
     """
     from reflex.model import Model
 
+    attr = getattr(cls, name, None)
+    if hint := get_property_hint(attr):
+        return hint
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         field = cls.__fields__[name]
@@ -147,13 +150,18 @@ def get_attribute_access_type(cls: GenericType, name: str) -> GenericType | None
         return type_
     elif isinstance(cls, type) and issubclass(cls, DeclarativeBase):
         insp = inspect(cls)
-        if name not in insp.all_orm_descriptors:
+        if name in insp.columns:
+            return insp.columns[name].type.python_type
+        if name not in insp.all_orm_descriptors.keys():
             return None
         descriptor = insp.all_orm_descriptors[name]
         if hint := get_property_hint(descriptor):
             return hint
         if isinstance(descriptor, QueryableAttribute):
-            return descriptor.type.python_type
+            prop = descriptor.property
+            if not isinstance(prop, Relationship):
+                return None
+            return prop.mapper.class_
     elif isinstance(cls, type) and issubclass(cls, Model):
         # Check in the annotations directly (for sqlmodel.Relationship)
         hints = get_type_hints(cls)
