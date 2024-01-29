@@ -8,13 +8,7 @@ from reflex.utils import types
 from reflex.vars import Var
 
 
-class BaseTable(ChakraComponent):
-    """The base class for all Chakra table components."""
-
-    library = "@chakra-ui/table@2.1.0"
-
-
-class Table(BaseTable):
+class Table(ChakraComponent):
     """A table component."""
 
     tag = "Table"
@@ -65,7 +59,7 @@ class Table(BaseTable):
         return super().create(*children, **props)
 
 
-class Thead(BaseTable):
+class Thead(ChakraComponent):
     """A table header component."""
 
     tag = "Thead"
@@ -117,7 +111,7 @@ class Thead(BaseTable):
             raise TypeError("table headers should be a list or tuple")
 
 
-class Tbody(BaseTable):
+class Tbody(ChakraComponent):
     """A table body component."""
 
     tag = "Tbody"
@@ -191,7 +185,7 @@ class Tbody(BaseTable):
             )
 
 
-class Tfoot(BaseTable):
+class Tfoot(ChakraComponent):
     """A table footer component."""
 
     tag = "Tfoot"
@@ -240,7 +234,7 @@ class Tfoot(BaseTable):
             raise TypeError("table headers should be a list or tuple")
 
 
-class Tr(BaseTable):
+class Tr(ChakraComponent):
     """A table row component."""
 
     tag = "Tr"
@@ -271,7 +265,7 @@ class Tr(BaseTable):
         return super().create(*children, **props)
 
 
-class Th(BaseTable):
+class Th(ChakraComponent):
     """A table header cell component."""
 
     tag = "Th"
@@ -283,7 +277,7 @@ class Th(BaseTable):
     is_numeric: Var[bool]
 
 
-class Td(BaseTable):
+class Td(ChakraComponent):
     """A table data cell component."""
 
     tag = "Td"
@@ -295,7 +289,7 @@ class Td(BaseTable):
     is_numeric: Var[bool]
 
 
-class TableCaption(BaseTable):
+class TableCaption(ChakraComponent):
     """A table caption component."""
 
     tag = "TableCaption"
@@ -304,7 +298,7 @@ class TableCaption(BaseTable):
     placement: Var[str]
 
 
-class TableContainer(BaseTable):
+class TableContainer(ChakraComponent):
     """The table container component renders a div that wraps the table component."""
 
     tag = "TableContainer"

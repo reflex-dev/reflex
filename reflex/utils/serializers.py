@@ -8,6 +8,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union, get_type_hints
 
 from reflex.base import Base
+from reflex.constants.colors import Color
 from reflex.utils import exceptions, format, types
 
 # Mapping from type to a serializer.
@@ -228,6 +229,22 @@ def serialize_datetime(dt: Union[date, datetime, time, timedelta]) -> str:
         The serialized datetime.
     """
     return str(dt)
+
+
+@serializer
+def serialize_color(color: Color) -> SerializedType:
+    """Serialize a color.
+
+    Args:
+        color: The color to serialize.
+
+    Returns:
+        The serialized color.
+    """
+    if color.alpha:
+        return f"var(--{color.color}-a{color.shade})"
+    else:
+        return f"var(--{color.color}-{color.shade})"
 
 
 try:

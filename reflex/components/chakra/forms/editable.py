@@ -8,13 +8,7 @@ from reflex.constants import EventTriggers
 from reflex.vars import Var
 
 
-class BaseEditable(ChakraComponent):
-    """The base class for all Chakra editable components."""
-
-    library = "@chakra-ui/editable@3.1.0"
-
-
-class Editable(BaseEditable):
+class Editable(ChakraComponent):
     """The wrapper component that provides context value."""
 
     tag = "Editable"
@@ -58,19 +52,19 @@ class Editable(BaseEditable):
         }
 
 
-class EditableInput(BaseEditable):
+class EditableInput(ChakraComponent):
     """The edit view of the component. It shows when you click or focus on the text."""
 
     tag = "EditableInput"
 
 
-class EditableTextarea(BaseEditable):
+class EditableTextarea(ChakraComponent):
     """Use the textarea element to handle multi line text input in an editable context."""
 
     tag = "EditableTextarea"
 
 
-class EditablePreview(BaseEditable):
+class EditablePreview(ChakraComponent):
     """The read-only view of the component."""
 
     tag = "EditablePreview"

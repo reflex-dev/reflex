@@ -18,86 +18,7 @@ from reflex.components.chakra.forms.button import Button
 from reflex.components.component import Component
 from reflex.vars import Var
 
-class BaseMenu(ChakraComponent):
-    @overload
-    @classmethod
-    def create(  # type: ignore
-        cls,
-        *children,
-        style: Optional[Style] = None,
-        key: Optional[Any] = None,
-        id: Optional[Any] = None,
-        class_name: Optional[Any] = None,
-        autofocus: Optional[bool] = None,
-        custom_attrs: Optional[Dict[str, Union[Var, str]]] = None,
-        on_blur: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_context_menu: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_double_click: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_focus: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_down: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_enter: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_leave: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_move: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_out: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_over: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_mouse_up: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_scroll: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        on_unmount: Optional[
-            Union[EventHandler, EventSpec, list, function, BaseVar]
-        ] = None,
-        **props
-    ) -> "BaseMenu":
-        """Create the component.
-
-        Args:
-            *children: The children of the component.
-            style: The style of the component.
-            key: A unique key for the component.
-            id: The id for the component.
-            class_name: The class name for the component.
-            autofocus: Whether the component should take the focus once the page is loaded
-            custom_attrs: custom attribute
-            **props: The props of the component.
-
-        Returns:
-            The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
-        """
-        ...
-
-class Menu(BaseMenu):
+class Menu(ChakraComponent):
     def get_event_triggers(self) -> dict[str, Union[Var, Any]]: ...
     @overload
     @classmethod
@@ -220,7 +141,7 @@ class Menu(BaseMenu):
         """
         ...
 
-class MenuButton(BaseMenu):
+class MenuButton(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -303,7 +224,7 @@ class MenuButton(BaseMenu):
         """
         ...
 
-class MenuList(BaseMenu):
+class MenuList(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -381,7 +302,7 @@ class MenuList(BaseMenu):
         """
         ...
 
-class MenuItem(BaseMenu):
+class MenuItem(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -470,7 +391,7 @@ class MenuItem(BaseMenu):
         """
         ...
 
-class MenuItemOption(BaseMenu):
+class MenuItemOption(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -567,7 +488,7 @@ class MenuItemOption(BaseMenu):
         """
         ...
 
-class MenuGroup(BaseMenu):
+class MenuGroup(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -646,7 +567,7 @@ class MenuGroup(BaseMenu):
         """
         ...
 
-class MenuOptionGroup(BaseMenu):
+class MenuOptionGroup(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore
@@ -731,7 +652,7 @@ class MenuOptionGroup(BaseMenu):
         """
         ...
 
-class MenuDivider(BaseMenu):
+class MenuDivider(ChakraComponent):
     @overload
     @classmethod
     def create(  # type: ignore

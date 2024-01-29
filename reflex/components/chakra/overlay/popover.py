@@ -13,13 +13,7 @@ from reflex.components.component import Component
 from reflex.vars import Var
 
 
-class BasePopover(ChakraComponent):
-    """The base class for all Chakra popover components."""
-
-    library = "@chakra-ui/popover@2.2.1"
-
-
-class Popover(BasePopover):
+class Popover(ChakraComponent):
     """The wrapper that provides props, state, and context to its children."""
 
     tag = "Popover"
@@ -147,49 +141,49 @@ class Popover(BasePopover):
         return super().create(*children, **props)
 
 
-class PopoverContent(BasePopover):
+class PopoverContent(ChakraComponent):
     """The popover itself."""
 
     tag = "PopoverContent"
 
 
-class PopoverHeader(BasePopover):
+class PopoverHeader(ChakraComponent):
     """The header of the popover."""
 
     tag = "PopoverHeader"
 
 
-class PopoverFooter(BasePopover):
+class PopoverFooter(ChakraComponent):
     """Display a popover footer."""
 
     tag = "PopoverFooter"
 
 
-class PopoverBody(BasePopover):
+class PopoverBody(ChakraComponent):
     """The body of the popover."""
 
     tag = "PopoverBody"
 
 
-class PopoverArrow(BasePopover):
+class PopoverArrow(ChakraComponent):
     """A visual arrow that points to the reference (or trigger)."""
 
     tag = "PopoverArrow"
 
 
-class PopoverCloseButton(BasePopover):
+class PopoverCloseButton(ChakraComponent):
     """A button to close the popover."""
 
     tag = "PopoverCloseButton"
 
 
-class PopoverAnchor(BasePopover):
+class PopoverAnchor(ChakraComponent):
     """Used to wrap the position-reference element."""
 
     tag = "PopoverAnchor"
 
 
-class PopoverTrigger(BasePopover):
+class PopoverTrigger(ChakraComponent):
     """Used to wrap the reference (or trigger) element."""
 
     tag = "PopoverTrigger"

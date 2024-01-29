@@ -13,8 +13,6 @@ from reflex.vars import Var
 class TextArea(ChakraComponent):
     """A text area component."""
 
-    library = "@chakra-ui/textarea@2.1.2"
-
     tag = "Textarea"
 
     # State var to bind the input.

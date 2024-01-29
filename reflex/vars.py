@@ -436,12 +436,9 @@ class Var:
 
         Returns:
             The merged var.
-
-        Raises:
-            ValueError: If the other value to be merged is None.
         """
         if other is None:
-            raise ValueError("The value to be merged cannot be None.")
+            return self._replace()
         if not isinstance(other, Var):
             other = Var.create(other)
         return self._replace(
@@ -575,11 +572,10 @@ class Var:
                 )
 
             # Get the type of the indexed var.
-            type_ = (
-                types.get_args(self._var_type)[0]
-                if types.is_generic_alias(self._var_type)
-                else Any
-            )
+            if types.is_generic_alias(self._var_type):
+                type_ = types.get_args(self._var_type)[0]
+            elif types._issubclass(self._var_type, str):
+                type_ = str
 
             # Use `at` to support negative indices.
             return self._replace(

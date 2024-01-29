@@ -13,12 +13,9 @@ from reflex import el
 from reflex.components.component import Component
 from reflex.components.radix.themes.components.icons import Icon
 from reflex.vars import Var
-from ..base import (
-    CommonMarginProps,
-    LiteralAccentColor,
-    LiteralVariant,
-    RadixThemesComponent,
-)
+from ..base import CommonMarginProps, LiteralAccentColor, RadixThemesComponent
+
+CalloutVariant = Literal["soft", "surface", "outline"]
 
 class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
     @overload
@@ -95,8 +92,8 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["soft", "surface", "outline"]],
+                Literal["soft", "surface", "outline"],
             ]
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
@@ -248,8 +245,8 @@ class CalloutRoot(el.Div, CommonMarginProps, RadixThemesComponent):
             color: map to CSS default color property.
             color_scheme: map to radix color property.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            size: Button size "1" - "4"
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
+            size: Size "1" - "3"
+            variant: Variant of button: "soft" | "surface" | "outline"
             high_contrast: Whether to render the button with higher contrast color against background
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -808,11 +805,11 @@ class Callout(CalloutRoot):
         ] = None,
         variant: Optional[
             Union[
-                Var[Literal["classic", "solid", "soft", "surface", "outline", "ghost"]],
-                Literal["classic", "solid", "soft", "surface", "outline", "ghost"],
+                Var[Literal["soft", "surface", "outline"]],
+                Literal["soft", "surface", "outline"],
             ]
         ] = None,
-        color: Optional[
+        color_scheme: Optional[
             Union[
                 Var[
                     Literal[
@@ -1020,9 +1017,9 @@ class Callout(CalloutRoot):
             text: The text of the callout.
             icon: The icon of the callout.
             as_child: Change the default rendered element for the one passed as a child, merging their props and behavior.
-            size: Button size "1" - "4"
-            variant: Variant of button: "solid" | "soft" | "outline" | "ghost"
-            color: Override theme color for button
+            size: Size "1" - "3"
+            variant: Variant of button: "soft" | "surface" | "outline"
+            color_scheme: Override theme color for button
             high_contrast: Whether to render the button with higher contrast color against background
             access_key:  Provides a hint for generating a keyboard shortcut for the current element.
             auto_capitalize: Controls whether and how text input is automatically capitalized as it is entered/edited by the user.
@@ -1060,5 +1057,3 @@ class Callout(CalloutRoot):
             The callout component.
         """
         ...
-
-callout = Callout.create
