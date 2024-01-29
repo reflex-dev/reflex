@@ -824,10 +824,44 @@ def validate_frontend_dependencies(init=True):
         validate_bun()
 
 
-def initialize_frontend_dependencies():
-    """Initialize all the frontend dependencies."""
+def ensure_reflex_distinct_id() -> int:
+    """Ensures that a reflex distinct id has been generated and stored in the reflex directory.
+
+    Returns:
+        Distinct id (int).
+    """
+    distinct_id_file = os.path.join(constants.Reflex.DIR, "distinct_id")
+
+    distinct_id = None
+    if os.path.exists(distinct_id_file):
+        try:
+            with open(distinct_id_file, "r") as f:
+                distinct_id = int(f.read())
+        except Exception:
+            # If anything goes wrong at all... just regenerate.
+            # Like what? Examples:
+            #     - file not exists
+            #     - file not readable
+            #     - content not parseable as an int
+            pass
+
+    if distinct_id is None:
+        distinct_id = random.getrandbits(128)
+        with open(distinct_id_file, "w") as f:
+            f.write(str(distinct_id))
+    # If we get here, distinct_id is definitely set
+    return distinct_id
+
+
+def initialize_reflex_user_directory():
+    """Initialize the reflex user directory."""
     # Create the reflex directory.
     path_ops.mkdir(constants.Reflex.DIR)
+    ensure_reflex_distinct_id()
+
+
+def initialize_frontend_dependencies():
+    """Initialize all the frontend dependencies."""
     # validate dependencies before install
     validate_frontend_dependencies()
     # Install the frontend dependencies.
