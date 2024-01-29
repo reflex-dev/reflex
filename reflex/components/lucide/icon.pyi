@@ -8,6 +8,7 @@ from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
 from reflex.components.component import Component
+from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -156,6 +157,7 @@ class Icon(LucideIconComponent):
 
         Args:
             *children: The positional arguments
+            size: The size of the icon in pixels.
             style: The style of the component.
             key: A unique key for the component.
             id: The id for the component.

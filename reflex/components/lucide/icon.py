@@ -1,6 +1,7 @@
 """Lucide Icon component."""
 
 from reflex.components.component import Component
+from reflex.style import Style
 from reflex.utils import format
 from reflex.vars import Var
 
@@ -8,7 +9,7 @@ from reflex.vars import Var
 class LucideIconComponent(Component):
     """Lucide Icon Component."""
 
-    library = "lucide-react@^0.314.0"
+    library = "lucide-react@0.314.0"
 
 
 class Icon(LucideIconComponent):
@@ -16,6 +17,7 @@ class Icon(LucideIconComponent):
 
     tag = "None"
 
+    # The size of the icon in pixels.
     size: Var[int]
 
     @classmethod
@@ -49,6 +51,14 @@ class Icon(LucideIconComponent):
         props["tag"] = format.to_title_case(props["tag"]) + "Icon"
         props["alias"] = f"Lucide{props['tag']}"
         return super().create(*children, **props)
+
+    def _apply_theme(self, theme: Component | None):
+        self.style = Style(
+            {
+                "color": f"var(--accent-12)",
+                **self.style,
+            }
+        )
 
 
 LUCIDE_ICON_LIST = [
