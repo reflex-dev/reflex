@@ -1,5 +1,5 @@
 """Interactive components provided by @radix-ui/themes."""
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import reflex as rx
 from reflex.components.component import Component
@@ -38,7 +38,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
     value: Var[str]
 
     # The initial value of checked radio item. Should be used in conjunction with onValueChange.
-    default_value: Var[Any]
+    default_value: Var[str]
 
     # Whether the radio group is disabled
     disabled: Var[bool]
@@ -86,7 +86,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
     """High level wrapper for the RadioGroup component."""
 
     # The items of the radio group.
-    items: Var[List[Any]]
+    items: Var[List[str]]
 
     # The direction of the radio group.
     direction: Var[LiteralFlexDirection] = Var.create_safe("column")
@@ -98,7 +98,11 @@ class HighLevelRadioGroup(RadioGroupRoot):
     size: Var[Literal["1", "2", "3"]] = Var.create_safe("2")
 
     @classmethod
-    def create(cls, items: Var[List[Any]], **props) -> Component:
+    def create(
+        cls,
+        items: Var[List[Optional[Union[str, int, float, list, dict, bool]]]],
+        **props
+    ) -> Component:
         """Create a radio group component.
 
         Args:
@@ -111,11 +115,17 @@ class HighLevelRadioGroup(RadioGroupRoot):
         direction = props.pop("direction", "column")
         gap = props.pop("gap", "2")
         size = props.pop("size", "2")
+        default_value = props.pop("default_value", "")
 
-        def radio_group_item(value: str) -> Component:
+        def radio_group_item(value: str | Var) -> Component:
+            value = (
+                Var.create(value, _var_is_string=type(value) is str)
+                .to_string()  # type: ignore
+                ._replace(_var_is_local=False)
+            )
             return Text.create(
                 Flex.create(
-                    RadioGroupItem.create(value=str(value)),
+                    RadioGroupItem.create(value=value),
                     value,
                     gap="2",
                 ),
@@ -123,17 +133,20 @@ class HighLevelRadioGroup(RadioGroupRoot):
                 as_="label",
             )
 
-        if isinstance(items, Var):
-            child = [rx.foreach(items, radio_group_item)]
-        else:
-            child = [radio_group_item(value) for value in items]  #  type: ignore
+        items = Var.create(items)  # type: ignore
+        children = [rx.foreach(items, radio_group_item)]
 
         return RadioGroupRoot.create(
             Flex.create(
-                *child,
+                *children,
                 direction=direction,
                 gap=gap,
             ),
             size=size,
+            default_value=Var.create(
+                default_value, _var_is_string=type(default_value) is str
+            )
+            .to_string()  # type: ignore
+            ._replace(_var_is_local=False),
             **props,
         )

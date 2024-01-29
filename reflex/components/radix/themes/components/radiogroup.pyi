@@ -7,7 +7,7 @@ from typing import Any, Dict, Literal, Optional, Union, overload
 from reflex.vars import Var, BaseVar, ComputedVar
 from reflex.event import EventChain, EventHandler, EventSpec
 from reflex.style import Style
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Union, Optional
 import reflex as rx
 from reflex.components.component import Component
 from reflex.components.radix.themes.layout.flex import Flex
@@ -103,7 +103,7 @@ class RadioGroupRoot(CommonMarginProps, RadixThemesComponent):
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[Any], Any]] = None,
+        default_value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,
@@ -456,7 +456,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
     def create(  # type: ignore
         cls,
         *children,
-        items: Optional[Union[Var[List[Any]], List[Any]]] = None,
+        items: Optional[Union[Var[List[str]], List[str]]] = None,
         direction: Optional[
             Union[
                 Var[Literal["row", "column", "row-reverse", "column-reverse"]],
@@ -542,7 +542,7 @@ class HighLevelRadioGroup(RadioGroupRoot):
         ] = None,
         high_contrast: Optional[Union[Var[bool], bool]] = None,
         value: Optional[Union[Var[str], str]] = None,
-        default_value: Optional[Union[Var[Any], Any]] = None,
+        default_value: Optional[Union[Var[str], str]] = None,
         disabled: Optional[Union[Var[bool], bool]] = None,
         name: Optional[Union[Var[str], str]] = None,
         required: Optional[Union[Var[bool], bool]] = None,

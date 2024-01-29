@@ -743,13 +743,13 @@ class Var:
                 operation_name = format.wrap(operation_name, "(")
         else:
             # apply operator to left operand (<operator> left_operand)
-            operation_name = f"{op}{self._var_full_name}"
+            operation_name = f"{op}{get_operand_full_name(self)}"
             # apply function to operands
             if fn is not None:
                 operation_name = (
                     f"{fn}({operation_name})"
                     if not invoke_fn
-                    else f"{self._var_full_name}.{fn}()"
+                    else f"{get_operand_full_name(self)}.{fn}()"
                 )
 
         return self._replace(
