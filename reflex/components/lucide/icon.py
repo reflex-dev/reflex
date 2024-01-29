@@ -38,12 +38,19 @@ class Icon(LucideIconComponent):
             The created component.
         """
         if children:
-            raise AttributeError(
-                f"Passing children to Icon component is not allowed: remove positional arguments {children} to fix"
-            )
+            if len(children) == 1 and type(children[0]) == str:
+                props["tag"] = children[0]
+            else:
+                raise AttributeError(
+                    f"Passing multiple children to Icon component is not allowed: remove positional arguments {children[1:]} to fix"
+                )
         if "tag" not in props.keys():
             raise AttributeError("Missing 'tag' keyword-argument for Icon")
-        if type(props["tag"]) != str or props["tag"].lower() not in LUCIDE_ICON_LIST:
+
+        if (
+            type(props["tag"]) != str
+            or format.to_snake_case(props["tag"]) not in LUCIDE_ICON_LIST
+        ):
             raise ValueError(
                 f"Invalid icon tag: {props['tag']}. Please use one of the following: {', '.join(LUCIDE_ICON_LIST[0:25])}, ..."
                 "\nSee full list at https://lucide.dev/icons."
