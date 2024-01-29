@@ -289,6 +289,9 @@ class FormSubmit(FormComponent):
     alias = "RadixFormSubmit"
 
 
+# High Level API
+Form = FormRoot
+
 form_root = FormRoot.create
 form_field = FormField.create
 form_label = FormLabel.create
@@ -296,3 +299,4 @@ form_control = FormControl.create
 form_message = FormMessage.create
 form_validity_state = FormValidityState.create
 form_submit = FormSubmit.create
+form = Form.create
